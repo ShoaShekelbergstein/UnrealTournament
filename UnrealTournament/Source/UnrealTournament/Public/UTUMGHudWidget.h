@@ -3,10 +3,11 @@
 
 #include "UserWidget.h"
 #include "AssetData.h"
+#include "UTUMGWidget.h"
 #include "UTUMGHudWidget.generated.h"
 
 UCLASS()
-class UNREALTOURNAMENT_API UUTUMGHudWidget : public UUserWidget
+class UNREALTOURNAMENT_API UUTUMGHudWidget : public UUTUMGWidget
 {
 	GENERATED_UCLASS_BODY()
 
@@ -25,12 +26,7 @@ class UNREALTOURNAMENT_API UUTUMGHudWidget : public UUserWidget
 	UFUNCTION(BlueprintCallable, Category = Hud)
 	void NotifyHUDWidgetIsDone();
 
-	/** Where in the viewport stack to sort this widget */
-	UPROPERTY(EditDefaultsOnly, Category="Display")
-	float DisplayZOrder;
-
 protected:
-
 
 	/** This is the UTHUD that anchors this UMG widget */
 	TWeakObjectPtr<class AUTHUD> HUDAnchor;

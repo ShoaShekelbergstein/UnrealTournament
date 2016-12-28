@@ -81,6 +81,7 @@
 #include "UTAnalytics.h"
 #include "QosInterface.h"
 #include "SUTReportUserDialog.h"
+#include "UTUMGWidget_Toast.h"
 
 #if WITH_SOCIAL
 #include "Social.h"
@@ -1427,22 +1428,11 @@ void UUTLocalPlayer::ShowToast(FText ToastText, float Lifetime)
 	if (GetWorld()->GetNetMode() == ENetMode::NM_Client && bSuppressToastsInGame) return;
 
 	// Build the Toast to Show...
-
-	TSharedPtr<SUTToastBase> Toast;
-	SAssignNew(Toast, SUTToastBase)
-		.PlayerOwner(this)
-		.Lifetime(Lifetime)
-		.ToastText(ToastText);
-
-	if (Toast.IsValid())
+	UUTUMGWidget_Toast* Toast = Cast<UUTUMGWidget_Toast>(OpenUMGWidget(TEXT("/Game/RestrictedAssets/UI/UMGMenuElements/UTGenericToastWidget.UTGenericToastWidget")));
+	if (Toast != nullptr)
 	{
-		ToastList.Add(Toast);
-
-		// Auto show if it's the first toast..
-		if (ToastList.Num() > 0 && ToastList[0].IsValid())
-		{
-			AddToastToViewport(ToastList[0]);
-		}
+		Toast->Message = ToastText;
+		Toast->Duration = Lifetime;
 	}
 #endif
 }
@@ -1856,7 +1846,6 @@ void UUTLocalPlayer::SaveProfileSettings()
 
 		if ( IsLoggedIn() )
 		{
-
 			// Build a blob of the profile contents
 			TArray<uint8> FileContents;
 			FMemoryWriter MemoryWriter(FileContents, true);
@@ -1873,6 +1862,7 @@ void UUTLocalPlayer::SaveProfileSettings()
 			}
 			else
 			{
+				ShowSavingWidget();
 				// Save the blob to the cloud
 				TSharedPtr<const FUniqueNetId> UserID = OnlineIdentityInterface->GetUniquePlayerId(GetControllerId());
 				if (OnlineUserCloudInterface.IsValid() && UserID.IsValid())
@@ -1899,6 +1889,7 @@ void UUTLocalPlayer::SaveProgression()
 {
 	if ( CurrentProgression != NULL && IsLoggedIn() )
 	{
+		ShowSavingWidget();
 		CurrentProgression->Updated();
 
 		// Build a blob of the profile contents
@@ -1927,6 +1918,8 @@ bool UUTLocalPlayer::IsPendingMCPLoad() const
 
 void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName)
 {
+	HideSavingWidget();
+
 	// Make sure this was our filename
 	if (FileName == GetProfileFilename())
 	{
@@ -4514,8 +4507,13 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 		bCloseUICalledDuringMoviePlayback = true;
 		return;
 	}
+
+	for (int32 i=0; i < UMGWidgetStack.Num(); i++)
+	{
+		CloseUMGWidget(UMGWidgetStack[i]);
+	}
 #endif
-	
+
 	bCloseUICalledDuringMoviePlayback = false;
 
 	ChatArchive.Empty();
@@ -6353,3 +6351,95 @@ void UUTLocalPlayer::CloseAbuseDialog()
 #endif
 }
 
+void UUTLocalPlayer::ShowSavingWidget()
+{
+#if !UE_SERVER
+	if (SavingWidget == nullptr)
+	{
+		SavingWidget = OpenUMGWidget(TEXT("/Game/RestrictedAssets/UI/UMGMenuElements/UTSavingWidget.UTSavingWidget"));
+	}
+#endif
+}
+
+void UUTLocalPlayer::HideSavingWidget()
+{
+#if !UE_SERVER
+	if (SavingWidget != nullptr)
+	{
+		CloseUMGWidget(SavingWidget);
+		SavingWidget = nullptr;
+	}
+#endif
+}
+
+
+UUTUMGWidget* UUTLocalPlayer::OpenUMGWidget(const FString& UMGClass)
+{
+	UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
+	if (GI != nullptr) 
+	{
+		// Attempt to look up the class as given
+		UClass* UMGWidgetClass = LoadClass<UUserWidget>(NULL, *UMGClass, NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
+
+		// If that failed, try adding the _C definition incase someone forgot it
+		if (UMGWidgetClass == nullptr)
+		{
+			FString FixedClassName = UMGClass + TEXT("_C");
+			UMGWidgetClass = LoadClass<UUserWidget>(NULL, *FixedClassName, NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
+		}
+
+		if (UMGWidgetClass)
+		{
+			UUTUMGWidget* FinalWidget = CreateWidget<UUTUMGWidget>(GI, UMGWidgetClass);
+			if (FinalWidget != nullptr)
+			{
+				return OpenExistingUMGWidget(FinalWidget);
+			}
+		}
+	}
+	return nullptr;
+}
+
+UUTUMGWidget* UUTLocalPlayer::OpenExistingUMGWidget(UUTUMGWidget* WidgetToOpen)
+{
+	if (WidgetToOpen != nullptr)
+	{
+		WidgetToOpen->AddToViewport(WidgetToOpen->DisplayZOrder);
+		if (WidgetToOpen->WidgetTag == NAME_None)
+		{
+			WidgetToOpen->WidgetTag = FName(*WidgetToOpen->GetName());
+		}
+		WidgetToOpen->AssociateLocalPlayer(this);
+	}
+	return WidgetToOpen;
+}
+
+UUTUMGWidget* UUTLocalPlayer::FindUMGWidget(const FName SearchTag)
+{
+	for (int32 i=0; i < UMGWidgetStack.Num(); i++)
+	{
+		if (UMGWidgetStack[i] != nullptr && UMGWidgetStack[i]->WidgetTag == SearchTag)
+		{
+			return UMGWidgetStack[i];
+		}
+	}
+
+	return nullptr;
+}
+
+void UUTLocalPlayer::CloseUMGWidgetByTag(const FName Tag)
+{
+	UUTUMGWidget* WidgetToClose = FindUMGWidget(Tag);	
+	if (WidgetToClose != nullptr)
+	{
+		CloseUMGWidget(WidgetToClose);
+	}
+}
+
+void UUTLocalPlayer::CloseUMGWidget(UUTUMGWidget* WidgetToClose)
+{
+	if (WidgetToClose != nullptr)
+	{
+		WidgetToClose->RemoveFromViewport();
+	}
+}

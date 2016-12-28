@@ -36,6 +36,7 @@ class SUTQuickChatWindow;
 class UUTKillcamPlayback;
 class SUTWebMessage;
 class SUTReportUserDialog;
+class UUTUMGWidget;
 
 enum class EMatchmakingCompleteResult : uint8;
 
@@ -214,7 +215,7 @@ public:
 	virtual void ShowMenu(const FString& Parameters);
 	virtual void HideMenu();
 	virtual void OpenTutorialMenu();
-	virtual void ShowToast(FText ToastText, float Lifetime=3.0f);	// NOTE: Need to add a type/etc so that they can be skinned better.
+	virtual void ShowToast(FText ToastText, float Lifetime=1.5f);	// NOTE: Need to add a type/etc so that they can be skinned better.
 	virtual void ShowAdminMessage(FString Message);
 
 	virtual void MessageBox(FText MessageTitle, FText MessageText);
@@ -250,6 +251,45 @@ public:
 	}
 
 #endif
+	UPROPERTY()
+	TArray<UUTUMGWidget*> UMGWidgetStack;
+
+	/**
+	 * Opens a UTUMGWidget and keeps track of it.  
+	 * @UMGClass the text class name of the UMG widget to open.  NOTE: it will auto-append the _C if needed
+	 * @returns the UMG widget opened
+	 */
+	UFUNCTION(BlueprintCallable, Category = UI)
+	virtual UUTUMGWidget* OpenUMGWidget(const FString& UMGClass);
+
+	/**
+	 * Takes an existing UTUMGWidget and keeps track of it.  
+	 * @WidgetToOpen the actual widget we are trying to open
+	 */
+	virtual UUTUMGWidget* OpenExistingUMGWidget(UUTUMGWidget* WidgetToOpen);
+
+	/**
+	 * Find a widget in the stack by tag
+	 * @SearchTag the tag of the widget to find
+	 * @returns the widget in question
+	 */
+	UFUNCTION(BlueprintCallable, Category = UI)
+	virtual UUTUMGWidget* FindUMGWidget(const FName SearchTag);
+	
+	/**
+	 * Closes a widget on the stack by it's tag.  Note this one occurs outside the preprocess block so it's actually available to blueprints.
+	 * @Tag the tag of the widget to find
+	 */
+
+	UFUNCTION(BlueprintCallable, Category = UI)
+	virtual void CloseUMGWidgetByTag(const FName Tag);
+
+	/**
+	 * Closes a given UTUMGWidget
+	 */
+	UFUNCTION(BlueprintCallable, Category = UI)
+	virtual void CloseUMGWidget(UUTUMGWidget* WidgetToClose);
+
 
 	UFUNCTION(BlueprintCallable, Category = UI)
 	virtual bool AreMenusOpen();
@@ -1215,6 +1255,13 @@ public:
 
 	void ReportAbuse(TWeakObjectPtr<class AUTPlayerState> Troll);
 	void CloseAbuseDialog();
+
+protected:
+	UPROPERTY()
+	UUTUMGWidget* SavingWidget;
+
+	void ShowSavingWidget();
+	void HideSavingWidget();
 
 };
 
