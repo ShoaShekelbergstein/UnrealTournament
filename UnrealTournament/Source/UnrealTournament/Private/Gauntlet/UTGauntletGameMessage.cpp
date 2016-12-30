@@ -26,8 +26,20 @@ FText UUTGauntletGameMessage::GetText(int32 Switch, bool bTargetsPlayerState1, A
 		case 1 : return FlagSpawnMessage; break;
 		case 2 : return YouAreOnOffenseMessage; break;
 		case 3 : return YouAreOnDefenseMessage; break;
+		case 4 : return FText::FromString(TEXT(" ")); break;			// 4 is a UMG class
 	}
 
 	return Super::GetText(Switch, bTargetsPlayerState1, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
 }
 
+FString UUTGauntletGameMessage::GetAnnouncementUMGClassname(int32 Switch, const UObject* OptionalObject) const
+{
+	if (Switch == 4) return TEXT("/Game/RestrictedAssets/UI/UMGHudMessages/UTTeamScoreMessageWidget.UTTeamScoreMessageWidget");
+	return TEXT("");
+}
+
+float UUTGauntletGameMessage::GetLifeTime(int32 Switch) const
+{
+	if (Switch == 4) return 6.0f;
+    return Blueprint_GetLifeTime(Switch);
+}

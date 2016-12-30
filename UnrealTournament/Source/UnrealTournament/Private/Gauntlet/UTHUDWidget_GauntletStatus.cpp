@@ -26,24 +26,31 @@ void UUTHUDWidget_GauntletStatus::Draw_Implementation(float DeltaTime)
 	AUTGauntletGameState* GauntletGameState = GetWorld()->GetGameState<AUTGauntletGameState>();
 	if (GauntletGameState != nullptr)
 	{
-		int32 FlagTeam = GauntletGameState->Flag != nullptr ? GauntletGameState->Flag->GetTeamNum() : 255;
-		if (FlagTeam < 0 || FlagTeam > 1 || !GauntletGameState->Teams.IsValidIndex(FlagTeam))
+		if (GauntletGameState->IsMatchInProgress())
 		{
-			FlagIcon.RenderColor = FLinearColor(0.0f,0.45f,0.125f,1.0f);
-		}
-		else
-		{
-			FlagIcon.RenderColor = GauntletGameState->Teams[FlagTeam]->TeamColor;
-		}
+			if (GauntletGameState->RemainingPickupDelay > 0)
+			{
+				ClockText.bDrawOutline = true;
+				ClockText.Text = NSLOCTEXT("Guantlet","FlagSpawnsInMsg","Flag Spawns in");
+				RenderObj_TextAt(ClockText, 0.0f, 64.0f);
+				ClockText.Text = UTHUDOwner->ConvertTime(FText::GetEmpty(), FText::GetEmpty(), GauntletGameState->RemainingPickupDelay, false);
+				RenderObj_TextAt(ClockText, 0.0f, 96.0f);
+				ClockText.bDrawOutline = false;
+			}
+			else
+			{
+				int32 FlagTeam = GauntletGameState->Flag != nullptr ? GauntletGameState->Flag->GetTeamNum() : 255;
+				if (FlagTeam < 0 || FlagTeam > 1 || !GauntletGameState->Teams.IsValidIndex(FlagTeam))
+				{
+					FlagIcon.RenderColor = FLinearColor(0.0f,0.45f,0.125f,1.0f);
+				}
+				else
+				{
+					FlagIcon.RenderColor = GauntletGameState->Teams[FlagTeam]->TeamColor;
+				}
 
-		RenderObj_TextureAt(FlagIcon, 0.0f, 64.0f, 66.0f, 63.0f);
-
-		if (GauntletGameState->RemainingPickupDelay > 0)
-		{
-			LockIcon.RenderColor = FLinearColor::Black;
-			RenderObj_TextureAt(LockIcon, 0.0f, 80.0f, 30.0f, 42.0f);
-			LockIcon.RenderColor = FLinearColor::Yellow;
-			RenderObj_TextureAt(LockIcon, 0.0f, 80.0f, 26.0f, 38.0f);
+				RenderObj_TextureAt(FlagIcon, 0.0f, 64.0f, 66.0f, 63.0f);
+			}
 		}
 
 		if (TeamIcons.Num() >= 2 && GauntletGameState->Teams.Num()>=2)

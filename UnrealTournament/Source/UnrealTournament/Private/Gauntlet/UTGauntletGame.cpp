@@ -27,24 +27,30 @@
 #include "UTDroppedLife.h"
 #include "UTTimedPowerup.h"
 #include "UTGauntletHUD.h"
+#include "UTIntermissionBeginInterface.h"
+
+namespace MatchState
+{
+	const FName GauntletScoreSummary = FName(TEXT("GauntletScoreSummary"));
+	const FName GauntletFadeToBlack = FName(TEXT("GauntletFadeToBlack"));
+	const FName GauntletRoundAnnounce = FName(TEXT("GauntletRoundAnnounce"));
+}
 
 AUTGauntletGame::AUTGauntletGame(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
-	FlagCapScore = 1;
 	GoalScore = 3;
 	TimeLimit = 0;
 	InitialBoostCount = 0;
 	DisplayName = NSLOCTEXT("UTGauntletGame", "GauntletDisplayName", "Gauntlet");
-	
-	IntermissionDuration = 30.f;
+
 	GameStateClass = AUTGauntletGameState::StaticClass();
 	HUDClass = AUTGauntletHUD::StaticClass();
 	SquadType = AUTCTFSquadAI::StaticClass();
 	RoundLives=0;
 	bPerPlayerLives = false;
-	FlagSwapTime=10;
-	FlagPickupDelay=30;
+	FlagSwapTime=8;
+	FlagPickupDelay=15;
 	MapPrefix = TEXT("CTF");
 	bHideInUI = true;
 	bRollingAttackerSpawns = false;
@@ -55,6 +61,9 @@ AUTGauntletGame::AUTGauntletGame(const FObjectInitializer& ObjectInitializer)
 	bGameHasTranslocator = false;
 	bSitOutDuringRound = false;
 
+	ScoreSummaryDuration = 6.0f;
+	FadeToBlackDuration = 1.5f;
+	RoundAnnounceDuration = 3.5f;
 }
 
 void AUTGauntletGame::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -64,14 +73,54 @@ void AUTGauntletGame::InitGame(const FString& MapName, const FString& Options, F
 	bForceRespawn = false;
 	GoalScore = 3;	
 	FlagSwapTime = FMath::Max(0, UGameplayStatics::GetIntOption(Options, TEXT("FlagSwapTime"), FlagSwapTime));
-	FlagPickupDelay = 30.0f;
+
+	TAssetSubclassOf<AUTWeapon> WeaponObj;
+
+	WeaponObj = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/LinkGun/BP_LinkGun.BP_LinkGun_C"));
+	DefaultWeaponLoadoutObjects.Add(WeaponObj);
+	WeaponObj = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/BioRifle/BP_BioRifle.BP_BioRifle_C"));
+	DefaultWeaponLoadoutObjects.Add(WeaponObj);
+	WeaponObj = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/ShockRifle/ShockRifle.ShockRifle_C"));
+	DefaultWeaponLoadoutObjects.Add(WeaponObj);
+	WeaponObj = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/Minigun/BP_Minigun.BP_Minigun_C"));
+	DefaultWeaponLoadoutObjects.Add(WeaponObj);
+	WeaponObj = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/Flak/BP_FlakCannon.BP_FlakCannon_C"));
+	DefaultWeaponLoadoutObjects.Add(WeaponObj);
+	WeaponObj = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/RocketLauncher/BP_RocketLauncher.BP_RocketLauncher_C"));
+	DefaultWeaponLoadoutObjects.Add(WeaponObj);
+	bFirstRoundInitialized = true;
 }
 
 void AUTGauntletGame::InitGameState()
 {
 	Super::InitGameState();
+
 	GauntletGameState = Cast<AUTGauntletGameState>(UTGameState);
 	GauntletGameState->FlagSwapTime = FlagSwapTime;
+	GauntletGameState->CTFRound = 0;
+
+	// Turn off weapon stay
+	bWeaponStayActive = false;
+
+}
+
+void AUTGauntletGame::GiveDefaultInventory(APawn* PlayerPawn)
+{
+	Super::GiveDefaultInventory(PlayerPawn);
+	AUTCharacter* UTCharacter = Cast<AUTCharacter>(PlayerPawn);
+	if (PlayerPawn)
+	{
+		// Players start with all weapons except the sniper.  TODO: Reduce the starting ammo
+		for (int32 i = 0; i < DefaultWeaponLoadoutObjects.Num(); i++)
+		{
+			TSubclassOf<AUTWeapon> InvClass = Cast<UClass>(StaticLoadObject(UClass::StaticClass(), NULL, *DefaultWeaponLoadoutObjects[i].ToStringReference().ToString(), NULL, LOAD_NoWarn));
+			AUTWeapon* Weapon = UTCharacter->CreateInventory(InvClass,true);
+			if (Weapon != nullptr)
+			{
+				Weapon->Ammo *= 0.5;
+			}
+		}
+	}
 }
 
 void AUTGauntletGame::ResetFlags() 
@@ -94,6 +143,9 @@ void AUTGauntletGame::InitRound()
 			GauntletGameState->FlagDispenser->InitRound();
 		}
 	}
+
+	GauntletGameState->WinningTeam = nullptr;
+	GauntletGameState->WinnerPlayerState = nullptr;
 }
 
 void AUTGauntletGame::InitFlagForRound(class AUTCarriedObject* Flag)
@@ -297,3 +349,198 @@ void AUTGauntletGame::HandleExitingIntermission()
 	Super::HandleExitingIntermission();
 	GauntletGameState->bFirstRoundInitialized = bFirstRoundInitialized;
 }
+
+void AUTGauntletGame::CheckGameTime()
+{
+	AUTCTFRoundGameState* RCTFGameState = Cast<AUTCTFRoundGameState>(CTFGameState);
+
+	if (CTFGameState->IsMatchIntermission())
+	{
+		if (RCTFGameState && (RCTFGameState->IntermissionTime == 5))
+		{
+			int32 MessageIndex = bFirstRoundInitialized ? RCTFGameState->CTFRound + 2001 : 2001;
+			BroadcastLocalized(this, UUTCountDownMessage::StaticClass(), MessageIndex, NULL, NULL, NULL);
+		}
+		if (RCTFGameState && (RCTFGameState->IntermissionTime <= 0))
+		{
+			SetMatchState(MatchState::MatchExitingIntermission);
+		}
+	}
+	else
+	{
+		Super::CheckGameTime();
+	}
+}
+
+void AUTGauntletGame::BeginGame()
+{
+	UE_LOG(UT, Warning, TEXT("BEGIN GAME GameType: %s"), *GetNameSafe(this));
+	UE_LOG(UT, Warning, TEXT("Difficulty: %f GoalScore: %i TimeLimit (sec): %i"), GameDifficulty, GoalScore, TimeLimit);
+
+	for (FActorIterator It(GetWorld()); It; ++It)
+	{
+		AActor* TestActor = *It;
+		if (TestActor && !TestActor->IsPendingKill() && TestActor->IsA<AUTPlayerState>())
+		{
+			Cast<AUTPlayerState>(TestActor)->StartTime = 0;
+			Cast<AUTPlayerState>(TestActor)->bSentLogoutAnalytics = false;
+		}
+	}
+
+	//Let the game session override the StartMatch function, in case it wants to wait for arbitration
+	if (GameSession->HandleStartMatchRequest())
+	{
+		return;
+	}
+	if (GauntletGameState)
+	{
+		GauntletGameState->CTFRound = 0;
+		GauntletGameState->NumRounds = NumRounds;
+		GauntletGameState->HalftimeScoreDelay = 0.5f;
+	}
+
+	float RealIntermissionDuration = IntermissionDuration;
+	IntermissionDuration = 10.f;
+	SetMatchState(MatchState::GauntletFadeToBlack);
+	IntermissionDuration = RealIntermissionDuration;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		AUTPlayerController* PC = Cast<AUTPlayerController>(It->Get());
+		if (PC)
+		{
+			PC->ViewStartSpot();
+		}
+	}
+
+	if (Super::UTIsHandlingReplays() && GetGameInstance() != nullptr)
+	{
+		GetGameInstance()->StartRecordingReplay(TEXT(""), GetWorld()->GetMapName());
+	}
+}
+
+void AUTGauntletGame::SetMatchState(FName NewState)
+{
+	if (MatchState == NewState) return;
+	Super::SetMatchState(NewState);
+
+	if (MatchState == MatchState::GauntletScoreSummary)
+	{
+		ForceEndOfRound();
+		FTimerHandle TempHandle;
+		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGauntletGame::EndScoreSummary, ScoreSummaryDuration, false);
+		if (GauntletGameState->CTFRound > 0)
+		{
+			//BroadcastLocalized(this, UUTGauntletGameMessage::StaticClass(), 4, GauntletGameState->WinnerPlayerState, nullptr, nullptr);
+		}
+	}
+	else if (MatchState == MatchState::GauntletFadeToBlack)
+	{
+		FTimerHandle TempHandle;
+		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGauntletGame::EndFadeToBlack, FadeToBlackDuration, false);
+	}
+	else if (MatchState == MatchState::GauntletRoundAnnounce)
+	{
+		//BroadcastLocalized(this, UUTCountDownMessage::StaticClass(), 2000 + GauntletGameState->CTFRound);
+		// FIXME 
+
+		FTimerHandle TempHandle;
+		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGauntletGame::EndRoundAnnounce, RoundAnnounceDuration, false);
+	}
+
+}
+
+void AUTGauntletGame::EndScoreSummary()
+{
+	SetMatchState(MatchState::GauntletFadeToBlack);
+}
+
+void AUTGauntletGame::EndFadeToBlack()
+{
+	SetMatchState(MatchState::GauntletRoundAnnounce);
+}
+
+void AUTGauntletGame::EndRoundAnnounce()
+{
+	SetMatchState(MatchState::MatchExitingIntermission);
+}
+
+
+void AUTGauntletGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AUTCharacter* HolderPawn, AUTPlayerState* Holder, FName Reason)
+{
+	Super::ScoreObject_Implementation(GameObject, HolderPawn, Holder, Reason);
+
+	// Place the flag at the new base..
+	GauntletGameState->Flag->FinalRestingPlace(GauntletGameState->GetFlagBase(1 - GameObject->GetTeamNum()));
+}
+
+void AUTGauntletGame::HandleFlagCapture(AUTCharacter* HolderPawn, AUTPlayerState* Holder)
+{
+	FlagScorer = Holder;
+	CheckScore(Holder);
+	if (GauntletGameState && GauntletGameState->IsMatchInProgress())
+	{
+
+		GauntletGameState->WinningTeam = Holder->Team;
+		GauntletGameState->WinnerPlayerState = Holder;
+
+		Holder->AddCoolFactorEvent(400.0f);
+		PickMostCoolMoments(true);
+		SetMatchState(MatchState::GauntletScoreSummary);
+	}
+}
+
+void AUTGauntletGame::ForceEndOfRound()
+{
+	// Tell the controllers to look at own team flag
+	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+	{
+		AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+		if (PC != NULL)
+		{
+			int32 TeamToWatch = IntermissionTeamToView(PC);
+			PC->SetViewTarget(CTFGameState->FlagBases[1-TeamToWatch]);
+		}
+	}
+
+	// Freeze all of the pawns
+	for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
+	{
+		AUTCharacter* UTCharacter = Cast<AUTCharacter>(It->Get());
+		if (UTCharacter)
+		{
+			UTCharacter->TurnOff();
+		}
+	}
+
+	GauntletGameState->bIsAtIntermission = true;
+	GauntletGameState->OnIntermissionChanged();
+
+	if (bCasterControl)
+	{
+		//Reset all casters to "not ready"
+		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+		{
+			AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+			if (PS != nullptr && PS->bCaster)
+			{
+				PS->bReadyToPlay = false;
+			}
+		}
+		GauntletGameState->bStopGameClock = true;
+	}
+
+	// inform actors of intermission start
+	for (FActorIterator It(GetWorld()); It; ++It)
+	{
+		if (It->GetClass()->ImplementsInterface(UUTIntermissionBeginInterface::StaticClass()))
+		{
+			IUTIntermissionBeginInterface::Execute_IntermissionBegin(*It);
+		}
+	}
+}
+
+void AUTGauntletGame::BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo* ScoringTeam, int32 OldScore)
+{
+	BroadcastLocalized(this, UUTGauntletGameMessage::StaticClass(), 4, ScoringPlayer, NULL, ScoringTeam);
+}
+	

@@ -5,6 +5,9 @@
 #include "UTGauntletFlagDispenser.h"
 #include "Net/UnrealNetwork.h"
 
+const float MIN_SCALE_DIST = 256.0f * 256.0f;
+const float MAX_SCALE_DIST = 1024.0f * 1024.0f;
+
 AUTGauntletFlagDispenser::AUTGauntletFlagDispenser(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
@@ -14,6 +17,7 @@ AUTGauntletFlagDispenser::AUTGauntletFlagDispenser(const FObjectInitializer& Obj
 	TeamNum = 255;
 	
 	static ConstructorHelpers::FObjectFinder<UClass> DefaultFlag(TEXT("Blueprint'/Game/RestrictedAssets/Proto/UT3_Pickups/Flag/UTGuantletFlag.UTGuantletFlag_C'"));
+	
 	CarriedObjectClass = DefaultFlag.Object;
 	
 	static ConstructorHelpers::FObjectFinder<USoundCue> CaptureSnd(TEXT("SoundCue'/Game/RestrictedAssets/Audio/Gameplay/A_Gameplay_CTF_CaptureSound_Cue.A_Gameplay_CTF_CaptureSound_Cue'"));
@@ -45,26 +49,56 @@ AUTGauntletFlagDispenser::AUTGauntletFlagDispenser(const FObjectInitializer& Obj
 
 void AUTGauntletFlagDispenser::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
 {
-	if (PC->GetPawn())
+	if (PC->GetPawn() && MyFlag == nullptr)
 	{
 		float Scale = Canvas->ClipY / 1080.0f;
-		FVector2D Size = FVector2D(14,47) * Scale;
+		FVector2D Size = FVector2D(43,41) * Scale;
 
 		AUTHUD* HUD = Cast<AUTHUD>(PC->MyHUD);
-		FVector FlagLoc = GetActorLocation() + FVector(0.0f,0.0f,128.0f);
-		FVector ScreenPosition = Canvas->Project(FlagLoc);
+		if (HUD == nullptr) return;
+
+		FVector InWorldDrawLoc = GetActorLocation() + FVector(0.0f,0.0f,290.0f);
+		FVector ScreenPosition = Canvas->Project(InWorldDrawLoc);
 
 		FVector LookVec;
 		FRotator LookDir;
 		PC->GetPawn()->GetActorEyesViewPoint(LookVec,LookDir);
 
-		if (HUD && FVector::DotProduct(LookDir.Vector().GetSafeNormal(), (FlagLoc - LookVec)) > 0.0f && 
-			ScreenPosition.X > 0 && ScreenPosition.X < Canvas->ClipX && 
-			ScreenPosition.Y > 0 && ScreenPosition.Y < Canvas->ClipY)
+		if ( FVector::DotProduct(LookDir.Vector().GetSafeNormal(), (InWorldDrawLoc - LookVec)) > 0.0f && 
+				ScreenPosition.X > 0 && ScreenPosition.X < Canvas->ClipX && 
+				ScreenPosition.Y > 0 && ScreenPosition.Y < Canvas->ClipY)
 		{
-			Canvas->SetDrawColor(255,255,255,255);
-			Canvas->DrawTile(HUD->HUDAtlas, ScreenPosition.X - (Size.X * 0.5f), ScreenPosition.Y - Size.Y, Size.X, Size.Y,1009,0,14,47);
+			// Draw the timer...
+			AUTGauntletGameState* GameState = GetWorld()->GetGameState<AUTGauntletGameState>();
+			if (GameState && GameState->RemainingPickupDelay > 0.0f)
+			{
+				Canvas->SetDrawColor(255,255,255,255);
+				FText Number = FText::AsNumber(GameState->RemainingPickupDelay);
+				FVector2D TextSize;
+				Canvas->StrLen(HUD->LargeFont, Number.ToString(), TextSize.X, TextSize.Y);
+				float Dist = (LookVec - InWorldDrawLoc).SizeSquared();
+				Dist = FMath::Clamp<float>(Dist, MIN_SCALE_DIST, MAX_SCALE_DIST) - MIN_SCALE_DIST;
+				Scale *= (0.4 + (0.6 * (1.0f - (Dist / MAX_SCALE_DIST))));
+				Canvas->DrawText(HUD->LargeFont, Number, ScreenPosition.X - (TextSize.X * 0.5 * Scale), ScreenPosition.Y - (TextSize.Y * 0.75 * Scale), Scale, Scale);
+				ScreenPosition.Y += TextSize.Y  * Scale * 1.25;
+			}
+
+			if (GetWorld()->GetTimeSeconds() - GetLastRenderTime() > 0.01f)
+			{
+				Canvas->SetDrawColor(FColor::Green);
+				Canvas->DrawTile(HUD->HUDAtlas, ScreenPosition.X - (Size.X * 0.5f), ScreenPosition.Y - Size.Y, Size.X, Size.Y,843,87,43,41);
+			}
 		}
+	}
+}
+
+void AUTGauntletFlagDispenser::BeginPlay()
+{
+	Super::BeginPlay();
+	APlayerController* PC = GEngine->GetFirstLocalPlayerController(GetWorld());
+	if (GetNetMode() != NM_DedicatedServer && PC != NULL && PC->MyHUD != NULL)
+	{
+		PC->MyHUD->AddPostRenderedActor(this);
 	}
 }
 
@@ -191,7 +225,7 @@ void AUTGauntletFlagDispenser::Tick(float DeltaTime)
 		if (GauntletGameState)
 		{
 			TimerEffect->SetFloatParameter(NAME_RespawnTime, 30.0f);
-			TimerEffect->SetFloatParameter(NAME_SecondsPerPip, 3.0f);
+			//TimerEffect->SetFloatParameter(NAME_SecondsPerPip, 5.0f);
 			TimerEffect->SetFloatParameter(NAME_Progress, 1.0f - (GauntletGameState->RemainingPickupDelay / 30.0f));
 		}
 	}

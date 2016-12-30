@@ -1233,6 +1233,13 @@ public:
 	UPROPERTY()
 	bool bReported;
 
+	/** Returns the team info for this player or null if it doesn't exist */
+	UFUNCTION(BlueprintCallable, Category = Team)
+	AUTTeamInfo* GetTeamInfo()
+	{
+		return Team;
+	}
+
 };
 
 USTRUCT()

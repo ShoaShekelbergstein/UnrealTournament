@@ -19,6 +19,9 @@ class UNREALTOURNAMENT_API AUTGauntletFlagDispenser : public AUTCTFFlagBase
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Flag)
 	UParticleSystemComponent* TimerEffect;
 
+	virtual void BeginPlay();
+
+
 	// Called to create the necessary capture objects.
 	virtual void CreateFlag();
 

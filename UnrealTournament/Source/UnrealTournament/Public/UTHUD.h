@@ -663,6 +663,7 @@ public:
 	/**
 	 *	returns true if a given umg widget is active on the stack
 	 **/
+
 	bool IsUMGWidgetActive(TWeakObjectPtr<UUTUMGHudWidget> TestWidget);
 
 	/**
@@ -676,6 +677,9 @@ public:
 	 **/
 	virtual void DeactivateUMGHudWidget(FString UMGHudWidgetClassName);
 	virtual void DeactivateActualUMGHudWidget(TWeakObjectPtr<UUTUMGHudWidget> WidgetToDeactivate);
+
+	/**/
+	virtual void ClearAllUMGWidgets();
 
 	/**
 	 *	Look up the crosshair information for a given weapon.  Returns the default object for the crosshair and passes out 

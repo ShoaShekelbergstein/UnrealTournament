@@ -1952,4 +1952,11 @@ float AUTHUD::DrawWinConditions(UFont* InFont, float XPos, float YPos, float Sco
 	return 0.f;
 }
 
+void AUTHUD::ClearAllUMGWidgets()
+{
+	while (UMGHudWidgetStack.Num() > 0)	
+	{
+		DeactivateActualUMGHudWidget(UMGHudWidgetStack[0]);
+	}
+}
 
