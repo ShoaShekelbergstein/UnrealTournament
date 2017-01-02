@@ -69,6 +69,7 @@ AUTRecastNavMesh::AUTRecastNavMesh(const FObjectInitializer& ObjectInitializer)
 
 	SizeSteps.Add(FCapsuleSize(46, 108));
 	SizeSteps.Add(FCapsuleSize(46, 69));
+	SizeSteps.Add(FCapsuleSize(92, 216));
 	JumpTestThreshold2D = 2048.0f;
 	ScoutClass = AUTCharacter::StaticClass();
 }
