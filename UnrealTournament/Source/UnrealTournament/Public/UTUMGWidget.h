@@ -29,7 +29,7 @@ class UNREALTOURNAMENT_API UUTUMGWidget : public UUserWidget
 	UUTLocalPlayer* GetPlayerOwner();
 
 	UFUNCTION(BlueprintCallable, category = UMG)
-	void CloseWidget();
+	virtual void CloseWidget();
 
 	// Displays a partical system behind this widget at a given screen location
 	UFUNCTION(BlueprintCallable, category = UMG)

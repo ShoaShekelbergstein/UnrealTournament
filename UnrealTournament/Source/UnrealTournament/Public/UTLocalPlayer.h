@@ -37,6 +37,7 @@ class UUTKillcamPlayback;
 class SUTWebMessage;
 class SUTReportUserDialog;
 class UUTUMGWidget;
+class UUTUMGWidget_Toast;
 
 enum class EMatchmakingCompleteResult : uint8;
 
@@ -216,6 +217,7 @@ public:
 	virtual void HideMenu();
 	virtual void OpenTutorialMenu();
 	virtual void ShowToast(FText ToastText, float Lifetime=1.5f);	// NOTE: Need to add a type/etc so that they can be skinned better.
+	virtual void ToastCompleted(UUTUMGWidget_Toast* Toast);
 	virtual void ShowAdminMessage(FString Message);
 
 	virtual void MessageBox(FText MessageTitle, FText MessageText);
@@ -253,6 +255,10 @@ public:
 #endif
 	UPROPERTY()
 	TArray<UUTUMGWidget*> UMGWidgetStack;
+
+	UPROPERTY()
+	TArray<UUTUMGWidget*> ToastStack;
+
 
 	/**
 	 * Opens a UTUMGWidget and keeps track of it.  
@@ -331,9 +337,7 @@ protected:
 
 	/** stores a reference to open dialogs so they don't get destroyed */
 	TArray< TSharedPtr<class SUTDialogBase> > OpenDialogs;
-	TArray<TSharedPtr<class SUTToastBase>> ToastList;
 
-	virtual void AddToastToViewport(TSharedPtr<SUTToastBase> ToastToDisplay);
 	void WelcomeDialogResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 	void OnSwitchUserResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 	TSharedPtr<class SUTQuickMatchWindow> QuickMatchDialog;
@@ -453,7 +457,6 @@ public:
 	virtual bool SkipWorldRender();
 
 #if !UE_SERVER
-	virtual void ToastCompleted();
 	virtual void CloseAuth();
 #endif
 

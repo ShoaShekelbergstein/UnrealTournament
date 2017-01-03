@@ -1398,25 +1398,7 @@ void UUTLocalPlayer::RemoveChatArchiveChangedDelegate(FDelegateHandle DelegateHa
 void UUTLocalPlayer::ShowAdminMessage(FString Message)
 {
 #if !UE_SERVER
-
-	// Build the Toast to Show...
-
-	TSharedPtr<SUTAdminMessageToast> Msg;
-	SAssignNew(Msg, SUTAdminMessageToast)
-		.PlayerOwner(this)
-		.Lifetime(10)
-		.ToastText(FText::FromString(Message));
-
-	if (Msg.IsValid())
-	{
-		ToastList.Add(Msg);
-
-		// Auto show if it's the first toast..
-		if (ToastList.Num() == 1)
-		{
-			AddToastToViewport(ToastList[0]);
-		}
-	}
+	ShowToast(FText::FromString(Message), 10);
 #endif
 
 }
@@ -1433,28 +1415,18 @@ void UUTLocalPlayer::ShowToast(FText ToastText, float Lifetime)
 	{
 		Toast->Message = ToastText;
 		Toast->Duration = Lifetime;
+		ToastStack.Add(Toast);
 	}
 #endif
 }
 
+void UUTLocalPlayer::ToastCompleted(UUTUMGWidget_Toast* Toast)
+{
 #if !UE_SERVER
-void UUTLocalPlayer::AddToastToViewport(TSharedPtr<SUTToastBase> ToastToDisplay)
-{
-	GEngine->GameViewport->AddViewportWidgetContent( SNew(SWeakWidget).PossiblyNullContent(ToastToDisplay.ToSharedRef()),10000);
-}
-
-void UUTLocalPlayer::ToastCompleted()
-{
-	GEngine->GameViewport->RemoveViewportWidgetContent(ToastList[0].ToSharedRef());
-	ToastList.RemoveAt(0,1);
-
-	if (ToastList.Num() > 0)
-	{
-		AddToastToViewport(ToastList[0]);
-	}
-}
-
+	ToastStack.Remove(Toast);
 #endif
+}
+
 
 FString UUTLocalPlayer::GetProfileFilename()
 {
@@ -4575,12 +4547,6 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 		CloseWindow(WindowStack[0]);
 	}
 
-	if (ToastList.Num() > 0)
-	{
-		GEngine->GameViewport->RemoveViewportWidgetContent(ToastList[0].ToSharedRef());
-		ToastList.Empty();
-	}
-
 #endif
 }
 
@@ -6404,19 +6370,38 @@ UUTUMGWidget* UUTLocalPlayer::OpenExistingUMGWidget(UUTUMGWidget* WidgetToOpen)
 {
 	if (WidgetToOpen != nullptr)
 	{
-		WidgetToOpen->AddToViewport(WidgetToOpen->DisplayZOrder);
+		int32 Cnt = 0;
+		for (int32 i=0; i < UMGWidgetStack.Num(); i++)
+		{	
+			if (UMGWidgetStack[i]->GetClass() == WidgetToOpen->GetClass())
+			{
+				Cnt++;
+			}
+		}
+
+		WidgetToOpen->AddToViewport(WidgetToOpen->DisplayZOrder - Cnt);
+		UE_LOG(UT,Warning,TEXT("Count = %i"), Cnt);
+		if (Cnt > 0)
+		{
+			WidgetToOpen->SetPositionInViewport(FVector2D(0.0f,-16.0f * Cnt),true);
+		}
+
 		if (WidgetToOpen->WidgetTag == NAME_None)
 		{
 			WidgetToOpen->WidgetTag = FName(*WidgetToOpen->GetName());
 		}
 		WidgetToOpen->AssociateLocalPlayer(this);
 		WidgetToOpen->WidgetOpened();
+
+		UMGWidgetStack.Add(WidgetToOpen);
+
 	}
 	return WidgetToOpen;
 }
 
 UUTUMGWidget* UUTLocalPlayer::FindUMGWidget(const FName SearchTag)
 {
+
 	for (int32 i=0; i < UMGWidgetStack.Num(); i++)
 	{
 		if (UMGWidgetStack[i] != nullptr && UMGWidgetStack[i]->WidgetTag == SearchTag)
@@ -6443,5 +6428,7 @@ void UUTLocalPlayer::CloseUMGWidget(UUTUMGWidget* WidgetToClose)
 	{
 		WidgetToClose->RemoveFromViewport();
 		WidgetToClose->WidgetClosed();
+
+		UMGWidgetStack.Remove(WidgetToClose);
 	}
 }

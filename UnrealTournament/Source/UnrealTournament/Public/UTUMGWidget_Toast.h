@@ -17,5 +17,11 @@ class UNREALTOURNAMENT_API UUTUMGWidget_Toast : public UUTUMGWidget
 	UPROPERTY(BlueprintReadWrite, category = UMG)
 	float Duration;
 
+	// Returns true if this toast is top on the stack
+	UFUNCTION(BlueprintCallable, category = UMG)
+	bool IsTopmostToast();
+
+	virtual void CloseWidget();
+
 	// TODO: Add the ability to have a custom toast icon...
 };
