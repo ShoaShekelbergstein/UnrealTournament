@@ -169,6 +169,7 @@ public:
 	virtual FRotator GetControlRotation() const override;
 	virtual void SetPlayer(UPlayer* InPlayer) override;
 	virtual AActor* GetViewTarget() const override;
+	virtual void BeginSpectatingState() override;
 
 	virtual void ViewStartSpot();
 

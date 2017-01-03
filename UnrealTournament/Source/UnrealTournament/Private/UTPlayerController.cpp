@@ -5507,3 +5507,10 @@ void AUTPlayerController::PreClientTravel(const FString& PendingURL, ETravelType
 	
 	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
 }
+
+void AUTPlayerController::BeginSpectatingState()
+{
+	Super::BeginSpectatingState();
+
+	FlushPressedKeys();
+}
