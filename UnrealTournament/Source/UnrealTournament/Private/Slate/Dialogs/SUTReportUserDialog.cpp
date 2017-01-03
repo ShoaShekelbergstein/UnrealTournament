@@ -131,8 +131,10 @@ TSharedRef<SWidget> SUTReportUserDialog::AddGridButton(FText Caption, int32 Abus
 *
 * @Type Sent by the client
 *
-* @EventParam TrollName/TrollID is identifying information regarding the troll
-* @EventParam ReportName/ReportID is identifying information regarding the Player Reporting the event
+* @EventParam TrollName string is identifying information regarding the troll
+* @EventParam TrollID string is identifying information regarding the troll
+* @EventParam ReportName string is identifying information regarding the Player Reporting the event
+* @EventParam ReportID string is identifying information regarding the Player Reporting the event
 *
 * @Comments
 */
