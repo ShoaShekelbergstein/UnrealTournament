@@ -103,7 +103,6 @@ void AUTWeaponLocker::SetWeaponList(TArray<FWeaponLockerItem> InList)
 			{
 				if (OtherItem.WeaponType == NewItem.WeaponType)
 				{
-					OtherItem.ExtraAmmo += NewItem.ExtraAmmo;
 					bFound = true;
 					break;
 				}
@@ -283,16 +282,14 @@ void AUTWeaponLocker::GiveTo_Implementation(APawn* Target)
 		for (const FWeaponLockerItem& Item : WeaponList)
 		{
 			AUTInventory* Existing = P->FindInventoryType(Item.WeaponType, true);
-			if (Existing == NULL || !Existing->StackPickup(nullptr))
+			if (Existing == NULL || !Existing->StackLockerPickup(nullptr))
 			{
 				FActorSpawnParameters Params;
 				Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 				Params.Instigator = P;
-				P->AddInventory(GetWorld()->SpawnActor<AUTInventory>(Item.WeaponType, GetActorLocation(), GetActorRotation(), Params), true);
-			}
-			if (Item.ExtraAmmo != 0)
-			{
-				//P->AddAmmo(FStoredAmmo{Item.WeaponType, Item.ExtraAmmo});
+				AUTInventory* NewInventory = GetWorld()->SpawnActor<AUTInventory>(Item.WeaponType, GetActorLocation(), GetActorRotation(), Params);
+				NewInventory->bFromLocker = true;
+				P->AddInventory(NewInventory, true);
 			}
 
 			//Add to the stats pickup count

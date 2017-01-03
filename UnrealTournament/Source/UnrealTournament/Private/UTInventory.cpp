@@ -286,6 +286,11 @@ void AUTInventory::OnViewTargetChange_Implementation(AUTPlayerController* NewVie
 
 }
 
+bool AUTInventory::StackLockerPickup(AUTInventory* ContainedInv)
+{
+	return StackPickup(ContainedInv);
+}
+
 bool AUTInventory::StackPickup_Implementation(AUTInventory* ContainedInv)
 {
 	return false;

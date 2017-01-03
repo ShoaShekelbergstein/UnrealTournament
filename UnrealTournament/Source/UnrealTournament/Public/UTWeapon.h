@@ -343,6 +343,7 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	virtual void DetachFromHolster();
 
 	virtual void DropFrom(const FVector& StartLocation, const FVector& TossVelocity) override;
+	virtual bool StackLockerPickup(AUTInventory* ContainedInv) override;
 
 	virtual void InitializeDroppedPickup(class AUTDroppedPickup* Pickup);
 

@@ -2063,9 +2063,27 @@ void AUTWeapon::UpdateTiming()
 	CurrentState->UpdateTiming();
 }
 
+bool AUTWeapon::StackLockerPickup(AUTInventory* ContainedInv)
+{
+	// end with currentammo+1 or dropped weapon's ammo, whichever is greater
+	int32 Amount = Cast<AUTWeapon>(ContainedInv) ? Cast<AUTWeapon>(ContainedInv)->Ammo - Ammo : 0;
+	Amount = FMath::Max(1, Amount);
+	AddAmmo(Amount);
+	return true;
+}
+
 bool AUTWeapon::StackPickup_Implementation(AUTInventory* ContainedInv)
 {
-	AddAmmo(ContainedInv != NULL ? Cast<AUTWeapon>(ContainedInv)->Ammo : GetClass()->GetDefaultObject<AUTWeapon>()->Ammo);
+	int32 Amount = GetClass()->GetDefaultObject<AUTWeapon>()->Ammo;
+	if (ContainedInv != nullptr)
+	{
+		if (bFromLocker && ContainedInv->bFromLocker)
+		{
+			return StackLockerPickup(ContainedInv);
+		}
+		Amount = Cast<AUTWeapon>(ContainedInv)->Ammo;
+	}
+	AddAmmo(Amount);
 	return true;
 }
 
