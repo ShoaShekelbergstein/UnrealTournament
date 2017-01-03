@@ -1324,7 +1324,7 @@ void AUTCharacter::FlagPingedBy(AUTPlayerState* PS)
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	AUTGameVolume* GV = UTCharacterMovement ? Cast<AUTGameVolume>(UTCharacterMovement->GetPhysicsVolume()) : nullptr;
 	float MinTimeForVerbal = (GV && GS && (GV->VoiceLinesSet != GS->LastEnemyLocationName)) ? 0.f : 6.f;
-	if (PS && (GetWorld()->GetTimeSeconds() - GS->LastEnemyLocationReportTime > MinTimeForVerbal) && !Flag->bCurrentlyPinged)
+	if (PS && Flag && GS && (GetWorld()->GetTimeSeconds() - GS->LastEnemyLocationReportTime > MinTimeForVerbal) && !Flag->bCurrentlyPinged)
 	{
 		if (GS)
 		{

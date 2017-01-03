@@ -71,7 +71,7 @@ void AUTGauntletGame::InitGame(const FString& MapName, const FString& Options, F
 	Super::InitGame(MapName, Options, ErrorMessage);
 
 	bForceRespawn = false;
-	GoalScore = 1;	
+	GoalScore = 3;	
 	FlagSwapTime = FMath::Max(0, UGameplayStatics::GetIntOption(Options, TEXT("FlagSwapTime"), FlagSwapTime));
 
 	TAssetSubclassOf<AUTWeapon> WeaponObj;
