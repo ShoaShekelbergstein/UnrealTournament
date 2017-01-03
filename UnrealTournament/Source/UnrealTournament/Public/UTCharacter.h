@@ -1144,7 +1144,7 @@ public:
 
 	virtual void DeactivateSpawnProtection();
 
-	virtual void AddDefaultInventory(TArray<TSubclassOf<AUTInventory>> DefaultInventoryToAdd);
+	virtual void AddDefaultInventory(const TArray<TSubclassOf<AUTInventory>>& DefaultInventoryToAdd);
 
 	UFUNCTION(BlueprintCallable, Category = Pawn)
 	bool IsDead() const;

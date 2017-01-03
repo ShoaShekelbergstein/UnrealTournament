@@ -3384,7 +3384,7 @@ void AUTCharacter::PostNetReceive()
 	}
 }
 
-void AUTCharacter::AddDefaultInventory(TArray<TSubclassOf<AUTInventory>> DefaultInventoryToAdd)
+void AUTCharacter::AddDefaultInventory(const TArray<TSubclassOf<AUTInventory>>& DefaultInventoryToAdd)
 {
 	// Check to see if this player has an active loadout.  If they do, apply it.  NOTE: Loadouts are 100% authoratative.  So if we apply any type of loadout, then end the AddDefaultInventory 
 	// call right there.  If you are using the loadout system and want to insure a player has some default items, use bDefaultInclude and make sure their cost is 0.

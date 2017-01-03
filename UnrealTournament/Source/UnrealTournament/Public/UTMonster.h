@@ -35,6 +35,35 @@ public:
 	float DropChance;
 	UPROPERTY(EditDefaultsOnly)
 	FCanvasIcon HUDIcon;
+	/** prevent monster from picking up these types of items (only relevant when bCanPickupItems is true) */
+	UPROPERTY(EditDefaultsOnly)
+	TArray<TSubclassOf<AUTInventory>> DisallowedPickupTypes;
+
+private:
+	bool bAddingDefaultInventory;
+public:
+
+	virtual bool AddInventory(AUTInventory* InvToAdd, bool bAutoActivate) override
+	{
+		if (InvToAdd != nullptr && !bAddingDefaultInventory)
+		{
+			for (TSubclassOf<AUTInventory> TestType : DisallowedPickupTypes)
+			{
+				if (InvToAdd->GetClass()->IsChildOf(TestType))
+				{
+					InvToAdd->Destroy();
+					return false;
+				}
+			}
+		}
+		return Super::AddInventory(InvToAdd, bAutoActivate);
+	}
+
+	virtual void AddDefaultInventory(const TArray<TSubclassOf<AUTInventory>>& DefaultInventoryToAdd) override
+	{
+		TGuardValue<bool> DefaultGuard(bAddingDefaultInventory, true);
+		Super::AddDefaultInventory(DefaultInventoryToAdd);
+	}
 
 	virtual void ApplyCharacterData(TSubclassOf<class AUTCharacterContent> Data) override
 	{}
