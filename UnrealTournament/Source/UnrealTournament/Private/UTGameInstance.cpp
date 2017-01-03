@@ -798,7 +798,7 @@ FText UUTGameInstance::GetLevelLoadText() const
 	{
 		return LevelLoadText;
 	}
-	else if (GetMoviePlayer().IsValid() && GetMoviePlayer()->WillAutoCompleteWhenLoadFinishes())
+	else if (bMovieWillAutocompleteWhenLoadFinishes)
 	{
 		return FText::GetEmpty();
 	}
@@ -972,6 +972,12 @@ void UUTGameInstance::PlayLoadingMovies(bool bStopWhenLoadingIsComnpleted)
 		}
 
 		PlayMovie(MovieName, LoadingMovieOverlay, true, bStopWhenLoadingIsComnpleted, EMoviePlaybackType::MT_LoadingLoop, true);
+
+		bMovieWillAutocompleteWhenLoadFinishes = false;
+		if (GetMoviePlayer().IsValid())
+		{
+			bMovieWillAutocompleteWhenLoadFinishes = GetMoviePlayer()->WillAutoCompleteWhenLoadFinishes();
+		}
 	}
 }
 

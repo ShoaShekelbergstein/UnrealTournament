@@ -106,6 +106,8 @@ protected:
 	FString LastTriedDemo;
 	bool bRetriedDemoAfterRedirects;
 
+	UPROPERTY(Transient)
+	bool bMovieWillAutocompleteWhenLoadFinishes;
 
 	/** Matchmaking singleton */
 	UPROPERTY(Transient)
