@@ -97,7 +97,7 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 		bool bHaveRallyPoweredHighlight;
 
 	UFUNCTION()
-		void OnBonusLevelChanged();
+	virtual void OnBonusLevelChanged();
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void BeginPlay() override;

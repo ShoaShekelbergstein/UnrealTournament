@@ -140,7 +140,35 @@ void AUTFlagRunPvEGame::HandleMatchHasStarted()
 
 	AddPeonMonsters(8);
 
-	SetTimerUFunc(this, FName(TEXT("EscalateMonsters")), 45.0f, true);
+	SetTimerUFunc(this, FName(TEXT("EscalateMonsters")), 50.0f, true);
+
+	Cast<AUTFlagRunPvEGameState>(UTGameState)->BonusLevel = 1;
+	Cast<AUTFlagRunPvEGameState>(UTGameState)->NextStarTime = 60;
+}
+
+void AUTFlagRunPvEGame::CheckRoundTimeVictory()
+{
+	AUTFlagRunPvEGameState* FRGS = Cast<AUTFlagRunPvEGameState>(CTFGameState);
+	int32 RemainingTime = UTGameState ? UTGameState->GetRemainingTime() : 100;
+	if (RemainingTime <= 0)
+	{
+		// Round is over, defense wins.
+		ScoreAlternateWin((FRGS != nullptr && FRGS->bRedToCap) ? 1 : 0, 1);
+	}
+	else if (FRGS != nullptr)
+	{
+		const uint8 OldBonusLevel = FRGS->BonusLevel;
+		if (FRGS->ElapsedTime >= FRGS->NextStarTime)
+		{
+			FRGS->BonusLevel++;
+			FRGS->NextStarTime += 60 * FRGS->BonusLevel;
+		}
+		if (OldBonusLevel != FRGS->BonusLevel)
+		{
+			FRGS->OnBonusLevelChanged();
+			FRGS->ForceNetUpdate();
+		}
+	}
 }
 
 void AUTFlagRunPvEGame::HandleMatchHasEnded()
@@ -238,8 +266,8 @@ void AUTFlagRunPvEGame::AddPeonMonsters(int32 Num)
 
 void AUTFlagRunPvEGame::EscalateMonsters()
 {
-	EliteCostLimit += 2 + int32(GameDifficulty) / 3;
-	ElitePointsRemaining += EliteCostLimit * 1.5;
+	EliteCostLimit += 1 + int32(GameDifficulty) / 3;
+	ElitePointsRemaining += EliteCostLimit * 1.2;
 	AddPeonMonsters(1);
 	AddEliteMonsters(ElitePointsRemaining / GetClass()->GetDefaultObject<AUTFlagRunPvEGame>()->EliteCostLimit);
 	BroadcastLocalized(nullptr, UUTPvEGameMessage::StaticClass(), 0);
@@ -361,4 +389,9 @@ void AUTFlagRunPvEGame::HandleRollingAttackerRespawn(AUTPlayerState* OtherPS)
 		RollingSpawnStartTime = GetWorld()->GetTimeSeconds();
 		OtherPS->RespawnWaitTime = RollingAttackerRespawnDelay;
 	}
+}
+
+int32 AUTFlagRunPvEGame::GetFlagCapScore()
+{
+	return Cast<AUTFlagRunPvEGameState>(UTGameState)->BonusLevel;
 }

@@ -44,6 +44,7 @@ public:
 	virtual void StartMatch() override;
 
 	virtual void HandleMatchHasStarted() override;
+	virtual void CheckRoundTimeVictory() override;
 	virtual void HandleMatchHasEnded() override;
 	virtual bool ShouldBalanceTeams(bool bInitialTeam) const override
 	{
@@ -63,6 +64,7 @@ public:
 	{}
 	virtual void FindAndMarkHighScorer() override;
 	virtual void HandleRollingAttackerRespawn(AUTPlayerState* OtherPS) override;
+	virtual int32 GetFlagCapScore() override;
 protected:
 	virtual void SpawnMonster(TSubclassOf<AUTMonster> MonsterClass);
 };

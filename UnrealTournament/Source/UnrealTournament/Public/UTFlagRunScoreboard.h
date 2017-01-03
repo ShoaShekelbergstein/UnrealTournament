@@ -146,4 +146,5 @@ protected:
 
 	virtual void DrawScoringPlays(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float MaxHeight) override;
 
+	virtual void GetScoringStars(int32& NumStars, FLinearColor& StarColor) const;
 };

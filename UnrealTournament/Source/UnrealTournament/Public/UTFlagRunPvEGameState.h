@@ -10,8 +10,15 @@ class AUTFlagRunPvEGameState : public AUTFlagRunGameState
 {
 	GENERATED_BODY()
 public:
+	/** time next star will be awarded (relative to RemainingTime, not TimeSeconds) */
+	UPROPERTY(Replicated)
+	int32 NextStarTime;
 	UPROPERTY(Replicated)
 	int32 KillsUntilExtraLife;
 	UPROPERTY()
 	int32 ExtraLivesGained;
+
+	virtual FText GetRoundStatusText(bool bForScoreboard) override;
+	virtual void OnBonusLevelChanged() override
+	{}
 };
