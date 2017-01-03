@@ -404,7 +404,7 @@ TSharedRef<SWidget> SUTHomePanel::BuildMainButtonContent()
 								.AutoHeight()
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(TEXT("See how well you stack up against the best AI in the world!")))
+									.Text(FText::FromString(TEXT("Hone your skills in a variety of challenge matches.")))
 									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small.Bold")
 									.ColorAndOpacity(FLinearColor(1.0f, 0.412f, 0.027f, 1.0f))
 								]
