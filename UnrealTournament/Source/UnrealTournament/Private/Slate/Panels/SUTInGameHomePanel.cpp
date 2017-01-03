@@ -236,7 +236,7 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 		{
 			if (PlayerOwner->PlayerController == nullptr || SelectedPlayer.Get() != PlayerOwner->PlayerController->PlayerState)
 			{
-				if (!SelectedPlayer->bReported)
+				if (!SelectedPlayer->bReported && !SelectedPlayer->bIsABot)
 				{
 					// Report a player
 					MenuBox->AddSlot()
