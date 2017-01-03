@@ -60,8 +60,6 @@ AUTFlagRunHUD::AUTFlagRunHUD(const FObjectInitializer& ObjectInitializer)
 	RedTeamOverlay.UL = 224.0f;
 	RedTeamOverlay.VL = 310.0f;
 	RedTeamOverlay.Texture = CharacterPortraitAtlas;
-
-
 }
 
 void AUTFlagRunHUD::BeginPlay()
@@ -150,7 +148,7 @@ void AUTFlagRunHUD::DrawHUD()
 				bool bIsAttacker = (GS->bRedToCap == (UTPS->Team->TeamIndex == 0));
 				float OwnerPipScaling = (UTPS == GetScorerPlayerState()) ? 1.5f : 1.f;
 				float PipSize = BasePipSize * OwnerPipScaling;
-				float LiveScaling = FMath::Clamp(((UTPS->RespawnTime > 0.f) && (UTPS->RespawnWaitTime > 0.f) && !UTPS->GetUTCharacter()) ? 1.f - UTPS->RespawnTime / UTPS->RespawnWaitTime : 1.f, 0.f ,1.f);
+				float LiveScaling = FMath::Clamp(((UTPS->RespawnTime > 0.f) && (UTPS->RespawnWaitTime > 0.f) && !UTPS->GetUTCharacter()) ? 1.f - UTPS->RespawnTime / UTPS->RespawnWaitTime : 1.f, 0.f, 1.f);
 
 				if (UTPS->Team->TeamIndex == 0)
 				{

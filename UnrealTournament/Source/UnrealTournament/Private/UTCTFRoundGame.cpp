@@ -128,59 +128,6 @@ bool AUTCTFRoundGame::SkipPlacement(AUTCharacter* UTChar)
 	return false; // (UTChar && FlagScorer && (UTChar->PlayerState == FlagScorer));
 }
 
-void AUTCTFRoundGame::RemoveLosers(int32 LoserTeam, int32 FlagTeam)
-{
-	// remove all dead or loser pawns
-	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
-	{
-		// Detach all controllers from their pawns
-		AController* Controller = Iterator->Get();
-		AUTPlayerState* PS = Controller ? Cast<AUTPlayerState>(Controller->PlayerState) : nullptr;
-		if (Controller && Controller->GetPawn() && (!PS || !PS->Team || (PS->Team->TeamIndex == LoserTeam)))
-		{
-			Controller->PawnPendingDestroy(Controller->GetPawn());
-			Controller->UnPossess();
-		}
-	}
-
-	TArray<APawn*> PawnsToDestroy;
-	for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
-	{
-		APawn* Pawn = It->Get();
-		if (Pawn && !Pawn->GetController())
-		{
-			PawnsToDestroy.Add(Pawn);
-		}
-		else
-		{
-			AUTCharacter* Char = Cast<AUTCharacter>(*It);
-			if (Char)
-			{
-				Char->SetAmbientSound(NULL);
-				Char->SetLocalAmbientSound(NULL);
-			}
-		}
-	}
-
-	for (int32 i = 0; i<PawnsToDestroy.Num(); i++)
-	{
-		APawn* Pawn = PawnsToDestroy[i];
-		if (Pawn != NULL && !Pawn->IsPendingKill())
-		{
-			Pawn->Destroy();
-		}
-	}
-
-	for (FActorIterator It(GetWorld()); It; ++It)
-	{
-		AActor* TestActor = *It;
-		if (TestActor && !TestActor->IsPendingKill() && TestActor->IsA<AUTProjectile>())
-		{
-			TestActor->Destroy();
-		}
-	}
-}
-
 void AUTCTFRoundGame::BeginGame()
 {
 	UE_LOG(UT, Log, TEXT("BEGIN GAME GameType: %s"), *GetNameSafe(this));
