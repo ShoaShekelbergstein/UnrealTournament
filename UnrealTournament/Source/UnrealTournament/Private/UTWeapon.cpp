@@ -2066,8 +2066,10 @@ void AUTWeapon::UpdateTiming()
 bool AUTWeapon::StackLockerPickup(AUTInventory* ContainedInv)
 {
 	// end with currentammo+1 or dropped weapon's ammo, whichever is greater
-	int32 Amount = Cast<AUTWeapon>(ContainedInv) ? Cast<AUTWeapon>(ContainedInv)->Ammo - Ammo : 0;
-	Amount = FMath::Max(1, Amount);
+	int32 DefaultAmmo = GetClass()->GetDefaultObject<AUTWeapon>()->Ammo;
+	int32 Amount = Cast<AUTWeapon>(ContainedInv) ? Cast<AUTWeapon>(ContainedInv)->Ammo : DefaultAmmo;
+	Amount = FMath::Min(Amount, DefaultAmmo - Ammo);
+	Amount = FMath::Max(Amount, 1);
 	AddAmmo(Amount);
 	return true;
 }
