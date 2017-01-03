@@ -11,6 +11,11 @@ int32 FUTPathLink::CostFor(APawn* Asker, const FNavAgentProperties& AgentProps, 
 	checkSlow(Start->Polys.Find(StartPoly) != INDEX_NONE);
 	checkSlow(Distances.Num() >= Start->Polys.Num());
 
+	if (Spec.IsValid() && Spec->IsDisabledByFailures())
+	{
+		return BLOCKED_PATH_COST;
+	}
+
 	int32 Result;
 
 	int32 Index = Start->Polys.Find(StartPoly);

@@ -1051,6 +1051,7 @@ void AUTBot::UpdateTrackingError(bool bNewEnemy)
 
 void AUTBot::SetMoveTarget(const FRouteCacheItem& NewMoveTarget, const TArray<FComponentBasedPosition>& NewMovePoints, const FUTPathLink& NewCurrentPath)
 {
+	PrevMoveTarget = MoveTarget;
 	MoveTarget = NewMoveTarget;
 	MoveTargetPoints = NewMovePoints;
 	bAdjusting = false;
@@ -2624,6 +2625,10 @@ void AUTBot::ExecuteWhatToDoNext()
 	// generally will get replaced but this helps track unintended fallthroughs in the decision code
 	GoalString = FString::Printf(TEXT("WhatToDoNext at %f"), GetWorld()->TimeSeconds);
 
+	// remember previous MoveTarget if we failed to reach it
+	// need to make sure we don't consider it a fail if the decision code gets restarted mid-move for unrelated reasons
+	const FRouteCacheItem OldMoveTarget = (MoveTimer <= 0.0f && !MoveTarget.IsValid()) ? PrevMoveTarget : FRouteCacheItem();
+	
 	Target = NULL;
 	TranslocTarget = FVector::ZeroVector;
 	if (GetCharacter() != NULL)
@@ -2743,6 +2748,42 @@ void AUTBot::ExecuteWhatToDoNext()
 					SendVoiceMessage(StatusMessage::ImOnDefense);
 				}
 				AnnouncedOrders = Orders;
+			}
+		}
+
+		if (OldMoveTarget.IsValid() && OldMoveTarget == MoveTarget && CurrentAction == WaitForMoveAction && GetPawn() != nullptr)
+		{
+			RepeatMoveFailCount++;
+			if (RepeatMoveFailCount > 6)
+			{
+				GoalString = FString::Printf(TEXT("Give up failed move attempt, try random wander (prev: %s)"), *GoalString);
+				SetMoveTargetDirect(FRouteCacheItem(GetPawn()->GetActorLocation() + FMath::VRand() * FVector(500.0f, 500.0f, 0.0f)));
+			}
+			else if (RepeatMoveFailCount > 3)
+			{
+				FUTPathLink Path;
+				NavNodeRef StartPoly = NavData->FindAnchorPoly(GetPawn()->GetNavAgentLocation(), GetPawn(), GetPawn()->GetNavAgentPropertiesRef());
+				if (StartPoly != INVALID_NAVNODEREF)
+				{
+					UUTPathNode* StartNode = NavData->GetNodeFromPoly(StartPoly);
+					if (StartNode != NULL)
+					{
+						int32 LinkIndex = StartNode->GetBestLinkTo(StartPoly, MoveTarget, GetPawn(), GetPawn()->GetNavAgentPropertiesRef(), NavData);
+						if (LinkIndex != INDEX_NONE)
+						{
+							Path = StartNode->Paths[LinkIndex];
+						}
+					}
+				}
+				if (Path.IsSet() && Path.Spec.IsValid())
+				{
+					Path.Spec->DisableDueToFailure();
+				}
+				// try jumping, in case we're stuck on a ledge
+				else if (GetCharacter() != nullptr)
+				{
+					GetCharacter()->GetCharacterMovement()->DoJump(false);
+				}
 			}
 		}
 	}

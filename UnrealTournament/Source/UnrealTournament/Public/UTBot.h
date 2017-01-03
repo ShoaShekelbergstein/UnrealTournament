@@ -421,6 +421,12 @@ private:
 	/** node or Actor bot is currently moving to */
 	UPROPERTY()
 	FRouteCacheItem MoveTarget;
+	/** previously set MoveTarget, used to check for bot being stuck when it thinks it's on a valid path */
+	UPROPERTY()
+	FRouteCacheItem PrevMoveTarget;
+	/** repeats of same MoveTarget */
+	UPROPERTY()
+	int32 RepeatMoveFailCount;
 protected:
 	/** path link that connects currently occupied node to MoveTarget */
 	UPROPERTY()
