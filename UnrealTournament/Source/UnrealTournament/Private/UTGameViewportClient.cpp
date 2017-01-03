@@ -1117,6 +1117,11 @@ bool UUTGameViewportClient::HideCursorDuringCapture()
 
 void UUTGameViewportClient::ClientConnectedToServer()
 {
+	UUTLocalPlayer* FirstPlayer = Cast<UUTLocalPlayer>(GEngine->GetLocalPlayerFromControllerId(this, 0));	// Grab the first local player.
+	if (FirstPlayer)
+	{
+		FirstPlayer->CloseConnectingDialog();
+	}
 }
 
 
