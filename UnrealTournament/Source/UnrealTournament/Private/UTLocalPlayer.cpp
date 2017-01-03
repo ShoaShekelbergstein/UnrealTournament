@@ -6410,6 +6410,7 @@ UUTUMGWidget* UUTLocalPlayer::OpenExistingUMGWidget(UUTUMGWidget* WidgetToOpen)
 			WidgetToOpen->WidgetTag = FName(*WidgetToOpen->GetName());
 		}
 		WidgetToOpen->AssociateLocalPlayer(this);
+		WidgetToOpen->WidgetOpened();
 	}
 	return WidgetToOpen;
 }
@@ -6441,5 +6442,6 @@ void UUTLocalPlayer::CloseUMGWidget(UUTUMGWidget* WidgetToClose)
 	if (WidgetToClose != nullptr)
 	{
 		WidgetToClose->RemoveFromViewport();
+		WidgetToClose->WidgetClosed();
 	}
 }

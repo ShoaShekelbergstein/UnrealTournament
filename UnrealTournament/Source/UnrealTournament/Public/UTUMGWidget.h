@@ -30,4 +30,27 @@ class UNREALTOURNAMENT_API UUTUMGWidget : public UUserWidget
 
 	UFUNCTION(BlueprintCallable, category = UMG)
 	void CloseWidget();
+
+	// Displays a partical system behind this widget at a given screen location
+	UFUNCTION(BlueprintCallable, category = UMG)
+	void ShowParticalSystem(UParticleSystem* ParticalSystem, FVector2D ScreenLocation, bool bRelativeCoords = false, FVector LocationModifier = FVector(0.f,0.f,0.f), FVector DirectionModifier = FVector(0.f,0.f,0.f));
+
+	// This event is called when the UMG widget is opened.  At this point, the PlayerOwner should be valid
+	UFUNCTION(BlueprintImplementableEvent)
+	void WidgetOpened();
+	virtual void WidgetOpened_Implementation()
+	{
+	}
+
+	// This event is called when the widget is closed.  NOTE: none of the cached data is safe at this point
+	UFUNCTION(BlueprintImplementableEvent)
+	void WidgetClosed();
+	virtual void WidgetClosed_Implementation()
+	{
+	}
+
+
+
+
+
 };

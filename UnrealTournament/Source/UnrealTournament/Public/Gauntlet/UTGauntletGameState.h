@@ -45,5 +45,6 @@ public:
 	{
 	}
 
-
+	// The player state of the last person to score.
+	AUTPlayerState* LastScorer;
 };

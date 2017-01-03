@@ -1892,11 +1892,12 @@ bool AUTHUD::IsUMGWidgetActive(TWeakObjectPtr<UUTUMGHudWidget> TestWidget)
 void AUTHUD::ActivateActualUMGHudWidget(TWeakObjectPtr<UUTUMGHudWidget> WidgetToActivate)
 {
 	UMGHudWidgetStack.Add(WidgetToActivate);
-	WidgetToActivate->AssociateHUD(this);
-
-	// UMG annoying adds +10 to the zorder (hard coded).  I could just tell the artists to start their DisplayZOrder usage at -11 or something 
-	// similar, but then I'd have to worry about them.  So I just subtract 10,000 from the DisplayZOrder.  
-	WidgetToActivate->AddToViewport(WidgetToActivate->DisplayZOrder - 10000.0f);
+	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;	
+	if (UTLP != nullptr)
+	{
+		WidgetToActivate->AssociateHUD(this);
+		UTLP->OpenExistingUMGWidget(WidgetToActivate.Get());
+	}
 }
 
 void AUTHUD::DeactivateUMGHudWidget(FString UMGHudWidgetClassName)
@@ -1918,7 +1919,11 @@ void AUTHUD::DeactivateUMGHudWidget(FString UMGHudWidgetClassName)
 
 void AUTHUD::DeactivateActualUMGHudWidget(TWeakObjectPtr<UUTUMGHudWidget> WidgetToDeactivate)
 {
-	WidgetToDeactivate->RemoveFromViewport();
+	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;	
+	if (UTLP != nullptr)
+	{
+		UTLP->CloseUMGWidget(WidgetToDeactivate.Get());
+	}
 	UMGHudWidgetStack.Remove(WidgetToDeactivate);
 }
 

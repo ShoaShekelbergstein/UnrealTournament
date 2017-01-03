@@ -71,7 +71,7 @@ void AUTGauntletGame::InitGame(const FString& MapName, const FString& Options, F
 	Super::InitGame(MapName, Options, ErrorMessage);
 
 	bForceRespawn = false;
-	GoalScore = 3;	
+	GoalScore = 1;	
 	FlagSwapTime = FMath::Max(0, UGameplayStatics::GetIntOption(Options, TEXT("FlagSwapTime"), FlagSwapTime));
 
 	TAssetSubclassOf<AUTWeapon> WeaponObj;
@@ -341,7 +341,8 @@ void AUTGauntletGame::FlagsAreReady()
 bool AUTGauntletGame::CheckScore_Implementation(AUTPlayerState* Scorer)
 {
 	// Skip the round based version as we use goal score
-	return AUTCTFBaseGame::CheckScore_Implementation(Scorer);
+	// We will check the score against Goal score after the GauntletScoreSummary is finished
+	return false;
 }
 
 void AUTGauntletGame::HandleExitingIntermission()
@@ -451,7 +452,28 @@ void AUTGauntletGame::SetMatchState(FName NewState)
 
 void AUTGauntletGame::EndScoreSummary()
 {
-	SetMatchState(MatchState::GauntletFadeToBlack);
+	AUTTeamInfo* WinningTeam = nullptr;
+	for (int32 i=0; i < GauntletGameState->Teams.Num(); i++)
+	{
+		if (GauntletGameState->Teams[i]->Score >= GoalScore)
+		{
+			WinningTeam = GauntletGameState->Teams[i];
+			break;		
+		}
+	}
+
+	if (WinningTeam == nullptr)
+	{
+		// Start the transition to the next round
+		SetMatchState(MatchState::GauntletFadeToBlack);
+	}
+	else
+	{
+		// Typically, find the best player on this team but for now focus on the last cap
+
+		BroadcastLocalized(this, UUTGauntletGameMessage::StaticClass(), 5, GauntletGameState->LastScorer, NULL, WinningTeam);
+		EndGame(GauntletGameState->LastScorer, FName(TEXT("scorelimit")));
+	}
 }
 
 void AUTGauntletGame::EndFadeToBlack()
@@ -468,6 +490,9 @@ void AUTGauntletGame::EndRoundAnnounce()
 void AUTGauntletGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AUTCharacter* HolderPawn, AUTPlayerState* Holder, FName Reason)
 {
 	Super::ScoreObject_Implementation(GameObject, HolderPawn, Holder, Reason);
+
+
+	GauntletGameState->LastScorer = Holder;
 
 	// Place the flag at the new base..
 	GauntletGameState->Flag->FinalRestingPlace(GauntletGameState->GetFlagBase(1 - GameObject->GetTeamNum()));
