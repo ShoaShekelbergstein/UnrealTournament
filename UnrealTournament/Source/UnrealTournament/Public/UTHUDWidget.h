@@ -85,7 +85,7 @@ public:
 
 	// If true, then this widget will attempt to scale itself by to the designed resolution.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widgets")
-	uint32 bScaleByDesignedResolution:1;
+	bool bScaleByDesignedResolution;
 
 	// If true, any scaling will maintain the aspect ratio of the widget.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widgets")

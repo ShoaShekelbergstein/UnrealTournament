@@ -532,9 +532,22 @@ FVector2D UUTHUDWidget::DrawText(FText Text, float X, float Y, UFont* Font, bool
 			X *= RenderScale;
 			Y *= RenderScale;
 		}
+		const float TextScaling = bScaleByDesignedResolution ? RenderScale*TextScale : TextScale;
+
+		if (TextHorzAlignment == ETextHorzPos::Center && Text.ToString().Contains(TEXT("\n")))
+		{
+			TGuardValue<bool> ScaleGuard(bScaleByDesignedResolution, false);
+			TArray<FString> Pieces;
+			Text.ToString().ParseIntoArrayLines(Pieces);
+			for (const FString& Next : Pieces)
+			{
+				FVector2D DrawnSize = DrawText(FText::FromString(Next), X, Y, Font, bDrawShadow, ShadowDirection, ShadowColor, bDrawOutline, OutlineColor, TextScaling, DrawOpacity, DrawColor, BackColor, TextHorzAlignment, TextVertAlignment, RenderInfo);
+				Y += DrawnSize.Y * TextScaling * ((TextVertAlignment == ETextVertPos::Center) ? 0.5f : 1.0f);
+			}
+			return TextSize;
+		}
 
 		FVector2D RenderPos = FVector2D(RenderPosition.X + X,RenderPosition.Y + Y);
-		float TextScaling = bScaleByDesignedResolution ? RenderScale*TextScale : TextScale;
 		// Handle Justification
 		if (TextHorzAlignment != ETextHorzPos::Left || TextVertAlignment != ETextVertPos::Top )
 		{
