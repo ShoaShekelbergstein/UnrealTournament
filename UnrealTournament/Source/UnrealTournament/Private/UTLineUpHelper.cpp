@@ -447,6 +447,12 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 
 		for (AUTCharacter* DestroyCharacter : PreviewsMarkedForDestroy)
 		{
+			//Destroy any carried objects before destroying pawn.
+			if (DestroyCharacter->GetCarriedObject())
+			{
+				DestroyCharacter->GetCarriedObject()->Destroy();
+			}
+
 			AUTPlayerController* UTPC = Cast<AUTPlayerController>(DestroyCharacter->GetController());
 			if (UTPC)
 			{
