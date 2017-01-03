@@ -686,6 +686,13 @@ void AUTPlayerController::ClientRestart_Implementation(APawn* NewPawn)
 	{
 		MyUTHUD->ClientRestart();
 	}
+
+	//if a line-up is active, make sure we turn back on the ignore look input flag on client
+	AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
+	if (UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive)
+	{
+		SetIgnoreLookInput(true);
+	}
 }
 
 void AUTPlayerController::PawnPendingDestroy(APawn* InPawn)
