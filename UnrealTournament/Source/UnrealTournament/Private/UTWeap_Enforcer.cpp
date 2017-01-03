@@ -41,6 +41,7 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	bFireLeftSide = false;
 	FOVOffset = FVector(0.7f, 1.f, 1.f);
 	MaxTracerDist = 2500.f;
+	bNoDropInTeamSafe = true;
 
 	LeftMesh = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("LeftMesh"));
 	LeftMesh->SetOnlyOwnerSee(true);

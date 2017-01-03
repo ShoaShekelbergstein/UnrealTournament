@@ -108,6 +108,10 @@ public:
 	/** if set, item is always dropped when its holder dies if uses/charges/etc remain */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Inventory)
 	bool bAlwaysDropOnDeath;
+	/** If true, don't drop this inventory in team safe volumes. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Inventory)
+		bool bNoDropInTeamSafe;
+
 	/** particles played when picked up */
 	UPROPERTY(EditDefaultsOnly, Category = Pickup)
 	UParticleSystem* PickupEffect;
@@ -138,6 +142,8 @@ public:
 
 	/** Called to stack pickup from a weapon locker. */
 	virtual bool StackLockerPickup(AUTInventory* ContainedInv);
+
+
 
 	/** if set, inventory gets the ModifyDamageTaken() and PreventHeadShot() functions/events when the holder takes damage */
 	UPROPERTY(EditDefaultsOnly, Category = Events)

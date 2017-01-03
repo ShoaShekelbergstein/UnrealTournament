@@ -2921,6 +2921,15 @@ void AUTCharacter::TossInventory(AUTInventory* InvToToss, FVector ExtraVelocity)
 		}
 		else
 		{
+			if (InvToToss->bNoDropInTeamSafe)
+			{
+				AUTGameVolume* GameVolume = Cast<AUTGameVolume>(GetPawnPhysicsVolume());
+				if (GameVolume && GameVolume->bIsTeamSafeVolume)
+				{
+					// don't drop in team safe volumes to prevent exploits
+					return;
+				}
+			}
 			InvToToss->DropFrom(GetActorLocation() + GetActorRotation().Vector() * GetSimpleCollisionCylinderExtent().X, GetVelocity() + GetActorRotation().RotateVector(ExtraVelocity + FVector(300.0f, 0.0f, 150.0f)));
 		}
 	}
