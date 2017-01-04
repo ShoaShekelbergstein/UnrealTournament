@@ -615,6 +615,12 @@ public:
 	UPROPERTY(replicated)
 	TSubclassOf<AUTTaunt> Taunt2Class;
 
+	UPROPERTY()
+	TSubclassOf<AUTTaunt> OldTauntClass;
+
+	UPROPERTY()
+	TSubclassOf<AUTTaunt> OldTaunt2Class;
+
 	UFUNCTION(Server, Reliable, WithValidation)
 	virtual void ServerReceiveTaunt2Class(const FString& NewTauntClass);
 

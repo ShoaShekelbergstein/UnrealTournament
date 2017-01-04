@@ -1114,6 +1114,8 @@ void AUTPlayerState::ServerReceiveTauntClass_Implementation(const FString& NewTa
 {
 	if (!bOnlySpectator)
 	{
+		OldTauntClass = TauntClass;
+
 		TauntClass = LoadClass<AUTTaunt>(NULL, *NewTauntClass, NULL, GetCosmeticLoadFlags(), NULL);
 		if (TauntClass != NULL)
 		{
@@ -1131,6 +1133,8 @@ void AUTPlayerState::ServerReceiveTaunt2Class_Implementation(const FString& NewT
 {
 	if (!bOnlySpectator)
 	{
+		OldTaunt2Class = Taunt2Class;
+
 		Taunt2Class = LoadClass<AUTTaunt>(NULL, *NewTauntClass, NULL, GetCosmeticLoadFlags(), NULL);
 		if (Taunt2Class != NULL)
 		{
