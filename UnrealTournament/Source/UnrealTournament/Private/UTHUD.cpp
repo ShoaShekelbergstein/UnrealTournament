@@ -513,6 +513,8 @@ void AUTHUD::UpdateKeyMappings(bool bForceUpdate)
 		RallyLabel = FindKeyMappingTo("RequestRally");
 		ShowScoresLabel = FindKeyMappingTo("ShowScores");
 		GroupTauntLabel = FindKeyMappingTo("GroupTaunt");
+		TauntOneLabel = FindKeyMappingTo("Taunt1"); 
+		TauntTwoLabel = FindKeyMappingTo("Taunt2");
 	}
 }
 

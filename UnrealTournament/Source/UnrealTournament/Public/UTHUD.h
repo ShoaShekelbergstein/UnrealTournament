@@ -496,6 +496,12 @@ public:
 		FText GroupTauntLabel;
 
 	UPROPERTY()
+		FText TauntOneLabel;
+
+	UPROPERTY()
+		FText TauntTwoLabel;
+
+	UPROPERTY()
 		FText ShowScoresLabel;
 
 protected:

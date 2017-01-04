@@ -243,12 +243,21 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 					if (IntermissionTime > 0)
 					{
 						FFormatNamedArguments Args;
-						if (UTPS->CarriedObject && (IntermissionTime > 5) && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive)
+						if ((IntermissionTime > 5) && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive && UTPS->GetUTCharacter())
 						{
-							Args.Add("GroupTaunt", UTHUDOwner->GroupTauntLabel);
-							SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "GroupTaunt", "Press {GroupTaunt} to start a group taunt."), Args);
+							if (UTPS->CarriedObject && !UTPS->ActiveGroupTaunt)
+							{
+								Args.Add("GroupTaunt", UTHUDOwner->GroupTauntLabel);
+								SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "GroupTaunt", "Press {GroupTaunt} to start a group taunt."), Args);
+							}
+							else
+							{
+								Args.Add("Emote1", UTHUDOwner->TauntOneLabel);
+								Args.Add("Emote2", UTHUDOwner->TauntTwoLabel);
+								SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "GroupTaunt", "Press {Emote1} or {Emote2} to play your emotes."), Args);
+							}
 						}
-						else
+						else if (IntermissionTime < 10)
 						{
 							Args.Add("Time", FText::AsNumber(IntermissionTime));
 							AUTCTFGameState* CTFGameState = Cast<AUTCTFGameState>(UTGameState);
