@@ -2293,6 +2293,7 @@ void UUTLocalPlayer::ReadMMRFromBackend()
 	MatchRatingTypes.Add(TEXT("RankedDuelSkillRating"));
 	MatchRatingTypes.Add(TEXT("RankedCTFSkillRating"));
 	MatchRatingTypes.Add(TEXT("RankedShowdownSkillRating"));
+	MatchRatingTypes.Add(TEXT("RankedFlagRunSkillRating"));
 	// This should be a weak ptr here, but UTLocalPlayer is unlikely to go away
 	TWeakObjectPtr<UUTLocalPlayer> WeakLocalPlayer(this);
 	McpUtils->GetBulkAccountMmr(MatchRatingTypes, [WeakLocalPlayer](const FOnlineError& Result, const FBulkAccountMmr& Response)

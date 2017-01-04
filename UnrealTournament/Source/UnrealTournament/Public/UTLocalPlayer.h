@@ -155,6 +155,12 @@ struct FMMREntry
 
 	UPROPERTY()
 	int32 MatchesPlayed;
+
+	FMMREntry()
+	{
+		MMR = 1500;
+		MatchesPlayed = 0;
+	}
 };
 
 USTRUCT()
