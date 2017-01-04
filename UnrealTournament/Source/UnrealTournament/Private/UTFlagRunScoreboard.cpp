@@ -94,7 +94,7 @@ bool UUTFlagRunScoreboard::ShowScorePanel()
 	}
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	AUTFlagRunGame* DefaultGame = GS && GS->GameModeClass ? GS->GameModeClass->GetDefaultObject<AUTFlagRunGame>() : nullptr;
-	if (!DefaultGame || (GS->GetMatchState() == MatchState::CountdownToBegin) || (GS->GetMatchState() == MatchState::PlayerIntro))
+	if (!DefaultGame || (GS->GetMatchState() == MatchState::CountdownToBegin) || (GS->GetMatchState() == MatchState::PlayerIntro) || bHasAnnouncedWin)
 	{
 		return false;
 	}
@@ -114,7 +114,7 @@ bool UUTFlagRunScoreboard::ShowScoringInfo()
 
 void UUTFlagRunScoreboard::DrawTeamPanel(float RenderDelta, float& YOffset)
 {
-	if (UTGameState == NULL || UTGameState->Teams.Num() < 2 || UTGameState->Teams[0] == NULL || UTGameState->Teams[1] == NULL)
+	if (UTGameState == NULL || UTGameState->Teams.Num() < 2 || UTGameState->Teams[0] == NULL || UTGameState->Teams[1] == NULL || bHasAnnouncedWin)
 	{
 		return;
 	}
@@ -245,7 +245,7 @@ float UUTFlagRunScoreboard::DrawWinAnnouncement(float DeltaTime, UFont* InFont)
 	FText EmphasisText = (GS->WinningTeam && (GS->WinningTeam->TeamIndex == 0)) ? RedTeamName : BlueTeamName;
 	float YL, EmphasisXL;
 	Canvas->StrLen(InFont, EmphasisText.ToString(), EmphasisXL, YL);
-	float YPos = (LastScorePanelYOffset > 0.f) ? LastScorePanelYOffset - 2.f : 0.25f*Canvas->ClipY;
+	float YPos = 0.02f * Canvas->ClipY;
 
 	float PostXL;
 	Canvas->StrLen(InFont, TeamWinsPostfix.ToString(), PostXL, YL);
@@ -302,7 +302,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 		return;
 	}
 
-	float PoundStart = 1.4f;
+	float PoundStart = 1.2f;
 	float PoundInterval = 0.5f;
 	float WooshStart = 3.5f;
 	float WooshTime = 0.25f;
@@ -601,19 +601,19 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 		else if (GS->GetScoringPlays().Num() > 0)
 		{
 			// draw scoring plays
-			float ScoreWidth = 0.8f*MapSize;
-			float MaxHeight = (0.05f + GS->CTFRound * 0.058f) * Canvas->ClipY;
+			float ScoreWidth = 0.5f*MapSize;
+			float MaxHeight = (0.05f + ((GS->CTFRound + 1)/2) * 0.058f) * Canvas->ClipY;
 			float PageBottom = LeftCorner.Y + MaxHeight;
 			FLinearColor PageColor = FLinearColor::Black;
 			PageColor.A = 0.5f;
-			float XOffset = 0.5f*(Canvas->ClipX - ScoreWidth);
+			float XOffset = 0.5f*(Canvas->ClipX - 2.f*ScoreWidth);
 			float YPos = LeftCorner.Y;
 
 			if (GS->HasMatchEnded() && GS->WinningTeam)
 			{
-				YPos += DrawWinAnnouncement(RenderDelta, UTHUDOwner->LargeFont);
+				YPos = 0.02f * Canvas->ClipY + DrawWinAnnouncement(RenderDelta, UTHUDOwner->LargeFont);
 			}
-			DrawTexture(UTHUDOwner->ScoreboardAtlas, XOffset, YPos, ScoreWidth, MaxHeight, 149, 138, 32, 32, 0.5f, PageColor);
+			DrawTexture(UTHUDOwner->ScoreboardAtlas, XOffset, YPos, 2.f*ScoreWidth, MaxHeight, 149, 138, 32, 32, 0.5f, PageColor);
 			DrawScoringPlays(RenderDelta, YPos, XOffset, 0.9f*ScoreWidth, PageBottom);
 		}
 	}
@@ -915,7 +915,7 @@ void UUTFlagRunScoreboard::DrawScoringPlayInfo(const FCTFScoringPlay& Play, floa
 	int32 IconIndex = Play.Team->TeamIndex;
 	IconIndex = FMath::Min(IconIndex, 1);
 	float IconHeight = 0.9f*CurrentScoreHeight;
-	float IconOffset = 0.12f*ScoreWidth;
+	float IconOffset = 0.15f*ScoreWidth;
 	DrawTexture(UTHUDOwner->HUDAtlas, XOffset + IconOffset, YPos + 0.1f*CurrentScoreHeight, IconHeight, IconHeight, UTHUDOwner->TeamIconUV[IconIndex].X, UTHUDOwner->TeamIconUV[IconIndex].Y, 72, 72, 1.f, Play.Team->TeamColor);
 
 	FString ScoredByLine;
@@ -940,8 +940,8 @@ void UUTFlagRunScoreboard::DrawScoringPlayInfo(const FCTFScoringPlay& Play, floa
 	// scored by
 	Canvas->SetLinearDrawColor(Play.Team->TeamColor);
 	float NameSizeX, NameSizeY;
-	Canvas->TextSize(UTHUDOwner->MediumFont, ScoredByLine, NameSizeX, NameSizeY, RenderScale, RenderScale);
-	Canvas->DrawText(UTHUDOwner->MediumFont, ScoredByLine, XOffset + 0.24f*ScoreWidth, YPos + 0.5f*CurrentScoreHeight - 0.6f*MedYL, RenderScale * FMath::Min(1.f, ScoreWidth*0.45f / FMath::Max(NameSizeX, 1.f)), RenderScale, TextRenderInfo);
+	Canvas->TextSize(UTHUDOwner->SmallFont, ScoredByLine, NameSizeX, NameSizeY, RenderScale, RenderScale);
+	Canvas->DrawText(UTHUDOwner->SmallFont, ScoredByLine, XOffset + 0.29f*ScoreWidth, YPos + 0.5f*CurrentScoreHeight - 0.5f*NameSizeY, RenderScale * FMath::Min(1.f, ScoreWidth*0.4f / FMath::Max(NameSizeX, 1.f)), RenderScale, TextRenderInfo);
 
 	int32 CurrentRoundBonus = FMath::Max(Play.RedBonus, Play.BlueBonus);
 	FString BonusString = TEXT("\u2605");
@@ -973,15 +973,15 @@ void UUTFlagRunScoreboard::DrawScoringPlayInfo(const FCTFScoringPlay& Play, floa
 		float BonusX, BonusY;
 		Canvas->TextSize(UTHUDOwner->MediumFont, BonusLine, BonusX, BonusY, 1.f, 1.f);
 		Canvas->SetLinearDrawColor(FLinearColor::White);
-		Canvas->DrawText(UTHUDOwner->TinyFont, BonusLine, XOffset + 1.035f*ScoreWidth, YPos + 0.5f*CurrentScoreHeight - 0.4f*BonusY*RenderScale, RenderScale, RenderScale, TextRenderInfo);
+		Canvas->DrawText(UTHUDOwner->TinyFont, BonusLine, XOffset + ScoreWidth, YPos + 0.5f*CurrentScoreHeight - 0.4f*BonusY*RenderScale, RenderScale, RenderScale, TextRenderInfo);
 	}
 
 	float ScoringOffsetX, ScoringOffsetY;
-	Canvas->TextSize(UTHUDOwner->LargeFont, BonusString, ScoringOffsetX, ScoringOffsetY, 1.f, 1.f);
-	float ScoreX = XOffset + 0.87f*ScoreWidth - 0.5f*ScoringOffsetX*RenderScale;
+	Canvas->TextSize(UTHUDOwner->MediumFont, BonusString, ScoringOffsetX, ScoringOffsetY, 1.f, 1.f);
+	float ScoreX = XOffset + 0.84f*ScoreWidth - 0.5f*ScoringOffsetX*RenderScale;
 
 	Canvas->SetLinearDrawColor(BonusColor);
-	Canvas->DrawText(UTHUDOwner->LargeFont, BonusString, ScoreX, YPos + 0.5f*CurrentScoreHeight - 0.6f*ScoringOffsetY*RenderScale, RenderScale, RenderScale, TextRenderInfo);
+	Canvas->DrawText(UTHUDOwner->MediumFont, BonusString, ScoreX, YPos + 0.5f*CurrentScoreHeight - 0.6f*ScoringOffsetY*RenderScale, RenderScale, RenderScale, TextRenderInfo);
 }
 
 void UUTFlagRunScoreboard::DrawScoringPlays(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float MaxHeight)
@@ -992,7 +992,6 @@ void UUTFlagRunScoreboard::DrawScoringPlays(float DeltaTime, float& YPos, float 
 		return;
 	}
 
-	int32 CurrentPeriod = -1;
 	Canvas->SetLinearDrawColor(FLinearColor::White);
 	FFontRenderInfo TextRenderInfo;
 	TextRenderInfo.bEnableShadow = true;
@@ -1008,14 +1007,14 @@ void UUTFlagRunScoreboard::DrawScoringPlays(float DeltaTime, float& YPos, float 
 	float ScoreHeight = MedYL;
 	int32 TotalPlays = GS->GetScoringPlays().Num();
 
-	Canvas->DrawText(UTHUDOwner->MediumFont, ScoringPlaysHeader, XOffset + (ScoreWidth - XL) * 0.5f, YPos, RenderScale, RenderScale, TextRenderInfo);
+	Canvas->DrawText(UTHUDOwner->MediumFont, ScoringPlaysHeader, XOffset + (2.f*ScoreWidth - XL) * 0.5f, YPos, RenderScale, RenderScale, TextRenderInfo);
 	YPos += 1.f * MedYL;
 	if (GS->GetScoringPlays().Num() == 0)
 	{
 		float YL;
 		Canvas->TextSize(UTHUDOwner->MediumFont, NoScoringText.ToString(), XL, YL, RenderScale, RenderScale);
 		YPos += 0.2f * MedYL;
-		DrawText(NoScoringText, XOffset + (ScoreWidth - XL) * 0.5f, YPos, UTHUDOwner->MediumFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, RenderScale, 1.f, FLinearColor::White, FLinearColor(0.0f, 0.0f, 0.0f, 0.0f), ETextHorzPos::Left, ETextVertPos::Top, TextRenderInfo);
+		DrawText(NoScoringText, XOffset + (2.f*ScoreWidth - XL) * 0.5f, YPos, UTHUDOwner->MediumFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, RenderScale, 1.f, FLinearColor::White, FLinearColor(0.0f, 0.0f, 0.0f, 0.0f), ETextHorzPos::Left, ETextVertPos::Top, TextRenderInfo);
 	}
 
 	float OldTimeLineOffset = TimeLineOffset;
@@ -1041,32 +1040,26 @@ void UUTFlagRunScoreboard::DrawScoringPlays(float DeltaTime, float& YPos, float 
 		}
 		if (Play.Team != NULL)
 		{
-			if ((GS->CTFRound == 0) && (Play.Period > CurrentPeriod))
-			{
-				CurrentPeriod++;
-				if (Play.Period < 3)
-				{
-					YPos += 0.3f*SmallYL;
-					DrawText(PeriodText[Play.Period], XOffset + 0.2f*ScoreWidth, YPos, UTHUDOwner->TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, RenderScale, 1.f, FLinearColor::White, FLinearColor(0.0f, 0.0f, 0.0f, 0.0f), ETextHorzPos::Left, ETextVertPos::Center, TextRenderInfo);
-					YPos += 0.7f * SmallYL;
-				}
-			}
+			float CurrentXOffset = (DrawnPlays % 2 == 1) ? XOffset : XOffset + 1.11f*ScoreWidth;
 			if (DrawnPlays % 2 == 1)
 			{
 				// draw group background
 				FLinearColor DrawColor = FLinearColor::White;
-				float CurrentScoreHeight = (DrawnPlays == NumPlays) ? (ScoreHeight + 8.f * RenderScale) : (2.f * ScoreHeight + 16.f * RenderScale);
+				float CurrentScoreHeight = (ScoreHeight + 8.f * RenderScale);
 				float BackAlpha = ((DrawnPlays == NumPlays) && (NumPlays == TimeFloor + 1)) ? FMath::Max(0.5f, PctOffset) : 0.3f;
-				DrawTexture(UTHUDOwner->ScoreboardAtlas, XOffset, YPos - 4.f*RenderScale, 1.11f*ScoreWidth, CurrentScoreHeight, 149, 138, 32, 32, BackAlpha, DrawColor);
+				DrawTexture(UTHUDOwner->ScoreboardAtlas, CurrentXOffset, YPos - 4.f*RenderScale, 2.22f*ScoreWidth, CurrentScoreHeight, 149, 138, 32, 32, BackAlpha, DrawColor);
 			}
 			// draw background
 			FLinearColor DrawColor = FLinearColor::White;
 			float BackAlpha = ((DrawnPlays == NumPlays) && (NumPlays == TimeFloor + 1)) ? FMath::Max(0.5f, PctOffset) : 0.5f;
-			DrawTexture(UTHUDOwner->ScoreboardAtlas, XOffset + 0.01f*ScoreWidth, YPos, 1.09f*ScoreWidth, ScoreHeight, 149, 138, 32, 32, BackAlpha, DrawColor);
+			DrawTexture(UTHUDOwner->ScoreboardAtlas, CurrentXOffset + 0.01f*ScoreWidth, YPos, 1.09f*ScoreWidth, ScoreHeight, 149, 138, 32, 32, BackAlpha, DrawColor);
 
 			float BoxYPos = YPos;
-			DrawScoringPlayInfo(Play, ScoreHeight, SmallYL, MedYL, DeltaTime, YPos, XOffset, ScoreWidth, TextRenderInfo, false);
-			YPos = (bGroupRoundPairs && (DrawnPlays % 2 == 0)) ? BoxYPos + ScoreHeight + 20.f*RenderScale : BoxYPos + ScoreHeight + 8.f*RenderScale;
+			DrawScoringPlayInfo(Play, ScoreHeight, SmallYL, MedYL, DeltaTime, YPos, CurrentXOffset, ScoreWidth, TextRenderInfo, false);
+			if (DrawnPlays % 2 == 0)
+			{
+				YPos = BoxYPos + ScoreHeight + 8.f*RenderScale;
+			}
 		}
 	}
 }
