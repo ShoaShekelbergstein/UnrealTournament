@@ -630,6 +630,7 @@ void AUTGameState::SetRemainingTime(int32 NewRemainingTime)
 {
 	RemainingTime = NewRemainingTime;
 	ReplicatedRemainingTime = RemainingTime;
+	ForceNetUpdate();
 }
 
 void AUTGameState::DefaultTimer()
@@ -678,6 +679,7 @@ void AUTGameState::DefaultTimer()
 				if (RemainingTime % RepTimeInterval == 0)
 				{
 					ReplicatedRemainingTime = RemainingTime;
+					ForceNetUpdate();
 				}
 				AUTGameMode* Game = GetWorld()->GetAuthGameMode<AUTGameMode>();
 				if (Game && (RemainingTime < 0.8f * TimeLimit))
