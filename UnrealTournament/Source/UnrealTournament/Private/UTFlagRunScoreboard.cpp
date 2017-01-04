@@ -70,12 +70,13 @@ UUTFlagRunScoreboard::UUTFlagRunScoreboard(const FObjectInitializer& ObjectIniti
 	TeamScorePrefix = NSLOCTEXT("CTFRewardMessage", "TeamScorePrefix", "");
 	TeamScorePostfix = NSLOCTEXT("CTFRewardMessage", "TeamScorePostfix", " Scores!");
 	TeamWinsPrefix = NSLOCTEXT("UTVictoryMessage", "TeamWinsPrefix", "");
-	TeamWinsPostfix = NSLOCTEXT("UTVictoryMessage", "TeamWinsPostfix", " Wins The Match!");
+	TeamWinsPostfix = NSLOCTEXT("UTVictoryMessage", "TeamWinsPostfix", " Wins The Match {winscore} - {losescore}");
+	TeamWinsTiebreakPostfix = NSLOCTEXT("UTVictoryMessage", "TeamWinsPostfix", " Wins The Match  {winscore} - {losescore} (+{tiebreaker})");
 	StarText = NSLOCTEXT("CTFRewardMessage", "StarText", "\u2605");
 	DefenseScorePrefix = NSLOCTEXT("CTFRewardMessage", "DefenseScoreBonusPrefix", "");
 	DefenseScorePostfix = NSLOCTEXT("CTFRewardMessage", "DefenseScoreBonusPostfix", " Successfully Defends!");
 	DeliveredPrefix = NSLOCTEXT("FlagRunScoreboard", "DeliveredBy", "Delivered by ");
-	ScoreInfoDuration = 7.f;
+	ScoreInfoDuration = 6.2f;
 	PendingTiebreak = 0;
 	bHasAnnouncedWin = false;
 }
@@ -90,7 +91,7 @@ bool UUTFlagRunScoreboard::ShowScorePanel()
 {
 	if (UTHUDOwner && UTHUDOwner->bShowScores)
 	{
-		return true;
+		return !bHasAnnouncedWin;
 	}
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	AUTFlagRunGame* DefaultGame = GS && GS->GameModeClass ? GS->GameModeClass->GetDefaultObject<AUTFlagRunGame>() : nullptr;
@@ -247,8 +248,17 @@ float UUTFlagRunScoreboard::DrawWinAnnouncement(float DeltaTime, UFont* InFont)
 	Canvas->StrLen(InFont, EmphasisText.ToString(), EmphasisXL, YL);
 	float YPos = 0.02f * Canvas->ClipY;
 
+	int32 WinningScore = GS->WinningTeam ? GS->WinningTeam->Score : 0;
+	int32 LosingTeamIndex = GS->WinningTeam ? 1 - GS->WinningTeam->TeamIndex : 0;
+	int32 LosingScore = (GS->Teams.Num() > LosingTeamIndex) && GS->Teams[LosingTeamIndex] ? GS->Teams[LosingTeamIndex]->Score : 0;
+	FText FormattedTeamWinsPostFix = (WinningScore > LosingScore) ? TeamWinsPostfix : TeamWinsTiebreakPostfix;
+	FFormatNamedArguments Args;
+	Args.Add("winscore", FText::AsNumber(WinningScore));
+	Args.Add("losescore", FText::AsNumber(LosingScore));
+	Args.Add("tiebreaker", FText::AsNumber(FMath::Abs(GS->TiebreakValue)));
+	FormattedTeamWinsPostFix = FText::Format(FormattedTeamWinsPostFix, Args);
 	float PostXL;
-	Canvas->StrLen(InFont, TeamWinsPostfix.ToString(), PostXL, YL);
+	Canvas->StrLen(InFont, FormattedTeamWinsPostFix.ToString(), PostXL, YL);
 
 	float ScoreWidth = RenderScale * (1.2f*(PostXL + EmphasisXL));
 	float ScoreHeight = 1.2f*YL;
@@ -267,7 +277,7 @@ float UUTFlagRunScoreboard::DrawWinAnnouncement(float DeltaTime, UFont* InFont)
 	ScoreX += EmphasisXL*RenderScale;
 
 	Canvas->SetLinearDrawColor(FLinearColor::White);
-	Canvas->DrawText(InFont, TeamWinsPostfix, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
+	Canvas->DrawText(InFont, FormattedTeamWinsPostFix, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
 	return RenderScale*ScoreHeight;
 }
 
@@ -304,7 +314,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 
 	float PoundStart = 1.2f;
 	float PoundInterval = 0.5f;
-	float WooshStart = 3.5f;
+	float WooshStart = 3.1f;
 	float WooshTime = 0.25f;
 	float WooshInterval = 0.4f;
 	float CurrentTime = GetWorld()->GetTimeSeconds() - ScoreReceivedTime;
@@ -313,7 +323,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 	FLinearColor BonusColor = GS->BronzeBonusColor;
 	GetScoringStars(NumStars, BonusColor);
 
-	if (GS && GS->HasMatchEnded() && (CurrentTime >= WooshStart + NumStars*WooshInterval + WooshTime + 1.f + FMath::Min(FMath::Abs(float(PendingTiebreak)), 20.f) * 0.05f + FMath::Max(0.f, FMath::Abs(float(PendingTiebreak)) - 20.f) * 0.025f))
+	if (GS && GS->HasMatchEnded() && (CurrentTime >= 2.f + WooshStart + NumStars*WooshInterval + WooshTime + 1.f + FMath::Min(FMath::Abs(float(PendingTiebreak)), 20.f) * 0.05f + FMath::Max(0.f, FMath::Abs(float(PendingTiebreak)) - 20.f) * 0.025f))
 	{
 		DrawWinAnnouncement(DeltaTime, UTHUDOwner->HugeFont);
 		return;
@@ -489,7 +499,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 	AUTFlagRunGame* DefaultGame = GS && GS->GameModeClass ? GS->GameModeClass->GetDefaultObject<AUTFlagRunGame>() : nullptr;
 	if (GS && ((GS->GetMatchState() == MatchState::MatchIntermission) || GS->HasMatchEnded()))
 	{
-		if (DefaultGame && (GetWorld()->GetTimeSeconds() - ScoreReceivedTime < ScoreInfoDuration))
+		if (DefaultGame && (GetWorld()->GetTimeSeconds() - ScoreReceivedTime < ScoreInfoDuration - 0.1f))
 		{
 			bNeedReplay = !IsBeforeFirstRound();
 			return;
@@ -516,7 +526,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 		FVector2D LeftCorner = FVector2D(MinimapCenter.X*Canvas->ClipX - 0.5f*MapSize, MapYPos);
 		if ((EndIntermissionTime < GetWorld()->GetTimeSeconds()) && (GS->IntermissionTime < 8.f) && (GS->IntermissionTime > 0.f) && !bHasAnnouncedWin)
 		{
-			EndIntermissionTime = GetWorld()->GetTimeSeconds() + (GS->HasMatchEnded() ? 11.f : 8.1f);
+			EndIntermissionTime = GetWorld()->GetTimeSeconds() + (GS->HasMatchEnded() ? 11.2f : 8.3f);
 			OldDisplayedParagraphs = 0;
 			bFullListPlayed = false;
 			bool bIsOnDefense = UTPS && UTPS->Team && GS->IsTeamOnDefenseNextRound(UTPS->Team->TeamIndex);
@@ -602,7 +612,8 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 		{
 			// draw scoring plays
 			float ScoreWidth = 0.5f*MapSize;
-			float MaxHeight = (0.05f + ((GS->CTFRound + 1)/2) * 0.058f) * Canvas->ClipY;
+			float TitleHeight = bHasAnnouncedWin ? 0.f : 0.056f;
+			float MaxHeight = (TitleHeight + ((GS->CTFRound + 1)/2) * 0.056f) * Canvas->ClipY;
 			float PageBottom = LeftCorner.Y + MaxHeight;
 			FLinearColor PageColor = FLinearColor::Black;
 			PageColor.A = 0.5f;
@@ -971,9 +982,9 @@ void UUTFlagRunScoreboard::DrawScoringPlayInfo(const FCTFScoringPlay& Play, floa
 		}
 		FString BonusLine = FString::Printf(TEXT("+%d"), NetBonus);
 		float BonusX, BonusY;
-		Canvas->TextSize(UTHUDOwner->MediumFont, BonusLine, BonusX, BonusY, 1.f, 1.f);
+		Canvas->TextSize(UTHUDOwner->TinyFont, BonusLine, BonusX, BonusY, 1.f, 1.f);
 		Canvas->SetLinearDrawColor(FLinearColor::White);
-		Canvas->DrawText(UTHUDOwner->TinyFont, BonusLine, XOffset + ScoreWidth, YPos + 0.5f*CurrentScoreHeight - 0.4f*BonusY*RenderScale, RenderScale, RenderScale, TextRenderInfo);
+		Canvas->DrawText(UTHUDOwner->TinyFont, BonusLine, XOffset + ScoreWidth, YPos + 0.5f*CurrentScoreHeight - 0.5f*BonusY*RenderScale, RenderScale, RenderScale, TextRenderInfo);
 	}
 
 	float ScoringOffsetX, ScoringOffsetY;
@@ -1007,8 +1018,11 @@ void UUTFlagRunScoreboard::DrawScoringPlays(float DeltaTime, float& YPos, float 
 	float ScoreHeight = MedYL;
 	int32 TotalPlays = GS->GetScoringPlays().Num();
 
-	Canvas->DrawText(UTHUDOwner->MediumFont, ScoringPlaysHeader, XOffset + (2.f*ScoreWidth - XL) * 0.5f, YPos, RenderScale, RenderScale, TextRenderInfo);
-	YPos += 1.f * MedYL;
+	if (!bHasAnnouncedWin)
+	{
+		Canvas->DrawText(UTHUDOwner->MediumFont, ScoringPlaysHeader, XOffset + (2.f*ScoreWidth - XL) * 0.5f, YPos, RenderScale, RenderScale, TextRenderInfo);
+		YPos += 1.f * MedYL;
+	}
 	if (GS->GetScoringPlays().Num() == 0)
 	{
 		float YL;

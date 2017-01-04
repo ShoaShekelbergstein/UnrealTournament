@@ -575,7 +575,7 @@ void AUTFlagRunGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 			PS->MatchHighlights[0] = (PS->MatchHighlightData[0] > 2) ? HighlightNames::HiredGun : HighlightNames::HappyToBeHere;
 		}
 	}
-	else if (PS->RoundDamageDone > 0)
+	else
 	{
 		PS->MatchHighlights[0] = (PS->RoundDamageDone > 0) ? HighlightNames::HappyToBeHere : HighlightNames::ParticipationAward;
 	}

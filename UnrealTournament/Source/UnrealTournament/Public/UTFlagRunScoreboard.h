@@ -56,6 +56,9 @@ class UNREALTOURNAMENT_API UUTFlagRunScoreboard : public UUTCTFScoreboard
 		FText TeamWinsPostfix;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
+		FText TeamWinsTiebreakPostfix;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
 		FText StarText;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
