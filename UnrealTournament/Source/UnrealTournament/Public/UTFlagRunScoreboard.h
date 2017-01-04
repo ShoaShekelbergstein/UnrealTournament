@@ -117,6 +117,8 @@ class UNREALTOURNAMENT_API UUTFlagRunScoreboard : public UUTCTFScoreboard
 
 	virtual void AnnounceRoundScore(AUTTeamInfo* InScoringTeam, APlayerState* InScoringPlayer, uint8 InRoundBonus, uint8 InReason);
 
+	virtual void NotifyMatchStateChange() override;
+
 protected:
 	virtual void DrawScoreHeaders(float RenderDelta, float& YOffset);
 	virtual void DrawGamePanel(float RenderDelta, float& YOffset) override;

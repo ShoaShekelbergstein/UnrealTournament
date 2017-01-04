@@ -613,6 +613,10 @@ void AUTHUD::NotifyMatchStateChange()
 				UTLP->ShowQuickChat(UTPlayerOwner->UTPlayerState->ChatDestination);
 			}
 		}
+		if (MyUTScoreboard)
+		{
+			MyUTScoreboard->NotifyMatchStateChange();
+		}
 	}
 }
 

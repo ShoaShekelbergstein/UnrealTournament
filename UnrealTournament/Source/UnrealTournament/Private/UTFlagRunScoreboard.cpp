@@ -168,6 +168,23 @@ void UUTFlagRunScoreboard::DrawTeamPanel(float RenderDelta, float& YOffset)
 	}
 }
 
+void UUTFlagRunScoreboard::NotifyMatchStateChange()
+{
+	// FIXMESTEVE - in playerintro mode, open match summary if not open (option for UTLP openmatchsummary)
+	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (UTLP && GS && !GS->IsPendingKillPending())
+	{
+		if (GS->GetMatchState() == MatchState::InProgress)
+		{
+			//force clear pending score
+			PendingScore = 0;
+			PendingTiebreak = 0;
+		}
+	}
+	Super::NotifyMatchStateChange();
+}
+
 void UUTFlagRunScoreboard::AnnounceRoundScore(AUTTeamInfo* InScoringTeam, APlayerState* InScoringPlayer, uint8 InRoundBonus, uint8 InReason)
 {
 	ScoringTeam = InScoringTeam;
