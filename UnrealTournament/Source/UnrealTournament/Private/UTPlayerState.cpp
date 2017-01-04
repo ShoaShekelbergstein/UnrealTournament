@@ -1029,9 +1029,9 @@ void AUTPlayerState::ServerReceiveHatClass_Implementation(const FString& NewHatC
 		if (HatClass != nullptr)
 		{
 			ValidateEntitlements();
-
-			OnRepHat();
 		}
+
+		OnRepHat();
 	}
 }
 
