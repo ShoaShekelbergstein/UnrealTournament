@@ -69,6 +69,7 @@ namespace EGenericAnalyticParam
 		MovementTutorialCompleted,
 		WeaponTutorialCompleted,
 		PickupsTutorialCompleted,
+		RealServerFPS,
 
 		NUM_GENERIC_PARAMS
 	};

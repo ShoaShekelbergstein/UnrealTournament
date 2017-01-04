@@ -183,6 +183,8 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(MovementTutorialCompleted);
 	AddGenericParamName(WeaponTutorialCompleted);
 	AddGenericParamName(PickupsTutorialCompleted);
+
+	AddGenericParamName(RealServerFPS);
 }
 
 void FUTAnalytics::Shutdown()
@@ -528,7 +530,7 @@ void FUTAnalytics::FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnal
 * @EventParam PostProcessQuality int32 The post process quality of the server
 * @EventParam TextureQuality int32 The texture quality of the server
 * @EventParam FXQuality int32 The effects quality of the server
-* @EventParam AvgFPS float The average fps of the server
+* @EventParam AvgFPS float This value is used to show performance of the server. IE: If this value is 600, we could run 10 servers per core at 60fps or 20 servers per core at 30 fps.
 * @EventParam PercentAbove30 float The time percentage when the fps was above 30
 * @EventParam PercentAbove60 float The time percentage when the fps was above 60
 * @EventParam PercentAbove120 float The time percentage when the fps was above 120
@@ -542,11 +544,15 @@ void FUTAnalytics::FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnal
 * @EventParam PercentGameThreadBound float The percentage of game thread bound frames
 * @EventParam PercentRenderThreadBound float The percentage of render thread bound frames
 * @EventParam PercentGPUBound float The percentage of GPU bound frames
+* @EventParam RealServerFPS float This value is the actual server FPS.
 *
 * @Comments
 */
 void FUTAnalytics::FireEvent_UTServerFPSCharts(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& InParamArray)
 {
+	extern float ENGINE_API GAverageFPS;
+	InParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RealServerFPS), GAverageFPS));
+	
 	if (UTGM)
 	{
 		SetMatchInitialParameters(UTGM, InParamArray, false);
