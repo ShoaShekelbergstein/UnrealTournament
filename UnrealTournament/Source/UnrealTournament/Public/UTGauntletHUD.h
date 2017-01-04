@@ -31,4 +31,25 @@ protected:
 
 	void DrawRoundImage(AUTGauntletGameState* GauntletGameState, float RoundScale, float GeneralOpacity, float FillOpacity);
 
+	virtual void DrawPlayerIcons(AUTGauntletGameState* GauntletGameState);
+	virtual void DrawPlayerIcon(AUTGauntletGameState* GauntletGameState, AUTPlayerState* PlayerState, float LiveScaling, float XOffset, float YOffset, float IconSize);
+	virtual void GetPlayerListForIcons(AUTGauntletGameState* GauntletGameState, TArray<AUTPlayerState*>& SortedPlayers);
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, NoClear)
+	FCanvasIcon RedTeamIcon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, NoClear)
+	FCanvasIcon BlueTeamIcon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, NoClear)
+	FCanvasIcon RedTeamOverlay;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, NoClear)
+	FCanvasIcon BlueTeamOverlay;
+
+	int32 RedPlayerCount;
+	int32 BluePlayerCount;
+
+
 };

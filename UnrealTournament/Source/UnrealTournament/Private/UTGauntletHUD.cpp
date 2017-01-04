@@ -24,6 +24,32 @@ AUTGauntletHUD::AUTGauntletHUD(const FObjectInitializer& ObjectInitializer)
 	FadeToBlackDuration = 1.2f;
 	RoundAnnounceDurations.Add(0.7f);	// Show Round and Background full white
 	RoundAnnounceDurations.Add(1.5f);   // Fade out white, scale out round
+
+	RedTeamIcon.U = 5.f;
+	RedTeamIcon.V = 5.f;
+	RedTeamIcon.UL = 224.f;
+	RedTeamIcon.VL = 310.f;
+	RedTeamIcon.Texture = CharacterPortraitAtlas;
+
+	BlueTeamIcon.U = 237.f;
+	BlueTeamIcon.V = 5.f;
+	BlueTeamIcon.UL = 224.f;
+	BlueTeamIcon.VL = 310.f;
+	BlueTeamIcon.Texture = CharacterPortraitAtlas;
+
+	BlueTeamOverlay.U = 237.0f;
+	BlueTeamOverlay.V = 330.0f;
+	BlueTeamOverlay.UL = 224.0f;
+	BlueTeamOverlay.VL = 310.0f;
+	BlueTeamOverlay.Texture = CharacterPortraitAtlas;
+
+	RedTeamOverlay.U = 5.0f;
+	RedTeamOverlay.V = 330.0f;
+	RedTeamOverlay.UL = 224.0f;
+	RedTeamOverlay.VL = 310.0f;
+	RedTeamOverlay.Texture = CharacterPortraitAtlas;
+
+
 }
 
 void AUTGauntletHUD::NotifyMatchStateChange()
@@ -70,6 +96,10 @@ void AUTGauntletHUD::DrawHUD()
 		else if (GauntletGameState->GetMatchState() == MatchState::GauntletRoundAnnounce)
 		{
 			DrawRoundAnnounce(GauntletGameState);
+		}
+		else if (GauntletGameState->GetMatchState() == MatchState::InProgress)
+		{
+			DrawPlayerIcons(GauntletGameState);
 		}
 	}
 
@@ -151,3 +181,123 @@ void AUTGauntletHUD::DrawRoundImage(AUTGauntletGameState* GauntletGameState, flo
 	Canvas->DrawTile(RoundMarkers[GauntletGameState->CTFRound], RoundPosition.X, RoundPosition.Y, RoundSize.X, RoundSize.Y,0,0,1024,1024);
 
 }
+void AUTGauntletHUD::DrawPlayerIcons(AUTGauntletGameState* GauntletGameState)
+{
+	if ( !ScoreboardIsUp() )
+	{
+
+		int32 OldRedCount = RedPlayerCount;
+		int32 OldBlueCount = BluePlayerCount;
+		RedPlayerCount = 0;
+		BluePlayerCount = 0;
+
+		const float RenderScale = float(Canvas->SizeY) / 1080.0f;
+
+		float TeammateScale = VerifyProfileSettings() ? CachedProfileSettings->HUDTeammateScaleOverride : UUTProfileSettings::StaticClass()->GetDefaultObject<UUTProfileSettings>()->HUDTeammateScaleOverride;
+
+		float BasePipSize = (32 + (64 * TeammateScale)) * GetHUDWidgetScaleOverride() * RenderScale;  // 96 - 32px in size
+		float XAdjust = BasePipSize * 1.1;
+		float XOffsetRed = 0.4f * Canvas->ClipX - XAdjust - BasePipSize;
+		float XOffsetBlue = 0.6f * Canvas->ClipX + XAdjust;
+		float YOffset = 0.005f * Canvas->ClipY * GetHUDWidgetScaleOverride() * RenderScale;
+		float XOffsetText = 0.f;
+
+		TArray<AUTPlayerState*> LivePlayers;
+		GetPlayerListForIcons(GauntletGameState, LivePlayers);
+		for (AUTPlayerState* UTPS : LivePlayers)
+		{
+			if (!UTPS->bOutOfLives)
+			{
+				float OwnerPipScaling = 1.f;
+				float PipSize = BasePipSize * OwnerPipScaling;
+				float LiveScaling = FMath::Clamp(((UTPS->RespawnTime > 0.f) && (UTPS->RespawnWaitTime > 0.f) && !UTPS->GetUTCharacter()) ? 1.f - UTPS->RespawnTime / UTPS->RespawnWaitTime : 1.f, 0.f, 1.f);
+
+				if (UTPS->Team->TeamIndex == 0)
+				{
+					RedPlayerCount++;
+					DrawPlayerIcon(GauntletGameState, UTPS, LiveScaling, XOffsetRed, YOffset, PipSize);
+					XOffsetRed -= 1.1f*PipSize;
+				}
+				else
+				{
+					BluePlayerCount++;
+					DrawPlayerIcon(GauntletGameState, UTPS, LiveScaling, XOffsetBlue, YOffset, PipSize);
+					XOffsetBlue += 1.1f*PipSize;
+				}
+			}
+		}
+	}
+}
+
+void AUTGauntletHUD::GetPlayerListForIcons(AUTGauntletGameState* GauntletGameState, TArray<AUTPlayerState*>& SortedPlayers)
+{
+	for (APlayerState* PS : GauntletGameState->PlayerArray)
+	{
+		AUTPlayerState* UTPS = Cast<AUTPlayerState>(PS);
+		if (UTPS != NULL && UTPS->Team != NULL && !UTPS->bOnlySpectator && !UTPS->bIsInactive)
+		{
+			SortedPlayers.Add(UTPS);
+		}
+	}
+	SortedPlayers.Sort([](AUTPlayerState& A, AUTPlayerState& B) { return A.PlayerName > B.PlayerName; });
+}
+
+void AUTGauntletHUD::DrawPlayerIcon(AUTGauntletGameState* GauntletGameState, AUTPlayerState* PlayerState, float LiveScaling, float XOffset, float YOffset, float PipSize)
+{
+	const FCanvasIcon& CharIcon = PlayerState->GetHUDIcon();
+	if (CharIcon.Texture != nullptr)
+	{
+		FLinearColor BackColor = FLinearColor::Black;
+		BackColor.A = 0.5f;
+
+		Canvas->SetLinearDrawColor(FLinearColor::White);
+
+		float PipHeight = PipSize * (320.0f / 224.0f);
+
+		// Draw the background.
+		const FCanvasIcon* BGIcon = PlayerState->GetTeamNum() == 1 ? &BlueTeamIcon : &RedTeamIcon;
+		Canvas->DrawTile(BGIcon->Texture, XOffset, YOffset, PipSize, PipHeight, BGIcon->U, BGIcon->V, BGIcon->UL, BGIcon->VL);
+
+		if (LiveScaling < 1.f)
+		{
+			Canvas->SetLinearDrawColor(FLinearColor(0.2f, 0.2f, 0.2f, 1.f));
+		}
+
+		BGIcon = &CharIcon;
+		if (PlayerState->GetTeamNum() == 1)
+		{
+			Canvas->DrawTile(BGIcon->Texture, XOffset, YOffset, PipSize, PipHeight, BGIcon->U + BGIcon->UL, BGIcon->V, BGIcon->UL * -1.0f, BGIcon->VL);
+		}
+		else
+		{
+			Canvas->DrawTile(BGIcon->Texture, XOffset, YOffset, PipSize, PipHeight, BGIcon->U, BGIcon->V, BGIcon->UL, BGIcon->VL);
+		}
+
+
+		if (LiveScaling < 1.f)
+		{
+			Canvas->SetLinearDrawColor(FLinearColor(0.0f, 0.0f, 0.0f, 0.6f));
+			Canvas->DrawTile(Canvas->DefaultTexture, XOffset + LiveScaling*PipSize, YOffset, PipSize - LiveScaling * PipSize, PipHeight, 0, 0, 1, 1, BLEND_Translucent);
+		}
+
+
+		Canvas->SetLinearDrawColor(FLinearColor::White);
+
+		BGIcon = PlayerState->GetTeamNum() == 1 ? &BlueTeamOverlay : &RedTeamOverlay;
+		Canvas->DrawTile(BGIcon->Texture, XOffset, YOffset, PipSize, PipHeight, BGIcon->U, BGIcon->V, BGIcon->UL, BGIcon->VL);
+
+		const float FontRenderScale = float(Canvas->SizeY) / 1080.0f;
+		FFontRenderInfo TextRenderInfo;
+
+		// draw pips for players alive on each team @TODO move to widget
+		TextRenderInfo.bEnableShadow = true;
+
+		FString LivesRemaining = FString::Printf(TEXT("%i"), PlayerState->RemainingLives);
+		float XL, YL;
+		Canvas->StrLen(SmallFont, LivesRemaining, XL, YL);
+
+		Canvas->SetLinearDrawColor(PlayerState->RemainingLives == 1 ? FLinearColor::Yellow : FLinearColor::White);
+		Canvas->DrawText(SmallFont, FText::FromString(LivesRemaining), XOffset + (PipSize * 0.5f) - (XL * 0.5f), YOffset + (PipSize * (320.0f / 224.0f)), FontRenderScale, FontRenderScale, TextRenderInfo);
+	}
+}
+

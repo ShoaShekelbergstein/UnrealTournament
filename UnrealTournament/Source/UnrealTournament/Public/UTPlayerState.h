@@ -1240,6 +1240,10 @@ public:
 		return Team;
 	}
 
+	/** The worldtime when this player state was last attached to an actual pawn.  This is only valid on the server */
+	UPROPERTY()
+	float LastSpawnTime;
+
 };
 
 USTRUCT()

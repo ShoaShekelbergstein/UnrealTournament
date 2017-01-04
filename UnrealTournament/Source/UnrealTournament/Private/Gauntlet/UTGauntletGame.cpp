@@ -47,9 +47,9 @@ AUTGauntletGame::AUTGauntletGame(const FObjectInitializer& ObjectInitializer)
 	GameStateClass = AUTGauntletGameState::StaticClass();
 	HUDClass = AUTGauntletHUD::StaticClass();
 	SquadType = AUTCTFSquadAI::StaticClass();
-	RoundLives=0;
-	bPerPlayerLives = false;
-	FlagSwapTime=8;
+	RoundLives=4;
+	bPerPlayerLives = true;
+	FlagSwapTime=12;
 	FlagPickupDelay=15;
 	MapPrefix = TEXT("CTF");
 	bHideInUI = true;
@@ -569,3 +569,46 @@ void AUTGauntletGame::BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo
 	BroadcastLocalized(this, UUTGauntletGameMessage::StaticClass(), 4, ScoringPlayer, NULL, ScoringTeam);
 }
 	
+bool AUTGauntletGame::IsPlayerOnLifeLimitedTeam(AUTPlayerState* PlayerState) const
+{
+	return true;
+}
+
+void AUTGauntletGame::ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType)
+{
+	Super::ScoreKill_Implementation(Killer, Other, KilledPawn, DamageType);
+	AUTPlayerState* KillerPlayerState = Killer ? Cast<AUTPlayerState>(Killer->PlayerState) : nullptr;
+	AUTPlayerState* VictimPlayerState = KilledPawn ? Cast<AUTPlayerState>(KilledPawn->PlayerState) : nullptr;
+	
+	if (KillerPlayerState && VictimPlayerState && !GauntletGameState->OnSameTeam(KillerPlayerState, VictimPlayerState))
+	{
+		AUTPlayerState* OldestPlayer = nullptr;
+
+		uint8 KillerTeamNum = KillerPlayerState->GetTeamNum();
+		for (APlayerState* PS : GauntletGameState->PlayerArray)
+		{
+			AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(PS);
+
+			if (UTPlayerState && GauntletGameState->OnSameTeam(KillerPlayerState, UTPlayerState) && !UTPlayerState->bIsInactive && UTPlayerState->bOutOfLives)
+			{
+				float TimeSeconds = GetWorld()->GetTimeSeconds();
+				if (OldestPlayer == nullptr || ( TimeSeconds - OldestPlayer->LastSpawnTime < TimeSeconds - UTPlayerState->LastSpawnTime))
+				{
+					OldestPlayer = UTPlayerState;
+				}
+			}
+		}
+
+		if (OldestPlayer != nullptr)
+		{
+
+			OldestPlayer->RemainingLives++;
+			if (OldestPlayer->bOutOfLives)
+			{
+				OldestPlayer->SetOutOfLives(false);
+				OldestPlayer->ForceNetUpdate();
+				RestartPlayer(Cast<AController>(OldestPlayer->GetOwner()));
+			}
+		}
+	}
+}

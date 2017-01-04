@@ -65,6 +65,8 @@ class UNREALTOURNAMENT_API AUTGauntletGame : public AUTCTFRoundGame
 	virtual void HandleFlagCapture(AUTCharacter* HolderPawn, AUTPlayerState* Holder) override;
 	virtual void BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo* ScoringTeam, int32 OldScore = 0);
 	virtual void GiveDefaultInventory(APawn* PlayerPawn);
+	virtual void ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType) override;
+
 protected:
 
 	UPROPERTY(BlueprintReadWrite,Category=Game)
@@ -92,5 +94,8 @@ protected:
 
 	UPROPERTY()
 	TArray<TAssetSubclassOf<AUTWeapon>> DefaultWeaponLoadoutObjects;
+
+	virtual bool IsPlayerOnLifeLimitedTeam(AUTPlayerState* PlayerState) const;
+
 
 };

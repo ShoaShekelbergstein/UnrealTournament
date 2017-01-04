@@ -2817,6 +2817,9 @@ void AUTGameMode::RestartPlayer(AController* aPlayer)
 		// clear in life stats
 		UTPS->ThisLifeDamageDone = 0;
 		UTPS->ThisLifeKills = 0;
+
+		//TODO: Talk to Matt O. about merging this functionality of this and the bot's LastRespawnTime.
+		UTPS->LastSpawnTime = GetWorld()->TimeSeconds;
 	}
 }
 
