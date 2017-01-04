@@ -327,7 +327,7 @@ void UPartyContext::HandleJoinPartyFailure(EJoinPartyCompletionResult Result, in
 	UUTLocalPlayer* LocalPlayer = GetOwningPlayer<UUTLocalPlayer>();
 	if (LocalPlayer)
 	{
-		LocalPlayer->ShowToast(NSLOCTEXT("UPartyContext", "FailPartyJoin", "Could not join party, it may be in matchmaking"));
+		LocalPlayer->ShowToast(NSLOCTEXT("UPartyContext", "FailPartyJoin", "Failed to join party"));
 	}
 }
 
