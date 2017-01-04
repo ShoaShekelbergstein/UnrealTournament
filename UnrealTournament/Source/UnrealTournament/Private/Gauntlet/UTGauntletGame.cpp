@@ -49,8 +49,8 @@ AUTGauntletGame::AUTGauntletGame(const FObjectInitializer& ObjectInitializer)
 	SquadType = AUTCTFSquadAI::StaticClass();
 	RoundLives=5;
 	bPerPlayerLives = true;
-	FlagSwapTime=12;
-	FlagPickupDelay=5;
+	FlagSwapTime=5;
+	FlagPickupDelay=15;
 	MapPrefix = TEXT("CTF");
 	bHideInUI = true;
 	bRollingAttackerSpawns = false;
