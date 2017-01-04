@@ -101,23 +101,9 @@ class UNREALTOURNAMENT_API AUTProj_FlakShard : public AUTProjectile
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
 	FLinearColor ColdTrailColor;
 
-	/** Number of extra visual shards inside this projectiles overlap sphere. */
-	UPROPERTY(EditAnywhere, Category = Effects)
-		int32 NumSatelliteShards;
-
-	/* Extra visual shards. */
-	UPROPERTY(BlueprintReadOnly, Category = Effects)
-		TArray<UStaticMeshComponent*> SatelliteShards;
-
-	/** satellite shard offsets. */
-	UPROPERTY()
-		TArray<FVector> ShardOffset;
-
 	/** Sound played when shard hits player */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Projectile)
 		USoundBase* FleshImpactSound;
-
-	virtual void RemoveSatelliteShards();
 
 	virtual void PostInitializeComponents() override;
 
@@ -128,5 +114,4 @@ class UNREALTOURNAMENT_API AUTProj_FlakShard : public AUTProjectile
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void CatchupTick(float CatchupTickDelta) override;
-	virtual void BeginPlay() override;
 };
