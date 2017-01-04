@@ -47,6 +47,8 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	HighlightMap.Add(HighlightNames::SpecialForces, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
 	HighlightMap.Add(HighlightNames::HiredGun, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
 	HighlightMap.Add(HighlightNames::HappyToBeHere, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
+	HighlightMap.Add(HighlightNames::BobLife, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
+	HighlightMap.Add(HighlightNames::CoolBeans, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
 
 	HighlightMap.Add(HighlightNames::RedeemerRejection, NSLOCTEXT("AUTGameMode", "RedeemerRejection", "Rejected Redeemer"));
 	HighlightMap.Add(HighlightNames::FlagDenials, NSLOCTEXT("AUTGameMode", "FlagDenials", "{0} Denials"));
@@ -65,6 +67,8 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	ShortHighlightMap.Add(HighlightNames::HiredGun, NSLOCTEXT("AUTGameMode", "HiredGun", "Hired Gun"));
 	ShortHighlightMap.Add(HighlightNames::HappyToBeHere, NSLOCTEXT("AUTGameMode", "HappyToBeHere", "Just Happy To Be Here"));
 	ShortHighlightMap.Add(HighlightNames::MostKillsTeam, NSLOCTEXT("AUTGameMode", "ShortMostKills", "Top Gun"));
+	ShortHighlightMap.Add(HighlightNames::BobLife, NSLOCTEXT("AUTGameMode", "BobLife", "Living the Bob Life"));
+	ShortHighlightMap.Add(HighlightNames::CoolBeans, NSLOCTEXT("AUTGameMode", "CoolBeans", "Cool Beans Yo"));
 
 	ShortHighlightMap.Add(HighlightNames::RedeemerRejection, NSLOCTEXT("AUTGameMode", "ShortRejection", "Redeem this"));
 	ShortHighlightMap.Add(HighlightNames::FlagDenials, NSLOCTEXT("AUTGameMode", "ShortDenials", "You shall not pass"));
@@ -560,16 +564,20 @@ void AUTFlagRunGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 	}
 	else if (PS->RoundKills + PS->RoundKillAssists > 0)
 	{
-		PS->MatchHighlights[0] = (PS->RoundKills + PS->RoundKillAssists > 2) ? HighlightNames::HiredGun : HighlightNames::HappyToBeHere;
 		PS->MatchHighlightData[0] = PS->RoundKills + PS->RoundKillAssists;
+
+		if (PS->MatchHighlightData[0] > 4)
+		{
+			PS->MatchHighlights[0] = (PS->MatchHighlightData[0] > 7) ? HighlightNames::CoolBeans : HighlightNames::BobLife;
+		}
+		else
+		{
+			PS->MatchHighlights[0] = (PS->MatchHighlightData[0] > 2) ? HighlightNames::HiredGun : HighlightNames::HappyToBeHere;
+		}
 	}
 	else if (PS->RoundDamageDone > 0)
 	{
-		PS->MatchHighlights[0] = HighlightNames::HappyToBeHere;
-	}
-	else
-	{
-		PS->MatchHighlights[0] = HighlightNames::ParticipationAward;
+		PS->MatchHighlights[0] = (PS->RoundDamageDone > 0) ? HighlightNames::HappyToBeHere : HighlightNames::ParticipationAward;
 	}
 }
 
