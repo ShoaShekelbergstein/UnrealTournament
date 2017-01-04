@@ -32,9 +32,9 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		HatVariant = 0;
 		EyewearPath = TEXT("");
 		EyewearVariant = 0;
-		GroupTauntPath = TEXT("");
 		TauntPath = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/Taunt_Boom.Taunt_Boom_C");
 		Taunt2Path = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/Taunt_Bow.Taunt_Bow_C");
+		GroupTauntPath = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/GroupTaunt_FacePalm.GroupTaunt_FacePalm_C");
 		CharacterPath = TEXT("");
 		CountryFlag = FName(TEXT("Unreal"));
 		Avatar = FName("UT.Avatar.0");
@@ -554,6 +554,14 @@ bool UUTProfileSettings::VersionFixup()
 	{
 		bUseWeaponColors = true;
 		HUDWidgetWeaponbarInactiveOpacity = 0.6f;
+	}
+
+	if (SettingsRevisionNum < DEFAULT_GROUPTAUNT_FIXUP_VERSION)
+	{
+		if (GroupTauntPath.IsEmpty())
+		{
+			GroupTauntPath = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/GroupTaunt_FacePalm.GroupTaunt_FacePalm_C");
+		}
 	}
 
 	int32 WeaponWheelIndex = -1;
