@@ -1899,7 +1899,7 @@ void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueN
 		{
 			LastProfileCloudWriteTime = FApp::GetCurrentTime();
 			FText Saved = NSLOCTEXT("MCP", "ProfileSaved", "Profile Saved");
-			ShowToast(Saved);
+			//ShowToast(Saved);
 		}
 		else
 		{
@@ -1915,7 +1915,7 @@ void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueN
 		if (bWasSuccessful)
 		{
 			FText Saved = NSLOCTEXT("MCP", "ProgressionSaved", "Progression Saved");
-			ShowToast(Saved);
+			//ShowToast(Saved);
 		}
 		else
 		{
@@ -4485,6 +4485,8 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 	{
 		CloseUMGWidget(UMGWidgetStack[i]);
 	}
+
+	ToastStack.Empty();
 #endif
 
 	bCloseUICalledDuringMoviePlayback = false;
