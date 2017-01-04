@@ -47,4 +47,8 @@ public:
 
 	// The player state of the last person to score.
 	AUTPlayerState* LastScorer;
+
+	virtual FText GetRoundStatusText(bool bForScoreboard);
+
+
 };

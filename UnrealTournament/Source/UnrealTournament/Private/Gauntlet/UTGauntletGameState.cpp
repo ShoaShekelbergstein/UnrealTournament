@@ -103,3 +103,8 @@ FText AUTGauntletGameState::GetGameStatusText(bool bForScoreboard)
 
 	return GetRoundStatusText(bForScoreboard);
 }
+
+FText AUTGauntletGameState::GetRoundStatusText(bool bForScoreboard)
+{
+	return FText::Format(NSLOCTEXT("UTGauntletGameState","GauntletRoundFormat","Round {0}"), FText::AsNumber(CTFRound));
+}

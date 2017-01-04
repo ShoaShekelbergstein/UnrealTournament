@@ -737,6 +737,7 @@ bool AUTGauntletFlag::PlaceExtraPoint(const FVector& A, const FVector& B, FVecto
 
 void AUTGauntletFlag::SendHome()
 {
+	TeamReset();
 	Super::SendHome();
 	CleanupTrail();
 }

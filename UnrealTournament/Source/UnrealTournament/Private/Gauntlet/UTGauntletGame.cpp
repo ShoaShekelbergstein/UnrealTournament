@@ -47,10 +47,10 @@ AUTGauntletGame::AUTGauntletGame(const FObjectInitializer& ObjectInitializer)
 	GameStateClass = AUTGauntletGameState::StaticClass();
 	HUDClass = AUTGauntletHUD::StaticClass();
 	SquadType = AUTCTFSquadAI::StaticClass();
-	RoundLives=4;
+	RoundLives=5;
 	bPerPlayerLives = true;
 	FlagSwapTime=12;
-	FlagPickupDelay=15;
+	FlagPickupDelay=5;
 	MapPrefix = TEXT("CTF");
 	bHideInUI = true;
 	bRollingAttackerSpawns = false;
@@ -478,6 +478,8 @@ void AUTGauntletGame::EndScoreSummary()
 
 void AUTGauntletGame::EndFadeToBlack()
 {
+	// Kill all pawns in the world.
+	RemoveAllPawns();
 	SetMatchState(MatchState::GauntletRoundAnnounce);
 }
 

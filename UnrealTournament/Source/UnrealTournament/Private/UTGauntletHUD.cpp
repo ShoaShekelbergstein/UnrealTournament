@@ -206,24 +206,23 @@ void AUTGauntletHUD::DrawPlayerIcons(AUTGauntletGameState* GauntletGameState)
 		GetPlayerListForIcons(GauntletGameState, LivePlayers);
 		for (AUTPlayerState* UTPS : LivePlayers)
 		{
-			if (!UTPS->bOutOfLives)
-			{
-				float OwnerPipScaling = 1.f;
-				float PipSize = BasePipSize * OwnerPipScaling;
-				float LiveScaling = FMath::Clamp(((UTPS->RespawnTime > 0.f) && (UTPS->RespawnWaitTime > 0.f) && !UTPS->GetUTCharacter()) ? 1.f - UTPS->RespawnTime / UTPS->RespawnWaitTime : 1.f, 0.f, 1.f);
+			float OwnerPipScaling = 1.f;
+			float PipSize = BasePipSize * OwnerPipScaling;
+			float LiveScaling = FMath::Clamp(((UTPS->RespawnTime > 0.f) && (UTPS->RespawnWaitTime > 0.f) && !UTPS->GetUTCharacter()) ? 1.f - UTPS->RespawnTime / UTPS->RespawnWaitTime : 1.f, 0.f, 1.f);
 
-				if (UTPS->Team->TeamIndex == 0)
-				{
-					RedPlayerCount++;
-					DrawPlayerIcon(GauntletGameState, UTPS, LiveScaling, XOffsetRed, YOffset, PipSize);
-					XOffsetRed -= 1.1f*PipSize;
-				}
-				else
-				{
-					BluePlayerCount++;
-					DrawPlayerIcon(GauntletGameState, UTPS, LiveScaling, XOffsetBlue, YOffset, PipSize);
-					XOffsetBlue += 1.1f*PipSize;
-				}
+			if (UTPS->bOutOfLives) LiveScaling = 0.0f;
+
+			if (UTPS->Team->TeamIndex == 0)
+			{
+				RedPlayerCount++;
+				DrawPlayerIcon(GauntletGameState, UTPS, LiveScaling, XOffsetRed, YOffset, PipSize);
+				XOffsetRed -= 1.1f*PipSize;
+			}
+			else
+			{
+				BluePlayerCount++;
+				DrawPlayerIcon(GauntletGameState, UTPS, LiveScaling, XOffsetBlue, YOffset, PipSize);
+				XOffsetBlue += 1.1f*PipSize;
 			}
 		}
 	}
@@ -298,6 +297,13 @@ void AUTGauntletHUD::DrawPlayerIcon(AUTGauntletGameState* GauntletGameState, AUT
 
 		Canvas->SetLinearDrawColor(PlayerState->RemainingLives == 1 ? FLinearColor::Yellow : FLinearColor::White);
 		Canvas->DrawText(SmallFont, FText::FromString(LivesRemaining), XOffset + (PipSize * 0.5f) - (XL * 0.5f), YOffset + (PipSize * (320.0f / 224.0f)), FontRenderScale, FontRenderScale, TextRenderInfo);
+
+		if (PlayerState->bOutOfLives)
+		{
+			Canvas->SetLinearDrawColor(FLinearColor::White);
+			Canvas->DrawTile(HUDAtlas, XOffset + (PipSize * 0.5f) - (13 * FontRenderScale), YOffset + (PipHeight * 0.5f) - (18 * FontRenderScale),  27 * FontRenderScale, 36 * FontRenderScale, 725, 0, 27 , 36);
+		}
+
 	}
 }
 
