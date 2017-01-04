@@ -11,6 +11,7 @@
 #include "UTCTFRoundGame.h"
 #include "UTCTFGameMode.h"
 #include "UTFlagRunGameState.h"
+#include "UTCTFMajorMessage.h"
 
 AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -257,6 +258,8 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 			ForceCharacterAnimResetForLineUp(UTChar);
 			SpawnPlayerWeapon(UTChar);
 		}
+
+		DisplayClientMessages();
 	}
 
 	bIsPlacingPlayers = false;
@@ -355,6 +358,20 @@ void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
 		//Want to still update the animations and bones even though we have turned off the Pawn, so re-enable those.
 		UTChar->GetMesh()->bPauseAnims = false;
 		UTChar->GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
+	}
+}
+
+void AUTLineUpHelper::DisplayClientMessages()
+{
+	//Let any scoring player know they can group taunt
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (GS && GS->ScoringPlayerState && GS->ScoringPlayerState->ActiveGroupTaunt == nullptr)
+	{
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(GS->ScoringPlayerState->GetOwner());
+		if (UTPC)
+		{
+			UTPC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 31, GS->ScoringPlayerState);
+		}
 	}
 }
 

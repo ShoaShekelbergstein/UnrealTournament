@@ -20,6 +20,8 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 	void ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar);
 
 	void SetupDelayedLineUp();
+	
+	void DisplayClientMessages();
 
 	UPROPERTY()
 	bool bIsActive;

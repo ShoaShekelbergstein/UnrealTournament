@@ -493,6 +493,9 @@ public:
 		FText BoostLabel;
 
 	UPROPERTY()
+		FText GroupTauntLabel;
+
+	UPROPERTY()
 		FText ShowScoresLabel;
 
 protected:

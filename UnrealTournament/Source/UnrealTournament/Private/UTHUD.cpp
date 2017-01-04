@@ -512,6 +512,7 @@ void AUTHUD::UpdateKeyMappings(bool bForceUpdate)
 		BoostLabel = FindKeyMappingTo("ActivateSpecial");
 		RallyLabel = FindKeyMappingTo("RequestRally");
 		ShowScoresLabel = FindKeyMappingTo("ShowScores");
+		GroupTauntLabel = FindKeyMappingTo("GroupTaunt");
 	}
 }
 
