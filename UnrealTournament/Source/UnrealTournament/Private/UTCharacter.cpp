@@ -5071,6 +5071,10 @@ void AUTCharacter::ApplyCharacterData(TSubclassOf<AUTCharacterContent> CharType)
 	if (Data->Mesh != NULL)
 	{
 		FComponentReregisterContext ReregisterContext(GetMesh());
+
+		// Animation is wiped out when context is reregistered
+		ResetTaunt();
+
 		GetMesh()->OverrideMaterials = Data->Mesh->OverrideMaterials;
 		FFAColor = (Data->DMSkinType == EDMSkin_Base) ? 255 : 0;
 		if ((PS != NULL && PS->Team != NULL) || (FFAColor != 255))
@@ -6023,34 +6027,40 @@ void AUTCharacter::OnEmoteEnded(UAnimMontage* Montage, bool bInterrupted)
 	TauntCount--;
 	if (TauntCount == 0)
 	{
-		if (CurrentTauntAudioComponent)
-		{
-			CurrentTauntAudioComponent->Stop();
-			CurrentTauntAudioComponent = nullptr;
-		}
+		ResetTaunt();
+	}
+}
 
-		if (Hat)
-		{
-			Hat->OnWearerEmoteEnded();
-		}
+void AUTCharacter::ResetTaunt()
+{
+	if (CurrentTauntAudioComponent)
+	{
+		CurrentTauntAudioComponent->Stop();
+		CurrentTauntAudioComponent = nullptr;
+	}
 
-		CurrentTaunt = nullptr;
-		CurrentFirstPersonTaunt = nullptr;
-		UTCharacterMovement->bIsTaunting = false;
+	if (Hat)
+	{
+		Hat->OnWearerEmoteEnded();
+	}
 
-		// if we're drawing the outline we need the mesh to keep ticking
-		if (CustomDepthMesh == NULL || !CustomDepthMesh->IsRegistered())
-		{
-			GetMesh()->MeshComponentUpdateFlag = GetClass()->GetDefaultObject<AUTCharacter>()->GetMesh()->MeshComponentUpdateFlag;
-		}
+	TauntCount = 0;
+	CurrentTaunt = nullptr;
+	CurrentFirstPersonTaunt = nullptr;
+	UTCharacterMovement->bIsTaunting = false;
 
-		if (Role == ROLE_Authority)
+	// if we're drawing the outline we need the mesh to keep ticking
+	if (CustomDepthMesh == NULL || !CustomDepthMesh->IsRegistered())
+	{
+		GetMesh()->MeshComponentUpdateFlag = GetClass()->GetDefaultObject<AUTCharacter>()->GetMesh()->MeshComponentUpdateFlag;
+	}
+
+	if (Role == ROLE_Authority)
+	{
+		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+		if (PS)
 		{
-			AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
-			if (PS)
-			{
-				PS->EmoteReplicationInfo.EmoteCount = 0;
-			}
+			PS->EmoteReplicationInfo.EmoteCount = 0;
 		}
 	}
 }
