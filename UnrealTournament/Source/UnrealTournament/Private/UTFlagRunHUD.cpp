@@ -86,6 +86,12 @@ void AUTFlagRunHUD::NotifyMatchStateChange()
 	Super::NotifyMatchStateChange();
 }
 
+bool AUTFlagRunHUD::ScoreboardIsUp()
+{
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	return  (GS && (GS->IsMatchIntermission() || GS->HasMatchEnded())) || Super::ScoreboardIsUp();
+}
+
 void AUTFlagRunHUD::GetPlayerListForIcons(TArray<AUTPlayerState*>& SortedPlayers)
 {
 	AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(GetWorld()->GetGameState());

@@ -40,16 +40,6 @@ int32 UUTLocalMessage::GetFontSizeIndex(int32 MessageIndex) const
 
 bool UUTLocalMessage::ShouldDrawMessage(int32 MessageIndex, AUTPlayerController* PC, bool bIsAtIntermission, bool bNoLivePawnTarget) const
 {
-	if (PC && PC->GetWorld())
-	{
-		//block all messages by default during line ups.
-		AUTGameState* UTGS = Cast<AUTGameState>(PC->GetWorld()->GetGameState());
-		if (UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive && bIsAtIntermission)
-		{
-			return false;
-		}
-	}
-
 	if ((bIsAtIntermission && !bDrawAtIntermission) || (bNoLivePawnTarget && bDrawOnlyIfAlive))
 	{
 		return false;
