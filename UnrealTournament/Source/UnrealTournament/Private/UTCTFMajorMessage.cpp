@@ -22,8 +22,6 @@ UUTCTFMajorMessage::UUTCTFMajorMessage(const FObjectInitializer& ObjectInitializ
 	RallyCompleteMessage = NSLOCTEXT("CTFGameMessage", "RallyCompleteMessage", "Rally Ended!");
 	PressToRallyPrefix = NSLOCTEXT("CTFGameMessage", "PressToRallyPrefix", "Press ");
 	PressToRallyPostfix = NSLOCTEXT("CTFGameMessage", "PressToRallyPostfix", " to Rally Now!");
-	PressToGroupTauntPrefix = NSLOCTEXT("CTFGameMessage", "PressToGroupTauntPrefix", "Press ");
-	PressToGroupTauntPostfix = NSLOCTEXT("CTFGameMessage", "PressToGroupTauntPostfix", " to Start a Group Taunt!");
 	bIsStatusAnnouncement = true;
 	bIsPartiallyUnique = true;
 	ScaleInSize = 3.f;
@@ -86,23 +84,10 @@ void UUTCTFMajorMessage::ClientReceive(const FClientReceiveData& ClientData) con
 
 bool UUTCTFMajorMessage::ShouldDrawMessage(int32 MessageIndex, AUTPlayerController* PC, bool bIsAtIntermission, bool bNoLivePawnTarget) const
 {
-	AUTPlayerState* UTPS = PC->UTPlayerState;
-
 	if (MessageIndex == 23)
 	{
 		// only draw if can still rally
 		if (!PC->CanPerformRally())
-		{
-			return false;
-		}
-	}
-	else if (PC && UTPS && MessageIndex == 31)
-	{
-		return (bIsAtIntermission && (UTPS->ActiveGroupTaunt == nullptr));
-	}
-	else
-	{
-		if (bIsAtIntermission)
 		{
 			return false;
 		}
@@ -165,22 +150,6 @@ void UUTCTFMajorMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText,
 		}
 		return;
 	}
-	else if (Switch == 31)
-	{
-		PrefixText = PressToGroupTauntPrefix;
-		PostfixText = PressToGroupTauntPostfix;
-		EmphasisColor = FLinearColor::Yellow;
-		EmphasisText = FText::GetEmpty();
-		if (RelatedPlayerState_1 && RelatedPlayerState_1->GetWorld())
-		{
-			AUTPlayerController* PC = Cast<AUTPlayerController>(GEngine->GetFirstLocalPlayerController(RelatedPlayerState_1->GetWorld()));
-			if (PC && PC->MyUTHUD)
-			{
-				EmphasisText = PC->MyUTHUD->GroupTauntLabel;
-			}
-		}
-		return;
-	}
 
 	Super::GetEmphasisText(PrefixText, EmphasisText, PostfixText, EmphasisColor, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
 }
@@ -199,7 +168,6 @@ FText UUTCTFMajorMessage::GetText(int32 Switch, bool bTargetsPlayerState1, APlay
 	case 27: return TeamRallyMessage; break;
 	case 28: return EnemyRallyMessage; break;
 	case 30: return BuildEmphasisText(Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject); break;
-	case 31: return BuildEmphasisText(Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject); break;
 	}
 	return FText::GetEmpty();
 }
@@ -262,12 +230,3 @@ FName UUTCTFMajorMessage::GetAnnouncementName_Implementation(int32 Switch, const
 	return GetTeamAnnouncement(Switch, TeamNum);
 }
 
-float UUTCTFMajorMessage::GetLifeTime(int32 Switch) const
-{
-	if (Switch == 31)
-	{
-		return 12.0f;
-	}
-
-	return Super::GetLifeTime(Switch);
-}

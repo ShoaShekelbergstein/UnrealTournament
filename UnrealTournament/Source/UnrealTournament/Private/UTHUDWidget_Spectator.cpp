@@ -5,6 +5,7 @@
 #include "UTCarriedObject.h"
 #include "UTCTFGameState.h"
 #include "UTDemoRecSpectator.h"
+#include "UTLineUpHelper.h"
 
 UUTHUDWidget_Spectator::UUTHUDWidget_Spectator(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -242,11 +243,19 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 					if (IntermissionTime > 0)
 					{
 						FFormatNamedArguments Args;
-						Args.Add("Time", FText::AsNumber(IntermissionTime));
-						AUTCTFGameState* CTFGameState = Cast<AUTCTFGameState>(UTGameState);
-						SpectatorMessage = !CTFGameState || (CTFGameState->CTFRound == 0)
-							? FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "HalfTime", "HALFTIME - Game resumes in {Time}"), Args)
-							: FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "Intermission", "Game resumes in {Time}"), Args);
+						if (UTPS->CarriedObject && (IntermissionTime > 5) && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive)
+						{
+							Args.Add("GroupTaunt", UTHUDOwner->GroupTauntLabel);
+							SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "GroupTaunt", "Press {GroupTaunt} to start a group taunt."), Args);
+						}
+						else
+						{
+							Args.Add("Time", FText::AsNumber(IntermissionTime));
+							AUTCTFGameState* CTFGameState = Cast<AUTCTFGameState>(UTGameState);
+							SpectatorMessage = !CTFGameState || (CTFGameState->CTFRound == 0)
+								? FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "HalfTime", "HALFTIME - Game resumes in {Time}"), Args)
+								: FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "Intermission", "Game resumes in {Time}"), Args);
+						}
 					}
 				}
 			}
