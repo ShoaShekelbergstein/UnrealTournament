@@ -268,6 +268,8 @@ void UUTHUDWidgetMessage::ReceiveLocalMessage(TSubclassOf<class UUTLocalMessage>
 
 void UUTHUDWidgetMessage::AddMessage(int32 QueueIndex, TSubclassOf<class UUTLocalMessage> MessageClass, uint32 MessageIndex, FText LocalMessageText, int32 MessageCount, APlayerState* RelatedPlayerState_1, APlayerState* RelatedPlayerState_2, UObject* OptionalObject)
 {
+	if (UTHUDOwner == nullptr) return; // We can't do anything without a hud owner
+
 	// If this MessageQueue has an associated UMG widget, we have to kill it before adding the new one.
 	bool bHadToClear = false;
 	if (MessageQueue[QueueIndex].UMGWidget.IsValid())

@@ -3584,7 +3584,7 @@ void AUTGameMode::GenericPlayerInitialization(AController* C)
 		if (C && Cast<AUTPlayerController>(C) && C->PlayerState)
 		{
 			AUTPlayerState* PlayerState = Cast<AUTPlayerState>(C->PlayerState);
-			if (PlayerState && !PlayerState->bIsDemoRecording)
+			if (PlayerState && !PlayerState->bIsDemoRecording && !PlayerState->bIsABot)
 			{
 				LobbyBeacon->UpdatePlayer(this, PlayerState, false);
 			}
@@ -3737,7 +3737,7 @@ void AUTGameMode::Logout(AController* Exiting)
 
 	if (IsGameInstanceServer() && LobbyBeacon)
 	{
-		if ( PS->GetOwner() && Cast<AUTPlayerController>(PS->GetOwner()) && !PS->bIsDemoRecording )
+		if ( PS && !PS->bIsABot && !PS->bIsDemoRecording )
 		{
 			LobbyBeacon->UpdatePlayer(this, PS, true);
 		}
@@ -4276,7 +4276,7 @@ void AUTGameMode::UpdateLobbyPlayerList()
 		for (int32 i=0;i<UTGameState->PlayerArray.Num();i++)
 		{
 			AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-			if ( PS->GetOwner() && Cast<AUTPlayerController>(PS->GetOwner()) && !PS->bIsDemoRecording )
+			if ( PS && !PS->bIsABot && !PS->bIsDemoRecording )
 			{
 				LobbyBeacon->UpdatePlayer(this, PS, false);
 			}
