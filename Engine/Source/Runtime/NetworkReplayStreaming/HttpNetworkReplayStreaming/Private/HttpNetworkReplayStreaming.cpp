@@ -963,7 +963,7 @@ void FHttpNetworkReplayStreamer::AddEvent( const uint32 TimeInMS, const FString&
 {
 	if (StreamerState != EStreamerState::StreamingUp && StreamerState != EStreamerState::StreamingDown)
 	{
-		UE_LOG( LogHttpReplay, Warning, TEXT( "FHttpNetworkReplayStreamer::AddEvent. Not streaming." ) );
+		UE_LOG( LogHttpReplay, Verbose, TEXT( "FHttpNetworkReplayStreamer::AddEvent. Not streaming." ) );
 		return;
 	}
 
