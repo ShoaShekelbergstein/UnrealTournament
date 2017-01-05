@@ -79,6 +79,7 @@ void AUTFlagRunScoring::ScoreKill(AController* Killer, AController* Victim, APaw
 	AUTPlayerState* KillerPS = Killer ? Cast<AUTPlayerState>(Killer->PlayerState) : NULL;
 	if (VictimPS && KillerPS && (VictimPS != KillerPS) && CTFGameState && !CTFGameState->OnSameTeam(Killer, Victim))
 	{
+		KillerPS->AdjustScore(1);
 		if (KillerPS->Team)
 		{
 			KillerPS->Team->ModifyStatsValue(NAME_TeamKills, 1);
