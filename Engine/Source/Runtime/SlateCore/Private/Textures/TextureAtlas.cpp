@@ -14,7 +14,11 @@ ESlateTextureAtlasThreadId GetCurrentSlateTextureAtlasThreadId()
 	// Note: For Game thread ownership, there is a point at which multiple worker threads operate on text simultaneously while the game thread is blocked
 	// Access to the font cache is controlled through mutexes so we simply need to check that we are not accessing it from the render thread
 	// Game thread access is also allowed when the game thread and render thread are the same
-	if (!IsInActualRenderingThread())
+	if (IsInSlateThread())
+	{
+		return ESlateTextureAtlasThreadId::Render;
+	}
+	else if (!IsInActualRenderingThread())
 	{
 		return ESlateTextureAtlasThreadId::Game;
 	}
