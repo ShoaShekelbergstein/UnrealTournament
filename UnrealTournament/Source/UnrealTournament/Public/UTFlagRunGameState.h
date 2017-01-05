@@ -102,6 +102,9 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 	UPROPERTY(BlueprintReadWrite)
 		int32 HiredGunCount;
 
+	UPROPERTY(BlueprintReadWrite)
+		int32 BobLifeCount;
+
 	UFUNCTION()
 	virtual void OnBonusLevelChanged();
 

@@ -70,8 +70,8 @@ UUTFlagRunScoreboard::UUTFlagRunScoreboard(const FObjectInitializer& ObjectIniti
 	TeamScorePrefix = NSLOCTEXT("CTFRewardMessage", "TeamScorePrefix", "");
 	TeamScorePostfix = NSLOCTEXT("CTFRewardMessage", "TeamScorePostfix", " Scores!");
 	TeamWinsPrefix = NSLOCTEXT("UTVictoryMessage", "TeamWinsPrefix", "");
-	TeamWinsPostfix = NSLOCTEXT("UTVictoryMessage", "TeamWinsPostfix", " Wins The Match {winscore} - {losescore}");
-	TeamWinsTiebreakPostfix = NSLOCTEXT("UTVictoryMessage", "TeamWinsPostfix", " Wins The Match  {winscore} - {losescore} (+{tiebreaker})");
+	TeamWinsPostfix = NSLOCTEXT("UTVictoryMessage", "TeamWinsPostfix", " Wins The Match");// {winscore} -{losescore}");
+	TeamWinsTiebreakPostfix = NSLOCTEXT("UTVictoryMessage", "TeamWinsPostfix", " Wins The Match");// {winscore} -{losescore} (+{tiebreaker})");
 	StarText = NSLOCTEXT("CTFRewardMessage", "StarText", "\u2605");
 	DefenseScorePrefix = NSLOCTEXT("CTFRewardMessage", "DefenseScoreBonusPrefix", "");
 	DefenseScorePostfix = NSLOCTEXT("CTFRewardMessage", "DefenseScoreBonusPostfix", " Successfully Defends!");

@@ -264,6 +264,7 @@ namespace HighlightNames
 	const FName ComeAtMeBro = FName(TEXT("ComeAtMeBro"));
 	const FName ThisIsSparta = FName(TEXT("ThisIsSparta"));
 	const FName AllOutOfBubbleGum = FName(TEXT("AllOutOfBubbleGum"));
+	const FName GameOver = FName(TEXT("GameOver"));
 }
 
 namespace ArmorTypeName
