@@ -12,7 +12,6 @@ namespace ERenderObjectType
 	const FName TextObject = FName(TEXT("HUDRenderObject_Text"));
 }
 
-
 DECLARE_CYCLE_STAT(TEXT("CanvasTextItem Time"), STAT_Canvas_TextItemTime, STATGROUP_Canvas);
 void FUTCanvasTextItem::Draw(FCanvas* InCanvas)
 {
@@ -309,8 +308,9 @@ UUTHUDWidget::UUTHUDWidget(const class FObjectInitializer& ObjectInitializer) : 
 	bIgnoreHUDOpacity = false;
 }
 
-void UUTHUDWidget::InitializeWidget(AUTHUD* Hud)
+void UUTHUDWidget::InitializeWidget(AUTHUD* InHUD)
 {
+	UTHUDOwner = InHUD;
 	for (TFieldIterator<UStructProperty> PropIt(GetClass()); PropIt; ++PropIt)
 	{
 		UStructProperty* Prop = NULL;
