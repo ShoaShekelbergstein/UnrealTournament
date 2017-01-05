@@ -74,7 +74,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	ShortHighlightMap.Add(HighlightNames::HappyToBeHere, NSLOCTEXT("AUTGameMode", "HappyToBeHere", "Just Happy To Be Here"));
 	ShortHighlightMap.Add(HighlightNames::MostKillsTeam, NSLOCTEXT("AUTGameMode", "ShortMostKills", "Top Gun"));
 	ShortHighlightMap.Add(HighlightNames::BobLife, NSLOCTEXT("AUTGameMode", "BobLife", "Living the Bob Life"));
-	ShortHighlightMap.Add(HighlightNames::GameOver, NSLOCTEXT("AUTGameMode", "GameOver", Game Over, Man"));
+	ShortHighlightMap.Add(HighlightNames::GameOver, NSLOCTEXT("AUTGameMode", "GameOver", "Game Over, Man"));
 	ShortHighlightMap.Add(HighlightNames::CoolBeans, NSLOCTEXT("AUTGameMode", "CoolBeans", "Cool Beans Yo"));
 	ShortHighlightMap.Add(HighlightNames::NotSureIfSerious, NSLOCTEXT("AUTGameMode", "NotSureIfSerious", "Not Sure If Serious"));
 	ShortHighlightMap.Add(HighlightNames::ComeAtMeBro, NSLOCTEXT("AUTGameMode", "ComeAtMeBro", "Come at Me Bro"));
