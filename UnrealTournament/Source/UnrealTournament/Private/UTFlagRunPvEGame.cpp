@@ -152,6 +152,11 @@ void AUTFlagRunPvEGame::CheckRoundTimeVictory()
 	int32 RemainingTime = UTGameState ? UTGameState->GetRemainingTime() : 100;
 	if (RemainingTime <= 0)
 	{
+		if (FRGS != nullptr)
+		{
+			FRGS->BonusLevel++;
+			FRGS->NextStarTime = 10000000;
+		}
 		// Round is over, defense wins.
 		ScoreAlternateWin((FRGS != nullptr && FRGS->bRedToCap) ? 1 : 0, 1);
 	}

@@ -28,7 +28,7 @@ FText AUTFlagRunPvEGameState::GetRoundStatusText(bool bForScoreboard)
 		}
 		FText NextText = NSLOCTEXT("UnrealTournament", "ToNextStar", "Next: {BonusTime}");
 		FFormatNamedArguments Args;
-		Args.Add("BonusTime", FText::AsNumber(FMath::Max<int32>(NextStarTime - ElapsedTime, 0)));
+		Args.Add("BonusTime", FText::AsNumber(FMath::Clamp<int32>(NextStarTime - ElapsedTime, 0, RemainingTime)));
 		FString SecondLine = FText::Format(NextText, Args).ToString();
 		return FText::FromString(FString::Printf(TEXT("%s\n%s"), *StarLine, *SecondLine));
 	}
