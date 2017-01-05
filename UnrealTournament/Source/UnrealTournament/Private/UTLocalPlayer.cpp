@@ -6141,6 +6141,8 @@ void UUTLocalPlayer::LaunchTutorial(FName TutorialName, const FString& DesiredQu
 			if ((CurrentProfileSettings->TutorialMask & TUTOIRAL_Weapon) != TUTOIRAL_Weapon) TutorialName = ETutorialTags::TUTTAG_Weapons;
 			else if ((CurrentProfileSettings->TutorialMask & TUTORIAL_Pickups) != TUTORIAL_Pickups) TutorialName = ETutorialTags::TUTTAG_Pickups;
 			else if ((CurrentProfileSettings->TutorialMask & TUTORIAL_DM) != TUTORIAL_DM) TutorialName = ETutorialTags::TUTTAG_DM;
+			else if ((CurrentProfileSettings->TutorialMask & TUTORIAL_FlagRun) != TUTORIAL_FlagRun) TutorialName = ETutorialTags::TUTTAG_Flagrun;
+			else if ((CurrentProfileSettings->TutorialMask & TUTORIAL_Showdown) != TUTORIAL_Showdown) TutorialName = ETutorialTags::TUTTAG_Showdown;
 			else if ((CurrentProfileSettings->TutorialMask & TUTORIAL_CTF) != TUTORIAL_CTF) TutorialName = ETutorialTags::TUTTAG_CTF;
 			else if ((CurrentProfileSettings->TutorialMask & TUTORIAL_Duel) != TUTORIAL_Duel) TutorialName = ETutorialTags::TUTTAG_Duel;
 			else TutorialName = ETutorialTags::TUTTAG_Movement;
@@ -6151,12 +6153,10 @@ void UUTLocalPlayer::LaunchTutorial(FName TutorialName, const FString& DesiredQu
 		}
 	}
 
-
 	for (int32 i = 0; i < TutorialData.Num(); i++)
 	{
 		if (TutorialData[i].Tag == TutorialName)
 		{
-
 			UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
 			if (GI)
 			{

@@ -2152,7 +2152,7 @@ namespace ETutorialTags
 	const FName TUTTAG_Weapons = FName(TEXT("WeaponsTutorial"));
 	const FName TUTTAG_Pickups = FName(TEXT("PickupTutorial"));
 	const FName TUTTAG_DM = FName(TEXT("DMTutorial"));
-	const FName TUTTAG_Flagrun = FName(TEXT("FlagrunTutorial"));
+	const FName TUTTAG_Flagrun = FName(TEXT("FlagRunTutorial"));
 	const FName TUTTAG_Showdown = FName(TEXT("ShowdownTutorial"));
 	const FName TUTTAG_TDM = FName(TEXT("TDMTutorial"));
 	const FName TUTTAG_CTF = FName(TEXT("CTFTutorial"));
