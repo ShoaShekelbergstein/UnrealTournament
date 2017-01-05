@@ -601,6 +601,12 @@ void AUTGameMode::RegisterServerWithSession()
 		AUTGameSessionRanked* UTGameSessionRanked = Cast<AUTGameSessionRanked>(GameSession);
 		if (UTGameSessionNonRanked)
 		{
+			if (IsGameInstanceServer())
+			{
+				// Set the server name to reflect the game mode and map
+				UTGameState->ServerName = FString::Printf(TEXT("%s on %s"),*DisplayName.ToString(), *GetWorld()->GetMapName());
+			}
+
 			UTGameSessionNonRanked->RegisterServer();
 			FTimerHandle TempHandle;
 			GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::UpdateOnlineServer, 60.0f*GetActorTimeDilation());
