@@ -1826,6 +1826,14 @@ FReply SUTWeaponConfigDialog::OnResetClick()
 {
 	UUTProfileSettings* ProfileSettings = PlayerOwner->GetProfileSettings();
 	ProfileSettings->ResetProfile(EProfileResetType::Weapons);
+
+	//Set weapon hand in case the reset profile changed it, so that it is replicated properly.
+	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+	if (UTPC)
+	{
+		UTPC->SetWeaponHand(ProfileSettings->WeaponHand);
+	}
+
 	PlayerOwner->SaveProfileSettings();
 
 	GetPlayerOwner()->CloseDialog(SharedThis(this));

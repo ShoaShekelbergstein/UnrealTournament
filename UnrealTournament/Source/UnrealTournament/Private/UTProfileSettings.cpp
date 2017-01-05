@@ -159,6 +159,8 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		bAutoWeaponSwitch = true;
 		bCustomWeaponCrosshairs = false;
 		bSingleCustomWeaponCrosshair = false;
+		
+		WeaponHand = EWeaponHand::HAND_Right;
 
 		WeaponWheelMapping.Empty();
 		WeaponWheelMapping.Add(8);
