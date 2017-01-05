@@ -140,7 +140,7 @@ void AUTFlagRunPvEGame::HandleMatchHasStarted()
 
 	AddPeonMonsters(8);
 
-	SetTimerUFunc(this, FName(TEXT("EscalateMonsters")), 50.0f, true);
+	SetTimerUFunc(this, FName(TEXT("EscalateMonsters")), 45.0f, true);
 
 	Cast<AUTFlagRunPvEGameState>(UTGameState)->BonusLevel = 1;
 	Cast<AUTFlagRunPvEGameState>(UTGameState)->NextStarTime = 60;
@@ -267,7 +267,7 @@ void AUTFlagRunPvEGame::AddPeonMonsters(int32 Num)
 void AUTFlagRunPvEGame::EscalateMonsters()
 {
 	EliteCostLimit += 1 + int32(GameDifficulty) / 3;
-	ElitePointsRemaining += EliteCostLimit * 1.2;
+	ElitePointsRemaining += EliteCostLimit * 1.25;
 	AddPeonMonsters(1);
 	AddEliteMonsters(ElitePointsRemaining / GetClass()->GetDefaultObject<AUTFlagRunPvEGame>()->EliteCostLimit);
 	BroadcastLocalized(nullptr, UUTPvEGameMessage::StaticClass(), 0);
