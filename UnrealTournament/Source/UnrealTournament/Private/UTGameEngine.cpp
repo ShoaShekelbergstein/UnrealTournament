@@ -64,6 +64,10 @@ UUTGameEngine::UUTGameEngine(const FObjectInitializer& ObjectInitializer)
 	AlwaysLoadedWeaponsStringRefs.Add(WeaponRef);
 	WeaponRef = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/Sniper/BP_Sniper.BP_Sniper_C"));
 	AlwaysLoadedWeaponsStringRefs.Add(WeaponRef);
+	WeaponRef = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/LightningRifle/BP_LightningRifle.BP_LightningRifle_C"));
+	AlwaysLoadedWeaponsStringRefs.Add(WeaponRef);
+	WeaponRef = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/GrenadeLauncher/BP_GrenadeLauncher.BP_GrenadeLauncher_C"));
+	AlwaysLoadedWeaponsStringRefs.Add(WeaponRef);
 
 	static ConstructorHelpers::FObjectFinder<UTexture2D> DefaultLevelScreenshotObj(TEXT("Texture2D'/Game/RestrictedAssets/Textures/_T_NSA_2_D._T_NSA_2_D'"));
 	DefaultLevelScreenshot = DefaultLevelScreenshotObj.Object;
