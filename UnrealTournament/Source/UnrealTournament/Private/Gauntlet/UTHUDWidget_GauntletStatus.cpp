@@ -53,7 +53,7 @@ void UUTHUDWidget_GauntletStatus::Draw_Implementation(float DeltaTime)
 			}
 		}
 
-		if (TeamIcons.Num() >= 2 && GauntletGameState->Teams.Num()>=2)
+		if (TeamIcons.Num() >= 2 && GauntletGameState->Teams.Num()>=2 && GauntletGameState->Teams[0] && GauntletGameState->Teams[1])
 		{
 			RenderObj_TextureAt(TeamIcons[0], -125.0f, 0.0f, 60.0f, 64.0f);
 
