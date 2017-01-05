@@ -544,11 +544,6 @@ void AUTFlagRunGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 	{
 		PS->MatchHighlights[0] = HighlightNames::HardToKill;
 	}
-	else if (PS->RoundKills > FMath::Max(1, PS->RoundKillAssists))
-	{
-		PS->MatchHighlights[0] = HighlightNames::KillingBlowsAward;
-		PS->MatchHighlightData[0] = PS->RoundKills;
-	}
 	else if (!bHaveRallyPoweredHighlight && (NumRalliesPowered > 1))
 	{
 		PS->AddMatchHighlight(HighlightNames::RallyPointPowered, NumRalliesPowered);
@@ -566,6 +561,11 @@ void AUTFlagRunGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 		if (PS->MatchHighlightData[0] > 4)
 		{
 			PS->MatchHighlights[0] = (PS->MatchHighlightData[0] > 7) ? HighlightNames::AllOutOfBubbleGum : HighlightNames::BobLife;
+		}
+		else if (PS->RoundKills > 1)
+		{
+			PS->MatchHighlights[0] = HighlightNames::KillingBlowsAward;
+			PS->MatchHighlightData[0] = PS->RoundKills;
 		}
 		else if (PS->MatchHighlightData[0] > 2)
 		{
