@@ -255,10 +255,7 @@ void AUTRallyPoint::StartRallyCharging()
 	}
 	UpdateRallyReadyCountdown(FMath::Max(RallyReadyCountdown, MinPersistentRemaining));
 	SetRallyPointState(RallyPointStates::Charging);
-	if (GetNetMode() != NM_DedicatedServer)
-	{
-		OnRallyChargingChanged();
-	}
+	OnRallyChargingChanged();
 	if ((Role == ROLE_Authority) && TouchingFC && TouchingFC->GetCarriedObject() && TouchingFC->GetCarriedObject()->bCurrentlyPinged && !GetWorldTimerManager().IsTimerActive(EnemyRallyWarningHandle) && (GetWorld()->GetTimeSeconds() - LastEnemyRallyWarning > 10.f))
 	{
 		GetWorldTimerManager().SetTimer(EnemyRallyWarningHandle, this, &AUTRallyPoint::WarnEnemyRally, 0.5f, false);
@@ -289,10 +286,7 @@ void AUTRallyPoint::RallyPoweredTurnOff()
 	GetWorldTimerManager().ClearTimer(EndRallyHandle);
 //	UpdateRallyReadyCountdown(RallyReadyDelay);
 	SetRallyPointState(RallyPointStates::Off);
-	if (GetNetMode() != NM_DedicatedServer)
-	{
-		OnRallyChargingChanged();
-	}
+	OnRallyChargingChanged();
 }
 
 void AUTRallyPoint::RallyPoweredComplete()
@@ -314,10 +308,7 @@ void AUTRallyPoint::RallyPoweredComplete()
 	UpdateRallyReadyCountdown(RallyReadyDelay);
 	FName NextState = (CharFlag != nullptr) ? RallyPointStates::Charging : RallyPointStates::Off;
 	SetRallyPointState(NextState);
-	if (GetNetMode() != NM_DedicatedServer)
-	{
-		OnRallyChargingChanged();
-	}
+	OnRallyChargingChanged();
 
 	if ( (Role == ROLE_Authority) && (NextState == RallyPointStates::Off))
 	{
@@ -344,10 +335,7 @@ void AUTRallyPoint::EndRallyCharging()
 	}
 //	UpdateRallyReadyCountdown(FMath::Max(RallyReadyDelay, MinPersistentRemaining));
 	SetRallyPointState(RallyPointStates::Off);
-	if (GetNetMode() != NM_DedicatedServer)
-	{
-		OnRallyChargingChanged();
-	}
+	OnRallyChargingChanged();
 }
 
 void AUTRallyPoint::FlagNearbyChanged(bool bIsNearby)
@@ -392,74 +380,77 @@ void AUTRallyPoint::FlagNearbyChanged(bool bIsNearby)
 
 void AUTRallyPoint::OnRallyChargingChanged()
 {
-	if (RallyPointState == RallyPointStates::Powered)
+	if (GetNetMode() != NM_DedicatedServer)
 	{
-		SetAmbientSound(FullyPoweredSound, false);
-		ChangeAmbientSoundPitch(PoweringUpSound, 1.5f);
-		if (RallyEffectPSC == nullptr)
+		if (RallyPointState == RallyPointStates::Powered)
 		{
-			RallyEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, RallyChargingEffect, GetActorLocation() - FVector(0.f, 0.f, Capsule->GetUnscaledCapsuleHalfHeight()), GetActorRotation());
-		}
-		static FName NAME_MoteColor(TEXT("MoteColor"));
-		RallyEffectPSC->SetVectorParameter(NAME_MoteColor, FVector(1.f, 1.f, 0.f));
-		static FName NAME_ParticleVelocity(TEXT("ParticleVelocity"));
-		RallyEffectPSC->SetVectorParameter(NAME_ParticleVelocity, FVector(0.f, 0.f, 1000.f));
-		static FName NAME_SmallParticleVelocity(TEXT("SmallParticleVelocity"));
-		RallyEffectPSC->SetVectorParameter(NAME_SmallParticleVelocity, FVector(0.f, 0.f, 1000.f));
-	}
-	else
-	{
-		if (RallyEffectPSC != nullptr)
-		{
-			// clear it
-			RallyEffectPSC->ActivateSystem(false);
-			RallyEffectPSC->UnregisterComponent();
-			RallyEffectPSC = nullptr;
-		}
-		if (RallyPointState == RallyPointStates::Charging)
-		{
-			SetAmbientSound(PoweringUpSound, false);
-			ChangeAmbientSoundPitch(PoweringUpSound, 0.5f);
-			UUTGameplayStatics::UTPlaySound(GetWorld(), FCTouchedSound, this, SRT_All);
-			RallyEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, RallyChargingEffect, GetActorLocation() - FVector(0.f, 0.f, Capsule->GetUnscaledCapsuleHalfHeight()), GetActorRotation());
-			AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-			bHaveGameState = (UTGS != nullptr);
-			static FName NAME_MoteColor(TEXT("MoteColor"));
-			RallyEffectPSC->SetVectorParameter(NAME_MoteColor, UTGS && UTGS->bRedToCap ? FVector(1.f, 0.f, 0.f) : FVector(0.f, 0.f, 1.f));
-			if ((Role == ROLE_Authority) && (UTGS != nullptr))
+			SetAmbientSound(FullyPoweredSound, false);
+			ChangeAmbientSoundPitch(PoweringUpSound, 1.5f);
+			if (RallyEffectPSC == nullptr)
 			{
-				AUTFlagRunGame* FlagRunGame = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
-				AUTCharacter* NearbyFC = FlagRunGame && FlagRunGame->ActiveFlag ? FlagRunGame->ActiveFlag->HoldingPawn : nullptr;
-				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
-				{
-					AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-					if (PC && PC->UTPlayerState && (PC->GetPawn() != NearbyFC) && PC->UTPlayerState->Team && (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0)))
-					{
-						PC->UTClientPlaySound(FCTouchedSound);
-					}
-				}
+				RallyEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, RallyChargingEffect, GetActorLocation() - FVector(0.f, 0.f, Capsule->GetUnscaledCapsuleHalfHeight()), GetActorRotation());
 			}
+			static FName NAME_MoteColor(TEXT("MoteColor"));
+			RallyEffectPSC->SetVectorParameter(NAME_MoteColor, FVector(1.f, 1.f, 0.f));
+			static FName NAME_ParticleVelocity(TEXT("ParticleVelocity"));
+			RallyEffectPSC->SetVectorParameter(NAME_ParticleVelocity, FVector(0.f, 0.f, 1000.f));
+			static FName NAME_SmallParticleVelocity(TEXT("SmallParticleVelocity"));
+			RallyEffectPSC->SetVectorParameter(NAME_SmallParticleVelocity, FVector(0.f, 0.f, 1000.f));
 		}
 		else
 		{
-			SetAmbientSound(nullptr, false);
-			UUTGameplayStatics::UTPlaySound(GetWorld(), RallyBrokenSound, this, SRT_All);
-			if ((Role == ROLE_Authority) && ((RallyReadyCountdown  < 2.f) || !TouchingFC || TouchingFC->IsDead()))
+			if (RallyEffectPSC != nullptr)
 			{
+				// clear it
+				RallyEffectPSC->ActivateSystem(false);
+				RallyEffectPSC->UnregisterComponent();
+				RallyEffectPSC = nullptr;
+			}
+			if (RallyPointState == RallyPointStates::Charging)
+			{
+				SetAmbientSound(PoweringUpSound, false);
+				ChangeAmbientSoundPitch(PoweringUpSound, 0.5f);
+				UUTGameplayStatics::UTPlaySound(GetWorld(), FCTouchedSound, this, SRT_All);
+				RallyEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, RallyChargingEffect, GetActorLocation() - FVector(0.f, 0.f, Capsule->GetUnscaledCapsuleHalfHeight()), GetActorRotation());
 				AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-				bool bNotifyAllPlayers = !TouchingFC || TouchingFC->IsDead() || (TouchingFC->GetCarriedObject() && TouchingFC->GetCarriedObject()->bCurrentlyPinged);
-				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+				bHaveGameState = (UTGS != nullptr);
+				static FName NAME_MoteColor(TEXT("MoteColor"));
+				RallyEffectPSC->SetVectorParameter(NAME_MoteColor, UTGS && UTGS->bRedToCap ? FVector(1.f, 0.f, 0.f) : FVector(0.f, 0.f, 1.f));
+				if ((Role == ROLE_Authority) && (UTGS != nullptr))
 				{
-					AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-					if (PC && PC->UTPlayerState && PC->UTPlayerState->Team && (bNotifyAllPlayers || (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0))))
+					AUTFlagRunGame* FlagRunGame = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
+					AUTCharacter* NearbyFC = FlagRunGame && FlagRunGame->ActiveFlag ? FlagRunGame->ActiveFlag->HoldingPawn : nullptr;
+					for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 					{
-						PC->UTClientPlaySound(RallyBrokenSound);
+						AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+						if (PC && PC->UTPlayerState && (PC->GetPawn() != NearbyFC) && PC->UTPlayerState->Team && (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0)))
+						{
+							PC->UTClientPlaySound(FCTouchedSound);
+						}
+					}
+				}
+			}
+			else
+			{
+				SetAmbientSound(nullptr, false);
+				UUTGameplayStatics::UTPlaySound(GetWorld(), RallyBrokenSound, this, SRT_All);
+				if ((Role == ROLE_Authority) && ((RallyReadyCountdown  < 2.f) || !TouchingFC || TouchingFC->IsDead()))
+				{
+					AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+					bool bNotifyAllPlayers = !TouchingFC || TouchingFC->IsDead() || (TouchingFC->GetCarriedObject() && TouchingFC->GetCarriedObject()->bCurrentlyPinged);
+					for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+					{
+						AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+						if (PC && PC->UTPlayerState && PC->UTPlayerState->Team && (bNotifyAllPlayers || (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0))))
+						{
+							PC->UTClientPlaySound(RallyBrokenSound);
+						}
 					}
 				}
 			}
 		}
+		OnAvailableEffectChanged();
 	}
-	OnAvailableEffectChanged();
 	OnRallyStateChanged();
 }
 
@@ -577,10 +568,7 @@ void AUTRallyPoint::Tick(float DeltaTime)
 							}
 						}
 						GetWorldTimerManager().SetTimer(EndRallyHandle, this, &AUTRallyPoint::RallyPoweredComplete, MinimumRallyTime, false);
-						if (GetNetMode() != NM_DedicatedServer)
-						{
-							OnRallyChargingChanged();
-						}
+						OnRallyChargingChanged();
 						ChangeAmbientSoundPitch(PoweringUpSound, 1.5f);
 					}
 					else
