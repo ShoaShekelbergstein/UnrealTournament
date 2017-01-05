@@ -20,7 +20,7 @@ AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 	RollingAttackerRespawnDelay = 10.0f;
 	bRollingAttackerSpawns = true;
 	RoundLives = 3;
-	BaseKillsForExtraLife = 25;
+	BaseKillsForExtraLife = 20;
 	TimeLimit = 10;
 	EliteCostLimit = 5;
 	bUseLevelTiming = false;
