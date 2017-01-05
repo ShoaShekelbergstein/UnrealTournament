@@ -6433,24 +6433,31 @@ void AUTCharacter::DisallowWeaponFiring(bool bDisallowed)
 	if (bDisallowed != bDisallowWeaponFiring)
 	{
 		bDisallowWeaponFiring = bDisallowed;
-		if (bDisallowed && Weapon != NULL)
+		if (Weapon != NULL)
 		{
-			for (int32 i = 0; i < PendingFire.Num(); i++)
+			if (bDisallowWeaponFiring)
 			{
-				if (PendingFire[i])
+				for (int32 i = 0; i < PendingFire.Num(); i++)
 				{
-					StopFire(i);
-				}
-			}
-			if (Weapon != NULL) // StopFire() could have killed us
-			{
-				for (UUTWeaponStateFiring* FiringState : Weapon->FiringState)
-				{
-					if (FiringState != NULL)
+					if (PendingFire[i])
 					{
-						FiringState->WeaponBecameInactive();
+						StopFire(i);
 					}
 				}
+				if (Weapon != NULL) // StopFire() could have killed us
+				{
+					for (UUTWeaponStateFiring* FiringState : Weapon->FiringState)
+					{
+						if (FiringState != NULL)
+						{
+							FiringState->WeaponBecameInactive();
+						}
+					}
+				}
+			}
+			else if (Cast<AUTPlayerController>(GetController()))
+			{
+				// client-side check fire buttons if weapon not firing, and fire
 			}
 		}
 	}
