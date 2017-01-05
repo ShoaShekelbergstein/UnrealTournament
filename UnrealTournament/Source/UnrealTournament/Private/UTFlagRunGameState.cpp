@@ -461,7 +461,7 @@ void AUTFlagRunGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 	FName SpreeStatsNames[5] = { NAME_SpreeKillLevel4, NAME_SpreeKillLevel3, NAME_SpreeKillLevel2, NAME_SpreeKillLevel1, NAME_SpreeKillLevel0 };
 	for (int32 i = 0; i < 5; i++)
 	{
-		if (PS->GetStatsValue(SpreeStatsNames[i]) > 0)
+		if (PS->GetRoundStatsValue(SpreeStatsNames[i]) > 0)
 		{
 			PS->AddMatchHighlight(SpreeStatsNames[i], PS->GetRoundStatsValue(SpreeStatsNames[i]));
 			return;
@@ -673,11 +673,11 @@ void AUTFlagRunGameState::UpdateHighlights_Implementation()
 				}
 			}
 
-			if (PS->GetRoundStatsValue(NAME_SniperHeadshotKills) > (MostHeadShotsPS ? MostHeadShotsPS->GetRoundStatsValue(NAME_SniperHeadshotKills) : 0.f))
+			if (PS->GetRoundStatsValue(NAME_SniperHeadshotKills) > (MostHeadShotsPS ? MostHeadShotsPS->GetRoundStatsValue(NAME_SniperHeadshotKills) : 1.f))
 			{
 				MostHeadShotsPS = PS;
 			}
-			if (PS->GetRoundStatsValue(NAME_AirRox) > (MostAirRoxPS ? MostAirRoxPS->GetRoundStatsValue(NAME_AirRox) : 0.f))
+			if (PS->GetRoundStatsValue(NAME_AirRox) > (MostAirRoxPS ? MostAirRoxPS->GetRoundStatsValue(NAME_AirRox) : 1.f))
 			{
 				MostAirRoxPS = PS;
 			}
