@@ -6108,10 +6108,10 @@ FText UUTLocalPlayer::GetMenuCommandTooltipText(FName MenuCommand) const
 	}
 	else
 	{
-		if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			return NSLOCTEXT("SUTHomePanel", "QuickPlayDM","Free for all Deathmatch!  Quickly find and join an online deathmatch game against players close to your skill level.");
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTF","Cap a flag or defend your base.  Click here to find and join an online capture the flag game against players close to your skill level");
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrun","Be the hero and break though the defensive line to capture your flag.");
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayShowdown","3v3 Showdown against players close to your skill level.");
+		if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			return NSLOCTEXT("SUTHomePanel", "QuickPlayDM","Quickly find and join an online deathmatch game against players close to your skill level.");
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTF","Quickly find and join an online capture the flag game against players close to your skill level");
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrun","Quickly find and join an online FlagRun game against players close to your skill level.");
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayShowdown","Quickly find and join a 3v3 Showdown against players close to your skill level.");
 		else if (MenuCommand == EMenuCommand::MC_Challenges)		return NSLOCTEXT("SUTHomePanel", "QuickPlayChallenges","Test your skills offline against our world class AI.");
 		else if (MenuCommand == EMenuCommand::MC_FindAMatch)		return NSLOCTEXT("SUTHomePanel", "QuickPlayFindAMatch","Head online and find games to play.");
 	}
