@@ -86,6 +86,29 @@ bool AUTFlagRunPvEGame::CheckRelevance_Implementation(AActor* Other)
 	}
 }
 
+void AUTFlagRunPvEGame::InitGameState()
+{
+	Super::InitGameState();
+
+	// needed here also for warmup
+	InitBoostTypes();
+}
+
+void AUTFlagRunPvEGame::InitBoostTypes()
+{
+	AUTFlagRunPvEGameState* GS = Cast<AUTFlagRunPvEGameState>(GameState);
+	TArray<TSubclassOf<AUTInventory>> BoostList;
+	for (const FStringClassReference& Item : BoostPowerupTypes)
+	{
+		TSubclassOf<AUTInventory> InvClass = Item.TryLoadClass<AUTInventory>();
+		if (InvClass != nullptr)
+		{
+			BoostList.Add(InvClass);
+		}
+	}
+	GS->SetSelectablePowerups(TArray<TSubclassOf<AUTInventory>>(), BoostList);
+}
+
 void AUTFlagRunPvEGame::StartMatch()
 {
 	Super::StartMatch();
@@ -98,16 +121,7 @@ void AUTFlagRunPvEGame::StartMatch()
 		GS->BoostRechargeTime = 180.0f;
 		GS->OffenseKillsNeededForPowerup = 1000000; // i.e. never
 		GS->DefenseKillsNeededForPowerup = 1000000;
-		TArray<TSubclassOf<AUTInventory>> BoostList;
-		for (const FStringClassReference& Item : BoostPowerupTypes)
-		{
-			TSubclassOf<AUTInventory> InvClass = Item.TryLoadClass<AUTInventory>();
-			if (InvClass != nullptr)
-			{
-				BoostList.Add(InvClass);
-			}
-		}
-		GS->SetSelectablePowerups(TArray<TSubclassOf<AUTInventory>>(), BoostList);
+		InitBoostTypes();
 	}
 	GS->KillsUntilExtraLife = BaseKillsForExtraLife;
 }

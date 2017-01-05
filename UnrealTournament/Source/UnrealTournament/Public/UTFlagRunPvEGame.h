@@ -40,6 +40,8 @@ public:
 	TArray<FStringClassReference> BoostPowerupTypes;
 
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
+	virtual void InitGameState() override;
+	virtual void InitBoostTypes();
 	virtual bool CheckRelevance_Implementation(AActor* Other) override;
 	virtual void StartMatch() override;
 
