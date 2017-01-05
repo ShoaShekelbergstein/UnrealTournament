@@ -619,10 +619,13 @@ PRAGMA_DISABLE_DEPRECATION_WARNINGS
 	}
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
-	ErrorMessage = GameSession->ApproveLogin(Options);
-	if (!ErrorMessage.IsEmpty())
+	if (GameSession)
 	{
-		return nullptr;
+		ErrorMessage = GameSession->ApproveLogin(Options);
+		if (!ErrorMessage.IsEmpty())
+		{
+			return nullptr;
+		}
 	}
 
 	APlayerController* NewPlayerController = SpawnPlayerController(InRemoteRole, FVector::ZeroVector, FRotator::ZeroRotator);
