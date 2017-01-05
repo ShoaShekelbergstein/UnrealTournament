@@ -1707,6 +1707,7 @@ void AUTPlayerController::PlayMenuSelectSound()
 
 void AUTPlayerController::OnFire()
 {
+	bFirePressed = true;
 	if (GetPawn() != NULL)
 	{
 		new(DeferredFireInputs)FDeferredFireInput(0, true);
@@ -1729,6 +1730,7 @@ void AUTPlayerController::OnFire()
 
 void AUTPlayerController::OnStopFire()
 {
+	bFirePressed = false;
 	if (GetPawn() != NULL)
 	{
 		new(DeferredFireInputs)FDeferredFireInput(0, false);
@@ -1737,6 +1739,7 @@ void AUTPlayerController::OnStopFire()
 
 void AUTPlayerController::OnAltFire()
 {
+	bAltFirePressed = true;
 	if (GetPawn() != NULL)
 	{
 		new(DeferredFireInputs)FDeferredFireInput(1, true);
@@ -1763,6 +1766,7 @@ void AUTPlayerController::OnAltFire()
 
 void AUTPlayerController::OnStopAltFire()
 {
+	bAltFirePressed = false;
 	if (GetPawn() != NULL)
 	{
 		new(DeferredFireInputs)FDeferredFireInput(1, false);
@@ -3846,6 +3850,21 @@ void AUTPlayerController::ServerReceiveCountryFlag_Implementation(FName NewCount
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("CountryFlag"), UTPlayerState->CountryFlag.ToString()));
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("UserId"), UTPlayerState->UniqueId.ToString()));
 			FUTAnalytics::GetProvider().RecordEvent(TEXT("FlagChange"), ParamArray);
+		}
+	}
+}
+
+void AUTPlayerController::ClientVerifyFiringInputs_Implementation()
+{
+	if (UTCharacter && UTCharacter->GetWeapon() && !UTCharacter->GetWeapon()->IsFiring())
+	{
+		if (bFirePressed)
+		{
+			new(DeferredFireInputs)FDeferredFireInput(0, true);
+		}
+		if (bAltFirePressed)
+		{
+			new(DeferredFireInputs)FDeferredFireInput(1, true);
 		}
 	}
 }

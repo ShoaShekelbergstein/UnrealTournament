@@ -6458,6 +6458,7 @@ void AUTCharacter::DisallowWeaponFiring(bool bDisallowed)
 			else if (Cast<AUTPlayerController>(GetController()))
 			{
 				// client-side check fire buttons if weapon not firing, and fire
+				((AUTPlayerController*)GetController())->ClientVerifyFiringInputs();
 			}
 		}
 	}

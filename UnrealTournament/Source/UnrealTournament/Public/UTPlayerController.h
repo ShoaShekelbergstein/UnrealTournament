@@ -154,6 +154,10 @@ public:
 	UFUNCTION(unreliable, client)
 		void UTClientPlaySound(class USoundBase* Sound);
 
+	/** Called when weapon firing has been enabled to handle any firing buttons held down while firing was disabled. */
+	UFUNCTION(unreliable, client)
+		void ClientVerifyFiringInputs();
+
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 	virtual void InitInputSystem() override;
@@ -1000,6 +1004,11 @@ protected:
 	 * makes weapons feel a little more responsive while strafing
 	 */
 	TArray< FDeferredFireInput, TInlineAllocator<2> > DeferredFireInputs;
+
+private:
+	/** Used to trigger firing coming out of weapon firing disallowed. */
+	bool bFirePressed;
+	bool bAltFirePressed;
 
 public:
 	UFUNCTION(Reliable, Server, WithValidation)
