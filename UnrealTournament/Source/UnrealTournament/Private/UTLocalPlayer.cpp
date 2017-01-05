@@ -4913,15 +4913,20 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 				if ((uint32)MCPPulledData.CurrentVersionNumber > MyVersion )
 				{
 #if !UE_SERVER
-					ShowWebMessage(NSLOCTEXT("UTLocalPlayer","NeedtoUpdateTitle","New Version Available"), TEXT("https://wiki.unrealengine.com/Version_Notes"));
+					ShowWebMessage(NSLOCTEXT("UTLocalPlayer","NeedtoUpdateTitle","New Version Available"), TEXT("http://epic.gm/ood"));
 #endif
 				}
 				else if (IsMenuGame())
 				{
 					if (MCPPulledData.CurrentVersionNumber > LastLoadedVersionNumber)
 					{
+						// Delete the web cache to insure the new version is loaded.  CEFBrowser should give you a LoadURLIgnoringCache but it doesn't
+						FString WebCacheIndex = FPaths::GameSavedDir() + TEXT("/webcache/index");
+						FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*WebCacheIndex);
+
 						// Open a Web page with better info
-						ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), TEXT("https://wiki.unrealengine.com/Version_Notes"));
+						ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), TEXT("http://epic.gm/updt"));
+					
 						LastLoadedVersionNumber = (uint32)MCPPulledData.CurrentVersionNumber;
 						SaveConfig();
 					}
