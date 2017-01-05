@@ -46,7 +46,7 @@ namespace UnrealTournamentGame.Automation
 			this.S3BucketName = InS3BucketName;
 			this.BuildString = InBuildString;
 			this.Debug = InDebug;
-			this.InstallSumo = "true";
+			this.InstallSumo = "false";
 			this.GameBinaryPath = "Engine/Binaries/Linux";
 			this.GameLogPath = "/UnrealTournament/Saved/Logs";
 			this.GameSavedPath = "/UnrealTournament/Saved";
