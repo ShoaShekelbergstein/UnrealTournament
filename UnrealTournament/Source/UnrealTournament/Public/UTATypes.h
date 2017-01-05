@@ -259,7 +259,11 @@ namespace HighlightNames
 	const FName HardToKill = FName(TEXT("HardToKill"));
 	const FName Rallies = FName(TEXT("Rallies"));
 	const FName RallyPointPowered = FName(TEXT("RallyPointPowered"));
-
+	const FName HatTrick = FName(TEXT("HatTrick"));
+	const FName NotSureIfSerious = FName(TEXT("NotSureIfSerious"));
+	const FName ComeAtMeBro = FName(TEXT("ComeAtMeBro"));
+	const FName ThisIsSparta = FName(TEXT("ThisIsSparta"));
+	const FName AllOutOfBubbleGum = FName(TEXT("AllOutOfBubbleGum"));
 }
 
 namespace ArmorTypeName

@@ -96,6 +96,12 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 	UPROPERTY(BlueprintReadWrite)
 		bool bHaveRallyPoweredHighlight;
 
+	UPROPERTY(BlueprintReadWrite)
+		int32 HappyCount;
+
+	UPROPERTY(BlueprintReadWrite)
+		int32 HiredGunCount;
+
 	UFUNCTION()
 	virtual void OnBonusLevelChanged();
 

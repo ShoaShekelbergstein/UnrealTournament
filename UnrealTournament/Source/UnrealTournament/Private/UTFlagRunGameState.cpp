@@ -49,6 +49,10 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	HighlightMap.Add(HighlightNames::HappyToBeHere, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
 	HighlightMap.Add(HighlightNames::BobLife, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
 	HighlightMap.Add(HighlightNames::CoolBeans, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
+	HighlightMap.Add(HighlightNames::NotSureIfSerious, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
+	HighlightMap.Add(HighlightNames::ComeAtMeBro, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
+	HighlightMap.Add(HighlightNames::ThisIsSparta, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
+	HighlightMap.Add(HighlightNames::AllOutOfBubbleGum, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
 
 	HighlightMap.Add(HighlightNames::RedeemerRejection, NSLOCTEXT("AUTGameMode", "RedeemerRejection", "Rejected Redeemer"));
 	HighlightMap.Add(HighlightNames::FlagDenials, NSLOCTEXT("AUTGameMode", "FlagDenials", "{0} Denials"));
@@ -58,17 +62,22 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	HighlightMap.Add(HighlightNames::HardToKill, NSLOCTEXT("AUTGameMode", "HardToKill", "Only died {0} times"));
 	HighlightMap.Add(HighlightNames::Rallies, NSLOCTEXT("AUTGameMode", "Rallies", "{0} Rallies"));
 	HighlightMap.Add(HighlightNames::RallyPointPowered, NSLOCTEXT("AUTGameMode", "RallyPointPowered", "{0} RallyPoints Powered"));
+	HighlightMap.Add(HighlightNames::HatTrick, NSLOCTEXT("AUTGameMode", "HatTrick", "3 Flag Caps"));
 
 	ShortHighlightMap.Add(HighlightNames::BadMF, NSLOCTEXT("AUTGameMode", "BadMF", "Bad MotherF**ker"));
 	ShortHighlightMap.Add(HighlightNames::LikeABoss, NSLOCTEXT("AUTGameMode", "LikeABoss", "Like a Boss"));
 	ShortHighlightMap.Add(HighlightNames::DeathIncarnate, NSLOCTEXT("AUTGameMode", "DeathIncarnate", "Death Incarnate"));
 	ShortHighlightMap.Add(HighlightNames::NaturalBornKiller, NSLOCTEXT("AUTGameMode", "NaturalBornKiller", "Natural Born Killer"));
-	ShortHighlightMap.Add(HighlightNames::SpecialForces, NSLOCTEXT("AUTGameMode", "SpecialForces", "Special Forces"));
+	ShortHighlightMap.Add(HighlightNames::SpecialForces, NSLOCTEXT("AUTGameMode", "SpecialForces", "Honey Badger"));
 	ShortHighlightMap.Add(HighlightNames::HiredGun, NSLOCTEXT("AUTGameMode", "HiredGun", "Hired Gun"));
 	ShortHighlightMap.Add(HighlightNames::HappyToBeHere, NSLOCTEXT("AUTGameMode", "HappyToBeHere", "Just Happy To Be Here"));
 	ShortHighlightMap.Add(HighlightNames::MostKillsTeam, NSLOCTEXT("AUTGameMode", "ShortMostKills", "Top Gun"));
 	ShortHighlightMap.Add(HighlightNames::BobLife, NSLOCTEXT("AUTGameMode", "BobLife", "Living the Bob Life"));
 	ShortHighlightMap.Add(HighlightNames::CoolBeans, NSLOCTEXT("AUTGameMode", "CoolBeans", "Cool Beans Yo"));
+	ShortHighlightMap.Add(HighlightNames::NotSureIfSerious, NSLOCTEXT("AUTGameMode", "NotSureIfSerious", "Not Sure If Serious"));
+	ShortHighlightMap.Add(HighlightNames::ComeAtMeBro, NSLOCTEXT("AUTGameMode", "ComeAtMeBro", "Come at Me Bro"));
+	ShortHighlightMap.Add(HighlightNames::ThisIsSparta, NSLOCTEXT("AUTGameMode", "ThisIsSparta", "This is Sparta!"));
+	ShortHighlightMap.Add(HighlightNames::AllOutOfBubbleGum, NSLOCTEXT("AUTGameMode", "AllOutOfBubbleGum", "All Out of Bubblegum"));
 
 	ShortHighlightMap.Add(HighlightNames::RedeemerRejection, NSLOCTEXT("AUTGameMode", "ShortRejection", "Redeem this"));
 	ShortHighlightMap.Add(HighlightNames::FlagDenials, NSLOCTEXT("AUTGameMode", "ShortDenials", "You shall not pass"));
@@ -78,6 +87,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	ShortHighlightMap.Add(HighlightNames::HardToKill, NSLOCTEXT("AUTGameMode", "ShortHardToKill", "Hard to Kill"));
 	ShortHighlightMap.Add(HighlightNames::Rallies, NSLOCTEXT("AUTGameMode", "ShortRallies", "Beam me Up"));
 	ShortHighlightMap.Add(HighlightNames::RallyPointPowered, NSLOCTEXT("AUTGameMode", "ShortRallyPointPowered", "Power Source"));
+	ShortHighlightMap.Add(HighlightNames::HatTrick, NSLOCTEXT("AUTGameMode", "ShortHatTrick", "Hat Trick"));
 }
 
 void AUTFlagRunGameState::BeginPlay()
@@ -440,19 +450,6 @@ int32 AUTFlagRunGameState::NumHighlightsNeeded()
 
 void AUTFlagRunGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 {
-	if (HasMatchEnded())
-	{
-		if (PS->GetRoundStatsValue(NAME_FCKills) > 0)
-		{
-			PS->AddMatchHighlight(NAME_FCKills, PS->GetRoundStatsValue(NAME_FCKills));
-			if (PS->MatchHighlights[NumHighlightsNeeded() - 1] != NAME_None)
-			{
-				return;
-			}
-		}
-		AUTGameState::AddMinorHighlights_Implementation(PS);
-		return;
-	}
 	if (PS->MatchHighlights[0] != NAME_None)
 	{
 		return;
@@ -568,30 +565,34 @@ void AUTFlagRunGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 
 		if (PS->MatchHighlightData[0] > 4)
 		{
-			PS->MatchHighlights[0] = (PS->MatchHighlightData[0] > 7) ? HighlightNames::CoolBeans : HighlightNames::BobLife;
+			PS->MatchHighlights[0] = (PS->MatchHighlightData[0] > 7) ? HighlightNames::AllOutOfBubbleGum : HighlightNames::BobLife;
+		}
+		else if (PS->MatchHighlightData[0] > 2)
+		{
+			FName HappyNames[2] = { HighlightNames::HiredGun, HighlightNames::CoolBeans };
+			PS->MatchHighlights[0] = HappyNames[HiredGunCount % 2];
+			HiredGunCount++;
 		}
 		else
 		{
-			PS->MatchHighlights[0] = (PS->MatchHighlightData[0] > 2) ? HighlightNames::HiredGun : HighlightNames::HappyToBeHere;
+			FName HappyNames[2] = { HighlightNames::HappyToBeHere, HighlightNames::NotSureIfSerious };
+			PS->MatchHighlights[0] = HappyNames[HappyCount % 2];
+			HappyCount++;
 		}
 	}
 	else
 	{
-		PS->MatchHighlights[0] = (PS->RoundDamageDone > 0) ? HighlightNames::HappyToBeHere : HighlightNames::ParticipationAward;
+		PS->MatchHighlights[0] = HighlightNames::ParticipationAward;
 	}
 }
 
 // new plan - rank order kills, give pending award.. Early out if good enough, override for lower
 void AUTFlagRunGameState::UpdateHighlights_Implementation()
 {
-	if (HasMatchEnded())
-	{
-		AUTGameState::UpdateHighlights_Implementation();
-		return;
-	}
-
 	bHaveRallyHighlight = false;
 	bHaveRallyPoweredHighlight = false;
+	HappyCount = 0;
+	HiredGunCount = 0;
 
 	//Collect all the weapons
 	TArray<AUTWeapon *> StatsWeapons;
@@ -687,28 +688,35 @@ void AUTFlagRunGameState::UpdateHighlights_Implementation()
 			}
 			else if (PS->Team)
 			{
-				AUTPlayerState* TopTeamKiller = (PS->Team->TeamIndex == 0) ? MostKillsRed : MostKillsBlue;
-				if (TopTeamKiller && (TotalKills >= TopTeamKiller->RoundKills + TopTeamKiller->RoundKillAssists))
+				if ((PS->FlagCaptures == 3) && ((PS->Team->TeamIndex == 0) == bRedToCap))
 				{
-					if (TotalKills >= 15)
-					{
-						PS->AddMatchHighlight(HighlightNames::BadMF, TotalKills);
-					}
-					else if (TotalKills >= 10)
-					{
-						PS->AddMatchHighlight(HighlightNames::LikeABoss, TotalKills);
-					}
-					else
-					{
-						PS->AddMatchHighlight(HighlightNames::MostKillsTeam, TotalKills);
-					}
+					PS->AddMatchHighlight(HighlightNames::HatTrick, 3);
 				}
 				else
 				{
-					AUTPlayerState* TopKillingBlows = (PS->Team->TeamIndex == 0) ? MostKillingBlowsRed : MostKillingBlowsBlue;
-					if (TopKillingBlows && (PS->RoundKills >= TopKillingBlows->RoundKills))
+					AUTPlayerState* TopTeamKiller = (PS->Team->TeamIndex == 0) ? MostKillsRed : MostKillsBlue;
+					if (TopTeamKiller && (TotalKills >= TopTeamKiller->RoundKills + TopTeamKiller->RoundKillAssists))
 					{
-						PS->AddMatchHighlight(HighlightNames::MostKillingBlowsAward, PS->RoundKills);
+						if (TotalKills >= 15)
+						{
+							PS->AddMatchHighlight(HighlightNames::BadMF, TotalKills);
+						}
+						else if (TotalKills >= 10)
+						{
+							PS->AddMatchHighlight((PS == MostKills) ? HighlightNames::LikeABoss : HighlightNames::ThisIsSparta, TotalKills);
+						}
+						else
+						{
+							PS->AddMatchHighlight((PS == MostKills) ? HighlightNames::MostKillsTeam : HighlightNames::ComeAtMeBro, TotalKills);
+						}
+					}
+					else
+					{
+						AUTPlayerState* TopKillingBlows = (PS->Team->TeamIndex == 0) ? MostKillingBlowsRed : MostKillingBlowsBlue;
+						if (TopKillingBlows && (PS->RoundKills >= TopKillingBlows->RoundKills))
+						{
+							PS->AddMatchHighlight(HighlightNames::MostKillingBlowsAward, PS->RoundKills);
+						}
 					}
 				}
 			}
