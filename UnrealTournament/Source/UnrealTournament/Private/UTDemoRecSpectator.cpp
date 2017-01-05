@@ -530,5 +530,18 @@ void AUTDemoRecSpectator::ClientReceiveLocalizedMessage_Implementation(TSubclass
 		}
 	}
 
+	UGameInstance* GameInstance = GetWorld()->GetGameInstance();
+	if (GameInstance != nullptr)
+	{
+		UUTGameViewportClient* ViewportClient = Cast<UUTGameViewportClient>(GameInstance->GetGameViewportClient());
+		if (ViewportClient != nullptr)
+		{
+			if (ViewportClient->GetActiveWorldOverride() == nullptr)
+			{
+				return;
+			}
+		}
+	}
+
 	Super::ClientReceiveLocalizedMessage_Implementation(Message, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
 }
