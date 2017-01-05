@@ -187,6 +187,9 @@ class UNREALTOURNAMENT_API UUTGameplayStatics : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, Category = "Collision", meta = (bIgnoreSelf = "true", WorldContext = "WorldContextObject", DisplayName = "LineTraceForObjectsSimple", Keywords = "raycast"))
 	static bool LineTraceForObjectsSimple(UObject* WorldContextObject, const FVector Start, const FVector End, const TArray< TEnumAsByte<EObjectTypeQuery> > & ObjectTypes, bool bTraceComplex, EDrawDebugTrace::Type DrawDebugType, FVector& HitLocation, FVector& HitNormal, bool bIgnoreSelf);
 
+	UFUNCTION(BlueprintCallable, Category = "Collision", meta = (WorldContext = "WorldContextObject"))
+	static bool LineTraceForWorldBlockingOnly(UObject* WorldContextObject, const FVector Start, const FVector End, EDrawDebugTrace::Type DrawDebugType, FVector& HitLocation, FVector& HitNormal);
+
 	/** get current level name
 	 * bShortName true: DM-SomeMap
 	 * bShortName false: /Game/RestrictedAssets/Maps/DM-SomeMap

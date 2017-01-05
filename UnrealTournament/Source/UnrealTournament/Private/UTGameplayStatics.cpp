@@ -849,6 +849,50 @@ bool UUTGameplayStatics::GetBestTime(UObject* WorldContextObject, FName TimingSe
 	return false;
 }
 
+bool UUTGameplayStatics::LineTraceForWorldBlockingOnly(UObject* WorldContextObject, const FVector Start, const FVector End, EDrawDebugTrace::Type DrawDebugType, FVector& HitLocation, FVector& HitNormal)
+{
+	bool bHit = false;
+
+	if (WorldContextObject == nullptr)
+	{
+		return bHit;
+	}
+
+	FHitResult Hit;
+	UWorld* World = WorldContextObject->GetWorld();
+	if (World)
+	{
+		bHit = World->LineTraceSingleByChannel(Hit, Start, End, ECC_Pawn, FCollisionQueryParams(), WorldResponseParams);
+		HitLocation = Hit.Location;
+		HitNormal = Hit.Normal;
+	}
+
+	if (DrawDebugType != EDrawDebugTrace::None)
+	{
+		FLinearColor TraceColor = FLinearColor::Red;
+		FLinearColor TraceHitColor = FLinearColor::Green;
+		float DrawTime = 5.0f;
+
+		bool bPersistent = DrawDebugType == EDrawDebugTrace::Persistent;
+		float LifeTime = (DrawDebugType == EDrawDebugTrace::ForDuration) ? DrawTime : 0.f;
+
+		if (bHit && Hit.bBlockingHit)
+		{
+			// Red up to the blocking hit, green thereafter
+			::DrawDebugLine(World, Start, Hit.ImpactPoint, TraceColor.ToFColor(true), bPersistent, LifeTime);
+			::DrawDebugLine(World, Hit.ImpactPoint, End, TraceHitColor.ToFColor(true), bPersistent, LifeTime);
+			::DrawDebugPoint(World, Hit.ImpactPoint, 16.f, TraceColor.ToFColor(true), bPersistent, LifeTime);
+		}
+		else
+		{
+			// no hit means all red
+			::DrawDebugLine(World, Start, End, TraceColor.ToFColor(true), bPersistent, LifeTime);
+		}
+	}
+
+	return bHit;
+}
+
 bool UUTGameplayStatics::LineTraceForObjectsSimple(UObject* WorldContextObject, const FVector Start, const FVector End, const TArray< TEnumAsByte<EObjectTypeQuery> > & ObjectTypes, bool bTraceComplex, EDrawDebugTrace::Type DrawDebugType, FVector& HitLocation, FVector& HitNormal, bool bIgnoreSelf)
 {
 	FHitResult Hit;
