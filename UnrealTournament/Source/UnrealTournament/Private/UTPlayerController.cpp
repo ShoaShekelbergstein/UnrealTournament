@@ -57,6 +57,7 @@
 #include "UTDemoRecSpectator.h"
 #include "UTFlagRunScoreboard.h"
 #include "UTFlagRunPvEHUD.h"
+#include "UTGauntletGameMessage.h"
 
 static TAutoConsoleVariable<float> CVarUTKillcamStartDelay(
 	TEXT("UT.KillcamStartDelay"),
@@ -4377,32 +4378,7 @@ void AUTPlayerController::ClientPumpkinPickedUp_Implementation(float GainedAmoun
 
 void AUTPlayerController::DebugTest(FString TestCommand)
 {
-	if (UTCharacter != nullptr)
-	{
-		AUTGauntletFlag* Flag = Cast<AUTGauntletFlag>(UTCharacter->GetCarriedObject());
-		if (Flag != nullptr)
-		{
-			if (TestCommand.Equals(TEXT("debugon"), ESearchCase::IgnoreCase))
-			{
-				Flag->bDebugGPS = true;
-			}
-			else if (TestCommand.Equals(TEXT("debugoff"), ESearchCase::IgnoreCase))
-			{
-				Flag->bDebugGPS = false;
-				FlushPersistentDebugLines(GetWorld());
-				FlushDebugStrings(GetWorld());
-			}
-			else if (TestCommand.Equals(TEXT("gpson"), ESearchCase::IgnoreCase))
-			{
-				Flag->bDisableGPS = false;
-			}
-			else if (TestCommand.Equals(TEXT("gpsoff"), ESearchCase::IgnoreCase))
-			{
-				Flag->bDisableGPS = true;
-			}
-		}
-	}
-
+	ClientReceiveLocalizedMessage(UUTGauntletGameMessage::StaticClass(), 6, nullptr, nullptr, nullptr);
 	Super::DebugTest(TestCommand);
 
 }

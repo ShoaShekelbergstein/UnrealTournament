@@ -28,7 +28,7 @@ void UUTUMGWidget::CloseWidget()
 	}
 }
 
-void UUTUMGWidget::ShowParticalSystem(UParticleSystem* ParticalSystem, FVector2D ScreenLocation, bool bRelativeCoords, FVector LocationModifier, FVector DirectionModifier)
+void UUTUMGWidget::ShowParticalSystem(UParticleSystem* ParticalSystem, FVector2D ScreenLocation, bool bRelativeCoords, float LocationModifier, FVector DirectionModifier)
 {
 	if (UTPlayerOwner == nullptr || UTPlayerOwner->PlayerController == nullptr) return; // Quick out.  We need a local player to do this
 
@@ -42,7 +42,6 @@ void UUTUMGWidget::ShowParticalSystem(UParticleSystem* ParticalSystem, FVector2D
 	FVector WorldLocation, WorldDirection;
 	if ( UGameplayStatics::DeprojectScreenToWorld(UTPlayerOwner->PlayerController, ScreenLocation, WorldLocation, WorldDirection) )
 	{
-		WorldDirection += DirectionModifier;
-		UGameplayStatics::SpawnEmitterAtLocation(UTPlayerOwner->PlayerController, ParticalSystem, WorldLocation + (WorldDirection.GetSafeNormal() * LocationModifier), WorldDirection.ToOrientationRotator());		
+		UGameplayStatics::SpawnEmitterAtLocation(UTPlayerOwner->PlayerController, ParticalSystem, WorldLocation + (WorldDirection * LocationModifier), (WorldDirection + DirectionModifier).ToOrientationRotator());		
 	}
 }

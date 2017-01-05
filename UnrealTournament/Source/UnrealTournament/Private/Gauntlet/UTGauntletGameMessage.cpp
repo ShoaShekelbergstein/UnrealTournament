@@ -28,6 +28,7 @@ FText UUTGauntletGameMessage::GetText(int32 Switch, bool bTargetsPlayerState1, A
 		case 3 : return YouAreOnDefenseMessage; break;
 		case 4 : return FText::FromString(TEXT(" ")); break;			// 4 is a UMG class
 		case 5 : return FText::FromString(TEXT(" ")); break;			// 5 is a UMG class
+		case 6 : return FText::FromString(TEXT(" ")); break;			// 5 is a UMG class
 	}
 
 	return Super::GetText(Switch, bTargetsPlayerState1, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
@@ -37,6 +38,7 @@ FString UUTGauntletGameMessage::GetAnnouncementUMGClassname(int32 Switch, const 
 {
 	if (Switch == 4) return TEXT("/Game/RestrictedAssets/UI/UMGHudMessages/UTTeamScoreMessageWidget.UTTeamScoreMessageWidget");
 	if (Switch == 5) return TEXT("/Game/RestrictedAssets/UI/UMGHudMessages/UTTeamVictoryMessage.UTTeamVictoryMessage");
+	if (Switch == 6) return TEXT("/Game/RestrictedAssets/UI/UMGHudMessages/UTRevivedMessage.UTRevivedMessage");
 	return TEXT("");
 }
 
@@ -44,5 +46,6 @@ float UUTGauntletGameMessage::GetLifeTime(int32 Switch) const
 {
 	if (Switch == 4) return 6.0f;
 	if (Switch == 5) return 5.0f;
+	if (Switch == 5) return 1.5f;
     return Blueprint_GetLifeTime(Switch);
 }

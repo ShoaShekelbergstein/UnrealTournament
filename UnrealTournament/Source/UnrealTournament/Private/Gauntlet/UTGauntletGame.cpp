@@ -609,7 +609,10 @@ void AUTGauntletGame::ScoreKill_Implementation(AController* Killer, AController*
 			{
 				OldestPlayer->SetOutOfLives(false);
 				OldestPlayer->ForceNetUpdate();
+
 				RestartPlayer(Cast<AController>(OldestPlayer->GetOwner()));
+				AUTPlayerController* UTPC = Cast<AUTPlayerController>(OldestPlayer->GetOwner());
+				UTPC->ClientReceiveLocalizedMessage(UUTGauntletGameMessage::StaticClass(), 6, nullptr, nullptr, nullptr);			
 			}
 		}
 	}
