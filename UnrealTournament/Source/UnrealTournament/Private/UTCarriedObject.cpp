@@ -559,6 +559,7 @@ void AUTCarriedObject::NoLongerHeld(AController* InstigatedBy)
 				}
 			}
 		}
+		TGuardValue<bool> DropGuard(bIsDropping, true); // make sure touch doesn't happen here, TossObject() will take care of it
 		DetachFrom(HoldingPawn->GetMesh());
 	}
 	LastHolder = Holder;
