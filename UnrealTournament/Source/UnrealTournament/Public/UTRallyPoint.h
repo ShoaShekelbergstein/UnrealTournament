@@ -150,6 +150,9 @@ class UNREALTOURNAMENT_API AUTRallyPoint : public AUTGameObjective, public IUTRe
 	virtual void Tick(float DeltaTime) override;
 	virtual void PostRenderFor(APlayerController *PC, UCanvas *Canvas, FVector CameraPosition, FVector CameraDir) override;
 
+	/** Draw rally charging thermometer. */
+	virtual void DrawChargingThermometer(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, bool bFixedPosition);
+
 	UPROPERTY()
 		bool bBeaconWasLeft;
 

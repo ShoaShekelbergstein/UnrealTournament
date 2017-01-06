@@ -769,16 +769,60 @@ FVector AUTRallyPoint::GetAdjustedScreenPosition(UCanvas* Canvas, const FVector&
 	return DrawScreenPosition;
 }
 
+void AUTRallyPoint::DrawChargingThermometer(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, bool bFixedPosition)
+{
+	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PC);
+	if (UTPC && UTPC->MyUTHUD)
+	{
+		float Width = 150.f;
+		float Height = 21.f;
+		float WidthScale = Canvas->ClipX / 1920.f;;
+		float HeightScale = WidthScale;
+		WidthScale *= 0.75f;
+		FLinearColor ChargeColor = FLinearColor::White;
+		float ChargePct = FMath::Clamp((RallyReadyDelay - ClientCountdown) / RallyReadyDelay, 0.f, 1.f);
+		UTexture* Texture = UTPC->MyUTHUD->HUDAtlas;
+		float DistanceScaling = 1.f;
+
+		float U = 127.f / Texture->Resource->GetSizeX();
+		float V = 641.f / Texture->Resource->GetSizeY();
+		float UL = U + (Width*ChargePct / Texture->Resource->GetSizeX());
+		float VL = V + (Height / Texture->Resource->GetSizeY());
+		FVector2D RenderPos = FVector2D(0.5f*Canvas->ClipX - (0.5f*Width), 0.4f*Canvas->ClipY - (0.5f*Height));
+		if (!bFixedPosition)
+		{
+			// position and scale based on world location
+			FVector ViewDir = UTPC->GetControlRotation().Vector();
+			float Dist = FMath::Max(1.f,(CameraPosition - GetActorLocation()).Size());
+			bool bDrawEdgeArrow = false;
+			FVector WorldPosition = GetActorLocation() + FVector(0.f, 0.f, 200.f);
+			FVector ScreenPos = GetAdjustedScreenPosition(Canvas, WorldPosition, CameraPosition, ViewDir, Dist, 20.f, bDrawEdgeArrow);
+			DistanceScaling = FMath::Min(0.5f, 1000.f/Dist);
+			RenderPos.X = ScreenPos.X - 0.5f*Width*DistanceScaling;
+			RenderPos.Y = ScreenPos.Y - 8.f;
+		}
+
+		FLinearColor DrawColor = FLinearColor::White;
+		DrawColor.A = 0.8f;
+
+		FCanvasTileItem ImageItem(RenderPos, Texture->Resource, DistanceScaling*FVector2D(Width*ChargePct, Height), FVector2D(U, V), FVector2D(UL, VL), DrawColor);
+		ImageItem.BlendMode = ESimpleElementBlendMode::SE_BLEND_Translucent;
+		Canvas->DrawItem(ImageItem);
+
+		V = 612.f / Texture->Resource->GetSizeY();
+		UL = U + (Width / Texture->Resource->GetSizeX());
+		VL = V + (Height / Texture->Resource->GetSizeY());
+		FCanvasTileItem ImageItemB(RenderPos, Texture->Resource, DistanceScaling*FVector2D(Width, Height), FVector2D(U, V), FVector2D(UL, VL), DrawColor);
+		ImageItemB.BlendMode = ESimpleElementBlendMode::SE_BLEND_Translucent;
+		Canvas->DrawItem(ImageItemB);
+	}
+}
+
 void AUTRallyPoint::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
 {
 	AUTPlayerState* ViewerPS = PC ? Cast <AUTPlayerState>(PC->PlayerState) : nullptr;
 	AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	if (!ViewerPS || !UTGS || !ViewerPS->Team)
-	{
-		return;
-	}
-	bool bViewerIsAttacking = (UTGS->bRedToCap == (ViewerPS->Team->TeamIndex == 0));
-	if (!UTGS->bEnemyRallyPointIdentified && !bViewerIsAttacking)
 	{
 		return;
 	}
@@ -790,42 +834,24 @@ void AUTRallyPoint::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVecto
 		}
 		if (RallyPointState == RallyPointStates::Charging)
 		{
-			AUTPlayerController* UTPC = Cast<AUTPlayerController>(PC);
-			if (UTPC && UTPC->MyUTHUD)
-			{
-				float Width = 150.f;
-				float Height = 21.f;
-				float WidthScale = Canvas->ClipX / 1920.f;;
-				float HeightScale = WidthScale;
-				WidthScale *= 0.75f;
-				FLinearColor ChargeColor = FLinearColor::White;
-				float ChargePct = FMath::Clamp((RallyReadyDelay - ClientCountdown) / RallyReadyDelay, 0.f, 1.f);
-				UTexture* Texture = UTPC->MyUTHUD->HUDAtlas;
-
-				FVector2D RenderPos = FVector2D(0.5f*Canvas->ClipX - (0.5f*Width), 0.4f*Canvas->ClipY - (0.5f*Height));
-
-				float U = 127.f / Texture->Resource->GetSizeX();
-				float V = 641.f / Texture->Resource->GetSizeY();
-				float UL = U + (Width*ChargePct / Texture->Resource->GetSizeX());
-				float VL = V + (Height / Texture->Resource->GetSizeY());
-				FLinearColor DrawColor = FLinearColor::White;
-				DrawColor.A = 0.8f;
-
-				FCanvasTileItem ImageItem(RenderPos, Texture->Resource, FVector2D(Width*ChargePct, Height), FVector2D(U, V), FVector2D(UL, VL), DrawColor);
-				ImageItem.BlendMode = ESimpleElementBlendMode::SE_BLEND_Translucent;
-				Canvas->DrawItem(ImageItem);
-
-				V = 612.f / Texture->Resource->GetSizeY();
-				UL = U + (Width / Texture->Resource->GetSizeX());
-				VL = V + (Height / Texture->Resource->GetSizeY());
-				FCanvasTileItem ImageItemB(RenderPos, Texture->Resource, FVector2D(Width, Height), FVector2D(U, V), FVector2D(UL, VL), DrawColor);
-				ImageItemB.BlendMode = ESimpleElementBlendMode::SE_BLEND_Translucent;
-				Canvas->DrawItem(ImageItemB);
-			}
+			DrawChargingThermometer(PC, Canvas, CameraPosition, true);
 			return;
 		}
 	}
 	else if (RallyPointState != RallyPointStates::Powered)
+	{
+		if (RallyPointState == RallyPointStates::Charging)
+		{
+			AUTCharacter* FC = (UTGS && UTGS->GetOffenseFlag()) ? UTGS->GetOffenseFlag()->HoldingPawn : nullptr;
+			if (FC && (GetWorld()->GetTimeSeconds() - FC->GetLastRenderTime() < 0.1f) && PC->LineOfSightTo(FC))
+			{
+				DrawChargingThermometer(PC, Canvas, CameraPosition, false);
+			}
+		}
+		return;
+	}
+	bool bViewerIsAttacking = (UTGS->bRedToCap == (ViewerPS->Team->TeamIndex == 0));
+	if (!UTGS->bEnemyRallyPointIdentified && !bViewerIsAttacking)
 	{
 		return;
 	}
