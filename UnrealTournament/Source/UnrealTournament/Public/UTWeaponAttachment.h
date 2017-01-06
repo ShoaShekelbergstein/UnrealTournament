@@ -93,9 +93,24 @@ public:
 	/** optional bullet whip sound when instant hit shots pass close by a local player without hitting */
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	USoundBase* BulletWhip;
+
 	/** maximum distance from fire line player can be and still get the bullet whip sound */
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	float MaxBulletWhipDist;
+
+	/** Time to delay bulletwhip to separate from firing sound. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		float BulletWhipDelay;
+
+	/** Save bullet path start and end for delayed bullet whip. */
+	UPROPERTY(BlueprintReadWrite, Category = "Weapon")
+		FVector BulletWhipStart;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Weapon")
+		FVector BulletWhipEnd;
+
+	UPROPERTY()
+		TArray<AUTPlayerController*>  BulletWhipHearers;
 
 	virtual void BeginPlay() override;
 	virtual void RegisterAllComponents() override;
@@ -151,8 +166,14 @@ public:
 	/** set main skin override for the weapon, NULL to restore to default */
 	virtual void SetSkin(UMaterialInterface* NewSkin);
 
+	/** Play bulletwhip (calls DelayedBulletWhip(). */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void PlayBulletWhip();
+
+	FTimerHandle BulletWhipHandle;
+
+	/**  Actually plays bulletwhip sound, delayed by BulletWhipDelay*/
+	virtual void DelayedBulletWhip();
 
 	virtual void MarkComponentsAsPendingKill() override
 	{
