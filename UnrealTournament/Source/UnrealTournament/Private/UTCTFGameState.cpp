@@ -108,11 +108,6 @@ void AUTCTFGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & O
 	DOREPLIFETIME(AUTCTFGameState, NumRounds);
 }
 
-bool AUTCTFGameState::AllowMinimapFor(AUTPlayerState* PS)
-{
-	return true;
-}
-
 void AUTCTFGameState::SetMaxNumberOfTeams(int32 TeamCount)
 {
 	for (int32 TeamIdx = 0; TeamIdx < TeamCount; TeamIdx++)
