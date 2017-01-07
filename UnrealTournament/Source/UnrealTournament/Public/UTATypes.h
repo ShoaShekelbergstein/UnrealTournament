@@ -248,6 +248,7 @@ namespace HighlightNames
 	const FName WeaponKills = FName(TEXT("WeaponKills"));
 	const FName KillingBlowsAward = FName(TEXT("KillingBlowsAward"));
 	const FName MostKillingBlowsAward = FName(TEXT("MostKillingBlowsAward"));
+	const FName CoupDeGrace = FName(TEXT("Coup de Grace"));
 	const FName FlagCap = FName(TEXT("FlagCap"));
 
 	const FName BadMF = FName(TEXT("BadMF"));

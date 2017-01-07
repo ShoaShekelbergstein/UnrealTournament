@@ -60,6 +60,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	HighlightMap.Add(HighlightNames::WeaponKills, NSLOCTEXT("AUTGameMode", "WeaponKills", "{0} kills with {1}"));
 	HighlightMap.Add(HighlightNames::KillingBlowsAward, NSLOCTEXT("AUTGameMode", "KillingBlowsAward", "{0} killing blows"));
 	HighlightMap.Add(HighlightNames::MostKillingBlowsAward, NSLOCTEXT("AUTGameMode", "MostKillingBlowsAward", "Most killing blows ({0})"));
+	HighlightMap.Add(HighlightNames::CoupDeGrace, NSLOCTEXT("AUTGameMode", "MostKillingBlowsAward", "Most killing blows ({0})"));
 	HighlightMap.Add(HighlightNames::HardToKill, NSLOCTEXT("AUTGameMode", "HardToKill", "Only died {0} times"));
 	HighlightMap.Add(HighlightNames::Rallies, NSLOCTEXT("AUTGameMode", "Rallies", "{0} Rallies"));
 	HighlightMap.Add(HighlightNames::RallyPointPowered, NSLOCTEXT("AUTGameMode", "RallyPointPowered", "{0} RallyPoints Powered"));
@@ -86,6 +87,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	ShortHighlightMap.Add(HighlightNames::WeaponKills, NSLOCTEXT("AUTGameMode", "ShortWeaponKills", "Weapon Master"));
 	ShortHighlightMap.Add(HighlightNames::KillingBlowsAward, NSLOCTEXT("AUTGameMode", "ShortKillingBlowsAward", "Nice Shot"));
 	ShortHighlightMap.Add(HighlightNames::MostKillingBlowsAward, NSLOCTEXT("AUTGameMode", "ShortMostKillingBlowsAward", "Punisher"));
+	ShortHighlightMap.Add(HighlightNames::CoupDeGrace, NSLOCTEXT("AUTGameMode", "CoupDeGrace", "Coup de Grace"));
 	ShortHighlightMap.Add(HighlightNames::HardToKill, NSLOCTEXT("AUTGameMode", "ShortHardToKill", "Hard to Kill"));
 	ShortHighlightMap.Add(HighlightNames::Rallies, NSLOCTEXT("AUTGameMode", "ShortRallies", "Beam me Up"));
 	ShortHighlightMap.Add(HighlightNames::RallyPointPowered, NSLOCTEXT("AUTGameMode", "ShortRallyPointPowered", "Power Source"));
@@ -723,7 +725,7 @@ void AUTFlagRunGameState::UpdateHighlights_Implementation()
 						AUTPlayerState* TopKillingBlows = (PS->Team->TeamIndex == 0) ? MostKillingBlowsRed : MostKillingBlowsBlue;
 						if (TopKillingBlows && (PS->RoundKills >= FMath::Max(2, TopKillingBlows->RoundKills)))
 						{
-							PS->AddMatchHighlight(HighlightNames::MostKillingBlowsAward, PS->RoundKills);
+							PS->AddMatchHighlight((PS == TopKillingBlows) ? HighlightNames::MostKillingBlowsAward : HighlightNames::CoupDeGrace, PS->RoundKills);
 						}
 					}
 				}
