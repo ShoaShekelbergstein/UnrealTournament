@@ -111,7 +111,6 @@ void AUTFlagRunHUD::GetPlayerListForIcons(TArray<AUTPlayerState*>& SortedPlayers
 void AUTFlagRunHUD::DrawHUD()
 {
 	Super::DrawHUD();
-
 	AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(GetWorld()->GetGameState());
 	bool bScoreboardIsUp = ScoreboardIsUp();
 	if (!bScoreboardIsUp && GS && GS->GetMatchState() == MatchState::InProgress)
@@ -119,7 +118,7 @@ void AUTFlagRunHUD::DrawHUD()
 		if (GS->FlagRunMessageTeam && UTPlayerOwner)
 		{
 			bUseShortWinMessage = true;
-			DrawWinConditions(TinyFont, 0.f, 0.07f*Canvas->ClipY, Canvas->ClipX, 1.f, true);
+			DrawWinConditions(TinyFont, 0.f, 0.07f*GetHUDWidgetScaleOverride()*Canvas->ClipY, Canvas->ClipX, GetHUDWidgetScaleOverride(), true);
 			bUseShortWinMessage = false;
 		}
 
