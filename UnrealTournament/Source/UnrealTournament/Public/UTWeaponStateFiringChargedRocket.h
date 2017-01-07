@@ -198,6 +198,10 @@ class UNREALTOURNAMENT_API UUTWeaponStateFiringChargedRocket : public UUTWeaponS
 			if (RocketLauncher->NumLoadedRockets > 0)
 			{
 				FireLoadedRocket();
+				if (GetOuterAUTWeapon()->GetCurrentState() == this)
+				{
+					GetOuterAUTWeapon()->GetWorldTimerManager().SetTimer(RefireCheckHandle, this, &UUTWeaponStateFiring::RefireCheckTimer, GetOuterAUTWeapon()->GetRefireTime(GetOuterAUTWeapon()->GetCurrentFireMode()), false);
+				}
 			}
 			else
 			{
