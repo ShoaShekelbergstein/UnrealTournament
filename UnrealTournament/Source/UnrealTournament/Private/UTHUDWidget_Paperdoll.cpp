@@ -212,7 +212,7 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 		FlagIcon.UVs = FlagHolderIconUVs;
 		FlagIcon.bUseTeamColors = false;
 		FlagIcon.RenderOpacity = 1.0f;
-		FLinearColor TeamColor = (PS && PS->Team && PS->Team->TeamIndex == 1) ? FLinearColor::Blue : FLinearColor::Red;
+		FLinearColor TeamColor = (PS && PS->Team && PS->Team->TeamIndex == 1) ? REDHUDCOLOR : BLUEHUDCOLOR;
 		FlagIcon.RenderColor = (bPlayerCanRally|| bShowTimer) ? FLinearColor::Yellow : TeamColor;
 		RenderObj_Texture(FlagIcon);
 

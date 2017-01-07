@@ -41,6 +41,9 @@ const int32 MAX_CHAT_TEXT_SIZE = 384;
 
 const float RALLY_ANIMATION_TIME = 1.2;
 
+const FLinearColor REDHUDCOLOR = FLinearColor(1.0f, 0.05f, 0.0f, 1.0f);
+const FLinearColor BLUEHUDCOLOR = FLinearColor(0.1f, 0.1f, 1.0f, 1.0f);
+
 UENUM()
 namespace EGameStage
 {

@@ -286,7 +286,7 @@ float UUTFlagRunScoreboard::DrawWinAnnouncement(float DeltaTime, UFont* InFont)
 	FFontRenderInfo TextRenderInfo;
 	TextRenderInfo.bEnableShadow = true;
 	TextRenderInfo.bClipText = true;
-	FLinearColor EmphasisColor = (GS->WinningTeam && (GS->WinningTeam->TeamIndex == 0)) ? FLinearColor::Red : FLinearColor::Blue;
+	FLinearColor EmphasisColor = (GS->WinningTeam && (GS->WinningTeam->TeamIndex == 0)) ? REDHUDCOLOR : BLUEHUDCOLOR;
 	float ScoreX = 0.5f * (Canvas->ClipX - RenderScale * (EmphasisXL + PostXL));
 
 	Canvas->SetLinearDrawColor(GS->WinningTeam->TeamColor);
@@ -368,7 +368,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 	FFontRenderInfo TextRenderInfo;
 	TextRenderInfo.bEnableShadow = true;
 	TextRenderInfo.bClipText = true;
-	FLinearColor EmphasisColor = (ScoringTeam && (ScoringTeam->TeamIndex == 0)) ? FLinearColor::Red : FLinearColor::Blue;
+	FLinearColor EmphasisColor = (ScoringTeam && (ScoringTeam->TeamIndex == 0)) ? REDHUDCOLOR : BLUEHUDCOLOR;
 	float ScoreX = 0.5f * (Canvas->ClipX - RenderScale * (EmphasisXL + PostXL));
 
 	Canvas->SetLinearDrawColor(ScoringTeam->TeamColor);

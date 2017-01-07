@@ -1516,7 +1516,7 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 				float IconSizeY = 36.f*RenderScale;
 				if (GS && (GS->CurrentRallyPoint == RP) && (UTPlayerOwner->UTPlayerState->bOnlySpectator || GS->bEnemyRallyPointIdentified || (GS->bRedToCap == (UTPlayerOwner->UTPlayerState->Team->TeamIndex == 0))))
 				{
-					RallyColor = GS->bRedToCap ? FLinearColor::Red : FLinearColor::Blue;
+					RallyColor = GS->bRedToCap ? REDHUDCOLOR : BLUEHUDCOLOR;
 					float Speed = 2.f;
 					float ScaleTime = Speed*GetWorld()->GetTimeSeconds() - int32(Speed*GetWorld()->GetTimeSeconds());
 					float Scaling = (ScaleTime < 0.5f)

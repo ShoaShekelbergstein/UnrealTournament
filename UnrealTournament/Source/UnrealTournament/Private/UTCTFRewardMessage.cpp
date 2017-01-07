@@ -125,7 +125,7 @@ void UUTCTFRewardMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText
 		PrefixText = TeamScorePrefix;
 		PostfixText = TeamScorePostfix;
 		EmphasisText = (Switch == 3) ? RedTeamName : BlueTeamName;
-		EmphasisColor = (Switch == 3) ? FLinearColor::Red : FLinearColor::Blue;
+		EmphasisColor = (Switch == 3) ? REDHUDCOLOR : BLUEHUDCOLOR;
 		return;
 	}
 	if (Switch == 7)

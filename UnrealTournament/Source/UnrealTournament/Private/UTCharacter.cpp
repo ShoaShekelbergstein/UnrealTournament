@@ -5629,7 +5629,7 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 		FVector ScreenPosition = Canvas->Project(WorldPosition + FVector(0.f, 0.f, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() * 2.25f));
 		float XPos = ScreenPosition.X - 0.5f*BarWidth;
 		float YPos = ScreenPosition.Y - BarHeight;
-		TeamColor.A = 0.6f;
+		TeamColor.A = 0.8f;
 		Canvas->SetLinearDrawColor(TeamColor);
 		Canvas->DrawTile(Canvas->DefaultTexture, XPos - Border, YPos - .25*(TextYL), BarWidth + 2.f*Border, BarHeight + 2.f*Border, 0, 0, 1, 1);
 

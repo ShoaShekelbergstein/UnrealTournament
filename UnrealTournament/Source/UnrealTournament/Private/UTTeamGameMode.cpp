@@ -17,6 +17,7 @@
 #include "UTBotCharacter.h"
 #include "AnalyticsEventAttribute.h"
 #include "IAnalyticsProvider.h"
+#include "UTATypes.h"
 
 UUTTeamInterface::UUTTeamInterface(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -28,10 +29,10 @@ AUTTeamGameMode::AUTTeamGameMode(const FObjectInitializer& ObjectInitializer)
 {
 	NumTeams = 2;
 	bBalanceTeams = true;
-	new(TeamColors) FLinearColor(1.0f, 0.05f, 0.0f, 1.0f);
-	new(TeamColors) FLinearColor(0.1f, 0.1f, 1.0f, 1.0f);
-	new(TeamColors) FLinearColor(0.0f, 1.0f, 0.0f, 1.0f);
-	new(TeamColors) FLinearColor(1.0f, 1.0f, 0.0f, 1.0f);
+	TeamColors.Add(REDHUDCOLOR);
+	TeamColors.Add(BLUEHUDCOLOR);
+	TeamColors.Add(FLinearColor(0.0f, 1.0f, 0.0f, 1.0f));
+	TeamColors.Add(FLinearColor(1.0f, 1.0f, 0.0f, 1.0f));
 
 	TeamNames.Add(NSLOCTEXT("UTTeamGameMode", "Team0Name", "Red"));
 	TeamNames.Add(NSLOCTEXT("UTTeamGameMode", "Team1Name", "Blue"));

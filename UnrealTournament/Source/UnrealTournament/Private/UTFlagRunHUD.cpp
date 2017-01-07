@@ -244,7 +244,7 @@ float AUTFlagRunHUD::DrawWinConditions(UFont* InFont, float XOffset, float YPos,
 		float ScoreX = XOffset;
 
 		FText EmphasisText = (GS->FlagRunMessageTeam->TeamIndex == 0) ? RedTeamText : BlueTeamText;
-		FLinearColor EmphasisColor = (GS->FlagRunMessageTeam->TeamIndex == 0) ? FLinearColor::Red : FLinearColor::Blue;
+		FLinearColor EmphasisColor = (GS->FlagRunMessageTeam->TeamIndex == 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
 
 		float YL, EmphasisXL;
 		Canvas->StrLen(InFont, EmphasisText.ToString(), EmphasisXL, YL);

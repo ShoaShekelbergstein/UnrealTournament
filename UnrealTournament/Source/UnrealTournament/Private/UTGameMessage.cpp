@@ -65,7 +65,7 @@ void UUTGameMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText, FTe
 		PrefixText = YouAreOn;
 		PostfixText = FText::GetEmpty();
 		EmphasisText = (Switch== 9) ? RedTeamName : BlueTeamName;
-		EmphasisColor = (Switch == 9) ? FLinearColor::Red : FLinearColor::Blue;
+		EmphasisColor = (Switch == 9) ? REDHUDCOLOR : BLUEHUDCOLOR;
 		return;
 	}
 	Super::GetEmphasisText(PrefixText, EmphasisText, PostfixText, EmphasisColor, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
