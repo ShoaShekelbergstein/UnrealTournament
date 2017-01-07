@@ -417,7 +417,7 @@ TSharedRef<SWidget> SUTHUDSettingsDialog::BuildGeneralTab()
 		+AddIntOption(NAME_HUDWidgetOpacity, NSLOCTEXT("HUDSETTINGS","OpacityLabel","General Opacity:"),NSLOCTEXT("SUTHUDSettingsDialog", "HUDOpacityTT", "Adjusts how transparent the HUD should be."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), int32(ProfileSettings->HUDWidgetOpacity * 100.0f), 0, 100)
 		//+AddIntOption(NAME_HUDWidgetBorderOpacity, NSLOCTEXT("HUDSETTINGS", "BorderOpacityLabel", "Border Opacity:"), NSLOCTEXT("SUTHUDSettingsDialog", "HUDBorderOpacityTT", "Adjusts how transparent the hard edge border around each element of the HUD should be."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), int32(ProfileSettings->HUDWidgetOpacity * 100.0f), 0, 100)
 		//+AddIntOption(NAME_HUDWidgetSlateOpacity, NSLOCTEXT("HUDSETTINGS", "SlateOpacityLabel", "Slate Opacity:"), NSLOCTEXT("SUTHUDSettingsDialog", "HUDSlateOpacityTT", "Adjusts how transparent the background portion of each HUD element should be."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), int32(ProfileSettings->HUDWidgetSlateOpacity * 100), 0, 100)
-		+AddIntOption(NAME_HUDWidgetScaleOverride, NSLOCTEXT("HUDSETTINGS", "ScaleLabel", "Scale:"), NSLOCTEXT("SUTHUDSettingsDialog", "HUDScaleTT", "Makes the HUD elements bigger or smaller."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), int32(ProfileSettings->HUDWidgetScaleOverride * 100.0f), 25, 300)
+		+AddIntOption(NAME_HUDWidgetScaleOverride, NSLOCTEXT("HUDSETTINGS", "ScaleLabel", "Scale:"), NSLOCTEXT("SUTHUDSettingsDialog", "HUDScaleTT", "Makes the HUD elements bigger or smaller."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), int32(ProfileSettings->HUDWidgetScaleOverride * 100.0f), 25, 150)
 
 		// Spacer....
 		+SVerticalBox::Slot().AutoHeight()
