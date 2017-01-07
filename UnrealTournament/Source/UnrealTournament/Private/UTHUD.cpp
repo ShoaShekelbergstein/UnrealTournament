@@ -1325,7 +1325,6 @@ EInputMode::Type AUTHUD::GetInputMode_Implementation() const
 	return EInputMode::EIM_None;
 }
 
-
 void AUTHUD::CreateMinimapTexture()
 {
 	MinimapTexture = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(GetWorld(), UCanvasRenderTarget2D::StaticClass(), 1024, 1024);

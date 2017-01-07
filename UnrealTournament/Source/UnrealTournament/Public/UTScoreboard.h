@@ -189,9 +189,6 @@ public:
 		bool bHaveWarmup;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
-		FText MinimapToggleText;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		bool bDrawMinimapInScoreboard;
 
 	/** If true force Epic account names on scoreboard. */

@@ -61,7 +61,6 @@ UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) 
 	NotReadyText = NSLOCTEXT("UTScoreboard", "NOTREADY", "");
 	WarmupText = NSLOCTEXT("UTScoreboard", "WARMUP", "WARMUP");
 	WarmupWarningText = NSLOCTEXT("UTScoreboard", "WarmupWarningText", "If players are warming up, will wait for match to fill before starting.");
-	MinimapToggleText = NSLOCTEXT("UTScoreboard", "MinimapToggle", "Press {key} to toggle Minimap");
 	
 	ReadyColor = FLinearColor::White;
 	ReadyScale = 1.f;
@@ -130,24 +129,13 @@ void UUTScoreboard::DrawMinimap(float RenderDelta)
 {
 	if (bDrawMinimapInScoreboard && UTGameState && UTHUDOwner && !UTHUDOwner->IsPendingKillPending())
 	{
-		bool bToggledMinimap = !UTGameState->HasMatchStarted() && (!UTPlayerOwner || !UTPlayerOwner->UTPlayerState || !UTPlayerOwner->UTPlayerState->bIsWarmingUp);
-		const float MapSize = (UTGameState && UTGameState->bTeamGame) ? FMath::Min(Canvas->ClipX - 2.f*ScaledEdgeSize - 2.f*ScaledCellWidth - MinimapPadding*RenderScale, 0.9f*Canvas->ClipY - 120.f * RenderScale)
-			: FMath::Min(0.5f*Canvas->ClipX, 0.9f*Canvas->ClipY - 120.f * RenderScale);
-		if (!bToggledMinimap || !UTHUDOwner->bShowScores)
-		{
-			float MapYPos = FMath::Max(120.f*RenderScale, MinimapCenter.Y*Canvas->ClipY - 0.5f*MapSize);
-			FVector2D LeftCorner = FVector2D(MinimapCenter.X*Canvas->ClipX - 0.5f*MapSize, MapYPos);
-			DrawTexture(UTHUDOwner->ScoreboardAtlas, LeftCorner.X, LeftCorner.Y, MapSize, MapSize, 149, 138, 32, 32, 0.5f, FLinearColor::Black);
-			UTHUDOwner->DrawMinimap(FColor(192, 192, 192, 220), MapSize, LeftCorner);
-		}
-		if (bToggledMinimap)
-		{
-			FFormatNamedArguments Args;
-			Args.Add("key", UTHUDOwner->ShowScoresLabel);
-			FText MinimapMessage = FText::Format(MinimapToggleText, Args);
-			float YPos = (UTGameState && UTGameState->bTeamGame) ? MinimapCenter.Y*Canvas->ClipY + 0.51f*MapSize : MinimapCenter.Y*Canvas->ClipY + 0.49f*MapSize;
-			DrawText(MinimapMessage, MinimapCenter.X*Canvas->ClipX - 0.5f*MapSize, YPos, UTHUDOwner->TinyFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
-		}
+		const float MapSize = (UTGameState && UTGameState->bTeamGame) ? FMath::Min(Canvas->ClipX - 2.f*ScaledEdgeSize - 2.f*ScaledCellWidth - MinimapPadding*RenderScale, 0.93f*Canvas->ClipY - 120.f * RenderScale)
+			: FMath::Min(0.5f*Canvas->ClipX, 0.93f*Canvas->ClipY - 120.f * RenderScale);
+
+		float MapYPos = FMath::Max(120.f*RenderScale, MinimapCenter.Y*Canvas->ClipY - 0.5f*MapSize);
+		FVector2D LeftCorner = FVector2D(MinimapCenter.X*Canvas->ClipX - 0.5f*MapSize, MapYPos);
+		DrawTexture(UTHUDOwner->ScoreboardAtlas, LeftCorner.X, LeftCorner.Y, MapSize, MapSize, 149, 138, 32, 32, 0.5f, FLinearColor::Black);
+		UTHUDOwner->DrawMinimap(FColor(192, 192, 192, 220), MapSize, LeftCorner);
 	}
 }
 
