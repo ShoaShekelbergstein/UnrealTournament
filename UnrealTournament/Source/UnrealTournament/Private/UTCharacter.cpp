@@ -5608,35 +5608,39 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 	AUTPlayerState* UTPS = Cast<AUTPlayerState>(PlayerState);
 	if (UTPS)
 	{
-		float TextXL, TextYL, MinTextXL;
-		UFont* TinyFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->TinyFont;
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+		bool bDrawHighlight = (GS && (UTPS->MatchHighlights[0] != NAME_None));
+		float TextXL, TextYL;
+		UFont* SmallFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->SmallFont;
 		FLinearColor TeamColor = UTPS->Team ? UTPS->Team->TeamColor : FLinearColor::Black;
-		float Border = 2.f;
+		TeamColor.G *= 0.5f;
 		float BarWidth, BarHeight;
-		FVector2D Scale(Canvas->ClipX / 1920.f, Canvas->ClipY / 1080.f);
+		float Scale = Canvas->ClipX / 1920.f;
+		float Border = 2.f*Scale;
 
-		Canvas->TextSize(TinyFont, PlayerState->PlayerName, TextXL, TextYL, 1.0f, 1.0f);
-		Canvas->TextSize(TinyFont, PlayerState->PlayerName, MinTextXL, TextYL, 1.0f, 1.0f);
-
-		TextXL *= Scale.X;
-		MinTextXL *= Scale.X;
-		TextYL *= Scale.Y;
-
-		BarWidth = Border + ((TextXL > MinTextXL) ? TextXL : MinTextXL);
-		BarHeight = Border + (.5*TextYL);
+		Canvas->TextSize(SmallFont, PlayerState->PlayerName, TextXL, TextYL, 1.0f, 1.0f);
+		TextXL *= Scale;
+		TextYL *= Scale;
+		BarWidth = Border + TextXL;
+		BarHeight = Border + 0.5f*TextYL;
 		
 		FVector WorldPosition = GetMesh()->GetComponentLocation();
-		FVector ScreenPosition = Canvas->Project(WorldPosition + FVector(0.f, 0.f, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() * 2.25f));
+		FVector ScreenPosition = ScreenPosition = Canvas->Project(WorldPosition + FVector(0.f, 0.f, 0.f *  GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()));
+		bool bNearEdge = FMath::Abs(ScreenPosition.X - 0.5f*Canvas->ClipX) > 0.25f*Canvas->ClipX;
+		float Bottom = bNearEdge ? Canvas->ClipY : 0.94f * Canvas->ClipY;
+		float NumLines = bDrawHighlight ? 3.f : 1.f;
+		ScreenPosition.Y = FMath::Min(ScreenPosition.Y, Bottom - Scale * NumLines * TextYL);
+
 		float XPos = ScreenPosition.X - 0.5f*BarWidth;
 		float YPos = ScreenPosition.Y - BarHeight;
-		TeamColor.A = 0.8f;
+		TeamColor.A = 0.7f;
 		Canvas->SetLinearDrawColor(TeamColor);
-		Canvas->DrawTile(Canvas->DefaultTexture, XPos - Border, YPos - .25*(TextYL), BarWidth + 2.f*Border, BarHeight + 2.f*Border, 0, 0, 1, 1);
+		Canvas->DrawTile(Canvas->DefaultTexture, XPos - Border, YPos - 0.25f*TextYL, BarWidth + 2.f*Border, BarHeight + 2.f*Border, 0, 0, 1, 1);
 
 		FLinearColor BeaconTextColor = FLinearColor::White;
 		BeaconTextColor.A = 0.9f;
-		FUTCanvasTextItem TextItem(FVector2D(FMath::TruncToFloat(Canvas->OrgX + XPos), FMath::TruncToFloat(Canvas->OrgY + YPos - 0.75f*BarHeight)), FText::FromString(PlayerState->PlayerName), TinyFont, BeaconTextColor, NULL);
-		TextItem.Scale = Scale;
+		FUTCanvasTextItem TextItem(FVector2D(FMath::TruncToFloat(Canvas->OrgX + XPos), FMath::TruncToFloat(Canvas->OrgY + YPos - 0.75f*BarHeight)), FText::FromString(PlayerState->PlayerName), SmallFont, BeaconTextColor, NULL);
+		TextItem.Scale = FVector2D(Scale, Scale);
 		TextItem.BlendMode = SE_BLEND_Translucent;
 		FLinearColor ShadowColor = FLinearColor::Black;
 		ShadowColor.A = BeaconTextColor.A;
@@ -5644,28 +5648,25 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 		TextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
 		Canvas->DrawItem(TextItem);
 
-		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS && (UTPS->MatchHighlights[0] != NAME_None))
+		if (bDrawHighlight)
 		{
+			ScreenPosition.Y += TextYL - 1.75f*BarHeight;
 			UFont* MediumFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->MediumFont;
+			UFont* TinyFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->TinyFont;
 			Canvas->TextSize(MediumFont, GS->ShortPlayerHighlightText(UTPS).ToString(), TextXL, TextYL, 1.0f, 1.0f);
 			float TinyXL, TinyYL;
 			Canvas->TextSize(TinyFont, GS->FormatPlayerHighlightText(UTPS, 0).ToString(), TinyXL, TinyYL, 1.0f, 1.0f);
 
-			ScreenPosition = Canvas->Project(WorldPosition + FVector(0.f, 0.f, 0.05f *  GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()));
-			bool bNearEdge = FMath::Abs(ScreenPosition.X - 0.5f*Canvas->ClipX) > 0.25f*Canvas->ClipX;
-			float Bottom = bNearEdge ? Canvas->ClipY : 0.95f * Canvas->ClipY;
-			ScreenPosition.Y = FMath::Min(ScreenPosition.Y, Bottom - Scale.Y * (TextYL + TinyYL));
-			FUTCanvasTextItem ShortHighlightTextItem(FVector2D(FMath::TruncToFloat(Canvas->OrgX + ScreenPosition.X - 0.5f*TextXL*Scale.X), FMath::TruncToFloat(Canvas->OrgY + ScreenPosition.Y - 0.2f*TextYL*Scale.Y)), GS->ShortPlayerHighlightText(UTPS), MediumFont, BeaconTextColor, NULL);
-			ShortHighlightTextItem.Scale = Scale;
+			FUTCanvasTextItem ShortHighlightTextItem(FVector2D(FMath::TruncToFloat(Canvas->OrgX + ScreenPosition.X - 0.5f*TextXL*Scale), FMath::TruncToFloat(Canvas->OrgY + ScreenPosition.Y - 0.2f*TextYL*Scale)), GS->ShortPlayerHighlightText(UTPS), MediumFont, BeaconTextColor, NULL);
+			ShortHighlightTextItem.Scale = FVector2D(Scale, Scale);
 			ShortHighlightTextItem.BlendMode = SE_BLEND_Translucent;
 			ShadowColor.A = 0.8f;
 			ShortHighlightTextItem.EnableShadow(ShadowColor);
 			ShortHighlightTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
 			Canvas->DrawItem(ShortHighlightTextItem);
 
-			FUTCanvasTextItem HighlightTextItem(FVector2D(FMath::TruncToFloat(Canvas->OrgX + ScreenPosition.X - 0.5f*TinyXL*Scale.X), FMath::TruncToFloat(Canvas->OrgY + ScreenPosition.Y + 0.8f*TextYL*Scale.Y)), GS->FormatPlayerHighlightText(UTPS, 0), TinyFont, BeaconTextColor, NULL);
-			HighlightTextItem.Scale = Scale;
+			FUTCanvasTextItem HighlightTextItem(FVector2D(FMath::TruncToFloat(Canvas->OrgX + ScreenPosition.X - 0.5f*TinyXL*Scale), FMath::TruncToFloat(Canvas->OrgY + ScreenPosition.Y + 0.7f*TextYL*Scale)), GS->FormatPlayerHighlightText(UTPS, 0), TinyFont, BeaconTextColor, NULL);
+			HighlightTextItem.Scale = FVector2D(Scale, Scale);
 			HighlightTextItem.BlendMode = SE_BLEND_Translucent;
 			HighlightTextItem.EnableShadow(ShadowColor);
 			HighlightTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
