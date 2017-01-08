@@ -1084,11 +1084,10 @@ void AUTHUD::CausedDamage(APawn* HitPawn, int32 Damage)
 
 void AUTHUD::DrawDamageNumbers()
 {
-#if !UE_BUILD_SHIPPING
-	//	UE_LOG(UT, Warning, TEXT("DrawDamageNumbers, numbers %d"), DamageNumbers.Num());
 	FFontRenderInfo TextRenderInfo;
 	TextRenderInfo.bEnableShadow = true;
 	Canvas->DrawColor = FColor::Red;
+	const float RenderScale = float(Canvas->SizeY) / 1080.0f;
 
 	for (int32 i = 0; i < DamageNumbers.Num(); i++)
 	{
@@ -1104,11 +1103,11 @@ void AUTHUD::DrawDamageNumbers()
 			FVector ScreenPosition = Canvas->Project(DamageNumbers[i].WorldPosition);
 			float XL, YL;
 			FString DamageString = FString::Printf(TEXT("%d"), DamageNumbers[i].DamageAmount);
-			Canvas->TextSize(MediumFont, DamageString, XL, YL, DamageNumbers[i].Scale, DamageNumbers[i].Scale);
-			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL, ScreenPosition.Y - 0.5f*YL, DamageNumbers[i].Scale, DamageNumbers[i].Scale, TextRenderInfo);
+			float NumberScale = RenderScale * DamageNumbers[i].Scale;
+			Canvas->TextSize(MediumFont, DamageString, XL, YL, 1.f, 1.f);
+			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*NumberScale, ScreenPosition.Y - NumberScale * (0.5f*YL + (DamageNumbers[i].Scale - 0.75f)*0.5f*YL), NumberScale, NumberScale, TextRenderInfo);
 		}
 	}
-#endif
 }
 
 FLinearColor AUTHUD::GetBaseHUDColor()
