@@ -28,7 +28,7 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	bLockedOnTarget = false;
 	LockCheckTime = 0.1f;
 	LockRange = 16000.0f;
-	LockAcquireTime = 0.5f;
+	LockAcquireTime = 0.6f;
 	LockTolerance = 0.2f;
 	LockedTarget = NULL;
 	PendingLockedTarget = NULL;
@@ -469,13 +469,13 @@ AUTProjectile* AUTWeap_RocketLauncher::FireRocketProjectile()
 	{
 		case 0://rockets
 		{
-			if (ShouldFireLoad())
+			if (ShouldFireLoad() || HasLockedTarget())
 			{
-				SpawnRotation.Yaw += FullLoadSpread*float(NumLoadedRockets-2.f);
+				SpawnRotation.Yaw += FullLoadSpread*float((NumLoadedRockets%3)-1.f);
 			}
 			NetSynchRandomSeed(); 
 			
-			FVector Offset = (FMath::Sin(NumLoadedRockets*PI*0.667f)*FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::Z) + FMath::Cos(NumLoadedRockets*PI*0.667f)*FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::X)) * BarrelRadius * 1.5f;
+			FVector Offset = (FMath::Sin(NumLoadedRockets*PI*0.667f)*FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::Z) + FMath::Cos(NumLoadedRockets*PI*0.667f)*FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::X)) * BarrelRadius * 2.f;
 			ResultProj = SpawnNetPredictedProjectile(RocketProjClass, SpawnLocation + Offset, SpawnRotation);
 
 			//Setup the seeking target
@@ -719,7 +719,7 @@ void AUTWeap_RocketLauncher::DrawWeaponCrosshair_Implementation(UUTHUDWidget* We
 			FVector ScreenTarget = WeaponHudWidget->GetCanvas()->Project(LockedTarget->GetActorLocation());
 			ScreenTarget.X -= WeaponHudWidget->GetCanvas()->SizeX*0.5f;
 			ScreenTarget.Y -= WeaponHudWidget->GetCanvas()->SizeY*0.5f;
-			WeaponHudWidget->DrawTexture(LockCrosshairTexture, ScreenTarget.X, ScreenTarget.Y, W, H, 0.f, 0.f, W, H, 1.f, FLinearColor::Yellow, FVector2D(0.5f, 0.5f), CrosshairRot);
+			WeaponHudWidget->DrawTexture(LockCrosshairTexture, ScreenTarget.X, ScreenTarget.Y, W, H, 0.f, 0.f, W, H, 1.f, FLinearColor::Red, FVector2D(0.5f, 0.5f), CrosshairRot);
 		}
 		else if (PendingLockedTarget && (GetWorld()->GetTimeSeconds() - PendingLockedTargetTime > LockAcquireTime- AcquireDisplayTime))
 		{
