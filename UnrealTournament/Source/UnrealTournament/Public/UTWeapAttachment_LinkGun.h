@@ -16,17 +16,22 @@ public:
 		PrimaryActorTick.bStartWithTickEnabled = true;
 	}
 protected:
-	/** simulated pulse target, set in FiringExtraUpdated() */
-	UPROPERTY(BlueprintReadOnly)
-	AActor* PulseTarget;
 
+	/** Pulse target currently applied to link beam */
+	UPROPERTY(BlueprintReadOnly)
+		AActor* PulseTarget;
+
+	UPROPERTY()
 	float LastBeamPulseTime;
+
+	virtual void UpdatePulseTarget();
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LinkGun)
 	UParticleSystem* PulseSuccessEffect;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LinkGun)
 	UParticleSystem* PulseFailEffect;
 
-	virtual void FiringExtraUpdated() override;
 	virtual void Tick(float DeltaTime) override;
 };

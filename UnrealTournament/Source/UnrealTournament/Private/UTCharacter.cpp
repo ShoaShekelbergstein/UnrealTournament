@@ -3314,6 +3314,7 @@ void AUTCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 	DOREPLIFETIME_CONDITION(AUTCharacter, WeaponAttachmentClass, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(AUTCharacter, bApplyWallSlide, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(AUTCharacter, bTriggerRallyEffect, COND_None);
+	DOREPLIFETIME_CONDITION(AUTCharacter, PulseTarget, COND_SkipOwner);
 
 	DOREPLIFETIME_CONDITION(AUTCharacter, HolsteredWeaponAttachmentClass, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(AUTCharacter, DamageScaling, COND_None);

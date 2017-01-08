@@ -683,6 +683,10 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
 		float LastWeaponFireTime;
 
+	/** Set on successful link pull for other clients. */
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Weapon")
+		AActor* PulseTarget;
+
 	/** set when client is locally simulating FlashLocation so ignore any replicated value */
 	bool bLocalFlashLoc;
 

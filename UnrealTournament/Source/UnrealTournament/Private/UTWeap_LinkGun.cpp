@@ -265,6 +265,10 @@ void AUTWeap_LinkGun::Tick(float DeltaTime)
 			PulseLoc = Hit.Location;
 		}*/
 	}
+	else if (UTOwner != nullptr)
+	{
+		UTOwner->PulseTarget = nullptr;
+	}
 }
 
 void AUTWeap_LinkGun::StartLinkPull()
@@ -275,6 +279,7 @@ void AUTWeap_LinkGun::StartLinkPull()
 	{
 		LastBeamPulseTime = GetWorld()->TimeSeconds;
 		PulseTarget = CurrentLinkedTarget;
+		UTOwner->PulseTarget = PulseTarget;
 		PulseLoc = PulseTarget->GetActorLocation();
 		UTOwner->TargetEyeOffset.Y = LinkPullKickbackY;
 		ServerSetPulseTarget(CurrentLinkedTarget);
@@ -319,6 +324,7 @@ void AUTWeap_LinkGun::ServerSetPulseTarget_Implementation(AActor* InTarget)
 	{
 		// use owner to target direction instead of exactly the weapon orientation so that shooting below center doesn't cause the pull to send them over the shooter's head
 		const FVector Dir = (PulseTarget->GetActorLocation() - PulseStart).GetSafeNormal();
+		UTOwner->PulseTarget = PulseTarget;
 		PulseLoc = PulseTarget->GetActorLocation();
 		PulseTarget->TakeDamage(LinkPullDamage, FUTPointDamageEvent(0.0f, Hit, Dir, BeamPulseDamageType, BeamPulseMomentum * Dir), UTOwner->Controller, this);
 		UUTGameplayStatics::UTPlaySound(GetWorld(), PullSucceeded, UTOwner, SRT_All, false, FVector::ZeroVector, Cast<AUTPlayerController>(PulseTarget->GetInstigatorController()), UTOwner, true, SAT_WeaponFire);
