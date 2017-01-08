@@ -533,13 +533,11 @@ void AUTPlayerState::IncrementKills(TSubclassOf<UDamageType> DamageType, bool bE
 			{
 				// delay actual announcement to keep multiple announcements in preferred order
 				bAnnounceWeaponSpree = (WeaponSprees[SpreeIndex].Kills == UTDamage.GetDefaultObject()->WeaponSpreeCount);
-				bShouldTauntKill = bShouldTauntKill || bAnnounceWeaponSpree;
 				// more likely to kill again with same weapon, so shorten search through array by swapping
 				WeaponSprees.Swap(0, SpreeIndex);
 			}
 			if (UTDamage.GetDefaultObject()->RewardAnnouncementClass)
 			{
-				bShouldTauntKill = true;
 				if (MyPC != nullptr)
 				{
 					MyPC->UTPlayerState->AddCoolFactorMinorEvent();
@@ -599,7 +597,7 @@ void AUTPlayerState::IncrementKills(TSubclassOf<UDamageType> DamageType, bool bE
 		bVictimIsLocalPlayer = bVictimIsLocalPlayer && (GetWorld()->GetNetMode() == NM_Standalone);
 		if (bShouldTauntKill && Controller)
 		{
-			if (bVictimIsLocalPlayer || ((GetWorld()->GetTimeSeconds() - LastTauntTime > 6.f) && GM && (GetWorld()->GetTimeSeconds() - GM->LastGlobalTauntTime > 3.f)))
+			if (bVictimIsLocalPlayer || ((GetWorld()->GetTimeSeconds() - LastTauntTime > 8.f) && GM && (GetWorld()->GetTimeSeconds() - GM->LastGlobalTauntTime > 15.f)))
 			{
 				LastTauntTime = GetWorld()->GetTimeSeconds();
 				GM->LastGlobalTauntTime = LastTauntTime;

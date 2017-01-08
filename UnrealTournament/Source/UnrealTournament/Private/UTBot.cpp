@@ -18,6 +18,7 @@
 #include "UTDefensePoint.h"
 #include "UTAIAction_Camp.h"
 #include "UTLift.h"
+#include "UTFlagRunGame.h"
 
 void FBotEnemyInfo::Update(EAIEnemyUpdateType UpdateType, const FVector& ViewerLoc)
 {
@@ -2739,13 +2740,17 @@ void AUTBot::ExecuteWhatToDoNext()
 			FName Orders = Squad->GetCurrentOrders(this);
 			if (Orders != AnnouncedOrders && FMath::FRand() < 0.1f)
 			{
-				if (Orders == NAME_Attack)
+				// no attack/defend announcements in FlagRun
+				if (GetWorld()->GetAuthGameMode<AUTFlagRunGame>() == nullptr)
 				{
-					SendVoiceMessage(StatusMessage::ImOnOffense);
-				}
-				else if (Orders == NAME_Defend)
-				{
-					SendVoiceMessage(StatusMessage::ImOnDefense);
+					if (Orders == NAME_Attack)
+					{
+						SendVoiceMessage(StatusMessage::ImOnOffense);
+					}
+					else if (Orders == NAME_Defend)
+					{
+						SendVoiceMessage(StatusMessage::ImOnDefense);
+					}
 				}
 				AnnouncedOrders = Orders;
 			}
