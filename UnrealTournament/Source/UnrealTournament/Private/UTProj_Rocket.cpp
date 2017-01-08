@@ -24,6 +24,7 @@ AUTProj_Rocket::AUTProj_Rocket(const class FObjectInitializer& ObjectInitializer
 	AdjustmentSpeed = 5000.0f;
 	bLeadTarget = true;
 	bRocketTeamSet = false;
+	MaxLeadDistance = 2000.f;
 }
 
 void AUTProj_Rocket::Tick(float DeltaTime)
@@ -33,9 +34,10 @@ void AUTProj_Rocket::Tick(float DeltaTime)
 	if (TargetActor != NULL)
 	{
 		FVector WantedDir = (TargetActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-		if (bLeadTarget)
+		float Dist = WantedDir.Size();
+		if (bLeadTarget && (Dist < MaxLeadDistance))
 		{
-			WantedDir += TargetActor->GetVelocity() * WantedDir.Size() / ProjectileMovement->MaxSpeed;
+			WantedDir += TargetActor->GetVelocity() * Dist / ProjectileMovement->MaxSpeed;
 		}
 
 		ProjectileMovement->Velocity += WantedDir * AdjustmentSpeed * DeltaTime;
@@ -45,30 +47,6 @@ void AUTProj_Rocket::Tick(float DeltaTime)
 		if (FVector::DotProduct(WantedDir, ProjectileMovement->Velocity) < 0.0f)
 		{
 			TargetActor = NULL;
-		}
-		else if ((GetNetMode() != NM_DedicatedServer) && (int32(8.f*GetWorld()->GetTimeSeconds()) != int32(8.f*(GetWorld()->GetTimeSeconds()-DeltaTime))))
-		{
-			AUTCharacter* UTChar = Cast<AUTCharacter>(Instigator);
-			if (UTChar)
-			{
-				if (!MeshMI)
-				{
-					OnRep_Instigator();
-				}
-				if (MeshMI)
-				{
-					static FName NAME_GunGlowsColor(TEXT("Gun_Glows_Color"));
-					FLinearColor NewColor = FLinearColor::Black;
-					NewColor.A = 0.3f;
-					if ((int32(8.f*GetWorld()->GetTimeSeconds()) % 3) == 0)
-					{
-						NewColor = (UTChar->GetTeamColor() == FLinearColor::White) ? FLinearColor::Red : UTChar->GetTeamColor();
-						NewColor.A = 10.f;
-					}
-					MeshMI->SetVectorParameterValue(NAME_GunGlowsColor, NewColor);
-					bRocketTeamSet = (NewColor != FLinearColor::White);
-				}
-			}
 		}
 		else if (!bRocketTeamSet && Instigator)
 		{
@@ -84,6 +62,65 @@ void AUTProj_Rocket::OnRep_TargetActor()
 	if (RL && UTChar->IsLocallyViewed())
 	{
 		RL->TrackingRockets.AddUnique(this);
+	}
+	else if (TargetActor)
+	{
+		APlayerController* PC = GEngine->GetFirstLocalPlayerController(GetWorld());
+		if (PC && PC->MyHUD && (PC->GetViewTarget() == TargetActor))
+		{
+			PC->MyHUD->AddPostRenderedActor(this);
+		}
+	}
+}
+
+void AUTProj_Rocket::Destroyed()
+{
+	Super::Destroyed();
+
+	if (GetWorld()->GetNetMode() != NM_DedicatedServer && GEngine->GetWorldContextFromWorld(GetWorld()) != NULL) // might not be able to get world context when exiting PIE
+	{
+		APlayerController* PC = GEngine->GetFirstLocalPlayerController(GetWorld());
+		if (PC && PC->MyHUD)
+		{
+			PC->MyHUD->RemovePostRenderedActor(this);
+		}
+	}
+}
+
+void AUTProj_Rocket::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
+{
+	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PC);
+	if (bExploded || IsPendingKillPending() || !UTPC || !UTPC->MyUTHUD || !TargetActor || (PC->GetViewTarget() != TargetActor) || !LockCrosshairTexture || !LockCrosshairTexture->Resource)
+	{
+		if (PC->MyHUD)
+		{
+			PC->MyHUD->RemovePostRenderedActor(this);
+		}
+		return;
+	}
+	if ((GetWorld()->TimeSeconds - GetLastRenderTime() < 0.1f) && !UTPC->MyUTHUD->bShowScores &&
+		FVector::DotProduct(CameraDir, (GetActorLocation() - CameraPosition)) > 0.0f && (UTPC->MyUTHUD == nullptr || !UTPC->MyUTHUD->bShowScores))
+	{
+		float Dist = (GetActorLocation() - TargetActor->GetActorLocation()).Size();
+		if (Dist > 3800.f)
+		{
+			return;
+		}
+		FVector ScreenPosition = Canvas->Project(GetActorLocation());
+		float CrosshairRot = GetWorld()->TimeSeconds * 90.0f;
+		float W = LockCrosshairTexture->GetSurfaceWidth();
+		float H = LockCrosshairTexture->GetSurfaceHeight();
+		FLinearColor DrawColor = FLinearColor::Red;
+		DrawColor.A = 0.8f;
+		float RenderScale = 2.f * Canvas->ClipX / 1920.f;
+		float UL = W / LockCrosshairTexture->Resource->GetSizeX();
+		float VL = H / LockCrosshairTexture->Resource->GetSizeY();
+		FVector2D RenderPos = FVector2D(ScreenPosition.X - (W*RenderScale * 0.5f), ScreenPosition.Y - (H *RenderScale * 0.5f));
+		FCanvasTileItem ImageItem(RenderPos, LockCrosshairTexture->Resource, FVector2D(W*RenderScale, H*RenderScale), FVector2D(0.f, 0.f), FVector2D(UL, VL), DrawColor);
+		ImageItem.Rotation = FRotator(0, 2.5f*CrosshairRot, 0);
+		ImageItem.PivotPoint = FVector2D(0.5f, 0.5f);
+		ImageItem.BlendMode = ESimpleElementBlendMode::SE_BLEND_Translucent;
+		Canvas->DrawItem(ImageItem);
 	}
 }
 
