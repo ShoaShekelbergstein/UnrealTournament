@@ -5625,7 +5625,7 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 		BarHeight = Border + 0.5f*TextYL;
 		
 		FVector WorldPosition = GetMesh()->GetComponentLocation();
-		FVector ScreenPosition = ScreenPosition = Canvas->Project(WorldPosition + FVector(0.f, 0.f, 0.f *  GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()));
+		FVector ScreenPosition = Canvas->Project(WorldPosition);
 		bool bNearEdge = FMath::Abs(ScreenPosition.X - 0.5f*Canvas->ClipX) > 0.25f*Canvas->ClipX;
 		float Bottom = bNearEdge ? Canvas->ClipY : 0.94f * Canvas->ClipY;
 		float NumLines = bDrawHighlight ? 3.f : 1.f;
