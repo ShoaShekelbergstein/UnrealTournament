@@ -441,8 +441,7 @@ void AUTGauntletGame::SetMatchState(FName NewState)
 	}
 	else if (MatchState == MatchState::GauntletRoundAnnounce)
 	{
-		//BroadcastLocalized(this, UUTCountDownMessage::StaticClass(), 2000 + GauntletGameState->CTFRound);
-		// FIXME 
+		BroadcastLocalized(this, UUTGauntletGameMessage::StaticClass(), 7, nullptr, nullptr, nullptr);
 
 		FTimerHandle TempHandle;
 		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGauntletGame::EndRoundAnnounce, RoundAnnounceDuration, false);

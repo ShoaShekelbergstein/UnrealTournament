@@ -184,7 +184,8 @@ void AUTGauntletFlag::OnObjectStateChanged()
 
 void AUTGauntletFlag::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
 {
-	if (ObjectState != CarriedObjectState::Held && PC->GetPawn() && GetTeamNum() != 255 )
+	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PC);
+	if ( ObjectState != CarriedObjectState::Held )
 	{
 		float Scale = Canvas->ClipY / 1080.0f;
 		FVector2D Size = FVector2D(43,41) * Scale;
@@ -213,14 +214,31 @@ void AUTGauntletFlag::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVec
 				float Dist = (LookVec - InWorldDrawLoc).SizeSquared();
 				Dist = FMath::Clamp<float>(Dist, MIN_SCALE_DIST, MAX_SCALE_DIST) - MIN_SCALE_DIST;
 				Scale *= (0.4 + (0.6 * (1.0f - (Dist / MAX_SCALE_DIST))));
-				Canvas->DrawText(HUD->LargeFont, Number, ScreenPosition.X - (TextSize.X * 0.5 * Scale), ScreenPosition.Y - (TextSize.Y * 0.75 * Scale), Scale, Scale);
-				ScreenPosition.Y += TextSize.Y  * Scale * 1.25;
-			}
 
-			if (GetWorld()->GetTimeSeconds() - GetLastRenderTime() > 0.01f)
-			{
-				Canvas->SetDrawColor(FColor::Green);
-				Canvas->DrawTile(HUD->HUDAtlas, ScreenPosition.X - (Size.X * 0.5f), ScreenPosition.Y - Size.Y, Size.X, Size.Y,843,87,43,41);
+				if (GetTeamNum() != 255)
+				{
+					Canvas->DrawText(HUD->LargeFont, Number, ScreenPosition.X - (TextSize.X * 0.5 * Scale), ScreenPosition.Y - (TextSize.Y * 0.75 * Scale), Scale, Scale);
+				}
+				ScreenPosition.Y += TextSize.Y  * Scale * 1.25;
+
+				if (GetWorld()->GetTimeSeconds() - GetLastRenderTime() > 0.01f)
+				{
+					AUTGauntletGameState* GauntletGameState = GetWorld()->GetGameState<AUTGauntletGameState>();
+			
+					if (GauntletGameState && GetTeamNum() == 0 && GauntletGameState->Teams.Num() > 0 && GauntletGameState->Teams[0]) 
+					{
+						Canvas->SetLinearDrawColor(GauntletGameState->Teams[0]->TeamColor);
+					}
+					else if (GauntletGameState && GetTeamNum() == 1 && GauntletGameState->Teams.Num() > 1 && GauntletGameState->Teams[1]) 
+					{
+						Canvas->SetLinearDrawColor(GauntletGameState->Teams[1]->TeamColor);
+					}
+					else
+					{
+						Canvas->SetDrawColor(FColor::Green);
+					}
+					Canvas->DrawTile(HUD->HUDAtlas, ScreenPosition.X - (Size.X * 0.5f), ScreenPosition.Y - Size.Y, Size.X, Size.Y,843,87,43,41);
+				}
 			}
 		}
 	}
