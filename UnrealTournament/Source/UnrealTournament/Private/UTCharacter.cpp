@@ -2648,7 +2648,6 @@ void AUTCharacter::FiringExtraUpdated()
 	}
 }
 
-
 void AUTCharacter::AddAmmo(const FStoredAmmo& AmmoToAdd)
 {
 	AUTWeapon* ExistingWeapon = FindInventoryType<AUTWeapon>(AmmoToAdd.Type, true);
@@ -5134,6 +5133,7 @@ void AUTCharacter::NotifyTeamChanged()
 	if (PS != NULL)
 	{
 		ApplyCharacterData(PS->GetSelectedCharacter());
+		UpdateArmorOverlay();
 		for (UMaterialInstanceDynamic* MI : BodyMIs)
 		{
 			if (MI != NULL)
@@ -5246,7 +5246,7 @@ void AUTCharacter::UpdateArmorOverlay()
 	{
 		SetCharacterOverlayEffect(ArmorType->OverlayEffect.IsValid() ? ArmorType->OverlayEffect : FOverlayEffect(ArmorType->OverlayMaterial), true);
 		UMaterialInstanceDynamic* MID = OverlayMesh ? Cast<UMaterialInstanceDynamic>(OverlayMesh->GetMaterial(0)) : nullptr;
-		if (MID)
+		if (MID && (GetNetMode() != NM_DedicatedServer))
 		{
 			static const FName NAME_Fresnel = FName(TEXT("Fresnel"));
 			float FresnelValue = (ArmorAmount > 100) ? 15.f : 1.f;
