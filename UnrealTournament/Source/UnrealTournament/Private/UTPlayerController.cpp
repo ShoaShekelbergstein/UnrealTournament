@@ -3856,7 +3856,7 @@ void AUTPlayerController::ServerReceiveCountryFlag_Implementation(FName NewCount
 
 void AUTPlayerController::ClientVerifyFiringInputs_Implementation()
 {
-	if (UTCharacter && UTCharacter->GetWeapon() && !UTCharacter->GetWeapon()->IsFiring())
+	if (UTCharacter && UTCharacter->GetWeapon() && !UTCharacter->GetWeapon()->IsFiring() && (UTCharacter->TauntCount == 0))
 	{
 		if (bFirePressed)
 		{

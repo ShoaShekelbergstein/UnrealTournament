@@ -6032,6 +6032,10 @@ void AUTCharacter::OnEmoteEnded(UAnimMontage* Montage, bool bInterrupted)
 	if (TauntCount == 0)
 	{
 		ResetTaunt();
+		if (Cast<AUTPlayerController>(GetController()))
+		{
+			((AUTPlayerController*)GetController())->ClientVerifyFiringInputs();
+		}
 	}
 }
 
