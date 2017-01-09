@@ -288,7 +288,7 @@ void AUTRemoteRedeemer::ExplodeTimed()
 {
 	if (!bExploded && Role == ROLE_Authority)
 	{
-		BlowUp();
+		BlowUp(FVector(0.f, 0.f, 1.f));
 	}
 }
 
@@ -521,7 +521,8 @@ void AUTRemoteRedeemer::ExplodeStage(float RangeMultiplier)
 			}
 
 			//DrawDebugSphere(GetWorld(), ExplosionCenter, RangeMultiplier*AdjustedDamageParams.OuterRadius, 12, FColor::Green, true, -1.f);
-			UUTGameplayStatics::UTHurtRadius(this, AdjustedDamageParams.BaseDamage, AdjustedDamageParams.MinimumDamage, DefaultRedeemer->Momentum, ExplosionCenter, RangeMultiplier * AdjustedDamageParams.InnerRadius, RangeMultiplier * AdjustedDamageParams.OuterRadius, AdjustedDamageParams.DamageFalloff,
+			float MinDamage = (RangeMultiplier * AdjustedDamageParams.OuterRadius < DefaultRedeemer->CollisionFreeRadius) ? 200.f : AdjustedDamageParams.MinimumDamage;
+			UUTGameplayStatics::UTHurtRadius(this, AdjustedDamageParams.BaseDamage, MinDamage, DefaultRedeemer->Momentum, ExplosionCenter, RangeMultiplier * AdjustedDamageParams.InnerRadius, RangeMultiplier * AdjustedDamageParams.OuterRadius, AdjustedDamageParams.DamageFalloff,
 				DefaultRedeemer->MyDamageType, IgnoreActors, this, DamageInstigator, nullptr, nullptr, DefaultRedeemer->CollisionFreeRadius);
 			if (StatusPS)
 			{

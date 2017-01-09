@@ -308,7 +308,8 @@ void AUTProj_Redeemer::ExplodeStage(float RangeMultiplier)
 			KillCount += LiveEnemyCount;
 		}
 
-		UUTGameplayStatics::UTHurtRadius(this, AdjustedDamageParams.BaseDamage, AdjustedDamageParams.MinimumDamage, AdjustedMomentum, ExplodeHitLocation, RangeMultiplier * AdjustedDamageParams.InnerRadius, RangeMultiplier * AdjustedDamageParams.OuterRadius, AdjustedDamageParams.DamageFalloff,
+		float MinDamage = (RangeMultiplier * AdjustedDamageParams.OuterRadius < CollisionFreeRadius) ? 200.f : AdjustedDamageParams.MinimumDamage;
+		UUTGameplayStatics::UTHurtRadius(this, AdjustedDamageParams.BaseDamage, MinDamage, AdjustedMomentum, ExplodeHitLocation, RangeMultiplier * AdjustedDamageParams.InnerRadius, RangeMultiplier * AdjustedDamageParams.OuterRadius, AdjustedDamageParams.DamageFalloff,
 			MyDamageType, IgnoreActors, this, InstigatorController, FFInstigatorController, FFDamageType, CollisionFreeRadius);
 		if (StatusPS)
 		{
