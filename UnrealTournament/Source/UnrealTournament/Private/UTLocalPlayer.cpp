@@ -1407,7 +1407,7 @@ void UUTLocalPlayer::ShowToast(FText ToastText, float Lifetime)
 {
 #if !UE_SERVER
 
-	if (GetWorld()->GetNetMode() == ENetMode::NM_Client && bSuppressToastsInGame) return;
+	if ((GetWorld() == nullptr) || (GetWorld()->GetNetMode() == ENetMode::NM_Client && bSuppressToastsInGame)) return;
 
 	// Build the Toast to Show...
 	UUTUMGWidget_Toast* Toast = Cast<UUTUMGWidget_Toast>(OpenUMGWidget(TEXT("/Game/RestrictedAssets/UI/UMGMenuElements/UTGenericToastWidget.UTGenericToastWidget")));
