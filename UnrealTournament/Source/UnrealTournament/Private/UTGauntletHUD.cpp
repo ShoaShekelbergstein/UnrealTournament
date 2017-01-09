@@ -193,7 +193,7 @@ void AUTGauntletHUD::DrawPlayerIcons(AUTGauntletGameState* GauntletGameState)
 
 		const float RenderScale = float(Canvas->SizeY) / 1080.0f;
 
-		float TeammateScale = VerifyProfileSettings() ? CachedProfileSettings->HUDTeammateScaleOverride : UUTProfileSettings::StaticClass()->GetDefaultObject<UUTProfileSettings>()->HUDTeammateScaleOverride;
+		float TeammateScale = 0.4f;
 
 		float BasePipSize = (32 + (64 * TeammateScale)) * GetHUDWidgetScaleOverride() * RenderScale;  // 96 - 32px in size
 		float XAdjust = BasePipSize * 1.1;

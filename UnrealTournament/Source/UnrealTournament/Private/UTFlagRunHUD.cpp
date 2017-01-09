@@ -127,12 +127,12 @@ void AUTFlagRunHUD::DrawHUD()
 		RedPlayerCount = 0;
 		BluePlayerCount = 0;
 
-		const float RenderScale = float(Canvas->SizeY) / 1080.0f;
+		const float RenderScale = float(Canvas->SizeX) / 1920.0f;
 
-		float TeammateScale = VerifyProfileSettings() ? CachedProfileSettings->HUDTeammateScaleOverride : UUTProfileSettings::StaticClass()->GetDefaultObject<UUTProfileSettings>()->HUDTeammateScaleOverride;
+		float TeammateScale = 0.4f;
 
 		float BasePipSize = (32 + (64 * TeammateScale)) * GetHUDWidgetScaleOverride() * RenderScale;  // 96 - 32px in size
-		float XAdjust = BasePipSize * 1.1;
+		float XAdjust = BasePipSize * 1.1f;
 		float XOffsetRed = 0.4f * Canvas->ClipX - XAdjust - BasePipSize;
 		float XOffsetBlue = 0.6f * Canvas->ClipX + XAdjust;
 		float YOffset = 0.005f * Canvas->ClipY * GetHUDWidgetScaleOverride() * RenderScale;
@@ -145,7 +145,7 @@ void AUTFlagRunHUD::DrawHUD()
 			if (!UTPS->bOutOfLives)
 			{
 				bool bIsAttacker = (GS->bRedToCap == (UTPS->Team->TeamIndex == 0));
-				float OwnerPipScaling = (UTPS == GetScorerPlayerState()) ? 1.5f : 1.f;
+				float OwnerPipScaling = (UTPS == GetScorerPlayerState()) ? 1.25f : 1.f;
 				float PipSize = BasePipSize * OwnerPipScaling;
 				float LiveScaling = FMath::Clamp(((UTPS->RespawnTime > 0.f) && (UTPS->RespawnWaitTime > 0.f) && !UTPS->GetUTCharacter()) ? 1.f - UTPS->RespawnTime / UTPS->RespawnWaitTime : 1.f, 0.f, 1.f);
 
