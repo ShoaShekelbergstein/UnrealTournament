@@ -33,7 +33,14 @@ class UNREALTOURNAMENT_API UUTUMGWidget : public UUserWidget
 
 	// Displays a partical system behind this widget at a given screen location
 	UFUNCTION(BlueprintCallable, category = UMG)
-	void ShowParticalSystem(UParticleSystem* ParticalSystem, FVector2D ScreenLocation, bool bRelativeCoords = false, float LocationModifier = 0.0f, FVector DirectionModifier = FVector(0.f,0.f,0.f));
+	/**
+	 * Displays a particle system in world.
+	 * @param ScreenPosition - Where on the screen to display the effect
+	 * @param bRelativeCoords - If true, ScreenPosition will be relative to the viewport
+	 * @param LocationModifier - A vector that will be added to the final location in local space
+	 * @param DirectionModifier - A rotator that will be added to the final direction in local space
+	 **/
+	void ShowParticalSystem(UParticleSystem* ParticalSystem, FVector2D ScreenLocation, bool bRelativeCoords = false, FVector LocationModifier = FVector(0.f,0.f,0.f), FRotator DirectionModifier = FRotator(0.f,0.f,0.f));
 
 	// This event is called when the UMG widget is opened.  At this point, the PlayerOwner should be valid
 	UFUNCTION(BlueprintImplementableEvent)
