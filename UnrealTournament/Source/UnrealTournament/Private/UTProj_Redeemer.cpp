@@ -7,6 +7,8 @@
 #include "UTProj_Redeemer.h"
 #include "UTCTFRewardMessage.h"
 #include "UTRedeemerLaunchAnnounce.h"
+#include "UTDemoNetDriver.h"
+#include "UTDemoRecSpectator.h"
 
 AUTProj_Redeemer::AUTProj_Redeemer(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -212,6 +214,21 @@ void AUTProj_Redeemer::PlayShotDownEffects()
 
 void AUTProj_Redeemer::Explode_Implementation(const FVector& HitLocation, const FVector& HitNormal, UPrimitiveComponent* HitComp)
 {
+	if (GetWorld()->GetNetMode() == NM_Client)
+	{
+		UDemoNetDriver* DemoDriver = GetWorld()->DemoNetDriver;
+		if (DemoDriver)
+		{
+			AUTDemoRecSpectator* DemoRecSpec = Cast<AUTDemoRecSpectator>(DemoDriver->SpectatorController);
+			if (DemoRecSpec && (GetWorld()->GetTimeSeconds() - DemoRecSpec->LastKillcamSeekTime) < 2.0f)
+			{
+				bExploded = true;
+				Destroy();
+				return;
+			}
+		}
+	}
+
 	if (!bExploded)
 	{
 		AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();

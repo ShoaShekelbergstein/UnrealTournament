@@ -10,6 +10,8 @@
 #include "UTWorldSettings.h"
 #include "UTProj_WeaponScreen.h"
 #include "UTRedeemerLaunchAnnounce.h"
+#include "UTDemoNetDriver.h"
+#include "UTDemoRecSpectator.h"
 
 AUTRemoteRedeemer::AUTRemoteRedeemer(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -227,6 +229,21 @@ void AUTRemoteRedeemer::Destroyed()
 
 void AUTRemoteRedeemer::BlowUp(FVector HitNormal)
 {
+	if (GetWorld()->GetNetMode() == NM_Client)
+	{
+		UDemoNetDriver* DemoDriver = GetWorld()->DemoNetDriver;
+		if (DemoDriver)
+		{
+			AUTDemoRecSpectator* DemoRecSpec = Cast<AUTDemoRecSpectator>(DemoDriver->SpectatorController);
+			if (DemoRecSpec && (GetWorld()->GetTimeSeconds() - DemoRecSpec->LastKillcamSeekTime) < 2.0f)
+			{
+				bExploded = true;
+				Destroy();
+				return;
+			}
+		}
+	}
+
 	if (!bExploded)
 	{
 		TArray<UAudioComponent*> AudioComponents;
@@ -294,6 +311,22 @@ void AUTRemoteRedeemer::ExplodeTimed()
 
 void AUTRemoteRedeemer::OnShotDown()
 {
+	if (GetWorld()->GetNetMode() == NM_Client)
+	{
+		UDemoNetDriver* DemoDriver = GetWorld()->DemoNetDriver;
+		if (DemoDriver)
+		{
+			AUTDemoRecSpectator* DemoRecSpec = Cast<AUTDemoRecSpectator>(DemoDriver->SpectatorController);
+			if (DemoRecSpec && (GetWorld()->GetTimeSeconds() - DemoRecSpec->LastKillcamSeekTime) < 2.0f)
+			{
+				bExploded = true;
+				bShotDown = true;
+				Destroy();
+				return;
+			}
+		}
+	}
+
 	if (!bExploded)
 	{
 		bShotDown = true;
