@@ -57,6 +57,13 @@ class UNREALTOURNAMENT_API UUTGameMessage : public UUTLocalMessage
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Message")
 		FText WeaponLocked;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Message")
+	FText DoorOpened;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Message")
+	FText DoorClosed;
+
+
 	virtual FText GetText(int32 Switch,bool bTargetsPlayerState1,class APlayerState* RelatedPlayerState_1,class APlayerState* RelatedPlayerState_2,class UObject* OptionalObject) const override;
 	virtual FName GetAnnouncementName_Implementation(int32 Switch, const UObject* OptionalObject, const class APlayerState* RelatedPlayerState_1, const class APlayerState* RelatedPlayerState_2) const override;
 	virtual FLinearColor GetMessageColor_Implementation(int32 MessageIndex) const override;

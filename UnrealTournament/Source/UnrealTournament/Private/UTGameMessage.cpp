@@ -26,6 +26,8 @@ UUTGameMessage::UUTGameMessage(const class FObjectInitializer& ObjectInitializer
 	PotentialSpeedHack = NSLOCTEXT("UTGameMessage", "Speedhack", "Server or network hitching.");
 	OnDeck = NSLOCTEXT("UTGameMessage", "MatchStarting", "The match is starting.");
 	WeaponLocked = NSLOCTEXT("UTGameMessage", "WeaponLocked", "Cannot unequip this weapon until it is fired.");
+	DoorOpened = NSLOCTEXT("UTGameMessage", "DoorOpened", "The door has opened!");
+	DoorClosed = NSLOCTEXT("UTGameMessage", "DoorClosed", "The door has closed!");
 	bIsStatusAnnouncement = true;
 	bPlayDuringInstantReplay = false;
 }
@@ -115,6 +117,10 @@ FText UUTGameMessage::GetText(int32 Switch = 0, bool bTargetsPlayerState1 = fals
 			return GetDefault<UUTGameMessage>(GetClass())->OnDeck;
 		case 99:
 			return GetDefault<UUTGameMessage>(GetClass())->WeaponLocked;
+		case 200:
+			return GetDefault<UUTGameMessage>(GetClass())->DoorOpened;
+		case 201:
+			return GetDefault<UUTGameMessage>(GetClass())->DoorClosed;
 		default:
 			return FText::GetEmpty();
 	}
