@@ -2246,14 +2246,11 @@ void AUTGameMode::EndGame(AUTPlayerState* Winner, FName Reason )
 					Winner = CPS;
 				}
 
-				if (TutorialMask > 0)
-				{
-					CPS->ClientTutorialFinished(TutorialMask);
-				}
 			}
 		}
 	}
 
+	
 	APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
 	UUTLocalPlayer* LP = LocalPC ? Cast<UUTLocalPlayer>(LocalPC->Player) : NULL;
 	if (LP && UTGameState && UTGameState->IsMatchInProgress())
@@ -2263,6 +2260,11 @@ void AUTGameMode::EndGame(AUTPlayerState* Winner, FName Reason )
 		if (bOfflineChallenge && PlayerWonChallenge())
 		{
 			LP->ChallengeCompleted(ChallengeTag, ChallengeDifficulty + 1);
+		}
+
+		if (TutorialMask > 0)
+		{
+			LP->SetTutorialFinished(TutorialMask);
 		}
 	}
 

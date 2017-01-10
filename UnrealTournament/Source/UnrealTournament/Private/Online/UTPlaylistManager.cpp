@@ -138,3 +138,16 @@ FName UUTPlaylistManager::GetPlaylistSlateBadge(int32 PlaylistId)
 
 	return NAME_None;
 }
+
+int32 UUTPlaylistManager::GetPlaylistRequireTutorialMask(int32 PlaylistId)
+{
+	for (FPlaylistItem& PlaylistEntry : Playlist)
+	{
+		if (PlaylistEntry.PlaylistId == PlaylistId )
+		{
+			return PlaylistEntry.RequiredTutorialMask;
+		}
+	}
+
+	return 0x00;
+}

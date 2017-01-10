@@ -93,6 +93,8 @@ class UNREALTOURNAMENT_API UUTProgressionStorage : public UObject
 		bNeedsUpdate = false;
 	}
 
+	virtual void FixupBestTimes(int32& TutorialMask);
+
 protected:
 
 	// If true then the progress will be written on level change

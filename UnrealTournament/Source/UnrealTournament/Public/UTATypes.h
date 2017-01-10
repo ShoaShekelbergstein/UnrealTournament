@@ -30,7 +30,10 @@ const uint16 TUTORIAL_CTF = 0x0020;
 const uint16 TUTORIAL_Duel = 0x0040;
 const uint16 TUTORIAL_FlagRun = 0x0080;
 const uint16 TUTORIAL_Showdown = 0x0100;
-const uint16 TUTORIAL_Gameplay = 0x0028;
+const uint16 TUTORIAL_Gameplay = TUTORIAL_DM | TUTORIAL_FlagRun | TUTORIAL_Showdown;
+const uint16 TUTORIAL_Hardcore = TUTORIAL_CTF | TUTORIAL_TDM | TUTORIAL_Duel;
+
+const uint16 TUTORIAL_All = TUTORIAL_SkillMoves | TUTORIAL_Gameplay | TUTORIAL_Hardcore;
 
 const int32 DEFAULT_RANK_CHECK = 0;
 const int32 NEW_USER_ELO = 1000;
@@ -2200,6 +2203,9 @@ public:
 
 	UPROPERTY(Config)
 	FString LoadingMovie;
+
+	UPROPERTY(Config)
+	FString LoadingText;
 
 	FTutorialData()
 		: Tag(NAME_None)

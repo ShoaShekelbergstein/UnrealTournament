@@ -31,6 +31,8 @@ struct FPlaylistItem
 	TArray<FString> MapNames;
 	UPROPERTY()
 	FString SlateBadgeName;
+	UPROPERTY()
+	int32 RequiredTutorialMask;
 };
 
 UCLASS(config = Game, notplaceable)
@@ -66,6 +68,7 @@ public:
 
 	FName GetPlaylistSlateBadge(int32 PlaylistId);
 
+	int32 GetPlaylistRequireTutorialMask(int32 PlaylistId);
 
 	bool GetGameModeForPlaylist(int32 PlaylistId, FString& GameMode);
 

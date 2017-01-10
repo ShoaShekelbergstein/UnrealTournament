@@ -129,54 +129,125 @@ bool UUTProgressionStorage::GetBestTime(FName TimingName, float& OutBestTime)
 
 void UUTProgressionStorage::SetBestTime(FName TimingName, float InBestTime)
 {
-	BestTimes.Add(TimingName, InBestTime);
-	bNeedsUpdate = true;
-
-	// hacky halloween reward implementation
-	if (TimingName == AchievementIDs::FacePumpkins)
+	if (!BestTimes.Contains(TimingName) || BestTimes[TimingName] > InBestTime)
 	{
-		if (InBestTime >= 6666.0f)
+		BestTimes.Add(TimingName, InBestTime);
+		bNeedsUpdate = true;
+
+		// hacky halloween reward implementation
+		if (TimingName == AchievementIDs::FacePumpkins)
 		{
-			for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
+			if (InBestTime >= 6666.0f)
 			{
-				if (It->GetProgressionStorage() == this)
+				for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
 				{
-					It->AwardAchievement(AchievementIDs::FacePumpkins);
+					if (It->GetProgressionStorage() == this)
+					{
+						It->AwardAchievement(AchievementIDs::FacePumpkins);
+					}
 				}
 			}
-		}
 
-		if (InBestTime >= 5000.0f)
-		{
-			for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
+			if (InBestTime >= 5000.0f)
 			{
-				if (It->GetProgressionStorage() == this)
+				for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
 				{
-					It->AwardAchievement(AchievementIDs::PumpkinHead2015Level3);
+					if (It->GetProgressionStorage() == this)
+					{
+						It->AwardAchievement(AchievementIDs::PumpkinHead2015Level3);
+					}
 				}
 			}
-		}
 
-		if (InBestTime >= 1000.0f)
-		{
-			for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
+			if (InBestTime >= 1000.0f)
 			{
-				if (It->GetProgressionStorage() == this)
+				for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
 				{
-					It->AwardAchievement(AchievementIDs::PumpkinHead2015Level2);
+					if (It->GetProgressionStorage() == this)
+					{
+						It->AwardAchievement(AchievementIDs::PumpkinHead2015Level2);
+					}
 				}
 			}
-		}
 
-		if (InBestTime >= 200.0f)
-		{
-			for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
+			if (InBestTime >= 200.0f)
 			{
-				if (It->GetProgressionStorage() == this)
+				for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
 				{
-					It->AwardAchievement(AchievementIDs::PumpkinHead2015Level1);
+					if (It->GetProgressionStorage() == this)
+					{
+						It->AwardAchievement(AchievementIDs::PumpkinHead2015Level1);
+					}
 				}
 			}
 		}
 	}
+}
+
+/** Kind of hacky fix up until we move to the ladder system */
+void UUTProgressionStorage::FixupBestTimes(int32& TutorialMask)
+{
+	// These are converted
+	static FName OldMovementTrainingName = FName(TEXT("movementtraining_timingsection"));	
+	static FName OldWeaponTrainingName = FName(TEXT("weapontraining_timingsection"));	
+	static FName OldPickupTrainingName = FName(TEXT("pickuptraining_timingsection"));	
+
+	// These are just removed
+	static FName OldFlagRunTrainingName = FName(TEXT("flagrun_timingsection"));	
+	static FName OldDMTrainingName = FName(TEXT("deathmatch_timingsection"));
+	static FName OldTDMTrainingName = FName(TEXT("teamdeathmatch_timingsection"));
+	static FName OldCTFTrainingName = FName(TEXT("capturetheflag_timingsection"));
+	static FName OldDuelTrainingName = FName(TEXT("duel_timingsection"));
+
+	if (BestTimes.Contains(OldMovementTrainingName))
+	{
+		BestTimes.Add(ETutorialTags::TUTTAG_Movement, BestTimes[OldMovementTrainingName]);
+		BestTimes.Remove(OldMovementTrainingName);
+		TutorialMask = TutorialMask | TUTORIAL_Movement;
+	}
+		
+	if (BestTimes.Contains(OldWeaponTrainingName))
+	{
+		BestTimes.Add(ETutorialTags::TUTTAG_Weapons, BestTimes[OldWeaponTrainingName]);
+		BestTimes.Remove(OldWeaponTrainingName);
+		TutorialMask = TutorialMask | TUTOIRAL_Weapon;
+	}
+
+	if (BestTimes.Contains(OldPickupTrainingName))
+	{
+		BestTimes.Add(ETutorialTags::TUTTAG_Pickups, BestTimes[OldPickupTrainingName]);
+		BestTimes.Remove(OldPickupTrainingName);
+		TutorialMask = TutorialMask | TUTORIAL_Pickups;
+	}
+
+	if (BestTimes.Contains(OldFlagRunTrainingName))
+	{
+		BestTimes.Remove(OldFlagRunTrainingName);
+		TutorialMask = TutorialMask | TUTORIAL_FlagRun;
+	}
+
+	if (BestTimes.Contains(OldDMTrainingName))
+	{
+		BestTimes.Remove(OldDMTrainingName);
+		TutorialMask = TutorialMask | TUTORIAL_DM;
+	}
+
+	if (BestTimes.Contains(OldTDMTrainingName))
+	{
+		BestTimes.Remove(OldTDMTrainingName);
+		TutorialMask = TutorialMask | TUTORIAL_TDM;
+	}
+
+	if (BestTimes.Contains(OldCTFTrainingName))
+	{
+		BestTimes.Remove(OldCTFTrainingName);
+		TutorialMask = TutorialMask | TUTORIAL_CTF;
+	}
+
+	if (BestTimes.Contains(OldDuelTrainingName))
+	{
+		BestTimes.Remove(OldDuelTrainingName);
+		TutorialMask = TutorialMask | TUTORIAL_Showdown;
+	}
+
 }

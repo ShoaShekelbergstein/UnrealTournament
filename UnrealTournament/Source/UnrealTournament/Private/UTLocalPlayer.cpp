@@ -91,8 +91,9 @@ UUTLocalPlayer::UUTLocalPlayer(const class FObjectInitializer& ObjectInitializer
 	: Super(ObjectInitializer)
 {
 	bInitialSignInAttempt = true;
-	LastProfileCloudWriteTime = 0;
-	ProfileCloudWriteCooldownTime = 15;
+	LastProfileCloudWriteTime = 0.0f;
+	LastProgressionCloudWriteTime = 0.0f;
+	ProfileCloudWriteCooldownTime = 12.0f;
 	bShowSocialNotification = false;
 	ServerPingBlockSize = 30;
 	bSuppressToastsInGame = false;
@@ -122,6 +123,7 @@ UUTLocalPlayer::UUTLocalPlayer(const class FObjectInitializer& ObjectInitializer
 	bSuppressDownloadDialog = false;
 
 	bQuickmatchOnLevelChange = false;
+
 }
 
 UUTLocalPlayer::~UUTLocalPlayer()
@@ -1670,6 +1672,7 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 
 		if (bWasSuccessful)
 		{
+
 			// Create the current profile.
 			if (CurrentProgression == NULL)
 			{
@@ -1714,11 +1717,19 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 			}
 
 			CurrentProgression->Serialize(Ar);
+
 			CurrentProgression->VersionFixup();
+			
+			int32 CurrentTutorialMask = CurrentProfileSettings->TutorialMask;
+			CurrentProgression->FixupBestTimes(CurrentTutorialMask);
+			if (CurrentTutorialMask != CurrentProfileSettings->TutorialMask)
+			{
+				CurrentProfileSettings->TutorialMask = CurrentTutorialMask;
+				SaveProfileSettings();
+			}
 
 			UE_LOG(UT, Verbose, TEXT("Progression: Achievements %d, Stars %d"), CurrentProgression->Achievements.Num(), CurrentProgression->TotalChallengeStars);
 
-			// set PlayerState progressionv variables if in main menu/single player
 			if (PlayerController != NULL)
 			{
 				AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -1736,14 +1747,7 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 
 		if (CurrentProfileSettings)
 		{
-			float BestTime;
-			if (CurrentProgression->GetBestTime(FName(TEXT("movementtraining_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTORIAL_Movement;
-			if (CurrentProgression->GetBestTime(FName(TEXT("weapontraining_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTOIRAL_Weapon;
-			if (CurrentProgression->GetBestTime(FName(TEXT("pickuptraining_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTORIAL_Pickups;
-			if (CurrentProgression->GetBestTime(FName(TEXT("deathmatch_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTORIAL_DM;
-			if (CurrentProgression->GetBestTime(FName(TEXT("teamdeathmatch_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTORIAL_TDM;
-			//if (CurrentProgression->GetBestTime(FName(TEXT("capturetheflag_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTORIAL_CTF;
-			if (CurrentProgression->GetBestTime(FName(TEXT("duel_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTORIAL_Duel;
+			CurrentProfileSettings->VersionFixup();
 		}
 
 		bProgressionReadFromCloud = true;
@@ -1834,11 +1838,13 @@ void UUTLocalPlayer::SaveProfileSettings()
 			}
 			else
 			{
-				ShowSavingWidget();
 				// Save the blob to the cloud
 				TSharedPtr<const FUniqueNetId> UserID = OnlineIdentityInterface->GetUniquePlayerId(GetControllerId());
 				if (OnlineUserCloudInterface.IsValid() && UserID.IsValid())
 				{
+					SavingMask |= 0x01;
+					ShowSavingWidget();
+
 					LastProfileCloudWriteTime = FApp::GetCurrentTime();
 					OnlineUserCloudInterface->WriteUserFile(*UserID, GetProfileFilename(), FileContents);
 				}
@@ -1861,24 +1867,32 @@ void UUTLocalPlayer::SaveProgression()
 {
 	if ( CurrentProgression != NULL && IsLoggedIn() )
 	{
-		ShowSavingWidget();
-		CurrentProgression->Updated();
-
-		// Build a blob of the profile contents
-		TArray<uint8> FileContents;
-		FMemoryWriter MemoryWriter(FileContents, true);
-		FObjectAndNameAsStringProxyArchive Ar(MemoryWriter, false);
-		Ar << CloudProfileMagicNumberVersion1;
-		int32 UE4Ver = Ar.UE4Ver();
-		Ar << UE4Ver;
-		CurrentProgression->Serialize(Ar);
-
-		// Save the blob to the cloud
-		TSharedPtr<const FUniqueNetId> UserID = OnlineIdentityInterface->GetUniquePlayerId(GetControllerId());
-		if (OnlineUserCloudInterface.IsValid() && UserID.IsValid())
+		if (FApp::GetCurrentTime() - LastProgressionCloudWriteTime < ProfileCloudWriteCooldownTime)
 		{
-			LastProfileCloudWriteTime = FApp::GetCurrentTime();
-			OnlineUserCloudInterface->WriteUserFile(*UserID, GetProgressionFilename(), FileContents);
+			GetWorld()->GetTimerManager().SetTimer(ProgressionWriteTimerHandle, this, &UUTLocalPlayer::SaveProgression, ProfileCloudWriteCooldownTime - (FApp::GetCurrentTime() - LastProgressionCloudWriteTime), false);
+		}
+		else
+		{
+			SavingMask |= 0x02;
+			ShowSavingWidget();
+			CurrentProgression->Updated();
+
+			// Build a blob of the profile contents
+			TArray<uint8> FileContents;
+			FMemoryWriter MemoryWriter(FileContents, true);
+			FObjectAndNameAsStringProxyArchive Ar(MemoryWriter, false);
+			Ar << CloudProfileMagicNumberVersion1;
+			int32 UE4Ver = Ar.UE4Ver();
+			Ar << UE4Ver;
+			CurrentProgression->Serialize(Ar);
+
+			// Save the blob to the cloud
+			TSharedPtr<const FUniqueNetId> UserID = OnlineIdentityInterface->GetUniquePlayerId(GetControllerId());
+			if (OnlineUserCloudInterface.IsValid() && UserID.IsValid())
+			{
+				LastProgressionCloudWriteTime = FApp::GetCurrentTime();
+				OnlineUserCloudInterface->WriteUserFile(*UserID, GetProgressionFilename(), FileContents);
+			}
 		}
 	}
 }
@@ -1890,11 +1904,10 @@ bool UUTLocalPlayer::IsPendingMCPLoad() const
 
 void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName)
 {
-	HideSavingWidget();
-
 	// Make sure this was our filename
 	if (FileName == GetProfileFilename())
 	{
+		SavingMask = SavingMask & 0xFE;
 		if (bWasSuccessful)
 		{
 			LastProfileCloudWriteTime = FApp::GetCurrentTime();
@@ -1912,6 +1925,7 @@ void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueN
 	}
 	else if (FileName == GetProgressionFilename())
 	{
+		SavingMask = SavingMask & 0xFD;
 		if (bWasSuccessful)
 		{
 			FText Saved = NSLOCTEXT("MCP", "ProgressionSaved", "Progression Saved");
@@ -1925,6 +1939,10 @@ void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueN
 	#endif
 		}
 	}
+
+	HideSavingWidget();
+
+
 }
 
 void UUTLocalPlayer::SetNickname(FString NewName)
@@ -3385,6 +3403,35 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 
 	if (IsLoggedIn() && OnlineSessionInterface.IsValid())
 	{
+		// Look to see if the player has played this tutorial before.
+
+		FName DesiredTutorial;
+		if (QuickMatchType == EEpicDefaultRuleTags::Deathmatch) DesiredTutorial = ETutorialTags::TUTTAG_DM;
+		if (QuickMatchType == EEpicDefaultRuleTags::TDM) DesiredTutorial = ETutorialTags::TUTTAG_TDM;
+		if (QuickMatchType == EEpicDefaultRuleTags::FlagRun) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
+		if (QuickMatchType == EEpicDefaultRuleTags::CTF) DesiredTutorial = ETutorialTags::TUTTAG_CTF;
+		if (QuickMatchType == EEpicDefaultRuleTags::TEAMSHOWDOWN) DesiredTutorial = ETutorialTags::TUTTAG_Showdown;
+		if (QuickMatchType == EEpicDefaultRuleTags::DUEL) DesiredTutorial = ETutorialTags::TUTTAG_Duel;
+
+
+		int32 DesiredTutorialMask = 0;
+		// Create a quick lookup table.
+		for (int32 i=0; i < TutorialData.Num(); i++)
+		{
+			if (TutorialData[i].Tag == DesiredTutorial)
+			{
+				DesiredTutorialMask = TutorialData[i].Mask;
+				break;
+			}
+		}
+
+		if (DesiredTutorialMask != 0 && CurrentProfileSettings && (CurrentProfileSettings->TutorialMask & DesiredTutorialMask) != DesiredTutorialMask)
+		{
+			// We need to play this tutorial instead.
+			LaunchTutorial(DesiredTutorial, QuickMatchType);
+			return;
+		}
+
 		if (1)
 		{
 			// Use matchmaking for quickmatch
@@ -4544,7 +4591,7 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 	HideHUDSettings();
 	HideRedirectDownload();
 	CloseWebMessage();
-
+	CloseSavingWidget();
 	while (WindowStack.Num() > 0)
 	{
 		CloseWindow(WindowStack[0]);
@@ -4963,7 +5010,8 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 
 bool UUTLocalPlayer::IsRankedMatchmakingEnabled(int32 PlaylistId)
 {
-	return ActiveRankedPlaylists.Contains(PlaylistId);
+	UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
+	return ActiveRankedPlaylists.Contains(PlaylistId) && GI && IsTutorialMaskCompleted(GI->GetPlaylistManager()->GetPlaylistRequireTutorialMask(PlaylistId));
 }
 
 void UUTLocalPlayer::ShowAdminDialog(AUTRconAdminInfo* AdminInfo)
@@ -5919,37 +5967,57 @@ void UUTLocalPlayer::LoginProcessComplete()
 
 void UUTLocalPlayer::SetTutorialFinished(int32 TutorialMask)
 {
-	if (CurrentProfileSettings != nullptr)
+	for (int32 i=0; i < TutorialData.Num(); i++)
 	{
-		if ((CurrentProfileSettings->TutorialMask & TutorialMask) != TutorialMask)
+		if (TutorialData[i].Mask == TutorialMask)
 		{
-			CurrentProfileSettings->TutorialMask |= TutorialMask;
+			SetTutorialFinished(TutorialData[i].Tag);
+			break;
+		}
+	}
+}
 
-			// Look to see if it's time to give a toast.  We need a better type of achievement toast.  Maybe play UMG here or something
-
-			if (TutorialMask == 0x01)	// We have completed the first tutorial...
+void UUTLocalPlayer::SetTutorialFinished(FName TutorialTag)
+{
+	for (int32 i=0; i < TutorialData.Num(); i++)
+	{
+		if (TutorialData[i].Tag == TutorialTag)
+		{
+			int32 TutorialMask = TutorialData[i].Mask;
+			if (CurrentProfileSettings != nullptr)
 			{
-				ShowToast(NSLOCTEXT("Unlocks","FirstTimer","Achievement: No Longer a Noob!"),6.0f);			
-			}
-			else if (TutorialMask <= TUTORIAL_Pickups && ((CurrentProfileSettings->TutorialMask & TUTORIAL_SkillMoves) == TUTORIAL_SkillMoves) )
-			{
-				ShowToast(NSLOCTEXT("Unlocks","OfflineChallengesUnlocked","Achievement: Got the Skills"),6.0f);			
-			}
-
-			if (TutorialMask > TUTORIAL_Pickups)
-			{
-				if (TutorialMask == TUTORIAL_DM)
+				if ((CurrentProfileSettings->TutorialMask & TutorialMask) != TutorialMask)
 				{
-					ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlocked","Achievement: Fragger\nDeathmatch Quickmatch Unlocked!"),6.0f);			
+					CurrentProfileSettings->TutorialMask |= TutorialMask;
+
+					// Look to see if it's time to give a toast.  We need a better type of achievement toast.  Maybe play UMG here or something
+
+					if (TutorialMask == 0x01)	// We have completed the first tutorial...
+					{
+						ShowToast(NSLOCTEXT("Unlocks","FirstTimer","Achievement: No Longer a Noob!"),6.0f);			
+					}
+					else if (TutorialMask <= TUTORIAL_Pickups && ((CurrentProfileSettings->TutorialMask & TUTORIAL_SkillMoves) == TUTORIAL_SkillMoves) )
+					{
+						ShowToast(NSLOCTEXT("Unlocks","OfflineChallengesUnlocked","Achievement: Got the Skills"),6.0f);			
+					}
+
+					if (TutorialMask > TUTORIAL_Pickups)
+					{
+						if (TutorialMask == TUTORIAL_DM)
+						{
+							ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlocked","Achievement: Fragger\nDeathmatch Quickmatch Unlocked!"),6.0f);			
+						}
+						if (TutorialMask == TUTORIAL_CTF)
+						{
+							ShowToast(NSLOCTEXT("Unlocks","CTFQuickMatchUnlocked","Achievement: Flag Runner\nCapture the Flag Quickmatch Unlocked!"),6.0f);			
+						}
+					}
 				}
-				if (TutorialMask == TUTORIAL_CTF)
-				{
-					ShowToast(NSLOCTEXT("Unlocks","CTFQuickMatchUnlocked","Achievement: Flag Runner\nCapture the Flag Quickmatch Unlocked!"),6.0f);			
-				}
+
+				SaveProfileSettings();
+				break;
 			}
 		}
-
-		SaveProfileSettings();
 	}
 }
 
@@ -6161,6 +6229,7 @@ void UUTLocalPlayer::LaunchTutorial(FName TutorialName, const FString& DesiredQu
 			if (GI)
 			{
 				GI->LoadingMovieToPlay = TutorialData[i].LoadingMovie;
+				GI->LevelLoadText = FText::FromString(TutorialData[i].LoadingText);
 				GI->bSuppressLoadingText = true;
 			}
 
@@ -6191,6 +6260,22 @@ void UUTLocalPlayer::RestartTutorial()
 	}
 }
 
+void UUTLocalPlayer::NextTutorial()
+{
+	for (int32 i = 0; i < TutorialData.Num(); i++)
+	{
+		if (TutorialData[i].Tag == LastTutorial)
+		{
+			int32 NextTutorialIndex = (i + 1) % TutorialData.Num();
+			if (TutorialData.IsValidIndex(NextTutorialIndex))
+			{
+				LaunchTutorial(TutorialData[NextTutorialIndex].Tag, TEXT(""));
+				break;
+			}
+		}
+	}
+}
+
 FText UUTLocalPlayer::GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const
 {
 	if (Section == ETutorialSections::SkillMoves)
@@ -6215,11 +6300,54 @@ FText UUTLocalPlayer::GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type
 
 	if (Section == ETutorialSections::Hardcore)
 	{
+		if ( CurrentProfileSettings && ((CurrentProfileSettings->TutorialMask & TUTORIAL_Hardcore) == TUTORIAL_Hardcore) )
+		{
+			return NSLOCTEXT("TutorialText","Completed","!! COMPLETED !!");
+		}
 		return NSLOCTEXT("TutorialText","Classic","Classic game modes that have stood the test of time.");
 	}
 
 	return FText::GetEmpty();
 }
+
+bool UUTLocalPlayer::IsTutorialMaskCompleted(int32 TutorialMask)
+{
+	return CurrentProfileSettings && (CurrentProfileSettings->TutorialMask & TutorialMask) == TutorialMask;
+}
+
+
+bool UUTLocalPlayer::IsTutorialCompleted(FName TutorialName)
+{
+	bool bCompleted = false;
+	for (int32 i=0; i < TutorialData.Num(); i++)
+	{
+		if (TutorialData[i].Tag == TutorialName)
+		{
+			bCompleted = CurrentProfileSettings && (CurrentProfileSettings->TutorialMask & TutorialData[i].Mask) == TutorialData[i].Mask;
+			break;
+		}
+	}
+	return bCompleted;
+}
+
+FText UUTLocalPlayer::GetBestTutorialTime(FName TutorialName)
+{
+	float BestTime = 0.0f;
+	for (int32 i=0; i < TutorialData.Num(); i++)
+	{
+		if (TutorialData[i].Tag == TutorialName)
+		{
+			if (CurrentProgression)
+			{
+				CurrentProgression->GetBestTime(TutorialName, BestTime);
+			}
+			break;
+		}
+	}
+
+	return UUTGameEngine::ConvertTime(FText::GetEmpty(), FText::GetEmpty(), BestTime, true, true, true);
+}
+
 
 FReply UUTLocalPlayer::ToggleFriendsAndChat()
 {
@@ -6337,11 +6465,20 @@ void UUTLocalPlayer::ShowSavingWidget()
 
 void UUTLocalPlayer::HideSavingWidget()
 {
+	if (SavingWidget != nullptr && SavingMask == 0x00)
+	{
+		SavingWidget->SimpleEvent(FName(TEXT("Close")));
+	}
+}
+
+void UUTLocalPlayer::CloseSavingWidget()
+{
 #if !UE_SERVER
 	if (SavingWidget != nullptr)
 	{
 		CloseUMGWidget(SavingWidget);
 		SavingWidget = nullptr;
+		SavingMask = 0x00;
 	}
 #endif
 }

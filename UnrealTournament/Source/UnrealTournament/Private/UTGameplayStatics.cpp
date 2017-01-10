@@ -829,7 +829,9 @@ void UUTGameplayStatics::SetBestTime(UObject* WorldContextObject, FName TimingSe
 		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(PC->Player);
 		if (LP && LP->GetProgressionStorage())
 		{
+			LP->SetTutorialFinished(TimingSection);
 			LP->GetProgressionStorage()->SetBestTime(TimingSection, InBestTime);
+			LP->SaveProgression();
 		}
 	}
 }

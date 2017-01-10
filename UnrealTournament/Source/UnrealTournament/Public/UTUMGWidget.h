@@ -56,6 +56,13 @@ class UNREALTOURNAMENT_API UUTUMGWidget : public UUserWidget
 	{
 	}
 
+	// This event is called when the UMG widget is opened.  At this point, the PlayerOwner should be valid
+	UFUNCTION(BlueprintImplementableEvent)
+	void SimpleEvent(FName EventTag);
+	virtual void SimpleEvent_Implementation(FName EventTag)
+	{
+	}
+
 
 
 

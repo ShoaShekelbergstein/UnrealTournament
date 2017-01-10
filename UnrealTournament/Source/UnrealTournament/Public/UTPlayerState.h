@@ -1233,8 +1233,6 @@ private:
 	virtual void ForceUpdatePlayerInfo();
 
 public:
-	UFUNCTION(Client, Reliable)
-	virtual void ClientTutorialFinished(uint16 TutorialMask);
 
 	UPROPERTY()
 	bool bReported;

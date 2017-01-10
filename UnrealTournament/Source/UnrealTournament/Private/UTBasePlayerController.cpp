@@ -1232,7 +1232,7 @@ void AUTBasePlayerController::NextTutorial()
 	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
 	if (LocalPlayer)
 	{
-		LocalPlayer->LaunchTutorial(ETutorialTags::TUTTAG_Progress);
+		LocalPlayer->NextTutorial();
 	}
 }
 

@@ -494,8 +494,10 @@ protected:
 	FChatArchiveChanged ChatArchiveChanged;
 
 	double LastProfileCloudWriteTime;
+	double LastProgressionCloudWriteTime;
 	double ProfileCloudWriteCooldownTime;
 	FTimerHandle ProfileWriteTimerHandle;
+	FTimerHandle ProgressionWriteTimerHandle;
 
 	// Hopefully the only magic number needed for profile versions, but being safe
 	uint32 CloudProfileMagicNumberVersion1;
@@ -1197,6 +1199,7 @@ public:
 	virtual void LoginProcessComplete();
 
 	virtual void SetTutorialFinished(int32 TutorialMask);
+	virtual void SetTutorialFinished(FName TutorialTag);
 
 	UFUNCTION(BlueprintCallable, Category = UI)
 	bool IsSystemMenuOpen();
@@ -1217,6 +1220,15 @@ public:
 	UPROPERTY(config)
 	TArray<FTutorialData> TutorialData;
 
+	UFUNCTION(BlueprintCallable, Category=Tutorial)
+	virtual FText GetBestTutorialTime(FName TutorialName);
+
+	UFUNCTION(BlueprintCallable, Category=Tutorial)
+	virtual bool IsTutorialMaskCompleted(int32 TutorialMask);
+
+	UFUNCTION(BlueprintCallable, Category=Tutorial)
+	virtual bool IsTutorialCompleted(FName TutorialName);
+
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual void LaunchTutorial(FName TutorialName, const FString& DesiredQuickmatchType = TEXT(""));
 
@@ -1225,6 +1237,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual void RestartTutorial();
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual void NextTutorial();
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual FText GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const;
@@ -1272,5 +1287,12 @@ protected:
 	void ShowSavingWidget();
 	void HideSavingWidget();
 
+	// Holds a mask that says various portions of the OSS are saving data.  NOTE: if this is non-zero then
+	// a save of some data is in progress (progression or profile).
+	uint8 SavingMask; 
+
+public:
+	UFUNCTION(BlueprintCallable, Category=UMG)
+	void CloseSavingWidget();
 };
 

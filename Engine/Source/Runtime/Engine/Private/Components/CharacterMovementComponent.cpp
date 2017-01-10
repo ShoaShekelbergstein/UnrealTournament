@@ -6452,8 +6452,8 @@ void UCharacterMovementComponent::SmoothCorrection(const FVector& OldLocation, c
 	}
 
 	// We shouldn't be running this on a server that is not a listen server.
-	checkSlow(GetNetMode() != NM_DedicatedServer);
-	checkSlow(GetNetMode() != NM_Standalone);
+	//checkSlow(GetNetMode() != NM_DedicatedServer);
+	//checkSlow(GetNetMode() != NM_Standalone);
 
 	// Only client proxies or remote clients on a listen server should run this code.
 	const bool bIsSimulatedProxy = (CharacterOwner->Role == ROLE_SimulatedProxy);

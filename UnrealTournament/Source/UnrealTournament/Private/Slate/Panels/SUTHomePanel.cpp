@@ -552,18 +552,9 @@ FReply SUTHomePanel::QuickPlayClick(FName QuickMatchType)
 	TSharedPtr<SUTMainMenu> MainMenu = StaticCastSharedPtr<SUTMainMenu>(GetParentWindow());
 	if (MainMenu.IsValid())
 	{
-		if (PlayerOwner->IsMenuOptionLocked(QuickMatchType))
-		{
-			if (QuickMatchType == EMenuCommand::MC_QuickPlayDM) PlayerOwner->LaunchTutorial(ETutorialTags::TUTTAG_DM, EEpicDefaultRuleTags::Deathmatch);
-			else if (QuickMatchType == EMenuCommand::MC_QuickPlayFlagrun) PlayerOwner->LaunchTutorial(ETutorialTags::TUTTAG_Flagrun, EEpicDefaultRuleTags::FlagRun);
-			else if (QuickMatchType == EMenuCommand::MC_QuickPlayShowdown) PlayerOwner->LaunchTutorial(ETutorialTags::TUTTAG_Showdown, EEpicDefaultRuleTags::TEAMSHOWDOWN);
-		}
-		else
-		{
-			if (QuickMatchType == EMenuCommand::MC_QuickPlayDM) MainMenu->QuickPlay(EEpicDefaultRuleTags::Deathmatch);
-			else if (QuickMatchType == EMenuCommand::MC_QuickPlayFlagrun) MainMenu->QuickPlay(EEpicDefaultRuleTags::FlagRun);
-			else if (QuickMatchType == EMenuCommand::MC_QuickPlayShowdown) MainMenu->QuickPlay(EEpicDefaultRuleTags::TEAMSHOWDOWN);
-		}
+		if (QuickMatchType == EMenuCommand::MC_QuickPlayDM) MainMenu->QuickPlay(EEpicDefaultRuleTags::Deathmatch);
+		else if (QuickMatchType == EMenuCommand::MC_QuickPlayFlagrun) MainMenu->QuickPlay(EEpicDefaultRuleTags::FlagRun);
+		else if (QuickMatchType == EMenuCommand::MC_QuickPlayShowdown) MainMenu->QuickPlay(EEpicDefaultRuleTags::TEAMSHOWDOWN);
 	}
 
 	return FReply::Handled();
@@ -720,7 +711,8 @@ TSharedRef<SWidget> SUTHomePanel::BuildRankedPlaylist()
 					SAssignNew(RankedBox, SHorizontalBox)
 				]
 			];
-				
+			
+			int32 ButtonCount = 0;
 			for (int32 i = 0; i < NumPlaylists; i++)
 			{
 				FString PlaylistName;
@@ -735,6 +727,7 @@ TSharedRef<SWidget> SUTHomePanel::BuildRankedPlaylist()
 					FName SlateBadgeName = UTGameInstance->GetPlaylistManager()->GetPlaylistSlateBadge(PlaylistId);
 					if (SlateBadgeName == NAME_None) SlateBadgeName = FName(TEXT("UT.HomePanel.DMBadge"));
 
+					ButtonCount++;
 					RankedBox->AddSlot()
 					.AutoWidth()
 
@@ -801,7 +794,13 @@ TSharedRef<SWidget> SUTHomePanel::BuildRankedPlaylist()
 					];					
 				}
 			}
-			return FinalBox.ToSharedRef();
+
+			if (ButtonCount > 0)
+			{
+				return FinalBox.ToSharedRef();
+			}
+
+			FinalBox->ClearChildren();
 		}
 	}
 	return SNullWidget::NullWidget;
