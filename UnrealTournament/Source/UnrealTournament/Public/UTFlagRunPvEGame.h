@@ -68,6 +68,12 @@ public:
 	virtual void FindAndMarkHighScorer() override;
 	virtual void HandleRollingAttackerRespawn(AUTPlayerState* OtherPS) override;
 	virtual int32 GetFlagCapScore() override;
+
+	virtual void CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps) override;
+#if !UE_SERVER
+	virtual void CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, bool bCreateReadOnly, TArray< TSharedPtr<TAttributePropertyBase> >& ConfigProps, int32 MinimumPlayers) override;
+#endif
+
 protected:
 	virtual void SpawnMonster(TSubclassOf<AUTMonster> MonsterClass);
 };

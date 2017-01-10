@@ -7,6 +7,8 @@
 #include "UTFlagRunPvESquadAI.h"
 #include "UTPvEGameMessage.h"
 #include "UTFlagRunPvEGameState.h"
+#include "SNumericEntryBox.h"
+#include "Slate/SUWindowsStyle.h"
 
 AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 	: Super(OI)
@@ -74,6 +76,7 @@ void AUTFlagRunPvEGame::InitGame(const FString& MapName, const FString& Options,
 	}
 
 	Super::InitGame(MapName, Options, ErrorMessage);
+	GameSession->MaxPlayers = 5;
 }
 
 bool AUTFlagRunPvEGame::CheckRelevance_Implementation(AActor* Other)
@@ -427,3 +430,69 @@ int32 AUTFlagRunPvEGame::GetFlagCapScore()
 {
 	return Cast<AUTFlagRunPvEGameState>(UTGameState)->BonusLevel;
 }
+
+// Creates the URL options for custom games
+void AUTFlagRunPvEGame::CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps)
+{
+	MenuProps.Empty();
+	MenuProps.Add(MakeShareable(new TAttributeProperty<int32>(this, &BotFillCount, TEXT("BotFill"))));
+}
+
+#if !UE_SERVER
+void AUTFlagRunPvEGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, bool bCreateReadOnly, TArray< TSharedPtr<TAttributePropertyBase> >& ConfigProps, int32 MinimumPlayers)
+{
+	CreateGameURLOptions(ConfigProps);
+	
+	TSharedPtr< TAttributeProperty<int32> > CombatantsAttr = StaticCastSharedPtr<TAttributeProperty<int32>>(FindGameURLOption(ConfigProps, TEXT("BotFill")));
+
+	if (CombatantsAttr.IsValid())
+	{
+		MenuSpace->AddSlot()
+		.AutoHeight()
+		.VAlign(VAlign_Top)
+		.Padding(0.0f, 0.0f, 0.0f, 5.0f)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			.Padding(0.0f, 5.0f, 0.0f, 0.0f)
+			[
+				SNew(SBox)
+				.WidthOverride(350)
+				[
+					SNew(STextBlock)
+					.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+					.Text(NSLOCTEXT("UTGameMode", "NumCombatants", "Number of Combatants"))
+				]
+			]
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			.Padding(20.0f, 0.0f, 0.0f, 0.0f)
+			[
+				SNew(SBox)
+				.WidthOverride(300)
+				[
+					bCreateReadOnly ?
+					StaticCastSharedRef<SWidget>(
+						SNew(STextBlock)
+						.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+						.Text(CombatantsAttr.ToSharedRef(), &TAttributeProperty<int32>::GetAsText)
+						) :
+					StaticCastSharedRef<SWidget>(
+						SNew(SNumericEntryBox<int32>)
+						.Value(CombatantsAttr.ToSharedRef(), &TAttributeProperty<int32>::GetOptional)
+						.OnValueChanged(CombatantsAttr.ToSharedRef(), &TAttributeProperty<int32>::Set)
+						.AllowSpin(true)
+						.Delta(1)
+						.MinValue(MinimumPlayers)
+						.MaxValue(5)
+						.MinSliderValue(MinimumPlayers)
+						.MaxSliderValue(5)
+						.EditableTextBoxStyle(SUWindowsStyle::Get(), "UT.Common.NumEditbox.White")
+					)
+				]
+			]
+		];
+	}
+}
+#endif
