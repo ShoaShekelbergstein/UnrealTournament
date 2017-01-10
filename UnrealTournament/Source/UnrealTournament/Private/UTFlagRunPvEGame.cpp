@@ -232,6 +232,7 @@ void AUTFlagRunPvEGame::SpawnMonster(TSubclassOf<AUTMonster> MonsterClass)
 	if (PS != NULL)
 	{
 		PS->bReadyToPlay = true;
+		PS->bDrawNameOnDeathIndicator = MonsterClass.GetDefaultObject()->Cost > 0;
 		PS->HUDIcon = MonsterClass.GetDefaultObject()->HUDIcon;
 		PS->RemainingLives = MonsterClass.GetDefaultObject()->NumRespawns;
 		HandleRollingAttackerRespawn(PS);

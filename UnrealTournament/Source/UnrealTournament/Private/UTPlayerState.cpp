@@ -89,6 +89,8 @@ AUTPlayerState::AUTPlayerState(const class FObjectInitializer& ObjectInitializer
 	CoolFactorCombinationWindow = 5.0f;
 	CoolFactorBleedSpeed = 20.0f;
 	MinimumConsiderationForCoolFactorHistory = 200.0f;
+
+	bDrawNameOnDeathIndicator = true;
 }
 
 void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
@@ -180,6 +182,7 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME_CONDITION(AUTPlayerState, WeaponSkins, COND_OwnerOnly);
 	DOREPLIFETIME(AUTPlayerState, ReadyMode);
 
+	DOREPLIFETIME_CONDITION(AUTPlayerState, bDrawNameOnDeathIndicator, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, HUDIcon, COND_InitialOnly);
 
 	DOREPLIFETIME(AUTPlayerState, CurrentLoadoutPackTag);
@@ -3982,6 +3985,10 @@ void AUTPlayerState::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVect
 		float Scale = Canvas->ClipX / 1920.f;
 		UFont* ChatFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->ChatFont;
 		Canvas->TextSize(ChatFont, PlayerName, TextXL, YL, Scale, Scale);
+		if (!bDrawNameOnDeathIndicator)
+		{
+			TextXL = 1.0f;
+		}
 		float BarWidth, Y;
 		Canvas->TextSize(ChatFont, FString("AAAWWW"), BarWidth, Y, Scale, Scale);
 		float MaxBarWidth = 2.f*BarWidth;
@@ -4015,18 +4022,22 @@ void AUTPlayerState::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVect
 			Canvas->SetLinearDrawColor(FLinearColor::White);
 			Canvas->DrawTile(BarTexture, ScreenPosition.X - 0.5f*SkullHeight, YPos - YL - SkullHeight, SkullHeight, SkullHeight, 725, 0, 28, 36);
 
-			Canvas->SetLinearDrawColor(TeamColor);
-			Canvas->DrawTile(Canvas->DefaultTexture, XPos - Border, YPos - YL - Border, XL + 2.f*Border, Height + 2.f*Border, 0, 0, 1, 1);
-			FLinearColor BeaconTextColor = FLinearColor::White;
-			BeaconTextColor.A = 0.8f * CenterFade;
-			FUTCanvasTextItem TextItem(FVector2D(FMath::TruncToFloat(Canvas->OrgX + XPos + 0.5f*(XL - TextXL)), FMath::TruncToFloat(Canvas->OrgY + YPos - 1.2f*YL)), FText::FromString(PlayerName), ChatFont, BeaconTextColor, NULL);
-			TextItem.Scale = FVector2D(TextScaling*Scale, TextScaling*Scale);
-			TextItem.BlendMode = SE_BLEND_Translucent;
-			FLinearColor ShadowColor = FLinearColor::Black;
-			ShadowColor.A = BeaconTextColor.A;
-			TextItem.EnableShadow(ShadowColor);
-			TextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
-			Canvas->DrawItem(TextItem);
+			if (bDrawNameOnDeathIndicator)
+			{
+				Canvas->SetLinearDrawColor(TeamColor);
+				Canvas->DrawTile(Canvas->DefaultTexture, XPos - Border, YPos - YL - Border, XL + 2.f*Border, Height + 2.f*Border, 0, 0, 1, 1);
+			
+				FLinearColor BeaconTextColor = FLinearColor::White;
+				BeaconTextColor.A = 0.8f * CenterFade;
+				FUTCanvasTextItem TextItem(FVector2D(FMath::TruncToFloat(Canvas->OrgX + XPos + 0.5f*(XL - TextXL)), FMath::TruncToFloat(Canvas->OrgY + YPos - 1.2f*YL)), FText::FromString(PlayerName), ChatFont, BeaconTextColor, NULL);
+				TextItem.Scale = FVector2D(TextScaling*Scale, TextScaling*Scale);
+				TextItem.BlendMode = SE_BLEND_Translucent;
+				FLinearColor ShadowColor = FLinearColor::Black;
+				ShadowColor.A = BeaconTextColor.A;
+				TextItem.EnableShadow(ShadowColor);
+				TextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
+				Canvas->DrawItem(TextItem);
+			}
 		}
 	}
 }

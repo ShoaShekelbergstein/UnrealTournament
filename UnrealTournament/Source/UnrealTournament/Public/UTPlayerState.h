@@ -662,6 +662,10 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = PlayerState)
 	FName Avatar;
 
+	/** whether to draw the name as part of the in-world death indicator or just the skull icon */
+	UPROPERTY(Replicated)
+	bool bDrawNameOnDeathIndicator;
+
 	/** HUD icon for player displays; overrides character data if set */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = PlayerState)
 	FCanvasIcon HUDIcon;
