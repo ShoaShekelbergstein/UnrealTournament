@@ -415,6 +415,22 @@ bool UPartyContext::IsPartyLeader(const FUniqueNetIdRepl& PartyMemberId)
 	return false;
 }
 
+FUniqueNetIdRepl UPartyContext::GetPartyLeader()
+{
+	UUTGameInstance* GameInstance = GetGameInstance<UUTGameInstance>();
+	check(GameInstance);
+	UUTParty* UTParty = GameInstance->GetParties();
+	check(UTParty);
+
+	UPartyGameState* PersistentParty = UTParty->GetPersistentParty();
+	if (ensure(PersistentParty))
+	{
+		return PersistentParty->GetPartyLeader();
+	}
+
+	return FUniqueNetIdRepl();
+}
+
 void UPartyContext::PromotePartyMemberToLeader(const FUniqueNetIdRepl& PartyMemberId)
 {
 	if (!PartyMemberId.IsValid())

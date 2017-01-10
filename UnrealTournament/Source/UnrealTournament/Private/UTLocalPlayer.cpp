@@ -2953,6 +2953,15 @@ bool UUTLocalPlayer::JoinSession(const FOnlineSessionSearchResult& SearchResult,
 	bCancelJoinSession = false;
 	FUniqueNetIdRepl UniqueId = OnlineIdentityInterface->GetUniquePlayerId(0);
 
+	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
+	if (PartyContext)
+	{
+		int32 PartySize = PartyContext->GetPartySize();
+		FUniqueNetIdRepl PartyLeaderId = PartyContext->GetPartyLeader();
+		SetDefaultURLOption(TEXT("PartySize"), FString::FromInt(PartySize));
+		SetDefaultURLOption(TEXT("PartyLeader"), PartyLeaderId.ToString());
+	}
+	
 	bJoinSessionInProgress = true;
 
 	PendingSession = SearchResult;

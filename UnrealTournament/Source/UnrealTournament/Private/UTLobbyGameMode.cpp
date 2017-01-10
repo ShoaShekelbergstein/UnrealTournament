@@ -152,6 +152,9 @@ FString AUTLobbyGameMode::InitNewPlayer(class APlayerController* NewPlayerContro
 		{
 			PS->SetCharacter(InOpt);
 		}
+
+		PS->PartyLeader = UGameplayStatics::ParseOption(Options, TEXT("PartyLeader"));
+		PS->PartySize = UGameplayStatics::GetIntOption(Options, TEXT("PartySize"), 1);
 	}
 
 	return Result;

@@ -545,6 +545,7 @@ bool UUTGameInstance::ClientTravelToSession(int32 ControllerId, FName InSessionN
 					{
 						bRanked = PartyGameState->IsMatchRanked();
 						URL += TEXT("?PartySize=") + FString::FromInt(PartyGameState->GetPartySize());
+						URL += TEXT("?PartyLeader=") + PartyGameState->GetPartyLeader()->ToString();
 					}
 					//Parties->NotifyPreClientTravel();
 				}

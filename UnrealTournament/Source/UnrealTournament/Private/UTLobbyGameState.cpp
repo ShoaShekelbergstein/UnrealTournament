@@ -301,7 +301,7 @@ void AUTLobbyGameState::JoinMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerSt
 		if (MatchInfo->bDedicatedMatch)
 		{
 			MatchInfo->AddPlayer(NewPlayer);
-			NewPlayer->ClientConnectToInstance(MatchInfo->GameInstanceGUID, bAsSpectator);
+			NewPlayer->ClientConnectToInstance(MatchInfo->GameInstanceGUID, NewPlayer->DesiredTeamNum, bAsSpectator);
 			return;	
 		}
 		if (MatchInfo->IsBanned(NewPlayer->UniqueId))
@@ -360,7 +360,7 @@ void AUTLobbyGameState::JoinMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerSt
 		if (GM && MatchInfo->MatchHasRoom(bAsSpectator) )
 		{
 			MatchInfo->AddPlayer(NewPlayer);
-			NewPlayer->ClientConnectToInstance(MatchInfo->GameInstanceGUID, bAsSpectator);
+			NewPlayer->ClientConnectToInstance(MatchInfo->GameInstanceGUID, NewPlayer->DesiredTeamNum, bAsSpectator);
 			return;
 		}
 

@@ -796,6 +796,7 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 			PS->bSkipELO = bPastELOLimit && Cast<AUTGameSession>(GameSession) && !((AUTGameSession *)(GameSession))->bNoJoinInProgress;
 
 			PS->PartySize = UGameplayStatics::GetIntOption(Options, TEXT("PartySize"), 1);
+			PS->PartyLeader = UGameplayStatics::ParseOption(Options, TEXT("PartyLeader"));
 		}
 	}
 

@@ -372,6 +372,9 @@ public:
 	UPROPERTY()
 	int32 PartySize;
 
+	UPROPERTY()
+	FString PartyLeader;
+
 	// Player Stats 
 
 	/** This is the unique ID for stats generation*/

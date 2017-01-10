@@ -121,7 +121,33 @@ APlayerController* AUTTeamGameMode::Login(class UPlayer* NewPlayer, ENetRole InR
 		if (!bRankedSession && !bIsQuickMatch)
 		{
 			// FIXMESTEVE Does team get overwritten in postlogin if inactive player?
-			uint8 DesiredTeam = (GetNetMode() == NM_Standalone) ? 1 : uint8(FMath::Clamp<int32>(UGameplayStatics::GetIntOption(Options, TEXT("Team"), 255), 0, 255));
+			uint8 DesiredTeam = 1;
+			if (GetNetMode() != NM_Standalone)
+			{
+				DesiredTeam = uint8(FMath::Clamp<int32>(UGameplayStatics::GetIntOption(Options, TEXT("Team"), 255), 0, 255));
+
+				if (DesiredTeam == 255)
+				{
+					AUTPlayerState* UTPS = Cast<AUTPlayerState>(PC->PlayerState);
+					if (UTPS && UTPS->PartySize > 1)
+					{
+						// Check if there's other party members in the server and try to put them in
+						for (int32 i = 0; i < GameState->PlayerArray.Num(); i++)
+						{
+							if (UTPS != GameState->PlayerArray[i])
+							{
+								AUTPlayerState* PossibleLeaderPS = Cast<AUTPlayerState>(GameState->PlayerArray[i]);
+								if (PossibleLeaderPS && PossibleLeaderPS->PartyLeader == UTPS->PartyLeader)
+								{
+									DesiredTeam = PossibleLeaderPS->GetTeamNum();
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+
 			ChangeTeam(PC, DesiredTeam, false);
 		}
 		else

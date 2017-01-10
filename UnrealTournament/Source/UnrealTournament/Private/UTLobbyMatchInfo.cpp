@@ -177,6 +177,17 @@ void AUTLobbyMatchInfo::AddPlayer(AUTLobbyPlayerState* PlayerToAdd, bool bIsOwne
 			PlayerToAdd->DesiredTeamNum = 0;
 		}
 	}
+	
+	if (PlayerToAdd->PartySize > 1)
+	{
+		for (int32 i = 0; i < Players.Num(); i++)
+		{
+			if (Players[i]->PartyLeader == PlayerToAdd->PartyLeader)
+			{
+				PlayerToAdd->DesiredTeamNum = Players[i]->DesiredTeamNum;
+			}
+		}
+	}
 
 	if (bIsSpectator)
 	{
@@ -376,6 +387,8 @@ void AUTLobbyMatchInfo::ServerStartMatch_Implementation()
 			return;
 		}
 
+		// Parties invalidate the balanced team code
+		/*
 		AUTTeamGameMode* TeamGame = Cast<AUTTeamGameMode>(CurrentRuleset->GetDefaultGameModeObject());
 		if (TeamGame != NULL)
 		{
@@ -397,6 +410,7 @@ void AUTLobbyMatchInfo::ServerStartMatch_Implementation()
 				}
 			}
 		}
+		*/
 
 		// TODO: need to check for ready ups on server side
 
@@ -505,7 +519,7 @@ void AUTLobbyMatchInfo::GameInstanceReady(FGuid inGameInstanceGUID)
 			{
 				// Tell the client to connect to the instance
 
-				Players[i]->ClientConnectToInstance(GameInstanceGUID, Players[i]->DesiredTeamNum == 255);
+				Players[i]->ClientConnectToInstance(GameInstanceGUID, Players[i]->DesiredTeamNum, Players[i]->DesiredTeamNum == 255);
 			}
 		}
 	}
@@ -691,7 +705,11 @@ void AUTLobbyMatchInfo::AssignTeams()
 			{
 				if (CurrentRuleset->bTeamGame)
 				{
-					Players[i]->DesiredTeamNum = i % 2;
+					// If player is in a party, they are most likely already on the correct team
+					if (Players[i]->PartySize == 1)
+					{
+						Players[i]->DesiredTeamNum = i % 2;
+					}
 				}
 				else 
 				{

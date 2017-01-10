@@ -126,4 +126,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = PartyContext)
 	int32 GetPartySize() const;
+
+	FUniqueNetIdRepl GetPartyLeader();
 };
