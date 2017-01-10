@@ -457,13 +457,16 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 			{
 				int32 OptimalPlayerCount = CurrentRuleset->bTeamGame ? InitialMapInfo->OptimalTeamPlayerCount : InitialMapInfo->OptimalPlayerCount;
 
+				int32 DesiredBotFill = BotSkillLevel >= 0 ? FMath::Clamp<int32>(OptimalPlayerCount,0, CurrentRuleset->MaxPlayers) : 0;
+				if (DesiredBotFill < CurrentRuleset->MinPlayersToStart) DesiredBotFill = CurrentRuleset->MinPlayersToStart;
+
 				if (BotSkillLevel >= 0)
 				{
-					GameURL += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), FMath::Clamp<int32>(OptimalPlayerCount,0, CurrentRuleset->MaxPlayers), FMath::Clamp<int32>(BotSkillLevel,0,7));			
+					GameURL += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), DesiredBotFill, FMath::Clamp<int32>(BotSkillLevel,0,7));			
 				}
 				else
 				{
-					GameURL += TEXT("?BotFill=0");
+					GameURL += FString::Printf(TEXT("?BotFill=%i"), DesiredBotFill);			
 				}
 			}
 		}
