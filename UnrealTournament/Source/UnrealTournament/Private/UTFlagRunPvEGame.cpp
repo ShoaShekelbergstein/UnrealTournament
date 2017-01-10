@@ -43,6 +43,18 @@ AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 	VialReplacement = FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Energy_Small.Energy_Small_C"));
 }
 
+void AUTFlagRunPvEGame::PreloadClientAssets(TArray<UObject*>& ObjList) const
+{
+	for (const FStringClassReference& Item : EditableMonsterTypes)
+	{
+		TSubclassOf<AUTMonster> NewType = Item.TryLoadClass<AUTMonster>();
+		if (NewType != nullptr)
+		{
+			ObjList.Add(NewType);
+		}
+	}
+}
+
 void AUTFlagRunPvEGame::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	for (const FStringClassReference& Item : EditableMonsterTypes)

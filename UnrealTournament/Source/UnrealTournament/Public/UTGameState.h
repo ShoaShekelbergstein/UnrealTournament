@@ -40,7 +40,15 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	FString ServerDescription;
 
 	UPROPERTY()
-		float MusicVolume;
+	float MusicVolume;
+
+	/** objects game class requested client pre-loading for via PreloadClientAssets()
+	 * this array prevents those items from GC'ing prior to usage being replicated and is only used on clients
+	 */
+	UPROPERTY()
+	TArray<UObject*> PreloadedAssets;
+
+	virtual void OnRep_GameModeClass() override;
 
 	/** teams, if the game type has them */
 	UPROPERTY(BlueprintReadOnly, Category = GameState)

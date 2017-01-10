@@ -992,5 +992,11 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category=Onboarding)
 	int32 TutorialMask;
 
+	/** preload assets on client that are loaded on server but aren't immediately used by/replicated to client so they may not be loaded
+	 * example: pawn classes for class-based modes
+	 * prevents client hitches when the objects are replicated the first time
+	 */
+	virtual void PreloadClientAssets(TArray<UObject*>& ObjList) const
+	{}
 };
 

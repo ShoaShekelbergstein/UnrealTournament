@@ -39,6 +39,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Meta = (MetaClass = "UTInventory"))
 	TArray<FStringClassReference> BoostPowerupTypes;
 
+	virtual void PreloadClientAssets(TArray<UObject*>& ObjList) const override;
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	virtual void InitGameState() override;
 	virtual void InitBoostTypes();

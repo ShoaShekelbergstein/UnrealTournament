@@ -359,6 +359,19 @@ void AUTGameState::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTra
 	Super::PreReplication(ChangedPropertyTracker);
 }
 
+void AUTGameState::OnRep_GameModeClass()
+{
+	Super::OnRep_GameModeClass();
+	if (GameModeClass != nullptr)
+	{
+		const AUTGameMode* DefGame = Cast<AUTGameMode>(GameModeClass.GetDefaultObject());
+		if (DefGame != nullptr)
+		{
+			DefGame->PreloadClientAssets(PreloadedAssets);
+		}
+	}
+}
+
 void AUTGameState::AddOverlayMaterial(UMaterialInterface* NewOverlay, UMaterialInterface* NewOverlay1P)
 {
 	AddOverlayEffect(FOverlayEffect(NewOverlay), FOverlayEffect(NewOverlay1P));
