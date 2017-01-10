@@ -1231,7 +1231,6 @@ void AUTBot::SetDefaultFocus()
 
 void AUTBot::DisplayDebug(UCanvas* Canvas, const FDebugDisplayInfo& DebugDisplay, float& YL, float& YPos)
 {
-#if ENABLE_DRAW_DEBUG
 	Super::DisplayDebug(Canvas, DebugDisplay, YL, YPos);
 
 	Canvas->SetDrawColor(255, 255, 255);
@@ -1278,7 +1277,6 @@ void AUTBot::DisplayDebug(UCanvas* Canvas, const FDebugDisplayInfo& DebugDisplay
 		}
 		DrawDebugSphere(GetWorld(), GetFocalPoint(), 24.0f, 8, FColor(255, 255, 0));
 	}
-#endif // ENABLE_DRAW_DEBUG
 }
 
 void AUTBot::ApplyWeaponAimAdjust(FVector TargetLoc, FVector& FocalPoint)
