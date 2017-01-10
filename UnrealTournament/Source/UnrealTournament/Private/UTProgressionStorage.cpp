@@ -42,9 +42,9 @@ void UUTProgressionStorage::TokensCommit()
 	if (!Achievements.Contains(AchievementIDs::TutorialComplete))
 	{
 		bool bCompletedTutorial = true;
-		static TArray<FName, TInlineAllocator<60>> TutorialTokens = []()
+		static TArray<FName, TInlineAllocator<70>> TutorialTokens = []()
 		{
-			TArray<FName, TInlineAllocator<60>> List;
+			TArray<FName, TInlineAllocator<70>> List;
 			FNumberFormattingOptions Options;
 			Options.MinimumIntegralDigits = 3;
 			for (int32 i = 0; i < 15; i++)
@@ -61,19 +61,27 @@ void UUTProgressionStorage::TokensCommit()
 			}
 			for (int32 i = 0; i < 5; i++)
 			{
-				List.Add(FName(*FString::Printf(TEXT("tuba_token_%s"), *FText::AsNumber(i, &Options).ToString())));
+				List.Add(FName(*FString::Printf(TEXT("FFA_token_%s"), *FText::AsNumber(i, &Options).ToString())));
 			}
 			for (int32 i = 0; i < 5; i++)
 			{
-				List.Add(FName(*FString::Printf(TEXT("outpost23_token_%s"), *FText::AsNumber(i, &Options).ToString())));
+				List.Add(FName(*FString::Printf(TEXT("TDM_token_%s"), *FText::AsNumber(i, &Options).ToString())));
 			}
 			for (int32 i = 0; i < 5; i++)
 			{
-				List.Add(FName(*FString::Printf(TEXT("face_token_%s"), *FText::AsNumber(i, &Options).ToString())));
+				List.Add(FName(*FString::Printf(TEXT("CTF_token_%s"), *FText::AsNumber(i, &Options).ToString())));
 			}
 			for (int32 i = 0; i < 5; i++)
 			{
-				List.Add(FName(*FString::Printf(TEXT("asdf_token_%s"), *FText::AsNumber(i, &Options).ToString())));
+				List.Add(FName(*FString::Printf(TEXT("Duel_token_%s"), *FText::AsNumber(i, &Options).ToString())));
+			}
+			for (int32 i = 0; i < 5; i++)
+			{
+				List.Add(FName(*FString::Printf(TEXT("SD_token_%s"), *FText::AsNumber(i, &Options).ToString())));
+			}
+			for (int32 i = 0; i < 5; i++)
+			{
+				List.Add(FName(*FString::Printf(TEXT("FR_token_%s"), *FText::AsNumber(i, &Options).ToString())));
 			}
 			return List;
 		}();
