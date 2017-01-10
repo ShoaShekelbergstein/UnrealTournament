@@ -325,20 +325,8 @@ void UUTGameUserSettings::RunSynthBenchmark(bool bSaveSettingsOnceDetected)
 		UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
 		if (UTEngine != NULL)
 		{
-			int32 RefreshRate;
-			if (UTEngine->GetMonitorRefreshRate(RefreshRate))
-			{
-				if (RefreshRate >= 120)
-				{
-					UTEngine->FrameRateCap = 120;
-				}
-				else
-				{
-					UTEngine->FrameRateCap = 60;
-				}
-
-				UTEngine->SaveConfig();
-			}
+			UTEngine->FrameRateCap = FMath::Max(UTEngine->FrameRateCap, 120.f);
+			UTEngine->SaveConfig();
 		}
 
 		CorrectScreenPercentageOnHighResLowGPU(DetectedLevels);

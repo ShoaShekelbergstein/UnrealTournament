@@ -4,6 +4,7 @@
 #include "UTPlayerInput.h"
 #include "GameFramework/InputSettings.h"
 #include "Runtime/JsonUtilities/Public/JsonUtilities.h"
+#include "UTGameEngine.h"
 
 static FName NAME_TapForward(TEXT("TapForward"));
 static FName NAME_TapBack(TEXT("TapBack"));
@@ -538,6 +539,16 @@ bool UUTProfileSettings::VersionFixup()
 	if (WeaponCustomizations.Contains(EpicWeaponCustomizationTags::Sniper))
 	{
 		WeaponCustomizations[EpicWeaponCustomizationTags::Sniper].DefaultCrosshairTag = DefaultWeaponCrosshairs::Sniper;
+	}
+
+	if (SettingsRevisionNum < FRAMECAP_FIXUP_VERSION)
+	{
+		UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
+		if (UTEngine != NULL)
+		{
+			UTEngine->FrameRateCap = FMath::Max(UTEngine->FrameRateCap, 120.f);
+			UTEngine->SaveConfig();
+		}
 	}
 
 	if (SettingsRevisionNum < WEAPONBAR_FIXUP_VERSION)
