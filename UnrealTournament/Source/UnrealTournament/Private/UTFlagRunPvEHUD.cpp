@@ -77,7 +77,7 @@ void AUTFlagRunPvEHUD::DrawHUD()
 	{
 		// draw extra life display
 		AUTFlagRunPvEGameState* GS = GetWorld()->GetGameState<AUTFlagRunPvEGameState>();
-		if (GS != nullptr)
+		if (GS != nullptr && GS->KillsUntilExtraLife > 0)
 		{
 			Canvas->DrawColor = FColor::White;
 			FText Txt = FText::Format(NSLOCTEXT("UnrealTournmanet", "KillsToLives", "{0} more kills for extra life"), FText::AsNumber(GS->KillsUntilExtraLife));
