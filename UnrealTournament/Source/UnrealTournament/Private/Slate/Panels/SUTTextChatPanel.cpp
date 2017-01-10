@@ -301,6 +301,9 @@ void SUTTextChatPanel::RouteChat(UUTLocalPlayer* LocalPlayer, TSharedPtr<FStored
 			ChatDestinationList[i]->HandleChat(ChatMessage);
 		}
 	}
+
+	ChatScrollBox->ScrollToEnd();
+
 }
 
 void SUTTextChatPanel::ChatTextCommited(const FText& NewText, ETextCommit::Type CommitType)
