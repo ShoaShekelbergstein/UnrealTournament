@@ -844,6 +844,10 @@ public:
 	{
 		StartNewAction(CampAction);
 	}
+	inline bool IsCamping() const
+	{
+		return CurrentAction == CampAction;
+	}
 	/** hunt specified enemy (assumed not currently attackable), attempting to predict its path and intercept it at an advantageous position */
 	virtual void DoHunt(APawn* NewHuntTarget);
 

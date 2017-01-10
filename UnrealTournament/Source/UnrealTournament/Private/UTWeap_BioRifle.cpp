@@ -1,11 +1,10 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
-
 #include "UnrealTournament.h"
 #include "UTWeap_BioRifle.h"
 #include "UTProj_BioShot.h"
 #include "UTWeaponStateFiringCharged.h"
 #include "StatNames.h"
-
+#include "UTDefensePoint.h"
 
 AUTWeap_BioRifle::AUTWeap_BioRifle(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer.SetDefaultSubobjectClass<UUTWeaponStateFiringCharged>(TEXT("FiringState1")))
@@ -253,3 +252,76 @@ void AUTWeap_BioRifle::FiringInfoUpdated_Implementation(uint8 InFireMode, uint8 
 	}
 }
 
+float AUTWeap_BioRifle::SuggestAttackStyle_Implementation()
+{
+	AUTBot* B = Cast<AUTBot>(UTOwner->Controller);
+	if (B == nullptr || B->GetEnemy() == nullptr)
+	{
+		return 0.4f;
+	}
+	else
+	{
+		float EnemyDist = (B->GetEnemy()->GetActorLocation() - UTOwner->GetActorLocation()).Size();
+		if (EnemyDist > 3300.0f)
+		{
+			return 1.0f;
+		}
+		else if (EnemyDist >= 2200.0f)
+		{
+			return 0.4f;
+		}
+		else
+		{
+			return -0.4;
+		}
+	}
+}
+float AUTWeap_BioRifle::SuggestDefenseStyle_Implementation()
+{
+	AUTBot* B = Cast<AUTBot>(UTOwner->Controller);
+	if (B == nullptr || B->GetEnemy() == nullptr)
+	{
+		return 0.0f;
+	}
+	else if ((B->GetEnemy()->GetActorLocation() - UTOwner->GetActorLocation()).Size() < 3600.0f)
+	{
+		return -0.6f;
+	}
+	else
+	{
+		return 0.0f;
+	}
+}
+bool AUTWeap_BioRifle::CanAttack_Implementation(AActor* Target, const FVector& TargetLoc, bool bDirectOnly, bool bPreferCurrentMode, uint8& BestFireMode, FVector& OptimalTargetLoc)
+{
+	AUTBot* B = Cast<AUTBot>(UTOwner->Controller);
+	if (Super::CanAttack_Implementation(Target, TargetLoc, bDirectOnly, bPreferCurrentMode, BestFireMode, OptimalTargetLoc))
+	{
+		if (!bPreferCurrentMode)
+		{
+			// increasing chance of primary fire at shorter ranges
+			BestFireMode = (FMath::FRand() < ((TargetLoc - UTOwner->GetActorLocation()).Size() - 1000.0f) / 3000.0f) ? 1 : 0;
+		}
+		return true;
+	}
+	else if (B == nullptr || !B->WeaponProficiencyCheck())
+	{
+		return false;
+	}
+	else if (B->IsCamping() && (B->GetDefensePoint() == nullptr || !B->GetDefensePoint()->bSniperSpot) && (TargetLoc - UTOwner->GetActorLocation()).Size() <= 4000.0f)
+	{
+		// charge up while waiting for an enemy to appear
+		BestFireMode = 1;
+		return true;
+	}
+	else if (Target != B->GetEnemy() || (B->GetEnemyLocation(B->GetEnemy(), true) - UTOwner->GetActorLocation()).Size() > 4000.0f || B->LostContact(3.0f))
+	{
+		return false;
+	}
+	else
+	{
+		// charge up for when we see enemy again
+		BestFireMode = 1;
+		return true;
+	}
+}

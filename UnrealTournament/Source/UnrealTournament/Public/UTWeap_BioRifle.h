@@ -75,4 +75,8 @@ class UNREALTOURNAMENT_API AUTWeap_BioRifle : public AUTWeapon
 	{
 		return (Ammo >= 1);
 	}
+
+	virtual bool CanAttack_Implementation(AActor* Target, const FVector& TargetLoc, bool bDirectOnly, bool bPreferCurrentMode, uint8& BestFireMode, FVector& OptimalTargetLoc) override;
+	virtual float SuggestAttackStyle_Implementation() override;
+	virtual float SuggestDefenseStyle_Implementation() override;
 };
