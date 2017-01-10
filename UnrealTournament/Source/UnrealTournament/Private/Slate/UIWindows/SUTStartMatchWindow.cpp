@@ -25,8 +25,8 @@ void SUTStartMatchWindow::Construct(const FArguments& InArgs, TWeakObjectPtr<UUT
 	Funny.Add(TEXT("Activating the Field LAttice Generator..."));
 	Funny.Add(TEXT("Taking a WOW break..."));
 	Funny.Add(TEXT("Dividing by Zero..."));
-	Funny.Add(TEXT("Tighening up the graphics..."));
-	Funny.Add(TEXT("Lets BOUNCE!!!"));
+	Funny.Add(TEXT("Tightening up the graphics..."));
+	Funny.Add(TEXT("Let\'s BOUNCE!!!"));
 	FunnyIndex = -1;
 	SUTWindowBase::Construct
 	(
