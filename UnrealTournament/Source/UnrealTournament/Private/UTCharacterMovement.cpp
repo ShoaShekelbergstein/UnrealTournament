@@ -742,7 +742,7 @@ bool UUTCharacterMovement::CanDodge()
 
 bool UUTCharacterMovement::CanJump()
 {
-	return (IsMovingOnGround() || CanMultiJump()) && CanEverJump() && !bWantsToCrouch && !bIsFloorSliding;
+	return (IsMovingOnGround() || CanMultiJump()) && CanEverJump() && !bIsFloorSliding;
 }
 
 bool UUTCharacterMovement::IsCarryingFlag() const

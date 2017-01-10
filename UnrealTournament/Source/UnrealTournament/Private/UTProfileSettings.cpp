@@ -181,7 +181,6 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	FKeyConfigurationInfo Key;
 
 	// Move
-
 	Key = FKeyConfigurationInfo("MoveForward", EControlCategory::Movement, EKeys::W, EKeys::Up, EKeys::Gamepad_LeftY, NSLOCTEXT("Keybinds","MoveForward","Move Forward"));
 	Key.AddAxisMapping("MoveForward", 1.0f);
 	Key.AddActionMapping("TapForward");
@@ -203,7 +202,6 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	outGameActions.Add(Key);
 
 	// Turn
-
 	Key = FKeyConfigurationInfo("TurnLeft", EControlCategory::Movement, EKeys::Left, EKeys::Invalid, EKeys::Invalid, NSLOCTEXT("Keybinds", "TurnLeft", "Turn Left"));
 	Key.AddAxisMapping("TurnRate", -1.0f);
 	outGameActions.Add(Key);
@@ -213,7 +211,6 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	outGameActions.Add(Key);
 
 	// Actions
-
 	Key = FKeyConfigurationInfo("Jump", EControlCategory::Movement, EKeys::SpaceBar, EKeys::Invalid, EKeys::Gamepad_FaceButton_Bottom, NSLOCTEXT("Keybinds", "Jump", "Jump"));
 	Key.AddAxisMapping("MoveUp", 1.0f);
 	Key.AddActionMapping("Jump");
@@ -224,16 +221,15 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	Key.AddActionMapping("Crouch");
 	outGameActions.Add(Key);
 
-	Key = FKeyConfigurationInfo("Slide", EControlCategory::Movement, EKeys::LeftShift, EKeys::Invalid, EKeys::Invalid, NSLOCTEXT("Keybinds", "Slide", "Slide"));
+	Key = FKeyConfigurationInfo("Slide", EControlCategory::Movement, EKeys::ThumbMouseButton, EKeys::Invalid, EKeys::Invalid, NSLOCTEXT("Keybinds", "Slide", "Slide"));
 	Key.AddActionMapping("Slide");
 	outGameActions.Add(Key);
 
-	Key = FKeyConfigurationInfo("SingleTapDodge", EControlCategory::Movement, EKeys::V, EKeys::MiddleMouseButton, EKeys::Gamepad_DPad_Down, NSLOCTEXT("Keybinds", "SingleTapDodge", "One Tap Dodge"));
+	Key = FKeyConfigurationInfo("SingleTapDodge", EControlCategory::Movement, EKeys::LeftShift, EKeys::V, EKeys::Gamepad_DPad_Down, NSLOCTEXT("Keybinds", "SingleTapDodge", "One Tap Dodge"));
 	Key.AddActionMapping("SingleTapDodge");
 	outGameActions.Add(Key);
 
 	// Combat
-
 	Key = FKeyConfigurationInfo("Fire", EControlCategory::Combat, EKeys::LeftMouseButton, EKeys::Invalid, EKeys::Gamepad_RightTrigger, NSLOCTEXT("Keybinds", "Fire", "Fire"));
 	Key.AddActionMapping("StartFire");
 	Key.AddActionMapping("StopFire");
@@ -270,13 +266,11 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	outGameActions.Add(Key);
 */
 
-	Key = FKeyConfigurationInfo("ToggleWepaonWheel", EControlCategory::Combat, EKeys::ThumbMouseButton, EKeys::Invalid, EKeys::Gamepad_DPad_Up, NSLOCTEXT("Keybinds", "ToggleWeaponWheel", "Show Weapon Wheel"));
+	Key = FKeyConfigurationInfo("ToggleWepaonWheel", EControlCategory::Combat, EKeys::MiddleMouseButton, EKeys::Invalid, EKeys::Gamepad_DPad_Up, NSLOCTEXT("Keybinds", "ToggleWeaponWheel", "Show Weapon Wheel"));
 	Key.AddActionMapping("ToggleWeaponWheel");
 	outGameActions.Add(Key);
 
-
 	// Weapon
-
 	Key = FKeyConfigurationInfo("SwitchWeapon1", EControlCategory::Weapon, EKeys::One, EKeys::Invalid, EKeys::Invalid, NSLOCTEXT("Keybinds", "SwitchWeapon1", "Select Weapon Group 1"));
 	Key.AddCustomBinding("SwitchWeapon 1");
 	outGameActions.Add(Key);
@@ -318,7 +312,6 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	outGameActions.Add(Key);
 
 	// Taunts
-
 	Key = FKeyConfigurationInfo("Taunt1", EControlCategory::Taunts, EKeys::J, EKeys::Invalid, EKeys::Gamepad_DPad_Left, NSLOCTEXT("Keybinds", "Taunt1", "Taunt #1"));
 	Key.AddActionMapping("PlayTaunt");
 	outGameActions.Add(Key);
@@ -332,7 +325,6 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	outGameActions.Add(Key);
 
 	// UI
-
 	Key = FKeyConfigurationInfo("ShowMenu", EControlCategory::UI, EKeys::Escape, EKeys::Invalid, EKeys::Gamepad_Special_Right, NSLOCTEXT("Keybinds", "ShowMenu", "Show Menu"));
 	Key.AddActionMapping("ShowMenu");
 	outGameActions.Add(Key);
@@ -362,7 +354,6 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	outGameActions.Add(Key);
 
 	// Misc
-
 	Key = FKeyConfigurationInfo("FeignDeath", EControlCategory::Misc, EKeys::H, EKeys::Invalid, EKeys::Invalid, NSLOCTEXT("Keybinds", "FeignDeath", "Feign Death"));
 	Key.AddCustomBinding("FeignDeath");
 	outGameActions.Add(Key);
@@ -602,10 +593,6 @@ bool UUTProfileSettings::VersionFixup()
 			{
 				bMiddleMouseUsed = true;
 			}
-			else if (GameActions[i].CustomBindings[j].KeyName == EKeys::ThumbMouseButton)
-			{
-				bThumbMouseUsed =  true;
-			}
 		}
 	}
 
@@ -620,12 +607,7 @@ bool UUTProfileSettings::VersionFixup()
 			{
 				GameActions[WeaponWheelIndex].PrimaryKey = EKeys::MiddleMouseButton;
 			}
-			else if (!bThumbMouseUsed)
-			{
-				GameActions[WeaponWheelIndex].PrimaryKey = EKeys::ThumbMouseButton;
-			}
 		}
-	
 	}
 
 	if (SelectTransIndex >= 0)
