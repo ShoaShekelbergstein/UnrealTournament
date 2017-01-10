@@ -79,6 +79,7 @@ void AUTPickupEnergy::GiveTo_Implementation(APawn* Target)
 	{
 		AUTPickup::GiveTo_Implementation(Target);
 		PS->BoostRechargePct += EnergyAmount;
+		PS->ForceNetUpdate();
 		//Add to the stats pickup count
 		if (StatsNameCount != NAME_None)
 		{

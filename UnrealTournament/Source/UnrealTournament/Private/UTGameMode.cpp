@@ -1783,6 +1783,17 @@ void AUTGameMode::StartMatch()
 		}
 	}
 	
+	// clear any PlayerState values that could be modified during warmup
+	for (int32 i = 0; i < GameState->PlayerArray.Num(); i++)
+	{
+		AUTPlayerState* PS = Cast<AUTPlayerState>(GameState->PlayerArray[i]);
+		if (PS != nullptr)
+		{
+			PS->BoostRechargePct = 0.0f;
+			PS->SetRemainingBoosts(0);
+		}
+	}
+
 	// Any player that join pre-StartMatch is given a free pass to quit
 	// Rejoining will not copy this flag to their new playerstate, so if they rejoin the server post-StartMatch and drop, they will get a quit notice
 	for (int32 i = 0; i < InactivePlayerArray.Num(); i++)
