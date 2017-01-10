@@ -319,7 +319,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		}
 
 		bool bGameOver = (UTPC != nullptr && UTPC->GetStateName() == NAME_GameOver);
-		bool bUseDeathCam = !bViewingInstantReplay && !bGameOver && UTCharacter && (UTCharacter->IsDead() || UTCharacter->IsRagdoll());
+		bool bUseDeathCam = !bViewingInstantReplay && !bGameOver && UTCharacter && (UTCharacter->IsDead() || UTCharacter->IsRagdoll()) && UTPC && UTPC->DeathCamFocus && !UTPC->DeathCamFocus->IsPendingKillPending() && (UTPC->DeathCamFocus != TargetActor);
 
 		float CameraDistance = bUseDeathCam ? DeathCamDistance : FreeCamDistance;
 		FVector CameraOffset = bUseDeathCam ? DeathCamOffset : FreeCamOffset;
@@ -329,7 +329,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 			CameraOffset = EndGameFreeCamOffset;
 		}
 		FRotator Rotator = (!UTPC || UTPC->bSpectatorMouseChangesView) ? PCOwner->GetControlRotation() : UTPC->GetSpectatingRotation(Loc, DeltaTime);
-		if (bUseDeathCam && UTPC && UTPC->DeathCamFocus && !UTPC->DeathCamFocus->IsPendingKillPending() && (UTPC->DeathCamFocus != TargetActor))
+		if (bUseDeathCam)
 		{
 			float ZoomFactor = FMath::Clamp(1.5f*UTPC->GetFrozenTime() - 0.8f, 0.f, 1.f);
 			float DistanceScaling = 1.f - ZoomFactor;
@@ -339,7 +339,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 			CheckCameraSweep(Result, TargetActor, Loc, Pos);
 			OutVT.POV.Location = !Result.bBlockingHit ? Pos : Result.Location;
 			bool bZoomIn = (UTPC->GetFrozenTime() > 0.5f);
-			if (bZoomIn && (GetWorld()->GetTimeSeconds() - UTPC->DeathCamFocus->GetLastRenderTime() < 0.1f))
+			if (bZoomIn)
 			{
 				// zoom in
 				float ViewDist = (UTPC->DeathCamFocus->GetActorLocation() - OutVT.POV.Location).SizeSquared();
@@ -365,7 +365,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 				UTPC->SetControlRotation(ViewRotation);
 				Rotator = ViewRotation;
 
-				if ((GetWorld()->GetTimeSeconds() - UTPC->DeathCamFocus->GetLastRenderTime() > 0.25f) && !UTPC->LineOfSightTo(UTPC->DeathCamFocus))
+				if ((GetWorld()->GetTimeSeconds() - UTPC->DeathCamFocus->GetLastRenderTime() > 0.2f) && !UTPC->LineOfSightTo(UTPC->DeathCamFocus))
 				{
 					UTPC->DeathCamFocus = nullptr;
 				}

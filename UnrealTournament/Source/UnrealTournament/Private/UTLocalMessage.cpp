@@ -33,7 +33,7 @@ bool UUTLocalMessage::IsOptionalSpoken(int32 MessageIndex) const
 	return bOptionalSpoken;
 }
 
-int32 UUTLocalMessage::GetFontSizeIndex(int32 MessageIndex) const
+int32 UUTLocalMessage::GetFontSizeIndex(int32 MessageIndex, bool bTargetsLocalPlayer) const
 {
 	return FontSizeIndex;
 }

@@ -334,7 +334,7 @@ void UUTHUDWidgetMessage::AddMessage(int32 QueueIndex, TSubclassOf<class UUTLoca
 void UUTHUDWidgetMessage::LayoutMessage(int32 QueueIndex, TSubclassOf<class UUTLocalMessage> MessageClass, uint32 MessageIndex, FText LocalMessageText, int32 MessageCount, APlayerState* RelatedPlayerState_1, APlayerState* RelatedPlayerState_2, UObject* OptionalObject)
 {
 	MessageQueue[QueueIndex].DrawColor = GetDefault<UUTLocalMessage>(MessageClass)->GetMessageColor(MessageIndex);
-	int32 FontIndex = GetDefault<UUTLocalMessage>(MessageClass)->GetFontSizeIndex(MessageIndex);
+	int32 FontIndex = GetDefault<UUTLocalMessage>(MessageClass)->GetFontSizeIndex(MessageIndex, UTHUDOwner && UTHUDOwner->UTPlayerOwner && UTHUDOwner->UTPlayerOwner->UTPlayerState && (RelatedPlayerState_1 == UTHUDOwner->UTPlayerOwner->UTPlayerState));
 	MessageQueue[QueueIndex].DisplayFont = (UTHUDOwner != nullptr) ? UTHUDOwner->GetFontFromSizeIndex(FontIndex) : nullptr;
 	MessageQueue[QueueIndex].ShadowDirection = (FontIndex == 1) ? LargeShadowDirection : SmallShadowDirection;
 	MessageQueue[QueueIndex].OptionalObject = OptionalObject;

@@ -91,7 +91,7 @@ FText UUTCTFGameMessage::GetText(int32 Switch, bool bTargetsPlayerState1, APlaye
 	return FText::GetEmpty();
 }
 
-int32 UUTCTFGameMessage::GetFontSizeIndex(int32 MessageIndex) const
+int32 UUTCTFGameMessage::GetFontSizeIndex(int32 MessageIndex, bool bTargetsLocalPlayer) const
 {
 	if ((MessageIndex == 11) || (MessageIndex == 12))
 	{

@@ -32,7 +32,7 @@ UUTGameMessage::UUTGameMessage(const class FObjectInitializer& ObjectInitializer
 	bPlayDuringInstantReplay = false;
 }
 
-int32 UUTGameMessage::GetFontSizeIndex(int32 MessageIndex) const
+int32 UUTGameMessage::GetFontSizeIndex(int32 MessageIndex, bool bTargetsLocalPlayer) const
 {
 	return ((MessageIndex == 0) || (MessageIndex == 1) || (MessageIndex == 7) || (MessageIndex == 9) || (MessageIndex == 10) || (MessageIndex == 16)) ? 2 : 1;
 }
@@ -43,7 +43,7 @@ float UUTGameMessage::GetScaleInSize_Implementation(int32 MessageIndex) const
 	{
 		return 1.f;
 	}
-	return (GetFontSizeIndex(MessageIndex) > 1) ? 3.f : 4.f;
+	return 3.f;
 }
 
 FLinearColor UUTGameMessage::GetMessageColor_Implementation(int32 MessageIndex) const

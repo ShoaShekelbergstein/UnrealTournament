@@ -118,7 +118,7 @@ class UNREALTOURNAMENT_API UUTLocalMessage : public ULocalMessage
 
 	virtual bool IsOptionalSpoken(int32 MessageIndex) const;
 
-	virtual int32 GetFontSizeIndex(int32 MessageIndex) const;
+	virtual int32 GetFontSizeIndex(int32 MessageIndex, bool bTargetsLocalPlayer) const;
 
 	virtual float GetAnnouncementDelay(int32 Switch);
 
