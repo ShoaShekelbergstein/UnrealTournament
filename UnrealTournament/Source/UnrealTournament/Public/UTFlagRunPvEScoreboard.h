@@ -34,4 +34,12 @@ public:
 			}
 		}
 	}
+
+	virtual void DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float RenderDelta, float XOffset, float YOffset) override
+	{
+		if (PlayerState->GetTeamNum() == 1)
+		{
+			Super::DrawPlayer(Index, PlayerState, RenderDelta, XOffset, YOffset);
+		}
+	}
 };

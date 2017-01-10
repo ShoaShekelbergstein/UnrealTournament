@@ -5,6 +5,7 @@
 #include "UTLobbyMatchInfo.h"
 #include "UTServerBeaconClient.h"
 #include "UTDemoRecSpectator.h"
+#include "UTMonsterAI.h"
 
 AUTServerBeaconClient::AUTServerBeaconClient(const class FObjectInitializer& ObjectInitializer) :
 Super(ObjectInitializer)
@@ -69,9 +70,8 @@ void AUTServerBeaconClient::ServerRequestInfo_Implementation()
 		// Add the Players section3
 		for (int32 i = 0; i < GameState->PlayerArray.Num(); i++)
 		{
-			//Cull out players that are Replay Spectators
-			AUTDemoRecSpectator* DemoSpectatorController = Cast<AUTDemoRecSpectator>(GameState->PlayerArray[i]->GetOwner());
-			if (DemoSpectatorController == nullptr && !GameState->PlayerArray[i]->bOnlySpectator)
+			//Cull out players that are Replay Spectators or monsters
+			if (Cast<AUTDemoRecSpectator>(GameState->PlayerArray[i]->GetOwner()) == nullptr && Cast<AUTMonsterAI>(GameState->PlayerArray[i]->GetOwner()) == nullptr && !GameState->PlayerArray[i]->bOnlySpectator)
 			{
 				FString PlayerName = GameState->PlayerArray[i]->PlayerName;
 				FString PlayerScore = FString::Printf(TEXT("%i"), int32(GameState->PlayerArray[i]->Score));
