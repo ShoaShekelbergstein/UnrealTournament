@@ -262,6 +262,7 @@ void UUTPartyGameState::SetMatchmakingRegion(const FString& InMatchmakingRegion)
 
 void UUTPartyGameState::ReturnToMainMenu()
 {
+	PartyState.SessionId.Empty();
 	PartyState.PartyProgression = EUTPartyState::Menus;
 	OnLeaderPartyStateChanged().Broadcast(PartyState.PartyProgression);
 	UpdatePartyData(OwningUserId);
