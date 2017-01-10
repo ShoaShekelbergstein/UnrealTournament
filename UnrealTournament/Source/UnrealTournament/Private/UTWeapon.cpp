@@ -2451,6 +2451,7 @@ void AUTWeapon::UpdateOverlaysShared(AActor* WeaponActor, AUTCharacter* InOwner,
 				if (PSC == NULL)
 				{
 					PSC = NewObject<UParticleSystemComponent>(InOverlayMesh);
+					PSC->SecondsBeforeInactive = 0.0f;
 					PSC->SetAbsolute(false, false, true);
 					PSC->RegisterComponent();
 				}
@@ -2474,6 +2475,10 @@ void AUTWeapon::UpdateOverlaysShared(AActor* WeaponActor, AUTCharacter* InOwner,
 							PSC->bAutoDestroy = true;
 							PSC->DeactivateSystem();
 							PSC->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+							// failsafe destruction timer
+							FTimerHandle Useless;
+							TWeakObjectPtr<UParticleSystemComponent> WeakPSC = PSC;
+							PSC->GetWorld()->GetTimerManager().SetTimer(Useless, FTimerDelegate::CreateLambda([WeakPSC]() { if (WeakPSC.IsValid()) { WeakPSC->DestroyComponent(); } }), 5.0f, false);
 						}
 						else
 						{
@@ -2495,6 +2500,10 @@ void AUTWeapon::UpdateOverlaysShared(AActor* WeaponActor, AUTCharacter* InOwner,
 					PSC->bAutoDestroy = true;
 					PSC->DeactivateSystem();
 					PSC->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+					// failsafe destruction timer
+					FTimerHandle Useless;
+					TWeakObjectPtr<UParticleSystemComponent> WeakPSC = PSC;
+					PSC->GetWorld()->GetTimerManager().SetTimer(Useless, FTimerDelegate::CreateLambda([WeakPSC]() { if (WeakPSC.IsValid()) { WeakPSC->DestroyComponent(); } }), 5.0f, false);
 				}
 				else
 				{
