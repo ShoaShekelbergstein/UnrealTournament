@@ -6081,6 +6081,11 @@ bool UUTLocalPlayer::SkipTutorialCheck()
 	}
 #endif
 
+	if (LastSession.Session.OwningUserId.IsValid() || LastSession.Session.SessionInfo.IsValid())
+	{
+		return true;
+	}
+
 	// Add any additional checks here to abort the tutorial check
 
 	return false;
