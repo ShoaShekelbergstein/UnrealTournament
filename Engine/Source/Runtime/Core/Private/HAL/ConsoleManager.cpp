@@ -133,7 +133,13 @@ public:
 				);
 
 			// If it was set by an ini that has to be hand edited, it is not an issue if a lower priority system tried and failed to set it afterwards
-			const bool bIntentionallyIgnored = (OldPri == EConsoleVariableFlags::ECVF_SetBySystemSettingsIni);
+			bool bIntentionallyIgnored = (OldPri == EConsoleVariableFlags::ECVF_SetBySystemSettingsIni);
+			
+			// Scalability gets applied after game setting, so not a warning
+			if (NewPri == EConsoleVariableFlags::ECVF_Scalability && OldPri == EConsoleVariableFlags::ECVF_SetByGameSetting)			
+			{
+				bIntentionallyIgnored = true;
+			}
 
 			if (bIntentionallyIgnored)
 			{
