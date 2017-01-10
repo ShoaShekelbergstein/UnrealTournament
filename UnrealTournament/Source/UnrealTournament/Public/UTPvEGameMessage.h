@@ -62,6 +62,8 @@ public:
 		{
 			case 0:
 				return ReinforcementsMsg;
+			case 1:
+				return ExtraLifeMsg;
 			default:
 				return FText();
 		}
