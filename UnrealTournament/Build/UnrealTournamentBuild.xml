@@ -118,6 +118,16 @@
 	</Agent>
 	
 	<Agent Name="Make Windows Builds" Type="Win64">
+		<Node Name="Cook WindowsServer" Requires="Compile UnrealTournamentEditor Win64;Compile Tools Windows" NotifyOnWarnings="false">
+			<Cook Project="$(ProjectFile)" Platform="WindowsServer"/>
+		</Node>
+		<Node Name="Stage Windows Server Win64" Requires="Compile UT Server Win64;Cook WindowsServer">
+			<Command Name="UnrealTournamentProto_BasicBuild" Arguments="-SkipBuild -SkipCook -Chunk -clientconfig=None -serverconfig=Shipping -TargetPlatform=Win64 -StagingDir=&quot;$(LocalStagingDir)&quot;"/>
+		</Node>
+		<Node Name="Publish WindowsServer Win64" Requires="Stage Windows Server Win64">
+			<Copy Files="..." From="$(LocalStagingDir)/WindowsServer" To="$(BuildDir)/WindowsServer"/>
+			<SymStore Files="#Compile UT Server Win64" StoreDir="$(WindowsSymbolsDir)" Product="UnrealTournamentServer" Platform="Win64" If="$(EnableSymStore)"/>
+		</Node>
 		<Node Name="Cook WindowsNoEditor" Requires="Compile UnrealTournamentEditor Win64;Compile Tools Windows" NotifyOnWarnings="false">
 			<Cook Project="$(ProjectFile)" Platform="WindowsNoEditor"/>
 		</Node>
@@ -140,11 +150,11 @@
 			<Tag Files="#ToSign" Filter="*.exe;*.dll" With="#ToSign_Trimmed"/>
 			<Sign Files="#ToSign_Trimmed" If="$(IsBuildMachine)"/>
 		</Node>
-		<Node Name="Chunk WindowsNoEditor" Requires="Stage WindowsNoEditor" Token="$(BuildDir)/WindowsNoEditor/WindowsNoEditor-Win32.token">
+		<Node Name="Chunk WindowsNoEditor" Requires="Stage WindowsNoEditor; Stage Windows Server Win64" Token="$(BuildDir)/WindowsNoEditor/WindowsNoEditor-Win32.token">
+			<Copy Files="..." From="$(LocalStagingDir)/WindowsServer" To="$(LocalStagingDir)/WindowsNoEditor/WindowsServer"/>
 			<Tag Files="$(LocalStagingDir)/WindowsNoEditor/Engine/Binaries/.../Win32/...;$(LocalStagingDir)/WindowsNoEditor/UnrealTournament/Binaries/.../Win32/..." Except="*.pdb" With="#Win32Binaries"/>
-			<Tag Files="$(LocalStagingDir)/WindowsNoEditor/Engine/Binaries/.../Win64/...;$(LocalStagingDir)/WindowsNoEditor/UnrealTournament/Binaries/.../Win64/..." Except="*.pdb" With="#Win64Binaries"/>
-			<Tag Files="$(LocalStagingDir)/WindowsNoEditor/..." Except="#Win32Binaries;#Win64Binaries;*.pdb" With="#StagingDir"/>
-			
+			<Tag Files="$(LocalStagingDir)/WindowsNoEditor/Engine/Binaries/.../Win64/...;$(LocalStagingDir)/WindowsNoEditor/UnrealTournament/Binaries/.../Win64/...;$(LocalStagingDir)/WindowsNoEditor/WindowsServer..." Except="*.pdb" With="#Win64Binaries"/>
+      		
 			<Property Name="Win32Launch" Value="Engine/Binaries/Win32/UE4-Win32-Shipping.exe"/>
 			<Property Name="Win64Launch" Value="Engine/Binaries/Win64/UE4-Win64-Shipping.exe"/>
 			<Property Name="LaunchArgs" Value="UnrealTournament"/>
@@ -169,19 +179,6 @@
 		</Node>
 	</Agent>
 	
-	<Agent Name="Make Windows Server Build" Type="Win64">
-		<Node Name="Cook WindowsServer" Requires="Compile UnrealTournamentEditor Win64;Compile Tools Windows" NotifyOnWarnings="false">
-			<Cook Project="$(ProjectFile)" Platform="WindowsServer"/>
-		</Node>
-		<Node Name="Stage Windows Server Win64" Requires="Compile UT Server Win64;Cook WindowsServer">
-			<Command Name="UnrealTournamentProto_BasicBuild" Arguments="-SkipBuild -SkipCook -Chunk -clientconfig=None -serverconfig=Shipping -TargetPlatform=Win64 -StagingDir=&quot;$(LocalStagingDir)&quot;"/>
-		</Node>
-		<Node Name="Publish WindowsServer Win64" Requires="Stage Windows Server Win64">
-			<Copy Files="..." From="$(LocalStagingDir)/WindowsServer" To="$(BuildDir)/WindowsServer"/>
-			<SymStore Files="#Compile UT Server Win64" StoreDir="$(WindowsSymbolsDir)" Product="UnrealTournamentServer" Platform="Win64" If="$(EnableSymStore)"/>
-		</Node>
-	</Agent>
-
 	<Agent Name="Make Windows Editor Build" Type="Win64">
 		<Node Name="Copy Editor Win64" Requires="Compile Tools Windows">
 			<Property Name="EngineReceiptsDir" Value="$(RootDir)/Engine/Binaries/Win64"/>
