@@ -65,6 +65,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	HighlightMap.Add(HighlightNames::Rallies, NSLOCTEXT("AUTGameMode", "Rallies", "{0} Rallies"));
 	HighlightMap.Add(HighlightNames::RallyPointPowered, NSLOCTEXT("AUTGameMode", "RallyPointPowered", "{0} RallyPoints Powered"));
 	HighlightMap.Add(HighlightNames::HatTrick, NSLOCTEXT("AUTGameMode", "HatTrick", "3 Flag Caps"));
+	HighlightMap.Add(HighlightNames::LikeTheWind, NSLOCTEXT("AUTGameMode", "LikeTheWind", "\u2605 \u2605 \u2605 Cap"));
 
 	ShortHighlightMap.Add(HighlightNames::BadMF, NSLOCTEXT("AUTGameMode", "BadMF", "Bad MotherF**ker"));
 	ShortHighlightMap.Add(HighlightNames::LikeABoss, NSLOCTEXT("AUTGameMode", "LikeABoss", "Like a Boss"));
@@ -92,6 +93,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	ShortHighlightMap.Add(HighlightNames::Rallies, NSLOCTEXT("AUTGameMode", "ShortRallies", "Beam me Up"));
 	ShortHighlightMap.Add(HighlightNames::RallyPointPowered, NSLOCTEXT("AUTGameMode", "ShortRallyPointPowered", "Power Source"));
 	ShortHighlightMap.Add(HighlightNames::HatTrick, NSLOCTEXT("AUTGameMode", "ShortHatTrick", "Hat Trick"));
+	ShortHighlightMap.Add(HighlightNames::LikeTheWind, NSLOCTEXT("AUTGameMode", "ShortLikeTheWind", "Run Like the Wind"));
 }
 
 void AUTFlagRunGameState::BeginPlay()
@@ -557,6 +559,10 @@ void AUTFlagRunGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 	{
 		PS->AddMatchHighlight(HighlightNames::Rallies, NumRallies);
 		bHaveRallyHighlight = true;
+	}
+	else if (PS->Team && (PS->Team->RoundBonus > GoldBonusThreshold))
+	{
+		PS->AddMatchHighlight(HighlightNames::LikeTheWind, 0);
 	}
 	else if (PS->RoundKills + PS->RoundKillAssists > 0)
 	{
