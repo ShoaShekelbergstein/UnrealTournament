@@ -755,8 +755,8 @@ void SUTMainMenu::StartGame(bool bLanGame)
 
 	if (bLanGame)
 	{
-		FString ExecPath = TEXT("..\\..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Shipping.exe");
-		FString Options = FString::Printf(TEXT("unrealtournament %s -log -server -LAN"), *URL);
+		FString ExecPath = TEXT("..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Shipping.exe");
+		FString Options = FString::Printf(TEXT("unrealtournament %s -log -server -LAN -AUTH_PASSWORD="), *URL);
 
 		IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 		if (OnlineSubsystem)
