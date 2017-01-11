@@ -375,7 +375,7 @@ APawn* UUTGameplayStatics::ChooseBestAimTarget(AController* AskingC, FVector Sta
 										{
 											// try spot on capsule nearest to where shot is firing
 											FVector ClosestPoint = FMath::ClosestPointOnSegment(P->GetActorLocation(), StartLoc, StartLoc + FireDir*(FireDist + 500.f));
-											FVector TestPoint = P->GetActorLocation() + P->GetCapsuleComponent()->GetUnscaledCapsuleRadius() * (ClosestPoint - P->GetActorLocation()).Size();
+											FVector TestPoint = P->GetActorLocation() + P->GetCapsuleComponent()->GetUnscaledCapsuleRadius() * (ClosestPoint - P->GetActorLocation()).GetSafeNormal();
 											float CharZ = P->GetActorLocation().Z;
 											float CapsuleHeight = P->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
 											TestPoint.Z = FMath::Clamp(ClosestPoint.Z, CharZ - CapsuleHeight, CharZ + CapsuleHeight);
