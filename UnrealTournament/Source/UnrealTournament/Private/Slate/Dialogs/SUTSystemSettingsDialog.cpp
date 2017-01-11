@@ -1377,55 +1377,82 @@ FReply SUTSystemSettingsDialog::CancelClick()
 
 void SUTSystemSettingsDialog::OnMatchmakingRegionSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	SelectedMatchmakingRegion->SetText(*NewSelection.Get());
-	bChangedMatchmakingRegion = true;
+	if (NewSelection.IsValid())
+	{
+		SelectedMatchmakingRegion->SetText(*NewSelection.Get());
+		bChangedMatchmakingRegion = true;
+	}
 }
 void SUTSystemSettingsDialog::OnResolutionSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	SelectedRes->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		SelectedRes->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnDisplayModeSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	SelectedDisplayMode->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		SelectedDisplayMode->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnTextureResolutionSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
-	ScalabilityQuality.TextureQuality = GeneralScalabilityList.Find(TextureRes->GetSelectedItem());
-	Scalability::SetQualityLevels(ScalabilityQuality);
-	SelectedTextureRes->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
+		ScalabilityQuality.TextureQuality = GeneralScalabilityList.Find(TextureRes->GetSelectedItem());
+		Scalability::SetQualityLevels(ScalabilityQuality);
+		SelectedTextureRes->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnViewDistanceSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
-	ScalabilityQuality.ViewDistanceQuality = GeneralScalabilityList.Find(ViewDistance->GetSelectedItem());
-	Scalability::SetQualityLevels(ScalabilityQuality);
-	SelectedViewDistance->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
+		ScalabilityQuality.ViewDistanceQuality = GeneralScalabilityList.Find(ViewDistance->GetSelectedItem());
+		Scalability::SetQualityLevels(ScalabilityQuality);
+		SelectedViewDistance->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnShadowQualitySelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
-	ScalabilityQuality.ShadowQuality = GeneralScalabilityList.Find(ShadowQuality->GetSelectedItem());
-	Scalability::SetQualityLevels(ScalabilityQuality);
-	SelectedShadowQuality->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
+		ScalabilityQuality.ShadowQuality = GeneralScalabilityList.Find(ShadowQuality->GetSelectedItem());
+		Scalability::SetQualityLevels(ScalabilityQuality);
+		SelectedShadowQuality->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnPPQualitySelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
-	ScalabilityQuality.PostProcessQuality = GeneralScalabilityList.Find(PPQuality->GetSelectedItem());
-	Scalability::SetQualityLevels(ScalabilityQuality);
-	SelectedPPQuality->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
+		ScalabilityQuality.PostProcessQuality = GeneralScalabilityList.Find(PPQuality->GetSelectedItem());
+		Scalability::SetQualityLevels(ScalabilityQuality);
+		SelectedPPQuality->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnEffectQualitySelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
-	ScalabilityQuality.EffectsQuality = GeneralScalabilityList.Find(EffectQuality->GetSelectedItem());
-	Scalability::SetQualityLevels(ScalabilityQuality);
-	SelectedEffectQuality->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
+		ScalabilityQuality.EffectsQuality = GeneralScalabilityList.Find(EffectQuality->GetSelectedItem());
+		Scalability::SetQualityLevels(ScalabilityQuality);
+		SelectedEffectQuality->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnAAModeSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	SelectedAAMode->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		SelectedAAMode->SetText(*NewSelection.Get());
+	}
 }
 
 int32 SUTSystemSettingsDialog::ConvertAAModeToComboSelection(int32 NewAAMode)
@@ -1485,7 +1512,10 @@ FText SUTSystemSettingsDialog::GetVSyncText() const
 
 void SUTSystemSettingsDialog::OnVOIPChanged(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	VOIPOptionsText->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		VOIPOptionsText->SetText(*NewSelection.Get());
+	}
 }
 
 
