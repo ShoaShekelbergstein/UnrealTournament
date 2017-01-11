@@ -53,8 +53,10 @@ groupshared uint SortedTileReflectionCaptureIndices[MAX_CAPTURES];
 #else
 	#if SORT_CAPTURES
 		#define CompositeTileReflectionCaptureIndices SortedTileReflectionCaptureIndices
+		#define InstancedCompositeTileReflectionCaptureIndices SortedTileReflectionCaptureIndices
 	#else
 		#define CompositeTileReflectionCaptureIndices TileReflectionCaptureIndices
+		#define InstancedCompositeTileReflectionCaptureIndices TileReflectionCaptureIndices
 	#endif
 #endif
 
