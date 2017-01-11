@@ -674,3 +674,19 @@ void UUTCheatManager::EstimateWaitTimes()
 #endif
 
 }
+
+void UUTCheatManager::UnlockTutorials()
+{
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(GetOuterAPlayerController()->Player);
+	if (LP != nullptr)
+	{
+		UUTProfileSettings* Profile = LP->GetProfileSettings();
+		if (Profile != nullptr)
+		{
+			Profile->TutorialMask = TUTORIAL_All;
+			LP->SaveProfileSettings();
+		}
+	}
+#endif
+}
