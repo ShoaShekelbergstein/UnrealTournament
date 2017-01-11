@@ -623,7 +623,7 @@ TSharedPtr<class SUTDialogBase>  UUTLocalPlayer::ShowMessage(FText MessageTitle,
 			.OnDialogResult(Callback);
 	}
 
-	OpenDialog( NewDialog.ToSharedRef() );
+	OpenDialog( NewDialog.ToSharedRef(), 2001);
 	return NewDialog;
 }
 

@@ -94,6 +94,7 @@ protected:
 
 	TSharedPtr<SUTPanelBase> HomePanel;
 
+	virtual FReply OpenBuildNotes();
 	virtual FReply OpenTPSReport();
 	virtual FReply OpenCredits();
 	virtual FReply OnMenuHTTPButton(FString URL);

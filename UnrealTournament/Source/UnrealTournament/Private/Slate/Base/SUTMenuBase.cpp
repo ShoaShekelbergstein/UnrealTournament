@@ -553,6 +553,7 @@ TSharedRef<SWidget> SUTMenuBase::BuildAboutSubMenu()
 	];
 
 
+	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_BuildNotes", "Build Notes"), FOnClicked::CreateSP(this, &SUTMenuBase::OpenBuildNotes));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_TPSReport", "Third Party Software"), FOnClicked::CreateSP(this, &SUTMenuBase::OpenTPSReport));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_Credits", "Credits"), FOnClicked::CreateSP(this, &SUTMenuBase::OpenCredits));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_UTSite", "UnrealTournament.com"), FOnClicked::CreateSP(this, &SUTMenuBase::OnMenuHTTPButton, FString(TEXT("http://www.unrealtournament.com/"))));
@@ -631,6 +632,11 @@ FReply SUTMenuBase::ClearCloud()
 	return FReply::Handled();
 }
 
+FReply SUTMenuBase::OpenBuildNotes()
+{
+	PlayerOwner->ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), TEXT("http://epic.gm/updt"));
+	return FReply::Handled();
+}
 
 FReply SUTMenuBase::OpenTPSReport()
 {
