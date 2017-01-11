@@ -197,6 +197,7 @@
 			<Tag Files="$(RootDir)/Engine/Binaries/DotNET/AutomationScripts/NoRedist/UnrealTournament.Automation.dll" With="#TrimmedTargets"/>
 
 			<Tag Files="$(RootDir)/Engine/Binaries/Win64/AgentInterface.dll" With="#TrimmedTargets"/>
+      <Tag Files="$(RootDir)/Engine/Binaries/Win64/AgentInterface.dll" With="#TrimmedTargets"/>
 			
 			<Tag Files="$(RootDir)/Engine/Build/BatchFiles/*" With="#TrimmedTargets"/>
 			<Tag Files="$(RootDir)/Engine/Build/BatchFiles/BuilderScripts/..." With="#TrimmedTargets"/>
@@ -226,8 +227,10 @@
 			<Tag Files="$(RootDir)/UnrealTournament/Plugins/Online/NotForLicensees/OnlineSubsystemMcp/..." Filter="*.dll;*.uplugin" With="#FinalTrim"/>
 			<Tag Files="$(RootDir)/UnrealTournament/Plugins/NotForLicensees/Social/..." Filter="*.dll;*.uplugin" With="#FinalTrim"/>
       <Tag Files="$(RootDir)/UnrealTournament/Plugins/NotForLicensees/OnlineGameplayFramework/..." Filter="*.dll;*.uplugin" With="#FinalTrim"/>
-			
+
 			<Copy Files="#FinalTrim" From="$(RootDir)" To="$(LocalStagingDir)/UT-Build/Win64"/>
+      <Copy Files="..." From="$(RootDir)/Engine/Binaries/ThirdParty/AppLocalDependencies/Win64/Microsoft.VC140.CRT" To="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64"/>
+      <Copy Files="..." From="$(RootDir)/Engine/Binaries/ThirdParty/AppLocalDependencies/Win64/UCRT" To="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64"/>
 			
 			<!-- Retag everything in the staged folder to sign it -->
 			<TagReceipt Files="$(UTReceiptsDir)/UnrealTournamentEditor.target;$(EngineReceiptsDir)/UnrealEngineLauncherProxy.target;$(EngineReceiptsDir)/CrashReportClient-Win64-Shipping.target;$(EngineReceiptsDir)/ShaderCompileWorker.target;$(EngineReceiptsDir)/UnrealCEFSubProcess.target;$(EngineReceiptsDir)/UnrealLightmass.target;$(EngineReceiptsDir)/UnrealPak.target;$(EngineReceiptsDir)/BootstrapPackagedGame-Win64-Shipping.target" ProjectDir="$(LocalStagingDir)/UT-Build/Win64/UnrealTournament" EngineDir="$(LocalStagingDir)/UT-Build/Win64/Engine" BuildProducts="true" RuntimeDependencies="false" With="#TargetsToSign"/>
