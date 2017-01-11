@@ -168,6 +168,7 @@ void AUTProj_Redeemer::OnShotDown()
 
 		// fall to ground, explode after a delay
 		ProjectileMovement->ProjectileGravityScale = 1.0f;
+		ProjectileMovement->Velocity *= 0.5f;
 		ProjectileMovement->MaxSpeed += 2000.0f; // make room for gravity
 		ProjectileMovement->bShouldBounce = true;
 		ProjectileMovement->Bounciness = 0.25f;
@@ -252,6 +253,8 @@ void AUTProj_Redeemer::Explode_Implementation(const FVector& HitLocation, const 
 		}
 		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		CollisionComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		ProjectileMovement->ProjectileGravityScale = 0.f;
+		ProjectileMovement->Velocity = FVector::ZeroVector;
 		ProjectileMovement->SetActive(false);
 
 		TArray<USceneComponent*> Components;

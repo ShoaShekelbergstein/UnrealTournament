@@ -273,7 +273,9 @@ void AUTRemoteRedeemer::BlowUp(FVector HitNormal)
 				WS->AddTimedMaterialParameter(OverlayMI, FName(TEXT("Static")), OverlayStaticCurve);
 			}
 		}
-
+		ProjectileMovement->Velocity = FVector::ZeroVector;
+		ProjectileMovement->ProjectileGravityScale = 0.f;
+		ProjectileMovement->Acceleration = FVector::ZeroVector;
 		ProjectileMovement->SetActive(false);
 		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		CollisionComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -292,8 +294,9 @@ void AUTRemoteRedeemer::BlowUp(FVector HitNormal)
 		{
 			ECollisionChannel TraceChannel = COLLISION_TRACE_WEAPONNOCHARACTER;
 			FCollisionQueryParams QueryParams(GetClass()->GetFName(), true, Instigator);
+			QueryParams.AddIgnoredActor(this);
 			FHitResult Hit;
-			FVector EndTrace = ExplosionCenter + 100.f * HitNormal; // move up by maxstepheight
+			FVector EndTrace = ExplosionCenter + 150.f * HitNormal; 
 			bool bHitGeometry = GetWorld()->LineTraceSingleByChannel(Hit, ExplosionCenter, EndTrace, TraceChannel, QueryParams);
 			ExplosionCenter = bHitGeometry ? 0.5f*(ExplosionCenter + Hit.Location) : EndTrace;
 		}
@@ -339,6 +342,8 @@ void AUTRemoteRedeemer::OnShotDown()
 
 		// fall to ground, explode after a delay
 		ProjectileMovement->SetActive(true);
+		ProjectileMovement->Velocity *= 0.5f;
+		ProjectileMovement->Acceleration = FVector::ZeroVector;
 		ProjectileMovement->ProjectileGravityScale = 1.0f;
 		ProjectileMovement->MaxSpeed += 2000.0f; // make room for gravity
 		ProjectileMovement->bShouldBounce = true;
@@ -716,7 +721,7 @@ void AUTRemoteRedeemer::Tick(float DeltaSeconds)
 	{
 		Cast<AUTPlayerController>(GetController())->UTClientPlaySound(FuelWarningSound);
 	}
-	if (Role != ROLE_SimulatedProxy)
+	if ((Role != ROLE_SimulatedProxy) && !bExploded && !bShotDown)
 	{
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 		if (GS && (GS->IsMatchIntermission() || GS->HasMatchEnded()))
