@@ -191,7 +191,7 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 	{
 		AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
 		
-		//Go through controllers and save current equipped wepaon as the FavoriteWeapon. Doing this before removing all pawns.
+		//Setup LineUp weapon. Favorite weapon if set, current weapon otherwise
 		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 		{
 			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
@@ -201,7 +201,7 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 				AUTCharacter* UTChar = Cast<AUTCharacter>(UTPC->GetPawn());
 				if (UTPS && UTChar)
 				{
-					UTPS->FavoriteWeapon = UTChar->GetWeaponClass();
+					UTPS->LineUpWeapon = (UTPS->FavoriteWeapon != NULL)? UTPS->FavoriteWeapon : UTChar->GetWeaponClass();
 				}
 			}
 		}
@@ -311,7 +311,7 @@ void AUTLineUpHelper::SpawnPlayerWeapon(AUTCharacter* UTChar)
 
 		if (UTPS)
 		{
-			WeaponClass = UTPS->FavoriteWeapon ? UTPS->FavoriteWeapon->GetDefaultObject<AUTWeapon>()->GetClass() : NULL;
+			WeaponClass = UTPS->LineUpWeapon ? UTPS->LineUpWeapon->GetDefaultObject<AUTWeapon>()->GetClass() : NULL;
 		}
 
 		//Default to Link Gun

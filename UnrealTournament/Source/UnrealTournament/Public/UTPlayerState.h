@@ -396,6 +396,10 @@ public:
 	UPROPERTY(replicated)
 		TSubclassOf<class AUTWeapon> FavoriteWeapon;
 
+	/** Weapon that will be used during the LineUp by the player**/
+	UPROPERTY()
+		TSubclassOf<class AUTWeapon> LineUpWeapon;
+
 	UPROPERTY()
 	int32 ElapsedTime;
 
