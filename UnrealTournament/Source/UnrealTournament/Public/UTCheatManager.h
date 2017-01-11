@@ -122,4 +122,6 @@ class UNREALTOURNAMENT_API UUTCheatManager : public UCheatManager
 	UFUNCTION(exec)
 	void UnlockTutorials();
 
+	UFUNCTION(exec)
+	void TestAMDAllocation();
 };

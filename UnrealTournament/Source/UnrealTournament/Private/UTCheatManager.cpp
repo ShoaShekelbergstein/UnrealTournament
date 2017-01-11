@@ -690,3 +690,75 @@ void UUTCheatManager::UnlockTutorials()
 	}
 #endif
 }
+
+void UUTCheatManager::TestAMDAllocation()
+{
+#if !UE_BUILD_SHIPPING
+	FTexture2DRHIRef ReadbackTextures[2];
+	int32 VideoWidth = 1920;
+	int32 VideoHeight = 1080;
+	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
+		FWebMRecordCreateBufers,
+		int32, InVideoWidth, VideoWidth,
+		int32, InVideoHeight, VideoHeight,
+		FTexture2DRHIRef*, InReadbackTextures, ReadbackTextures,
+		{
+			for (int32 TextureIndex = 0; TextureIndex < 2; ++TextureIndex)
+			{
+				FRHIResourceCreateInfo CreateInfo;
+				InReadbackTextures[TextureIndex] = RHICreateTexture2D(
+					InVideoWidth,
+					InVideoHeight,
+					PF_B8G8R8A8,
+					1,
+					1,
+					TexCreate_CPUReadback,
+					CreateInfo
+					);
+			}
+		});
+	FlushRenderingCommands();
+	
+	UE_LOG(UT, Warning, TEXT("Allocated readback textures"));
+
+	FIntPoint ResizeTo(1920, 1080);
+	static const FName RendererModuleName("Renderer");
+	IRendererModule& RendererModuleRef = FModuleManager::GetModuleChecked<IRendererModule>(RendererModuleName);
+	IRendererModule* RendererModule = &RendererModuleRef;
+
+	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
+		ReadSurfaceCommand,
+		FTexture2DRHIRef*, InReadbackTextures, ReadbackTextures,
+		IRendererModule*, InRenderModule, RendererModule,
+		FIntPoint, InResizeTo, ResizeTo,
+		{
+			FPooledRenderTargetDesc OutputDesc(FPooledRenderTargetDesc::Create2DDesc(InResizeTo, PF_B8G8R8A8, FClearValueBinding::None, TexCreate_None, TexCreate_RenderTargetable, false));
+	
+			TRefCountPtr<IPooledRenderTarget> ResampleTexturePooledRenderTarget;
+			InRenderModule->RenderTargetPoolFindFreeElement(RHICmdList, OutputDesc, ResampleTexturePooledRenderTarget, TEXT("ResampleTexture"));
+			check(ResampleTexturePooledRenderTarget);
+
+			const FSceneRenderTargetItem& DestRenderTarget = ResampleTexturePooledRenderTarget->GetRenderTargetItem();
+
+			// Asynchronously copy render target from GPU to CPU
+			const bool bKeepOriginalSurface = false;
+			RHICmdList.CopyToResolveTarget(
+				DestRenderTarget.TargetableTexture,
+				InReadbackTextures[0],
+				bKeepOriginalSurface,
+				FResolveParams());
+		});
+	FlushRenderingCommands();
+	UE_LOG(UT, Warning, TEXT("Copied a frame GPU to CPU"));
+
+	ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
+		ReadbackFromStagingBuffer,
+		FTexture2DRHIRef*, InReadbackTextures, ReadbackTextures,
+		{
+			RHICmdList.UnmapStagingSurface(InReadbackTextures[0]);
+			RHICmdList.UnmapStagingSurface(InReadbackTextures[1]);
+		});
+	FlushRenderingCommands();
+	UE_LOG(UT, Warning, TEXT("Unmapped readback textures"));
+#endif
+}
