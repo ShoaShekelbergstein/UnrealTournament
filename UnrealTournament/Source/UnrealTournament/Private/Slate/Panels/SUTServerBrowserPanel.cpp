@@ -1553,15 +1553,21 @@ void SUTServerBrowserPanel::AddHub(TSharedPtr<FServerData> Hub)
 
 	for (int32 i=0; i < AllHubServers.Num() ; i++)
 	{
-		if (AllHubServers[i].IsValid() && AllHubServers[i]->SearchResult.IsValid() && !AllHubServers[i]->bFakeHUB)
+		if (AllHubServers[i].IsValid())
 		{
-			if (AllHubServers[i]->GetId() == Hub->GetId())
+			if (AllHubServers[i]->SearchResult.IsValid())
 			{
-				if (AllHubServers[i] != Hub)
+				if(!AllHubServers[i]->bFakeHUB)
 				{
-					AllHubServers[i]->Update(Hub);
+					if (AllHubServers[i]->GetId() == Hub->GetId())
+					{
+						if (AllHubServers[i] != Hub)
+						{
+							AllHubServers[i]->Update(Hub);
+						}
+						return; 
+					}
 				}
-				return; 
 			}
 
 			if (AllHubServers[i]->IP == Hub->IP && AllHubServers[i]->Name.Equals(Hub->Name, ESearchCase::IgnoreCase))
@@ -1570,7 +1576,6 @@ void SUTServerBrowserPanel::AddHub(TSharedPtr<FServerData> Hub)
 				AllHubServers[i]->Update(Hub);
 				return;
 			}
-
 		}
 	}
 
