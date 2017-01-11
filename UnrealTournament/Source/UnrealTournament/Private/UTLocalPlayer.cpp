@@ -2954,7 +2954,7 @@ bool UUTLocalPlayer::JoinSession(const FOnlineSessionSearchResult& SearchResult,
 	FUniqueNetIdRepl UniqueId = OnlineIdentityInterface->GetUniquePlayerId(0);
 
 	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
-	if (PartyContext)
+	if (IsLoggedIn() && PartyContext)
 	{
 		int32 PartySize = PartyContext->GetPartySize();
 		FUniqueNetIdRepl PartyLeaderId = PartyContext->GetPartyLeader();
@@ -3148,8 +3148,7 @@ void UUTLocalPlayer::LeaveSession()
 {
 	if (OnlineIdentityInterface.IsValid())
 	{
-		TSharedPtr<const FUniqueNetId> UserId = OnlineIdentityInterface->GetUniquePlayerId(0);
-		if (UserId.IsValid() && OnlineSessionInterface.IsValid() && OnlineSessionInterface->GetSessionSettings(GameSessionName) != nullptr)
+		if (OnlineSessionInterface.IsValid() && OnlineSessionInterface->GetSessionSettings(GameSessionName) != nullptr)
 		{
 			OnlineSessionInterface->EndSession(GameSessionName);
 		}
