@@ -455,7 +455,7 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 		}
 
 		// build all of the data needed to launch the map.
-		FString GameURL = FString::Printf(TEXT("%s?Game=%s?MaxPlayers=%i"),*InitialMap, *CurrentRuleset->GameMode, CurrentRuleset->MaxPlayers);
+		FString GameURL = FString::Printf(TEXT("%s?Game=%s?MaxPlayers=%i?MinPlayers=%i"),*InitialMap, *CurrentRuleset->GameMode, CurrentRuleset->MaxPlayers, CurrentRuleset->MinPlayersToStart);
 		GameURL += CurrentRuleset->GameOptions;
 
 		if (CurrentRuleset->bCompetitiveMatch)
