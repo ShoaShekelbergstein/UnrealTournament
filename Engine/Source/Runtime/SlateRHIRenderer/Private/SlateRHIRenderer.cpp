@@ -144,8 +144,8 @@ void FSlateRHIRenderer::FViewportInfo::RecreateDepthBuffer_RenderThread()
 
 FSlateRHIRenderer::FSlateRHIRenderer( TSharedRef<FSlateFontServices> InSlateFontServices, TSharedRef<FSlateRHIResourceManager> InResourceManager )
 	: FSlateRenderer(InSlateFontServices)
-#if USE_MAX_DRAWBUFFERS
 	, EnqueuedWindowDrawBuffer(NULL)
+#if USE_MAX_DRAWBUFFERS
 	, FreeBufferIndex(1)
 #endif
 {
@@ -253,6 +253,8 @@ FSlateDrawBuffer& FSlateRHIRenderer::GetDrawBuffer()
 			// this happens if the render thread becomes completely blocked by expensive tasks when the Slate thread is running
 			// in this case we cannot tick Slate.
 			FPlatformProcess::Sleep(0.001f);
+			UE_LOG(LogSlate, Warning, TEXT("Slate: Had to block on waiting for a draw buffer (slate thread)"));
+			FreeBufferIndex = (FreeBufferIndex + 1) % NumDrawBuffers;
 		}
 		else
 		{
@@ -864,10 +866,22 @@ void FSlateRHIRenderer::DrawWindows( FSlateDrawBuffer& WindowDrawBuffer )
 {
 	if (IsInSlateThread())
 	{
+		if (EnqueuedWindowDrawBuffer != nullptr)
+		{
+			UE_LOG(LogSlate, Warning, TEXT("Slate thread double enqueued a draw buffer"));
+			EnqueuedWindowDrawBuffer->Unlock();
+		}
+			
 		EnqueuedWindowDrawBuffer = &WindowDrawBuffer;
 	}
 	else
 	{
+		if (EnqueuedWindowDrawBuffer)
+		{
+			EnqueuedWindowDrawBuffer->Unlock();
+			EnqueuedWindowDrawBuffer = nullptr;
+		}
+
 		DrawWindows_Private(WindowDrawBuffer);
 	}
 }
