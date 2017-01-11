@@ -157,7 +157,7 @@ uint32 FSlateLoadingThreadTask::Run()
 	SyncMechanism->SlateThreadRunMainLoop();
 
 	// Tear down the slate loading thread ID
-	GSlateLoadingThreadId = 0;
+	//GSlateLoadingThreadId = 0;
 
 	return 0;
 }

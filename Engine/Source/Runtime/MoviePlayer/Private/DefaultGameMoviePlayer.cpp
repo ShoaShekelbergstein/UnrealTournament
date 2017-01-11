@@ -335,6 +335,9 @@ void FDefaultGameMoviePlayer::WaitForMovieToFinish()
 				delete SyncMechanism;
 				SyncMechanism = NULL;
 			}
+
+			GSlateLoadingThreadId = 0;
+
 		}
 
 		if( !bEnforceMinimumTime )
