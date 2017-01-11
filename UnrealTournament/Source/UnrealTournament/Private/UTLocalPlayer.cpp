@@ -6155,7 +6155,7 @@ bool UUTLocalPlayer::IsMenuOptionLocked(FName MenuCommand) const
 		}
 		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	
 		{
-			return !(CurrentProfileSettings &&  ((CurrentProfileSettings->TutorialMask & TUTORIAL_Duel) == TUTORIAL_Duel));
+			return !(CurrentProfileSettings &&  ((CurrentProfileSettings->TutorialMask & TUTORIAL_Showdown) == TUTORIAL_Showdown));
 		}
 		else if (MenuCommand == EMenuCommand::MC_Challenges)		
 		{
