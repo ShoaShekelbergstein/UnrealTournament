@@ -28,6 +28,14 @@ FUTOnlineSessionSettings::FUTOnlineSessionSettings(bool bIsLAN, bool bIsPresence
 
 	Set(SETTING_REGION, Region, EOnlineDataAdvertisementType::ViaOnlineService);
 
+#if UE_SERVER
+	const FString DCID = FQosInterface::GetDatacenterId();
+	if (!DCID.IsEmpty())
+	{
+		Set(SETTING_DCID, DCID, EOnlineDataAdvertisementType::ViaOnlineService);
+	}
+#endif
+
 	Set(SETTING_RANKED, 1, EOnlineDataAdvertisementType::ViaOnlineService);
 }
 
