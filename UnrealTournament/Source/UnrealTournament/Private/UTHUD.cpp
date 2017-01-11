@@ -571,11 +571,15 @@ void AUTHUD::NotifyMatchStateChange()
 		{
 			if (GS->GameModeClass != nullptr)
 			{
-				return;
+				const AUTGameMode* DefaultGame = Cast<AUTGameMode>(GS->GetDefaultGameMode());
+				if ( DefaultGame == nullptr || !DefaultGame->bShowMatchSummary )
+				{
+					return;
+				}
+
+				float MatchSummaryDelay = DefaultGame->EndScoreboardDelay + DefaultGame->MainScoreboardDisplayTime + DefaultGame->ScoringPlaysDisplayTime;
+				GetWorldTimerManager().SetTimer(MatchSummaryHandle, this, &AUTHUD::OpenMatchSummary, MatchSummaryDelay*GetActorTimeDilation(), false);
 			}
-			const AUTGameMode* DefaultGame = Cast<AUTGameMode>(GS->GetDefaultGameMode());
-			float MatchSummaryDelay = DefaultGame ? DefaultGame->EndScoreboardDelay + DefaultGame->MainScoreboardDisplayTime + DefaultGame->ScoringPlaysDisplayTime : 10.f;
-			GetWorldTimerManager().SetTimer(MatchSummaryHandle, this, &AUTHUD::OpenMatchSummary, MatchSummaryDelay*GetActorTimeDilation(), false);
 		}
 		else if (GS->GetMatchState() == MatchState::WaitingToStart)
 		{
