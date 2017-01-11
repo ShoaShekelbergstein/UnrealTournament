@@ -378,7 +378,11 @@ void SUTMainMenu::OpenDelayedMenu()
 			.PlayerOwner(PlayerOwner)
 			.GameRuleSets(AvailableGameRulesets)
 			.DialogSize(FVector2D(1920,1080))
+#if PLATFORM_WINDOWS
+			.ButtonMask(UTDIALOG_BUTTON_PLAY | UTDIALOG_BUTTON_LAN | UTDIALOG_BUTTON_CANCEL)
+#else
 			.ButtonMask(UTDIALOG_BUTTON_PLAY | UTDIALOG_BUTTON_CANCEL)
+#endif
 			.OnDialogResult(this, &SUTMainMenu::OnGameChangeDialogResult);
 		
 
@@ -396,7 +400,11 @@ void SUTMainMenu::OnGameChangeDialogResult(TSharedPtr<SCompoundWidget> Dialog, u
 {
 	if ( ButtonPressed != UTDIALOG_BUTTON_CANCEL && CreateGameDialog.IsValid() )
 	{
-		if (ButtonPressed == UTDIALOG_BUTTON_PLAY)
+		if (ButtonPressed == UTDIALOG_BUTTON_LAN)
+		{
+			StartGame(true);
+		}
+		else if (ButtonPressed == UTDIALOG_BUTTON_PLAY)
 		{
 			StartGame(false);
 		}
@@ -747,7 +755,7 @@ void SUTMainMenu::StartGame(bool bLanGame)
 
 	if (bLanGame)
 	{
-		FString ExecPath = FPlatformProcess::GenerateApplicationPath(FApp::GetName(), FApp::GetBuildConfiguration());
+		FString ExecPath = TEXT("..\\..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Shipping.exe");
 		FString Options = FString::Printf(TEXT("unrealtournament %s -log -server -LAN"), *URL);
 
 		IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
