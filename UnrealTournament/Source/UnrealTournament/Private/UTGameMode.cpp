@@ -548,7 +548,7 @@ void AUTGameMode::InitGameState()
 		UTGameState->bCasterControl = bCasterControl;
 		UTGameState->bPlayPlayerIntro = bPlayPlayerIntro;
 		UTGameState->bIsInstanceServer = IsGameInstanceServer();
-		if (bOfflineChallenge || bUseMatchmakingSession)
+		if (bOfflineChallenge || bUseMatchmakingSession || bBasicTrainingGame)
 		{
 			UTGameState->bAllowTeamSwitches = false;
 		}
