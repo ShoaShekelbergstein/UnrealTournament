@@ -3,6 +3,7 @@
 #include "UTCarriedObjectMessage.h"
 #include "UTCTFMajorMessage.h"
 #include "UTAnnouncer.h"
+#include "UTRallyPoint.h"
 
 UUTCTFMajorMessage::UUTCTFMajorMessage(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -110,6 +111,14 @@ void UUTCTFMajorMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText,
 		{
 			PrefixText = EnemyRallyPrefix;
 			EmphasisText = GV->VolumeName;
+			PostfixText = EnemyRallyPostfix;
+			AUTPlayerState* PS = Cast<AUTPlayerState>(RelatedPlayerState_1);
+			EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : FLinearColor::Red;
+		}
+		else if (Cast<AUTRallyPoint>(OptionalObject))
+		{
+			PrefixText = EnemyRallyPrefix;
+			EmphasisText = Cast<AUTRallyPoint>(OptionalObject)->LocationText;
 			PostfixText = EnemyRallyPostfix;
 			AUTPlayerState* PS = Cast<AUTPlayerState>(RelatedPlayerState_1);
 			EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : FLinearColor::Red;

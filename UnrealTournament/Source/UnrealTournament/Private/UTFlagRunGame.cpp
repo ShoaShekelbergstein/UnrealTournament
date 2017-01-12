@@ -765,7 +765,18 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 			}
 
 			// announce
-			AActor* RallySpot = UTPlayerState->RallyPoint ? UTPlayerState->RallyPoint->MyGameVolume : nullptr;
+			AActor* RallySpot = nullptr;
+			if (UTPlayerState->RallyPoint)
+			{
+				if (UTPlayerState->RallyPoint->LocationText.IsEmpty())
+				{
+					RallySpot = UTPlayerState->RallyPoint->MyGameVolume;
+				}
+				else
+				{
+					RallySpot = UTPlayerState->RallyPoint;
+				}
+			}
 			if (RallySpot == nullptr)
 			{
 				UTCharacter->UTCharacterMovement->UpdatedComponent->UpdatePhysicsVolume(true);
@@ -790,7 +801,7 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 				AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
 				if (PC)
 				{
-					if (GS->OnSameTeam(UTPlayerState, PC))
+					if (false)//GS->OnSameTeam(UTPlayerState, PC))
 					{
 						PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 27, UTPlayerState);
 						if (GetWorld()->GetTimeSeconds() - RallyRequestTime < 6.f)
