@@ -6300,6 +6300,11 @@ void FSlateApplication::PrivateDestroyWindow( const TSharedRef<SWindow>& Destroy
 
 void FSlateApplication::OnWindowClose( const TSharedRef< FGenericWindow >& PlatformWindow )
 {
+	if (IsInSlateThread())
+	{
+		return;
+	}
+
 	TSharedPtr< SWindow > Window = FSlateWindowHelper::FindWindowByPlatformWindow( SlateWindows, PlatformWindow );
 
 	if ( Window.IsValid() )
