@@ -312,7 +312,7 @@ public:
 		float DodgeLandingSpeedFactor;
 
 	/** Horizontal speed reduction on dodge jump landing (multiplied). */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Landing Speed Factor"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Jump Landing Speed Factor"))
 		float DodgeJumpLandingSpeedFactor;
 
 	/** Time after landing dodge before another can be attempted. */

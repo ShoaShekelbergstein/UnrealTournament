@@ -240,7 +240,7 @@ void AUTInventory::DropFrom(const FVector& StartLocation, const FVector& TossVel
 		}
 		Instigator = NULL;
 		SetOwner(NULL);
-		if (DroppedPickupClass != NULL)
+		if (DroppedPickupClass != NULL && !IsPendingKillPending())
 		{
 			// pull back spawn location if it is embedded in world geometry
 			FVector AdjustedStartLoc = StartLocation;
