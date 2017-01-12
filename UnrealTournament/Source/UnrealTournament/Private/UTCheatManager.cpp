@@ -693,7 +693,7 @@ void UUTCheatManager::UnlockTutorials()
 
 void UUTCheatManager::TestAMDAllocation()
 {
-#if !UE_BUILD_SHIPPING
+#if WITH_EDITOR
 	FTexture2DRHIRef ReadbackTextures[2];
 	int32 VideoWidth = 1920;
 	int32 VideoHeight = 1080;
