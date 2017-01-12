@@ -14,7 +14,16 @@ class UNREALTOURNAMENT_API UUTUMGWidget : public UUserWidget
 
 	UPROPERTY(EditDefaultsOnly, category = UMG)
 	FName WidgetTag;
-	
+
+	// if true, the UMG stack will be checked to see if there is already one of this type
+	// open.  If there is, it won't be added.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, category = UMG)
+	bool bUniqueUMG;
+
+	// This is an offset to add to a widget when it's added if multiple copies of this widget are already on the screen
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, category = UMG)
+	FVector2D StackingOffset;
+
 	UPROPERTY()
 	UUTLocalPlayer* UTPlayerOwner;
 
@@ -31,7 +40,7 @@ class UNREALTOURNAMENT_API UUTUMGWidget : public UUserWidget
 	UFUNCTION(BlueprintCallable, category = UMG)
 	virtual void CloseWidget();
 
-	// Displays a partical system behind this widget at a given screen location
+	// Displays a particle system behind this widget at a given screen location
 	UFUNCTION(BlueprintCallable, category = UMG)
 	/**
 	 * Displays a particle system in world.
@@ -40,7 +49,7 @@ class UNREALTOURNAMENT_API UUTUMGWidget : public UUserWidget
 	 * @param LocationModifier - A vector that will be added to the final location in local space
 	 * @param DirectionModifier - A rotator that will be added to the final direction in local space
 	 **/
-	void ShowParticalSystem(UParticleSystem* ParticalSystem, FVector2D ScreenLocation, bool bRelativeCoords = false, FVector LocationModifier = FVector(0.f,0.f,0.f), FRotator DirectionModifier = FRotator(0.f,0.f,0.f));
+	void ShowParticleSystem(UParticleSystem* ParticleSystem, FVector2D ScreenLocation, bool bRelativeCoords = false, FVector LocationModifier = FVector(0.f,0.f,0.f), FRotator DirectionModifier = FRotator(0.f,0.f,0.f));
 
 	// This event is called when the UMG widget is opened.  At this point, the PlayerOwner should be valid
 	UFUNCTION(BlueprintImplementableEvent)

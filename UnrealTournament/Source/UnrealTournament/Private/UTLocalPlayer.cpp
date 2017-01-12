@@ -6537,17 +6537,20 @@ UUTUMGWidget* UUTLocalPlayer::OpenExistingUMGWidget(UUTUMGWidget* WidgetToOpen)
 			}
 		}
 
-		WidgetToOpen->AddToViewport(WidgetToOpen->DisplayZOrder - Cnt);
-		UE_LOG(UT,Warning,TEXT("Count = %i"), Cnt);
+		if (WidgetToOpen->bUniqueUMG && Cnt > 0) return nullptr;	// Don't add widgets if they are unique and already exist.
+
+		// If there are multiples of this widget open, offset them.
+		GEngine->GameViewport->AddViewportWidgetContent(WidgetToOpen->TakeWidget(), WidgetToOpen->DisplayZOrder - Cnt);
 		if (Cnt > 0)
 		{
-			WidgetToOpen->SetPositionInViewport(FVector2D(0.0f,-16.0f * Cnt),true);
+			WidgetToOpen->SetPositionInViewport(WidgetToOpen->StackingOffset * Cnt,true);
 		}
 
 		if (WidgetToOpen->WidgetTag == NAME_None)
 		{
 			WidgetToOpen->WidgetTag = FName(*WidgetToOpen->GetName());
 		}
+
 		WidgetToOpen->AssociateLocalPlayer(this);
 		WidgetToOpen->WidgetOpened();
 
@@ -6584,7 +6587,7 @@ void UUTLocalPlayer::CloseUMGWidget(UUTUMGWidget* WidgetToClose)
 {
 	if (WidgetToClose != nullptr)
 	{
-		WidgetToClose->RemoveFromViewport();
+		GEngine->GameViewport->RemoveViewportWidgetContent(WidgetToClose->TakeWidget());
 		WidgetToClose->WidgetClosed();
 
 		UMGWidgetStack.Remove(WidgetToClose);

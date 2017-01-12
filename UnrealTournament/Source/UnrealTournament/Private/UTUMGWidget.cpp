@@ -8,6 +8,9 @@ UUTUMGWidget::UUTUMGWidget(const FObjectInitializer& ObjectInitializer)
 {
 	DisplayZOrder = 1.0f;
 	WidgetTag = NAME_None;
+
+	bUniqueUMG = false;
+	StackingOffset = FVector2D(0.0f, -16.0f);
 }
 
 void UUTUMGWidget::AssociateLocalPlayer(UUTLocalPlayer* NewLocalPlayer)
@@ -28,17 +31,27 @@ void UUTUMGWidget::CloseWidget()
 	}
 }
 
-void UUTUMGWidget::ShowParticalSystem(UParticleSystem* ParticalSystem, FVector2D ScreenLocation, bool bRelativeCoords, FVector LocationModifier, FRotator DirectionModifier)
+void UUTUMGWidget::ShowParticleSystem(UParticleSystem* ParticleSystem, FVector2D ScreenLocation, bool bRelativeCoords, FVector LocationModifier, FRotator DirectionModifier)
 {
 	if (UTPlayerOwner == nullptr || UTPlayerOwner->PlayerController == nullptr) return; // Quick out.  We need a local player to do this
 
 	//TODO: Make the screenlocation work with the UMG/Slate scaling system
 
+	FVector2D ViewportSize = FVector2D(1.f, 1.f);
+	UTPlayerOwner->ViewportClient->GetViewportSize(ViewportSize);	
+
 	if (bRelativeCoords)
 	{
-		FVector2D ViewportSize = FVector2D(1.f, 1.f);
-		UTPlayerOwner->ViewportClient->GetViewportSize(ViewportSize);	
 		ScreenLocation *= ViewportSize;
+	}
+	else
+	{
+		float Aspect = 1.7777777f;	// 16:9
+		float XScale = ViewportSize.X / 1920.0f;
+		float YScale =XScale / Aspect;
+	
+		ScreenLocation.X *= XScale;
+		ScreenLocation.Y *= YScale;
 	}
 
 	FVector WorldLocation, WorldDirection;
@@ -46,6 +59,6 @@ void UUTUMGWidget::ShowParticalSystem(UParticleSystem* ParticalSystem, FVector2D
 	{
 		FVector FinalLocation = WorldLocation + WorldDirection.ToOrientationQuat().RotateVector(LocationModifier);
 		FRotator FinalRotation = (WorldDirection + DirectionModifier.Vector()).ToOrientationRotator();
-		UGameplayStatics::SpawnEmitterAtLocation(UTPlayerOwner->PlayerController, ParticalSystem, FinalLocation, FinalRotation);		
+		UGameplayStatics::SpawnEmitterAtLocation(UTPlayerOwner->PlayerController, ParticleSystem, FinalLocation, FinalRotation);		
 	}
 }
