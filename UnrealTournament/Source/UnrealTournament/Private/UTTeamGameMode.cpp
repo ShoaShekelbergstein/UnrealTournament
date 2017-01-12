@@ -247,8 +247,8 @@ bool AUTTeamGameMode::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroad
 				{
 					for (int32 i = 0; i < Teams.Num(); i++)
 					{
-						// don't allow switching to a team with more players, or equal players if the player is on a team now
-						if (i != NewTeam && Teams[i]->GetSize() - ((PS->Team != NULL && PS->Team->TeamIndex == i) ? 1 : 0)  < Teams[NewTeam]->GetSize())
+						// if this isn't smallest team, use PickBalancedTeam() to get right team
+						if (i != NewTeam && Teams[i]->GetSize() <= Teams[NewTeam]->GetSize())
 						{
 							bForceTeam = true;
 							break;
@@ -455,7 +455,7 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 			{
 				if (TestTeam != WorstTeam)
 				{
-					return TestTeam->TeamIndex;
+						return TestTeam->TeamIndex;
 				}
 			}
 		}
@@ -465,11 +465,11 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 	{
 		if (BestTeams[i]->TeamIndex == RequestedTeam)
 		{
-			return RequestedTeam;
+				return RequestedTeam;
 		}
 	}
 
-	return BestTeams[FMath::RandHelper(BestTeams.Num())]->TeamIndex;
+		return BestTeams[FMath::RandHelper(BestTeams.Num())]->TeamIndex;
 }
 
 void AUTTeamGameMode::HandlePlayerIntro()
