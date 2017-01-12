@@ -560,7 +560,7 @@ void AUTFlagRunGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 		PS->AddMatchHighlight(HighlightNames::Rallies, NumRallies);
 		bHaveRallyHighlight = true;
 	}
-	else if (PS->Team && (PS->Team->RoundBonus > GoldBonusThreshold))
+	else if (PS->Team && (PS->CarriedObject != nullptr) && (PS->Team->RoundBonus > GoldBonusThreshold))
 	{
 		PS->AddMatchHighlight(HighlightNames::LikeTheWind, 0);
 	}
