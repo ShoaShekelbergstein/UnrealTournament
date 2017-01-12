@@ -801,7 +801,7 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 				AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
 				if (PC)
 				{
-					if (false)//GS->OnSameTeam(UTPlayerState, PC))
+					if (GS->OnSameTeam(UTPlayerState, PC))
 					{
 						PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 27, UTPlayerState);
 						if (GetWorld()->GetTimeSeconds() - RallyRequestTime < 6.f)
