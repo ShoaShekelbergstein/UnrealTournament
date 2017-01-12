@@ -57,6 +57,8 @@ AUTRallyPoint::AUTRallyPoint(const FObjectInitializer& ObjectInitializer)
 	RallyPointState = RallyPointStates::Off;
 	RallyAvailableDistance = 4000.f;
 	bReplicateMovement = false;
+	RallyBeaconText = NSLOCTEXT("UTRallyPoint", "RallyHere", " RALLY HERE! ");
+	LocationText = FText::GetEmpty();
 }
 
 #if WITH_EDITORONLY_DATA
@@ -865,11 +867,11 @@ void AUTRallyPoint::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVecto
 		float TextXL, YL;
 		float Scale = Canvas->ClipX / 1920.f;
 		UFont* SmallFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->SmallFont;
-		FText RallyText = NSLOCTEXT("UTRallyPoint", "RallyHere", " RALLY HERE! ");
+		FText RallyText = RallyBeaconText; 
 		if ((RallyPointState == RallyPointStates::Powered) && MyGameVolume)
 		{
 			FFormatNamedArguments Args;
-			Args.Add("RallyLoc", MyGameVolume->VolumeName);
+			Args.Add("RallyLoc", LocationText.IsEmpty() ? MyGameVolume->VolumeName : LocationText);
 			RallyText = bViewerIsAttacking ? FText::Format(NSLOCTEXT("UTRallyPoint", "RallyAtLoc", " RALLY at {RallyLoc} "), Args) : FText::Format(NSLOCTEXT("UTRallyPoint", "EnemyRallyAtLoc", " ENEMY RALLY at {RallyLoc} "), Args);
 		}
 		Canvas->TextSize(SmallFont, RallyText.ToString(), TextXL, YL, Scale, Scale);

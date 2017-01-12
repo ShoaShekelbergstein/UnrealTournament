@@ -132,6 +132,14 @@ class UNREALTOURNAMENT_API AUTRallyPoint : public AUTGameObjective, public IUTRe
 	UPROPERTY()
 		float LastEnemyRallyWarning;
 
+	/** What to display on the Rally Beacon for flag carriers */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RallyPoint)
+		FText RallyBeaconText;
+
+	/** Location name for this RallyPoint.  If not set, use the game volume's VolumeName. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RallyPoint)
+		FText LocationText;
+
 	UFUNCTION()
 		void OnReplicatedCountdown();
 
