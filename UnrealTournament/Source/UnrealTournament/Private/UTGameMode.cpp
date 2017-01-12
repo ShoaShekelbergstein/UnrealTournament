@@ -1972,6 +1972,23 @@ void AUTGameMode::EndMatch()
 {
 	Super::EndMatch();
 
+	APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
+	UUTLocalPlayer* LP = LocalPC ? Cast<UUTLocalPlayer>(LocalPC->Player) : NULL;
+	if (LP && UTGameState)
+	{
+		LP->EarnedStars = 0;
+		LP->RosterUpgradeText = FText::GetEmpty();
+		if (bOfflineChallenge && PlayerWonChallenge())
+		{
+			LP->ChallengeCompleted(ChallengeTag, ChallengeDifficulty + 1);
+		}
+
+		if (TutorialMask > 0)
+		{
+			LP->SetTutorialFinished(TutorialMask);
+		}
+	}
+
 #if !(UE_BUILD_SHIPPING)
 	EnemyKillsByDamageType.ValueSort([](int32 A, int32 B)
 	{
@@ -2259,24 +2276,6 @@ void AUTGameMode::EndGame(AUTPlayerState* Winner, FName Reason )
 				}
 
 			}
-		}
-	}
-
-	
-	APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
-	UUTLocalPlayer* LP = LocalPC ? Cast<UUTLocalPlayer>(LocalPC->Player) : NULL;
-	if (LP && UTGameState && UTGameState->IsMatchInProgress())
-	{
-		LP->EarnedStars = 0;
-		LP->RosterUpgradeText = FText::GetEmpty();
-		if (bOfflineChallenge && PlayerWonChallenge())
-		{
-			LP->ChallengeCompleted(ChallengeTag, ChallengeDifficulty + 1);
-		}
-
-		if (TutorialMask > 0)
-		{
-			LP->SetTutorialFinished(TutorialMask);
 		}
 	}
 
