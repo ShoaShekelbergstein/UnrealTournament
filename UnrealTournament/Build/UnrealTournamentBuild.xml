@@ -153,7 +153,7 @@
 		<Node Name="Chunk WindowsNoEditor" Requires="Stage WindowsNoEditor; Stage Windows Server Win64" Token="$(BuildDir)/WindowsNoEditor/WindowsNoEditor-Win32.token">
 			<Copy Files="..." From="$(LocalStagingDir)/WindowsServer" To="$(LocalStagingDir)/WindowsNoEditor/WindowsServer"/>
 			<Tag Files="$(LocalStagingDir)/WindowsNoEditor/Engine/Binaries/.../Win32/...;$(LocalStagingDir)/WindowsNoEditor/UnrealTournament/Binaries/.../Win32/..." Except="*.pdb" With="#Win32Binaries"/>
-			<Tag Files="$(LocalStagingDir)/WindowsNoEditor/Engine/Binaries/.../Win64/...;$(LocalStagingDir)/WindowsNoEditor/UnrealTournament/Binaries/.../Win64/...;$(LocalStagingDir)/WindowsNoEditor/WindowsServer..." Except="*.pdb" With="#Win64Binaries"/>
+			<Tag Files="$(LocalStagingDir)/WindowsNoEditor/Engine/Binaries/.../Win64/...;$(LocalStagingDir)/WindowsNoEditor/UnrealTournament/Binaries/.../Win64/...;$(LocalStagingDir)/WindowsNoEditor/WindowsServer/..." Except="*.pdb" With="#Win64Binaries"/>
       		
 			<Property Name="Win32Launch" Value="Engine/Binaries/Win32/UE4-Win32-Shipping.exe"/>
 			<Property Name="Win64Launch" Value="Engine/Binaries/Win64/UE4-Win64-Shipping.exe"/>
