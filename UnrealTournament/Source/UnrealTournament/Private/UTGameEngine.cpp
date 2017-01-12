@@ -324,28 +324,9 @@ void UUTGameEngine::Tick(float DeltaSeconds, bool bIdleMode)
 		FWorldContext& Context = WorldList[WorldIdx];
 		if (!Context.TravelURL.IsEmpty())
 		{
-			FURL DefaultURL;
-			DefaultURL.LoadURLConfig(TEXT("DefaultPlayer"), GGameIni);
-			FURL NewURL(&DefaultURL, *Context.TravelURL, TRAVEL_Absolute);
-			for (int32 i = 0; i < DefaultURL.Op.Num(); i++)
-			{
-				FString OpKey;
-				DefaultURL.Op[i].Split(TEXT("="), &OpKey, NULL);
-				if (!NewURL.HasOption(*OpKey))
-				{
-					new(NewURL.Op) FString(DefaultURL.Op[i]);
-				}
-			}
 			UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(GetLocalPlayerFromControllerId(GWorld,0));
-			if (UTLocalPlayer)
+			if (UTLocalPlayer != NULL)
 			{
-				if (NewURL.HasOption(TEXT("Rank")))
-				{
-					NewURL.RemoveOption(TEXT("Rank"));
-				}
-
-				NewURL.AddOption(*FString::Printf(TEXT("Rank=%i"),UTLocalPlayer->GetBaseELORank()));
-
 				//Hide the console when traveling to a new map
 				UUTConsole* UTConsole = (UTLocalPlayer->ViewportClient != nullptr) ? Cast<UUTConsole>(UTLocalPlayer->ViewportClient->ViewportConsole) : nullptr;
 				if (UTConsole != nullptr)
@@ -354,8 +335,6 @@ void UUTGameEngine::Tick(float DeltaSeconds, bool bIdleMode)
 					UTConsole->FakeGotoState(NAME_None);
 				}
 			}
-
-			Context.TravelURL = NewURL.ToString();
 		}
 	}
 	
@@ -372,6 +351,26 @@ EBrowseReturnVal::Type UUTGameEngine::Browse( FWorldContext& WorldContext, FURL 
 	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(GetLocalPlayerFromControllerId(WorldContext.World(),0));
 	if (UTLocalPlayer != NULL)
 	{
+		FURL DefaultURL;
+		DefaultURL.LoadURLConfig(TEXT("DefaultPlayer"), GGameIni);
+		FURL NewURL(&DefaultURL, *URL.ToString(), TRAVEL_Absolute);
+		for (int32 i = 0; i < DefaultURL.Op.Num(); i++)
+		{
+			FString OpKey;
+			DefaultURL.Op[i].Split(TEXT("="), &OpKey, NULL);
+			if (!NewURL.HasOption(*OpKey))
+			{
+				new(NewURL.Op) FString(DefaultURL.Op[i]);
+			}
+		}
+
+		if (NewURL.HasOption(TEXT("Rank")))
+		{
+			NewURL.RemoveOption(TEXT("Rank"));
+		}
+
+		NewURL.AddOption(*FString::Printf(TEXT("Rank=%i"),UTLocalPlayer->GetBaseELORank()));
+
 		UUTProfileSettings* ProfileSettings = UTLocalPlayer->GetProfileSettings();
 		if (ProfileSettings && ProfileSettings->bNeedProfileWriteOnLevelChange)
 		{
@@ -389,6 +388,8 @@ EBrowseReturnVal::Type UUTGameEngine::Browse( FWorldContext& WorldContext, FURL 
 		{
 			UTLocalPlayer->ClearDefaultURLOption(TEXT("Team"));
 		}
+
+		URL = NewURL;
 	}
 
 #if !UE_SERVER && !UE_EDITOR
