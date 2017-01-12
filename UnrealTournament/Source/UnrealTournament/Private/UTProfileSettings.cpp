@@ -145,7 +145,7 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::Sniper, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::Sniper, 9, 9.0f, DefaultWeaponCrosshairs::Sniper, FLinearColor::White, 1.0f));
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::IGShockRifle, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::IGShockRifle, 4, 4.0f, DefaultWeaponCrosshairs::Cross1, FLinearColor::White, 1.0f));
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::ShockRifle, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::ShockRifle, 4, 4.0f, DefaultWeaponCrosshairs::Circle5, FLinearColor::White, 1.0f));
-		WeaponCustomizations.Add(EpicWeaponCustomizationTags::FlakCannon, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::FlakCannon, 7, 7.0f, DefaultWeaponCrosshairs::Bracket5, FLinearColor::White, 1.0f));
+		WeaponCustomizations.Add(EpicWeaponCustomizationTags::FlakCannon, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::FlakCannon, 7, 7.0f, DefaultWeaponCrosshairs::Bracket5, FLinearColor::White, 0.8f));
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::LinkGun, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::LinkGun, 5, 5.0f, DefaultWeaponCrosshairs::Bracket1, FLinearColor::White, 1.0f));
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::Minigun, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::Minigun, 6, 6.0f, DefaultWeaponCrosshairs::Circle4, FLinearColor::White, 1.0f));
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::BioRifle, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::BioRifle, 3, 3.0f, DefaultWeaponCrosshairs::Bracket3, FLinearColor::White, 1.0f));
@@ -543,6 +543,10 @@ bool UUTProfileSettings::VersionFixup()
 
 	if (SettingsRevisionNum < FRAMECAP_FIXUP_VERSION)
 	{
+		if (WeaponCustomizations.Contains(EpicWeaponCustomizationTags::FlakCannon))
+		{
+			WeaponCustomizations[EpicWeaponCustomizationTags::FlakCannon].CrosshairScaleOverride = 0.8f;
+		}
 		UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
 		if (UTEngine != NULL)
 		{
