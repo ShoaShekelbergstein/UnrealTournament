@@ -34,8 +34,12 @@ void SUTReportUserDialog::Construct(const FArguments& InArgs)
 						);
 
 
-	if (DialogContent.IsValid() && Troll.IsValid())
+	if (DialogContent.IsValid() && Troll.IsValid() && Troll->UniqueId.IsValid())
 	{
+
+		FString TrollID = Troll->UniqueId->ToString();
+		FString TrollName = Troll->PlayerName;
+
 		DialogContent->AddSlot()
 		.HAlign(HAlign_Center)
 		[
@@ -60,7 +64,7 @@ void SUTReportUserDialog::Construct(const FArguments& InArgs)
 				+SHorizontalBox::Slot().Padding(20.0,0.0f,0.0f,0.0f).FillWidth(0.5f)
 				[
 					SNew(STextBlock)
-					.Text(FText::FromString(Troll->PlayerName))
+					.Text(FText::FromString(TrollName))
 					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tween.Bold")
 				]
 			]
@@ -77,7 +81,7 @@ void SUTReportUserDialog::Construct(const FArguments& InArgs)
 				+SHorizontalBox::Slot().Padding(20.0,0.0f,0.0f,0.0f).FillWidth(0.5f)
 				[
 					SNew(STextBlock)
-					.Text(FText::FromString(Troll->UniqueId->ToString()))
+					.Text(FText::FromString(TrollID))
 					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tween.Bold")
 				]
 			]
