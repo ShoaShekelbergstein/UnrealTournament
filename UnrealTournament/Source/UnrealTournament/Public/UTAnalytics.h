@@ -45,6 +45,8 @@ public:
 	static void FireEvent_PlayerContextLocationPerMinute(AUTPlayerController* UTPC, FString& PlayerContextLocation, const int32 NumSocialPartyMembers);
 	static void FireEvent_UTServerFPSCharts(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& InParamArray);
 	static void FireEvent_UTServerWeaponKills(AUTGameMode* UTGM, TMap<TSubclassOf<UDamageType>, int32>* KillsArray);
+	static void FireEvent_UTStartRankedMatch(AUTGameMode* UTGM);
+	static void FireEvent_UTEndRankedMatch(AUTGameMode* UTGM);
 
 	/* Client metrics */
 	static void FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& InParamArray);
@@ -65,7 +67,7 @@ public:
 	static void SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime);
 	static void SetServerInitialParameters(TArray<FAnalyticsEventAttribute>& ParamArray);
 	static void SetClientInitialParameters(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime);
-	static void AddAllEpicAccountNamesToParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray);
+	static void AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray);
 
 private:
 	/** Initialize the FString Array of Analytic Parameters */

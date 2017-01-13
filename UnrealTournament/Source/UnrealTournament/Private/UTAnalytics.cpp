@@ -118,6 +118,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	GenericParamNames[EGenericAnalyticParam::ParamName] = TEXT(#ParamName)
 
 	AddGenericParamName(PlayerGUID);
+	AddGenericParamName(PlayerList);
 	AddGenericParamName(ServerInstanceGUID);
 	AddGenericParamName(ServerMatchGUID);
 	AddGenericParamName(MatchTime);
@@ -150,6 +151,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(WeaponName);
 	AddGenericParamName(NumKills);
 	AddGenericParamName(UTServerWeaponKills);
+	AddGenericParamName(WeaponInfo);
 
 	AddGenericParamName(UTFPSCharts);
 	AddGenericParamName(UTServerFPSCharts);
@@ -173,6 +175,9 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 
 	AddGenericParamName(UTEnterMatch);
 	AddGenericParamName(EnterMethod);
+	AddGenericParamName(UTStartRankedMatch);
+	AddGenericParamName(UTEndRankedMatch);
+	AddGenericParamName(ELOPlayerInfo);
 
 	AddGenericParamName(UTTutorialPickupToken);
 	AddGenericParamName(TokenID);
@@ -301,7 +306,7 @@ void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalytic
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGM->UTGameState->ReplayID));
 		}
 
-		AddAllEpicAccountNamesToParameters(UTGM, ParamArray);
+		AddPlayerListToParameters(UTGM, ParamArray);
 	}
 
 	FString MapName = GetMapName(UTGM);
@@ -332,18 +337,23 @@ void FUTAnalytics::SetServerInitialParameters(TArray<FAnalyticsEventAttribute>& 
 
 }
 
-void FUTAnalytics::AddAllEpicAccountNamesToParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray)
+void FUTAnalytics::AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray)
 {
 	if (UTGM && UTGM->GetWorld())
 	{
+		TMap<FString,int32> PlayerGUIDs;
+
 		for (FConstControllerIterator It = UTGM->GetWorld()->GetControllerIterator(); It; ++It)
 		{
 			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*It);
 			if (UTPC && UTPC->PlayerState && !UTPC->PlayerState->bOnlySpectator)
 			{
-				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(UTPC)));
+				PlayerGUIDs.Add(GetEpicAccountName(UTPC),UTPC->GetTeamNum());
 			}
 		}
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerList), PlayerGUIDs));
+
 	}
 }
 
@@ -716,10 +726,13 @@ void FUTAnalytics::FireEvent_UTServerWeaponKills(AUTGameMode* UTGM, TMap<TSubcla
 		SetMatchInitialParameters(UTGM, ParamArray, true);
 		SetServerInitialParameters(ParamArray);
 
+		TMap<FString, int32> WeaponInfo;
 		for (auto& KillElement : *KillsArray)
 		{
-			ParamArray.Add(FAnalyticsEventAttribute(*KillElement.Key->GetName(), KillElement.Value));
+			WeaponInfo.Add(*KillElement.Key->GetName(), KillElement.Value);
 		}
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::WeaponInfo), WeaponInfo));
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTServerWeaponKills), ParamArray);
 	}
@@ -1014,17 +1027,14 @@ void FUTAnalytics::FireEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FStr
 }
 
 /*
-* @EventName UTTutorialStarted
+* @EventName UTCancelOnboarding
 *
-* @Trigger Fires when a client starts a tutorial
+* @Trigger Fires when a client is forced into onboarding, and cancels out of the onboarding process
 *
 * @Type Sent by the Client
 *
-* @EventParam TutorialMap FString Name of the tutorial map.
-* @EventParam MovementTutorialCompleted bool If the movement tutorial has been previously completed
-* @EventParam WeaponTutorialCompleted bool If the movement tutorial has been previously completed
-* @EventParam PickupsTutorialCompleted If the movement tutorial has been previously completed
-*
+* @EventParam PlayerGUID string GUID to identify the player
+* 
 * @Comments
 */
 void FUTAnalytics::FireEvent_UTCancelOnboarding(AUTPlayerController* UTPC)
@@ -1034,8 +1044,60 @@ void FUTAnalytics::FireEvent_UTCancelOnboarding(AUTPlayerController* UTPC)
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 
-		SetClientInitialParameters(UTPC, ParamArray, true);
+		SetClientInitialParameters(UTPC, ParamArray, false);
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTCancelOnboarding), ParamArray);
+	}
+}
+
+void FUTAnalytics::FireEvent_UTStartRankedMatch(AUTGameMode* UTGM)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		TMap<FString, int32> ELOStats;
+
+		SetMatchInitialParameters(UTGM, ParamArray, false);
+
+		for (FConstPlayerControllerIterator It = UTGM->GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*It);
+			if (UTPC && UTPC->UTPlayerState && !UTPC->UTPlayerState->bOnlySpectator)
+			{
+				ELOStats.Add(GetEpicAccountName(UTPC), UTGM->GetEloFor(UTPC->UTPlayerState, true));
+			}
+		}
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ELOPlayerInfo), ELOStats));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTStartRankedMatch), ParamArray);
+	}
+}
+
+void FUTAnalytics::FireEvent_UTEndRankedMatch(AUTGameMode* UTGM)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+		
+		TMap<FString, int32> ELOStats;
+
+		SetMatchInitialParameters(UTGM, ParamArray, false);
+
+		for (FConstPlayerControllerIterator It = UTGM->GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*It);
+			if (UTPC && UTPC->UTPlayerState && !UTPC->UTPlayerState->bOnlySpectator)
+			{
+				ELOStats.Add(GetEpicAccountName(UTPC), UTGM->GetEloFor(UTPC->UTPlayerState, true));
+			}
+		}
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ELOPlayerInfo), ELOStats));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTEndRankedMatch), ParamArray);
 	}
 }

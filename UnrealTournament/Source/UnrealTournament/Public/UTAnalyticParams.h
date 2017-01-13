@@ -3,6 +3,7 @@ namespace EGenericAnalyticParam
 	enum Type
 	{
 		PlayerGUID,
+		PlayerList,
 		ServerInstanceGUID,
 		ServerMatchGUID,
 		MatchTime,
@@ -35,6 +36,7 @@ namespace EGenericAnalyticParam
 		WeaponName,
 		NumKills,
 		UTServerWeaponKills,
+		WeaponInfo,
 
 		UTFPSCharts,
 		UTServerFPSCharts,
@@ -59,6 +61,9 @@ namespace EGenericAnalyticParam
 
 		UTEnterMatch,
 		EnterMethod,
+		UTStartRankedMatch,
+		UTEndRankedMatch,
+		ELOPlayerInfo,
 
 		UTTutorialPickupToken,
 		TokenID,

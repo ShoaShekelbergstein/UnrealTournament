@@ -926,6 +926,11 @@ void AUTGameState::HandleMatchHasStarted()
 
 	StartFPSCharts();
 
+	if (bRankedSession)
+	{
+		FUTAnalytics::FireEvent_UTStartRankedMatch(Cast<AUTGameMode>(GetWorld()->GetAuthGameMode()));
+	}
+
 	Super::HandleMatchHasStarted();
 
 	AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
@@ -940,6 +945,11 @@ void AUTGameState::HandleMatchHasEnded()
 	MatchEndTime = GetWorld()->TimeSeconds;
 
 	StopFPSCharts();
+
+	if (bRankedSession)
+	{
+		FUTAnalytics::FireEvent_UTEndRankedMatch(Cast<AUTGameMode>(GetWorld()->GetAuthGameMode()));
+	}
 
 	Super::HandleMatchHasEnded();
 }
