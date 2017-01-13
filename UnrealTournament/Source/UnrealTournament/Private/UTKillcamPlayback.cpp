@@ -42,6 +42,22 @@ UUTKillcamPlayback::UUTKillcamPlayback()
 
 DEFINE_LOG_CATEGORY_STATIC(LogUTKillcam, Log, All);
 
+void UUTKillcamPlayback::OnPostLoadMap()
+{
+	FCoreUObjectDelegates::PostLoadMap.Remove(OnPostLoadMapHandle);
+	SetPlaybackWorldShouldTick(false);
+}
+
+void UUTKillcamPlayback::SetPlaybackWorldShouldTick(const bool bShouldTick)
+{
+	// Even ticking the playback world while it's paused can have significant overhead. Prevent any ticking of this world
+	// at all until we actually need to display it to the user.
+	if (KillcamWorld)
+	{
+		KillcamWorld->SetShouldTick(bShouldTick);
+	}
+}
+
 void UUTKillcamPlayback::BeginDestroy()
 {
 	FWorldDelegates::OnWorldCleanup.Remove(OnWorldCleanupHandle);
@@ -141,6 +157,7 @@ void UUTKillcamPlayback::PlayKillcamReplay(const FString& ReplayUniqueName)
 	// Currently, loading the killcam world seamlessly is not supported, so force a synchronous load for now
 	AdditionalOptions.Add(TEXT("AsyncLoadWorldOverride=0"));
 
+	OnPostLoadMapHandle = FCoreUObjectDelegates::PostLoadMap.AddUObject(this, &UUTKillcamPlayback::OnPostLoadMap);
 	GameInstance->PlayReplay(ReplayUniqueName, KillcamWorld, AdditionalOptions);
 
 	UWorld* CachedSourceWorld = SourceWorld.Get();
@@ -225,6 +242,8 @@ void UUTKillcamPlayback::KillcamGoToTime(const float TimeInSeconds, const FNetwo
 				}
 			}
 		}
+
+		SetPlaybackWorldShouldTick(true);
 
 		KillcamWorld->DemoNetDriver->AddNonQueuedGUIDForScrubbing(FocusActor);
 		KillcamWorld->DemoNetDriver->GotoTimeInSeconds(TimeInSeconds,
@@ -492,6 +511,8 @@ void UUTKillcamPlayback::HideKillcamFromUser()
 		return;
 	}
 	
+	SetPlaybackWorldShouldTick(false);
+
 	for (TActorIterator<AUTPlayerController> It(KillcamWorld); It; ++It)
 	{
 		if (It->Announcer)
