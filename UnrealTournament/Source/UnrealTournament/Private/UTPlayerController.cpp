@@ -3786,7 +3786,12 @@ void AUTPlayerController::ReceivedPlayer()
 			if (FUTAnalytics::IsAvailable() && (GetWorld()->GetNetMode() != NM_Client || GetWorld()->GetNetDriver() != NULL)) // make sure we don't do analytics for demo playback
 			{
 				FString ServerInfo = (GetWorld()->GetNetMode() == NM_Client) ? GetWorld()->GetNetDriver()->ServerConnection->URL.ToString() : GEngine->GetWorldContextFromWorldChecked(GetWorld()).LastURL.ToString();
-				FUTAnalytics::GetProvider().RecordEvent(TEXT("PlayerConnect"), TEXT("Server"), ServerInfo);
+				
+				TArray<FAnalyticsEventAttribute> ParamArray;
+				FUTAnalytics::SetClientInitialParameters(this, ParamArray, false);
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("Server"), ServerInfo));
+
+				FUTAnalytics::GetProvider().RecordEvent(TEXT("PlayerConnect"),ParamArray);
 			}
 		}
 
@@ -3849,6 +3854,8 @@ void AUTPlayerController::ServerReceiveCountryFlag_Implementation(FName NewCount
 			TArray<FAnalyticsEventAttribute> ParamArray;
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("CountryFlag"), UTPlayerState->CountryFlag.ToString()));
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("UserId"), UTPlayerState->UniqueId.ToString()));
+			FUTAnalytics::SetClientInitialParameters(this, ParamArray, false);
+
 			FUTAnalytics::GetProvider().RecordEvent(TEXT("FlagChange"), ParamArray);
 		}
 	}
@@ -5297,7 +5304,7 @@ void AUTPlayerController::PlayTutorialAnnouncement(int32 Index, UObject* Optiona
 
 		if (FUTAnalytics::IsAvailable())
 		{
-			FUTAnalytics::FireEvent_UTTutorialPlayInstruction(Index, OptionalObject ? OptionalObject->GetName() : FString());
+			FUTAnalytics::FireEvent_UTTutorialPlayInstruction(this, Index, OptionalObject ? OptionalObject->GetName() : FString());
 		}
 	}
 }

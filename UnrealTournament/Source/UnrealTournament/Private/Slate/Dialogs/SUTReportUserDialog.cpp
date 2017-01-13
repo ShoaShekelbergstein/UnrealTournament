@@ -167,6 +167,8 @@ FReply SUTReportUserDialog::OnReportClicked(int32 ReportType)
 				case 3 : ParamArray.Add(FAnalyticsEventAttribute(TEXT("Abuse"), TEXT("Poor Behavior"))); break;
 			}
 
+			FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerOwner->PlayerController), ParamArray, false);
+
 			FUTAnalytics::GetProvider().RecordEvent( TEXT("AbuseReport"), ParamArray );
 		}
 	}

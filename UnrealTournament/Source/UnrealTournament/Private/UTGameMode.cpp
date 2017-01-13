@@ -414,9 +414,9 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	}
 
 	bool bHasAnalyticsLoggedGameStart = EvalBoolOptions(UGameplayStatics::ParseOption(Options, FUTAnalytics::AnalyticsLoggedGameOption), false);
-	if (!bHasAnalyticsLoggedGameStart && FUTAnalytics::IsAvailable())
+	if (!bHasAnalyticsLoggedGameStart && FUTAnalytics::IsAvailable() && GetWorld())
 	{
-		FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("Console - %s"), *DisplayName.ToString()));
+		FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), FString::Printf(TEXT("Console - %s"), *DisplayName.ToString()));
 	}
 }
 
@@ -1827,6 +1827,8 @@ void AUTGameMode::StartMatch()
 			{
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("CustomContent"), 0));
 			}
+			FUTAnalytics::SetMatchInitialParameters(this, ParamArray, false);
+
 			FUTAnalytics::GetProvider().RecordEvent( TEXT("NewMatch"), ParamArray );
 		}
 		else if (bOfflineChallenge)
@@ -1835,6 +1837,8 @@ void AUTGameMode::StartMatch()
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("OfflineChallenge"), bOfflineChallenge));
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("ChallengeDifficulty"), ChallengeDifficulty));
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("ChallengeTag"), ChallengeTag.ToString()));
+			FUTAnalytics::SetMatchInitialParameters(this, ParamArray, false);
+
 			FUTAnalytics::GetProvider().RecordEvent(TEXT("NewOfflineChallengeMatch"), ParamArray);
 		}
 		else
@@ -1844,6 +1848,7 @@ void AUTGameMode::StartMatch()
 			{
 				TArray<FAnalyticsEventAttribute> ParamArray;
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("CustomContent"), UTEngine->LocalContentChecksums.Num()));
+				FUTAnalytics::SetMatchInitialParameters(this, ParamArray, false);
 				FUTAnalytics::GetProvider().RecordEvent(TEXT("MatchWithCustomContent"), ParamArray);
 			}
 		}
@@ -2142,6 +2147,7 @@ void AUTGameMode::SendEndOfGameStats(FName Reason)
 			TArray<FAnalyticsEventAttribute> ParamArray;
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("WinnerName"), UTGameState->WinnerPlayerState ? UTGameState->WinnerPlayerState->PlayerName : TEXT("None")));
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("Reason"), *Reason.ToString()));
+			FUTAnalytics::SetMatchInitialParameters(this, ParamArray, false);
 			FUTAnalytics::GetProvider().RecordEvent(TEXT("EndFFAMatch"), ParamArray);
 		}
 		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
@@ -3711,6 +3717,7 @@ void AUTGameMode::SendLogoutAnalytics(AUTPlayerState* PS)
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerXP"), PS->GetXP().Total()));
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerLevel"), GetLevelForXP(PS->GetXP().Total())));
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerStars"), PS->TotalChallengeStars));
+		FUTAnalytics::SetMatchInitialParameters(this, ParamArray, false);
 		FUTAnalytics::GetProvider().RecordEvent(TEXT("PlayerLogoutStat"), ParamArray);
 	}
 }

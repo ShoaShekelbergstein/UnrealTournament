@@ -233,6 +233,8 @@ void SUTInGameMenu::WriteQuitMidGameAnalytics()
 					ParamArray.Add(FAnalyticsEventAttribute(TEXT("FPS"), GAverageFPS));
 					ParamArray.Add(FAnalyticsEventAttribute(TEXT("Kills"), PS->Kills));
 					ParamArray.Add(FAnalyticsEventAttribute(TEXT("Deaths"), PS->Deaths));
+					FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerOwner->PlayerController), ParamArray, true);
+
 					FUTAnalytics::GetProvider().RecordEvent(TEXT("QuitMidGame"), ParamArray);
 				}
 			}

@@ -706,7 +706,7 @@ void SUTMainMenu::StartGame(bool bLanGame)
 			{
 				GameOptions += FUTAnalytics::AnalyticsLoggedGameOptionTrue;
 				
-				FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("MainMenu - Custom Game - %s"),*GameModeName));
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("MainMenu - Custom Game - %s"),*GameModeName));
 			}
 		}
 	}
@@ -737,11 +737,11 @@ void SUTMainMenu::StartGame(bool bLanGame)
 			
 			if (DefaultGameMode)
 			{
-				FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("MainMenu - Predefined Game Type - %s"), *DefaultGameMode->DisplayName.ToString()));
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("MainMenu - Predefined Game Type - %s"), *DefaultGameMode->DisplayName.ToString()));
 			}
 			else
 			{
-				FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("MainMenu - Predefined Game Type - %s"), *CurrentRule->GameMode));
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("MainMenu - Predefined Game Type - %s"), *CurrentRule->GameMode));
 			}
 		}
 	}

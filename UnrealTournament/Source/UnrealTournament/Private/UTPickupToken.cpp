@@ -83,9 +83,9 @@ void AUTPickupToken::PickedUp()
 	{
 		UUTGameplayStatics::TokenPickedUp(GetWorld(), TokenUniqueID);
 
-		if (FUTAnalytics::IsAvailable())
+		if (FUTAnalytics::IsAvailable() && GetWorld())
 		{
-			FUTAnalytics::FireEvent_UTTutorialPickupToken(TokenUniqueID.ToString());
+			FUTAnalytics::FireEvent_UTTutorialPickupToken(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), TokenUniqueID.ToString());
 		}
 	}
 }

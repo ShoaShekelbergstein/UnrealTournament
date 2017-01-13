@@ -903,6 +903,9 @@ void AUTTeamGameMode::SendEndOfGameStats(FName Reason)
 				FString TeamName = FString::Printf(TEXT("TeamScore%i"), i);
 				ParamArray.Add(FAnalyticsEventAttribute(TeamName, UTGameState->Teams[i]->Score));
 			}
+
+			FUTAnalytics::SetMatchInitialParameters(this, ParamArray, true);
+
 			FUTAnalytics::GetProvider().RecordEvent(TEXT("EndTeamMatch"), ParamArray);
 		}
 	}

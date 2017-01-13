@@ -295,6 +295,22 @@ void AUTCTFRoundGame::PlayEndOfMatchMessage()
 	}
 }
 
+void AUTCTFRoundGame::DefaultTimer()
+{
+	Super::DefaultTimer();
+
+	//Super::DefaultTimer will never set the ReplayID because of our override of IsUTHandingReplays, 
+	//check Super::IsUTHandlingReplays instead to see if we should set ReplayID.
+	if (Super::UTIsHandlingReplays())
+	{
+		UDemoNetDriver* DemoNetDriver = GetWorld()->DemoNetDriver;
+		if (DemoNetDriver != nullptr && DemoNetDriver->ReplayStreamer.IsValid())
+		{
+			UTGameState->ReplayID = DemoNetDriver->ReplayStreamer->GetReplayID();
+		}
+	}
+}
+
 void AUTCTFRoundGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 {
 	// Dont ever end the game in PIE
@@ -1202,6 +1218,7 @@ void AUTCTFRoundGame::ScoreAlternateWin(int32 WinningTeamIndex, uint8 Reason)
 			{
 				TArray<FAnalyticsEventAttribute> ParamArray;
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("FlagCapScore"), 0));
+				FUTAnalytics::SetMatchInitialParameters(this, ParamArray, true);
 				FUTAnalytics::GetProvider().RecordEvent(TEXT("RCTFRoundResult"), ParamArray);
 			}
 		}

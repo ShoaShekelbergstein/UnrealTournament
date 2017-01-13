@@ -818,7 +818,7 @@ FReply SUTGameSetupDialog::OnButtonClick(uint16 ButtonID)
 
 					GetCustomGameSettings(GameMode, StartingMap, Description, GameModeName, GameOptions, DesiredPlayerCount, bTeamGame);
 
-					FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("HUB - Create - %s"), *GameModeName));
+					FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("HUB - Create - %s"), *GameModeName));
 				}
 				else
 				{
@@ -827,7 +827,7 @@ FReply SUTGameSetupDialog::OnButtonClick(uint16 ButtonID)
 						AUTGameMode* DefaultGameMode = SelectedRuleset->GetDefaultGameModeObject();
 						if (DefaultGameMode)
 						{
-							FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("HUB - Create - %s"), *DefaultGameMode->DisplayName.ToString()));
+							FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("HUB - Create - %s"), *DefaultGameMode->DisplayName.ToString()));
 						}
 					}
 				}

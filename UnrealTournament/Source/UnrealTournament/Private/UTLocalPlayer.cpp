@@ -335,6 +335,7 @@ void UUTLocalPlayer::PlayerAdded(class UGameViewportClient* InViewportClient, in
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("OSMinor"), OSMinor));
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("CPUVendor"), FPlatformMisc::GetCPUVendor()));
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("CPUBrand"), FPlatformMisc::GetCPUBrand()));
+		FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
 		FUTAnalytics::GetProvider().RecordEvent( TEXT("SystemInfo"), ParamArray );
 	}
 
@@ -1611,6 +1612,8 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("HatPath"), CurrentProfileSettings->HatPath));
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("LeaderHatPath"), CurrentProfileSettings->LeaderHatPath));
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("LocalXP"), CurrentProfileSettings->LocalXP));
+				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 				FUTAnalytics::GetProvider().RecordEvent(TEXT("CloudProfileLoaded"), ParamArray);
 			}
 
@@ -2548,6 +2551,8 @@ void UUTLocalPlayer::SetHatPath(const FString& NewHatPath)
 				TArray<FAnalyticsEventAttribute> ParamArray;
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("HatPath"), NewHatPath));
+				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 				FUTAnalytics::GetProvider().RecordEvent( TEXT("HatChanged"), ParamArray );
 			}
 			PS->ServerReceiveHatClass(NewHatPath);
@@ -2590,6 +2595,8 @@ void UUTLocalPlayer::SetLeaderHatPath(const FString& NewLeaderHatPath)
 				TArray<FAnalyticsEventAttribute> ParamArray;
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("LeaderHatPath"), NewLeaderHatPath));
+				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 				FUTAnalytics::GetProvider().RecordEvent( TEXT("LeaderHatChanged"), ParamArray );
 			}
 			PS->ServerReceiveLeaderHatClass(NewLeaderHatPath);
@@ -2633,6 +2640,8 @@ void UUTLocalPlayer::SetEyewearPath(const FString& NewEyewearPath)
 				TArray<FAnalyticsEventAttribute> ParamArray;
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("EyewearPath"), NewEyewearPath));
+				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 				FUTAnalytics::GetProvider().RecordEvent( TEXT("CharacterChanged"), ParamArray );
 			}
 
@@ -2668,6 +2677,8 @@ void UUTLocalPlayer::SetCharacterPath(const FString& NewCharacterPath)
 		TArray<FAnalyticsEventAttribute> ParamArray;
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("CharacterPath"), NewCharacterPath));
+		FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 		FUTAnalytics::GetProvider().RecordEvent( TEXT("CharacterChanged"), ParamArray );
 	}
 
@@ -3479,7 +3490,7 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 
 				if (FUTAnalytics::IsAvailable())
 				{
-					FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("QuickMatch - %s"), *QuickMatchType));
+					FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("QuickMatch - %s"), *QuickMatchType));
 				}
 			}
 		}
@@ -3517,7 +3528,7 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 
 				if (FUTAnalytics::IsAvailable())
 				{
-					FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("QuickMatch - %s"), *QuickMatchType));
+					FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("QuickMatch - %s"), *QuickMatchType));
 				}
 			}
 		}
@@ -4865,6 +4876,8 @@ void UUTLocalPlayer::ChallengeCompleted(FName ChallengeTag, int32 Stars)
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("ChallengeTag"), ChallengeTag.ToString()));
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("Stars"), Stars));
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("TotalStars"), AllStars));
+			FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 			FUTAnalytics::GetProvider().RecordEvent(TEXT("ChallengeComplete"), ParamArray);
 		}
 	}
@@ -5310,6 +5323,8 @@ void UUTLocalPlayer::HandleProfileNotification(const FOnlineNotification& Notifi
 		{
 			TArray<FAnalyticsEventAttribute> ParamArray;
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("XP"), Payload.XP));
+			FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 			FUTAnalytics::GetProvider().RecordEvent(TEXT("XPProgress"), ParamArray);
 		}
 	}
@@ -6248,6 +6263,7 @@ void UUTLocalPlayer::LaunchTutorial(FName TutorialName, const FString& DesiredQu
 
 			FString URL = TutorialData[i].Map + TutorialData[i].LaunchArgs + FString::Printf(TEXT("?TutorialMask=%i"),TutorialData[i].Mask);
 			GetWorld()->ServerTravel(URL,true,false);
+			FUTAnalytics::FireEvent_UTTutorialStarted(Cast<AUTPlayerController>(PlayerController), TutorialName.ToString());
 			return;
 		}
 	}

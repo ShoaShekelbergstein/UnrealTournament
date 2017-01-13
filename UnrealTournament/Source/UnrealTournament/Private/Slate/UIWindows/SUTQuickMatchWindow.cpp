@@ -986,6 +986,8 @@ void SUTQuickMatchWindow::OnClosed()
 		float Duration = PlayerOwner->GetWorld()->GetRealTimeSeconds() - StartTime;
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("Duration"), Duration));
 
+		FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerOwner->PlayerController), ParamArray, false);
+
 		FUTAnalytics::GetProvider().RecordEvent(TEXT("QuickMatch"), ParamArray);
 	}
 

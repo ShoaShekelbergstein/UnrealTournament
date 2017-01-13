@@ -959,18 +959,18 @@ void UUTGameplayStatics::RecordEvent_UTTutorialStarted(AUTPlayerController* UTPC
 }
 
 
-void UUTGameplayStatics::RecordEvent_UTTutorialCompleted(FString TutorialMap)
+void UUTGameplayStatics::RecordEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap)
 {
 	if (FUTAnalytics::IsAvailable())
 	{
-		FUTAnalytics::FireEvent_UTTutorialCompleted(TutorialMap);
+		FUTAnalytics::FireEvent_UTTutorialCompleted(UTPC, TutorialMap);
 	}
 }
 
-void UUTGameplayStatics::RecordEvent_UTTutorialPlayInstruction(int32 InstructionID)
+void UUTGameplayStatics::RecordEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, int32 InstructionID)
 {
 	if (FUTAnalytics::IsAvailable())
 	{
-		FUTAnalytics::FireEvent_UTTutorialPlayInstruction(InstructionID);
+		FUTAnalytics::FireEvent_UTTutorialPlayInstruction(UTPC, InstructionID);
 	}
 }

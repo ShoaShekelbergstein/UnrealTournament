@@ -2,6 +2,9 @@ namespace EGenericAnalyticParam
 {
 	enum Type
 	{
+		PlayerGUID,
+		ServerInstanceGUID,
+		ServerMatchGUID,
 		MatchTime,
 		MapName,
 		GameModeName,
