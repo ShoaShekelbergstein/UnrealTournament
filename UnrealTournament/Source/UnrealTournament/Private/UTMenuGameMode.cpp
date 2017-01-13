@@ -134,6 +134,11 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 			// NOTE: If we are in a party, never return to the tutorial menu
 			if (LP != NULL && !LP->IsInAnActiveParty())
 			{
+				if (FUTAnalytics::IsAvailable())
+				{
+					FUTAnalytics::FireEvent_UTTutorialStarted(Cast<AUTPlayerController>(PC), FString("Onboarding"));
+				}
+
 				LP->OpenTutorialMenu();
 			}
 			// make sure this doesn't get kept around

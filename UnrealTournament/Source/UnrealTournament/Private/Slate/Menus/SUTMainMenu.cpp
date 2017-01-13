@@ -115,6 +115,25 @@ void SUTMainMenu::SetInitialPanel()
 
 FReply SUTMainMenu::OnShowHomePanel()
 {
+	//if we are leaving the tutorial panel, we may have canceled on boarding
+	if (FUTAnalytics::IsAvailable() && ActivePanel == TutorialPanel)
+	{
+		AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+		if (PC && !PC->SkipTutorialCheck())
+		{
+			UUTProfileSettings* ProfileSettings = PC->GetProfileSettings();
+			if (ProfileSettings != nullptr)
+			{
+				if ((ProfileSettings->TutorialMask == 0) ||
+					((ProfileSettings->TutorialMask & 0x07) != 0x07) ||
+					(ProfileSettings->TutorialMask < 8))
+				{
+					FUTAnalytics::FireEvent_UTCancelOnboarding(PC);
+				}
+			}
+		}
+	}
+
 	return SUTMenuBase::OnShowHomePanel();
 }
 

@@ -68,6 +68,7 @@ namespace EGenericAnalyticParam
 
 		UTTutorialStarted,
 		UTTutorialCompleted,
+		UTCancelOnboarding,
 		TutorialMap,
 		MovementTutorialCompleted,
 		WeaponTutorialCompleted,

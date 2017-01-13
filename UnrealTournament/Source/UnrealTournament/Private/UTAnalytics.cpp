@@ -182,6 +182,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 
 	AddGenericParamName(UTTutorialStarted);
 	AddGenericParamName(UTTutorialCompleted);
+	AddGenericParamName(UTCancelOnboarding);
 	AddGenericParamName(TutorialMap);
 	AddGenericParamName(MovementTutorialCompleted);
 	AddGenericParamName(WeaponTutorialCompleted);
@@ -1009,5 +1010,32 @@ void FUTAnalytics::FireEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FStr
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TutorialMap), TutorialMap));
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTTutorialCompleted), ParamArray);
+	}
+}
+
+/*
+* @EventName UTTutorialStarted
+*
+* @Trigger Fires when a client starts a tutorial
+*
+* @Type Sent by the Client
+*
+* @EventParam TutorialMap FString Name of the tutorial map.
+* @EventParam MovementTutorialCompleted bool If the movement tutorial has been previously completed
+* @EventParam WeaponTutorialCompleted bool If the movement tutorial has been previously completed
+* @EventParam PickupsTutorialCompleted If the movement tutorial has been previously completed
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTCancelOnboarding(AUTPlayerController* UTPC)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetClientInitialParameters(UTPC, ParamArray, true);
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTCancelOnboarding), ParamArray);
 	}
 }
