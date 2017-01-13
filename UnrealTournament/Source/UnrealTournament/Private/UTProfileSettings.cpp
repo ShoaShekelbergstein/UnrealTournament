@@ -687,8 +687,6 @@ void UUTProfileSettings::GetWeaponCustomization(FName WeaponCustomizationTag, FW
 		else
 		{
 			outWeaponCustomizationInfo.CrosshairTag = WeaponCustomizations[WeaponCustomizationTag].DefaultCrosshairTag;
-			outWeaponCustomizationInfo.CrosshairColorOverride = FLinearColor::White;
-			outWeaponCustomizationInfo.CrosshairScaleOverride = 1.0f;
 		}
 	}
 	else
