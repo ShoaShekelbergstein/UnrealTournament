@@ -267,7 +267,10 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 
 	// Set goal score to end match.
 	GoalScore = FMath::Max(0, UGameplayStatics::GetIntOption(Options, TEXT("GoalScore"), GoalScore));
-
+	if (bBasicTrainingGame)
+	{
+		GoalScore = 0;
+	}
 	MinPlayersToStart = FMath::Max(1, UGameplayStatics::GetIntOption(Options, TEXT("MinPlayers"), MinPlayersToStart));
 
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("RankCheck"));
