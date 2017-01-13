@@ -690,8 +690,11 @@ PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
 	FString ErrorMessage;
 
-	// Register the player with the session
-	GameSession->RegisterPlayer(NewPlayerController, UniqueId.GetUniqueNetId(), UGameplayStatics::HasOption(Options, TEXT("bIsFromInvite")));
+	if (GameSession)
+	{
+		// Register the player with the session
+		GameSession->RegisterPlayer(NewPlayerController, UniqueId.GetUniqueNetId(), UGameplayStatics::HasOption(Options, TEXT("bIsFromInvite")));
+	}
 
 	// Find a starting spot
 	AActor* const StartSpot = FindPlayerStart(NewPlayerController, Portal);
