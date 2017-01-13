@@ -43,6 +43,7 @@
 #include "UTCTFGameMessage.h"
 #include "UTTutorialAnnouncement.h"
 #include "UTFlagRunMessage.h"
+#include "UTDoorMessage.h"
 
 #if WITH_PROFILE
 #include "OnlineSubsystemMcp.h"
@@ -87,7 +88,7 @@ void UUTCheatManager::Ann(int32 Switch)
 	Flag->SendGameMessage(4, Holder, NULL);
 	Flag->SendGameMessage(3, Holder, NULL);
 	Flag->SendGameMessage(1, NULL, NULL);*/
-	GetOuterAPlayerController()->ClientReceiveLocalizedMessage(UUTMultiKillMessage::StaticClass(), Switch, GetOuterAPlayerController()->PlayerState, GetOuterAPlayerController()->PlayerState, NULL);
+	GetOuterAPlayerController()->ClientReceiveLocalizedMessage(UUTDoorMessage::StaticClass(), Switch, GetOuterAPlayerController()->PlayerState, GetOuterAPlayerController()->PlayerState, NULL);
 	/*GetOuterAPlayerController()->ClientReceiveLocalizedMessage(UUTSpreeMessage::StaticClass(), Switch, GetOuterAPlayerController()->PlayerState, GetOuterAPlayerController()->PlayerState, NULL);
 	GetOuterAPlayerController()->ClientReceiveLocalizedMessage(UUTVictimMessage::StaticClass(), Switch, GetOuterAPlayerController()->PlayerState, GetOuterAPlayerController()->PlayerState, NULL);
 	GetOuterAPlayerController()->ClientReceiveLocalizedMessage(UUTCountDownMessage::StaticClass(), Switch, GetOuterAPlayerController()->PlayerState, GetOuterAPlayerController()->PlayerState, NULL);

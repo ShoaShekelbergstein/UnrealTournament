@@ -14,32 +14,38 @@ UUTDoorMessage::UUTDoorMessage(const class FObjectInitializer& ObjectInitializer
 	bIsStatusAnnouncement = false;
 	bPlayDuringIntermission = false;
 	Lifetime = 2.f;
-	AnnouncementDelay = 0.f;
+	AnnouncementDelay = 1.5f;
 	MessageArea = FName(TEXT("Announcements"));
 	MessageSlot = FName(TEXT("MajorRewardMessage"));
 	DoorOpenText = NSLOCTEXT("RedeemerMessage", "DoorOpen", "Door is Open");
-	DoorClosedText = NSLOCTEXT("RedeemerMessage", "DoorClosed", "Door is Cloing");
+	DoorClosedText = NSLOCTEXT("RedeemerMessage", "DoorClosed", "Door is Closing");
 }
 
 FText UUTDoorMessage::GetText(int32 Switch, bool bTargetsPlayerState1, class APlayerState* RelatedPlayerState_1, class APlayerState* RelatedPlayerState_2, class UObject* OptionalObject) const
 {
-	if (Switch == 0)
+	if (Switch == 1)
 	{
 		return DoorOpenText;
 	}
-	if (Switch == 1)
+	if (Switch == 0)
 	{
 		return DoorClosedText;
 	}
 	return FText::GetEmpty();
 }
 
+
+float UUTDoorMessage::GetAnnouncementDelay(int32 Switch)
+{
+	return (Switch == 1) ? 5.f : AnnouncementDelay;
+}
+
 FName UUTDoorMessage::GetAnnouncementName_Implementation(int32 Switch, const UObject* OptionalObject, const class APlayerState* RelatedPlayerState_1, const class APlayerState* RelatedPlayerState_2) const
 {
 	switch (Switch)
 	{
-	case 0: return TEXT("DoorBreached"); break;
-	case 1: return TEXT("DoorClosing"); break;
+	case 0: return TEXT("DoorClosing"); break;
+	case 1: return TEXT("DoorBreached"); break;
 	}
 	return NAME_None;
 }

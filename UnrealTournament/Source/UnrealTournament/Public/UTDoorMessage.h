@@ -21,4 +21,5 @@ class UNREALTOURNAMENT_API UUTDoorMessage : public UUTLocalMessage
 	virtual bool ShouldPlayAnnouncement(const FClientReceiveData& ClientData) const override;
 	virtual FText GetText(int32 Switch = 0, bool bTargetsPlayerState1 = false, class APlayerState* RelatedPlayerState_1 = NULL, class APlayerState* RelatedPlayerState_2 = NULL, class UObject* OptionalObject = NULL) const override;
 	virtual float GetAnnouncementPriority(const FAnnouncementInfo AnnouncementInfo) const override;
+	virtual float GetAnnouncementDelay(int32 Switch) override;
 };
