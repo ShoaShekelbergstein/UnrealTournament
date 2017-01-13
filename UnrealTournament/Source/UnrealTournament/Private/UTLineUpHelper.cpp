@@ -73,12 +73,17 @@ void AUTLineUpHelper::CleanUp()
 				}
 			}
 
-			//If we are in the end game / map vote we don't need to destroy our spawned clones and should 
-			//let them stick around and look fancy while voting / stats are being displayed
 			AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
-			if (UTGS && (UTGS->GetMatchState() != MatchState::WaitingPostMatch) && (UTGS->GetMatchState() != MatchState::MapVoteHappening))
+			if (UTGS)
 			{
-				DestroySpawnedClones();
+				UTGS->LeadLineUpPlayer = nullptr;
+
+				//If we are in the end game / map vote we don't need to destroy our spawned clones and should 
+				//let them stick around and look fancy while voting / stats are being displayed
+				if ((UTGS->GetMatchState() != MatchState::WaitingPostMatch) && (UTGS->GetMatchState() != MatchState::MapVoteHappening))
+				{
+					DestroySpawnedClones();
+				}
 			}
 		}
 	}
@@ -248,6 +253,16 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 		FlagFixUp();
 		SortPlayers();
 		MovePreviewCharactersToLineUpSpawns(ZoneType);
+
+		//Setup LeadPlayer, not done in Sort because players will be deleted as part of MovePreivewCharactersToLineUpSpawns
+		if (PlayerPreviewCharacters.Num() > 0)
+		{
+			AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+			if (UTGS)
+			{
+				UTGS->LeadLineUpPlayer = Cast<AUTPlayerController>(PlayerPreviewCharacters[0]->GetController());
+			}
+		}
 
 		//Go back through characters now that they are moved and turn them off
 		for (AUTCharacter* UTChar : PlayerPreviewCharacters)

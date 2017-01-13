@@ -352,6 +352,7 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 
 	DOREPLIFETIME(AUTGameState, LineUpHelper);
 	DOREPLIFETIME(AUTGameState, ReplayID);
+	DOREPLIFETIME(AUTGameState, LeadLineUpPlayer);
 }
 
 void AUTGameState::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
