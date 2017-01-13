@@ -41,9 +41,9 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	HighlightMap.Add(HighlightNames::MostKillsTeam, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
 	HighlightMap.Add(HighlightNames::BadMF, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
 	HighlightMap.Add(HighlightNames::LikeABoss, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
-	HighlightMap.Add(HighlightNames::DeathIncarnate, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills ({0})"));
-	HighlightMap.Add(HighlightNames::ComeAtMeBro, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills ({0})"));
-	HighlightMap.Add(HighlightNames::ThisIsSparta, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills ({0})"));
+	HighlightMap.Add(HighlightNames::DeathIncarnate, NSLOCTEXT("AUTGameMode", "MostKills", "Most Kills ({0})"));
+	HighlightMap.Add(HighlightNames::ComeAtMeBro, NSLOCTEXT("AUTGameMode", "MostKills", "Most Kills ({0})"));
+	HighlightMap.Add(HighlightNames::ThisIsSparta, NSLOCTEXT("AUTGameMode", "MostKills", "Most Kills ({0})"));
 
 	HighlightMap.Add(HighlightNames::NaturalBornKiller, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
 	HighlightMap.Add(HighlightNames::SpecialForces, NSLOCTEXT("AUTGameMode", "LotsOfKills", "{0} Kills"));
@@ -700,7 +700,7 @@ void AUTFlagRunGameState::UpdateHighlights_Implementation()
 			int32 TotalKills = PS->RoundKills + PS->RoundKillAssists;
 			if (MostKills && (TotalKills >= 20) && (TotalKills >= MostKills->RoundKills + MostKills->RoundKillAssists))
 			{
-				PS->AddMatchHighlight(HighlightNames::DeathIncarnate, MostKills->Kills);
+				PS->AddMatchHighlight(HighlightNames::DeathIncarnate, TotalKills);
 			}
 			else if (PS->Team)
 			{
