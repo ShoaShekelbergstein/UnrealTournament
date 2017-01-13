@@ -6541,6 +6541,9 @@ UUTUMGWidget* UUTLocalPlayer::OpenExistingUMGWidget(UUTUMGWidget* WidgetToOpen)
 
 		// If there are multiples of this widget open, offset them.
 		GEngine->GameViewport->AddViewportWidgetContent(WidgetToOpen->TakeWidget(), WidgetToOpen->DisplayZOrder - Cnt);
+		
+		// Clamp the stack.
+		Cnt = FMath::Clamp<int32>(Cnt,0,4);
 		if (Cnt > 0)
 		{
 			WidgetToOpen->SetPositionInViewport(WidgetToOpen->StackingOffset * Cnt,true);
