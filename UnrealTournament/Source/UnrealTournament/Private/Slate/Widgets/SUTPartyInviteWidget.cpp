@@ -9,6 +9,7 @@
 #include "UTGameInstance.h"
 #include "../SUTStyle.h"
 
+
 #if WITH_SOCIAL
 #include "Social.h"
 #endif
@@ -27,6 +28,11 @@ void SUTPartyInviteWidget::Construct(const FArguments& InArgs, const FLocalPlaye
 		ISocialModule::Get().GetFriendsAndChatManager(TEXT(""), true)->GetNotificationService()->OnSendNotification().AddSP(this, &SUTPartyInviteWidget::HandleFriendsActionNotification);
 	}
 #endif
+	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(Ctx.GetWorld(), UPartyContext::StaticClass()));
+	if (PartyContext)
+	{
+		PartyJoinedDelegateHandle = PartyContext->OnPartyJoined.AddSP(this, &SUTPartyInviteWidget::HandlePartyJoined);
+	}
 
 	ChildSlot
 	.HAlign(HAlign_Right)
@@ -200,8 +206,20 @@ FReply SUTPartyInviteWidget::RejectInvite()
 	return FReply::Handled();
 }
 
+void SUTPartyInviteWidget::HandlePartyJoined()
+{
+	LastInviteTime = 0;
+	LastInviteContent.Empty();
+	LastInviteUniqueID.Empty();
+}
+
 SUTPartyInviteWidget::~SUTPartyInviteWidget()
 {
+	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(Ctx.GetWorld(), UPartyContext::StaticClass()));
+	if (PartyContext)
+	{
+		PartyContext->OnPartyJoined.Remove(PartyJoinedDelegateHandle);
+	}
 }
 
 #endif
