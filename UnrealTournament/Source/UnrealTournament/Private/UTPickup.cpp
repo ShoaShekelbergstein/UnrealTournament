@@ -238,23 +238,32 @@ void AUTPickup::StartSleeping_Implementation()
 {
 	SetPickupHidden(true);
 	SetActorEnableCollision(false);
-	if ((RespawnTime > 0.0f) && (!bSpawnOncePerRound || !bHasSpawnedThisRound))
+	if (RespawnTime > 0.0f)
 	{
-		if (!bFixedRespawnInterval || !GetWorld()->GetTimerManager().IsTimerActive(WakeUpTimerHandle))
+		if (bSpawnOncePerRound && bHasSpawnedThisRound)
 		{
-			GetWorld()->GetTimerManager().SetTimer(WakeUpTimerHandle, this, &AUTPickup::WakeUpTimer, RespawnTime, false);
-		}
-		if (TimerEffect != NULL && TimerEffect->Template != NULL)
-		{
-			// FIXME: workaround for particle bug; screen facing particles don't handle negative scale correctly
-			FVector FixedScale = TimerEffect->GetComponentScale();
-			FixedScale = FVector(FMath::Abs<float>(FixedScale.X), FMath::Abs<float>(FixedScale.Y), FMath::Abs<float>(FixedScale.Z));
-			TimerEffect->SetWorldScale3D(FixedScale);
-
 			TimerEffect->SetFloatParameter(NAME_Progress, 0.0f);
 			TimerEffect->SetFloatParameter(NAME_RespawnTime, RespawnTime);
-			TimerEffect->SetHiddenInGame(false);
-			PrimaryActorTick.SetTickFunctionEnable(true);
+			TimerEffect->SetHiddenInGame(true);
+		}
+		else
+		{
+			if (!bFixedRespawnInterval || !GetWorld()->GetTimerManager().IsTimerActive(WakeUpTimerHandle))
+			{
+				GetWorld()->GetTimerManager().SetTimer(WakeUpTimerHandle, this, &AUTPickup::WakeUpTimer, RespawnTime, false);
+			}
+			if (TimerEffect != NULL && TimerEffect->Template != NULL)
+			{
+				// FIXME: workaround for particle bug; screen facing particles don't handle negative scale correctly
+				FVector FixedScale = TimerEffect->GetComponentScale();
+				FixedScale = FVector(FMath::Abs<float>(FixedScale.X), FMath::Abs<float>(FixedScale.Y), FMath::Abs<float>(FixedScale.Z));
+				TimerEffect->SetWorldScale3D(FixedScale);
+
+				TimerEffect->SetFloatParameter(NAME_Progress, 0.0f);
+				TimerEffect->SetFloatParameter(NAME_RespawnTime, RespawnTime);
+				TimerEffect->SetHiddenInGame(false);
+				PrimaryActorTick.SetTickFunctionEnable(true);
+			}
 		}
 	}
 
@@ -340,7 +349,7 @@ void AUTPickup::WakeUpTimer()
 			WakeUp();
 		}
 	}
-	else
+	else if (!bFixedRespawnInterval)
 	{
 		// it's possible we're out of sync, so set up a state that indicates the pickup should respawn any time now, but isn't yet available
 		if (TimerEffect != NULL)
