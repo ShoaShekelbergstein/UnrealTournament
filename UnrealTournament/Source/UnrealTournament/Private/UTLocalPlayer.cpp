@@ -3433,7 +3433,7 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 			}
 		}
 
-		if (DesiredTutorialMask != 0 && CurrentProfileSettings && (CurrentProfileSettings->TutorialMask & DesiredTutorialMask) != DesiredTutorialMask)
+		if (!IsInAnActiveParty() && DesiredTutorialMask != 0 && CurrentProfileSettings && (CurrentProfileSettings->TutorialMask & DesiredTutorialMask) != DesiredTutorialMask)
 		{
 			// We need to play this tutorial instead.
 			LaunchTutorial(DesiredTutorial, QuickMatchType);
@@ -6126,7 +6126,7 @@ void UUTLocalPlayer::HideRedirectDownload()
 #endif
 }
 
-bool UUTLocalPlayer::IsInAnActiveParty()
+bool UUTLocalPlayer::IsInAnActiveParty() const
 {
 	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
 	if (PartyContext)
@@ -6183,7 +6183,7 @@ bool UUTLocalPlayer::IsMenuOptionEnabled(FName MenuCommand) const
 
 FText UUTLocalPlayer::GetMenuCommandTooltipText(FName MenuCommand) const 
 {
-	if ( IsMenuOptionLocked(MenuCommand) )
+	if ( !IsInAnActiveParty() && IsMenuOptionLocked(MenuCommand) )
 	{
 		if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			return NSLOCTEXT("SUTHomePanel", "QuickPlayDMLocked","Before you can play Deathmatch online, you need to complete the Deathmatch training in Basic Training.");
 		else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTFLocked","Before you can play Capture the Flag online, you need to complete the CTF training in Basic Training.");

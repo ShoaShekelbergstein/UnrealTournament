@@ -1209,7 +1209,7 @@ public:
 	bool SkipTutorialCheck();
 
 	// Returns true if this local player is currently in a party
-	bool IsInAnActiveParty();
+	bool IsInAnActiveParty() const;
 
 	virtual bool IsMenuOptionLocked(FName MenuCommand) const;
 	virtual	EVisibility IsMenuOptionLockVisible(FName MenuCommand) const;
