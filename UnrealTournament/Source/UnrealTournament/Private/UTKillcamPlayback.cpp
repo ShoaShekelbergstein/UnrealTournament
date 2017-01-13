@@ -491,6 +491,14 @@ void UUTKillcamPlayback::HideKillcamFromUser()
 	{
 		return;
 	}
+	
+	for (TActorIterator<AUTPlayerController> It(KillcamWorld); It; ++It)
+	{
+		if (It->Announcer)
+		{
+			It->Announcer->ClearAnnouncements();
+		}
+	}
 
 	AUTGameState* GS = KillcamWorld->GetGameState<AUTGameState>();
 	if (GS)
