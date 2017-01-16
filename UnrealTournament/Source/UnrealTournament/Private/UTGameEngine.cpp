@@ -356,12 +356,7 @@ EBrowseReturnVal::Type UUTGameEngine::Browse( FWorldContext& WorldContext, FURL 
 		FURL NewURL(&DefaultURL, *URL.ToString(), TRAVEL_Absolute);
 		for (int32 i = 0; i < DefaultURL.Op.Num(); i++)
 		{
-			FString OpKey;
-			DefaultURL.Op[i].Split(TEXT("="), &OpKey, NULL);
-			if (!NewURL.HasOption(*OpKey))
-			{
-				new(NewURL.Op) FString(DefaultURL.Op[i]);
-			}
+			NewURL.AddOption(*DefaultURL.Op);
 		}
 
 		if (NewURL.HasOption(TEXT("Rank")))
