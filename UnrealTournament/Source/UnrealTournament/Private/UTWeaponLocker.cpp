@@ -369,7 +369,25 @@ void AUTWeaponLocker::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 float AUTWeaponLocker::BotDesireability_Implementation(APawn* Asker, AController* RequestOwner, float TotalDistance)
 {
-	return IsTaken(Asker) ? 0.0f : 1.0f; // FIXME: real rating
+	AUTCharacter* UTC = Cast<AUTCharacter>(Asker);
+	if (IsTaken(Asker) || UTC == nullptr)
+	{
+		return 0.0f;
+	}
+	else
+	{
+		// FIXME: accumulate real rating
+		// for now, want if would gain weapon or significant ammo
+		for (const FWeaponLockerItem& Item : WeaponList)
+		{
+			AUTWeapon* Existing = Cast<AUTWeapon>(UTC->FindInventoryType(Item.WeaponType, true));
+			if (Existing == nullptr || Existing->Ammo < Item.WeaponType.GetDefaultObject()->Ammo / 2)
+			{
+				return 1.0f;
+			}
+		}
+		return 0.0f;
+	}
 }
 float AUTWeaponLocker::DetourWeight_Implementation(APawn* Asker, float TotalDistance)
 {
