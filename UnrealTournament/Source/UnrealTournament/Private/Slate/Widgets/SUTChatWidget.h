@@ -18,7 +18,7 @@ public:
 	SLATE_END_ARGS()
 
 	/** Needed for every widget */
-	void Construct(const FArguments& InArgs, const FLocalPlayerContext& InCtx);
+	void Construct(const FArguments& InArgs);
 
 	/** Focus edit box so user can immediately start typing */
 	void SetFocus();
@@ -35,9 +35,6 @@ private:
 
 	/** The UI sets up the appropriate mouse settings upon focus */
 	virtual FReply OnFocusReceived(const FGeometry& MyGeometry, const FFocusEvent& InFocusEvent) override;
-
-	/** Player context */
-	FLocalPlayerContext Ctx;
 
 	/* Display Service for Social */
 	TSharedPtr< class IChatDisplayService > Display;

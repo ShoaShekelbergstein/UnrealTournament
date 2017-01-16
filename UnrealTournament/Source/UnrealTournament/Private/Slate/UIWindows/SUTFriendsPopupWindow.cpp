@@ -34,7 +34,7 @@ void SUTFriendsPopupWindow::Construct(const FArguments& InArgs)
 				.Padding(0)
 				.BorderImage(FCoreStyle::Get().GetBrush("NoBorder"))
 				[
-					SNew(SUTChatWidget, PlayerOwner->PlayerController)
+					SNew(SUTChatWidget)
 				]
 			]
 			+SOverlay::Slot()
@@ -46,7 +46,7 @@ void SUTFriendsPopupWindow::Construct(const FArguments& InArgs)
 				.Padding(0)
 				.BorderImage(FCoreStyle::Get().GetBrush("NoBorder"))
 				[
-					SNew(SUTFriendsWidget, PlayerOwner->PlayerController)
+					SNew(SUTFriendsWidget)
 /*					.FriendStyle(&SocialAsset->Style)*/
 				]
 			]

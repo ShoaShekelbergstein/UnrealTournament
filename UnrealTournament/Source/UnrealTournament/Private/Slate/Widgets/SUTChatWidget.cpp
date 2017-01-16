@@ -16,9 +16,8 @@
 
 #if !UE_SERVER
 
-void SUTChatWidget::Construct(const FArguments& InArgs, const FLocalPlayerContext& InCtx)
+void SUTChatWidget::Construct(const FArguments& InArgs)
 {
-	Ctx = InCtx;
 
 #if WITH_SOCIAL
 	//some constant values

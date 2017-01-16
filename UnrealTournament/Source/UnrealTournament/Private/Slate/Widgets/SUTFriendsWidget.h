@@ -24,7 +24,7 @@ public:
 	virtual ~SUTFriendsWidget();
 
 	/** Needed for every widget */
-	void Construct(const FArguments& InArgs, const FLocalPlayerContext& InCtx);
+	void Construct(const FArguments& InArgs);
 
 private:
 
@@ -38,9 +38,6 @@ private:
 
 	/** Holder of the content */
 	TSharedPtr<SWeakWidget> ContentWidget;
-
-	/** Player context */
-	FLocalPlayerContext Ctx;
 };
 
 #endif // !UE_SERVER
