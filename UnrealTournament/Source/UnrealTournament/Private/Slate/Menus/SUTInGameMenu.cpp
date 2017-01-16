@@ -247,7 +247,7 @@ FReply SUTInGameMenu::OnReturnToMainMenu()
 	bool bIsRankedGame = false;
 	bool bIsQuickMatch = false;
 	AUTGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
-	if (GameState && GameState->bRankedSession)
+	if (GameState)
 	{
 		if (GameState->bRankedSession)
 		{
