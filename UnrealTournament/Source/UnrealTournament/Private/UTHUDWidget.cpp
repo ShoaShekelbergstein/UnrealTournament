@@ -524,7 +524,24 @@ FVector2D UUTHUDWidget::DrawText(FText Text, float X, float Y, UFont* Font, bool
 			UE_LOG(UT, Warning, TEXT("%s draw text with font %s"), *GetName(), *Font->GetName());
 		}*/
 		
-		Canvas->StrLen(Font, Text.ToString(), XL, YL);
+		const bool bHasLineBreak = Text.ToString().Contains(TEXT("\n"));
+		// canvas code is broken for strings with line breaks, split them manually
+		TArray<FString> Pieces;
+		if (bHasLineBreak)
+		{
+			Text.ToString().ParseIntoArrayLines(Pieces);
+			for (const FString& Next : Pieces)
+			{
+				float TestXL, TestYL;
+				Canvas->StrLen(Font, Next, TestXL, TestYL);
+				XL = FMath::Max<float>(TestXL, XL);
+				YL += TestYL;
+			}
+		}
+		else
+		{
+			Canvas->StrLen(Font, Text.ToString(), XL, YL);
+		}
 		TextSize = FVector2D(XL,YL); // Save for Later
 
 		if (bScaleByDesignedResolution)
@@ -534,11 +551,9 @@ FVector2D UUTHUDWidget::DrawText(FText Text, float X, float Y, UFont* Font, bool
 		}
 		const float TextScaling = bScaleByDesignedResolution ? RenderScale*TextScale : TextScale;
 
-		if (TextHorzAlignment == ETextHorzPos::Center && Text.ToString().Contains(TEXT("\n")))
+		if (TextHorzAlignment == ETextHorzPos::Center && bHasLineBreak)
 		{
 			TGuardValue<bool> ScaleGuard(bScaleByDesignedResolution, false);
-			TArray<FString> Pieces;
-			Text.ToString().ParseIntoArrayLines(Pieces);
 			for (const FString& Next : Pieces)
 			{
 				FVector2D DrawnSize = DrawText(FText::FromString(Next), X, Y, Font, bDrawShadow, ShadowDirection, ShadowColor, bDrawOutline, OutlineColor, TextScaling, DrawOpacity, DrawColor, BackColor, TextHorzAlignment, TextVertAlignment, RenderInfo);
