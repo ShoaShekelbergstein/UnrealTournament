@@ -3259,7 +3259,7 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 		}
 		else
 		{
-			UTGameState->PlayersNeeded = (GetWorld()->GetTimeSeconds() - StartPlayTime > (bIsQuickMatch ? MaxWaitForQuickMatch : 60.f)) ? FMath::Max(0, MinPlayersToStart - NumPlayers - NumBots) : FMath::Max(0, FMath::Min(GameSession->MaxPlayers, QuickPlayersToStart) - NumPlayers - NumBots);
+			UTGameState->PlayersNeeded = (GetWorld()->GetTimeSeconds() - StartPlayTime > (bIsQuickMatch ? MaxWaitForQuickMatch : 60.f)) ? FMath::Max(0, MinPlayersToStart - NumPlayers - NumBots) : FMath::Max(0, FMath::Min(GameSession->MaxPlayers, (bIsQuickMatch ? QuickPlayersToStart : MinPlayersToStart)) - NumPlayers - NumBots);
 			//UE_LOG(UT, Warning, TEXT("Elapsed %f wait %f playersneeded %d minplayers %d numplayers %d numbots %d"), (GetWorld()->GetTimeSeconds() - StartPlayTime), (bIsQuickMatch ? MaxWaitForQuickMatch : 60.f), UTGameState->PlayersNeeded, MinPlayersToStart, NumPlayers, NumBots);
 			if (((GetNetMode() == NM_Standalone) || bDevServer || (UTGameState->PlayersNeeded == 0)) && (NumPlayers + NumSpectators > 0))
 			{
