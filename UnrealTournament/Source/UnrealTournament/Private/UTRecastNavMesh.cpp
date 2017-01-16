@@ -98,25 +98,6 @@ void AUTRecastNavMesh::PostLoad()
 
 	PathNodes.Remove(NULL); // really shouldn't happen but no need to crash for it
 
-	// FIXME: temporary backwards compat with a last minute change
-	for (UUTPathNode* Node : PathNodes)
-	{
-		for (FUTPathLink& Path : Node->Paths)
-		{
-			if (Path.CollisionHeight == 106)
-			{
-				Path.CollisionHeight = 108;
-			}
-		}
-	}
-	for (FCapsuleSize& Size : SizeSteps)
-	{
-		if (Size.Height == 106)
-		{
-			Size.Height = 108;
-		}
-	}
-
 	// init lookup hashes
 	for (UUTPathNode* Node : PathNodes)
 	{
