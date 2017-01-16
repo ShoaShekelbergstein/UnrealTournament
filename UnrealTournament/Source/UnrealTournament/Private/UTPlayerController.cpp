@@ -3569,9 +3569,14 @@ void AUTPlayerController::ChooseBestCamera()
 void AUTPlayerController::NotifyTakeHit(AController* InstigatedBy, int32 Damage, FVector Momentum, const FDamageEvent& DamageEvent)
 {
 	APlayerState* InstigatedByState = (InstigatedBy != NULL) ? InstigatedBy->PlayerState : NULL;
+	TSubclassOf<UUTDamageType> UTDmgType = *DamageEvent.DamageTypeClass;
 	FVector RelHitLocation(FVector::ZeroVector);
 	FVector ShotDir(FVector::ZeroVector);
-	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
+	if (UTDmgType != nullptr && UTDmgType.GetDefaultObject()->bDmgHUDUsesShooterLoc && InstigatedBy != nullptr && InstigatedBy->GetPawn() != nullptr && GetPawn() != nullptr)
+	{
+		ShotDir = (GetPawn()->GetActorLocation() - InstigatedBy->GetPawn()->GetActorLocation()).GetSafeNormal();
+	}
+	else if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
 		ShotDir = ((FPointDamageEvent*)&DamageEvent)->ShotDirection;
 	}
@@ -3583,8 +3588,8 @@ void AUTPlayerController::NotifyTakeHit(AController* InstigatedBy, int32 Damage,
 		}
 		else
 		{
-		ShotDir = (((FRadialDamageEvent*)&DamageEvent)->ComponentHits[0].ImpactPoint - ((FRadialDamageEvent*)&DamageEvent)->Origin).GetSafeNormal();
-	}
+			ShotDir = (((FRadialDamageEvent*)&DamageEvent)->ComponentHits[0].ImpactPoint - ((FRadialDamageEvent*)&DamageEvent)->Origin).GetSafeNormal();
+		}
 	}
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	bool bFriendlyFire = InstigatedByState != PlayerState && GS != NULL && GS->OnSameTeam(InstigatedByState, this);
