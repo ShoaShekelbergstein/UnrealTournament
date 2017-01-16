@@ -54,7 +54,7 @@ void UUTKillcamPlayback::SetPlaybackWorldShouldTick(const bool bShouldTick)
 	// at all until we actually need to display it to the user.
 	if (KillcamWorld)
 	{
-		KillcamWorld->SetShouldTick(bShouldTick);
+		//KillcamWorld->SetShouldTick(bShouldTick);
 	}
 }
 
