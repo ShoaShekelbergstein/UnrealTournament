@@ -3742,7 +3742,7 @@ void AUTPlayerController::PlayGroupTaunt()
 	if (GetWorld()->GetRealTimeSeconds() - LastEmoteTime > EmoteCooldownTime)
 	{
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS && (GS->LeadLineUpPlayer == this) && (GS->IsMatchIntermission() || GS->HasMatchEnded()))
+		if (GS && (GS->LeadLineUpPlayer == UTPlayerState) && (GS->IsMatchIntermission() || GS->HasMatchEnded()))
 		{
 			ServerPlayGroupTaunt();
 			LastEmoteTime = GetWorld()->GetRealTimeSeconds();

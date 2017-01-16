@@ -704,7 +704,7 @@ public:
 	AUTLineUpHelper* LineUpHelper;
 
 	UPROPERTY(Replicated)
-	AUTPlayerController* LeadLineUpPlayer;
+	AUTPlayerState* LeadLineUpPlayer;
 
 	// Returns true if the replication of the MapVote list is completed
 	bool IsMapVoteListReplicationCompleted();

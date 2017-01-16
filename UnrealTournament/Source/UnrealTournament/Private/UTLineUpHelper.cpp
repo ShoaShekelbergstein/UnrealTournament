@@ -260,7 +260,7 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 			AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
 			if (UTGS)
 			{
-				UTGS->LeadLineUpPlayer = Cast<AUTPlayerController>(PlayerPreviewCharacters[0]->GetController());
+				UTGS->LeadLineUpPlayer = Cast<AUTPlayerState>(PlayerPreviewCharacters[0]->PlayerState);
 			}
 		}
 
