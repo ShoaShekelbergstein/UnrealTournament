@@ -806,7 +806,7 @@ void SUTMainMenu::StartGame(bool bLanGame)
 	}
 	else
 	{
-		ConsoleCommand(TEXT("Open ") + URL);
+		ConsoleCommand(TEXT("Start ") + URL);
 	}
 
 	if (CreateGameDialog.IsValid())

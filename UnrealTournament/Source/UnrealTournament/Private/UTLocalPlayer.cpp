@@ -3120,7 +3120,7 @@ void UUTLocalPlayer::OnJoinSessionComplete(FName SessionName, EOnJoinSessionComp
 			Context.LastURL.RemoveOption(TEXT("Friend"));
 			Context.LastURL.RemoveOption(TEXT("Session"));
 			
-			PlayerController->ClientTravel(ConnectionString, ETravelType::TRAVEL_Partial,false);
+			PlayerController->ClientTravel(ConnectionString, ETravelType::TRAVEL_Absolute,false);
 
 			bWantsToConnectAsSpectator = false;
 			UE_LOG(UT,Verbose,TEXT("----- Joined "));
