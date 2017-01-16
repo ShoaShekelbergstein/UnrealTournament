@@ -3444,6 +3444,12 @@ void AUTGameMode::HandleMatchHasEnded()
 {
 	Super::HandleMatchHasEnded();
 
+	AUTPlayerController* UTPC = Cast<AUTPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
+	if (UTPC && bBasicTrainingGame)
+	{
+		FUTAnalytics::FireEvent_UTTutorialCompleted(UTPC, DisplayName.ToString());
+	}
+
 	// save AI data only after completed matches
 	AUTRecastNavMesh* NavData = GetUTNavData(GetWorld());
 	if (NavData != NULL)
