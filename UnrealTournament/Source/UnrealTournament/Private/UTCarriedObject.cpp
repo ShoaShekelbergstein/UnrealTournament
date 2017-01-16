@@ -538,10 +538,14 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 		}
 	}
 	UpdateOutline();
+
+	// FIXME DEBUG
+	ensure(Holder == nullptr || Holder->CarriedObject == this);
 }
 
 void AUTCarriedObject::NoLongerHeld(AController* InstigatedBy)
 {
+	LastHolder = Holder;
 	// Have the holding pawn drop the object
 	if (HoldingPawn != NULL)
 	{
@@ -562,18 +566,17 @@ void AUTCarriedObject::NoLongerHeld(AController* InstigatedBy)
 		TGuardValue<bool> DropGuard(bIsDropping, true); // make sure touch doesn't happen here, TossObject() will take care of it
 		DetachFrom(HoldingPawn->GetMesh());
 	}
-	LastHolder = Holder;
-	if (Holder != NULL)
+	if (LastHolder != NULL)
 	{
-		Holder->bSpecialTeamPlayer = false;
-		Holder->bSpecialPlayer = false;
+		LastHolder->bSpecialTeamPlayer = false;
+		LastHolder->bSpecialPlayer = false;
 		if (GetNetMode() != NM_DedicatedServer)
 		{
-			Holder->OnRepSpecialPlayer();
-			Holder->OnRepSpecialTeamPlayer();
+			LastHolder->OnRepSpecialPlayer();
+			LastHolder->OnRepSpecialTeamPlayer();
 		}
-		Holder->ClearCarriedObject(this);
-		Holder->ForceNetUpdate();
+		LastHolder->ClearCarriedObject(this);
+		LastHolder->ForceNetUpdate();
 	}
 
 	LastHoldingPawn = HoldingPawn;
