@@ -1184,7 +1184,7 @@ void UUTLocalPlayer::ShowRankedReconnectDialog(const FString& UniqueID)
 	{
 		FDateTime LastRankedMatchTime;
 		FDateTime::Parse(LastRankedMatchTimeString, LastRankedMatchTime);
-		if ((FDateTime::Now() - LastRankedMatchTime).GetHours() < 1)
+		if ((FDateTime::Now() - LastRankedMatchTime).GetMinutes() < 5.0f)
 		{
 			// Ask player if they want to try to rejoin last ranked game
 			ShowMessage(NSLOCTEXT("UTLocalPlayer", "RankedReconnectTitle", "Reconnect To Last Match?"),
@@ -2897,6 +2897,8 @@ void UUTLocalPlayer::ReturnToMainMenu()
 {
 	PendingQuickmatchType = TEXT("");
 	bQuickmatchOnLevelChange = false;
+
+	InvalidateLastSession();
 
 	HideMenu();
 
@@ -4886,7 +4888,7 @@ void UUTLocalPlayer::ChallengeCompleted(FName ChallengeTag, int32 Stars)
 bool UUTLocalPlayer::QuickMatchCheckFull()
 {
 #if !UE_SERVER
-	if (QuickMatchDialog.IsValid())
+	if (QuickMatchDialog.IsValid() || MatchmakingDialog.IsValid())
 	{
 		FTimerHandle TmpHandle;
 		GetWorld()->GetTimerManager().SetTimer(TmpHandle, this, &UUTLocalPlayer::RestartQuickMatch, 0.5f, false);
