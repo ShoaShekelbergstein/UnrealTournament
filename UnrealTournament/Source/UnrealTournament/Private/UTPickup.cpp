@@ -82,6 +82,7 @@ void AUTPickup::SetTacCom(bool bTacComEnabled)
 void AUTPickup::BeginPlay()
 {
 	Super::BeginPlay();
+	bFixedRespawnInterval = false;
 
 	if (BaseEffect != NULL && BaseTemplateAvailable != NULL)
 	{
