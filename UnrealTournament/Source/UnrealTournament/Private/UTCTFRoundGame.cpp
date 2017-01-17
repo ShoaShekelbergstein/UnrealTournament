@@ -227,7 +227,7 @@ float AUTCTFRoundGame::AdjustNearbyPlayerStartScore(const AController* Player, c
 	float ScoreAdjust = 0.f;
 	float NextDist = (OtherCharacter->GetActorLocation() - StartLoc).Size();
 
-	if (NextDist < 8000.0f)
+	if ((NextDist < 8000.0f) && Player && Cast<AUTPlayerState>(Player->PlayerState))
 	{
 		if (!UTGameState->OnSameTeam(Player, OtherController))
 		{
@@ -254,7 +254,7 @@ float AUTCTFRoundGame::AdjustNearbyPlayerStartScore(const AController* Player, c
 				}
 			}
 		}
-		else if ((NextDist < 3000.f) && Player && Cast<AUTPlayerState>(Player->PlayerState) && IsPlayerOnLifeLimitedTeam(Cast<AUTPlayerState>(Player->PlayerState)))
+		else if ((NextDist < 3000.f) && IsPlayerOnLifeLimitedTeam(Cast<AUTPlayerState>(Player->PlayerState)))
 		{
 			ScoreAdjust += (3000.f - NextDist) / 1000.f;
 		}
