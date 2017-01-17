@@ -116,7 +116,7 @@ APlayerController* AUTTeamGameMode::Login(class UPlayer* NewPlayer, ENetRole InR
 {
 	APlayerController* PC = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
 
-	if (PC != NULL && !PC->PlayerState->bOnlySpectator)
+	if (PC && PC->PlayerState && !PC->PlayerState->bOnlySpectator)
 	{
 		if (!bRankedSession && !bIsQuickMatch)
 		{
