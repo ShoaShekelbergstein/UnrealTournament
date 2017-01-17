@@ -308,6 +308,8 @@ namespace UnrealTournamentGame.Automation
 		{
 			string AwsCredentialsFile = "AwsDedicatedServerCredentialsDecoded.txt";
 
+			int LocalTtlInterval = TtlInterval;
+			int LocalMaxMatchLength = MaxMatchLength;
 			int LocalCpuBudget = CpuBudget;
 			if (InstanceSize == 0)
 			{
@@ -337,6 +339,8 @@ namespace UnrealTournamentGame.Automation
 			{
 				CliArgBytes = System.Text.Encoding.UTF8.GetBytes("UnrealTournament ut-entry?game=lobby?ServerName=\""+HubServerName+"\" -nocore -epicapp=" + AppName.ToString() + " " + ExtraCliArgs);
 				LocalCpuBudget=32000;
+				LocalMaxMatchLength = 0;
+				LocalTtlInterval = 0;
 			}
 			else
 			{
@@ -349,8 +353,8 @@ namespace UnrealTournamentGame.Automation
 				"epic_game_binary_path=" + this.GameBinaryPath + "&" +
 				"epic_game_log_path=" + this.GameLogPath + "&" +
 				"epic_game_saved_path=" + this.GameSavedPath + "&" +
-				"epic_game_max_match_length=" + this.MaxMatchLength.ToString() + "&" +
-				"epic_game_ttl_interval=" + this.TtlInterval.ToString() + "&" +
+				"epic_game_max_match_length=" + LocalMaxMatchLength.ToString() + "&" +
+				"epic_game_ttl_interval=" + LocalTtlInterval.ToString() + "&" +
 				"epic_install_sumo=" + this.InstallSumo + "&" +
 				"epic_game_tag=" + GetTag(AppName, Region, tag) + "&" +
 				"epic_game_version=" + Changelist.ToString() + "&" +
@@ -384,6 +388,8 @@ namespace UnrealTournamentGame.Automation
 										  string AppNameStringOverride = "",
 										  string HubServerName = "")
 		{
+			int LocalTtlInterval = TtlInterval;
+			int LocalMaxMatchLength = MaxMatchLength;
 			int LocalCpuBudget = CpuBudget;
 			UnrealTournamentBuild.UnrealTournamentAppName LocalAppName = AppName;
 			if( ! String.IsNullOrEmpty(AppNameStringOverride))
@@ -433,6 +439,8 @@ namespace UnrealTournamentGame.Automation
 			{
 				CliArgBytes = System.Text.Encoding.UTF8.GetBytes("UnrealTournament ut-entry?game=lobby?ServerName=\""+HubServerName+"\" -nocore -epicapp=" + LocalAppName.ToString() + " " + ExtraCliArgs);
 				LocalCpuBudget=32000;
+				LocalMaxMatchLength = 0;
+				LocalTtlInterval = 0;
 			}
 			else
 			{
@@ -444,8 +452,8 @@ namespace UnrealTournamentGame.Automation
 				"epic_game_binary_path=" + this.GameBinaryPath + "&" +
 				"epic_game_log_path=" + this.GameLogPath + "&" +
 				"epic_game_saved_path=" + this.GameSavedPath + "&" +
-				"epic_game_max_match_length=" + this.MaxMatchLength.ToString() + "&" +
-				"epic_game_ttl_interval=" + this.TtlInterval.ToString() + "&" +
+				"epic_game_max_match_length=" + LocalMaxMatchLength.ToString() + "&" +
+				"epic_game_ttl_interval=" + LocalTtlInterval.ToString() + "&" +
 				"epic_install_sumo=" + this.InstallSumo + "&" +
 				"epic_game_tag=" + GetTag(LocalAppName, Region, tag) + "&" +
 				"epic_game_version=" + Changelist.ToString() + "&" +
