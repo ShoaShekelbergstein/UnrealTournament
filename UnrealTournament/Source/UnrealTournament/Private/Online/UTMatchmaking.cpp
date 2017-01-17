@@ -285,7 +285,11 @@ void UUTMatchmaking::CancelMatchmaking()
 {
 	if (Matchmaking)
 	{
-		ensure(ReservationBeaconClient == nullptr);
+		if (ReservationBeaconClient != nullptr)
+		{
+			CleanupReservationBeacon();
+		}
+
 		/*
 		if (QosEvaluator && QosEvaluator->IsActive())
 		{
