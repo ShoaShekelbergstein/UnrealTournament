@@ -764,7 +764,8 @@ protected:
 	virtual void UpdateSkillRating();
 	virtual void SendLogoutAnalytics(class AUTPlayerState* PS);
 
-	virtual void AwardXP();
+	virtual void AwardXP(); 
+	virtual float GetScoreForXP(class AUTPlayerState* PS);
 
 	void ReportRankedMatchResults(const FString& MatchRatingType);
 	void GetRankedTeamInfo(int32 TeamId, struct FRankedTeamInfo& RankedTeamInfoOut);

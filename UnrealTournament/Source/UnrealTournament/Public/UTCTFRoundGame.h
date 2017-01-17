@@ -133,6 +133,7 @@ class UNREALTOURNAMENT_API AUTCTFRoundGame : public AUTCTFBaseGame
 	virtual void EndPlayerIntro() override;
 	virtual void InitGameState() override;
 	virtual void SetPlayerStateInactive(APlayerState* NewPlayerState) override;
+	virtual float GetScoreForXP(class AUTPlayerState* PS) override;
 
 	virtual void EndTeamGame(AUTTeamInfo* Winner, FName Reason);
 

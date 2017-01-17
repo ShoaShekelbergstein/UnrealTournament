@@ -2204,6 +2204,11 @@ void AUTGameMode::SendEndOfGameStats(FName Reason)
 	}
 }
 
+float AUTGameMode::GetScoreForXP(AUTPlayerState* PS)
+{
+	return PS->Score;
+}
+
 void AUTGameMode::AwardXP()
 {
 	static const bool bXPCheatEnabled = FParse::Param(FCommandLine::Get(), TEXT("XPGiveaway"));
@@ -2216,7 +2221,7 @@ void AUTGameMode::AwardXP()
 			if (PC != NULL)
 			{
 				// TODO: move some of this to the backend
-				UTPS->GiveXP(FNewScoreXP(FMath::Max<int32>(0, FMath::TruncToInt(UTPS->Score))));
+				UTPS->GiveXP(FNewScoreXP(FMath::Max<int32>(0, FMath::TruncToInt(GetScoreForXP(UTPS)))));
 				if (XPCapPerMin > 0)
 				{
 					UTPS->ClampXP(XPCapPerMin * (((UTGameState->ElapsedTime - PS->StartTime) / 60) + 1));

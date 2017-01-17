@@ -1274,3 +1274,7 @@ bool AUTCTFRoundGame::IsPlayerOnLifeLimitedTeam(AUTPlayerState* PlayerState) con
 	return PlayerState && PlayerState->Team && IsTeamOnOffense(PlayerState->Team->TeamIndex) ? RCTFGameState->bAttackerLivesLimited : RCTFGameState->bDefenderLivesLimited;
 }
 
+float AUTCTFRoundGame::GetScoreForXP(AUTPlayerState* PS)
+{
+	return PS->Kills;
+}
