@@ -108,6 +108,7 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	bCheckHeadSphere = false;
 	bCheckMovingHeadSphere = false;
 	bIgnoreShockballs = false;
+	bTeammatesBlockHitscan = false;
 
 	WeightSpeedPctModifier = 1.0f;
 
@@ -1687,7 +1688,7 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 		for (FConstPawnIterator Iterator = GetWorld()->GetPawnIterator(); Iterator; ++Iterator)
 		{
 			AUTCharacter* Target = Cast<AUTCharacter>(*Iterator);
-			if (Target && (Target != UTOwner) && (!GS || !GS->OnSameTeam(UTOwner, Target)))
+			if (Target && (Target != UTOwner) && (bTeammatesBlockHitscan || !GS || !GS->OnSameTeam(UTOwner, Target)))
 			{
 				// find appropriate rewind position, and test against trace from StartLocation to Hit.Location
 				FVector TargetLocation = ((PredictionTime > 0.f) && (Role == ROLE_Authority)) ? Target->GetRewindLocation(PredictionTime) : Target->GetActorLocation();

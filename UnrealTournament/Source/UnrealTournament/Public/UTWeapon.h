@@ -199,6 +199,10 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 		bool bIgnoreShockballs;
 
+	/** Whether Hitscan shots are blocked by teammates. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+		bool bTeammatesBlockHitscan;
+
 	/** Custom Momentum scaling for friendly hitscanned pawns */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	float FriendlyMomentumScaling;
