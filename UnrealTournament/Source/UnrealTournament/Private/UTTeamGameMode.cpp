@@ -118,11 +118,18 @@ APlayerController* AUTTeamGameMode::Login(class UPlayer* NewPlayer, ENetRole InR
 
 	if (PC && PC->PlayerState && !PC->PlayerState->bOnlySpectator)
 	{
-		if (!bRankedSession && !bIsQuickMatch)
-		{
 			// FIXMESTEVE Does team get overwritten in postlogin if inactive player?
 			uint8 DesiredTeam = 1;
-			if (GetNetMode() != NM_Standalone)
+
+			if (bRankedSession)
+			{
+				AUTGameSessionRanked* UTGameSession = Cast<AUTGameSessionRanked>(GameSession);
+				if (UTGameSession)
+				{
+					DesiredTeam = UTGameSession->GetTeamForPlayer(UniqueId);
+				}
+			}
+			else if (GetNetMode() != NM_Standalone)
 			{
 				DesiredTeam = uint8(FMath::Clamp<int32>(UGameplayStatics::GetIntOption(Options, TEXT("Team"), 255), 0, 255));
 
@@ -149,17 +156,6 @@ APlayerController* AUTTeamGameMode::Login(class UPlayer* NewPlayer, ENetRole InR
 			}
 
 			ChangeTeam(PC, DesiredTeam, false);
-		}
-		else
-		{
-			uint8 DesiredTeam = 0;
-			AUTGameSessionRanked* UTGameSession = Cast<AUTGameSessionRanked>(GameSession);
-			if (UTGameSession)
-			{
-				DesiredTeam = UTGameSession->GetTeamForPlayer(UniqueId);
-			}
-			ChangeTeam(PC, DesiredTeam, false);
-		}
 	}
 
 	return PC;

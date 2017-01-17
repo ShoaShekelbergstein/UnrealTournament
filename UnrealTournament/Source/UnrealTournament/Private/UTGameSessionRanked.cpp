@@ -946,7 +946,7 @@ uint8 AUTGameSessionRanked::GetTeamForPlayer(const FUniqueNetIdRepl& PlayerId) c
 		}
 	}
 
-	return 0;
+	return 255;
 }
 
 void AUTGameSessionRanked::UnregisterPlayer(FName InSessionName, const FUniqueNetIdRepl& UniqueId)
