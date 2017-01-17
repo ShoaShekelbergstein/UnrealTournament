@@ -801,6 +801,8 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 
 			PS->PartySize = UGameplayStatics::GetIntOption(Options, TEXT("PartySize"), 1);
 			PS->PartyLeader = UGameplayStatics::ParseOption(Options, TEXT("PartyLeader"));
+
+			UE_LOG(LogOnlineParty, Display, TEXT("%s joined with Party Leader %s"), *PS->PlayerName, *PS->PartyLeader);
 		}
 	}
 

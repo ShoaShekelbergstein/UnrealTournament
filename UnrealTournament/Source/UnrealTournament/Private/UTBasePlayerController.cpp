@@ -959,6 +959,8 @@ void AUTBasePlayerController::ServerReceiveStatsID_Implementation(const FString&
 	{
 		if (NewStatsID != UTPlayerState->StatsID)
 		{
+			UE_LOG(LogOnlineParty, Display, TEXT("%s sent stats id %s"), *UTPlayerState->PlayerName, *NewStatsID);
+
 			UTPlayerState->StatsID = NewStatsID;
 			UTPlayerState->ReadStatsFromCloud();
 			UTPlayerState->ReadMMRFromBackend();
