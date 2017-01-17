@@ -3446,11 +3446,14 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 			}
 		}
 
-		if (!IsInAnActiveParty() && DesiredTutorialMask != 0 && CurrentProfileSettings && (CurrentProfileSettings->TutorialMask & DesiredTutorialMask) != DesiredTutorialMask)
+		if (!FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")))
 		{
-			// We need to play this tutorial instead.
-			LaunchTutorial(DesiredTutorial, QuickMatchType);
-			return;
+			if (!IsInAnActiveParty() && DesiredTutorialMask != 0 && CurrentProfileSettings && (CurrentProfileSettings->TutorialMask & DesiredTutorialMask) != DesiredTutorialMask)
+			{
+				// We need to play this tutorial instead.
+				LaunchTutorial(DesiredTutorial, QuickMatchType);
+				return;
+			}
 		}
 
 		if (1)
