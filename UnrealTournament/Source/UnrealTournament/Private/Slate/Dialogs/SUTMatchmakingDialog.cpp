@@ -106,6 +106,16 @@ FText SUTMatchmakingDialog::GetRegionText() const
 			if (PartyState)
 			{
 				FString MatchMakingRegion = PartyState->GetMatchmakingRegion();
+
+				if (MatchMakingRegion == TEXT("NA"))
+				{
+					MatchMakingRegion = TEXT("North America");
+				}
+				else if (MatchMakingRegion == TEXT("EU"))
+				{
+					MatchMakingRegion = TEXT("Europe");
+				}
+
 				if (PartyState->GetPartyProgression() == EUTPartyState::QuickMatching)
 				{
 					return FText::Format(NSLOCTEXT("Generic", "QuickMatching", "Quick Matching in Region: {0}"), FText::FromString(MatchMakingRegion));
