@@ -72,11 +72,16 @@ FName AUTPlayerCameraManager::GetCameraStyleWithOverrides() const
 	static const FName NAME_FirstPerson = FName(TEXT("FirstPerson"));
 	static const FName NAME_Default = FName(TEXT("Default"));
 	static const FName NAME_LineUpCam = FName(TEXT("LineUpCam"));
+	static const FName NAME_RallyCam = FName(TEXT("RallyCam"));
 
 	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
 	if (GameState && GameState->LineUpHelper && GameState->LineUpHelper->bIsActive)
 	{
 		return NAME_LineUpCam;
+	}
+	if ((CameraStyle == NAME_RallyCam) && GameState && GameState->IsMatchInProgress() && !GameState->IsMatchIntermission())
+	{
+		return NAME_RallyCam;
 	}
 
 	AActor* CurrentViewTarget = GetViewTarget();
@@ -176,7 +181,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 	static const FName NAME_LineUpCam = FName(TEXT("LineUpCam"));
 
 	FName SavedCameraStyle = CameraStyle;
-	CameraStyle = (CameraStyle == NAME_RallyCam) ? NAME_RallyCam : GetCameraStyleWithOverrides();
+	CameraStyle = GetCameraStyleWithOverrides();
 
 	//if we have a line up active, change our ViewTarget to be the line-up target and setup camera settings
 	if (CameraStyle == NAME_LineUpCam)
