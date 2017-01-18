@@ -64,7 +64,7 @@ public:
 	static FString GetGenericParamName(EGenericAnalyticParam::Type InGenericParam);
 
 	/*Parameter Array Helpers*/
-	static void SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime);
+	static void SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime, bool bIsRankedMatch = false);
 	static void SetServerInitialParameters(TArray<FAnalyticsEventAttribute>& ParamArray);
 	static void SetClientInitialParameters(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime);
 	static void AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray);

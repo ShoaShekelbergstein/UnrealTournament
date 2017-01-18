@@ -289,7 +289,7 @@ void FUTAnalytics::SetClientInitialParameters(AUTPlayerController* UTPC, TArray<
 	}
 }
 
-void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime)
+void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime, bool bIsRankedMatch)
 {
 	if (bNeedMatchTime)
 	{
@@ -304,6 +304,21 @@ void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalytic
 		{
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGM->UTGameState->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGM->UTGameState->ReplayID));
+		}
+
+		if (UTGM->GetWorld())
+		{
+			//Add all ELO information
+			TMap<FString, int32> ELOStats;
+			for (FConstPlayerControllerIterator It = UTGM->GetWorld()->GetPlayerControllerIterator(); It; ++It)
+			{
+				AUTPlayerController* UTPC = Cast<AUTPlayerController>(*It);
+				if (UTPC && UTPC->UTPlayerState && !UTPC->UTPlayerState->bOnlySpectator)
+				{
+					ELOStats.Add(GetEpicAccountName(UTPC), UTGM->GetEloFor(UTPC->UTPlayerState, bIsRankedMatch));
+				}
+			}
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ELOPlayerInfo), ELOStats));
 		}
 
 		AddPlayerListToParameters(UTGM, ParamArray);
@@ -1057,20 +1072,7 @@ void FUTAnalytics::FireEvent_UTStartRankedMatch(AUTGameMode* UTGM)
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 
-		TMap<FString, int32> ELOStats;
-
-		SetMatchInitialParameters(UTGM, ParamArray, false);
-
-		for (FConstPlayerControllerIterator It = UTGM->GetWorld()->GetPlayerControllerIterator(); It; ++It)
-		{
-			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*It);
-			if (UTPC && UTPC->UTPlayerState && !UTPC->UTPlayerState->bOnlySpectator)
-			{
-				ELOStats.Add(GetEpicAccountName(UTPC), UTGM->GetEloFor(UTPC->UTPlayerState, true));
-			}
-		}
-
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ELOPlayerInfo), ELOStats));
+		SetMatchInitialParameters(UTGM, ParamArray, false, true);
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTStartRankedMatch), ParamArray);
 	}
@@ -1083,20 +1085,7 @@ void FUTAnalytics::FireEvent_UTEndRankedMatch(AUTGameMode* UTGM)
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 		
-		TMap<FString, int32> ELOStats;
-
-		SetMatchInitialParameters(UTGM, ParamArray, false);
-
-		for (FConstPlayerControllerIterator It = UTGM->GetWorld()->GetPlayerControllerIterator(); It; ++It)
-		{
-			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*It);
-			if (UTPC && UTPC->UTPlayerState && !UTPC->UTPlayerState->bOnlySpectator)
-			{
-				ELOStats.Add(GetEpicAccountName(UTPC), UTGM->GetEloFor(UTPC->UTPlayerState, true));
-			}
-		}
-
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ELOPlayerInfo), ELOStats));
+		SetMatchInitialParameters(UTGM, ParamArray, false, true);
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTEndRankedMatch), ParamArray);
 	}
