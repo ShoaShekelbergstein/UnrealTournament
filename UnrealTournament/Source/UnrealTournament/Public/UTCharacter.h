@@ -930,6 +930,10 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = Pawn)
 	int32 UnfeignCount;
 
+	/* Used to limit how often impulses are applied to ragdolls, particularly when projectile is passing through it. */
+	UPROPERTY(BlueprintReadWrite, Category = Pawn)
+		float LastRagdollDamageTime;
+
 public:
 	/** Return true if character is in a ragdoll state */
 	UFUNCTION(BlueprintCallable, Category = "Pawn|Character")

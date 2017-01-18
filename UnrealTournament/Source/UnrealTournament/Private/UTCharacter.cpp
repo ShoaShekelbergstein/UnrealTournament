@@ -1057,8 +1057,9 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 					HitLocation = RadialEvent.ComponentHits[0].Location;
 				}
 			}
-			if (IsRagdoll())
+			if (IsRagdoll() && (GetWorld()->GetTimeSeconds() - LastRagdollDamageTime > 0.2f))
 			{
+				LastRagdollDamageTime = GetWorld()->GetTimeSeconds();
 				GetMesh()->AddImpulseAtLocation(ResultMomentum*GetMesh()->GetMass() *0.01f, HitLocation);
 			}
 			if ((GetNetMode() != NM_DedicatedServer) && !IsPendingKillPending())
