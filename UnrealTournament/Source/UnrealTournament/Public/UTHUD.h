@@ -402,9 +402,6 @@ public:
 	bool GetPlayKillSoundMsg();
 
 	UFUNCTION(BlueprintCallable, Category=HUD)
-	float GetQuickStatsAngle();
-
-	UFUNCTION(BlueprintCallable, Category=HUD)
 	float GetQuickStatsDistance();
 
 	UFUNCTION(BlueprintCallable, Category=HUD)

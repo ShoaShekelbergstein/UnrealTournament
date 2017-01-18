@@ -1736,11 +1736,6 @@ bool AUTHUD::GetPlayKillSoundMsg()
 	return VerifyProfileSettings() ? CachedProfileSettings->bPlayKillSoundMsg : UUTProfileSettings::StaticClass()->GetDefaultObject<UUTProfileSettings>()->bPlayKillSoundMsg;
 }
 
-float AUTHUD::GetQuickStatsAngle()
-{
-	return VerifyProfileSettings() ? CachedProfileSettings->QuickStatsAngle : UUTProfileSettings::StaticClass()->GetDefaultObject<UUTProfileSettings>()->QuickStatsAngle;
-}
-
 float AUTHUD::GetQuickStatsDistance()
 {
 	return FMath::Clamp<float>((VerifyProfileSettings() ? CachedProfileSettings->QuickStatsDistance : UUTProfileSettings::StaticClass()->GetDefaultObject<UUTProfileSettings>()->QuickStatsDistance), 0.05f, 0.55f);

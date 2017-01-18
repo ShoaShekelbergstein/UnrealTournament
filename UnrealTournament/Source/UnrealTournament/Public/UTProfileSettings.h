@@ -239,9 +239,6 @@ public:
 	// ======================== HUD Settings
 
 	UPROPERTY(BlueprintReadOnly, Category = HUD)
-	float QuickStatsAngle;
-
-	UPROPERTY(BlueprintReadOnly, Category = HUD)
 	float QuickStatsDistance;
 
 	UPROPERTY(BlueprintReadOnly, Category = HUD)

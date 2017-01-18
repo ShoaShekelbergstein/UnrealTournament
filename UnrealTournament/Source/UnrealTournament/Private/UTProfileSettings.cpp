@@ -54,7 +54,6 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 
 	if (SectionToReset == EProfileResetType::All || SectionToReset == EProfileResetType::HUD)
 	{
-		QuickStatsAngle = 180.0f;
 		QuickStatsDistance = 0.08f;
 		QuickStatsType = EQuickStatsLayouts::Arc;
 		QuickStatsBackgroundAlpha = 0.15;

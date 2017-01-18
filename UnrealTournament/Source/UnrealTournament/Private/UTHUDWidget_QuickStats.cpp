@@ -70,7 +70,7 @@ FVector2D UUTHUDWidget_QuickStats::CalcRotOffset(FVector2D InitialPosition, floa
 void UUTHUDWidget_QuickStats::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCanvas* InCanvas, FVector2D InCanvasCenter)
 {
 	// Look to see if we should draw the ammo...
-	DrawAngle = InUTHUDOwner->GetQuickStatsAngle();
+	DrawAngle = 180.f;
 
 	float DrawDistance = InUTHUDOwner->GetQuickStatsDistance();
 	FName DisplayTag = InUTHUDOwner->GetQuickStatsType();
