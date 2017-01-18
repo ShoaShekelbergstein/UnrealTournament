@@ -3000,7 +3000,7 @@ TSharedRef<SWidget> AUTPlayerState::BuildSeasonInfo()
 {
 	TSharedRef<SVerticalBox> VBox = SNew(SVerticalBox);
 
-	AUTPlayerController* PC = Cast<AUTPlayerController>(GetOwner());
+	AUTBasePlayerController* PC = Cast<AUTBasePlayerController>(GetOwner());
 	UUTLocalPlayer* LP = PC ? Cast<UUTLocalPlayer>(PC->Player) : NULL;
 
 	static FName FacePumpkins(TEXT("FacePumpkins"));
