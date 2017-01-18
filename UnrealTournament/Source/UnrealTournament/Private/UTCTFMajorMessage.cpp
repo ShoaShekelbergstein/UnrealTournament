@@ -194,7 +194,7 @@ bool UUTCTFMajorMessage::InterruptAnnouncement(const FAnnouncementInfo Announcem
 	}
 	if (AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass)
 	{
-		return false;
+		return (AnnouncementInfo.Switch == 25) && (OtherAnnouncementInfo.Switch == 30);
 	}
 	if (GetAnnouncementPriority(AnnouncementInfo) > OtherAnnouncementInfo.MessageClass->GetDefaultObject<UUTLocalMessage>()->GetAnnouncementPriority(OtherAnnouncementInfo))
 	{
