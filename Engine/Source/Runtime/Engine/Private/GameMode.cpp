@@ -113,7 +113,11 @@ void AGameMode::PostLogin( APlayerController* NewPlayer )
 	// save network address for re-associating with reconnecting player, after stripping out port number
 	FString Address = NewPlayer->GetPlayerNetworkAddress();
 	int32 pos = Address.Find(TEXT(":"), ESearchCase::CaseSensitive);
-	NewPlayer->PlayerState->SavedNetworkAddress = (pos > 0) ? Address.Left(pos) : Address;
+
+	if (NewPlayer->PlayerState)
+	{
+		NewPlayer->PlayerState->SavedNetworkAddress = (pos > 0) ? Address.Left(pos) : Address;
+	}
 
 	// check if this player is reconnecting and already has PlayerState
 	FindInactivePlayer(NewPlayer);
