@@ -385,7 +385,6 @@ void AUTDemoRecSpectator::InitPlayerState()
 		if (!NetDriver->bIsLocalReplay)
 		{
 			PlayerState->bOnlySpectator = true;
-			PlayerState->PlayerName = TEXT("Replay Spectator");
 		}
 	}
 
