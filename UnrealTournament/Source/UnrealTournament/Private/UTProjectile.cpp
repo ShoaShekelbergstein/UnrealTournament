@@ -522,11 +522,7 @@ void AUTProjectile::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& 
 		BPClass->GetLifetimeBlueprintReplicationList(OutLifetimeProps);
 	}
 
-	//DOREPLIFETIME(AActor, Role);
-	//DOREPLIFETIME(AActor, RemoteRole);
-	//DOREPLIFETIME(AActor, Owner);
 	DOREPLIFETIME(AActor, bHidden);
-
 	DOREPLIFETIME(AActor, bTearOff);
 	DOREPLIFETIME(AActor, bCanBeDamaged);
 
@@ -534,11 +530,7 @@ void AUTProjectile::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& 
 	//DOREPLIFETIME(AActor, AttachmentReplication);
 
 	DOREPLIFETIME(AActor, Instigator);
-
-	//DOREPLIFETIME_CONDITION(AActor, ReplicatedMovement, COND_SimulatedOrPhysics);
-
 	DOREPLIFETIME_CONDITION(AUTProjectile, UTProjReplicatedMovement, COND_SimulatedOrPhysics);
-
 	DOREPLIFETIME(AUTProjectile, Slomo);
 }
 
@@ -797,8 +789,9 @@ bool AUTProjectile::ShouldIgnoreHit_Implementation(AActor* OtherActor, UPrimitiv
 	return (((Cast<AUTTeleporter>(OtherActor) != NULL || Cast<AVolume>(OtherActor) != NULL) && !GetVelocity().IsZero())
 		|| (Cast<AUTRepulsorBubble>(OtherActor) != NULL)
 		|| (Cast<AUTProjectile>(OtherActor) != NULL && !InteractsWithProj(Cast<AUTProjectile>(OtherActor)))
-		|| Cast<AUTProj_WeaponScreen>(OtherActor) != NULL)
-		|| (ProjectileMovement->bShouldBounce && (Role != ROLE_Authority) && OtherActor && OtherActor->bTearOff);
+		|| Cast<AUTProj_WeaponScreen>(OtherActor) != NULL
+		|| Cast<AUTGib>(OtherActor) != NULL
+		|| ((Role != ROLE_Authority) && OtherActor && OtherActor->bTearOff));
 }
 
 void AUTProjectile::ProcessHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp, const FVector& HitLocation, const FVector& HitNormal)
