@@ -136,7 +136,7 @@ void UUTWeaponStateFiringLinkBeam::Tick(float DeltaTime)
 		LinkGun->bLinkBeamImpacting = (Hit.Time < 1.f);
 		AActor* OldLinkedTarget = LinkGun->CurrentLinkedTarget;
 		LinkGun->CurrentLinkedTarget = nullptr;
-		if (Hit.Actor != NULL && Hit.Actor->bCanBeDamaged && Hit.Actor != LinkGun->GetUTOwner())
+		if (LinkGun->IsValidLinkTarget(Hit.Actor.Get()))
         {   
 			LinkGun->CurrentLinkedTarget = Hit.Actor.Get();
 			if (LinkGun->Role == ROLE_Authority)

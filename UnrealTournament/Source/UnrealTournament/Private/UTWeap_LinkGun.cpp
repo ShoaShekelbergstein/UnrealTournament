@@ -292,10 +292,16 @@ void AUTWeap_LinkGun::StartLinkPull()
 	LinkStartTime = -100.f;
 }
 
+bool AUTWeap_LinkGun::IsValidLinkTarget(AActor* InTarget)
+{
+	return (InTarget && Cast<AUTCharacter>(InTarget) && !InTarget->bTearOff && InTarget != GetUTOwner());
+}
+
 bool AUTWeap_LinkGun::ServerSetPulseTarget_Validate(AActor* InTarget)
 {
 	return true;
 }
+
 void AUTWeap_LinkGun::ServerSetPulseTarget_Implementation(AActor* InTarget)
 {
 	if (!UTOwner || !UTOwner->Controller || !InTarget)
@@ -307,7 +313,7 @@ void AUTWeap_LinkGun::ServerSetPulseTarget_Implementation(AActor* InTarget)
 	Super::FireInstantHit(false, &Hit);
 	FVector PulseStart = UTOwner->GetActorLocation();
 
-	PulseTarget = Hit.Actor.Get();
+	PulseTarget = IsValidLinkTarget(Hit.Actor.Get()) ? Hit.Actor.Get() : nullptr;
 	// try CSHD result if it's reasonable
 	if (PulseTarget == NULL && ClientPulseTarget != NULL)
 	{
