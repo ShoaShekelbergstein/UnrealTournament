@@ -1866,11 +1866,11 @@ void AUTGameMode::RemoveAllPawns()
 		// Detach all controllers from their pawns
 		AController* Controller = Iterator->Get();
 		AUTPlayerController* PC = Cast<AUTPlayerController>(Controller);
-		if (PC)
+		if (PC && PC->UTPlayerState)
 		{
 			AUTPlayerState* NewPlayerState = PC->UTPlayerState;
 			NewPlayerState->bIsWarmingUp = false;
-			if (bHasRespawnChoices && !NewPlayerState->bIsSpectator)
+			if (bHasRespawnChoices && !NewPlayerState->bIsSpectator && (!NewPlayerState->RespawnChoiceA || !NewPlayerState->RespawnChoiceB))
 			{
 				NewPlayerState->RespawnChoiceA = nullptr;
 				NewPlayerState->RespawnChoiceB = nullptr;
