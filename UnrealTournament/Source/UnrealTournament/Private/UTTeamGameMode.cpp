@@ -194,7 +194,7 @@ bool AUTTeamGameMode::PlayerWonChallenge()
 
 bool AUTTeamGameMode::ShouldBalanceTeams(bool bInitialTeam) const
 {
-	return !bRankedSession && bBalanceTeams && ((bIsQuickMatch && !bInitialTeam) || HasMatchStarted() || GetMatchState() == MatchState::CountdownToBegin);
+	return !bRankedSession && bBalanceTeams && (HasMatchStarted() || GetMatchState() == MatchState::CountdownToBegin);
 }
 
 bool AUTTeamGameMode::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroadcast)
@@ -362,21 +362,29 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 	// if in doubt choose team with bots on it as the bots will leave if necessary to balance
 	{
 		TArray< AUTTeamInfo*, TInlineAllocator<4> > TeamsWithBots;
+		AUTTeamInfo* TeamWithMostBots = nullptr;
+		int32 TeamWithMostBotsCount = 0;
 		for (AUTTeamInfo* TestTeam : BestTeams)
 		{
 			bool bHasBots = false;
+			int32 BotCount = 0;
 			TArray<AController*> Members = TestTeam->GetTeamMembers();
 			for (AController* C : Members)
 			{
 				if (Cast<AUTBot>(C) != NULL)
 				{
 					bHasBots = true;
-					break;
+					BotCount++;
 				}
 			}
 			if (bHasBots)
 			{
 				TeamsWithBots.Add(TestTeam);
+			}
+			if (BotCount > TeamWithMostBotsCount)
+			{ 
+				TeamWithMostBotsCount = BotCount;
+				TeamWithMostBots = TestTeam;
 			}
 		}
 		if (TeamsWithBots.Num() > 0)
@@ -389,6 +397,12 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 				}
 			}
 
+			if (TeamWithMostBots != nullptr)
+			{
+				return TeamWithMostBots->TeamIndex;
+			}
+
+			// This has the potential to pick an undesired team in games with greater than 2 teams
 			return TeamsWithBots[FMath::RandHelper(TeamsWithBots.Num())]->TeamIndex;
 		}
 	}
