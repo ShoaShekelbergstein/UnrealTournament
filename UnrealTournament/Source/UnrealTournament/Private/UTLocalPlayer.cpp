@@ -1720,15 +1720,13 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 			}
 
 			CurrentProgression->Serialize(Ar);
-
 			CurrentProgression->VersionFixup();
 			
-			int32 CurrentTutorialMask = CurrentProfileSettings->TutorialMask;
+			int32 CurrentTutorialMask = GetTutorialMask();
 			CurrentProgression->FixupBestTimes(CurrentTutorialMask);
-			if (CurrentTutorialMask != CurrentProfileSettings->TutorialMask)
+			if (CurrentTutorialMask != GetTutorialMask())
 			{
-				CurrentProfileSettings->TutorialMask = CurrentTutorialMask;
-				SaveProfileSettings();
+				SetTutorialMask(CurrentTutorialMask);
 			}
 
 			UE_LOG(UT, Verbose, TEXT("Progression: Achievements %d, Stars %d"), CurrentProgression->Achievements.Num(), CurrentProgression->TotalChallengeStars);
@@ -3448,7 +3446,7 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 
 		if (!FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")))
 		{
-			if (!IsInAnActiveParty() && DesiredTutorialMask != 0 && CurrentProfileSettings && (CurrentProfileSettings->TutorialMask & DesiredTutorialMask) != DesiredTutorialMask)
+			if ( !IsInAnActiveParty() && DesiredTutorialMask != 0 && !IsTutorialMaskCompleted(DesiredTutorialMask) )
 			{
 				// We need to play this tutorial instead.
 				LaunchTutorial(DesiredTutorial, QuickMatchType);
@@ -6012,39 +6010,34 @@ void UUTLocalPlayer::SetTutorialFinished(FName TutorialTag)
 		if (TutorialData[i].Tag == TutorialTag)
 		{
 			int32 TutorialMask = TutorialData[i].Mask;
-			if (CurrentProfileSettings != nullptr)
+			if ( !IsTutorialMaskCompleted(TutorialMask) )
 			{
-				if ((CurrentProfileSettings->TutorialMask & TutorialMask) != TutorialMask)
+				SetTutorialMask(TutorialMask);
+
+				// Look to see if it's time to give a toast.  We need a better type of achievement toast.  Maybe play UMG here or something
+
+				if (TutorialMask == 0x01)	// We have completed the first tutorial...
 				{
-					CurrentProfileSettings->TutorialMask |= TutorialMask;
-
-					// Look to see if it's time to give a toast.  We need a better type of achievement toast.  Maybe play UMG here or something
-
-					if (TutorialMask == 0x01)	// We have completed the first tutorial...
-					{
-						ShowToast(NSLOCTEXT("Unlocks","FirstTimer","Achievement: No Longer a Noob!"),6.0f);			
-					}
-					else if (TutorialMask <= TUTORIAL_Pickups && ((CurrentProfileSettings->TutorialMask & TUTORIAL_SkillMoves) == TUTORIAL_SkillMoves) )
-					{
-						ShowToast(NSLOCTEXT("Unlocks","OfflineChallengesUnlocked","Achievement: Got the Skills"),6.0f);			
-					}
-
-					if (TutorialMask > TUTORIAL_Pickups)
-					{
-						if (TutorialMask == TUTORIAL_DM)
-						{
-							ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlocked","Achievement: Fragger\nDeathmatch Quickmatch Unlocked!"),6.0f);			
-						}
-						if (TutorialMask == TUTORIAL_CTF)
-						{
-							ShowToast(NSLOCTEXT("Unlocks","CTFQuickMatchUnlocked","Achievement: Flag Runner\nCapture the Flag Quickmatch Unlocked!"),6.0f);			
-						}
-					}
+					ShowToast(NSLOCTEXT("Unlocks","FirstTimer","Achievement: No Longer a Noob!"),6.0f);			
+				}
+				else if (TutorialMask <= TUTORIAL_Pickups && IsTutorialMaskCompleted(TUTORIAL_SkillMoves) )
+				{
+					ShowToast(NSLOCTEXT("Unlocks","OfflineChallengesUnlocked","Achievement: Got the Skills"),6.0f);			
 				}
 
-				SaveProfileSettings();
-				break;
+				if (TutorialMask > TUTORIAL_Pickups)
+				{
+					if (TutorialMask == TUTORIAL_DM)
+					{
+						ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlocked","Achievement: Fragger\nDeathmatch Quickmatch Unlocked!"),6.0f);			
+					}
+					if (TutorialMask == TUTORIAL_CTF)
+					{
+						ShowToast(NSLOCTEXT("Unlocks","CTFQuickMatchUnlocked","Achievement: Flag Runner\nCapture the Flag Quickmatch Unlocked!"),6.0f);			
+					}
+				}
 			}
+			break;
 		}
 	}
 }
@@ -6166,27 +6159,23 @@ bool UUTLocalPlayer::IsMenuOptionLocked(FName MenuCommand) const
 	{
 		if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			
 		{
-			return !(CurrentProfileSettings &&  ((CurrentProfileSettings->TutorialMask & TUTORIAL_DM) == TUTORIAL_DM));
+			return !IsTutorialMaskCompleted(TUTORIAL_DM);
 		}
 		if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)			
 		{
-			return !(CurrentProfileSettings &&  ((CurrentProfileSettings->TutorialMask & TUTORIAL_FlagRun) == TUTORIAL_FlagRun));
+			return !IsTutorialMaskCompleted(TUTORIAL_FlagRun);
 		}
 		else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		
 		{
-			return !(CurrentProfileSettings &&  ((CurrentProfileSettings->TutorialMask & TUTORIAL_CTF) == TUTORIAL_CTF));
+			return !IsTutorialMaskCompleted(TUTORIAL_CTF);
 		}
 		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	
 		{
-			return !(CurrentProfileSettings &&  ((CurrentProfileSettings->TutorialMask & TUTORIAL_Showdown) == TUTORIAL_Showdown));
+			return !IsTutorialMaskCompleted(TUTORIAL_Showdown);
 		}
 		else if (MenuCommand == EMenuCommand::MC_Challenges)		
 		{
 			return false;
-		}
-		else if (MenuCommand == EMenuCommand::MC_FindAMatch)		
-		{
-			return !(CurrentProfileSettings && CurrentProfileSettings->TutorialMask > TUTORIAL_SkillMoves && ((CurrentProfileSettings->TutorialMask & TUTORIAL_SkillMoves) == TUTORIAL_SkillMoves));
 		}
 	}
 
@@ -6240,21 +6229,15 @@ void UUTLocalPlayer::LaunchTutorial(FName TutorialName, const FString& DesiredQu
 	{
 		// Look to see where the player is in the tutorial progression and pick the next tutorial.
 
-		if (CurrentProfileSettings)
-		{
-			if ((CurrentProfileSettings->TutorialMask & TUTOIRAL_Weapon) != TUTOIRAL_Weapon) TutorialName = ETutorialTags::TUTTAG_Weapons;
-			else if ((CurrentProfileSettings->TutorialMask & TUTORIAL_Pickups) != TUTORIAL_Pickups) TutorialName = ETutorialTags::TUTTAG_Pickups;
-			else if ((CurrentProfileSettings->TutorialMask & TUTORIAL_DM) != TUTORIAL_DM) TutorialName = ETutorialTags::TUTTAG_DM;
-			else if ((CurrentProfileSettings->TutorialMask & TUTORIAL_FlagRun) != TUTORIAL_FlagRun) TutorialName = ETutorialTags::TUTTAG_Flagrun;
-			else if ((CurrentProfileSettings->TutorialMask & TUTORIAL_Showdown) != TUTORIAL_Showdown) TutorialName = ETutorialTags::TUTTAG_Showdown;
-			else if ((CurrentProfileSettings->TutorialMask & TUTORIAL_CTF) != TUTORIAL_CTF) TutorialName = ETutorialTags::TUTTAG_CTF;
-			else if ((CurrentProfileSettings->TutorialMask & TUTORIAL_Duel) != TUTORIAL_Duel) TutorialName = ETutorialTags::TUTTAG_Duel;
-			else TutorialName = ETutorialTags::TUTTAG_Movement;
-		}
-		else
-		{
-			TutorialName = ETutorialTags::TUTTAG_Movement;
-		}
+		if ( IsTutorialMaskCompleted(TUTOIRAL_Weapon) )			TutorialName = ETutorialTags::TUTTAG_Weapons;
+		else if (IsTutorialMaskCompleted(TUTORIAL_Pickups) )	TutorialName = ETutorialTags::TUTTAG_Pickups;
+		else if (IsTutorialMaskCompleted(TUTORIAL_DM) )			TutorialName = ETutorialTags::TUTTAG_DM;
+		else if (IsTutorialMaskCompleted(TUTORIAL_FlagRun) )	TutorialName = ETutorialTags::TUTTAG_Flagrun;
+		else if (IsTutorialMaskCompleted(TUTORIAL_Showdown) )	TutorialName = ETutorialTags::TUTTAG_Showdown;
+		else if (IsTutorialMaskCompleted(TUTORIAL_CTF) )		TutorialName = ETutorialTags::TUTTAG_CTF;
+		else if (IsTutorialMaskCompleted(TUTORIAL_Duel) )		TutorialName = ETutorialTags::TUTTAG_Duel;
+
+		else TutorialName =	ETutorialTags::TUTTAG_Movement;
 	}
 
 	for (int32 i = 0; i < TutorialData.Num(); i++)
@@ -6317,7 +6300,7 @@ FText UUTLocalPlayer::GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type
 {
 	if (Section == ETutorialSections::SkillMoves)
 	{
-		if ( CurrentProfileSettings && ((CurrentProfileSettings->TutorialMask & TUTORIAL_SkillMoves) == TUTORIAL_SkillMoves) )
+		if ( IsTutorialMaskCompleted(TUTORIAL_SkillMoves) )
 		{
 			return NSLOCTEXT("TutorialText","Completed","!! COMPLETED !!");
 		}
@@ -6327,7 +6310,7 @@ FText UUTLocalPlayer::GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type
 
 	if (Section == ETutorialSections::Gameplay)
 	{
-		if ( CurrentProfileSettings && ((CurrentProfileSettings->TutorialMask & TUTORIAL_Gameplay) == TUTORIAL_Gameplay) )
+		if ( IsTutorialMaskCompleted(TUTORIAL_Gameplay) )
 		{
 			return NSLOCTEXT("TutorialText","Completed","!! COMPLETED !!");
 		}
@@ -6337,7 +6320,7 @@ FText UUTLocalPlayer::GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type
 
 	if (Section == ETutorialSections::Hardcore)
 	{
-		if ( CurrentProfileSettings && ((CurrentProfileSettings->TutorialMask & TUTORIAL_Hardcore) == TUTORIAL_Hardcore) )
+		if ( IsTutorialMaskCompleted(TUTORIAL_Hardcore) )
 		{
 			return NSLOCTEXT("TutorialText","Completed","!! COMPLETED !!");
 		}
@@ -6347,20 +6330,20 @@ FText UUTLocalPlayer::GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type
 	return FText::GetEmpty();
 }
 
-bool UUTLocalPlayer::IsTutorialMaskCompleted(int32 TutorialMask)
+bool UUTLocalPlayer::IsTutorialMaskCompleted(int32 TutorialMask) const
 {
-	return CurrentProfileSettings && (CurrentProfileSettings->TutorialMask & TutorialMask) == TutorialMask;
+	return ( GetTutorialMask() & TutorialMask ) == TutorialMask;
 }
 
 
-bool UUTLocalPlayer::IsTutorialCompleted(FName TutorialName)
+bool UUTLocalPlayer::IsTutorialCompleted(FName TutorialName) const
 {
 	bool bCompleted = false;
 	for (int32 i=0; i < TutorialData.Num(); i++)
 	{
 		if (TutorialData[i].Tag == TutorialName)
 		{
-			bCompleted = CurrentProfileSettings && (CurrentProfileSettings->TutorialMask & TutorialData[i].Mask) == TutorialData[i].Mask;
+			bCompleted = IsTutorialMaskCompleted(TutorialData[i].Mask);
 			break;
 		}
 	}
@@ -6422,7 +6405,7 @@ bool UUTLocalPlayer::HasProgressionKey(FName RequiredKey)
 
 	if (RequiredKey == FName(TEXT("PROGRESSION_KEY_NoLongerANoob")))
 	{
-		return (CurrentProfileSettings && CurrentProfileSettings->TutorialMask > TUTORIAL_SkillMoves);
+		return IsTutorialMaskCompleted(TUTORIAL_SkillMoves);
 	}
 
 	return false;
@@ -6620,3 +6603,39 @@ void UUTLocalPlayer::CloseUMGWidget(UUTUMGWidget* WidgetToClose)
 		UMGWidgetStack.Remove(WidgetToClose);
 	}
 }
+
+int32 UUTLocalPlayer::GetTutorialMask() const
+{
+	int32 TutorialMask = 0x00;
+	if (CurrentProfileSettings) TutorialMask |= CurrentProfileSettings->TutorialMask;
+	if (CurrentProgression) TutorialMask |= CurrentProgression->TutorialMask;
+
+	return TutorialMask;
+}
+
+void UUTLocalPlayer::SetTutorialMask(int32 BitToSet)
+{
+	int32 TutorialMask = GetTutorialMask();
+	TutorialMask = TutorialMask | BitToSet;
+
+	if (CurrentProgression) CurrentProgression->TutorialMask = TutorialMask;
+	if (CurrentProfileSettings) CurrentProfileSettings->TutorialMask = TutorialMask;
+
+	SaveProfileSettings();
+	SaveProgression();
+}
+
+void UUTLocalPlayer::ClearTutorialMask(int32 BitToClear)
+{
+	int32 TutorialMask = GetTutorialMask();
+	TutorialMask = TutorialMask & (~BitToClear);
+	
+	if (CurrentProgression) TutorialMask = TutorialMask;
+	if (CurrentProfileSettings) TutorialMask = TutorialMask;
+
+	SaveProfileSettings();
+	SaveProgression();
+
+}
+
+

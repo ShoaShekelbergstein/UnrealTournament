@@ -679,22 +679,16 @@ void UUTGameInstance::BeginLevelLoading(const FString& LevelName)
 
 	if (CleanLevelName.ToLower() == TEXT("tut-movementtraining") )
 	{
-
 		UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetFirstGamePlayer());
-		if (LocalPlayer && 
-				(LocalPlayer->LoginPhase == ELoginPhase::Offline || 
-						(LocalPlayer->LoginPhase == ELoginPhase::LoggedIn 
-							&& LocalPlayer->GetProfileSettings() != nullptr 
-							&& ((LocalPlayer->GetProfileSettings()->TutorialMask & TUTORIAL_Movement) != TUTORIAL_Movement) 
-						)
-				)
-			)
-
+		if (LocalPlayer)
 		{
-			MovieVignettes.Add( FMapVignetteInfo(TEXT("intro_full"), FText::GetEmpty()));
-			MovieVignettes.Add( FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
-			PlayLoadingMovies(false);	
-			return;
+			if ( !LocalPlayer->IsTutorialMaskCompleted(TUTORIAL_Movement) )
+			{
+				MovieVignettes.Add( FMapVignetteInfo(TEXT("intro_full"), FText::GetEmpty()));
+				MovieVignettes.Add( FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
+				PlayLoadingMovies(false);	
+				return;
+			}
 		}
 	}
 

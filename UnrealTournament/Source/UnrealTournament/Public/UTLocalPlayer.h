@@ -1223,11 +1223,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category=Tutorial)
 	virtual FText GetBestTutorialTime(FName TutorialName);
 
+	/** Returns the current tutorial mask */
 	UFUNCTION(BlueprintCallable, Category=Tutorial)
-	virtual bool IsTutorialMaskCompleted(int32 TutorialMask);
+	virtual int32 GetTutorialMask() const;
+
+	virtual void SetTutorialMask(int32 BitToSet);
+	virtual void ClearTutorialMask(int32 BitToClear);
+
 
 	UFUNCTION(BlueprintCallable, Category=Tutorial)
-	virtual bool IsTutorialCompleted(FName TutorialName);
+	virtual bool IsTutorialMaskCompleted(int32 TutorialMask) const;
+
+	UFUNCTION(BlueprintCallable, Category=Tutorial)
+	virtual bool IsTutorialCompleted(FName TutorialName) const;
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual void LaunchTutorial(FName TutorialName, const FString& DesiredQuickmatchType = TEXT(""));

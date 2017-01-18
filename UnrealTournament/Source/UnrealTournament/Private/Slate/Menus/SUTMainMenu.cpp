@@ -121,12 +121,11 @@ FReply SUTMainMenu::OnShowHomePanel()
 		AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
 		if (PC && !PC->SkipTutorialCheck())
 		{
-			UUTProfileSettings* ProfileSettings = PC->GetProfileSettings();
-			if (ProfileSettings != nullptr)
+			UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(PC->Player);
+			if (UTLocalPlayer)
 			{
-				if ((ProfileSettings->TutorialMask == 0) ||
-					((ProfileSettings->TutorialMask & 0x07) != 0x07) ||
-					(ProfileSettings->TutorialMask < 8))
+				int32 TutorialMask = UTLocalPlayer->GetTutorialMask();
+				if (TutorialMask == 0 || (TutorialMask & TUTORIAL_SkillMoves) != TUTORIAL_SkillMoves) 
 				{
 					FUTAnalytics::FireEvent_UTCancelOnboarding(PC);
 				}

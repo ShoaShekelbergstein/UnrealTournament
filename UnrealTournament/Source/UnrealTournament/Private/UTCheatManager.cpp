@@ -682,12 +682,7 @@ void UUTCheatManager::UnlockTutorials()
 	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(GetOuterAPlayerController()->Player);
 	if (LP != nullptr)
 	{
-		UUTProfileSettings* Profile = LP->GetProfileSettings();
-		if (Profile != nullptr)
-		{
-			Profile->TutorialMask = TUTORIAL_All;
-			LP->SaveProfileSettings();
-		}
+		LP->SetTutorialMask(TUTORIAL_All);
 	}
 #endif
 }
