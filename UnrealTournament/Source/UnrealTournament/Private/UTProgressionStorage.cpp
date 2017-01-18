@@ -307,42 +307,42 @@ void UUTProgressionStorage::FixupBestTimes(int32& inTutorialMask)
 		inTutorialMask = inTutorialMask | TUTORIAL_Showdown;
 	}
 
-	if (HasAnyTokens(TEXT("movementtraining"),15))
+	if (CheckTokens(TEXT("movementtraining"),15))
 	{
 		inTutorialMask = inTutorialMask | TUTORIAL_Movement;
 	}
 		
-	if (HasAnyTokens(TEXT("weapontraining"),15))
+	if (CheckTokens(TEXT("weapontraining"),15))
 	{
 		inTutorialMask = inTutorialMask | TUTOIRAL_Weapon;
 	}
 
-	if (HasAnyTokens(TEXT("pickuptraining"),10))
+	if (CheckTokens(TEXT("pickuptraining"),10))
 	{
 		inTutorialMask = inTutorialMask | TUTORIAL_Pickups;
 	}
 
-	if (HasAnyTokens(TEXT("FR"),5))
+	if (CheckTokens(TEXT("FR"),5))
 	{
 		inTutorialMask = inTutorialMask | TUTORIAL_FlagRun;
 	}
 
-	if (HasAnyTokens(TEXT("FFA"),5))
+	if (CheckTokens(TEXT("FFA"),5))
 	{
 		inTutorialMask = inTutorialMask | TUTORIAL_DM;
 	}
 
-	if (HasAnyTokens(TEXT("TDM"),5))
+	if (CheckTokens(TEXT("TDM"),5))
 	{
 		inTutorialMask = inTutorialMask | TUTORIAL_TDM;
 	}
 
-	if (HasAnyTokens(TEXT("CTF"),5))
+	if (CheckTokens(TEXT("CTF"),5))
 	{
 		inTutorialMask = inTutorialMask | TUTORIAL_CTF;
 	}
 
-	if (HasAnyTokens(TEXT("Duel"),5) )
+	if (CheckTokens(TEXT("Duel"),5) )
 	{
 		inTutorialMask = inTutorialMask | TUTORIAL_Showdown;
 	}
