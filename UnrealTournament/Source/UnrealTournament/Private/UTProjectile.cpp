@@ -760,7 +760,13 @@ void AUTProjectile::OnBounce(const struct FHitResult& ImpactResult, const FVecto
 
 bool AUTProjectile::InteractsWithProj(AUTProjectile* OtherProj)
 {
-	return (bAlwaysShootable || OtherProj->bAlwaysShootable || (bIsEnergyProjectile && OtherProj->bIsEnergyProjectile)) && !bFakeClientProjectile && !OtherProj->bFakeClientProjectile;
+	if ((bAlwaysShootable || OtherProj->bAlwaysShootable || (bIsEnergyProjectile && OtherProj->bIsEnergyProjectile)) && !bFakeClientProjectile && !OtherProj->bFakeClientProjectile)
+	{
+		// interact if not same team
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+		return  !Instigator || !OtherProj->Instigator || !GS || !GS->OnSameTeam(Instigator, OtherProj->Instigator);
+	}
+	return false;
 }
 
 void AUTProjectile::InitFakeProjectile(AUTPlayerController* OwningPlayer)
