@@ -6607,8 +6607,14 @@ void UUTLocalPlayer::CloseUMGWidget(UUTUMGWidget* WidgetToClose)
 int32 UUTLocalPlayer::GetTutorialMask() const
 {
 	int32 TutorialMask = 0x00;
-	if (CurrentProfileSettings) TutorialMask |= CurrentProfileSettings->TutorialMask;
-	if (CurrentProgression) TutorialMask |= CurrentProgression->TutorialMask;
+	if (CurrentProfileSettings)
+	{
+		TutorialMask |= CurrentProfileSettings->TutorialMask;
+	}
+	if (CurrentProgression)
+	{
+		TutorialMask |= CurrentProgression->TutorialMask;
+	}
 
 	return TutorialMask;
 }
@@ -6618,8 +6624,14 @@ void UUTLocalPlayer::SetTutorialMask(int32 BitToSet)
 	int32 TutorialMask = GetTutorialMask();
 	TutorialMask = TutorialMask | BitToSet;
 
-	if (CurrentProgression) CurrentProgression->TutorialMask = TutorialMask;
-	if (CurrentProfileSettings) CurrentProfileSettings->TutorialMask = TutorialMask;
+	if (CurrentProgression)
+	{
+		CurrentProgression->TutorialMask = TutorialMask;
+	}
+	if (CurrentProfileSettings)
+	{
+		CurrentProfileSettings->TutorialMask = TutorialMask;
+	}
 
 	SaveProfileSettings();
 	SaveProgression();
@@ -6630,8 +6642,14 @@ void UUTLocalPlayer::ClearTutorialMask(int32 BitToClear)
 	int32 TutorialMask = GetTutorialMask();
 	TutorialMask = TutorialMask & (~BitToClear);
 	
-	if (CurrentProgression) TutorialMask = TutorialMask;
-	if (CurrentProfileSettings) TutorialMask = TutorialMask;
+	if (CurrentProgression)
+	{
+		CurrentProgression->TutorialMask = TutorialMask;
+	}
+	if (CurrentProfileSettings)
+	{
+		CurrentProfileSettings->TutorialMask = TutorialMask;
+	}
 
 	SaveProfileSettings();
 	SaveProgression();
