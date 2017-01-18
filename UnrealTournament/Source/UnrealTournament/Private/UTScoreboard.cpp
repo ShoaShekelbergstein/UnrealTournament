@@ -160,8 +160,11 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 		Args.Add("GameName", FText::AsCultureInvariant(GameName));
 		Args.Add("MapName", FText::AsCultureInvariant(MapName));
 		GameMessage = FText::Format(GameMessageText, Args);
-		Canvas->StrLen(UTHUDOwner->MediumFont, GameMessageText.ToString(), MessageX, MessageY);
-		MessageX *= RenderScale;
+
+		float NameX, MapX;
+		Canvas->StrLen(UTHUDOwner->MediumFont, GameName.ToString(), NameX, MessageY);
+		Canvas->StrLen(UTHUDOwner->MediumFont, MapName.ToString(), MapX, MessageY);
+		MessageX = (NameX+MapX+64.f) * RenderScale;
 	}
 	else
 	{
@@ -169,8 +172,13 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 	}
 
 	// Draw the Background
-	float LeftEdge = 0.5f*(Canvas->ClipX - FMath::Clamp(MessageX+100.f*RenderScale, 520.f, Canvas->ClipX));
-	DrawTexture(UTHUDOwner->ScoreboardAtlas,LeftEdge - 16.f*RenderScale,YOffset, RenderSize.X - 2.f*LeftEdge + 32.f*RenderScale, 72.f*RenderScale, 4.f*RenderScale,2,124, 128, 1.0);
+	FText StatusText = UTGameState->GetGameStatusText(true);
+	float StatusX, StatusY;
+	Canvas->StrLen(UTHUDOwner->SmallFont, StatusText.ToString(), StatusX, StatusY);
+
+	float Width = FMath::Clamp(MessageX + (StatusX + 32.f)*RenderScale, 520.f*RenderScale, Canvas->ClipX);
+	float LeftEdge = 0.5f*(Canvas->ClipX - Width);
+	DrawTexture(UTHUDOwner->ScoreboardAtlas,LeftEdge - 16.f*RenderScale,YOffset, Width + 32.f*RenderScale, 72.f*RenderScale, 4.f*RenderScale,2,124, 128, 1.0);
 
 	if (UTHUDOwner->ScoreMessageText.IsEmpty())
 	{ 
@@ -181,7 +189,7 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 		UTHUDOwner->DrawWinConditions(UTHUDOwner->MediumFont, LeftEdge, YOffset + 4.f*RenderScale, Canvas->ClipX, RenderScale, false);
 	}
 
-	DrawGameOptions(RenderDelta, YOffset, RenderSize.X - LeftEdge);
+	DrawGameOptions(RenderDelta, YOffset, LeftEdge + Width);
 	YOffset += 72.f*RenderScale;	// The size of this zone.
 }
 
