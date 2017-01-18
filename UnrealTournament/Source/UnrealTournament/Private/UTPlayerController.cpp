@@ -5358,6 +5358,12 @@ void AUTPlayerController::ClientSetActiveLineUp_Implementation(bool bNewIsActive
 				{
 					TestActor->Destroy();
 				}
+
+				AUTCharacter* UTChar = Cast<AUTCharacter>(*It);
+				if (UTChar && UTChar->IsDead())
+				{
+					UTChar->Destroy();
+				}
 			}
 
 			if (bNewIsActive)
