@@ -743,7 +743,7 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildGeneralTab()
 				SNew(STextBlock)
 				.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
 				.Text(NSLOCTEXT("SUTSystemSettingsDialog", "MatchmakingRegion", "Matchmaking Region"))
-				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "MatchmakingRegion_Tooltip", "Which region that ranked matchmaking will use.")))
+				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "MatchmakingRegion_Tooltip", "Which region that ranked matchmaking will use. NA = North America, EU = Europe.")))
 			]
 		]
 		+ SHorizontalBox::Slot()
