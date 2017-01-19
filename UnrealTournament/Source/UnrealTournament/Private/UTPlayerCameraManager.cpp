@@ -194,14 +194,10 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		OutVT.POV.ProjectionMode = bIsOrthographic ? ECameraProjectionMode::Orthographic : ECameraProjectionMode::Perspective;
 		OutVT.POV.PostProcessBlendWeight = 1.0f;
 
-		if (GameState && GameState->LineUpHelper)
+		AActor* LineUpCam = (GameState && GameState->LineUpHelper) ?  GameState->LineUpHelper->GetCameraActorForLineUp(GetWorld(), GameState->LineUpHelper->LastActiveType) : nullptr;
+		if (LineUpCam)
 		{
-			AActor* LineUpCam = GameState->LineUpHelper->GetCameraActorForLineUp(GetWorld(), GameState->LineUpHelper->LastActiveType);
-			if (LineUpCam)
-			{
-				OutVT.Target = LineUpCam;
-			}
-
+			OutVT.Target = LineUpCam;
 			OutVT.POV.Location = LineUpCam->GetActorLocation();
 			OutVT.POV.Rotation = LineUpCam->GetActorRotation();
 		}
