@@ -2216,5 +2216,40 @@ public:
 		, LoadingMovie(TEXT(""))
 	{
 	}
+};
+
+USTRUCT()
+struct FHUDandUMGParticleSystemTracker
+{
+
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	UParticleSystemComponent* ParticleSystemComponent;
+
+	UPROPERTY()
+	FVector LocationModifier;
+
+	UPROPERTY()
+	FRotator DirectionModifier;
+
+	UPROPERTY()
+	FVector2D ScreenLocation;
+
+	FHUDandUMGParticleSystemTracker()
+		: ParticleSystemComponent(nullptr)
+	{
+	}
+
+
+	FHUDandUMGParticleSystemTracker(UParticleSystemComponent* inParticleSystemComponent, FVector inLocationModifier, FRotator inDirectionModifier, FVector2D inScreenLocation)
+	{
+		ParticleSystemComponent = inParticleSystemComponent;	
+		LocationModifier = inLocationModifier;
+		DirectionModifier = inDirectionModifier;
+		ScreenLocation = inScreenLocation;
+	}
 
 };
+
+

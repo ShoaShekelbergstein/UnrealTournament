@@ -31,7 +31,7 @@ void UUTUMGWidget::CloseWidget()
 	}
 }
 
-void UUTUMGWidget::ShowParticleSystem(UParticleSystem* ParticleSystem, FVector2D ScreenLocation, bool bRelativeCoords, FVector LocationModifier, FRotator DirectionModifier)
+void UUTUMGWidget::ShowParticleSystem(UParticleSystem* ParticleSystem, FVector2D ScreenLocation, bool bRelativeCoords, FVector LocationModifier, FRotator DirectionModifier, bool bAttachToCamera)
 {
 	if (UTPlayerOwner == nullptr || UTPlayerOwner->PlayerController == nullptr) return; // Quick out.  We need a local player to do this
 
@@ -59,6 +59,50 @@ void UUTUMGWidget::ShowParticleSystem(UParticleSystem* ParticleSystem, FVector2D
 	{
 		FVector FinalLocation = WorldLocation + WorldDirection.ToOrientationQuat().RotateVector(LocationModifier);
 		FRotator FinalRotation = (WorldDirection + DirectionModifier.Vector()).ToOrientationRotator();
-		UGameplayStatics::SpawnEmitterAtLocation(UTPlayerOwner->PlayerController, ParticleSystem, FinalLocation, FinalRotation);		
+
+		UParticleSystemComponent* PCS = UGameplayStatics::SpawnEmitterAtLocation(UTPlayerOwner->PlayerController, ParticleSystem, FinalLocation, FinalRotation);
+		if (bAttachToCamera && PCS != nullptr)
+		{
+			PCS->OnSystemFinished.AddDynamic(this, &UUTUMGWidget::OnParticlesFinished);
+			ParticleSystemList.Add(FHUDandUMGParticleSystemTracker(PCS, LocationModifier, DirectionModifier, ScreenLocation));
+		}
 	}
+}
+
+void UUTUMGWidget::OnParticlesFinished(UParticleSystemComponent* PCS)
+{
+	for (int32 i = 0; i < ParticleSystemList.Num(); i++)
+	{
+		if (ParticleSystemList[i].ParticleSystemComponent == PCS)
+		{
+			ParticleSystemList.RemoveAt(i);
+			return;
+		}
+	}
+}
+
+void UUTUMGWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	if (ParticleSystemList.Num() > 0)
+	{
+		for (int32 i = 0; i < ParticleSystemList.Num(); i++)
+		{
+			FVector WorldLocation, WorldDirection;
+			if ( UGameplayStatics::DeprojectScreenToWorld(UTPlayerOwner->PlayerController, ParticleSystemList[i].ScreenLocation, WorldLocation, WorldDirection) )
+			{
+
+				if (ParticleSystemList[i].ParticleSystemComponent != nullptr)
+				{
+					FVector FinalLocation = WorldLocation + WorldDirection.ToOrientationQuat().RotateVector(ParticleSystemList[i].LocationModifier);
+					FRotator FinalRotation = (WorldDirection + ParticleSystemList[i].DirectionModifier.Vector()).ToOrientationRotator();
+					ParticleSystemList[i].ParticleSystemComponent->SetWorldLocationAndRotation(FinalLocation, FinalRotation);
+				}
+			}
+		}	
+	}
+
+
+
 }

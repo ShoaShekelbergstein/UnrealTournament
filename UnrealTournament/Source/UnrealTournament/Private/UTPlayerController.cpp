@@ -4409,7 +4409,10 @@ void AUTPlayerController::ClientPumpkinPickedUp_Implementation(float GainedAmoun
 
 void AUTPlayerController::DebugTest(FString TestCommand)
 {
-	ClientReceiveLocalizedMessage(UUTGauntletGameMessage::StaticClass(), 6, nullptr, nullptr, nullptr);
+
+	int32 Index = FCString::Atoi(*TestCommand);
+
+	ClientReceiveLocalizedMessage(UUTGauntletGameMessage::StaticClass(), Index, PlayerState, nullptr, nullptr);
 	Super::DebugTest(TestCommand);
 
 }

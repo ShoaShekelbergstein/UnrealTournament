@@ -97,7 +97,7 @@ void AUTGauntletFlag::OnRep_Team()
 		if ( TeamMaterials.IsValidIndex(TeamNum) )
 		{
 			UE_LOG(UT,Log,TEXT("Setting Material"));
-			Mesh->SetMaterial(1, TeamMaterials[TeamNum]);
+			Mesh->SetMaterial(0, TeamMaterials[TeamNum]);
 		}
 	}
 	else
@@ -105,7 +105,7 @@ void AUTGauntletFlag::OnRep_Team()
 		UE_LOG(UT,Verbose,TEXT("[UTGauntletFlag::OnRep_Team]  Team = 255 (nullptr)"));
 
 		UE_LOG(UT,Log,TEXT("Setting Neutral Material"));
-		Mesh->SetMaterial(1, NeutralMaterial);
+		Mesh->SetMaterial(0, NeutralMaterial);
 	}
 }
 
@@ -185,7 +185,7 @@ void AUTGauntletFlag::OnObjectStateChanged()
 void AUTGauntletFlag::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
 {
 	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PC);
-	if ( ObjectState != CarriedObjectState::Held )
+	if ( ObjectState != CarriedObjectState::Held && PC->GetPawn() != nullptr)
 	{
 		float Scale = Canvas->ClipY / 1080.0f;
 		FVector2D Size = FVector2D(43,41) * Scale;
@@ -334,7 +334,6 @@ void AUTGauntletFlag::SetTeam(AUTTeamInfo* NewTeam)
 		uint8 NewTeamNum = NewTeam == nullptr ? 255 : NewTeam->GetTeamNum();
 
 		AUTGauntletGameState* GauntletGameState = GetWorld()->GetGameState<AUTGauntletGameState>();
-
 		if (GauntletGameState != nullptr)
 		{
 			// If we are back to neutral, clear the flags and put 2 destination flags
@@ -346,18 +345,24 @@ void AUTGauntletFlag::SetTeam(AUTTeamInfo* NewTeam)
 					AUTCTFFlagBase* DestinationBase = GauntletGameState->GetFlagBase(i);
 					if (DestinationBase)
 					{
+						DestinationBase->SpawnDefenseEffect();
 						PutGhostFlagAt(FFlagTrailPos(DestinationBase->GetActorLocation() + FVector(0.0f, 0.0f, 64.0f)), false, true, 1 - i);
 					}
 				}
 			}
 			else
 			{
+
+				AUTCTFFlagBase* DestinationBase = GauntletGameState->GetFlagBase(NewTeamNum);
+				if (DestinationBase) DestinationBase->ClearDefenseEffect();
+
 				ClearGhostFlags();
 				bFriendlyCanPickup = true;
 				bAnyoneCanPickup = false;
-				AUTCTFFlagBase* DestinationBase = GauntletGameState->GetFlagBase(1 - NewTeamNum);
+				DestinationBase = GauntletGameState->GetFlagBase(1 - NewTeamNum);
 				if (DestinationBase)
 				{
+					DestinationBase->SpawnDefenseEffect();
 					PutGhostFlagAt(FFlagTrailPos(DestinationBase->GetActorLocation() + FVector(0.0f, 0.0f, 64.0f)), false, true, NewTeamNum);
 				}
 			}

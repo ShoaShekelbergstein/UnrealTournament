@@ -333,6 +333,11 @@ void AUTGauntletGame::FlagsAreReady()
 	if (GauntletGameState->FlagDispenser)
 	{
 		GauntletGameState->FlagDispenser->CreateFlag();
+		// Remove the defense effect from all of the flag bases.  It will get readded as the flag changes hands.
+		for (int32 i=0; i < GauntletGameState->FlagBases.Num(); i++)
+		{
+			GauntletGameState->FlagBases[i]->ClearDefenseEffect();
+		}
 	}
 
 	InitFlags();
@@ -470,7 +475,6 @@ void AUTGauntletGame::EndScoreSummary()
 	{
 		// Typically, find the best player on this team but for now focus on the last cap
 
-		BroadcastLocalized(this, UUTGauntletGameMessage::StaticClass(), 5, GauntletGameState->LastScorer, NULL, WinningTeam);
 		EndGame(GauntletGameState->LastScorer, FName(TEXT("scorelimit")));
 	}
 }
@@ -492,11 +496,34 @@ void AUTGauntletGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, A
 {
 	Super::ScoreObject_Implementation(GameObject, HolderPawn, Holder, Reason);
 
+	// Clear the defense effects
+
+	AUTCTFFlagBase* DestinationBase = GauntletGameState->GetFlagBase(0);
+	DestinationBase->ClearDefenseEffect();
+	DestinationBase = GauntletGameState->GetFlagBase(1);
+	DestinationBase->ClearDefenseEffect();
+
 
 	GauntletGameState->LastScorer = Holder;
 
+	DestinationBase = GauntletGameState->GetFlagBase(1 - GameObject->GetTeamNum());
+
 	// Place the flag at the new base..
-	GauntletGameState->Flag->FinalRestingPlace(GauntletGameState->GetFlagBase(1 - GameObject->GetTeamNum()));
+	GauntletGameState->Flag->FinalRestingPlace(DestinationBase);
+
+	// We need to add a flag capture emote
+	if (HolderPawn != nullptr)
+	{
+		FVector BaseLocation = DestinationBase->GetActorLocation();
+		FVector PawnLocation = HolderPawn->GetActorLocation();
+		FRotator NewPawnRotation = FRotator(0.0f,0.0f,0.0f);
+
+		NewPawnRotation.Yaw =  (BaseLocation - PawnLocation).ToOrientationRotator().Yaw;
+
+		HolderPawn->SetActorLocationAndRotation(BaseLocation + FVector(0.0f,0.0f,96.0f), NewPawnRotation);
+		Holder->PlayTauntByIndex(0);
+	}
+
 }
 
 void AUTGauntletGame::HandleFlagCapture(AUTCharacter* HolderPawn, AUTPlayerState* Holder)
@@ -614,5 +641,14 @@ void AUTGauntletGame::ScoreKill_Implementation(AController* Killer, AController*
 				UTPC->ClientReceiveLocalizedMessage(UUTGauntletGameMessage::StaticClass(), 6, nullptr, nullptr, nullptr);			
 			}
 		}
+	}
+}
+
+
+void AUTGauntletGame::PlayEndOfMatchMessage()
+{
+	if (UTGameState && UTGameState->WinningTeam)
+	{
+		BroadcastLocalized(this, UUTGauntletGameMessage::StaticClass(), 5, GauntletGameState->LastScorer, NULL, UTGameState->WinningTeam);
 	}
 }
