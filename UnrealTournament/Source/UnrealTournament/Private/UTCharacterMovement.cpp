@@ -811,7 +811,7 @@ bool UUTCharacterMovement::CanWallDodge(const FVector &DodgeDir, const FVector &
 
 bool UUTCharacterMovement::PerformDodge(FVector &DodgeDir, FVector &DodgeCross)
 {
-	if (!HasValidData() || !MovementState.bCanJump)
+	if (!HasValidData())
 	{
 		return false;
 	}
