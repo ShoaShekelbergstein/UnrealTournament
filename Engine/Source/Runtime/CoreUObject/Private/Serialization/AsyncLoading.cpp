@@ -5911,7 +5911,7 @@ void FAsyncPackage::CloseDelayedLinkers()
 	{
 		check(LinkerToClose);
 		check(LinkerToClose->LinkerRoot);
-	#if USE_EVENT_DRIVEN_ASYNC_LOAD
+	#if 1 //USE_EVENT_DRIVEN_ASYNC_LOAD
 		FLinkerLoad* LinkerToReset = FLinkerLoad::FindExistingLinkerForPackage(CastChecked<UPackage>(LinkerToClose->LinkerRoot));
 		check(LinkerToReset == LinkerToClose);
 		if (LinkerToReset && LinkerToReset->AsyncRoot)
