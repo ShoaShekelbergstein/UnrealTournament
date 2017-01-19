@@ -37,7 +37,7 @@ FText UUTDoorMessage::GetText(int32 Switch, bool bTargetsPlayerState1, class APl
 
 float UUTDoorMessage::GetAnnouncementDelay(int32 Switch)
 {
-	return (Switch == 1) ? 5.f : AnnouncementDelay;
+	return (Switch == 1) ? 1.f : AnnouncementDelay;
 }
 
 FName UUTDoorMessage::GetAnnouncementName_Implementation(int32 Switch, const UObject* OptionalObject, const class APlayerState* RelatedPlayerState_1, const class APlayerState* RelatedPlayerState_2) const

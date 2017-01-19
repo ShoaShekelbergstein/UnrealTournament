@@ -75,11 +75,6 @@ bool UUTPowerupUseMessage::ShouldPlayAnnouncement(const FClientReceiveData& Clie
 	return true;
 }
 
-float UUTPowerupUseMessage::GetAnnouncementDelay(int32 Switch)
-{
-	return 0.f;
-}
-
 bool UUTPowerupUseMessage::InterruptAnnouncement(const FAnnouncementInfo AnnouncementInfo, const FAnnouncementInfo OtherAnnouncementInfo) const
 {
 	return (AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass);
