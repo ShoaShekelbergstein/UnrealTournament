@@ -1235,6 +1235,28 @@ void AUTPlayerState::CopyProperties(APlayerState* PlayerState)
 		{
 			PS->StatManager->InitializeManager(PS);
 		}
+
+		PS->DuelRank = DuelRank;
+		PS->TDMRank = TDMRank;
+		PS->DMRank = DMRank;
+		PS->CTFRank = CTFRank;
+		PS->ShowdownRank = ShowdownRank;
+		PS->FlagRunRank = FlagRunRank;
+		PS->RankedDuelRank = RankedDuelRank;
+		PS->RankedCTFRank = RankedCTFRank;
+		PS->RankedShowdownRank = RankedShowdownRank;
+		PS->RankedFlagRunRank = RankedFlagRunRank;
+
+		PS->DuelMatchesPlayed = DuelMatchesPlayed;
+		PS->TDMMatchesPlayed = TDMMatchesPlayed;
+		PS->DMMatchesPlayed = DMMatchesPlayed;
+		PS->CTFMatchesPlayed = CTFMatchesPlayed;
+		PS->ShowdownMatchesPlayed = ShowdownMatchesPlayed;
+		PS->FlagRunMatchesPlayed = FlagRunMatchesPlayed;
+		PS->RankedDuelMatchesPlayed = RankedDuelMatchesPlayed;
+		PS->RankedCTFMatchesPlayed = RankedCTFMatchesPlayed;
+		PS->RankedShowdownMatchesPlayed = RankedShowdownMatchesPlayed;
+		PS->RankedFlagRunMatchesPlayed = RankedFlagRunMatchesPlayed;
 	}
 }
 void AUTPlayerState::OverrideWith(APlayerState* PlayerState)
