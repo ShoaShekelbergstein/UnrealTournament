@@ -37,6 +37,7 @@ AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/SilverSkaarjBoots.SilverSkaarjBoots_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/Ghost.Ghost_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/ShieldBot.ShieldBot_C")));
+	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/Bobodemon.Bobodemon_C")));
 
 	BoostPowerupTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_Recall.BP_Recall_C")));
 	BoostPowerupTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/Boost_RocketSalvo.Boost_RocketSalvo_C")));

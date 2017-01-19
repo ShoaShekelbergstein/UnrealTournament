@@ -3,6 +3,7 @@
 
 #include "UTCharacter.h"
 #include "UTMonsterAI.h"
+#include "UTReplicatedEmitter.h"
 
 #include "UTMonster.generated.h"
 
@@ -38,6 +39,14 @@ public:
 	/** prevent monster from picking up these types of items (only relevant when bCanPickupItems is true) */
 	UPROPERTY(EditDefaultsOnly)
 	TArray<TSubclassOf<AUTInventory>> DisallowedPickupTypes;
+
+	/** enables teleport dodge instead of normal dodge mechanic */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TeleportDodgeDistance;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<AUTReplicatedEmitter> TeleportDodgeEffect;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TeleportDodgeCooldown;
 
 private:
 	bool bAddingDefaultInventory;
@@ -76,6 +85,60 @@ public:
 		{
 			AUTInventory* Inv = CreateInventory<AUTInventory>(ExtraDropType, false);
 			TossInventory(Inv);
+		}
+	}
+
+	virtual bool CanDodge() const override
+	{
+		bool bSavedCanJump = UTCharacterMovement->MovementState.bCanJump;
+		if (TeleportDodgeDistance > 0.0f)
+		{
+			UTCharacterMovement->MovementState.bCanJump = true;
+		}
+		const bool bResult = Super::CanDodge();
+		UTCharacterMovement->MovementState.bCanJump = bSavedCanJump;
+		return bResult;
+	}
+
+	virtual bool Dodge(FVector DodgeDir, FVector DodgeCross) override
+	{
+		if (TeleportDodgeDistance <= 0.0f)
+		{
+			return Super::Dodge(DodgeDir, DodgeCross);
+		}
+		else
+		{
+			if (!CanDodge())
+			{
+				return false;
+			}
+			else
+			{
+				const FVector OldLoc = GetActorLocation();
+				FHitResult Hit;
+				FVector TeleportDest;
+				if (GetWorld()->LineTraceSingleByChannel(Hit, OldLoc, OldLoc + DodgeDir * TeleportDodgeDistance, ECC_Pawn))
+				{
+					TeleportDest = Hit.Location - Hit.Normal * GetCapsuleComponent()->GetUnscaledCapsuleRadius();
+				}
+				else
+				{
+					TeleportDest = OldLoc + DodgeDir * (TeleportDodgeDistance - GetCapsuleComponent()->GetUnscaledCapsuleRadius());
+				}
+				if (TeleportTo(TeleportDest, GetActorRotation()))
+				{
+					if (TeleportDodgeEffect != nullptr)
+					{
+						GetWorld()->SpawnActor<AUTReplicatedEmitter>(TeleportDodgeEffect, OldLoc, GetActorRotation());
+					}
+					UTCharacterMovement->DodgeResetTime = GetWorld()->TimeSeconds + TeleportDodgeCooldown;
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
 		}
 	}
 };
