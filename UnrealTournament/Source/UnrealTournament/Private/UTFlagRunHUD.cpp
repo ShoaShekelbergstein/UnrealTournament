@@ -259,10 +259,6 @@ float AUTFlagRunHUD::DrawWinConditions(UFont* InFont, float XOffset, float YPos,
 			TimeNeeded = Switch / 100;
 			Switch = Switch - 100 * TimeNeeded;
 		}
-		if (bUseShortWinMessage && Switch < 4)
-		{
-			return 0.f;
-		}
 		FText PostfixText = FText::GetEmpty();
 		switch (Switch)
 		{
@@ -279,11 +275,6 @@ float AUTFlagRunHUD::DrawWinConditions(UFont* InFont, float XOffset, float YPos,
 		}	
 		if (bUseShortWinMessage)
 		{
-			// early out if bronze with no time
-			if ((TimeNeeded <= 0) && ((Switch == 4) || (Switch == 8)))
-			{
-				return 0.f;
-			}
 			PostfixText = (TimeNeeded > 0) ? AttackersMustScoreShort : FText::GetEmpty();
 		}
 
