@@ -84,6 +84,13 @@ void UUTWeaponStateFiringBurstEnforcer::UpdateTiming()
 
 void UUTWeaponStateFiringBurstEnforcer::RefireCheckTimer()
 {
+	// query bot to consider whether to still fire, switch modes, etc
+	AUTBot* B = Cast<AUTBot>(GetUTOwner()->Controller);
+	if (B != NULL)
+	{
+		B->CheckWeaponFiring();
+	}
+
 	uint8 CurrentFireMode = GetOuterAUTWeapon()->GetCurrentFireMode();
 	if (GetOuterAUTWeapon()->GetUTOwner()->GetPendingWeapon() != NULL || !GetOuterAUTWeapon()->HasAmmo(CurrentFireMode))
 	{
