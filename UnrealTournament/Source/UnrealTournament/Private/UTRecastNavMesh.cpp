@@ -675,10 +675,6 @@ void AUTRecastNavMesh::BuildNodeNetwork()
 			{
 				if (Builder->IsDestinationOnly())
 				{
-					if (It->GetName() == TEXT("BaseJumpPad4_1184"))
-					{
-						int i = 3;
-					}
 					// we need to make sure to grab all encompassing polys into the new PathNode as it will have special properties
 					// and Recast may have split the polys inside the extent of the POI
 					const FVector UnrealCenter = It->GetActorLocation();
@@ -745,6 +741,20 @@ void AUTRecastNavMesh::BuildNodeNetwork()
 							}
 						}
 						SetNodeSize(Node);
+						// hacky: use the object size instead of the poly size to initialize the pathnode so that inconvenient Recast poly splits don't result in a lower size than intended
+						FVector RealExtent = GetPOIExtent(*It);
+						FCapsuleSize RealSize(FMath::TruncToInt(RealExtent.X), FMath::TruncToInt(RealExtent.Z));
+						for (int32 i = 0; i < SizeSteps.Num(); i++)
+						{
+							if (SizeSteps[i].Radius <= RealSize.Radius)
+							{
+								Node->MinPolyEdgeSize.Radius = FMath::Max<float>(SizeSteps[i].Radius, Node->MinPolyEdgeSize.Radius);
+							}
+							if (SizeSteps[i].Height <= RealSize.Height)
+							{
+								Node->MinPolyEdgeSize.Height = FMath::Max<float>(SizeSteps[i].Height, Node->MinPolyEdgeSize.Height);
+							}
+						}
 					}
 				}
 				else
