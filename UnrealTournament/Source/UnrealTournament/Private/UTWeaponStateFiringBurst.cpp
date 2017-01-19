@@ -17,7 +17,8 @@ void UUTWeaponStateFiringBurst::BeginState(const UUTWeaponState* PrevState)
 	CurrentShot = 0;
 	if (GetOuterAUTWeapon()->Spread.IsValidIndex(GetOuterAUTWeapon()->GetCurrentFireMode()))
 	{
-		GetOuterAUTWeapon()->Spread[GetOuterAUTWeapon()->GetCurrentFireMode()] = 0.f;
+		const AUTWeapon* DefWeapon = GetOuterAUTWeapon()->GetClass()->GetDefaultObject<AUTWeapon>();
+		GetOuterAUTWeapon()->Spread[GetOuterAUTWeapon()->GetCurrentFireMode()] = DefWeapon->Spread.IsValidIndex(GetOuterAUTWeapon()->GetCurrentFireMode()) ? DefWeapon->Spread[GetOuterAUTWeapon()->GetCurrentFireMode()] : 0.0f;
 	}
 	ShotTimeRemaining = -0.001f;
 	RefireCheckTimer();
@@ -36,6 +37,13 @@ void UUTWeaponStateFiringBurst::UpdateTiming()
 
 void UUTWeaponStateFiringBurst::RefireCheckTimer()
 {
+	// query bot to consider whether to still fire, switch modes, etc
+	AUTBot* B = Cast<AUTBot>(GetUTOwner()->Controller);
+	if (B != NULL)
+	{
+		B->CheckWeaponFiring();
+	}
+
 	uint8 CurrentFireMode = GetOuterAUTWeapon()->GetCurrentFireMode();
 	if (GetOuterAUTWeapon()->GetUTOwner()->GetPendingWeapon() != NULL || !GetOuterAUTWeapon()->HasAmmo(CurrentFireMode))
 	{
@@ -48,7 +56,8 @@ void UUTWeaponStateFiringBurst::RefireCheckTimer()
 			CurrentShot = 0;
 			if (GetOuterAUTWeapon()->Spread.IsValidIndex(CurrentFireMode))
 			{
-				GetOuterAUTWeapon()->Spread[CurrentFireMode] = 0.f;
+				const AUTWeapon* DefWeapon = GetOuterAUTWeapon()->GetClass()->GetDefaultObject<AUTWeapon>();
+				GetOuterAUTWeapon()->Spread[GetOuterAUTWeapon()->GetCurrentFireMode()] = DefWeapon->Spread.IsValidIndex(CurrentFireMode) ? DefWeapon->Spread[CurrentFireMode] : 0.0f;
 			}
 		}
 		GetOuterAUTWeapon()->OnContinuedFiring();
