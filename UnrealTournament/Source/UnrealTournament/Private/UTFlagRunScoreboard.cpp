@@ -524,7 +524,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 		if (bNeedReplay && GS->ScoringPlayerState)
 		{
 			bNeedReplay = false;
-			if (GetWorld()->DemoNetDriver)
+			if (GetWorld()->DemoNetDriver && (GetWorld()->GetTimeSeconds() - UTPlayerOwner->CreationTime > 15.0f + ScoreInfoDuration))
 			{
 				AUTCharacter* PawnToFocus = GS->ScoringPlayerState->GetUTCharacter();
 				FNetworkGUID FocusPawnGuid = GetWorld()->DemoNetDriver->GetGUIDForActor(PawnToFocus);
