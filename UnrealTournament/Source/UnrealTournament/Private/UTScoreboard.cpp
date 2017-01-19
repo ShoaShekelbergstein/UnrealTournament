@@ -172,7 +172,7 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 	}
 
 	// Draw the Background
-	FText StatusText = UTGameState->GetGameStatusText(true);
+	FText StatusText = UTGameState != nullptr ? UTGameState->GetGameStatusText(true) : FText::GetEmpty();
 	float StatusX, StatusY;
 	Canvas->StrLen(UTHUDOwner->SmallFont, StatusText.ToString(), StatusX, StatusY);
 
