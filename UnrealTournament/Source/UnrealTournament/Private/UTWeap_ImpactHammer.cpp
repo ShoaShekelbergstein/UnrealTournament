@@ -57,10 +57,10 @@ void AUTWeap_ImpactHammer::DrawWeaponCrosshair_Implementation(UUTHUDWidget* Weap
 	{
 		float CircleSize = 76.f;
 		float CrosshairScale = GetCrosshairScale(WeaponHudWidget->UTHUDOwner); 
-		WeaponHudWidget->DrawTexture(WeaponHudWidget->UTHUDOwner->HUDAtlas, 0, 0, CircleSize * CrosshairScale, CircleSize * CrosshairScale, 98, 936, CircleSize, CircleSize, 0.2f, FLinearColor::White, FVector2D(0.5f, 0.5f));
+		WeaponHudWidget->DrawTexture(WeaponHudWidget->UTHUDOwner->HUDAtlas, 0, 0, CircleSize * CrosshairScale, CircleSize * CrosshairScale, 98, 938, CircleSize, CircleSize, 0.2f, FLinearColor::White, FVector2D(0.5f, 0.5f));
 		FLinearColor ChargeColor = (ChargedMode->ChargeTime >= FullChargeTime * FullImpactChargePct) ? FLinearColor::Yellow : FLinearColor::White;
 		float ChargePct = FMath::Clamp(ChargedMode->ChargeTime / FullChargeTime, 0.f, 1.f);
-		WeaponHudWidget->DrawTexture(WeaponHudWidget->UTHUDOwner->HUDAtlas, 0, 0.5f * CircleSize * CrosshairScale*(1.f - ChargePct), CircleSize * CrosshairScale, CircleSize * CrosshairScale*ChargePct, 98, 936 + CircleSize*(1.f - ChargePct), CircleSize, CircleSize*ChargePct, 0.7f, ChargeColor, FVector2D(0.5f, 0.5f));
+		WeaponHudWidget->DrawTexture(WeaponHudWidget->UTHUDOwner->HUDAtlas, 0, 0.5f * CircleSize * CrosshairScale*(1.f - ChargePct), CircleSize * CrosshairScale, CircleSize * CrosshairScale*ChargePct, 98, 938 + CircleSize*(1.f - ChargePct), CircleSize, CircleSize*ChargePct, 0.7f, ChargeColor, FVector2D(0.5f, 0.5f));
 	}
 }
 
