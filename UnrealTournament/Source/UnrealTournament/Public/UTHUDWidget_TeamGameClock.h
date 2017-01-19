@@ -54,6 +54,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RenderObject")
 	FHUDRenderObject_Text GameStateText;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RoleStrings")
+		FText AttackText;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RoleStrings")
+		FText DefendText;
+
 	// The scale factor to use on the clock when it has to show hours
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RenderObject")
 	float AltClockScale;
