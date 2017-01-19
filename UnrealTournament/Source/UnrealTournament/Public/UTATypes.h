@@ -1997,6 +1997,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = INPUT)
 	uint32 bShowInUI : 1;
 
+	// If true, then this keybind is optional
+	UPROPERTY(BlueprintReadOnly, Category = INPUT)
+	uint32 bOptional : 1;
+
 	// These values are the meat of the key bind system.  Any GameAction can be used to build multiple Action/Axis/Custom mappings.  
 	// The game will clear and rebuild the key table each time it's loaded.  INI's are no longer used.
 
@@ -2019,13 +2023,14 @@ public:
 		bShowInUI = true;
 	}
 
-	FKeyConfigurationInfo(const FName& inGameActionTag, EControlCategory::Type inCategory, FKey inDefaultPrimaryKey, FKey inDefaultSecondayKey, FKey inGamepadKey, const FText& inMenuText)
+	FKeyConfigurationInfo(const FName& inGameActionTag, EControlCategory::Type inCategory, FKey inDefaultPrimaryKey, FKey inDefaultSecondayKey, FKey inGamepadKey, const FText& inMenuText, bool inbOptional)
 		: GameActionTag(inGameActionTag)
 		, Category(inCategory)
 		, MenuText(inMenuText)
 		, PrimaryKey(inDefaultPrimaryKey)
 		, SecondaryKey(inDefaultSecondayKey)
 		, GamepadKey(inGamepadKey)
+		, bOptional(inbOptional)
 	{
 		bShowInUI = true;
 	}

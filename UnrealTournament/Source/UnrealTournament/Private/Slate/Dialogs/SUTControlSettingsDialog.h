@@ -171,6 +171,9 @@ protected:
 	TSharedRef<SWidget> BuildMovementTab();
 
 	FSlateColor GetLabelColorAndOpacity(TSharedPtr<FKeyBindTracker> Tracker) const;
+
+	void SaveControlSettings();
+	virtual void EmptyBindResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 };
 
 #endif

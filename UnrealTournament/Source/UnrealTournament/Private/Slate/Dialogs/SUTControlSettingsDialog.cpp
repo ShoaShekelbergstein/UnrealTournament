@@ -327,7 +327,10 @@ FSlateColor SUTControlSettingsDialog::GetLabelColorAndOpacity(TSharedPtr<FKeyBin
 		if (Tracker->PrimaryKeyBindWidget.IsValid() && Tracker->PrimaryKeyBindWidget->GetKey() == EKeys::Invalid &&
 			Tracker->SecondaryKeyBindWidget.IsValid() && Tracker->SecondaryKeyBindWidget->GetKey() == EKeys::Invalid)
 		{
-			return FSlateColor(FLinearColor::Yellow);
+			if (!Tracker->KeyConfig->bOptional)
+			{
+				return FSlateColor(FLinearColor::Yellow);
+			}
 		}
 	}
 	return FSlateColor(FLinearColor::White);
@@ -767,31 +770,69 @@ FReply SUTControlSettingsDialog::OKClick()
 
 	// Look at all of the control settings and make sure they are all set.
 
+	bool bEmptyOptionals = false;
+	FString KeyList;
+
 	// Copy the binds back in to the profile
 	for (int32 i=0 ; i < BindList.Num(); i++)
 	{
 		if (BindList[i]->PrimaryKeyBindWidget->GetKey() == EKeys::Invalid &&
 			BindList[i]->SecondaryKeyBindWidget->GetKey() == EKeys::Invalid)
 		{
-
-			if (ScrollBox.IsValid())
+			if (!BindList[i]->KeyConfig->bOptional)
 			{
-				ScrollBox->ScrollDescendantIntoView(BindList[i]->PrimaryKeyBindWidget, false, SScrollBox::EDescendantScrollDestination::IntoView);
+				if (ScrollBox.IsValid())
+				{
+					ScrollBox->ScrollDescendantIntoView(BindList[i]->PrimaryKeyBindWidget, false, SScrollBox::EDescendantScrollDestination::IntoView);
+				}
+
+				GetPlayerOwner()->ShowMessage
+						(
+							NSLOCTEXT("SUTControlSettingsDialog", "EmptyBindingTitle", "Missing Key"),
+							FText::Format(NSLOCTEXT("SUTControlSettingsDialog", "EmptyBindingMessage", "The action '{0}' doesn't have a key bound to it.  Please set a key for it before saving."), BindList[i]->KeyConfig->MenuText),
+							UTDIALOG_BUTTON_OK, nullptr
+						);
+
+				return FReply::Handled();
 			}
-
-			GetPlayerOwner()->ShowMessage
-					(
-						NSLOCTEXT("SUTControlSettingsDialog", "EmptyBindingTitle", "Missing Key"),
-						FText::Format(NSLOCTEXT("SUTControlSettingsDialog", "EmptyBindingMessage", "The action '{0}' doesn't have a key bound to it.  Please set a key for it before saving."), BindList[i]->KeyConfig->MenuText),
-						UTDIALOG_BUTTON_OK, nullptr
-					);
-
-			return FReply::Handled();
-
+			else
+			{
+				KeyList += KeyList.IsEmpty() ? BindList[i]->KeyConfig->MenuText.ToString() : (TEXT("\n") + BindList[i]->KeyConfig->MenuText.ToString());
+				bEmptyOptionals = true;
+			}
 		}
 	}
 
+	if (bEmptyOptionals)
+	{
+		GetPlayerOwner()->ShowMessage
+		(
+			NSLOCTEXT("SUTControlSettingsDialog", "EmptyOptionalsTitle", "Missing Key Bindings"),
+			FText::Format(NSLOCTEXT("SUTControlSettingsDialog", "EmptyOptionalsMessage", "The following keys are not assigned:\n\n'{0}'\n\nAre you sure you want to save your settings?"), FText::FromString(KeyList)),
+			UTDIALOG_BUTTON_YES | UTDIALOG_BUTTON_NO,
+			FDialogResultDelegate::CreateSP(this, &SUTControlSettingsDialog::EmptyBindResult)
+		);
 
+	}
+	else
+	{
+		SaveControlSettings();
+	}
+
+	return FReply::Handled();
+}
+
+void SUTControlSettingsDialog::EmptyBindResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID)
+{
+	if (ButtonID == UTDIALOG_BUTTON_YES)
+	{
+		SaveControlSettings();
+	}
+}
+
+
+void SUTControlSettingsDialog::SaveControlSettings()
+{
 	// Copy the action settings back in to the profile;
 
 	UUTProfileSettings* ProfileSettings = PlayerOwner->GetProfileSettings();
@@ -835,8 +876,6 @@ FReply SUTControlSettingsDialog::OKClick()
 
 	GetPlayerOwner()->CloseDialog(SharedThis(this));
 	GetPlayerOwner()->SaveProfileSettings();
-
-	return FReply::Handled();
 }
 
 FReply SUTControlSettingsDialog::CancelClick()
@@ -920,6 +959,21 @@ void SUTControlSettingsDialog::OnKeyBindingChanged( FKey PreviousKey, FKey NewKe
 				TSharedPtr<FKeyBindTracker> OldBindInContention = BindList[i];
 
 				bool bOldPrimary = BindList[i]->PrimaryKeyBindWidget->GetKey() == NewKey;
+
+				if (BindList[i]->KeyConfig->bOptional) 
+				{
+					if (bOldPrimary)
+					{
+						OldBindInContention->PrimaryKeyBindWidget->SetKey(FKey(), true, false);
+					}
+					else
+					{
+						OldBindInContention->SecondaryKeyBindWidget->SetKey(FKey(), true, false);
+					}
+
+					continue;
+				}
+
 				auto OnDuplicateDialogResult = [bPrimaryKey, NewKey, PreviousKey, NewBindInContention, OldBindInContention, bOldPrimary](TSharedPtr<SCompoundWidget> Widget, uint16 Button)
 				{
 					if (Button == UTDIALOG_BUTTON_NO)
