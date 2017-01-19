@@ -4456,25 +4456,30 @@ void UUTLocalPlayer::YoutubeUploadResult(TSharedPtr<SCompoundWidget> Widget, uin
 	}
 	else
 	{
+		bool bNeedsYoutubeSignup = false;
 		SUTYoutubeUploadDialog* UploadDialog = (SUTYoutubeUploadDialog*)Widget.Get();
 		TSharedRef< TJsonReader<> > JsonReader = TJsonReaderFactory<>::Create(UploadDialog->UploadFailMessage);
 		TSharedPtr< FJsonObject > JsonObject;
-		FJsonSerializer::Deserialize(JsonReader, JsonObject);
-		const TSharedPtr<FJsonObject>* ErrorObject;
-		bool bNeedsYoutubeSignup = false;
-		if (JsonObject->TryGetObjectField(TEXT("error"), ErrorObject))
+		if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
 		{
-			const TArray<TSharedPtr<FJsonValue>>* ErrorArray;
-			if ((*ErrorObject)->TryGetArrayField(TEXT("errors"), ErrorArray))
+			if (JsonObject.IsValid())
 			{
-				for (int32 Idx = 0; Idx < ErrorArray->Num(); Idx++)
+				const TSharedPtr<FJsonObject>* ErrorObject;
+				if (JsonObject->TryGetObjectField(TEXT("error"), ErrorObject))
 				{
-					FString ErrorReason;
-					if ((*ErrorArray)[Idx]->AsObject()->TryGetStringField(TEXT("reason"), ErrorReason))
+					const TArray<TSharedPtr<FJsonValue>>* ErrorArray;
+					if ((*ErrorObject)->TryGetArrayField(TEXT("errors"), ErrorArray))
 					{
-						if (ErrorReason == TEXT("youtubeSignupRequired"))
+						for (int32 Idx = 0; Idx < ErrorArray->Num(); Idx++)
 						{
-							bNeedsYoutubeSignup = true;
+							FString ErrorReason;
+							if ((*ErrorArray)[Idx]->AsObject()->TryGetStringField(TEXT("reason"), ErrorReason))
+							{
+								if (ErrorReason == TEXT("youtubeSignupRequired"))
+								{
+									bNeedsYoutubeSignup = true;
+								}
+							}
 						}
 					}
 				}
