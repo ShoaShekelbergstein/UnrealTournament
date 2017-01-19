@@ -1294,9 +1294,12 @@ void SUTPlayerSettingsDialog::OnGroupTauntSelected(TSharedPtr<FString> NewSelect
 				PlayerPreviewMesh->PlayGroupTaunt(TSubclassOf<AUTGroupTaunt>(TauntClass));
 				if (!bSkipPlayingGroupTauntBGMusic && TauntClass->GetDefaultObject<AUTGroupTaunt>()->BGMusic)
 				{
-					UGameplayStatics::PlaySound2D(PlayerPreviewMesh->GetWorld(), TauntClass->GetDefaultObject<AUTGroupTaunt>()->BGMusic);
+					if (GroupTauntAudio)
+					{
+						GroupTauntAudio->Stop();
+					}
+					GroupTauntAudio = UGameplayStatics::SpawnSound2D(PlayerPreviewMesh->GetWorld(), TauntClass->GetDefaultObject<AUTGroupTaunt>()->BGMusic);
 				}
-				//PlayerPreviewMesh->GetMesh()->PlayAnimation(TauntClass->GetDefaultObject<AUTGroupTaunt>()->TauntMontage, true);
 			}
 		}
 	}

@@ -69,6 +69,8 @@ protected:
 	int32 OldSSRQuality;
 
 	AActor* PreviewEnvironment;
+	
+	UAudioComponent* GroupTauntAudio;
 
 	TSharedPtr<SEditableTextBox> PlayerName;
 	TSharedPtr<SSlider> WeaponBobScaling, ViewBobScaling;
@@ -181,6 +183,5 @@ protected:
 	FReply SelectAvatar(int32 Index, FName Avatar);
 	FName SelectedAvatar;
 	TArray<FName> AvatarList;
-
 };
 #endif
