@@ -88,15 +88,17 @@ public:
 		}
 	}
 
-	virtual bool CanDodge() const override
+	virtual bool CanDodgeInternal_Implementation() const override
 	{
 		bool bSavedCanJump = UTCharacterMovement->MovementState.bCanJump;
 		if (TeleportDodgeDistance > 0.0f)
 		{
 			UTCharacterMovement->MovementState.bCanJump = true;
+			UTCharacterMovement->NavAgentProps.bCanJump = true;
 		}
-		const bool bResult = Super::CanDodge();
+		const bool bResult = Super::CanDodgeInternal_Implementation();
 		UTCharacterMovement->MovementState.bCanJump = bSavedCanJump;
+		UTCharacterMovement->NavAgentProps.bCanJump = bSavedCanJump;
 		return bResult;
 	}
 
@@ -117,21 +119,21 @@ public:
 				const FVector OldLoc = GetActorLocation();
 				FHitResult Hit;
 				FVector TeleportDest;
-				if (GetWorld()->LineTraceSingleByChannel(Hit, OldLoc, OldLoc + DodgeDir * TeleportDodgeDistance, ECC_Pawn))
+				if (GetWorld()->LineTraceSingleByChannel(Hit, OldLoc, OldLoc + DodgeDir * TeleportDodgeDistance, ECC_Pawn, FCollisionQueryParams(NAME_None, false, this)))
 				{
-					TeleportDest = Hit.Location - Hit.Normal * GetCapsuleComponent()->GetUnscaledCapsuleRadius();
+					TeleportDest = Hit.Location - DodgeDir * GetCapsuleComponent()->GetUnscaledCapsuleRadius();
 				}
 				else
 				{
 					TeleportDest = OldLoc + DodgeDir * (TeleportDodgeDistance - GetCapsuleComponent()->GetUnscaledCapsuleRadius());
 				}
-				if (TeleportTo(TeleportDest, GetActorRotation()))
+				if (ACharacter::TeleportTo(TeleportDest, GetActorRotation()))
 				{
 					if (TeleportDodgeEffect != nullptr)
 					{
 						GetWorld()->SpawnActor<AUTReplicatedEmitter>(TeleportDodgeEffect, OldLoc, GetActorRotation());
 					}
-					UTCharacterMovement->DodgeResetTime = GetWorld()->TimeSeconds + TeleportDodgeCooldown;
+					UTCharacterMovement->DodgeResetTime = UTCharacterMovement->GetCurrentMovementTime() + TeleportDodgeCooldown;
 					return true;
 				}
 				else

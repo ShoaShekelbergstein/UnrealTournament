@@ -1177,7 +1177,7 @@ public:
 
 	/** Return true if character is currently able to dodge. */
 	UFUNCTION(BlueprintCallable, Category = "Pawn|Character")
-	virtual bool CanDodge() const;
+	bool CanDodge() const;
 
 	/** Return true if character is currently able to slide. */
 	UFUNCTION(BlueprintCallable, Category = "Pawn|Character")
