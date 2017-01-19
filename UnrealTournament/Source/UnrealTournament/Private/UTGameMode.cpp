@@ -4996,7 +4996,7 @@ void AUTGameMode::AddInactivePlayer(APlayerState* PlayerState, APlayerController
 bool AUTGameMode::FindInactivePlayer(APlayerController* PC)
 {
 	// don't bother for spectators
-	if (PC->PlayerState->bOnlySpectator)
+	if (!PC || !PC->PlayerState || PC->PlayerState->bOnlySpectator)
 	{
 		return false;
 	}
