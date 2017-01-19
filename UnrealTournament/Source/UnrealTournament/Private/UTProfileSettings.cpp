@@ -611,7 +611,7 @@ bool UUTProfileSettings::VersionFixup()
 
 	for (int32 i=0; i < ObsoleteKeyIndexes.Num(); i++)
 	{
-		GameActions.RemoveAt(i);	
+		GameActions.RemoveAt(ObsoleteKeyIndexes[i]);	
 	}
 
 
