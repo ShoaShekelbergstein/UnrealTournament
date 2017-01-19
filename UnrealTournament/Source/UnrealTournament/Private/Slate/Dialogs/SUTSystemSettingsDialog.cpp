@@ -459,14 +459,7 @@ void SUTSystemSettingsDialog::Construct(const FArguments& InArgs)
 	UUTProfileSettings* ProfileSettings = GetPlayerOwner()->GetProfileSettings();
 	if (ProfileSettings && !ProfileSettings->MatchmakingRegion.IsEmpty())
 	{
-		for (int32 i = 0; i < MatchmakingRegionList.Num(); i++)
-		{
-			if (*MatchmakingRegionList[i].Get() == ProfileSettings->MatchmakingRegion)
-			{
-				MatchmakingRegion->SetSelectedItem(MatchmakingRegionList[i]);
-				break;
-			}
-		}
+		MatchmakingRegion->SetSelectedItem( MatchmakingRegionList[ProfileSettings->MatchmakingRegion.Equals(TEXT("eu"), ESearchCase::IgnoreCase) ? 1 :0]);
 	}
 	bChangedMatchmakingRegion = false;
 
@@ -561,8 +554,8 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildGeneralTab()
 		CurrentResIndex = ResList.Add(MakeShareable(new FString(FString::Printf(TEXT("%ix%i"), int32(ViewportSize.X), int32(ViewportSize.Y)))));
 	}
 	
-	MatchmakingRegionList.Add(MakeShareable(new FString(TEXT("NA"))));
-	MatchmakingRegionList.Add(MakeShareable(new FString(TEXT("EU"))));
+	MatchmakingRegionList.Add(MakeShareable(new FString(TEXT("North American"))));
+	MatchmakingRegionList.Add(MakeShareable(new FString(TEXT("Europe"))));
 
 	DisplayModeList.Add(MakeShareable(new FString(NSLOCTEXT("SUTSystemSettingsDialog", "DisplayModeFullscreen", "Fullscreen").ToString())));
 	DisplayModeList.Add(MakeShareable(new FString(NSLOCTEXT("SUTSystemSettingsDialog", "DisplayModeWindowedFullscreen", "Windowed (Fullscreen)").ToString())));
@@ -743,7 +736,7 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildGeneralTab()
 				SNew(STextBlock)
 				.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
 				.Text(NSLOCTEXT("SUTSystemSettingsDialog", "MatchmakingRegion", "Matchmaking Region"))
-				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "MatchmakingRegion_Tooltip", "Which region that ranked matchmaking will use. NA = North America, EU = Europe.")))
+				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "MatchmakingRegion_Tooltip", "Which region that ranked matchmaking will use.")))
 			]
 		]
 		+ SHorizontalBox::Slot()
@@ -1336,7 +1329,7 @@ FReply SUTSystemSettingsDialog::OKClick()
 		TSharedPtr<FString> MatchmakingRegionSelection = MatchmakingRegion->GetSelectedItem();
 		if (MatchmakingRegionSelection.IsValid() && bChangedMatchmakingRegion)
 		{
-			ProfileSettings->MatchmakingRegion = *MatchmakingRegionSelection.Get();
+			ProfileSettings->MatchmakingRegion = (MatchmakingRegionSelection.Get()->Equals(TEXT("europe"),ESearchCase::IgnoreCase)) ?	TEXT("EU") : TEXT("NA");
 			bProfileNeedsUpdate = true;
 		}
 
