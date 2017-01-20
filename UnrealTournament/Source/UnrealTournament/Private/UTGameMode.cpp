@@ -353,7 +353,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	bPlayPlayerIntro = EvalBoolOptions(InOpt, bPlayPlayerIntro);
 
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("Dev"));
-	bDevServer = EvalBoolOptions(InOpt, bDevServer);
+	bDevServer = EvalBoolOptions(InOpt, bDevServer) || (GetWorld()->WorldType == EWorldType::PIE);
 
 	if (UGameplayStatics::HasOption(Options, TEXT("Challenge")) && (GetNetMode() == NM_Standalone))
 	{
