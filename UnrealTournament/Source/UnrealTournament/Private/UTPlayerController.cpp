@@ -2407,6 +2407,25 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 	}
 	else if (P != NULL)
 	{
+		UPrimitiveComponent* UpdatedComp = P->UTCharacterMovement ? Cast<UPrimitiveComponent>(P->UTCharacterMovement->UpdatedComponent) : nullptr;
+		if (UpdatedComp)
+		{
+			for (int32 i = 0; i < UpdatedComp->MoveIgnoreActors.Num(); i++)
+			{
+				AUTCharacter* OverlappedChar = Cast<AUTCharacter>(UpdatedComp->MoveIgnoreActors[i]);
+				// if overlapping, hide
+				if (OverlappedChar)
+				{
+					FVector Diff = OverlappedChar->GetActorLocation() - P->GetActorLocation();
+					// check for 2D overlap, and eye position with capsule radius of other capsule height extent.
+					if ((Diff.SizeSquared2D() < 0.81f*FMath::Square(P->GetCapsuleComponent()->GetUnscaledCapsuleRadius() + OverlappedChar->GetCapsuleComponent()->GetUnscaledCapsuleRadius())) 
+						&& (FMath::Abs(Diff.Z + P->BaseEyeHeight) < P->GetCapsuleComponent()->GetUnscaledCapsuleRadius() + OverlappedChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()))
+					{
+						HideComponentTree(OverlappedChar->GetMesh(), HiddenComponents);
+					}
+				}
+			}
+		}
 		// hide first person mesh (but not attachments) if hidden weapons
 		if (GetWeaponHand() == EWeaponHand::HAND_Hidden || (P->GetWeapon() != NULL && P->GetWeapon()->ZoomState != EZoomState::EZS_NotZoomed))
 		{

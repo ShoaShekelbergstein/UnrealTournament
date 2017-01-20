@@ -534,6 +534,21 @@ void UUTCharacterMovement::TickComponent(float DeltaTime, enum ELevelTick TickTy
 		return;
 	}
 
+	// FIXMESTEVE do when character gets team, not every tick
+	// FIXMESTEVE TODO - need to check overlaps and push apart
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (GS && !GS->bTeamCollision && UTOwner && Cast<UPrimitiveComponent>(UpdatedComponent))
+	{
+		for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
+		{
+			AUTCharacter* Char = It->IsValid() ? Cast<AUTCharacter>((*It).Get()) : nullptr;
+			if (Char && (UTOwner != Char))
+			{
+				((UPrimitiveComponent *)(UpdatedComponent))->IgnoreActorWhenMoving(Char, GS->OnSameTeam(UTOwner, Char));
+			}
+		}
+	}
+
 	if (CharacterOwner->Role > ROLE_SimulatedProxy)
 	{
 		if (CharacterOwner->Role == ROLE_Authority)
@@ -1254,9 +1269,9 @@ void UUTCharacterMovement::ApplyVelocityBraking(float DeltaTime, float Friction,
 
 void UUTCharacterMovement::CalcVelocity(float DeltaTime, float Friction, bool bFluid, float BrakingDeceleration)
 {
+	AUTCharacter* UTOwner = Cast<AUTCharacter>(CharacterOwner);
 	if (MovementMode == MOVE_Walking)
 	{
-		AUTCharacter* UTOwner = Cast<AUTCharacter>(CharacterOwner);
 		if (UTOwner != NULL)
 		{
 			Friction *= (1.0f - UTOwner->GetWalkMovementReductionPct());
@@ -1273,6 +1288,41 @@ void UUTCharacterMovement::CalcVelocity(float DeltaTime, float Friction, bool bF
 		}
 	}
 	Super::CalcVelocity(DeltaTime, Friction, bFluid, BrakingDeceleration);
+
+	// force away from stopped teammates
+	UPrimitiveComponent* UpdatedPrim = Cast<UPrimitiveComponent>(UpdatedComponent);
+	if (UpdatedPrim && UTOwner && ((Acceleration.IsZero() && (MovementMode != MOVE_Falling)) || (Velocity.Size2D() < MaxWalkSpeedCrouched)))
+	{
+		for (int32 i = 0; i < UpdatedPrim->MoveIgnoreActors.Num(); i++)
+		{
+			AUTCharacter* OverlappedChar = Cast<AUTCharacter>(UpdatedPrim->MoveIgnoreActors[i]);
+			// if overlapping, force away
+			if (OverlappedChar)
+			{
+				FVector Diff = OverlappedChar->GetActorLocation() - UTOwner->GetActorLocation();
+				// check for overlap.
+				if ((Diff.SizeSquared2D() < 1.21f * FMath::Square(UTOwner->GetCapsuleComponent()->GetUnscaledCapsuleRadius() + OverlappedChar->GetCapsuleComponent()->GetUnscaledCapsuleRadius())) 
+					&& (FMath::Abs(Diff.Z) < UTOwner->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() + OverlappedChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()))
+				{
+					if (!OverlappedChar->UTCharacterMovement || OverlappedChar->UTCharacterMovement->Acceleration.IsZero() || (OverlappedChar->GetVelocity().Size2D() < MaxWalkSpeedCrouched))
+					{
+						float VelZ = Velocity.Z;
+						FVector DeflectionDir = Velocity.IsNearlyZero() ? -1.f*Diff.SafeNormal() : (Velocity ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
+						if ((DeflectionDir | Diff) > 0.f)
+						{
+							DeflectionDir *= -1.f;
+						}
+						Velocity = FMath::Max(0.f, Velocity.Size() - 0.7f*MaxWalkSpeedCrouched) * Velocity.GetSafeNormal() + 0.7f*MaxWalkSpeedCrouched * DeflectionDir.GetSafeNormal();
+						if (MovementMode == MOVE_Falling)
+						{
+							Velocity.Z = VelZ;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	//UE_LOG(UTNet, Warning, TEXT("At %f DeltaTime %f Velocity is %f %f %f from acceleration %f %f slide %d"), GetCurrentSynchTime(), DeltaTime, Velocity.X, Velocity.Y, Velocity.Z, Acceleration.X, Acceleration.Y, bIsFloorSliding);
 
 	// workaround for engine path following code not setting Acceleration correctly

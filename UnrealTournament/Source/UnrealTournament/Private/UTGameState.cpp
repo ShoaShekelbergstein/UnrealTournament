@@ -45,6 +45,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	TauntSelectionIndex = 0;
 	bPersistentKillIconMessages = false;
 	bTeamProjHits = false;
+	bTeamCollision = false;
 
 	// We want to be ticked.
 	PrimaryActorTick.bCanEverTick = true;

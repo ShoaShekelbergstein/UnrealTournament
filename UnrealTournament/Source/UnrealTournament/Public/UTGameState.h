@@ -79,6 +79,10 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
 		uint32 bTeamProjHits : 1;
 
+	/** If true, teammates block each others movement. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = GameState)
+		uint32 bTeamCollision : 1;
+
 	/**If enabled, the server grants special control for casters*/
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
 	uint32 bCasterControl : 1;
