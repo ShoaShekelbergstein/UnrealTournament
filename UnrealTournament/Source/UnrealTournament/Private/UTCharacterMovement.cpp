@@ -1307,7 +1307,7 @@ void UUTCharacterMovement::CalcVelocity(float DeltaTime, float Friction, bool bF
 					if (!OverlappedChar->UTCharacterMovement || OverlappedChar->UTCharacterMovement->Acceleration.IsZero() || (OverlappedChar->GetVelocity().Size2D() < MaxWalkSpeedCrouched))
 					{
 						float VelZ = Velocity.Z;
-						FVector DeflectionDir = Velocity.IsNearlyZero() ? -1.f*Diff.SafeNormal() : (Velocity ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
+						FVector DeflectionDir = Velocity.IsNearlyZero() ? -1.f*Diff.GetSafeNormal() : (Velocity ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
 						if ((DeflectionDir | Diff) > 0.f)
 						{
 							DeflectionDir *= -1.f;

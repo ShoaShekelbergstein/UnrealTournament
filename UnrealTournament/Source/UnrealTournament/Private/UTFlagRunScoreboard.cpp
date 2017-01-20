@@ -457,7 +457,6 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 	{
 		float BonusXL, BonusYL;
 		UFont* BonusFont = UTHUDOwner->MediumFont;
-		FFormatNamedArguments Args;
 		Args.Add("Bonus", FText::AsNumber(FMath::Abs(PendingTiebreak)));
 		FText BonusText = FText::Format(NSLOCTEXT("FlagRun", "BonusTime", "Bonus Time +{Bonus}"), Args);
 		Canvas->StrLen(BonusFont, BonusText.ToString(), BonusXL, BonusYL);
