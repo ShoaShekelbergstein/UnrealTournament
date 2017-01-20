@@ -545,7 +545,6 @@ bool UUTProfileSettings::VersionFixup()
 	}
 
 	int32 WeaponWheelIndex = -1;
-	int32 SelectTransIndex = -1;
 
 	bool bMiddleMouseUsed = false;
 	bool bThumbMouseUsed = false;
@@ -565,7 +564,7 @@ bool UUTProfileSettings::VersionFixup()
 	{
 		if (GameActions[i].GameActionTag == FName(TEXT("TurnLeft")) || GameActions[i].GameActionTag == FName(TEXT("TurnRight")) ||
 			GameActions[i].GameActionTag == FName(TEXT("SelectTrans")) || GameActions[i].GameActionTag == FName(TEXT("BuyMenu")) ||
-			GameActions[i].GameActionTag == FName(TEXT("PushToTalk")) )		
+			GameActions[i].GameActionTag == FName(TEXT("PushToTalk")) || GameActions[i].GameActionTag == FName(TEXT("SelectTrans")) )
 		{
 			ObsoleteKeyIndexes.Add(i);
 			continue;				
@@ -575,12 +574,6 @@ bool UUTProfileSettings::VersionFixup()
 		{
 			GameActions[i].CustomBindings.Empty();
 			GameActions[i].AddCustomBinding("SwitchWeapon 10");
-		}
-		else if (GameActions[i].GameActionTag == FName(TEXT("SelectTrans")) )
-		{
-			// this action will be deleted, so continue the loop without looking for the keybinds.
-			SelectTransIndex = i;
-			continue;
 		}
 		else if (GameActions[i].GameActionTag == FName(TEXT("ToggleWepaonWheel")) )
 		{
@@ -608,13 +601,7 @@ bool UUTProfileSettings::VersionFixup()
 			}
 		}
 	}
-
-	for (int32 i=0; i < ObsoleteKeyIndexes.Num(); i++)
-	{
-		GameActions.RemoveAt(ObsoleteKeyIndexes[i]);	
-	}
-
-
+		
 	// Fix up a default for the Weapon Wheel
 	if (WeaponWheelIndex >=0)
 	{
@@ -629,9 +616,9 @@ bool UUTProfileSettings::VersionFixup()
 		}
 	}
 
-	if (SelectTransIndex >= 0)
+	for (int32 i = ObsoleteKeyIndexes.Num(); i >= 0; i--)
 	{
-		GameActions.RemoveAt(SelectTransIndex);
+		GameActions.RemoveAt(ObsoleteKeyIndexes[i]);
 	}
 
 	//New setting, defaulting it to on
