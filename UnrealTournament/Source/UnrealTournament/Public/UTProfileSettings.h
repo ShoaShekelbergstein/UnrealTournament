@@ -99,9 +99,12 @@ public:
 
 	// ======================== Character Settings
 
-	// What is the Player name associated with this profile
+	// What is the Player name associated with this profile FIXMESTEVE DO WE NEED?
 	UPROPERTY(BlueprintReadOnly, Category = Character)
 	FString PlayerName;
+
+	UPROPERTY(BlueprintReadOnly, Category = Character)
+	FString ClanName;
 
 	UPROPERTY(BlueprintReadOnly, Category = Character)
 	FString HatPath;

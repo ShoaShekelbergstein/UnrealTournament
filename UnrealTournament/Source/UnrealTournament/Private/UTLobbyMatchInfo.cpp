@@ -387,33 +387,6 @@ void AUTLobbyMatchInfo::ServerStartMatch_Implementation()
 			return;
 		}
 
-		// Parties invalidate the balanced team code
-		/*
-		AUTTeamGameMode* TeamGame = Cast<AUTTeamGameMode>(CurrentRuleset->GetDefaultGameModeObject());
-		if (TeamGame != NULL)
-		{
-			bool bBalanceTeams = AUTBaseGameMode::EvalBoolOptions(UGameplayStatics::ParseOption(CurrentRuleset->GameOptions, TEXT("BalanceTeams")), TeamGame->bBalanceTeams);
-			if (bBalanceTeams)
-			{
-				 // don't allow starting if the teams aren't balanced
-				TArray<int32> TeamSizes = GetTeamSizes();
-				for (int32 i = 0; i < TeamSizes.Num(); i++)
-				{
-					for (int32 j = 0; j < TeamSizes.Num(); j++)
-					{
-						if (FMath::Abs<int32>(TeamSizes[i] - TeamSizes[j]) > 1)
-						{
-							GetOwnerPlayerState()->ClientMatchError(NSLOCTEXT("LobbyMessage", "UnbalancedTeams", "The teams must be balanced to start the match."));
-							return;
-						}
-					}
-				}
-			}
-		}
-		*/
-
-		// TODO: need to check for ready ups on server side
-
 		if (CurrentState == ELobbyMatchState::Setup)
 		{
 			LaunchMatch(false, 2);

@@ -634,6 +634,7 @@ void UUTProfileSettings::ApplyAllSettings(UUTLocalPlayer* ProfilePlayer)
 {
 	ProfilePlayer->bSuppressToastsInGame = bSuppressToastsInGame;
 	ProfilePlayer->SetNickname(PlayerName);
+	ProfilePlayer->SetClanName(ClanName);
 	ProfilePlayer->SetCharacterPath(CharacterPath);
 	ProfilePlayer->SetHatPath(HatPath);
 	ProfilePlayer->SetLeaderHatPath(LeaderHatPath);

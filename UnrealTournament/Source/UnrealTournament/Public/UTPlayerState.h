@@ -186,10 +186,6 @@ public:
 	UPROPERTY()
 		uint32 bAnnounceWeaponReward : 1;
 
-	/** Set if need to retry name change to account name. */
-	UPROPERTY()
-		FString RequestedName;
-
 	/** Last displayed ready state. */
 	uint8 LastReadyState;
 
@@ -359,11 +355,11 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = PlayerState, replicated)
 	bool bIsRconAdmin;
 
-	UPROPERTY(BlueprintReadOnly, replicated, Category = PlayerState)
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
 	bool bIsDemoRecording;
 
 	/** Whether this player currently has a limited number of lives. */
-	UPROPERTY(BlueprintReadOnly, replicated, Category = PlayerState)
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
 		bool bHasLifeLimit;
 
 	UPROPERTY()
@@ -374,6 +370,9 @@ public:
 
 	UPROPERTY()
 	FString PartyLeader;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
+		FString ClanName;
 
 	// Player Stats 
 
@@ -788,9 +787,14 @@ public:
 	void StatsWriteComplete(FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded);
 	virtual void AddMatchToStats(const FString& MapName, const FString& GameType, const TArray<class AUTTeamInfo*>* Teams, const TArray<APlayerState*>* ActivePlayerStates, const TArray<APlayerState*>* InactivePlayerStates);
 	
+	UPROPERTY(BlueprintReadOnly)
+		FString EpicAccountName;
+
 	/** Cached clamped player name for display. */
 	UPROPERTY(BlueprintReadWrite)
 	FString ClampedName;
+
+	virtual FString ValidatePlayerName();
 
 	/** True if clamped name is currently valid. */
 	bool bHasValidClampedName;

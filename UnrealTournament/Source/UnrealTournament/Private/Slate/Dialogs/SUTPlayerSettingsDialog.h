@@ -72,7 +72,7 @@ protected:
 	
 	UAudioComponent* GroupTauntAudio;
 
-	TSharedPtr<SEditableTextBox> PlayerName;
+	TSharedPtr<SEditableTextBox> ClanName;
 	TSharedPtr<SSlider> WeaponBobScaling, ViewBobScaling;
 	FLinearColor SelectedPlayerColor;
 

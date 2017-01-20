@@ -207,11 +207,18 @@ class UNREALTOURNAMENT_API UUTLocalPlayer : public ULocalPlayer
 	GENERATED_UCLASS_BODY()
 
 public:
+
+	UPROPERTY()
+		FString ClanName;
+
+	virtual FString SetClanName(FString NewClanName);
+
 	virtual ~UUTLocalPlayer();
 
 	virtual bool IsMenuGame();
 
 	virtual FString GetNickname() const;
+	virtual FString GetClanName() const;
 	virtual FText GetAccountSummary() const;
 	virtual FString GetAccountName() const;
 	virtual FText GetAccountDisplayName() const;
@@ -473,7 +480,7 @@ protected:
 	bool bInitialSignInAttempt;
 
 	// Holds the local copy of the player nickname.
-	UPROPERTY(config)
+	UPROPERTY()
 	FString PlayerNickname;
 
 	// What is the Epic ID associated with this player.

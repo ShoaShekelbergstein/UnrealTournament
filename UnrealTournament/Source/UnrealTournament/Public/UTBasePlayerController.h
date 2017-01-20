@@ -39,6 +39,14 @@ class UNREALTOURNAMENT_API AUTBasePlayerController : public APlayerController , 
 
 	virtual void SetName(const FString& S);
 
+	/** Change name of server */
+	UFUNCTION(reliable, server, WithValidation)
+		void ServerChangeClanName(const FString& S);
+
+	/** Tries to set the player's clan tag to the given name. */
+	UFUNCTION(exec)
+		virtual void ClanName(const FString& S);
+
 	/**	Will popup the in-game menu	 **/
 	UFUNCTION(exec, BlueprintCallable, Category = "UI")
 	virtual void ShowMenu(const FString& Parameters);

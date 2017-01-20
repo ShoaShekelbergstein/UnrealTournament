@@ -5474,31 +5474,6 @@ void AUTPlayerController::ClientDrawLine_Implementation(FVector Start, FVector E
 	DrawDebugLine(GetWorld(), Start, End, Color, (Duration != 0.f), Duration);
 }
 
-void AUTPlayerController::RealNames()
-{
-	if (MyUTHUD && MyUTHUD->MyUTScoreboard)
-	{
-		MyUTHUD->MyUTScoreboard->bForceRealNames = true;
-		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS)
-		{
-			for (int32 i = 0; i < GS->PlayerArray.Num(); i++)
-			{
-				AUTPlayerState* PS = Cast<AUTPlayerState>(GS->PlayerArray[i]);
-				if (PS)
-				{
-					TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*PS->StatsID));
-					FText EpicAccountName = GS->GetEpicAccountNameForAccount(UserId);
-					if (!EpicAccountName.IsEmpty())
-					{
-						PS->PlayerName = EpicAccountName.ToString();
-					}
-				}
-			}
-		}
-	}
-}
-
 void AUTPlayerController::ClientReceiveLocalizedMessage_Implementation(TSubclassOf<ULocalMessage> Message, int32 Switch, APlayerState* RelatedPlayerState_1, APlayerState* RelatedPlayerState_2, UObject* OptionalObject)
 {
 	Super::ClientReceiveLocalizedMessage_Implementation(Message, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);

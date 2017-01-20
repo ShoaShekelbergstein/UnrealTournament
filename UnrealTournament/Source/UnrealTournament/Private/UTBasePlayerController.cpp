@@ -81,26 +81,14 @@ void AUTBasePlayerController::SetupInputComponent()
 
 	Super::SetupInputComponent();
 	InputComponent->BindAction("ShowMenu", IE_Released, this, &AUTBasePlayerController::execShowMenu);
-
-
-
 }
 
 void AUTBasePlayerController::SetName(const FString& S)
 {
-	if (!S.IsEmpty())
-	{
-		UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
-		if (LocalPlayer != NULL)
-		{
-			LocalPlayer->SetNickname(S);
-			UUTProfileSettings* ProfileSettings = GetProfileSettings();
-			if (ProfileSettings != nullptr)
-			{
-				LocalPlayer->SaveProfileSettings();
-			}
-		}
-	}
+}
+
+void AUTBasePlayerController::ClanName(const FString& S)
+{
 }
 
 void AUTBasePlayerController::execShowMenu()
@@ -124,6 +112,19 @@ void AUTBasePlayerController::HideMenu()
 	{
 		LP->HideMenu();
 	}
+}
+
+void AUTBasePlayerController::ServerChangeClanName_Implementation(const FString& S)
+{
+	if (UTPlayerState)
+	{
+		UTPlayerState->ClanName = S;
+	}
+}
+
+bool AUTBasePlayerController::ServerChangeClanName_Validate(const FString& S)
+{
+	return true;
 }
 
 #if !UE_SERVER

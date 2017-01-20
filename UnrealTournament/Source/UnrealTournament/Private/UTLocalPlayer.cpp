@@ -221,7 +221,6 @@ void UUTLocalPlayer::CleanUpOnlineSubSystyem()
 			VoiceInt->ClearOnPlayerTalkingStateChangedDelegate_Handle(SpeakerDelegate);
 		}
 	}
-
 }
 
 bool UUTLocalPlayer::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
@@ -243,7 +242,25 @@ bool UUTLocalPlayer::IsAFriend(FUniqueNetIdRepl PlayerId)
 
 FString UUTLocalPlayer::GetNickname() const
 {
-	return PlayerNickname;
+	FString OfficialName = Super::GetNickname();
+	return OfficialName.IsEmpty() ? PlayerNickname : OfficialName;
+}
+
+FString UUTLocalPlayer::SetClanName(FString NewClanName)
+{
+	ClanName = NewClanName;
+	if (Cast<AUTBasePlayerController>(PlayerController))
+	{
+		Cast<AUTBasePlayerController>(PlayerController)->ServerChangeClanName(ClanName);
+	}
+	CurrentProfileSettings->ClanName = ClanName;
+	SetDefaultURLOption(TEXT("Clan"), ClanName);
+	return ClanName;
+}
+
+FString UUTLocalPlayer::GetClanName() const
+{
+	return ClanName;
 }
 
 FText UUTLocalPlayer::GetAccountDisplayName() const
@@ -1814,11 +1831,8 @@ void UUTLocalPlayer::SaveProfileSettings()
 {
 	if ( CurrentProfileSettings != NULL )
 	{
-		if (PlayerController && PlayerController->PlayerState)
-		{
-			CurrentProfileSettings->PlayerName = PlayerController->PlayerState->PlayerName;
-		}
-
+		CurrentProfileSettings->PlayerName = GetNickname();
+		CurrentProfileSettings->ClanName = GetClanName();
 		CurrentProfileSettings->SettingsRevisionNum = CURRENT_PROFILESETTINGS_VERSION;
 		CurrentProfileSettings->bNeedProfileWriteOnLevelChange = false;
 		CurrentProfileSettings->SettingsSavedOn = FDateTime::UtcNow();
@@ -1944,20 +1958,21 @@ void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueN
 	}
 
 	HideSavingWidget();
-
-
 }
 
 void UUTLocalPlayer::SetNickname(FString NewName)
 {
-	if (!NewName.IsEmpty())
+	GetNickname();
+
+	// safety in case offline and no name set FIXMESTEVE make sure needed.
+	if (PlayerNickname.IsEmpty() && !NewName.IsEmpty())
 	{
 		PlayerNickname = NewName;
-		SaveConfig();
 		if (PlayerController)
 		{
 			PlayerController->ServerChangeName(NewName);
 		}
+		CurrentProfileSettings->PlayerName = PlayerNickname;
 	}
 }
 
@@ -3693,7 +3708,6 @@ int32 UUTLocalPlayer::GetRecentPlayersList(TArray< FUTFriend >& OutRecentPlayers
 	return RetVal;
 }
 
-
 void UUTLocalPlayer::OnTauntPlayed(AUTPlayerState* PS, TSubclassOf<AUTTaunt> TauntToPlay, float EmoteSpeed)
 {
 #if !UE_SERVER
@@ -3731,7 +3745,6 @@ void UUTLocalPlayer::SendFriendRequest(AUTPlayerState* DesiredPlayerState)
 		RequestFriendship(DesiredPlayerState->UniqueId.GetUniqueNetId());
 	}
 }
-
 
 bool UUTLocalPlayer::ContentExists(const FPackageRedirectReference& Redirect)
 {
@@ -3794,7 +3807,6 @@ bool UUTLocalPlayer::RequiresDLCWarning()
 	}
 
 	return true;
-
 }
 
 void UUTLocalPlayer::ShowDLCWarning()
@@ -3907,7 +3919,6 @@ int32 UUTLocalPlayer::GetDownloadBytes()
 	return 0;
 }
 
-
 float UUTLocalPlayer::GetDownloadProgress()
 {
 	UUTGameViewportClient* UTGameViewport = Cast<UUTGameViewportClient>(ViewportClient);
@@ -3918,10 +3929,6 @@ float UUTLocalPlayer::GetDownloadProgress()
 
 	return 0.0f;
 }
-
-
-
-
 
 bool UUTLocalPlayer::IsDownloadInProgress()
 {
@@ -3951,6 +3958,7 @@ void UUTLocalPlayer::HandleNetworkFailureMessage(enum ENetworkFailure::Type Fail
 		BasePlayerController->HandleNetworkFailureMessage(FailureType, ErrorString);
 	}
 }
+
 void UUTLocalPlayer::OpenLoadout(bool bBuyMenu)
 {
 #if !UE_SERVER
@@ -3981,6 +3989,7 @@ void UUTLocalPlayer::OpenLoadout(bool bBuyMenu)
 	}
 #endif
 }
+
 void UUTLocalPlayer::CloseLoadout()
 {
 #if !UE_SERVER
@@ -4014,6 +4023,7 @@ void UUTLocalPlayer::OpenMapVote(AUTGameState* GameState)
 	}
 #endif
 }
+
 void UUTLocalPlayer::CloseMapVote()
 {
 #if !UE_SERVER

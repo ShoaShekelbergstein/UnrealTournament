@@ -65,7 +65,6 @@ UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) 
 	ReadyColor = FLinearColor::White;
 	ReadyScale = 1.f;
 	bDrawMinimapInScoreboard = true;
-	bForceRealNames = false;
 	MinimapPadding = 12.f;
 }
 
@@ -358,8 +357,17 @@ void UUTScoreboard::DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float R
 	}
 
 	float NameXL, NameYL;
+	float ClanXL = 0.f;
+	FString DisplayName = PlayerState->PlayerName;
+	FString ClanName = PlayerState->ClanName;
+	if (!PlayerState->ClanName.IsEmpty())
+	{
+		ClanName = "[" + ClanName + "]";
+		Canvas->TextSize(UTHUDOwner->SmallFont, ClanName, ClanXL, NameYL, 1.f, 1.f);
+		ClanXL += 4.f;
+	}
 	float MaxNameWidth = 0.42f*ScaledCellWidth - (PlayerState->bIsFriend ? 30.f*RenderScale : 0.f);
-	Canvas->TextSize(UTHUDOwner->SmallFont, PlayerState->PlayerName, NameXL, NameYL, 1.f, 1.f);
+	Canvas->TextSize(UTHUDOwner->SmallFont, DisplayName, NameXL, NameYL, 1.f, 1.f);
 	UFont* NameFont = UTHUDOwner->SmallFont;
 	FLinearColor DrawColor = GetPlayerColorFor(PlayerState);
 
@@ -420,24 +428,15 @@ void UUTScoreboard::DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float R
 
 	FVector2D NameSize;
 
-	TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*PlayerState->StatsID));
-	FText EpicAccountName = UTGameState->GetEpicAccountNameForAccount(UserId);
-	float NameScaling = FMath::Min(RenderScale, MaxNameWidth / FMath::Max(NameXL, 1.f));
-	if (bForceRealNames && !EpicAccountName.IsEmpty())
+	float NameScaling = FMath::Min(RenderScale, MaxNameWidth / FMath::Max(NameXL+ClanXL, 1.f));
+	if (!PlayerState->EpicAccountName.IsEmpty())
 	{
-		NameSize = DrawText(EpicAccountName, XOffset + (ScaledCellWidth * ColumnHeaderPlayerX), YOffset + ColumnY, NameFont, false, FVector2D(0.f, 0.f), FLinearColor::Black, true, GetPlayerHighlightColorFor(PlayerState), NameScaling, 1.0f, DrawColor, FLinearColor(0.0f, 0.0f, 0.0f, 0.0f), ETextHorzPos::Left, ETextVertPos::Center);
+		NameSize = DrawText(FText::FromString(ClanName), XOffset + (ScaledCellWidth * ColumnHeaderPlayerX), YOffset + ColumnY, NameFont, NameScaling, 1.0f, DrawColor, ETextHorzPos::Left, ETextVertPos::Center);
+		NameSize += DrawText(FText::FromString(DisplayName), XOffset + NameScaling*ClanXL + (ScaledCellWidth * ColumnHeaderPlayerX), YOffset + ColumnY, NameFont, false, FVector2D(0.f, 0.f), FLinearColor::Black, true, GetPlayerHighlightColorFor(PlayerState), NameScaling, 1.0f, DrawColor, FLinearColor(0.0f, 0.0f, 0.0f, 0.0f), ETextHorzPos::Left, ETextVertPos::Center);
 	}
 	else
 	{
-		const bool bNameMatchesAccount = (EpicAccountName.ToString() == PlayerState->PlayerName);
-		if (bNameMatchesAccount)
-		{
-			NameSize = DrawText(FText::FromString(PlayerState->PlayerName), XOffset + (ScaledCellWidth * ColumnHeaderPlayerX), YOffset + ColumnY, NameFont, false, FVector2D(0.f, 0.f), FLinearColor::Black, true, GetPlayerHighlightColorFor(PlayerState), NameScaling, 1.0f, DrawColor, FLinearColor(0.0f, 0.0f, 0.0f, 0.0f), ETextHorzPos::Left, ETextVertPos::Center);
-		}
-		else
-		{
-			NameSize = DrawText(FText::FromString(PlayerState->PlayerName), XOffset + (ScaledCellWidth * ColumnHeaderPlayerX), YOffset + ColumnY, NameFont, NameScaling, 1.0f, DrawColor, ETextHorzPos::Left, ETextVertPos::Center);
-		}
+		NameSize = DrawText(FText::FromString(DisplayName), XOffset + (ScaledCellWidth * ColumnHeaderPlayerX), YOffset + ColumnY, NameFont, NameScaling, 1.0f, DrawColor, ETextHorzPos::Left, ETextVertPos::Center);
 	}
 
 	if (PlayerState->bIsFriend)

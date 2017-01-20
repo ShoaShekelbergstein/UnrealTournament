@@ -152,6 +152,7 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME(AUTPlayerState, FavoriteWeapon);
 	DOREPLIFETIME(AUTPlayerState, bIsRconAdmin);
 	DOREPLIFETIME(AUTPlayerState, SelectionOrder);
+	DOREPLIFETIME(AUTPlayerState, ClanName);
 
 	DOREPLIFETIME(AUTPlayerState, DuelMatchesPlayed);
 	DOREPLIFETIME(AUTPlayerState, CTFMatchesPlayed);
@@ -230,6 +231,25 @@ void AUTPlayerState::SetPlayerName(const FString& S)
 	}
 	ForceNetUpdate();
 	bHasValidClampedName = false;
+}
+
+FString AUTPlayerState::ValidatePlayerName()
+{
+	if (EpicAccountName.IsEmpty())
+	{
+		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
+		if (UTGameState)
+		{
+			TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*StatsID));
+			EpicAccountName = UTGameState->GetEpicAccountNameForAccount(UserId).ToString();
+			if (!EpicAccountName.IsEmpty())
+			{
+				PlayerName = EpicAccountName;
+				bHasValidClampedName = false;
+			}
+		}
+	}
+	return PlayerName;
 }
 
 void AUTPlayerState::OnRep_HasHighScore()
@@ -775,6 +795,10 @@ void AUTPlayerState::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		ValidatePlayerName();
+	}
 	if (Role == ROLE_Authority)
 	{
 		AUTCharacter* UTChar = GetUTCharacter();
@@ -793,20 +817,6 @@ void AUTPlayerState::Tick(float DeltaTime)
 				if (FC)
 				{
 					FC->AnnounceStatus(StatusMessage::RallyNow);
-				}
-			}
-		}
-		if (!StatsID.IsEmpty() && !RequestedName.IsEmpty() && Cast<AController>(GetOwner()))
-		{
-			AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-			if (UTGameState)
-			{
-				TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*StatsID));
-				FText EpicAccountName = UTGameState->GetEpicAccountNameForAccount(UserId);
-				if (!EpicAccountName.IsEmpty())
-				{
-					GetWorld()->GetAuthGameMode()->ChangeName(Cast<AController>(GetOwner()), RequestedName, false);
-					RequestedName = TEXT("");
 				}
 			}
 		}
