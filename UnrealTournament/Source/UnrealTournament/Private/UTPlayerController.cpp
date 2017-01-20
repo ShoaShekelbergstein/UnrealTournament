@@ -5363,16 +5363,13 @@ void AUTPlayerController::ClientPrepareForLineUp_Implementation()
 	}
 }
 
-void AUTPlayerController::ClientSetActiveLineUp_Implementation(bool bNewIsActive, LineUpTypes LastType)
+void AUTPlayerController::ClientSetActiveLineUp_Implementation()
 {
 	if (GetWorld())
 	{
 		AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
 		if (UTGS && UTGS->LineUpHelper)
 		{
-			UTGS->LineUpHelper->bIsActive = bNewIsActive;
-			UTGS->LineUpHelper->LastActiveType = LastType;
-
 			for (FActorIterator It(GetWorld()); It; ++It)
 			{
 				AActor* TestActor = *It;
@@ -5388,7 +5385,7 @@ void AUTPlayerController::ClientSetActiveLineUp_Implementation(bool bNewIsActive
 				}
 			}
 
-			if (bNewIsActive)
+			if (UTGS->LineUpHelper->bIsActive)
 			{
 				SetIgnoreLookInput(true);
 				ToggleScoreboard(false);

@@ -297,7 +297,7 @@ public:
 	virtual void ClientPrepareForLineUp();
 
 	UFUNCTION(client, reliable)
-	virtual void ClientSetActiveLineUp(bool bNewIsActive, LineUpTypes LastType);
+	virtual void ClientSetActiveLineUp();
 
 	UFUNCTION(client, reliable)
 	virtual void ClientToggleScoreboard(bool bShow);

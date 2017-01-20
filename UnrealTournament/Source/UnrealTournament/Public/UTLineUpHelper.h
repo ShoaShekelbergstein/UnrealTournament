@@ -21,10 +21,13 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 
 	void SetupDelayedLineUp();
 
-	UPROPERTY()
+	UFUNCTION()
+	void OnRep_LineUpInfo();
+
+	UPROPERTY(Replicated, ReplicatedUsing = OnRep_LineUpInfo)
 	bool bIsActive;
-	
-	UPROPERTY()
+
+	UPROPERTY(Replicated, ReplicatedUsing = OnRep_LineUpInfo)
 	LineUpTypes LastActiveType;
 
 	UPROPERTY()

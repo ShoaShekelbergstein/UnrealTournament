@@ -23,6 +23,14 @@ AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 	TimerDelayForEndMatch = 9.f;
 }
 
+void AUTLineUpHelper::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AUTLineUpHelper, bIsActive);
+	DOREPLIFETIME(AUTLineUpHelper, LastActiveType);
+}
+
 void AUTLineUpHelper::HandleLineUp(LineUpTypes ZoneType)
 {
 	LastActiveType = ZoneType;
@@ -60,7 +68,8 @@ void AUTLineUpHelper::CleanUp()
 		}
 
 		bIsActive = false;
-		
+		LastActiveType = LineUpTypes::Invalid;
+
 		if (GetWorld())
 		{
 			for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
@@ -69,7 +78,6 @@ void AUTLineUpHelper::CleanUp()
 				if (UTPC)
 				{
 					CleanUpPlayerAfterLineUp(UTPC);
-					UTPC->ClientSetActiveLineUp(false, LineUpTypes::Invalid);
 				}
 			}
 
@@ -186,6 +194,18 @@ void AUTLineUpHelper::SetupDelayedLineUp()
 	}
 }
 
+void AUTLineUpHelper::OnRep_LineUpInfo()
+{
+	if (GetWorld() && bIsActive && (LastActiveType != LineUpTypes::Invalid) && (LastActiveType != LineUpTypes::None))
+	{
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController());
+		if (UTPC)
+		{
+			UTPC->ClientSetActiveLineUp();
+		}
+	}
+}
+
 void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 {	
 	static const FName NAME_LineUpCam = FName(TEXT("LineUpCam"));
@@ -245,7 +265,6 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 				if (UTPC)
 				{
 					UTPC->SetCameraMode(NAME_LineUpCam);
-					UTPC->ClientSetActiveLineUp(true, ZoneType);
 				}
 			}
 		}
