@@ -196,7 +196,9 @@ void AUTLineUpHelper::SetupDelayedLineUp()
 
 void AUTLineUpHelper::OnRep_LineUpInfo()
 {
-	if (GetWorld() && bIsActive && (LastActiveType != LineUpTypes::Invalid) && (LastActiveType != LineUpTypes::None))
+	//Make sure that we have received both bIsActive and LastActiveType before calling ClientSetActiveLineUp
+	//This means that we either have a valid LastActiveType and bIsActive is true, or an Invalid LastActiveType and bIsActive is false
+	if ( GetWorld() && ((bIsActive && (LastActiveType != LineUpTypes::Invalid) && (LastActiveType != LineUpTypes::None)) || (!bIsActive && LastActiveType == LineUpTypes::Invalid)) ) 
 	{
 		AUTPlayerController* UTPC = Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController());
 		if (UTPC)
