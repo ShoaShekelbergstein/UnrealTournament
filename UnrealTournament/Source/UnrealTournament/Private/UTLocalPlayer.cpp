@@ -6236,13 +6236,13 @@ void UUTLocalPlayer::LaunchTutorial(FName TutorialName, const FString& DesiredQu
 	{
 		// Look to see where the player is in the tutorial progression and pick the next tutorial.
 
-		if ( IsTutorialMaskCompleted(TUTOIRAL_Weapon) )			TutorialName = ETutorialTags::TUTTAG_Weapons;
-		else if (IsTutorialMaskCompleted(TUTORIAL_Pickups) )	TutorialName = ETutorialTags::TUTTAG_Pickups;
-		else if (IsTutorialMaskCompleted(TUTORIAL_DM) )			TutorialName = ETutorialTags::TUTTAG_DM;
-		else if (IsTutorialMaskCompleted(TUTORIAL_FlagRun) )	TutorialName = ETutorialTags::TUTTAG_Flagrun;
-		else if (IsTutorialMaskCompleted(TUTORIAL_Showdown) )	TutorialName = ETutorialTags::TUTTAG_Showdown;
-		else if (IsTutorialMaskCompleted(TUTORIAL_CTF) )		TutorialName = ETutorialTags::TUTTAG_CTF;
-		else if (IsTutorialMaskCompleted(TUTORIAL_Duel) )		TutorialName = ETutorialTags::TUTTAG_Duel;
+		if ( !IsTutorialMaskCompleted(TUTOIRAL_Weapon) )			TutorialName = ETutorialTags::TUTTAG_Weapons;
+		else if (!IsTutorialMaskCompleted(TUTORIAL_Pickups) )	TutorialName = ETutorialTags::TUTTAG_Pickups;
+		else if (!IsTutorialMaskCompleted(TUTORIAL_DM) )			TutorialName = ETutorialTags::TUTTAG_DM;
+		else if (!IsTutorialMaskCompleted(TUTORIAL_FlagRun) )	TutorialName = ETutorialTags::TUTTAG_Flagrun;
+		else if (!IsTutorialMaskCompleted(TUTORIAL_Showdown) )	TutorialName = ETutorialTags::TUTTAG_Showdown;
+		else if (!IsTutorialMaskCompleted(TUTORIAL_CTF) )		TutorialName = ETutorialTags::TUTTAG_CTF;
+		else if (!IsTutorialMaskCompleted(TUTORIAL_Duel) )		TutorialName = ETutorialTags::TUTTAG_Duel;
 
 		else TutorialName =	ETutorialTags::TUTTAG_Movement;
 	}
