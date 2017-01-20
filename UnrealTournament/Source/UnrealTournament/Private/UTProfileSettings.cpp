@@ -564,7 +564,7 @@ bool UUTProfileSettings::VersionFixup()
 	{
 		if (GameActions[i].GameActionTag == FName(TEXT("TurnLeft")) || GameActions[i].GameActionTag == FName(TEXT("TurnRight")) ||
 			GameActions[i].GameActionTag == FName(TEXT("SelectTrans")) || GameActions[i].GameActionTag == FName(TEXT("BuyMenu")) ||
-			GameActions[i].GameActionTag == FName(TEXT("PushToTalk")) || GameActions[i].GameActionTag == FName(TEXT("SelectTrans")) )
+			GameActions[i].GameActionTag == FName(TEXT("PushToTalk")))
 		{
 			ObsoleteKeyIndexes.Add(i);
 			continue;				
