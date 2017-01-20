@@ -350,6 +350,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 	float YL, EmphasisXL;
 	Canvas->StrLen(InFont, EmphasisText.ToString(), EmphasisXL, YL);
 	float YPos = (LastScorePanelYOffset > 0.f) ? LastScorePanelYOffset - 2.f : 0.25f*Canvas->ClipY;
+	float TopY = YPos;
 	float StarXL, StarYL;
 	UFont* StarFont = UTHUDOwner->HugeFont;
 	Canvas->StrLen(StarFont, StarText.ToString(), StarXL, StarYL);
@@ -364,10 +365,21 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 	float XOffset = 0.5f*(Canvas->ClipX - ScoreWidth);
 	DrawFramedBackground(XOffset, YPos, ScoreWidth, RenderScale * ScoreHeight);
 
-	// Draw scoring team string
 	FFontRenderInfo TextRenderInfo;
 	TextRenderInfo.bEnableShadow = true;
 	TextRenderInfo.bClipText = true;
+
+	// Draw Round number
+	Canvas->SetLinearDrawColor(FLinearColor::White);
+	FFormatNamedArguments Args;
+	Args.Add("RoundNum", FText::AsNumber(GS->CTFRound));
+	FText RoundText = FText::Format(NSLOCTEXT("FlagRun", "Round", "Round {RoundNum}"), Args);
+	float RoundXL, SmallYL;
+	Canvas->StrLen(UTHUDOwner->SmallFont, RoundText.ToString(), RoundXL, SmallYL);
+	Canvas->DrawText(UTHUDOwner->SmallFont, RoundText, 0.5f * (Canvas->ClipX - RenderScale * RoundXL), YPos, RenderScale, RenderScale, TextRenderInfo);
+	YPos += 0.65f*SmallYL*RenderScale;
+
+	// Draw scoring team string
 	FLinearColor EmphasisColor = (ScoringTeam && (ScoringTeam->TeamIndex == 0)) ? REDHUDCOLOR : BLUEHUDCOLOR;
 	float ScoreX = 0.5f * (Canvas->ClipX - RenderScale * (EmphasisXL + PostXL));
 
@@ -379,7 +391,6 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 	Canvas->DrawText(InFont, ScorePostfix, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
 
 	YPos += YL*RenderScale;
-
 	ScoreX = 0.5f * (Canvas->ClipX - 1.5f * RenderScale * StarXL * (float(NumStars) - 0.5f));
 	Canvas->SetLinearDrawColor(BonusColor);
 
@@ -393,7 +404,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 				UTHUDOwner->UTPlayerOwner->ClientPlaySound(StarPoundSound);
 			}
 			float StarXPos = ScoreX;
-			float StarYPos = YPos - 0.31f*YL*RenderScale;
+			float StarYPos = YPos - 0.42f*YL*RenderScale;
 			if (CurrentTime >= WooshStart + i*WooshInterval)
 			{
 				if (CurrentTime - DeltaTime < WooshStart + i*WooshInterval)
@@ -466,7 +477,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 				}
 			}
 			FVector LineEndPoint(0.5f*Canvas->ClipX, 0.06f*Canvas->ClipY, 0.f);
-			FVector LineStartPoint(0.545f*Canvas->ClipX, YPos + 1.19f*YL*RenderScale, 0.f);
+			FVector LineStartPoint(0.545f*Canvas->ClipX, YPos + 1.05f*YL*RenderScale, 0.f);
 			FLinearColor LineColor = EmphasisColor;
 			LineColor.A = 0.2f;
 			FBatchedElements* BatchedElements = Canvas->Canvas->GetBatchedElements(FCanvas::ET_Line);
@@ -475,15 +486,15 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 		}
 		Canvas->SetLinearDrawColor(FLinearColor::White);
 		TextRenderInfo.bEnableShadow = true;
-		Canvas->DrawText(BonusFont, BonusText, 0.5f*(Canvas->ClipX - RenderScale*BonusXL), YPos + 0.99f*YL*RenderScale, RenderScale, RenderScale, TextRenderInfo);
+		Canvas->DrawText(BonusFont, BonusText, 0.5f*(Canvas->ClipX - RenderScale*BonusXL), YPos + 0.85f*YL*RenderScale, RenderScale, RenderScale, TextRenderInfo);
 	}
 
 	// Draw scoring player string
 	if (ScoringPlayer)
 	{
-		YPos = YPos + StarYL*RenderScale;
 		float DeliveredXL;
 		Canvas->StrLen(UTHUDOwner->SmallFont, DeliveredPrefix.ToString(), DeliveredXL, YL);
+		YPos = TopY + RenderScale * (ScoreHeight - 1.1f*YL);
 		EmphasisText = FText::FromString(ScoringPlayer->PlayerName);
 		Canvas->StrLen(UTHUDOwner->SmallFont, EmphasisText.ToString(), EmphasisXL, YL);
 
