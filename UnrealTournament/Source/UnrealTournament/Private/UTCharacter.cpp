@@ -5620,7 +5620,12 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 		float Scale = Canvas->ClipX / 1920.f;
 		float Border = 2.f*Scale;
 
-		Canvas->TextSize(SmallFont, PlayerState->PlayerName, TextXL, TextYL, 1.0f, 1.0f);
+		FString DisplayName = UTPS->PlayerName;
+		if (!UTPS->ClanName.IsEmpty())
+		{
+			DisplayName = "[" + UTPS->ClanName + "]" + DisplayName;
+		}
+		Canvas->TextSize(SmallFont, DisplayName, TextXL, TextYL, 1.0f, 1.0f);
 		TextXL *= Scale;
 		TextYL *= Scale;
 		BarWidth = Border + TextXL;
@@ -5641,7 +5646,7 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 
 		FLinearColor BeaconTextColor = FLinearColor::White;
 		BeaconTextColor.A = 0.9f;
-		FUTCanvasTextItem TextItem(FVector2D(FMath::TruncToFloat(Canvas->OrgX + XPos), FMath::TruncToFloat(Canvas->OrgY + YPos - 0.75f*BarHeight)), FText::FromString(PlayerState->PlayerName), SmallFont, BeaconTextColor, NULL);
+		FUTCanvasTextItem TextItem(FVector2D(FMath::TruncToFloat(Canvas->OrgX + XPos), FMath::TruncToFloat(Canvas->OrgY + YPos - 0.75f*BarHeight)), FText::FromString(DisplayName), SmallFont, BeaconTextColor, NULL);
 		TextItem.Scale = FVector2D(Scale, Scale);
 		TextItem.BlendMode = SE_BLEND_Translucent;
 		FLinearColor ShadowColor = FLinearColor::Black;

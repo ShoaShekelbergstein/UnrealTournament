@@ -242,7 +242,7 @@ FString AUTPlayerState::ValidatePlayerName()
 		{
 			TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*StatsID));
 			EpicAccountName = UTGameState->GetEpicAccountNameForAccount(UserId).ToString();
-			if (!EpicAccountName.IsEmpty())
+			if (!EpicAccountName.IsEmpty() && (EpicAccountName != TEXT("InvalidMCPUser")))
 			{
 				PlayerName = EpicAccountName;
 				bHasValidClampedName = false;
@@ -2887,7 +2887,7 @@ void AUTPlayerState::BuildPlayerInfo(TSharedPtr<SUTTabWidget> TabWidget, TArray<
 		}
 	}
 
-	FText EpicAccountName = FText::GetEmpty();
+	FText EpicAccountNameText = FText::GetEmpty();
 	if (!StatsID.IsEmpty())
 	{
 		TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*StatsID));
@@ -2898,7 +2898,7 @@ void AUTPlayerState::BuildPlayerInfo(TSharedPtr<SUTTabWidget> TabWidget, TArray<
 				AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
 				if (UTGS != nullptr)
 				{
-					EpicAccountName = UTGS->GetEpicAccountNameForAccount(UserId);
+					EpicAccountNameText = UTGS->GetEpicAccountNameForAccount(UserId);
 				}
 			}
 		}
@@ -2927,7 +2927,7 @@ void AUTPlayerState::BuildPlayerInfo(TSharedPtr<SUTTabWidget> TabWidget, TArray<
 			SNew(SBox)
 			[
 				SNew(STextBlock)
-				.Text(EpicAccountName)
+				.Text(EpicAccountNameText)
 				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
 			]
 		]

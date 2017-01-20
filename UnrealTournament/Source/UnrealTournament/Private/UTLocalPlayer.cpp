@@ -243,7 +243,7 @@ bool UUTLocalPlayer::IsAFriend(FUniqueNetIdRepl PlayerId)
 FString UUTLocalPlayer::GetNickname() const
 {
 	FString OfficialName = Super::GetNickname();
-	return OfficialName.IsEmpty() ? PlayerNickname : OfficialName;
+	return (OfficialName.IsEmpty() || (OfficialName == TEXT("InvalidMCPUser"))) ? PlayerNickname : OfficialName;
 }
 
 FString UUTLocalPlayer::SetClanName(FString NewClanName)
