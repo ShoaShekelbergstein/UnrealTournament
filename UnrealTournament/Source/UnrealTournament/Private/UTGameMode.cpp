@@ -739,40 +739,6 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 			{
 				PS->SetCharacter(InOpt);
 			}
-			InOpt = UGameplayStatics::ParseOption(Options, TEXT("Hat"));
-			if (InOpt.Len() > 0)
-			{
-				PS->ServerReceiveHatClass(InOpt);
-			}
-			InOpt = UGameplayStatics::ParseOption(Options, TEXT("LeaderHat"));
-			if (InOpt.Len() > 0)
-			{
-				PS->ServerReceiveLeaderHatClass(InOpt);
-			}
-			InOpt = UGameplayStatics::ParseOption(Options, TEXT("Eyewear"));
-			if (InOpt.Len() > 0)
-			{
-				PS->ServerReceiveEyewearClass(InOpt);
-			}
-			InOpt = UGameplayStatics::ParseOption(Options, TEXT("GroupTaunt"));
-			if (InOpt.Len() > 0)
-			{
-				PS->ServerReceiveGroupTauntClass(InOpt);
-			}
-			InOpt = UGameplayStatics::ParseOption(Options, TEXT("Taunt"));
-			if (InOpt.Len() > 0)
-			{
-				PS->ServerReceiveTauntClass(InOpt);
-			}
-			InOpt = UGameplayStatics::ParseOption(Options, TEXT("Taunt2"));
-			if (InOpt.Len() > 0)
-			{
-				PS->ServerReceiveTaunt2Class(InOpt);
-			}
-			int32 HatVar = UGameplayStatics::GetIntOption(Options, TEXT("HatVar"), 0);
-			PS->ServerReceiveHatVariant(HatVar);
-			int32 EyewearVar = UGameplayStatics::GetIntOption(Options, TEXT("EyewearVar"), 0);
-			PS->ServerReceiveEyewearVariant(EyewearVar);
 
 			// warning: blindly calling this here relies on ValidateEntitlements() defaulting to "allow" if we have not yet obtained this user's entitlement information
 			PS->ValidateEntitlements();

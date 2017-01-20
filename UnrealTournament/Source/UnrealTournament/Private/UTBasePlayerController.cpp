@@ -945,7 +945,74 @@ void AUTBasePlayerController::ReceivedPlayer()
 	}
 
 	SendStatsIDToServer();
+	SendCosmeticsToServer();
+}
 
+void AUTBasePlayerController::SendCosmeticsToServer()
+{
+	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(Player);
+	if (UTLocalPlayer)
+	{
+		FString CosmeticsUsage = FString::Printf(TEXT("?Hat=%s?LeaderHat=%s?Eyewear=%s?GroupTaunt=%s?Taunt=%s?Taunt2=%s?HatVar=%d?EyewearVar=%d"), 
+			*UTLocalPlayer->GetHatPath(), 
+			*UTLocalPlayer->GetLeaderHatPath(),
+			*UTLocalPlayer->GetEyewearPath(), 
+			*UTLocalPlayer->GetGroupTauntPath(), 
+			*UTLocalPlayer->GetTauntPath(), 
+			*UTLocalPlayer->GetTaunt2Path(), 
+			UTLocalPlayer->GetHatVariant(), 
+			UTLocalPlayer->GetEyewearVariant());
+
+		ServerReceiveCosmetics(CosmeticsUsage);
+	}
+}
+
+bool AUTBasePlayerController::ServerReceiveCosmetics_Validate(const FString& CosmeticString)
+{
+	return true;
+}
+
+void AUTBasePlayerController::ServerReceiveCosmetics_Implementation(const FString& CosmeticString)
+{
+	FString InOpt;
+	AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+	if (PS)
+	{
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("Hat"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveHatClass(InOpt);
+		}
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("LeaderHat"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveLeaderHatClass(InOpt);
+		}
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("Eyewear"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveEyewearClass(InOpt);
+		}
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("GroupTaunt"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveGroupTauntClass(InOpt);
+		}
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("Taunt"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveTauntClass(InOpt);
+		}
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("Taunt2"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveTaunt2Class(InOpt);
+		}
+		int32 HatVar = UGameplayStatics::GetIntOption(CosmeticString, TEXT("HatVar"), 0);
+		PS->ServerReceiveHatVariant(HatVar);
+		int32 EyewearVar = UGameplayStatics::GetIntOption(CosmeticString, TEXT("EyewearVar"), 0);
+		PS->ServerReceiveEyewearVariant(EyewearVar);
+	}
 }
 
 bool AUTBasePlayerController::ServerReceiveStatsID_Validate(const FString& NewStatsID)

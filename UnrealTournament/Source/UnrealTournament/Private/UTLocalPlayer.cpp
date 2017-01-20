@@ -1000,6 +1000,8 @@ void UUTLocalPlayer::OnLoginComplete(int32 LocalUserNum, bool bWasSuccessful, co
 		}
 
 		PendingLoginUserName = TEXT("");
+
+		RemoveCosmeticsFromDefaultURL();
 	}
 	else
 	{
@@ -2481,7 +2483,7 @@ void UUTLocalPlayer::SetHatVariant(int32 NewVariant)
 	{
 		CurrentProfileSettings->HatVariant = NewVariant;
 	}
-	SetDefaultURLOption(TEXT("HatVar"), FString::FromInt(NewVariant));
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -2503,7 +2505,7 @@ void UUTLocalPlayer::SetEyewearVariant(int32 NewVariant)
 	{
 		CurrentProfileSettings->EyewearVariant = NewVariant;
 	}
-	SetDefaultURLOption(TEXT("EyewearVar"), FString::FromInt(NewVariant));
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -2538,7 +2540,7 @@ void UUTLocalPlayer::SetHatPath(const FString& NewHatPath)
 	{
 		CurrentProfileSettings->HatPath = NewHatPath;
 	}
-	SetDefaultURLOption(TEXT("Hat"), NewHatPath);
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -2582,7 +2584,7 @@ void UUTLocalPlayer::SetLeaderHatPath(const FString& NewLeaderHatPath)
 	{
 		CurrentProfileSettings->LeaderHatPath = NewLeaderHatPath;
 	}
-	SetDefaultURLOption(TEXT("LeaderHat"), NewLeaderHatPath);
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -2627,7 +2629,7 @@ void UUTLocalPlayer::SetEyewearPath(const FString& NewEyewearPath)
 	{
 		CurrentProfileSettings->EyewearPath = NewEyewearPath;
 	}
-	SetDefaultURLOption(TEXT("Eyewear"), NewEyewearPath);
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -2684,7 +2686,7 @@ void UUTLocalPlayer::SetCharacterPath(const FString& NewCharacterPath)
 	{
 		CurrentProfileSettings->CharacterPath = NewCharacterPath;
 	}
-	SetDefaultURLOption(TEXT("Character"), NewCharacterPath);
+
 	if (PS != NULL)
 	{
 		PS->ServerSetCharacter(NewCharacterPath);
@@ -2702,7 +2704,7 @@ void UUTLocalPlayer::SetGroupTauntPath(const FString& NewGroupTauntPath)
 	{
 		CurrentProfileSettings->GroupTauntPath = NewGroupTauntPath;
 	}
-	SetDefaultURLOption(TEXT("GroupTaunt"), NewGroupTauntPath);
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -2724,7 +2726,7 @@ void UUTLocalPlayer::SetTauntPath(const FString& NewTauntPath)
 	{
 		CurrentProfileSettings->TauntPath = NewTauntPath;
 	}
-	SetDefaultURLOption(TEXT("Taunt"), NewTauntPath);
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -2746,7 +2748,7 @@ void UUTLocalPlayer::SetTaunt2Path(const FString& NewTauntPath)
 	{
 		CurrentProfileSettings->Taunt2Path = NewTauntPath;
 	}
-	SetDefaultURLOption(TEXT("Taunt2"), NewTauntPath);
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -6661,4 +6663,24 @@ void UUTLocalPlayer::ClearTutorialMask(int32 BitToClear)
 
 }
 
-
+void UUTLocalPlayer::RemoveCosmeticsFromDefaultURL()
+{
+	FURL DefaultURL;
+	DefaultURL.LoadURLConfig(TEXT("DefaultPlayer"), GGameIni);
+	if (DefaultURL.HasOption(TEXT("Hat")) ||
+		DefaultURL.HasOption(TEXT("LeaderHat")) ||
+		DefaultURL.HasOption(TEXT("Eyewear")) ||
+		DefaultURL.HasOption(TEXT("GroupTaunt")) ||
+		DefaultURL.HasOption(TEXT("Taunt")) ||
+		DefaultURL.HasOption(TEXT("Taunt2")))
+	{
+		ClearDefaultURLOption(TEXT("Hat"));
+		ClearDefaultURLOption(TEXT("LeaderHat"));
+		ClearDefaultURLOption(TEXT("Eyewear"));
+		ClearDefaultURLOption(TEXT("GroupTaunt"));
+		ClearDefaultURLOption(TEXT("Taunt"));
+		ClearDefaultURLOption(TEXT("Taunt2"));
+		ClearDefaultURLOption(TEXT("HatVar"));
+		ClearDefaultURLOption(TEXT("EyewearVar"));
+	}
+}

@@ -155,6 +155,11 @@ public:
 
 	void SendStatsIDToServer();
 
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerReceiveCosmetics(const FString& CosmeticString);
+
+	void SendCosmeticsToServer();
+
 protected:
 	FOnFindSessionsCompleteDelegate OnFindGUIDSessionCompleteDelegate;
 	FDelegateHandle OnFindGUIDSessionCompleteDelegateHandle;
