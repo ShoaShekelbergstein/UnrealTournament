@@ -842,7 +842,7 @@ void AUTRallyPoint::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVecto
 	}
 	else if (RallyPointState != RallyPointStates::Powered)
 	{
-		if (RallyPointState == RallyPointStates::Charging)
+		if (ClientCountdown > 0.f)
 		{
 			AUTCharacter* FC = (UTGS && UTGS->GetOffenseFlag()) ? UTGS->GetOffenseFlag()->HoldingPawn : nullptr;
 			if (FC && (GetWorld()->GetTimeSeconds() - FC->GetLastRenderTime() < 0.1f) && PC->LineOfSightTo(FC))
