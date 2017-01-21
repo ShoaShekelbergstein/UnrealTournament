@@ -1958,7 +1958,9 @@ float AUTHUD::DrawWinConditions(UFont* InFont, float XPos, float YPos, float Sco
 	{
 		DrawText(ScoreMessageText.ToString(), FLinearColor::White, XPos, YPos, InFont, RenderScale, 1.f);
 	}
-	return 0.f;
+	float XL, YL;
+	Canvas->StrLen(InFont, ScoreMessageText.ToString(), XL, YL);
+	return RenderScale * XL;
 }
 
 void AUTHUD::ClearAllUMGWidgets()
