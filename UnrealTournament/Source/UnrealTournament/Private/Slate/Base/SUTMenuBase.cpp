@@ -240,7 +240,7 @@ void SUTMenuBase::CreateDesktop()
 				.HAlign(HAlign_Fill)
 				[
 					SNew(SBox)
-					.HeightOverride(64)
+					.HeightOverride(48)
 					[
 						SNew(SBorder)
 						.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Dark"))
@@ -250,7 +250,7 @@ void SUTMenuBase::CreateDesktop()
 							.AutoHeight()
 							[
 								SNew(SBox)
-								.HeightOverride(56)
+								.HeightOverride(48)
 								[
 									// Left Menu
 									SNew(SOverlay)
@@ -291,7 +291,6 @@ void SUTMenuBase::CreateDesktop()
 void SUTMenuBase::SetInitialPanel()
 {
 }
-
 
 /****************************** [ Build Sub Menus ] *****************************************/
 
@@ -353,7 +352,6 @@ TSharedRef<SWidget> SUTMenuBase::BuildDefaultLeftMenuBar()
 			];
 		}
 
-
 		BuildLeftMenuBar();
 	}
 
@@ -379,34 +377,32 @@ TSharedRef<SWidget> SUTMenuBase::BuildDefaultRightMenuBar()
 
 	if (RightMenuBar.IsValid())
 	{
-
 		BuildRightMenuBar();
 
 		RightMenuBar->AddSlot()
-		.Padding(0.0f,0.0f,5.0f,0.0f)
+		.Padding(0.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
 		[
 			BuildAboutSubMenu()
 		];
 
 		RightMenuBar->AddSlot()
-		.Padding(0.0f,0.0f,5.0f,0.0f)
+		.Padding(0.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
 		.VAlign(VAlign_Center)
 		[
 			BuildOnlinePresence()
 		];
 
-
 		RightMenuBar->AddSlot()
-		.Padding(0.0f,0.0f,5.0f,0.0f)
+		.Padding(0.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
 		[
 			BuildOptionsSubMenu()
 		];
 
 		RightMenuBar->AddSlot()
-		.Padding(70.0f,0.0f,5.0f,0.0f)
+		.Padding(70.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
 		[
 			SNew(SUTButton)
@@ -429,7 +425,7 @@ TSharedRef<SWidget> SUTMenuBase::BuildDefaultRightMenuBar()
 		];
 
 		RightMenuBar->AddSlot()
-		.Padding(0.0f,0.0f,5.0f,0.0f)
+		.Padding(0.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
 		[
 			SNew(SUTButton)
@@ -447,7 +443,7 @@ TSharedRef<SWidget> SUTMenuBase::BuildDefaultRightMenuBar()
 		];
 
 		RightMenuBar->AddSlot()
-		.Padding(0.0f,0.0f,5.0f,0.0f)
+		.Padding(0.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
 		[
 			SNew(SUTButton)
@@ -464,8 +460,6 @@ TSharedRef<SWidget> SUTMenuBase::BuildDefaultRightMenuBar()
 			]
 		];
 	}
-
-
 	return RightMenuBar.ToSharedRef();
 }
 
@@ -483,7 +477,6 @@ EVisibility SUTMenuBase::GetSocialBangVisibility() const
 
 TSharedRef<SWidget> SUTMenuBase::BuildOptionsSubMenu()
 {
-	
 	TSharedPtr<SUTComboButton> DropDownButton = NULL;
 	
 	SNew(SHorizontalBox)

@@ -920,16 +920,16 @@ void SUWindowsStyle::SetTopMenuStyle(TSharedRef<FSlateStyleSet> StyleRef)
 
 
 	Style.Set("UT.TopMenu.Button.TextStyle", FTextBlockStyle()
-		.SetFont(TTF_FONT("Play-Bold", 30))
+		.SetFont(TTF_FONT("Play-Bold", 22))
 		.SetColorAndOpacity(FLinearColor::White));
 
 	Style.Set("UT.TopMenu.Button.SmallTextStyle", FTextBlockStyle()
-		.SetFont(TTF_FONT("Play-Bold", 22))
+		.SetFont(TTF_FONT("Play-Bold", 20))
 		.SetColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f, 1.0f))
 		);
 
 	Style.Set("UT.TopMenu.Button.SmallTextStyle.Selected", FTextBlockStyle()
-		.SetFont(TTF_FONT("Play-Bold", 22))
+		.SetFont(TTF_FONT("Play-Bold", 20))
 		.SetColorAndOpacity(FLinearColor::White)
 		);
 }

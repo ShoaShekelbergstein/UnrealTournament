@@ -67,7 +67,6 @@ void SUTInGameMenu::BuildLeftMenuBar()
 			];
 		}
 
-
 		if (GS && (GS->GetMatchState() == MatchState::WaitingToStart) && (!PS || !PS->bIsWarmingUp))
 		{
 			if (GS->GetNetMode() == NM_Standalone)
@@ -157,12 +156,9 @@ void SUTInGameMenu::BuildLeftMenuBar()
 				]
 			]
 		];
-
-
 	}
 	
 	FSlateApplication::Get().PlaySound(SUTStyle::PauseSound,0);
-
 }
 
 void SUTInGameMenu::BuildExitMenu(TSharedPtr<SUTComboButton> ExitButton)
@@ -258,7 +254,6 @@ FReply SUTInGameMenu::OnReturnToMainMenu()
 			bIsQuickMatch = true;
 		}
 	}
-	
 
 	const bool bIsPartyLeader = PlayerOwner->IsPartyLeader();
 	if (!bIsPartyLeader || bIsRankedGame || bIsQuickMatch)
@@ -321,7 +316,6 @@ FReply SUTInGameMenu::OnSpectateClick()
 	return FReply::Handled();
 }
 
-
 void SUTInGameMenu::SetInitialPanel()
 {
 	SAssignNew(HomePanel, SUTInGameHomePanel, PlayerOwner);
@@ -346,7 +340,6 @@ FReply SUTInGameMenu::OnMapVoteClick()
 	{
 		PlayerOwner->OpenMapVote(GameState);
 	}
-
 	return FReply::Handled();
 }
 
@@ -357,7 +350,6 @@ FText SUTInGameMenu::GetMapVoteTitle() const
 	{
 		return FText::Format(NSLOCTEXT("SUTInGameMenu","MapVoteFormat","MAP VOTE ({0})"), FText::AsNumber(GameState->VoteTimer));
 	}
-
 	return NSLOCTEXT("SUTMenuBase","MenuBar_MapVote","MAP VOTE");
 }
 
@@ -440,7 +432,6 @@ void SUTInGameMenu::ShowExitDestinationMenu()
 	}
 
 	PlayerOwner->OpenDialog(QP.ToSharedRef(), 200);
-
 }
 
 void SUTInGameMenu::QuitConfirmation()
@@ -541,7 +532,6 @@ EVisibility SUTInGameMenu::GetMapVoteVisibility() const
 	}
 }
 
-
 EVisibility SUTInGameMenu::GetMatchSummaryVisibility() const
 {
 	return StaticCastSharedPtr<SUTInGameHomePanel>(HomePanel)->GetSummaryVisibility();
@@ -557,10 +547,8 @@ EVisibility SUTInGameMenu::GetMatchSummaryButtonVisibility() const
 			return EVisibility::Visible;
 		}
 	}
-
 	return EVisibility::Collapsed;
 }
-
 
 FReply SUTInGameMenu::ShowSummary()
 {
@@ -579,7 +567,6 @@ void SUTInGameMenu::OnMenuOpened(const FString& Parameters)
 	{
 		PlayerOwner->FocusWidget(PlayerOwner->GetChatWidget());
 	}
-
 }
 
 bool SUTInGameMenu::SkipWorldRender()
@@ -597,7 +584,6 @@ FReply SUTInGameMenu::OnKeyUp( const FGeometry& MyGeometry, const FKeyEvent& InK
 			ChatBox->SetText(FText::GetEmpty());
 		}
 	}
-
 	return SUTMenuBase::OnKeyUp(MyGeometry, InKeyboardEvent);
 }
 
@@ -610,7 +596,6 @@ void SUTInGameMenu::OnMenuClosed()
 
 	SUTMenuBase::OnMenuClosed();
 }
-
 
 
 #endif
