@@ -104,7 +104,7 @@ void UUTScoreboard::Draw_Implementation(float RenderDelta)
 	Super::Draw_Implementation(RenderDelta);
 
 	bHaveWarmup = false;
-	float YOffset = 8.f*RenderScale;
+	float YOffset = 48.f*RenderScale;
 	DrawGamePanel(RenderDelta, YOffset);
 	DrawTeamPanel(RenderDelta, YOffset);
 	DrawScorePanel(RenderDelta, YOffset);
@@ -167,7 +167,9 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 	}
 	else
 	{
-		MessageX = UTHUDOwner->DrawWinConditions(UTHUDOwner->MediumFont, 220.f*RenderScale, YOffset + 4.f*RenderScale, Canvas->ClipX, RenderScale, true, true);
+		MessageX = UTHUDOwner->DrawWinConditions(UTHUDOwner->MediumFont, 220.f*RenderScale, YOffset + 2.f*RenderScale, Canvas->ClipX, RenderScale, true, true);
+		float NameX;
+		Canvas->StrLen(UTHUDOwner->MediumFont, TEXT("TEST"), NameX, MessageY);
 	}
 
 	// Draw the Background
@@ -175,42 +177,48 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 	float StatusX, StatusY;
 	Canvas->StrLen(UTHUDOwner->SmallFont, StatusText.ToString(), StatusX, StatusY);
 
-	float Width = FMath::Clamp(MessageX + (StatusX + 32.f)*RenderScale, 520.f*RenderScale, Canvas->ClipX);
+	float DisplayedTime = UTGameState ? UTGameState->GetClockTime() : 0.f;
+	FText Timer = UTHUDOwner->ConvertTime(FText::GetEmpty(), FText::GetEmpty(), DisplayedTime, false, true, true);
+	float TimerX, TimerY;
+	Canvas->StrLen(UTHUDOwner->NumberFont, Timer.ToString(), TimerX, TimerY);
+
+	float Width = FMath::Clamp(MessageX + (StatusX + TimerX + 32.f)*RenderScale, 520.f*RenderScale, Canvas->ClipX);
 	float LeftEdge = 0.5f*(Canvas->ClipX - Width);
-	DrawTexture(UTHUDOwner->ScoreboardAtlas,LeftEdge - 16.f*RenderScale,YOffset, Width + 32.f*RenderScale, 72.f*RenderScale, 4.f*RenderScale,2,124, 128, 1.0);
+	DrawTexture(UTHUDOwner->ScoreboardAtlas,LeftEdge - 16.f*RenderScale,YOffset, Width + 32.f*RenderScale, 42.f*RenderScale, 4.f, 2.f, 124.f, 128.f, 1.f);
 
 	if (UTHUDOwner->ScoreMessageText.IsEmpty())
 	{ 
-		DrawText(GameMessage, LeftEdge, YOffset + 36.f*RenderScale, UTHUDOwner->MediumFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
+		DrawText(GameMessage, LeftEdge, YOffset + 16.f*RenderScale, UTHUDOwner->MediumFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
 	}
 	else
 	{
-		UTHUDOwner->DrawWinConditions(UTHUDOwner->MediumFont, LeftEdge, YOffset + 4.f*RenderScale, Canvas->ClipX, RenderScale, false);
+		UTHUDOwner->DrawWinConditions(UTHUDOwner->MediumFont, LeftEdge, YOffset, Canvas->ClipX, RenderScale, false);
 	}
 
 	DrawGameOptions(RenderDelta, YOffset, LeftEdge + Width);
-	YOffset += 72.f*RenderScale;	// The size of this zone.
+	YOffset += 42.f*RenderScale;	// The size of this zone.
 }
 
 void UUTScoreboard::DrawGameOptions(float RenderDelta, float& YOffset, float RightEdge)
 {
 	if (UTGameState)
 	{
+		float DisplayedTime = UTGameState ? UTGameState->GetClockTime() : 0.f;
+		FText Timer = UTHUDOwner->ConvertTime(FText::GetEmpty(), FText::GetEmpty(), DisplayedTime, false, true, true);
+		FVector2D TimeSize = DrawText(Timer, RightEdge, YOffset + 21.f*RenderScale, UTHUDOwner->NumberFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Right, ETextVertPos::Center);
+		RightEdge = RightEdge - (TimeSize.X + 8.f)*RenderScale;
+
 		FText StatusText = UTGameState->GetGameStatusText(true);
 		if (!StatusText.IsEmpty())
 		{
-			DrawText(StatusText, RightEdge, YOffset + 48.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Right, ETextVertPos::Center);
+			DrawText(StatusText, RightEdge, YOffset + 17.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Right, ETextVertPos::Center);
 		}
 		else if (UTGameState->GoalScore > 0)
 		{
 			// Draw Game Text
 			FText Score = FText::Format(UTGameState->GoalScoreText, FText::AsNumber(UTGameState->GoalScore));
-			DrawText(Score, RightEdge, YOffset + 48.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Right, ETextVertPos::Center);
+			DrawText(Score, RightEdge, YOffset + 21.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Right, ETextVertPos::Center);
 		}
-
-		float DisplayedTime = UTGameState ? UTGameState->GetClockTime() : 0.f;
-		FText Timer = UTHUDOwner->ConvertTime(FText::GetEmpty(), FText::GetEmpty(), DisplayedTime, false, true, true);
-		DrawText(Timer, RightEdge, YOffset + 22.f*RenderScale, UTHUDOwner->NumberFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Right, ETextVertPos::Center);
 	}
 }
 

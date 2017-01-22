@@ -57,7 +57,6 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 					.InitialChatDestination(ChatDestinations::Local)
 				]
 			]
-
 		]
 	];
 
@@ -79,7 +78,6 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 			]
 		];
 	}
-
 }
 
 EVisibility SUTInGameHomePanel::GetSummaryVisibility() const
@@ -94,8 +92,6 @@ EVisibility SUTInGameHomePanel::GetSummaryVisibility() const
 	}
 	return EVisibility::Hidden;
 }
-
-
 
 void SUTInGameHomePanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
 {
@@ -116,6 +112,7 @@ void SUTInGameHomePanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
 		}
 	}
 }
+
 void SUTInGameHomePanel::OnHidePanel()
 {
 	SUTPanelBase::OnHidePanel();
@@ -136,7 +133,6 @@ void SUTInGameHomePanel::OnHidePanel()
 	}
 
 	HideMatchSummary();
-
 }
 
 // @Returns true if the mouse position is inside the viewport
@@ -191,7 +187,6 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 			]
 		]
 	];
-
 
 	if (MenuBox.IsValid())
 	{
@@ -343,10 +338,7 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 				];
 			}
 		}
-	
-	
 	}
-
 }
 
 void SUTInGameHomePanel::HideContextMenu()
@@ -404,10 +396,8 @@ FReply SUTInGameHomePanel::ContextCommand(int32 CommandId, TWeakObjectPtr<AUTPla
 			}
 		}
 	}
-
 	return FReply::Handled();
 }
-
 
 FReply SUTInGameHomePanel::OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
@@ -459,7 +449,6 @@ FReply SUTInGameHomePanel::OnMouseButtonUp(const FGeometry& MyGeometry, const FP
 			}
 		}
 	}
-
 	return FReply::Unhandled();
 }
 
