@@ -548,7 +548,7 @@ void AUTFlagRunGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 	}
 	else if (PS->RoundKills >= FMath::Max(3, 2 * PS->RoundDeaths))
 	{
-		PS->MatchHighlights[0] = HighlightNames::HardToKill;
+		PS->AddMatchHighlight(HighlightNames::HardToKill, PS->RoundDeaths);
 	}
 	else if (!bHaveRallyPoweredHighlight && (NumRalliesPowered > 1))
 	{
