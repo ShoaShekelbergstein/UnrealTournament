@@ -84,6 +84,11 @@ void AUTCTFRoundGame::PostLogin(APlayerController* NewPlayer)
 	if (NewPlayer)
 	{
 		InitPlayerForRound(Cast<AUTPlayerState>(NewPlayer->PlayerState));
+		AUTPlayerState* UTPS = Cast<AUTPlayerController>(NewPlayer) ? Cast<AUTPlayerController>(NewPlayer)->UTPlayerState : nullptr;
+		if (UTPS && UTPS->Team && IsMatchInProgress() && UTGameState && !UTGameState->IsMatchIntermission())
+		{
+			NewPlayer->ClientReceiveLocalizedMessage(UUTCTFRoleMessage::StaticClass(), IsTeamOnDefense(UTPS->Team->TeamIndex) ? 2 : 1);
+		}
 	}
 	Super::PostLogin(NewPlayer);
 }
