@@ -12,13 +12,14 @@
 #include "UTProfileSettings.generated.h"
 
 
-static const uint32 CURRENT_PROFILESETTINGS_VERSION = 40;
+static const uint32 CURRENT_PROFILESETTINGS_VERSION = 41;
 static const uint32 VALID_PROFILESETTINGS_VERSION = 32;
 static const uint32 WEAPONBAR_FIXUP_VERSION = 33;
 static const uint32 COMMENU_FIXUP_VERSION = 34;
 static const uint32 ENABLE_DOUBLETAP_DODGE_FIXUP_VERSION = 37;
 static const uint32 DEFAULT_GROUPTAUNT_FIXUP_VERSION = 38;
 static const uint32 FRAMECAP_FIXUP_VERSION = 40;
+static const uint32 CLANNAME_FIXUP_VERSION = 41;
 
 class UUTLocalPlayer;
 

@@ -16,6 +16,7 @@ UUTProfileSettings::UUTProfileSettings(const FObjectInitializer& ObjectInitializ
 {
 	bNeedProfileWriteOnLevelChange = false;
 	DefaultBotSkillLevel = 2;
+	ClanName = TEXT("");
 }
 
 void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
@@ -27,6 +28,7 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 	if (SectionToReset == EProfileResetType::All || SectionToReset == EProfileResetType::Character)
 	{
 		PlayerName = TEXT("Player");
+		ClanName = TEXT("");
 		HatPath = TEXT("");
 		LeaderHatPath = TEXT("");
 		HatVariant = 0;
@@ -346,9 +348,7 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	Key = FKeyConfigurationInfo("RequestRally", EControlCategory::Misc, EKeys::E, EKeys::Invalid, EKeys::Gamepad_FaceButton_Top, NSLOCTEXT("Keybinds", "RequestRally", "Request Rally"), false);
 	Key.AddActionMapping("RequestRally");
 	outGameActions.Add(Key);
-
 }
-
 
 bool UUTProfileSettings::ValidateGameActions()
 {
@@ -370,7 +370,6 @@ bool UUTProfileSettings::ValidateGameActions()
 
 			if (InputSettings != nullptr)
 			{
-
 				for (int32 j = 0; j < Action->ActionMappings.Num(); j++)
 				{
 					FName ActionName = Action->ActionMappings[j].ActionName;
@@ -542,6 +541,11 @@ bool UUTProfileSettings::VersionFixup()
 		{
 			GroupTauntPath = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/GroupTaunt_FacePalm.GroupTaunt_FacePalm_C");
 		}
+	}
+
+	if (SettingsRevisionNum < CLANNAME_FIXUP_VERSION)
+	{
+		ClanName = TEXT("");
 	}
 
 	int32 WeaponWheelIndex = -1;
