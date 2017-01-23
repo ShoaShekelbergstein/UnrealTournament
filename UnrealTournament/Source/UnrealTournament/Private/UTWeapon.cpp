@@ -2965,7 +2965,7 @@ void AUTWeapon::TickZoom(float DeltaTime)
 				}
 				else
 				{
-					FOV = FMath::Lerp(StartFov, EndFov, ZoomTime / ZoomModes[CurrentZoomMode].Time);
+					FOV = FMath::Lerp(StartFov, EndFov, FMath::Max(0.f, ZoomTime - 0.15f) / ZoomModes[CurrentZoomMode].Time);
 					FOV = FMath::Clamp(FOV, EndFov, StartFov);
 				}
 
