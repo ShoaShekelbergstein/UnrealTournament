@@ -1574,7 +1574,7 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 					// draw line from hud to this loc - can't used Canvas line drawing code because it doesn't support translucency
 					FVector LineStartPoint(Pos.X, Pos.Y, 0.f);
 					FLinearColor LineColor = (PS == GetScorerPlayerState()) ? FLinearColor::Yellow : FLinearColor::White;
-					LineColor.A = 0.1f;
+					LineColor.A = (PS == GetScorerPlayerState()) ? 0.2f : 0.1f;
 					FBatchedElements* BatchedElements = Canvas->Canvas->GetBatchedElements(FCanvas::ET_Line);
 					FHitProxyId HitProxyId = Canvas->Canvas->GetHitProxyId();
 					BatchedElements->AddTranslucentLine(PS->ScoreCorner, LineStartPoint, LineColor, HitProxyId, 4.f);
@@ -1587,8 +1587,14 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 
 				if (Cast<AUTPlayerController>(PlayerOwner) && (Cast<AUTPlayerController>(PlayerOwner)->LastSpectatedPlayerId == PS->SpectatingID))
 				{
+					float Speed = 2.f;
+					float ScaleTime = Speed*GetWorld()->GetTimeSeconds() - int32(Speed*GetWorld()->GetTimeSeconds());
+					float Scaling = (ScaleTime < 0.5f)
+						? ScaleTime
+						: 1.f - ScaleTime;
+					const FVector2D OwnPlayerIconScale = PlayerIconScale * (1.f + Scaling);
 					Canvas->DrawColor = FColor(255, 255, 0, 255);
-					Canvas->DrawTile(SelectedPlayerTexture, Pos.X - 0.6f*PlayerIconScale.X, Pos.Y - 0.6f*PlayerIconScale.Y, 1.2f*PlayerIconScale.X, 1.2f*PlayerIconScale.Y, 0.0f, 0.0f, SelectedPlayerTexture->GetSurfaceWidth(), SelectedPlayerTexture->GetSurfaceHeight());
+					Canvas->DrawTile(SelectedPlayerTexture, Pos.X - 0.6f*OwnPlayerIconScale.X, Pos.Y - 0.6f*OwnPlayerIconScale.Y, 1.2f*OwnPlayerIconScale.X, 1.2f*OwnPlayerIconScale.Y, 0.0f, 0.0f, SelectedPlayerTexture->GetSurfaceWidth(), SelectedPlayerTexture->GetSurfaceHeight());
 				}
 			}
 		}
