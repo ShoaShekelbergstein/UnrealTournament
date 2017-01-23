@@ -21,6 +21,8 @@
 #include "UTLineUpHelper.h"
 #include "UTLineUpZone.h"
 #include "UTCharacter.h"
+#include "StatNames.h"
+#include "UTATypes.h"
 
 AUTCTFBaseGame::AUTCTFBaseGame(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -34,7 +36,7 @@ AUTCTFBaseGame::AUTCTFBaseGame(const FObjectInitializer& ObjectInitializer)
 
 	MapPrefix = TEXT("CTF");
 	SquadType = AUTCTFSquadAI::StaticClass();
-	CTFScoringClass = AUTCTFScoring::StaticClass();
+	CTFScoringClass = AUTBaseScoring::StaticClass();
 	IntermissionDuration = 10.f;
 	FlagCapScore = 1;
 
@@ -60,8 +62,8 @@ void AUTCTFBaseGame::PreInitializeComponents()
 
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.Instigator = Instigator;
-	CTFScoring = GetWorld()->SpawnActor<AUTCTFScoring>(CTFScoringClass, SpawnInfo);
-	CTFScoring->CTFGameState = CTFGameState;
+	CTFScoring = GetWorld()->SpawnActor<AUTBaseScoring>(CTFScoringClass, SpawnInfo);
+	CTFScoring->InitFor(this);
 }
 
 void AUTCTFBaseGame::InitGameState()
@@ -227,7 +229,7 @@ void AUTCTFBaseGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AU
 	if (Holder != NULL && Holder->Team != NULL && !CTFGameState->HasMatchEnded() && !CTFGameState->IsMatchIntermission())
 	{
 		int32 NewFlagCapScore = GetFlagCapScore();
-		CTFScoring->ScoreObject(GameObject, HolderPawn, Holder, Reason, TimeLimit, NewFlagCapScore);
+		CTFScoring->ScoreObject(GameObject, HolderPawn, Holder, Reason, NewFlagCapScore);
 
 		if (BaseMutator != NULL)
 		{
@@ -268,6 +270,18 @@ void AUTCTFBaseGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AU
 				}
 			}
 			HandleFlagCapture(HolderPawn, Holder);
+			if (IsMatchInProgress())
+			{
+				// tell bots about the cap
+				AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+				if (GS != NULL)
+				{
+					for (AUTTeamInfo* TeamIter : GS->Teams)
+					{
+						TeamIter->NotifyObjectiveEvent(GameObject->HomeBase, HolderPawn->Controller, FName(TEXT("FlagCap")));
+					}
+				}
+			}
 		}
 	}
 }
@@ -343,29 +357,22 @@ void AUTCTFBaseGame::HandleMatchIntermission()
 		{
 			PlacePlayersAroundFlagBase(i, i);
 		}
-
-		// Tell the controllers to look at own team flag
-		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
-		{
-			AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-			if (PC != NULL)
-			{
-				PC->ClientHalftime();
-				int32 TeamToWatch = IntermissionTeamToView(PC);
-				PC->SetViewTarget(CTFGameState->FlagBases[TeamToWatch]);
-			}
-		}
-	}
-
-	// Freeze all of the pawns
-	for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
-	{
-		if (*It && !Cast<ASpectatorPawn>((*It).Get()))
-		{
-			(*It)->TurnOff();
-		}
 	}
 	
+	UTGameState->PrepareForIntermission();
+
+	// Tell the controllers to look at own team flag
+	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+	{
+		AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+		if (PC != NULL)
+		{
+			PC->ClientPrepareForIntermission();
+			int32 TeamToWatch = IntermissionTeamToView(PC);
+			PC->SetViewTarget(CTFGameState->FlagBases[TeamToWatch]);
+			PC->FlushPressedKeys();
+		}
+	}
 
 	CTFGameState->bIsAtIntermission = true;
 	CTFGameState->OnIntermissionChanged();
@@ -414,7 +421,7 @@ void AUTCTFBaseGame::HandleExitingIntermission()
 	//now respawn all the players
 	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 	{
-		AController* Controller = *Iterator;
+		AController* Controller = Iterator->Get();
 		if (Controller->PlayerState != NULL && !Controller->PlayerState->bOnlySpectator)
 		{
 			RestartPlayer(Controller);
@@ -513,7 +520,7 @@ void AUTCTFBaseGame::RestartPlayer(AController* aPlayer)
 
 void AUTCTFBaseGame::PlacePlayersAroundFlagBase(int32 TeamNum, int32 FlagTeamNum)
 {
-	if ((CTFGameState == NULL) || (FlagTeamNum >= CTFGameState->FlagBases.Num()) || (CTFGameState->FlagBases[FlagTeamNum] == NULL))
+	if ((CTFGameState == NULL) || (FlagTeamNum >= CTFGameState->FlagBases.Num()) || (CTFGameState->FlagBases[FlagTeamNum] == NULL) || (CTFGameState->LineUpHelper != NULL && CTFGameState->LineUpHelper->bIsActive))
 	{
 		return;
 	}
@@ -632,7 +639,7 @@ void AUTCTFBaseGame::BuildScoreInfo(AUTPlayerState* PlayerState, TSharedPtr<clas
 	NewPlayerInfoLine(TopLeftPane, NSLOCTEXT("AUTGameMode", "Deaths", "Deaths"), MakeShareable(new TAttributeStat(PlayerState, NAME_None, [](const AUTPlayerState* PS, const TAttributeStat* Stat) -> float { return PS->Deaths; })), StatList);
 	/*NewPlayerInfoLine(TopLeftPane, NSLOCTEXT("AUTGameMode", "ScorePM", "Score Per Minute"), MakeShareable(new TAttributeStat(PlayerState, NAME_None, [](const AUTPlayerState* PS, const TAttributeStat* Stat) -> float
 	{
-	return (PS->StartTime <  PS->GetWorld()->GameState->ElapsedTime) ? PS->Score * 60.f / (PS->GetWorld()->GameState->ElapsedTime - PS->StartTime) : 0.f;
+	return (PS->StartTime <  UTGameState->ElapsedTime) ? PS->Score * 60.f / (UTGameState->ElapsedTime - PS->StartTime) : 0.f;
 	}, TwoDecimal)), StatList);*/
 	NewPlayerInfoLine(TopLeftPane, NSLOCTEXT("AUTGameMode", "KDRatio", "K/D Ratio"), MakeShareable(new TAttributeStat(PlayerState, NAME_None, [](const AUTPlayerState* PS, const TAttributeStat* Stat) -> float
 	{

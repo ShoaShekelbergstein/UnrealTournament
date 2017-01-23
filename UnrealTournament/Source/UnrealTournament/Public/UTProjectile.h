@@ -204,7 +204,9 @@ class UNREALTOURNAMENT_API AUTProjectile : public AActor, public IUTResetInterfa
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Projectile)
 		float OffsetTime;
 
-		/** this is used with SendInitialReplication() to force projectiles to be initially replicated prior to initial physics,
+	virtual void PrepareForIntermission();
+
+	/** this is used with SendInitialReplication() to force projectiles to be initially replicated prior to initial physics,
 	 * which fixes most cases of projectiles never appearing on clients (because they got blown up before ever being sent)
 	 * we use a special tick function instead of BeginPlay() so that COND_Initial replication conditions continue to work as expected
 	 */
@@ -359,6 +361,9 @@ class UNREALTOURNAMENT_API AUTProjectile : public AActor, public IUTResetInterfa
 	/* Position of shooter when this projectile was shot. */
 	UPROPERTY()
 		FVector ShooterLocation;
+
+	UPROPERTY()
+		FRotator ShooterRotation;
 
 	/** Projectile size for hitting pawns
 	 * if set to zero, the extra component used for this feature will not be attached (perf improvement) but means you can't go from 0 at spawn -> 1+ after spawn

@@ -47,6 +47,9 @@ class UNREALTOURNAMENT_API UUTProgressionStorage : public UObject
 	UPROPERTY()
 	int32 TotalChallengeStars;
 
+	UPROPERTY()
+	int32 TutorialMask;
+
 	virtual void SetTotalChallengeStars(int32 NewValue)
 	{
 		bNeedsUpdate = true;
@@ -92,6 +95,11 @@ class UNREALTOURNAMENT_API UUTProgressionStorage : public UObject
 	{
 		bNeedsUpdate = false;
 	}
+
+	virtual void FixupBestTimes(int32& TutorialMask);
+
+	virtual bool CheckTokens(FString TokenId, int32 MaxNumberOfTokens);
+	virtual bool HasAnyTokens(FString TokenId, int32 MaxNumberOfTokens);
 
 protected:
 

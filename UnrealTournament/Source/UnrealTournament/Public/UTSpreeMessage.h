@@ -121,9 +121,9 @@ class UNREALTOURNAMENT_API UUTSpreeMessage : public UUTLocalMessage
 		return (MessageIndex >= 0) ? 3.f : 1.f;
 	}
 
-	virtual int32 GetFontSizeIndex(int32 MessageIndex) const override
+	virtual int32 GetFontSizeIndex(int32 MessageIndex, bool bTargetsLocalPlayer) const override
 	{
-		return (MessageIndex >= 0) ? 2 : 1;
+		return (bTargetsLocalPlayer && (MessageIndex >= 0)) ? 2 : 1;
 	}
 
 	virtual FName GetAnnouncementName_Implementation(int32 Switch, const UObject* OptionalObject, const class APlayerState* RelatedPlayerState_1, const class APlayerState* RelatedPlayerState_2) const override

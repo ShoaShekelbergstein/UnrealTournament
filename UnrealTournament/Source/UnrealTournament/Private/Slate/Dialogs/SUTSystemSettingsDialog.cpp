@@ -345,14 +345,14 @@ void SUTSystemSettingsDialog::Construct(const FArguments& InArgs)
 				.AutoHeight()
 				[
 					SNew(SBox)
-					.HeightOverride(46)
+					.HeightOverride(55)
 					[
 						SNew(SHorizontalBox)
 						+ SHorizontalBox::Slot()
 						.FillWidth(1.0f)
 						[
 							SNew(SImage)
-							.Image(SUWindowsStyle::Get().GetBrush("UT.TopMenu.MidFill"))
+							.Image(SUTStyle::Get().GetBrush("UT.HeaderBackground.Dark"))
 						]
 					]
 				]
@@ -365,7 +365,7 @@ void SUTSystemSettingsDialog::Construct(const FArguments& InArgs)
 				.AutoHeight()
 				[
 					SNew(SBox)
-					.HeightOverride(46)
+					.HeightOverride(55)
 					[
 						SNew(SHorizontalBox)
 						+ SHorizontalBox::Slot()
@@ -374,10 +374,10 @@ void SUTSystemSettingsDialog::Construct(const FArguments& InArgs)
 						[
 							SAssignNew(GeneralSettingsTabButton, SUTTabButton)
 							.ContentPadding(FMargin(15.0f, 10.0f, 70.0f, 0.0f))
-							.ButtonStyle(SUWindowsStyle::Get(), "UT.TopMenu.OptionTabButton")
-							.ClickMethod(EButtonClickMethod::MouseDown)
+							.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
+							.IsToggleButton(true)
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 							.Text(NSLOCTEXT("SUTSystemSettingsDialog", "ControlTabGeneral", "General"))
-							.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.SmallTextStyle")
 							.OnClicked(this, &SUTSystemSettingsDialog::OnTabClickGeneral)
 						]
 
@@ -387,9 +387,9 @@ void SUTSystemSettingsDialog::Construct(const FArguments& InArgs)
 						[
 							SAssignNew(GraphicsSettingsTabButton, SUTTabButton)
 							.ContentPadding(FMargin(15.0f, 10.0f, 70.0f, 0.0f))
-							.ButtonStyle(SUWindowsStyle::Get(), "UT.TopMenu.OptionTabButton")
-							.ClickMethod(EButtonClickMethod::MouseDown)
-							.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.SmallTextStyle")
+							.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
+							.IsToggleButton(true)
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 							.Text(NSLOCTEXT("SUTSystemSettingsDialog", "ControlTabGraphics", "Graphics"))
 							.OnClicked(this, &SUTSystemSettingsDialog::OnTabClickGraphics)
 						]
@@ -400,9 +400,9 @@ void SUTSystemSettingsDialog::Construct(const FArguments& InArgs)
 						[
 							SAssignNew(AudioSettingsTabButton, SUTTabButton)
 							.ContentPadding(FMargin(15.0f, 10.0f, 70.0f, 0.0f))
-							.ButtonStyle(SUWindowsStyle::Get(), "UT.TopMenu.OptionTabButton")
-							.ClickMethod(EButtonClickMethod::MouseDown)
-							.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.SmallTextStyle")
+							.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
+							.IsToggleButton(true)
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 							.Text(NSLOCTEXT("SUTSystemSettingsDialog", "ControlTabAudio", "Audio"))
 							.OnClicked(this, &SUTSystemSettingsDialog::OnTabClickAudio)
 						]
@@ -492,6 +492,7 @@ TSharedRef<class SWidget> SUTSystemSettingsDialog::BuildCustomButtonBar()
 			]
 			+ SHorizontalBox::Slot()
 			.FillWidth(0.1f)
+			.Padding(10.0f,0.0f,0.0f,0.0f)
 			.HAlign(HAlign_Right)
 			[
 				SNew(SCheckBox)
@@ -742,7 +743,7 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildGeneralTab()
 				SNew(STextBlock)
 				.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
 				.Text(NSLOCTEXT("SUTSystemSettingsDialog", "MatchmakingRegion", "Matchmaking Region"))
-				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "MatchmakingRegion_Tooltip", "Which region that ranked matchmaking will use.")))
+				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "MatchmakingRegion_Tooltip", "Which region that ranked matchmaking will use. NA = North America, EU = Europe.")))
 			]
 		]
 		+ SHorizontalBox::Slot()
@@ -777,8 +778,8 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildGeneralTab()
 			[
 				SNew(STextBlock)
 				.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
-				.Text(NSLOCTEXT("SUTSystemSettingsDialog", "KeyboardLighting", "Enable Keyboard Lighting (Razer Chroma)"))
-				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "KeyboardLighting_Tooltip", "Keyboard lighting only supported on Razer Chroma at the moment.")))
+				.Text(NSLOCTEXT("SUTSystemSettingsDialog", "KeyboardLighting", "Enable Keyboard Lighting"))
+				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "KeyboardLighting_Tooltip", "Keyboard lighting only supported on Razer Chroma and Corsair RGB at the moment.")))
 			]
 		]
 		+ SHorizontalBox::Slot()
@@ -1243,16 +1244,8 @@ FReply SUTSystemSettingsDialog::OnAutodetectClick()
 		UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
 		if (UTEngine != NULL)
 		{
-			int32 RefreshRate;
-			if (UTEngine->GetMonitorRefreshRate(RefreshRate))
-			{
-				int32 AutoDetectedFramerateCap = 120;
-				if (RefreshRate < 120)
-				{
-					AutoDetectedFramerateCap = 60;
-				}
-				FrameRateCap->SetText(FText::AsNumber(AutoDetectedFramerateCap));
-			}
+			int32 AutoDetectedFramerateCap = 120;
+			FrameRateCap->SetText(FText::AsNumber(AutoDetectedFramerateCap));
 		}
 	}
 
@@ -1290,17 +1283,18 @@ FReply SUTSystemSettingsDialog::OKClick()
 	int32 NewScreenPercentage = FMath::TruncToInt(ScreenPercentageSlider->GetValue() * (ScreenPercentageRange.Y - ScreenPercentageRange.X) + ScreenPercentageRange.X) / 5 * 5;
 	UserSettings->SetScreenPercentage(NewScreenPercentage);
 
+	int32 NewDisplayMode = DisplayModeList.Find(DisplayModeComboBox->GetSelectedItem());
+	UserSettings->SetFullscreenMode(EWindowMode::ConvertIntToWindowMode(NewDisplayMode));
 	const TCHAR* Cmd = *SelectedRes->GetText().ToString();
 	int32 X=FCString::Atoi(Cmd);
 	const TCHAR* CmdTemp = FCString::Strchr(Cmd,'x') ? FCString::Strchr(Cmd,'x')+1 : FCString::Strchr(Cmd,'X') ? FCString::Strchr(Cmd,'X')+1 : TEXT("");
 	int32 Y=FCString::Atoi(CmdTemp);
-	UserSettings->SetScreenResolution(FIntPoint(X, Y));
-	int32 NewDisplayMode = DisplayModeList.Find(DisplayModeComboBox->GetSelectedItem());
-	UserSettings->SetFullscreenMode(EWindowMode::ConvertIntToWindowMode(NewDisplayMode));
 	UserSettings->SetVSyncEnabled(VSync->IsChecked());
 	UserSettings->SetKeyboardLightingEnabled(KeyboardLightingCheckbox->IsChecked());
-	UserSettings->RequestResolutionChange(X, Y, EWindowMode::ConvertIntToWindowMode(NewDisplayMode));
+	UserSettings->SetScreenResolution(FIntPoint(X, Y));
 	UserSettings->SaveConfig();
+
+	UserSettings->ApplyResolutionSettings(false);
 
 	// Immediately change the vsync, UserSettings would do it, but it's in a function that we don't typically call
 	static auto CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));
@@ -1383,55 +1377,82 @@ FReply SUTSystemSettingsDialog::CancelClick()
 
 void SUTSystemSettingsDialog::OnMatchmakingRegionSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	SelectedMatchmakingRegion->SetText(*NewSelection.Get());
-	bChangedMatchmakingRegion = true;
+	if (NewSelection.IsValid())
+	{
+		SelectedMatchmakingRegion->SetText(*NewSelection.Get());
+		bChangedMatchmakingRegion = true;
+	}
 }
 void SUTSystemSettingsDialog::OnResolutionSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	SelectedRes->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		SelectedRes->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnDisplayModeSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	SelectedDisplayMode->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		SelectedDisplayMode->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnTextureResolutionSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
-	ScalabilityQuality.TextureQuality = GeneralScalabilityList.Find(TextureRes->GetSelectedItem());
-	Scalability::SetQualityLevels(ScalabilityQuality);
-	SelectedTextureRes->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
+		ScalabilityQuality.TextureQuality = GeneralScalabilityList.Find(TextureRes->GetSelectedItem());
+		Scalability::SetQualityLevels(ScalabilityQuality);
+		SelectedTextureRes->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnViewDistanceSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
-	ScalabilityQuality.ViewDistanceQuality = GeneralScalabilityList.Find(ViewDistance->GetSelectedItem());
-	Scalability::SetQualityLevels(ScalabilityQuality);
-	SelectedViewDistance->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
+		ScalabilityQuality.ViewDistanceQuality = GeneralScalabilityList.Find(ViewDistance->GetSelectedItem());
+		Scalability::SetQualityLevels(ScalabilityQuality);
+		SelectedViewDistance->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnShadowQualitySelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
-	ScalabilityQuality.ShadowQuality = GeneralScalabilityList.Find(ShadowQuality->GetSelectedItem());
-	Scalability::SetQualityLevels(ScalabilityQuality);
-	SelectedShadowQuality->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
+		ScalabilityQuality.ShadowQuality = GeneralScalabilityList.Find(ShadowQuality->GetSelectedItem());
+		Scalability::SetQualityLevels(ScalabilityQuality);
+		SelectedShadowQuality->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnPPQualitySelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
-	ScalabilityQuality.PostProcessQuality = GeneralScalabilityList.Find(PPQuality->GetSelectedItem());
-	Scalability::SetQualityLevels(ScalabilityQuality);
-	SelectedPPQuality->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
+		ScalabilityQuality.PostProcessQuality = GeneralScalabilityList.Find(PPQuality->GetSelectedItem());
+		Scalability::SetQualityLevels(ScalabilityQuality);
+		SelectedPPQuality->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnEffectQualitySelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
-	ScalabilityQuality.EffectsQuality = GeneralScalabilityList.Find(EffectQuality->GetSelectedItem());
-	Scalability::SetQualityLevels(ScalabilityQuality);
-	SelectedEffectQuality->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		Scalability::FQualityLevels ScalabilityQuality = Scalability::GetQualityLevels();
+		ScalabilityQuality.EffectsQuality = GeneralScalabilityList.Find(EffectQuality->GetSelectedItem());
+		Scalability::SetQualityLevels(ScalabilityQuality);
+		SelectedEffectQuality->SetText(*NewSelection.Get());
+	}
 }
 void SUTSystemSettingsDialog::OnAAModeSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	SelectedAAMode->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		SelectedAAMode->SetText(*NewSelection.Get());
+	}
 }
 
 int32 SUTSystemSettingsDialog::ConvertAAModeToComboSelection(int32 NewAAMode)
@@ -1491,7 +1512,10 @@ FText SUTSystemSettingsDialog::GetVSyncText() const
 
 void SUTSystemSettingsDialog::OnVOIPChanged(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
-	VOIPOptionsText->SetText(*NewSelection.Get());
+	if (NewSelection.IsValid())
+	{
+		VOIPOptionsText->SetText(*NewSelection.Get());
+	}
 }
 
 

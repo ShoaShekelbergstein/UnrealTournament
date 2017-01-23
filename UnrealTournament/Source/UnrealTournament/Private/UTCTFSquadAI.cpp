@@ -35,7 +35,7 @@ void AUTCTFSquadAI::Initialize(AUTTeamInfo* InTeam, FName InOrders)
 	}
 }
 
-bool AUTCTFSquadAI::MustKeepEnemy(APawn* TheEnemy)
+bool AUTCTFSquadAI::MustKeepEnemy(AUTBot* B, APawn* TheEnemy)
 {
 	// must keep enemy flag holder
 	AUTCharacter* UTC = Cast<AUTCharacter>(TheEnemy);
@@ -385,7 +385,7 @@ bool AUTCTFSquadAI::CheckSquadObjectives(AUTBot* B)
 		}
 		else if (B->GetEnemy() != NULL)
 		{
-			if (!B->LostContact(3.0f) || MustKeepEnemy(B->GetEnemy()))
+			if (!B->LostContact(3.0f) || MustKeepEnemy(B, B->GetEnemy()))
 			{
 				B->GoalString = "Fight attacker";
 				return false;
@@ -516,11 +516,18 @@ void AUTCTFSquadAI::NotifyObjectiveEvent(AActor* InObjective, AController* Insti
 		}
 		SetLeader(InstigatedBy);
 	}
+	const bool bResetAlternateRoutes = (EventName == FName(TEXT("FlagCap")) && InObjective == Objective); // reset path selection when our team capped as the enemy flag is now back in the base
 	for (AController* C : Members)
 	{
 		AUTBot* B = Cast<AUTBot>(C);
 		if (B != NULL)
 		{
+			if (bResetAlternateRoutes)
+			{
+				B->bDisableSquadRoutes = false;
+				B->SquadRouteGoal.Clear();
+				B->UsingSquadRouteIndex = INDEX_NONE;
+			}
 			if (B->GetUTChar() != NULL && B->GetUTChar()->GetCarriedObject() != NULL)
 			{
 				// retask flag carrier immediately

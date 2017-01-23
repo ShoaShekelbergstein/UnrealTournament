@@ -34,6 +34,10 @@ class SUTMatchSummaryPanel;
 class SUTChatEditBox;
 class SUTQuickChatWindow;
 class UUTKillcamPlayback;
+class SUTWebMessage;
+class SUTReportUserDialog;
+class UUTUMGWidget;
+class UUTUMGWidget_Toast;
 
 enum class EMatchmakingCompleteResult : uint8;
 
@@ -151,6 +155,12 @@ struct FMMREntry
 
 	UPROPERTY()
 	int32 MatchesPlayed;
+
+	FMMREntry()
+	{
+		MMR = 1500;
+		MatchesPlayed = 0;
+	}
 };
 
 USTRUCT()
@@ -212,7 +222,8 @@ public:
 	virtual void ShowMenu(const FString& Parameters);
 	virtual void HideMenu();
 	virtual void OpenTutorialMenu();
-	virtual void ShowToast(FText ToastText);	// NOTE: Need to add a type/etc so that they can be skinned better.
+	virtual void ShowToast(FText ToastText, float Lifetime=1.5f);	// NOTE: Need to add a type/etc so that they can be skinned better.
+	virtual void ToastCompleted(UUTUMGWidget_Toast* Toast);
 	virtual void ShowAdminMessage(FString Message);
 
 	virtual void MessageBox(FText MessageTitle, FText MessageText);
@@ -248,6 +259,49 @@ public:
 	}
 
 #endif
+	UPROPERTY()
+	TArray<UUTUMGWidget*> UMGWidgetStack;
+
+	UPROPERTY()
+	TArray<UUTUMGWidget*> ToastStack;
+
+
+	/**
+	 * Opens a UTUMGWidget and keeps track of it.  
+	 * @UMGClass the text class name of the UMG widget to open.  NOTE: it will auto-append the _C if needed
+	 * @returns the UMG widget opened
+	 */
+	UFUNCTION(BlueprintCallable, Category = UI)
+	virtual UUTUMGWidget* OpenUMGWidget(const FString& UMGClass);
+
+	/**
+	 * Takes an existing UTUMGWidget and keeps track of it.  
+	 * @WidgetToOpen the actual widget we are trying to open
+	 */
+	virtual UUTUMGWidget* OpenExistingUMGWidget(UUTUMGWidget* WidgetToOpen);
+
+	/**
+	 * Find a widget in the stack by tag
+	 * @SearchTag the tag of the widget to find
+	 * @returns the widget in question
+	 */
+	UFUNCTION(BlueprintCallable, Category = UI)
+	virtual UUTUMGWidget* FindUMGWidget(const FName SearchTag);
+	
+	/**
+	 * Closes a widget on the stack by it's tag.  Note this one occurs outside the preprocess block so it's actually available to blueprints.
+	 * @Tag the tag of the widget to find
+	 */
+
+	UFUNCTION(BlueprintCallable, Category = UI)
+	virtual void CloseUMGWidgetByTag(const FName Tag);
+
+	/**
+	 * Closes a given UTUMGWidget
+	 */
+	UFUNCTION(BlueprintCallable, Category = UI)
+	virtual void CloseUMGWidget(UUTUMGWidget* WidgetToClose);
+
 
 	UFUNCTION(BlueprintCallable, Category = UI)
 	virtual bool AreMenusOpen();
@@ -289,9 +343,7 @@ protected:
 
 	/** stores a reference to open dialogs so they don't get destroyed */
 	TArray< TSharedPtr<class SUTDialogBase> > OpenDialogs;
-	TArray<TSharedPtr<class SUTToastBase>> ToastList;
 
-	virtual void AddToastToViewport(TSharedPtr<SUTToastBase> ToastToDisplay);
 	void WelcomeDialogResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 	void OnSwitchUserResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 	TSharedPtr<class SUTQuickMatchWindow> QuickMatchDialog;
@@ -411,7 +463,6 @@ public:
 	virtual bool SkipWorldRender();
 
 #if !UE_SERVER
-	virtual void ToastCompleted();
 	virtual void CloseAuth();
 #endif
 
@@ -443,8 +494,10 @@ protected:
 	FChatArchiveChanged ChatArchiveChanged;
 
 	double LastProfileCloudWriteTime;
+	double LastProgressionCloudWriteTime;
 	double ProfileCloudWriteCooldownTime;
 	FTimerHandle ProfileWriteTimerHandle;
+	FTimerHandle ProgressionWriteTimerHandle;
 
 	// Hopefully the only magic number needed for profile versions, but being safe
 	uint32 CloudProfileMagicNumberVersion1;
@@ -653,7 +706,13 @@ protected:
 	FString PendingFriendInviteFriendId;
 	bool bShowSocialNotification;
 
+public:
+	virtual void SetShowingFriendsPopup(bool bShowing);
+	bool bShowingFriendsMenu;
+
 #if !UE_SERVER
+
+protected:
 
 	 TSharedPtr<SOverlay> ContentLoadingMessage;
 
@@ -662,11 +721,10 @@ public:
 	virtual void HideContentLoadingMessage();
 
 	virtual TSharedPtr<SUTFriendsPopupWindow> GetFriendsPopup();
-	virtual void SetShowingFriendsPopup(bool bShowing);
+
 protected:
 	TSharedPtr<SUTFriendsPopupWindow> FriendsMenu;
 #endif
-	bool bShowingFriendsMenu;
 
 	// If the player is not logged in, then this string will hold the last attempted presence update
 	FString LastPresenceUpdate;
@@ -674,14 +732,10 @@ protected:
 
 public:
 	virtual FName GetCountryFlag();
-	virtual void SetCountryFlag(FName NewFlag, bool bSave=false);
-
-	// If the player switches profiles and is in a session, we have to delay the switch until we can leave the current session
-	// and exit back to the main menu.  To do this, we store the Pending info here and when the main menu sees that the player has left a session
-	// THEN we perform the login.
-
 	virtual FName GetAvatar();
-	virtual void SetAvatar(FName NewAvatar, bool bSave=false);
+
+	// Combined and moved to the MCPPRofile so the backend has access to this information
+	virtual void SetCountryFlagAndAvatar(FName NewFlag, FName NewAvatar);
 
 
 protected:
@@ -1104,6 +1158,7 @@ public:
 	virtual bool HasChatText();
 
 protected:
+
 	// Loads the local profile from disk.  This happens immediately upon creation and again when a logout occurs.  
 	virtual void LoadLocalProfileSettings();
 
@@ -1144,6 +1199,7 @@ public:
 	virtual void LoginProcessComplete();
 
 	virtual void SetTutorialFinished(int32 TutorialMask);
+	virtual void SetTutorialFinished(FName TutorialTag);
 
 	UFUNCTION(BlueprintCallable, Category = UI)
 	bool IsSystemMenuOpen();
@@ -1153,8 +1209,98 @@ public:
 	bool SkipTutorialCheck();
 
 	// Returns true if this local player is currently in a party
-	bool IsInAnActiveParty();
+	bool IsInAnActiveParty() const;
+
+	virtual bool IsMenuOptionLocked(FName MenuCommand) const;
+	virtual	EVisibility IsMenuOptionLockVisible(FName MenuCommand) const;
+	virtual	bool IsMenuOptionEnabled(FName MenuCommand) const;
+
+	virtual FText GetMenuCommandTooltipText(FName MenuCommand) const;
+
+	UPROPERTY(config)
+	TArray<FTutorialData> TutorialData;
+
+	UFUNCTION(BlueprintCallable, Category=Tutorial)
+	virtual FText GetBestTutorialTime(FName TutorialName);
+
+	/** Returns the current tutorial mask */
+	UFUNCTION(BlueprintCallable, Category=Tutorial)
+	virtual int32 GetTutorialMask() const;
+
+	virtual void SetTutorialMask(int32 BitToSet);
+	virtual void ClearTutorialMask(int32 BitToClear);
 
 
+	UFUNCTION(BlueprintCallable, Category=Tutorial)
+	virtual bool IsTutorialMaskCompleted(int32 TutorialMask) const;
+
+	UFUNCTION(BlueprintCallable, Category=Tutorial)
+	virtual bool IsTutorialCompleted(FName TutorialName) const;
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual void LaunchTutorial(FName TutorialName, const FString& DesiredQuickmatchType = TEXT(""));
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual bool LaunchPendingQuickmatch();
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual void RestartTutorial();
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual void NextTutorial();
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual FText GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const;
+
+protected:
+	UPROPERTY()
+	bool bQuickmatchOnLevelChange;
+	
+	UPROPERTY()
+	FString PendingQuickmatchType;
+
+	UPROPERTY()
+	FName LastTutorial;
+
+	TSharedPtr<SUTWebMessage> WebMessageDialog;
+	TSharedPtr<SUTReportUserDialog> AbuseDialog;
+
+public:
+	/** Hides/Shows the friends and chat panel */
+	virtual FReply ToggleFriendsAndChat();
+
+
+	/** 
+	 *  Will return true if a progression key has been set.  NOTE until we bring a progression system online,
+	 *	this will be just a collection of ugly checks :) 
+	 **/
+
+	virtual bool HasProgressionKey(FName RequiredKey);
+	virtual bool HasProgressionKeys(TArray<FName> RequiredKeys);
+
+	// Holds the last loaded version.  This is used to display the what's new dialog
+	UPROPERTY(config)
+	int32 LastLoadedVersionNumber;
+
+	virtual void ShowWebMessage(FText Caption, FString Url);
+	virtual void CloseWebMessage();
+
+	void ReportAbuse(TWeakObjectPtr<class AUTPlayerState> Troll);
+	void CloseAbuseDialog();
+
+protected:
+	UPROPERTY()
+	UUTUMGWidget* SavingWidget;
+
+	void ShowSavingWidget();
+	void HideSavingWidget();
+
+	// Holds a mask that says various portions of the OSS are saving data.  NOTE: if this is non-zero then
+	// a save of some data is in progress (progression or profile).
+	uint8 SavingMask; 
+
+public:
+	UFUNCTION(BlueprintCallable, Category=UMG)
+	void CloseSavingWidget();
 };
 

@@ -106,6 +106,16 @@ FText SUTMatchmakingDialog::GetRegionText() const
 			if (PartyState)
 			{
 				FString MatchMakingRegion = PartyState->GetMatchmakingRegion();
+
+				if (MatchMakingRegion == TEXT("NA"))
+				{
+					MatchMakingRegion = TEXT("North America");
+				}
+				else if (MatchMakingRegion == TEXT("EU"))
+				{
+					MatchMakingRegion = TEXT("Europe");
+				}
+
 				if (PartyState->GetPartyProgression() == EUTPartyState::QuickMatching)
 				{
 					return FText::Format(NSLOCTEXT("Generic", "QuickMatching", "Quick Matching in Region: {0}"), FText::FromString(MatchMakingRegion));
@@ -268,7 +278,7 @@ void SUTMatchmakingDialog::Tick(const FGeometry & AllottedGeometry, const double
 	SUTDialogBase::Tick(AllottedGeometry, InCurrentTime, InDeltaTime);
 
 	// Failsafe in case we join a server
-	if (PlayerOwner.IsValid() && !PlayerOwner->IsMenuGame())
+	if (PlayerOwner.IsValid() && PlayerOwner->GetWorld()->GetNetMode() == NM_Client)
 	{
 		GetPlayerOwner()->CloseDialog(SharedThis(this));
 	}

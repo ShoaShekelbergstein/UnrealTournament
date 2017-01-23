@@ -23,6 +23,11 @@ class UNREALTOURNAMENT_API UUTGauntletGameMessage : public UUTLocalMessage
 	FText YouAreOnDefenseMessage;
 
 	virtual FText GetText(int32 Switch = 0, bool bTargetsPlayerState1 = false, class APlayerState* RelatedPlayerState_1 = NULL, class APlayerState* RelatedPlayerState_2 = NULL, class UObject* OptionalObject = NULL) const override;
+
+	virtual FString GetAnnouncementUMGClassname(int32 Switch, const UObject* OptionalObject) const override;
+
+	virtual float GetLifeTime(int32 Switch) const;
+
 };
 
 

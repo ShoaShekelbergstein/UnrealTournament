@@ -13,14 +13,19 @@
 #include "UnrealNetwork.h"
 
 FName NAME_GauntletTrail = FName(TEXT("NAME_GauntletTrail"));
-FName NAME_SecondsPerPip = FName(TEXT("SecondsPerPip"));
 
 const float MAX_REDUNDANT_Z = 96.0;
 const float MIN_GPS_POINT_THRESHOLD = 1024.0f * 1024.0f;
 
+const float MIN_SCALE_DIST = 256.0f * 256.0f;
+const float MAX_SCALE_DIST = 1024.0f * 1024.0f;
+
 AUTGauntletFlag::AUTGauntletFlag(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.TickGroup = TG_PrePhysics;
+
 	static ConstructorHelpers::FObjectFinder<UClass> GFClass(TEXT("Blueprint'/Game/RestrictedAssets/Proto/UT3_Pickups/Flag/GhostFlag.GhostFlag_C'"));
 	GhostFlagClass = GFClass.Object;
 
@@ -29,10 +34,10 @@ AUTGauntletFlag::AUTGauntletFlag(const FObjectInitializer& ObjectInitializer)
 	if (TimerEffect != nullptr && TimerPS.Object != nullptr)
 	{
 		TimerEffect->SetTemplate(TimerPS.Object);
-		TimerEffect->SetHiddenInGame(false);
+		TimerEffect->SetHiddenInGame(true);
 		TimerEffect->SetupAttachment(RootComponent);
 		TimerEffect->LDMaxDrawDistance = 4000.0f;
-		TimerEffect->RelativeLocation.Z = 40.0f;
+		TimerEffect->RelativeLocation.Z = 300.0f;
 		TimerEffect->Mobility = EComponentMobility::Movable;
 		TimerEffect->SetCastShadow(false);
 	}
@@ -67,6 +72,18 @@ void AUTGauntletFlag::PostInitializeComponents()
 		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGauntletFlag::ValidateGPSPath, 2.5f, true);
 	}
 }
+
+void AUTGauntletFlag::BeginPlay()
+{
+	Super::BeginPlay();
+
+	APlayerController* PC = GEngine->GetFirstLocalPlayerController(GetWorld());
+	if (GetNetMode() != NM_DedicatedServer && PC != NULL && PC->MyHUD != NULL)
+	{
+		PC->MyHUD->AddPostRenderedActor(this);
+	}
+}
+
 
 void AUTGauntletFlag::OnRep_Team()
 {
@@ -157,57 +174,74 @@ void AUTGauntletFlag::SetHolder(AUTCharacter* NewHolder)
 void AUTGauntletFlag::MoveToHome()
 {
 	Super::MoveToHome();
-	SetTeam(nullptr);
 }
 
 void AUTGauntletFlag::OnObjectStateChanged()
 {
 	AUTCarriedObject::OnObjectStateChanged();
 	GetMesh()->ClothBlendWeight = (ObjectState == CarriedObjectState::Held) ? ClothBlendHeld : ClothBlendHome;
-
-	if (GetWorld()->GetNetMode() != NM_DedicatedServer)
-	{
-		APlayerController* PC = GEngine->GetFirstLocalPlayerController(GetWorld());
-		if (PC != NULL && PC->MyHUD != NULL)
-		{
-			if (ObjectState == CarriedObjectState::Dropped)
-			{
-				AUTGauntletGameState* SCTFGameState = GetWorld()->GetGameState<AUTGauntletGameState>();
-				PC->MyHUD->AddPostRenderedActor(this);
-			}
-			else
-			{
-				PC->MyHUD->RemovePostRenderedActor(this);
-			}
-		}
-	}
 }
 
 void AUTGauntletFlag::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
 {
-/*
-	if (PC->GetPawn())
+	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PC);
+	if ( ObjectState != CarriedObjectState::Held )
 	{
 		float Scale = Canvas->ClipY / 1080.0f;
-		FVector2D Size = FVector2D(44,41) * Scale;
+		FVector2D Size = FVector2D(43,41) * Scale;
 
 		AUTHUD* HUD = Cast<AUTHUD>(PC->MyHUD);
-		FVector FlagLoc = GetActorLocation() + FVector(0.0f,0.0f,128.0f);
-		FVector ScreenPosition = Canvas->Project(FlagLoc);
+		if (HUD == nullptr) return;
+
+		FVector InWorldDrawLoc = GetActorLocation() + FVector(0.0f,0.0f,200.0f);
+		FVector ScreenPosition = Canvas->Project(InWorldDrawLoc);
 
 		FVector LookVec;
 		FRotator LookDir;
 		PC->GetPawn()->GetActorEyesViewPoint(LookVec,LookDir);
 
-		if (HUD && FVector::DotProduct(LookDir.Vector().GetSafeNormal(), (FlagLoc - LookVec)) > 0.0f && 
-			ScreenPosition.X > 0 && ScreenPosition.X < Canvas->ClipX && 
-			ScreenPosition.Y > 0 && ScreenPosition.Y < Canvas->ClipY)
+		if ( FVector::DotProduct(LookDir.Vector().GetSafeNormal(), (InWorldDrawLoc - LookVec)) > 0.0f && 
+				ScreenPosition.X > 0 && ScreenPosition.X < Canvas->ClipX && 
+				ScreenPosition.Y > 0 && ScreenPosition.Y < Canvas->ClipY)
 		{
-			Canvas->SetDrawColor(255,255,255,255);
-			Canvas->DrawTile(HUD->HUDAtlas, ScreenPosition.X - (Size.X * 0.5f), ScreenPosition.Y - Size.Y, Size.X, Size.Y,843,87,44,41);
+
+			if (ObjectState == CarriedObjectState::Dropped && SwapTimer > 0)
+			{
+				Canvas->SetDrawColor(255,255,255,255);
+				FText Number = FText::AsNumber(int32(SwapTimer)+1);
+				FVector2D TextSize;
+				Canvas->StrLen(HUD->LargeFont, Number.ToString(), TextSize.X, TextSize.Y);
+				float Dist = (LookVec - InWorldDrawLoc).SizeSquared();
+				Dist = FMath::Clamp<float>(Dist, MIN_SCALE_DIST, MAX_SCALE_DIST) - MIN_SCALE_DIST;
+				Scale *= (0.4 + (0.6 * (1.0f - (Dist / MAX_SCALE_DIST))));
+
+				if (GetTeamNum() != 255)
+				{
+					Canvas->DrawText(HUD->LargeFont, Number, ScreenPosition.X - (TextSize.X * 0.5 * Scale), ScreenPosition.Y - (TextSize.Y * 0.75 * Scale), Scale, Scale);
+				}
+				ScreenPosition.Y += TextSize.Y  * Scale * 1.25;
+
+				if (GetWorld()->GetTimeSeconds() - GetLastRenderTime() > 0.01f)
+				{
+					AUTGauntletGameState* GauntletGameState = GetWorld()->GetGameState<AUTGauntletGameState>();
+			
+					if (GauntletGameState && GetTeamNum() == 0 && GauntletGameState->Teams.Num() > 0 && GauntletGameState->Teams[0]) 
+					{
+						Canvas->SetLinearDrawColor(GauntletGameState->Teams[0]->TeamColor);
+					}
+					else if (GauntletGameState && GetTeamNum() == 1 && GauntletGameState->Teams.Num() > 1 && GauntletGameState->Teams[1]) 
+					{
+						Canvas->SetLinearDrawColor(GauntletGameState->Teams[1]->TeamColor);
+					}
+					else
+					{
+						Canvas->SetDrawColor(FColor::Green);
+					}
+					Canvas->DrawTile(HUD->HUDAtlas, ScreenPosition.X - (Size.X * 0.5f), ScreenPosition.Y - Size.Y, Size.X, Size.Y,843,87,43,41);
+				}
+			}
 		}
-	}	
-*/
+	}
 }
 
 
@@ -224,9 +258,9 @@ void AUTGauntletFlag::ChangeState(FName NewCarriedObjectState)
 }
 
 
-void AUTGauntletFlag::Tick(float DeltaSeconds)
+void AUTGauntletFlag::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaSeconds);
+	Super::Tick(DeltaTime);
 
 	AUTGauntletGameState* GauntletGameState = GetWorld()->GetGameState<AUTGauntletGameState>();
 	if (GauntletGameState)
@@ -239,7 +273,7 @@ void AUTGauntletFlag::Tick(float DeltaSeconds)
 			{
 				if (bPendingTeamSwitch)
 				{
-					SwapTimer -= DeltaSeconds;
+					SwapTimer -= DeltaTime;
 					if (SwapTimer <= 0)
 					{
 						TeamReset();
@@ -250,7 +284,7 @@ void AUTGauntletFlag::Tick(float DeltaSeconds)
 			{
 				if (SwapTimer < DefaultSwapTime)
 				{
-					SwapTimer += DeltaSeconds;
+					SwapTimer += DeltaTime;
 				}
 			}
 			else if (ObjectState == CarriedObjectState::Home)
@@ -261,30 +295,8 @@ void AUTGauntletFlag::Tick(float DeltaSeconds)
 			SwapTimer = FMath::Clamp<float>(SwapTimer, 0, DefaultSwapTime);
 		}
 
-		if (ObjectState == CarriedObjectState::Home)
-		{
-			if (TimerEffect != nullptr)
-			{
-				if (GauntletGameState->RemainingPickupDelay > 0)
-				{
-					if (TimerEffect->bHiddenInGame)
-					{
-						TimerEffect->SetHiddenInGame(false);
-						TimerEffect->SetFloatParameter(NAME_RespawnTime, 30.0f);
-						TimerEffect->SetFloatParameter(NAME_SecondsPerPip, 3.0f);
-					}
-
-					float Progress = 1.0f - float(GauntletGameState->RemainingPickupDelay) / 30.0f;
-					UE_LOG(UT,Log,TEXT("Progress %f"), Progress);
-					TimerEffect->SetFloatParameter(NAME_Progress, Progress);			
-				}
-				else
-				{
-					TimerEffect->SetHiddenInGame(true);
-				}
-			}
-		}
-		else if (ObjectState == CarriedObjectState::Dropped)
+		
+		if ( (ObjectState == CarriedObjectState::Dropped || ObjectState == CarriedObjectState::Home) && GetTeamNum() != 255 )
 		{
 			if (TimerEffect != nullptr)
 			{
@@ -293,19 +305,17 @@ void AUTGauntletFlag::Tick(float DeltaSeconds)
 					if (TimerEffect->bHiddenInGame)
 					{
 						TimerEffect->SetHiddenInGame(false);
-						TimerEffect->SetFloatParameter(NAME_RespawnTime, GauntletGameState->FlagSwapTime);
-						TimerEffect->SetFloatParameter(NAME_SecondsPerPip, 1.0f);
-
 					}
+
+					TimerEffect->SetFloatParameter(NAME_RespawnTime, GauntletGameState->FlagSwapTime);
 					float Progress = 1.0f - float(SwapTimer) / float(GauntletGameState->FlagSwapTime);
-					UE_LOG(UT,Log,TEXT("Progress %f"), Progress);
 					TimerEffect->SetFloatParameter(NAME_Progress, Progress);			
 				}
-				else
-				{
-					TimerEffect->SetHiddenInGame(true);
-				}
 			}
+		}
+		else
+		{
+			TimerEffect->SetHiddenInGame(true);
 		}
 	}
 }
@@ -313,6 +323,8 @@ void AUTGauntletFlag::Tick(float DeltaSeconds)
 void AUTGauntletFlag::SetTeam(AUTTeamInfo* NewTeam)
 {
 	Super::SetTeam(NewTeam);
+
+	TimerEffect->SetHiddenInGame(true);
 
 	UE_LOG(UT,Verbose,TEXT("[AUTGauntletFlag::SetTeam] %s"), NewTeam == nullptr ? TEXT("NULL") : *FString::Printf(TEXT("%i"), NewTeam->GetTeamNum() ));
 
@@ -548,7 +560,7 @@ void AUTGauntletFlag::GenerateGPSPath()
 
 								// Almsot done.  Go over all of the points, and remove and redundant ones.  A redundant point is any point that is < 1Kuu 
 								// from the previous point and Z change of less than MAX_REDUNDANT_Z
-								/*
+
 								Point = 0;
 								while (Point < Points.Num()-2)
 								{
@@ -588,7 +600,6 @@ void AUTGauntletFlag::GenerateGPSPath()
 
 									Point++;
 								}
-								*/
 								// Finally, add a point at the player's location.  But push the point slightly past the player so that
 								// they will see it if their back is to the next point in the node.  A gentle reminder to turn around and go.
 
@@ -744,9 +755,19 @@ bool AUTGauntletFlag::PlaceExtraPoint(const FVector& A, const FVector& B, FVecto
 
 void AUTGauntletFlag::SendHome()
 {
+	TeamReset();
 	Super::SendHome();
 	CleanupTrail();
 }
+
+void AUTGauntletFlag::FinalRestingPlace(AUTCTFFlagBase* NewBase)
+{
+	CleanupTrail();
+	ClearGhostFlags();
+	HomeBase = NewBase;
+	MoveToHome();
+}
+
 
 
 void AUTGauntletFlag::Destroyed()

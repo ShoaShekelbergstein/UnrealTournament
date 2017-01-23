@@ -3,6 +3,7 @@
 #pragma once
 
 #include "UTTeamInterface.h"
+#include "OnlineSessionInterface.h"
 #include "UTBasePlayerController.generated.h"
 
 class UUTGameViewportClient;
@@ -297,7 +298,7 @@ public:
 	bool SkipTutorialCheck();
 
 	UFUNCTION(BlueprintCallable, Category = "Movie")
-	void SetLoadingMovieToPlay(const FString& MoviePath);
+	void SetLoadingMovieToPlay(const FString& MoviePath, bool bSuppressLoadingText=false);
 
 	UFUNCTION(exec)
 	void UTDumpOnlineSessionState();
@@ -311,4 +312,17 @@ protected:
 	// Forward the direct say to alternate servers
 	virtual bool ForwardDirectSay(AUTPlayerState* SenderPlayerState, FString& FinalMessage);
 
+public:
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual void LaunchTutorial(FName TutorialName);
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual void NextTutorial();
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual void RepeatTutorial();
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual FText GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const;
 };

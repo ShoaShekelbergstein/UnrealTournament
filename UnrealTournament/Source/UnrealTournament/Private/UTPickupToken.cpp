@@ -10,9 +10,7 @@
 
 AUTPickupToken::AUTPickupToken(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	// This was the only way I could make clientside actors that I could destroy
-	bReplicates = true;
-	bNetTemporary = true;
+	bNetLoadOnClient = true;
 }
 
 void AUTPickupToken::PostLoad()
@@ -85,9 +83,9 @@ void AUTPickupToken::PickedUp()
 	{
 		UUTGameplayStatics::TokenPickedUp(GetWorld(), TokenUniqueID);
 
-		if (FUTAnalytics::IsAvailable())
+		if (FUTAnalytics::IsAvailable() && GetWorld())
 		{
-			FUTAnalytics::FireEvent_UTTutorialPickupToken(TokenUniqueID.ToString());
+			FUTAnalytics::FireEvent_UTTutorialPickupToken(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), TokenUniqueID.ToString());
 		}
 	}
 }

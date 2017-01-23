@@ -61,6 +61,31 @@ bool UUTPlaylistManager::GetTeamEloRatingForPlaylist(int32 PlaylistId, FString& 
 	return false;
 }
 
+bool UUTPlaylistManager::GetPlaylistId(int32 PlaylistIndex, int32& PlaylistId)
+{
+	if (Playlist.IsValidIndex(PlaylistIndex))
+	{
+		PlaylistId = Playlist[PlaylistIndex].PlaylistId;
+		return true;
+	}
+
+	return false;
+}
+
+bool UUTPlaylistManager::GetGameModeForPlaylist(int32 PlaylistId, FString& GameMode)
+{
+	for (const FPlaylistItem& PlaylistEntry : Playlist)
+	{
+		if (PlaylistEntry.PlaylistId == PlaylistId)
+		{
+			GameMode = PlaylistEntry.GameMode;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool UUTPlaylistManager::GetURLForPlaylist(int32 PlaylistId, FString& URL)
 {
 	for (const FPlaylistItem& PlaylistEntry : Playlist)
@@ -99,4 +124,30 @@ void UUTPlaylistManager::UpdatePlaylistFromMCP(int32 PlaylistId, FString InExtra
 			PlaylistEntry.MapNames = InMapNames;
 		}
 	}
+}
+
+FName UUTPlaylistManager::GetPlaylistSlateBadge(int32 PlaylistId)
+{
+	for (FPlaylistItem& PlaylistEntry : Playlist)
+	{
+		if (PlaylistEntry.PlaylistId == PlaylistId && !PlaylistEntry.SlateBadgeName.IsEmpty() )
+		{
+			return FName(*PlaylistEntry.SlateBadgeName);
+		}
+	}
+
+	return NAME_None;
+}
+
+int32 UUTPlaylistManager::GetPlaylistRequireTutorialMask(int32 PlaylistId)
+{
+	for (FPlaylistItem& PlaylistEntry : Playlist)
+	{
+		if (PlaylistEntry.PlaylistId == PlaylistId )
+		{
+			return PlaylistEntry.RequiredTutorialMask;
+		}
+	}
+
+	return 0x00;
 }

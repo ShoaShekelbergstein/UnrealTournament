@@ -28,6 +28,8 @@ public:
 
 	void HandleFriendsActionNotification(TSharedRef<FFriendsAndChatMessage> FriendsAndChatMessage);
 
+	void HandlePartyJoined();
+
 	FReply AcceptInvite();
 	FReply RejectInvite();
 
@@ -36,6 +38,8 @@ public:
 	FDateTime LastInviteTime;
 
 	TSharedPtr<STextBlock> InviteMessage;
+
+	FDelegateHandle PartyJoinedDelegateHandle;
 };
 
 #endif

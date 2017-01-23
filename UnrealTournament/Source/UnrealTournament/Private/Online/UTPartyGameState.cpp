@@ -78,6 +78,8 @@ void UUTPartyGameState::OnPartyMatchmakingStarted(bool bRanked)
 {
 	if (IsLocalPartyLeader())
 	{
+		PartyState.bRanked = bRanked;
+
 		if (bRanked)
 		{
 			PartyState.PartyProgression = EUTPartyState::Matchmaking;
@@ -260,6 +262,7 @@ void UUTPartyGameState::SetMatchmakingRegion(const FString& InMatchmakingRegion)
 
 void UUTPartyGameState::ReturnToMainMenu()
 {
+	PartyState.SessionId.Empty();
 	PartyState.PartyProgression = EUTPartyState::Menus;
 	OnLeaderPartyStateChanged().Broadcast(PartyState.PartyProgression);
 	UpdatePartyData(OwningUserId);

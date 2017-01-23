@@ -97,9 +97,9 @@ FReply SUTMenuBase::OnKeyUp( const FGeometry& MyGeometry, const FKeyEvent& InKey
 {
 	if (InKeyboardEvent.GetKey() == EKeys::Escape)
 	{
-		if (bShowingFriends)
+		if (PlayerOwner->bShowingFriendsMenu)
 		{
-			ToggleFriendsAndChat();
+			PlayerOwner->ToggleFriendsAndChat();
 		}
 		else if (GWorld->GetWorld()->GetMapName().ToLower() != TEXT("ut-entry"))
 		{
@@ -219,7 +219,6 @@ void SUTMenuBase::CreateDesktop()
 {
 	bNeedsPlayerOptions = false;
 	bNeedsWeaponOptions = false;
-	bShowingFriends = false;
 	TickCountDown = 0;
 	
 	LeftMenuBar = NULL;
@@ -554,6 +553,7 @@ TSharedRef<SWidget> SUTMenuBase::BuildAboutSubMenu()
 	];
 
 
+	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_BuildNotes", "Build Notes"), FOnClicked::CreateSP(this, &SUTMenuBase::OpenBuildNotes));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_TPSReport", "Third Party Software"), FOnClicked::CreateSP(this, &SUTMenuBase::OpenTPSReport));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_Credits", "Credits"), FOnClicked::CreateSP(this, &SUTMenuBase::OpenCredits));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_UTSite", "UnrealTournament.com"), FOnClicked::CreateSP(this, &SUTMenuBase::OnMenuHTTPButton, FString(TEXT("http://www.unrealtournament.com/"))));
@@ -632,6 +632,11 @@ FReply SUTMenuBase::ClearCloud()
 	return FReply::Handled();
 }
 
+FReply SUTMenuBase::OpenBuildNotes()
+{
+	PlayerOwner->ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), TEXT("http://epic.gm/updt"));
+	return FReply::Handled();
+}
 
 FReply SUTMenuBase::OpenTPSReport()
 {
@@ -867,34 +872,7 @@ FReply SUTMenuBase::OnShowServerBrowserPanel()
 
 FReply SUTMenuBase::ToggleFriendsAndChat()
 {
-#if PLATFORM_LINUX
-	// Need launcher so this doesn't work on linux right now
-	return FReply::Handled();
-#endif
-
-	if (bShowingFriends)
-	{
-		Desktop->RemoveSlot(6000);
-		bShowingFriends = false;
-		PlayerOwner->SetShowingFriendsPopup(bShowingFriends);
-	}
-	else
-	{
-		TSharedPtr<SUTFriendsPopupWindow> Popup = PlayerOwner->GetFriendsPopup();
-		Popup->SetOnCloseClicked(FOnClicked::CreateSP(this, &SUTMenuBase::ToggleFriendsAndChat));
-
-		if (Popup.IsValid())
-		{
-			Desktop->AddSlot(6000)
-				[
-					Popup.ToSharedRef()
-				];
-			bShowingFriends = true;
-			PlayerOwner->SetShowingFriendsPopup(bShowingFriends);
-		}
-	}
-
-
+	if (PlayerOwner != nullptr) PlayerOwner->ToggleFriendsAndChat();
 	return FReply::Handled();
 }
 

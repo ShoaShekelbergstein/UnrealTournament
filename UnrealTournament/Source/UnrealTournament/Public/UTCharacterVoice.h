@@ -52,6 +52,10 @@ const int32 ON_OFFENSE_SWITCH_INDEX = 10900;
 const int32 SPREAD_OUT_SWITCH_INDEX = 11000;
 const int32 BASE_UNDER_ATTACK_SWITCH_INDEX = 11100;
 const int32 KEY_CALLOUTS = 100000;
+const int32 FIRSTGAMEVOLUMESPEECH = KEY_CALLOUTS + 299;
+const int32 LASTGAMEVOLUMESPEECH = KEY_CALLOUTS + 4999;
+const int32 FIRSTPICKUPSPEECH = KEY_CALLOUTS + 5099;
+const int32 LASTPICKUPSPEECH = KEY_CALLOUTS + 9999;
 
 UCLASS()
 class UNREALTOURNAMENT_API UUTCharacterVoice : public UUTLocalMessage
@@ -104,6 +108,9 @@ class UNREALTOURNAMENT_API UUTCharacterVoice : public UUTLocalMessage
 		TArray<FCharacterSpeech> BaseUnderAttackMessages;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
+		TArray<FCharacterSpeech> IncomingMessages;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
 		TArray<FCharacterSpeech> SpreadOutMessages;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
@@ -123,6 +130,9 @@ class UNREALTOURNAMENT_API UUTCharacterVoice : public UUTLocalMessage
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
 		TArray<FCharacterSpeech> EnemyRallyMessages;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
+		TArray<FCharacterSpeech> RallyNowMessages;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
 		TArray<FCharacterSpeech> FindFCMessages;
@@ -315,4 +325,7 @@ class UNREALTOURNAMENT_API UUTCharacterVoice : public UUTLocalMessage
 	virtual float GetAnnouncementPriority(const FAnnouncementInfo AnnouncementInfo) const override;
 	virtual bool IsOptionalSpoken(int32 MessageIndex) const override;
 	virtual int32 GetDestinationIndex(int32 MessageIndex) const override;
+
+	virtual bool IsFlagLocationUpdate(int32 Switch) const;
+	virtual bool IsPickupUpdate(int32 Switch) const;
 };

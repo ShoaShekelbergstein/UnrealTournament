@@ -60,6 +60,9 @@ class UNREALTOURNAMENT_API UUTLocalMessage : public ULocalMessage
 	UPROPERTY(EditDefaultsOnly, Category = Message)
 		uint32 bPlayDuringIntermission : 1;
 
+	UPROPERTY(EditDefaultsOnly, Category = Message)
+		uint32 bPlayDuringInstantReplay : 1;
+	
 	virtual bool ShouldPlayDuringIntermission(int32 MessageIndex) const
 	{
 		return bPlayDuringIntermission;
@@ -115,7 +118,7 @@ class UNREALTOURNAMENT_API UUTLocalMessage : public ULocalMessage
 
 	virtual bool IsOptionalSpoken(int32 MessageIndex) const;
 
-	virtual int32 GetFontSizeIndex(int32 MessageIndex) const;
+	virtual int32 GetFontSizeIndex(int32 MessageIndex, bool bTargetsLocalPlayer) const;
 
 	virtual float GetAnnouncementDelay(int32 Switch);
 

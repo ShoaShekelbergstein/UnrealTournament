@@ -13,10 +13,10 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 	UPROPERTY(Replicated)
 		uint32 bRedToCap : 1;
 
-	UPROPERTY(Replicated)
+	UPROPERTY()
 		int32 GoldBonusThreshold;
 
-	UPROPERTY(Replicated)
+	UPROPERTY()
 		int32 SilverBonusThreshold;
 
 	UPROPERTY()
@@ -35,6 +35,9 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 		FText SilverBonusTimedText;
 
 	UPROPERTY()
+		FText BronzeBonusTimedText;
+
+	UPROPERTY()
 		FLinearColor GoldBonusColor;
 
 	UPROPERTY()
@@ -42,6 +45,10 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 
 	UPROPERTY()
 		FLinearColor BronzeBonusColor;
+
+	// Early ending time for this round
+	UPROPERTY(Replicated)
+		int32 EarlyEndTime;
 
 	UPROPERTY(Replicated)
 		bool bAttackersCanRally;
@@ -79,16 +86,39 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 	UPROPERTY(BlueprintReadOnly, Replicated)
 		class AUTRallyPoint* CurrentRallyPoint;
 
+	UPROPERTY(BlueprintReadOnly, Replicated)
+		bool bEnemyRallyPointIdentified;
+
+	/** Used during highlight generation. */
+	UPROPERTY(BlueprintReadWrite)
+		bool bHaveRallyHighlight;
+
+	UPROPERTY(BlueprintReadWrite)
+		bool bHaveRallyPoweredHighlight;
+
+	UPROPERTY(BlueprintReadWrite)
+		int32 HappyCount;
+
+	UPROPERTY(BlueprintReadWrite)
+		int32 HiredGunCount;
+
+	UPROPERTY(BlueprintReadWrite)
+		int32 BobLifeCount;
+
 	UFUNCTION()
-		void OnBonusLevelChanged();
+	virtual void OnBonusLevelChanged();
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void BeginPlay() override;
 
 	virtual void UpdateSelectablePowerups();
 
+	virtual void CheckTimerMessage() override;
+
 	virtual bool IsTeamOnOffense(int32 TeamNumber) const override;
 	virtual bool IsTeamOnDefense(int32 TeamNumber) const override;
+
+	virtual void OnIntermissionChanged() override;
 
 	UFUNCTION(BlueprintCallable, Category = Team)
 		virtual bool IsTeamOnDefenseNextRound(int32 TeamNumber) const;
@@ -108,12 +138,21 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 	UFUNCTION(BlueprintCallable, Category = Team)
 		virtual bool IsTeamAbleToEarnPowerup(int32 TeamNumber) const;
 
+	UFUNCTION(BlueprintCallable, Category = Team)
+		virtual AUTCTFFlag* GetOffenseFlag();
+
 	//Handles precaching all game announcement sounds for the local player
 	virtual void PrecacheAllPowerupAnnouncements(class UUTAnnouncer* Announcer) const;
 
 	virtual FText GetRoundStatusText(bool bForScoreboard) override;
 
 	virtual FLinearColor GetGameStatusColor() override;
+
+	virtual void UpdateHighlights_Implementation() override;
+
+	virtual void AddMinorHighlights_Implementation(AUTPlayerState* PS) override;
+
+	virtual int32 NumHighlightsNeeded() override;
 
 protected:
 	virtual void UpdateTimeMessage() override;
@@ -122,9 +161,12 @@ protected:
 
 	virtual void AddModeSpecificOverlays();
 
-	UPROPERTY()
-		TArray<TSubclassOf<class AUTInventory>> DefenseSelectablePowerups;
+	// FIXME: Replication is temp
+	UPROPERTY(Replicated)
+	TArray<TSubclassOf<class AUTInventory>> DefenseSelectablePowerups;
+	UPROPERTY(Replicated)
+	TArray<TSubclassOf<class AUTInventory>> OffenseSelectablePowerups;
 
-	UPROPERTY()
-		TArray<TSubclassOf<class AUTInventory>> OffenseSelectablePowerups;
+public:
+	virtual void SetSelectablePowerups(const TArray<TSubclassOf<AUTInventory>>& OffenseList, const TArray<TSubclassOf<AUTInventory>>& DefenseList);
 };

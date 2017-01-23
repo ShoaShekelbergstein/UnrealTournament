@@ -69,7 +69,12 @@ void AUTLobbyGameMode::InitGame( const FString& MapName, const FString& Options,
 	{
 		UE_LOG(UT,Log,TEXT("  Maximum Allowed ELO Rank is: %i"), MaxAllowedRank)
 	}
+
+	MaxInstances = FMath::Max(0, UGameplayStatics::GetIntOption(Options, TEXT("MaxInstances"), MaxInstances));
 }
+
+
+
 
 
 void AUTLobbyGameMode::InitGameState()
@@ -147,6 +152,9 @@ FString AUTLobbyGameMode::InitNewPlayer(class APlayerController* NewPlayerContro
 		{
 			PS->SetCharacter(InOpt);
 		}
+
+		PS->PartyLeader = UGameplayStatics::ParseOption(Options, TEXT("PartyLeader"));
+		PS->PartySize = UGameplayStatics::GetIntOption(Options, TEXT("PartySize"), 1);
 	}
 
 	return Result;

@@ -66,6 +66,10 @@ public:
 	UPROPERTY()
 		bool bLargeCorrection;
 
+	/** Debugging jump visualization. */
+	UPROPERTY()
+		bool bDrawJumps;
+
 	/** Position error considered a large correction for client adjustment. */
 	UPROPERTY()
 		float LargeCorrectionThreshold;
@@ -166,6 +170,7 @@ public:
 	float SwimmingWallPushImpulse;
 
 	virtual void PhysSwimming(float deltaTime, int32 Iterations) override;
+	virtual void HandleSwimmingWallHit(const FHitResult& Hit, float DeltaTime) override;
 
 	/** True if was swimming in current, and haven't landed yet. */
 	UPROPERTY(BlueprintReadOnly, Category = Swimming)
@@ -307,7 +312,7 @@ public:
 		float DodgeLandingSpeedFactor;
 
 	/** Horizontal speed reduction on dodge jump landing (multiplied). */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Landing Speed Factor"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Jump Landing Speed Factor"))
 		float DodgeJumpLandingSpeedFactor;
 
 	/** Time after landing dodge before another can be attempted. */
@@ -554,6 +559,8 @@ public:
 	virtual void ProcessLanded(const FHitResult& Hit, float remainingTime, int32 Iterations) override;
 
 	virtual void OnTeleported() override;
+
+	virtual void OnLineUp();
 
 	virtual bool DoJump(bool bReplayingMoves) override;
 

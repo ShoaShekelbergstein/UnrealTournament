@@ -28,7 +28,7 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	bLockedOnTarget = false;
 	LockCheckTime = 0.1f;
 	LockRange = 16000.0f;
-	LockAcquireTime = 0.5f;
+	LockAcquireTime = 0.6f;
 	LockTolerance = 0.2f;
 	LockedTarget = NULL;
 	PendingLockedTarget = NULL;
@@ -70,6 +70,7 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 
 	TutorialAnnouncements.Add(TEXT("PriRocketLauncher"));
 	TutorialAnnouncements.Add(TEXT("SecRocketLauncher"));
+	HighlightText = NSLOCTEXT("Weapon", "RockerHighlightText", "I am the Rocketman");
 }
 
 void AUTWeap_RocketLauncher::Destroyed()
@@ -164,7 +165,12 @@ void AUTWeap_RocketLauncher::ClearLoadedRockets()
 	CurrentRocketFireMode = 0;
 	NumLoadedBarrels = 0;
 	NumLoadedRockets = 0;
-	SetLockTarget(nullptr);
+	if (Role == ROLE_Authority)
+	{
+		SetLockTarget(nullptr);
+		PendingLockedTarget = nullptr;
+		PendingLockedTargetTime = 0.f;
+	}
 	if (UTOwner != NULL)
 	{
 		UTOwner->SetFlashExtra(0, CurrentFireMode);
@@ -267,7 +273,6 @@ void AUTWeap_RocketLauncher::FireShot()
 		if (NumLoadedRockets <= 0)
 		{
 			ClearLoadedRockets();
-			SetLockTarget(NULL);
 		}
 	}
 
@@ -464,13 +469,13 @@ AUTProjectile* AUTWeap_RocketLauncher::FireRocketProjectile()
 	{
 		case 0://rockets
 		{
-			if (ShouldFireLoad())
+			if (ShouldFireLoad() || HasLockedTarget())
 			{
-				SpawnRotation.Yaw += FullLoadSpread*float(NumLoadedRockets-2.f);
+				SpawnRotation.Yaw += FullLoadSpread*float((NumLoadedRockets%3)-1.f);
 			}
 			NetSynchRandomSeed(); 
 			
-			FVector Offset = (FMath::Sin(NumLoadedRockets*PI*0.667f)*FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::Z) + FMath::Cos(NumLoadedRockets*PI*0.667f)*FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::X)) * BarrelRadius * 1.5f;
+			FVector Offset = (FMath::Sin(NumLoadedRockets*PI*0.667f)*FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::Z) + FMath::Cos(NumLoadedRockets*PI*0.667f)*FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::X)) * BarrelRadius * 2.f;
 			ResultProj = SpawnNetPredictedProjectile(RocketProjClass, SpawnLocation + Offset, SpawnRotation);
 
 			//Setup the seeking target
@@ -478,7 +483,7 @@ AUTProjectile* AUTWeap_RocketLauncher::FireRocketProjectile()
 			if (HasLockedTarget() && SpawnedRocket)
 			{
 				SpawnedRocket->TargetActor = LockedTarget;
-				TrackingRockets.Add(SpawnedRocket);
+				TrackingRockets.AddUnique(SpawnedRocket);
 			}
 
 			break;
@@ -561,7 +566,7 @@ bool AUTWeap_RocketLauncher::WithinLockAim(AActor *Target)
 {
 	if (CanLockTarget(Target))
 	{
-		const FVector FireLoc = GetFireStartLoc();
+		const FVector FireLoc = UTOwner->GetPawnViewLocation();
 		const FVector Dir = GetBaseFireRotation().Vector();
 		const FVector TargetDir = (Target->GetActorLocation() - UTOwner->GetActorLocation()).GetSafeNormal();
 		// note that we're not tracing to retain existing target; allows locking through walls to a limited extent
@@ -583,6 +588,10 @@ void AUTWeap_RocketLauncher::OnRep_PendingLockedTarget()
 	if (PendingLockedTarget != nullptr)
 	{
 		PendingLockedTargetTime = GetWorld()->GetTimeSeconds();
+	}
+	else
+	{
+		PendingLockedTargetTime = 0.f;
 	}
 }
 
@@ -616,13 +625,24 @@ void AUTWeap_RocketLauncher::SetLockTarget(AActor* NewTarget)
 
 void AUTWeap_RocketLauncher::UpdateLock()
 {
-	if (UTOwner == NULL || UTOwner->Controller == NULL || UTOwner->IsFiringDisabled() || (CurrentFireMode != 1) || !IsFiring())
+	if (Role != ROLE_Authority)
+	{
+		return;
+	}
+	if (UTOwner == NULL || UTOwner->Controller == NULL || UTOwner->IsFiringDisabled() || (CurrentFireMode != 1) || !IsFiring() || (NumLoadedRockets == 0))
 	{
 		SetLockTarget(NULL);
 		return;
 	}
 
-	const FVector FireLoc = GetFireStartLoc();
+	UUTWeaponStateFiringCharged* ChargeState = Cast<UUTWeaponStateFiringCharged>(CurrentState);
+	if (ChargeState != NULL && !ChargeState->bCharging)
+	{
+		// rockets are being released, don't change lock at this time
+		return;
+	}
+
+	const FVector FireLoc = UTOwner->GetPawnViewLocation();
 	AActor* NewTarget = UUTGameplayStatics::ChooseBestAimTarget(UTOwner->Controller, FireLoc, GetBaseFireRotation().Vector(), LockAim, LockRange, LockOffset,AUTCharacter::StaticClass());
 
 	//Have a target. Update the target lock
@@ -693,23 +713,22 @@ void AUTWeap_RocketLauncher::DrawWeaponCrosshair_Implementation(UUTHUDWidget* We
 		float W = LockCrosshairTexture->GetSurfaceWidth();
 		float H = LockCrosshairTexture->GetSurfaceHeight();
 		float CrosshairRot = GetWorld()->TimeSeconds * 90.0f;
-		const float AcquireDisplayTime = 0.5f;
+		const float AcquireDisplayTime = 0.6f;
 		if (HasLockedTarget())
 		{
 			FVector ScreenTarget = WeaponHudWidget->GetCanvas()->Project(LockedTarget->GetActorLocation());
 			ScreenTarget.X -= WeaponHudWidget->GetCanvas()->SizeX*0.5f;
 			ScreenTarget.Y -= WeaponHudWidget->GetCanvas()->SizeY*0.5f;
-			WeaponHudWidget->DrawTexture(LockCrosshairTexture, ScreenTarget.X, ScreenTarget.Y, W, H, 0.f, 0.f, W, H, 1.f, FLinearColor::Yellow, FVector2D(0.5f, 0.5f), CrosshairRot);
+			WeaponHudWidget->DrawTexture(LockCrosshairTexture, ScreenTarget.X, ScreenTarget.Y, W, H, 0.f, 0.f, W, H, 1.f, FLinearColor::Red, FVector2D(0.5f, 0.5f), CrosshairRot);
 		}
 		else if (PendingLockedTarget && (GetWorld()->GetTimeSeconds() - PendingLockedTargetTime > LockAcquireTime- AcquireDisplayTime))
 		{
 			FVector ScreenTarget = WeaponHudWidget->GetCanvas()->Project(PendingLockedTarget->GetActorLocation());
 			ScreenTarget.X -= WeaponHudWidget->GetCanvas()->SizeX*0.5f;
 			ScreenTarget.Y -= WeaponHudWidget->GetCanvas()->SizeY*0.5f;
-			UTexture2D* PendingLockTexture = LockCrosshairTexture;
 			float Opacity = (GetWorld()->GetTimeSeconds() - PendingLockedTargetTime - LockAcquireTime + AcquireDisplayTime) / AcquireDisplayTime;
 			float PendingScale = 1.f + 5.f * (1.f - Opacity);
-			WeaponHudWidget->DrawTexture(PendingLockTexture, ScreenTarget.X, ScreenTarget.Y, W * PendingScale, H * PendingScale, 0.f, 0.f, W, H, 0.2f + 0.5f*Opacity, FLinearColor::White, FVector2D(0.5f, 0.5f), 2.5f*CrosshairRot);
+			WeaponHudWidget->DrawTexture(LockCrosshairTexture, ScreenTarget.X, ScreenTarget.Y, W * PendingScale, H * PendingScale, 0.f, 0.f, W, H, 0.2f + 0.5f*Opacity, FLinearColor::White, FVector2D(0.5f, 0.5f), 2.5f*CrosshairRot);
 		}
 
 		for (int32 i = 0; i < TrackingRockets.Num(); i++)
@@ -835,7 +854,7 @@ bool AUTWeap_RocketLauncher::CanAttack_Implementation(AActor* Target, const FVec
 		if (!bPreferCurrentMode && B != NULL)
 		{
 			// prefer single rocket for visible enemy unless enemy is much stronger and want to try bursting
-			BestFireMode = (FMath::FRand() < 0.3f || B->GetTarget() != B->GetEnemy() || (!B->IsStopped() && B->RelativeStrength(B->GetEnemy()) <= 0.5f)) ? 0 : 1;
+			BestFireMode = (FMath::FRand() < 0.3f || B->GetTarget() != B->GetEnemy() || (B->IsStopped() && Target == B->GetEnemy() && B->IsEnemyVisible(B->GetEnemy())) || B->RelativeStrength(B->GetEnemy()) <= 0.0f) ? 0 : 1;
 		}
 		return true;
 	}

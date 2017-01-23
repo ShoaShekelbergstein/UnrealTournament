@@ -25,7 +25,8 @@ AUTWeaponAttachment::AUTWeaponAttachment(const FObjectInitializer& ObjectInitial
 
 	bCopyWeaponImpactEffect = true;
 
-	MaxBulletWhipDist = 240.0f;
+	MaxBulletWhipDist = 250.0f;
+	BulletWhipDelay = 0.3f;
 }
 
 void AUTWeaponAttachment::BeginPlay()
@@ -304,28 +305,67 @@ void AUTWeaponAttachment::PlayBulletWhip()
 {
 	if (BulletWhip != NULL && !UTOwner->FlashLocation.IsZero())
 	{
-		const FVector BulletSrc = UTOwner->GetActorLocation();
-		const FVector Dir = (UTOwner->FlashLocation - BulletSrc).GetSafeNormal();
+		// delay bullet whip to better separate sound from shot
+		if (GetWorld()->GetTimerManager().IsTimerActive(BulletWhipHandle))
+		{
+			DelayedBulletWhip();
+		}
+		BulletWhipStart = UTOwner->GetActorLocation();
+		BulletWhipEnd = UTOwner->FlashLocation;
+		BulletWhipHearers.Empty();
+
+		const FVector Dir = (BulletWhipEnd - BulletWhipStart).GetSafeNormal();
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 		for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
 		{
 			AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
-			if (PC != NULL && PC->GetViewTarget() != UTOwner && (!GS || !GS->OnSameTeam(UTOwner, PC)) )
+			if (PC != NULL && PC->GetViewTarget() != UTOwner && (!GS || !GS->OnSameTeam(UTOwner, PC)))
 			{
 				FVector ViewLoc;
 				FRotator ViewRot;
 				PC->GetPlayerViewPoint(ViewLoc, ViewRot);
-				const FVector ClosestPt = FMath::ClosestPointOnSegment(ViewLoc, BulletSrc, UTOwner->FlashLocation);
-				if (ClosestPt != BulletSrc && ClosestPt != UTOwner->FlashLocation && (ClosestPt - ViewLoc).Size() <= MaxBulletWhipDist)
+				const FVector ClosestPt = FMath::ClosestPointOnSegment(ViewLoc, BulletWhipStart, BulletWhipEnd);
+				if (ClosestPt != BulletWhipStart && ClosestPt != BulletWhipEnd && (ClosestPt - ViewLoc).Size() <= MaxBulletWhipDist)
 				{
 					// trace to make sure missed shot isn't on the other side of a wall
 					FCollisionQueryParams Params(FName(TEXT("BulletWhip")), true, UTOwner);
 					Params.AddIgnoredActor(PC->GetPawn());
 					if (!GetWorld()->LineTraceTestByChannel(ClosestPt, ViewLoc, COLLISION_TRACE_WEAPON, Params))
 					{
-						PC->ClientHearSound(BulletWhip, this, ClosestPt, false, false, SAT_None);
+						BulletWhipHearers.Add(PC);
 					}
 				}
+			}
+		}
+
+		if (BulletWhipHearers.Num() > 0)
+		{
+			if (BulletWhipDelay <= 0.f)
+			{
+				DelayedBulletWhip();
+			}
+			else
+			{
+				GetWorld()->GetTimerManager().SetTimer(BulletWhipHandle, this, &AUTWeaponAttachment::DelayedBulletWhip, BulletWhipDelay, false);
+			}
+		}
+	}
+}
+
+// FIXMESTEVE - need to make play decision before delay
+void AUTWeaponAttachment::DelayedBulletWhip()
+{
+	if (BulletWhip != NULL)
+	{
+		for (int32 i=0; i<BulletWhipHearers.Num(); i++)
+		{
+			if (BulletWhipHearers[i] != nullptr)
+			{
+				FVector ViewLoc;
+				FRotator ViewRot;
+				BulletWhipHearers[i]->GetPlayerViewPoint(ViewLoc, ViewRot);
+				const FVector ClosestPt = FMath::ClosestPointOnSegment(ViewLoc, BulletWhipStart, BulletWhipEnd);
+				BulletWhipHearers[i]->ClientHearSound(BulletWhip, this, ClosestPt, false, false, SAT_None);
 			}
 		}
 	}

@@ -97,17 +97,12 @@ void AUTLobbyMatchInfo::SetLobbyMatchState(FName NewMatchState)
 {
 	if ((CurrentState != ELobbyMatchState::Recycling || NewMatchState == ELobbyMatchState::Dead) && CurrentState != ELobbyMatchState::Dead)
 	{
-		// When the client receives it's startup info, it will attempt to switch the match's state from Setup to waiting for players
-		// but if we are Gamenching due to quickstart we don't want that.
-		//if (NewMatchState != ELobbyMatchState::WaitingForPlayers || CurrentState != ELobbyMatchState::Launching)
-		//{
-			CurrentState = NewMatchState;
-			if (CurrentState == ELobbyMatchState::Recycling)
-			{
-				FTimerHandle TempHandle; 
-				GetWorldTimerManager().SetTimer(TempHandle, this, &AUTLobbyMatchInfo::RecycleMatchInfo, 120.0, false);
-			}
-		//}
+		CurrentState = NewMatchState;
+		if (CurrentState == ELobbyMatchState::Recycling)
+		{
+			FTimerHandle TempHandle; 
+			GetWorldTimerManager().SetTimer(TempHandle, this, &AUTLobbyMatchInfo::RecycleMatchInfo, 120.0, false);
+		}
 	}
 }
 
@@ -180,6 +175,17 @@ void AUTLobbyMatchInfo::AddPlayer(AUTLobbyPlayerState* PlayerToAdd, bool bIsOwne
 		else
 		{
 			PlayerToAdd->DesiredTeamNum = 0;
+		}
+	}
+	
+	if (PlayerToAdd->PartySize > 1)
+	{
+		for (int32 i = 0; i < Players.Num(); i++)
+		{
+			if (Players[i]->PartyLeader == PlayerToAdd->PartyLeader)
+			{
+				PlayerToAdd->DesiredTeamNum = Players[i]->DesiredTeamNum;
+			}
 		}
 	}
 
@@ -303,19 +309,6 @@ void AUTLobbyMatchInfo::SetSettings(AUTLobbyGameState* GameState,  AUTLobbyPlaye
 		BotSkillLevel = MatchToCopy->BotSkillLevel;
 	}
 
-	if (!bIsInParty && MatchOwner && MatchOwner->IsABeginner(CurrentRuleset.IsValid() ? CurrentRuleset->GetDefaultGameModeObject() : NULL))
-	{
-		bRankLocked = true;
-		bBeginnerMatch = true;
-
-		// Tell the host to display a warning
-
-		if (CurrentRuleset.IsValid())
-		{
-			MatchOwner->NotifyBeginnerAutoLock();
-		}
-	}
-
 	SetLobbyMatchState(ELobbyMatchState::Setup);
 }
 
@@ -388,40 +381,14 @@ void AUTLobbyMatchInfo::ServerStartMatch_Implementation()
 {
 	if (CheckLobbyGameState() && LobbyGameState->CanLaunch())
 	{
-#if !UE_BUILD_SHIPPING
-		if (FParse::Param(FCommandLine::Get(), TEXT("NoMinPlayers")))
-		{
-			CurrentRuleset->MinPlayersToStart = 1;
-		}
-#endif
-		if (Players.Num() < CurrentRuleset->MinPlayersToStart && LobbyGameState->GameInstances.Num() > 0 )
-		{
-			AUTLobbyGameMode* LobbyGameMode = GetWorld()->GetAuthGameMode<AUTLobbyGameMode>();
-			if (LobbyGameMode == nullptr || !LobbyGameMode->bAllowInstancesToStartWithBots || BotSkillLevel < 0)
-			{
-				GetOwnerPlayerState()->ClientMatchError(NSLOCTEXT("LobbyMessage", "NotEnoughPlayers","There are not enough players in the match to start."));
-				return;
-			}
-		}
-
-		if (NumPlayersInMatch() > CurrentRuleset->MaxPlayers)
-		{
-			GetOwnerPlayerState()->ClientMatchError(NSLOCTEXT("LobbyMessage", "TooManyPlayers","There are too many players in this match to start."));
-			return;
-		}
-
-		if (NumSpectatorsInMatch() > LobbyGameState->MaxSpectatorsInInstance)
-		{
-			GetOwnerPlayerState()->ClientMatchError(NSLOCTEXT("LobbyMessage", "TooManySpectators","There are too many spectators in this match to start."));
-			return;
-		}
-
 		if (NumSpectatorsInMatch() > 0 && !bSpectatable)
 		{
 			GetOwnerPlayerState()->ClientMatchError(NSLOCTEXT("LobbyMessage", "HasSpectators","There are spectators in this match.  Please remove them or enable spectating before launching."));
 			return;
 		}
 
+		// Parties invalidate the balanced team code
+		/*
 		AUTTeamGameMode* TeamGame = Cast<AUTTeamGameMode>(CurrentRuleset->GetDefaultGameModeObject());
 		if (TeamGame != NULL)
 		{
@@ -443,10 +410,11 @@ void AUTLobbyMatchInfo::ServerStartMatch_Implementation()
 				}
 			}
 		}
+		*/
 
 		// TODO: need to check for ready ups on server side
 
-		if (CurrentState == ELobbyMatchState::WaitingForPlayers)
+		if (CurrentState == ELobbyMatchState::Setup)
 		{
 			LaunchMatch(false, 2);
 			return;
@@ -487,7 +455,7 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 		}
 
 		// build all of the data needed to launch the map.
-		FString GameURL = FString::Printf(TEXT("%s?Game=%s?MaxPlayers=%i"),*InitialMap, *CurrentRuleset->GameMode, CurrentRuleset->MaxPlayers);
+		FString GameURL = FString::Printf(TEXT("%s?Game=%s?MaxPlayers=%i?MinPlayers=%i"),*InitialMap, *CurrentRuleset->GameMode, CurrentRuleset->MaxPlayers, CurrentRuleset->MinPlayersToStart);
 		GameURL += CurrentRuleset->GameOptions;
 
 		if (CurrentRuleset->bCompetitiveMatch)
@@ -503,13 +471,16 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 			{
 				int32 OptimalPlayerCount = CurrentRuleset->bTeamGame ? InitialMapInfo->OptimalTeamPlayerCount : InitialMapInfo->OptimalPlayerCount;
 
+				int32 DesiredBotFill = BotSkillLevel >= 0 ? FMath::Clamp<int32>(OptimalPlayerCount,0, CurrentRuleset->MaxPlayers) : 0;
+				if (DesiredBotFill < CurrentRuleset->MinPlayersToStart) DesiredBotFill = CurrentRuleset->MinPlayersToStart;
+
 				if (BotSkillLevel >= 0)
 				{
-					GameURL += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), FMath::Clamp<int32>(OptimalPlayerCount,0, CurrentRuleset->MaxPlayers), FMath::Clamp<int32>(BotSkillLevel,0,7));			
+					GameURL += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), DesiredBotFill, FMath::Clamp<int32>(BotSkillLevel,0,7));			
 				}
 				else
 				{
-					GameURL += TEXT("?BotFill=0");
+					GameURL += FString::Printf(TEXT("?BotFill=%i"), DesiredBotFill);			
 				}
 			}
 		}
@@ -529,7 +500,6 @@ void AUTLobbyMatchInfo::ServerAbortMatch_Implementation()
 		LobbyGameState->TerminateGameInstance(this, true);
 	}
 
-	SetLobbyMatchState(ELobbyMatchState::WaitingForPlayers);
 	TWeakObjectPtr<AUTLobbyPlayerState> OwnerPS = GetOwnerPlayerState();
 	if (OwnerPS.IsValid()) OwnerPS->bReadyToPlay = false;
 }
@@ -549,7 +519,7 @@ void AUTLobbyMatchInfo::GameInstanceReady(FGuid inGameInstanceGUID)
 			{
 				// Tell the client to connect to the instance
 
-				Players[i]->ClientConnectToInstance(GameInstanceGUID, Players[i]->DesiredTeamNum == 255);
+				Players[i]->ClientConnectToInstance(GameInstanceGUID, Players[i]->DesiredTeamNum, Players[i]->DesiredTeamNum == 255);
 			}
 		}
 	}
@@ -600,9 +570,7 @@ bool AUTLobbyMatchInfo::ShouldShowInDock()
 	}
 	else
 	{
-		return (OwnerId.IsValid() || bQuickPlayMatch) && //(Players.Num() > 0 || PlayersInMatchInstance.Num() > 0) && 
-				CurrentRuleset.IsValid() && 
-				(CurrentState == ELobbyMatchState::InProgress || CurrentState == ELobbyMatchState::Launching || CurrentState == ELobbyMatchState::WaitingForPlayers);
+		return (OwnerId.IsValid() || bQuickPlayMatch) && CurrentRuleset.IsValid() && (CurrentState == ELobbyMatchState::InProgress || CurrentState == ELobbyMatchState::WaitingForPlayers);
 	}
 }
 
@@ -676,7 +644,7 @@ void AUTLobbyMatchInfo::OnRep_InitialMap()
 void AUTLobbyMatchInfo::SetRedirects()
 {
 	// Copy any required redirects in to match info.  The UI will pickup on the replication and pull them.
-	AUTBaseGameMode* BaseGame = Cast<AUTBaseGameMode>(GetWorld()->GetAuthGameMode());
+	AUTBaseGameMode* BaseGame = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
 	if (BaseGame != NULL)
 	{
 		Redirects.Empty();
@@ -737,7 +705,11 @@ void AUTLobbyMatchInfo::AssignTeams()
 			{
 				if (CurrentRuleset->bTeamGame)
 				{
-					Players[i]->DesiredTeamNum = i % 2;
+					// If player is in a party, they are most likely already on the correct team
+					if (Players[i]->PartySize == 1)
+					{
+						Players[i]->DesiredTeamNum = i % 2;
+					}
 				}
 				else 
 				{
@@ -764,11 +736,16 @@ void AUTLobbyMatchInfo::SetRules(TWeakObjectPtr<AUTReplicatedGameRuleset> NewRul
 	bMapChanged = true;
 }
 
-bool AUTLobbyMatchInfo::ServerSetRules_Validate(const FString& RulesetTag, const FString& StartingMap,int32 NewBotSkillLevel, bool bIsInParty) { return true; }
-void AUTLobbyMatchInfo::ServerSetRules_Implementation(const FString&RulesetTag, const FString& StartingMap,int32 NewBotSkillLevel, bool bIsInParty)
+bool AUTLobbyMatchInfo::ServerSetRules_Validate(const FString& RulesetTag, const FString& StartingMap,int32 NewBotSkillLevel, bool bIsInParty, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch) { return true; }
+void AUTLobbyMatchInfo::ServerSetRules_Implementation(const FString&RulesetTag, const FString& StartingMap,int32 NewBotSkillLevel, bool bIsInParty, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch)
 {
+	bBeginnerMatch = _bBeginnerMatch;
 	if ( CheckLobbyGameState() )
 	{
+		bRankLocked = _bRankLocked;
+		bSpectatable = _bSpectatable;
+		bPrivateMatch = _bPrivateMatch;
+
 		TWeakObjectPtr<AUTReplicatedGameRuleset> NewRuleSet = LobbyGameState->FindRuleset(RulesetTag);
 
 		if (NewRuleSet.IsValid())
@@ -784,21 +761,6 @@ void AUTLobbyMatchInfo::ServerSetRules_Implementation(const FString&RulesetTag, 
 			AUTBaseGameMode* DefaultGameMode = CurrentRuleset->GetDefaultGameModeObject();
 			if (DefaultGameMode == nullptr) DefaultGameMode = AUTBaseGameMode::StaticClass()->GetDefaultObject<AUTBaseGameMode>();
 			RankCheck = OwnerPlayerState->GetRankCheck(DefaultGameMode);
-
-			TWeakObjectPtr<AUTLobbyPlayerState> MatchOwner = GetOwnerPlayerState();
-			if (!bIsInParty && MatchOwner.IsValid() && MatchOwner->IsABeginner(CurrentRuleset.IsValid() ? CurrentRuleset->GetDefaultGameModeObject() : NULL))
-			{
-				bRankLocked = true;
-				bBeginnerMatch = true;
-
-				// Tell the host to display a warning
-
-				if (CurrentRuleset.IsValid())
-				{
-					MatchOwner->NotifyBeginnerAutoLock();
-				}
-			}
-
 		}
 	}
 }
@@ -814,10 +776,15 @@ void AUTLobbyMatchInfo::OnRep_MatchUpdate()
 {
 }
 
-bool AUTLobbyMatchInfo::ServerCreateCustomRule_Validate(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame) { return true; }
-void AUTLobbyMatchInfo::ServerCreateCustomRule_Implementation(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame)
+bool AUTLobbyMatchInfo::ServerCreateCustomRule_Validate(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch) { return true; }
+void AUTLobbyMatchInfo::ServerCreateCustomRule_Implementation(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch)
 {
 	bool bOldTeamGame = CurrentRuleset.IsValid() ? CurrentRuleset->bTeamGame : false;
+
+	bBeginnerMatch = _bBeginnerMatch;
+	bRankLocked = _bRankLocked;
+	bSpectatable = _bSpectatable;
+	bPrivateMatch = _bPrivateMatch;
 
 	// We need to build a one off custom replicated ruleset just for this hub.  :)
 	AUTLobbyGameState* GameState = GetWorld()->GetGameState<AUTLobbyGameState>();
@@ -916,23 +883,6 @@ void AUTLobbyMatchInfo::ServerCreateCustomRule_Implementation(const FString& Gam
 		if (OwnerPlayerState.IsValid())
 		{
 			RankCheck = OwnerPlayerState->GetRankCheck(DefaultGameMode);
-			
-			TWeakObjectPtr<AUTLobbyPlayerState> MatchOwner = GetOwnerPlayerState();
-			if (MatchOwner.IsValid() && MatchOwner->IsABeginner(CurrentRuleset.IsValid() ? CurrentRuleset->GetDefaultGameModeObject() : NULL))
-			{
-				bRankLocked = true;
-				bBeginnerMatch = true;
-
-				// Tell the host to display a warning
-
-				if (CurrentRuleset.IsValid())
-				{
-					MatchOwner->NotifyBeginnerAutoLock();
-				}
-			}
-
-
-
 		}
 	}
 }

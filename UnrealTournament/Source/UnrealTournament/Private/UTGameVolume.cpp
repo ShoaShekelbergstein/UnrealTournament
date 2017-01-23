@@ -22,28 +22,29 @@ AUTGameVolume::AUTGameVolume(const FObjectInitializer& ObjectInitializer)
 	RouteID = -1;
 	bReportDefenseStatus = false;
 	bHasBeenEntered = false;
+	bHasFCEntry = false;
+	MinEnemyInBaseInterval = 7.f;
 
 	static ConstructorHelpers::FObjectFinder<USoundBase> AlarmSoundFinder(TEXT("SoundCue'/Game/RestrictedAssets/Audio/Gameplay/A_FlagRunBaseAlarm.A_FlagRunBaseAlarm'"));
 	AlarmSound = AlarmSoundFinder.Object;
 
 	static ConstructorHelpers::FObjectFinder<USoundBase> EarnedSoundFinder(TEXT("SoundCue'/Game/RestrictedAssets/Pickups/Health/Asset/A_Pickups_Health_Small_Cue_Modulated.A_Pickups_Health_Small_Cue_Modulated'"));
 	HealthSound = EarnedSoundFinder.Object;
+
+	GetBrushComponent()->SetCollisionObjectType(COLLISION_GAMEVOLUME);
 }
 
 void AUTGameVolume::Reset_Implementation()
 {
 	bHasBeenEntered = false;
+	bHasFCEntry = false;
 }
 
 void AUTGameVolume::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	if (bIsTeamSafeVolume && (Role == ROLE_Authority))
-	{
-		//GetWorldTimerManager().SetTimer(HealthTimerHandle, this, &AUTGameVolume::HealthTimer, 1.f, true);
-	}
-	else if ((VoiceLinesSet == NAME_None) && !VolumeName.IsEmpty() && !bIsTeleportZone)
+	if ((VoiceLinesSet == NAME_None) && !VolumeName.IsEmpty() && !bIsTeleportZone && !bIsTeamSafeVolume)
 	{
 		VoiceLinesSet = UUTCharacterVoice::StaticClass()->GetDefaultObject<UUTCharacterVoice>()->GetFallbackLines(FName(*VolumeName.ToString()));
 		if (VoiceLinesSet == NAME_None)
@@ -86,8 +87,8 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 	{
 		AUTCharacter* P = ((AUTCharacter*)(Other));
 		P->LastGameVolume = this;
-		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS != nullptr && P->PlayerState != nullptr && !GS->IsMatchIntermission() && GS->IsMatchInProgress())
+		AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+		if (GS != nullptr && P->PlayerState != nullptr && !GS->IsMatchIntermission() && (GS->IsMatchInProgress() || (Cast<AUTPlayerState>(P->PlayerState) && ((AUTPlayerState*)(P->PlayerState))->bIsWarmingUp)))
 		{
 			if (bIsTeamSafeVolume)
 			{
@@ -127,19 +128,18 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 			}
 			else if (P->GetCarriedObject())
 			{
-				/*				if (VoiceLinesSet != NAME_None)
-								{
-									UE_LOG(UT, Warning, TEXT("VoiceLineSet %s for %s location %s"), *VoiceLinesSet.ToString(), *GetName(), *VolumeName.ToString());
-									((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(VoiceLinesSet, 1);
-								}
-								else
-								{
-									UE_LOG(UT, Warning, TEXT("No VoiceLineSet for %s location %s"), *GetName(), *VolumeName.ToString());
-								}
-								return;*/
-				if (bIsNoRallyZone && !P->GetCarriedObject()->bWasInEnemyBase)
+				/*if (VoiceLinesSet != NAME_None)
 				{
-					if (GetWorld()->GetTimeSeconds() - P->GetCarriedObject()->EnteredEnemyBaseTime > 10.f)
+					UE_LOG(UT, Warning, TEXT("VoiceLineSet %s for %s location %s"), *VoiceLinesSet.ToString(), *GetName(), *VolumeName.ToString());
+					//((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(VoiceLinesSet, 1);
+				}
+				else
+				{
+					UE_LOG(UT, Warning, TEXT("No VoiceLineSet for %s location %s"), *GetName(), *VolumeName.ToString());
+				}*/
+				if (bIsNoRallyZone && !bIsTeamSafeVolume && !P->GetCarriedObject()->bWasInEnemyBase)
+				{
+					if (GetWorld()->GetTimeSeconds() - P->GetCarriedObject()->EnteredEnemyBaseTime > 2.f)
 					{
 						// play alarm
 						UUTGameplayStatics::UTPlaySound(GetWorld(), AlarmSound, P, SRT_All, false, FVector::ZeroVector, NULL, NULL, false);
@@ -148,25 +148,27 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 				}
 
 				// possibly announce flag carrier changed zones
-				if (bIsNoRallyZone && !P->GetCarriedObject()->bWasInEnemyBase && (GetWorld()->GetTimeSeconds() - FMath::Max(GS->LastEnemyEnteringBaseTime, GS->LastEnteringEnemyBaseTime) > 10.f))
+				if (bIsNoRallyZone && !bIsTeamSafeVolume && !P->GetCarriedObject()->bWasInEnemyBase && (GetWorld()->GetTimeSeconds() - FMath::Min(GS->LastEnemyFCEnteringBaseTime, GS->LastEnteringEnemyBaseTime) > 2.f))
 				{
-					if ((GetWorld()->GetTimeSeconds() - GS->LastEnteringEnemyBaseTime > 6.f) && Cast<AUTPlayerState>(P->PlayerState))
+					if ((GetWorld()->GetTimeSeconds() - GS->LastEnteringEnemyBaseTime > 2.f) && Cast<AUTPlayerState>(P->PlayerState))
 					{
+						((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(StatusMessage::ImGoingIn);
 						if (VoiceLinesSet != NAME_None)
 						{
 							((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(VoiceLinesSet, 1);
+							GS->LastFriendlyLocationReportTime = GetWorld()->GetTimeSeconds();
+							GS->LastFriendlyLocationName = VoiceLinesSet;
 						}
-						((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(StatusMessage::ImGoingIn);
 						GS->LastEnteringEnemyBaseTime = GetWorld()->GetTimeSeconds();
 					}
-					if (GetWorld()->GetTimeSeconds() - GS->LastEnemyEnteringBaseTime > 10.f)
+					if (GetWorld()->GetTimeSeconds() - GS->LastEnemyFCEnteringBaseTime > 2.f)
 					{
 						AUTPlayerState* PS = P->GetCarriedObject()->LastPinger;
 						if (!PS)
 						{
 							for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 							{
-								AController* C = *Iterator;
+								AController* C = Iterator->Get();
 								if (C && !GS->OnSameTeam(P, C) && Cast<AUTPlayerState>(C->PlayerState))
 								{
 									PS = ((AUTPlayerState*)(C->PlayerState));
@@ -176,24 +178,26 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 						}
 						if (PS)
 						{
+							PS->AnnounceStatus(StatusMessage::Incoming);
 							if (VoiceLinesSet != NAME_None)
 							{
 								PS->AnnounceStatus(VoiceLinesSet, 0);
+								GS->LastEnemyLocationReportTime = GetWorld()->GetTimeSeconds();
+								GS->LastEnemyLocationName = VoiceLinesSet;
 							}
-							PS->AnnounceStatus(StatusMessage::BaseUnderAttack);
-							GS->LastEnemyEnteringBaseTime = GetWorld()->GetTimeSeconds();
+							GS->LastEnemyFCEnteringBaseTime = GetWorld()->GetTimeSeconds();
 						}
 					}
 				}
-				else if ((GetWorld()->GetTimeSeconds() - FMath::Max(GS->LastFriendlyLocationReportTime, GS->LastEnemyLocationReportTime) > 3.f) || bIsWarningZone)
+				else if ((GetWorld()->GetTimeSeconds() - FMath::Min(GS->LastFriendlyLocationReportTime, GS->LastEnemyLocationReportTime) > 1.f) || bIsWarningZone || !bHasFCEntry)
 				{
-					if ((VoiceLinesSet != NAME_None) && (GetWorld()->GetTimeSeconds() - GS->LastFriendlyLocationReportTime > 3.f) && Cast<AUTPlayerState>(P->PlayerState) && (GS->LastFriendlyLocationName != VoiceLinesSet))
+					if ((VoiceLinesSet != NAME_None) && ((GetWorld()->GetTimeSeconds() - GS->LastFriendlyLocationReportTime > 1.f) || !bHasFCEntry) && Cast<AUTPlayerState>(P->PlayerState) && (GS->LastFriendlyLocationName != VoiceLinesSet))
 					{
 						((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(VoiceLinesSet, 1);
 						GS->LastFriendlyLocationReportTime = GetWorld()->GetTimeSeconds();
 						GS->LastFriendlyLocationName = VoiceLinesSet;
 					}
-					if ((VoiceLinesSet != NAME_None) && P->GetCarriedObject()->bCurrentlyPinged && P->GetCarriedObject()->LastPinger && (GetWorld()->GetTimeSeconds() - GS->LastEnemyLocationReportTime > 3.f) && (GS->LastEnemyLocationName != VoiceLinesSet))
+					if ((VoiceLinesSet != NAME_None) && P->GetCarriedObject()->bCurrentlyPinged && P->GetCarriedObject()->LastPinger && ((GetWorld()->GetTimeSeconds() - GS->LastEnemyLocationReportTime > 1.f) || !bHasFCEntry) && (GS->LastEnemyLocationName != VoiceLinesSet))
 					{
 						P->GetCarriedObject()->LastPinger->AnnounceStatus(VoiceLinesSet, 0);
 						GS->LastEnemyLocationReportTime = GetWorld()->GetTimeSeconds();
@@ -201,7 +205,7 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 					}
 					else if (bIsWarningZone && !P->bWasInWarningZone && !bIsNoRallyZone)
 					{
-						// force ping if important zone, wasn't already in important zone, report only if 3 seconds since last report
+						// force ping if important zone, wasn't already in important zone
 						// also do if no pinger if important zone
 						P->GetCarriedObject()->LastPingedTime = FMath::Max(P->GetCarriedObject()->LastPingedTime, GetWorld()->GetTimeSeconds() - P->GetCarriedObject()->PingedDuration + 1.f);
 						if (VoiceLinesSet != NAME_None)
@@ -211,7 +215,7 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 							{
 								for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 								{
-									AController* C = *Iterator;
+									AController* C = Iterator->Get();
 									if (C && !GS->OnSameTeam(P, C) && Cast<AUTPlayerState>(C->PlayerState))
 									{
 										Warner = ((AUTPlayerState*)(C->PlayerState));
@@ -219,7 +223,7 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 									}
 								}
 							}
-							if (Warner && (GetWorld()->GetTimeSeconds() - GS->LastEnemyLocationReportTime > 3.f))
+							if (Warner && ((GetWorld()->GetTimeSeconds() - GS->LastEnemyLocationReportTime > 1.f) || !bHasFCEntry))
 							{
 								Warner->AnnounceStatus(VoiceLinesSet, 0);
 								GS->LastEnemyLocationReportTime = GetWorld()->GetTimeSeconds();
@@ -229,7 +233,33 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 					}
 				}
 				P->bWasInWarningZone = bIsWarningZone;
-				P->GetCarriedObject()->bWasInEnemyBase = bIsNoRallyZone;
+				P->GetCarriedObject()->bWasInEnemyBase = bIsNoRallyZone && !bIsTeamSafeVolume;
+				bHasFCEntry = true;
+			}
+			else if (bIsNoRallyZone && !bIsTeamSafeVolume && Cast<AUTPlayerState>(P->PlayerState) && ((AUTPlayerState*)(P->PlayerState))->Team && (GS->bRedToCap == (((AUTPlayerState*)(P->PlayerState))->Team->TeamIndex == 0)))
+			{
+				// warn base is under attack
+				if (GetWorld()->GetTimeSeconds() - GS->LastEnemyEnteringBaseTime > MinEnemyInBaseInterval)
+				{
+					AUTPlayerState* PS = (P->LastTargeter && !GS->OnSameTeam(P, P->LastTargeter)) ? P->LastTargeter : nullptr;
+					if (!PS)
+					{
+						for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+						{
+							AController* C = Iterator->Get();
+							if (C && !GS->OnSameTeam(P, C) && Cast<AUTPlayerState>(C->PlayerState))
+							{
+								PS = ((AUTPlayerState*)(C->PlayerState));
+								break;
+							}
+						}
+					}
+					if (PS)
+					{
+						PS->AnnounceStatus(StatusMessage::BaseUnderAttack);
+						GS->LastEnemyEnteringBaseTime = GetWorld()->GetTimeSeconds();
+					}
+				}
 			}
 			else if (!bHasBeenEntered && bReportDefenseStatus && (VoiceLinesSet != NAME_None))
 			{

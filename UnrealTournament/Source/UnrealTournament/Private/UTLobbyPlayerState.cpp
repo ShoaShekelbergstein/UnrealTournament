@@ -122,12 +122,12 @@ void AUTLobbyPlayerState::ClientMatchError_Implementation(const FText &MatchErro
 	}
 }
 
-void AUTLobbyPlayerState::ClientConnectToInstance_Implementation(const FString& GameInstanceGUIDString, bool bAsSpectator)
+void AUTLobbyPlayerState::ClientConnectToInstance_Implementation(const FString& GameInstanceGUIDString, int32 InDesiredTeam, bool bAsSpectator)
 {
 	AUTBasePlayerController* BPC = Cast<AUTBasePlayerController>(GetOwner());
 	if (BPC)
 	{
-		BPC->ConnectToServerViaGUID(GameInstanceGUIDString, DesiredTeamNum, bAsSpectator);
+		BPC->ConnectToServerViaGUID(GameInstanceGUIDString, InDesiredTeam, bAsSpectator);
 	}
 }
 

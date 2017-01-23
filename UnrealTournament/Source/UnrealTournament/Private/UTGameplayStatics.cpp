@@ -375,7 +375,7 @@ APawn* UUTGameplayStatics::ChooseBestAimTarget(AController* AskingC, FVector Sta
 										{
 											// try spot on capsule nearest to where shot is firing
 											FVector ClosestPoint = FMath::ClosestPointOnSegment(P->GetActorLocation(), StartLoc, StartLoc + FireDir*(FireDist + 500.f));
-											FVector TestPoint = P->GetActorLocation() + P->GetCapsuleComponent()->GetUnscaledCapsuleRadius() * (ClosestPoint - P->GetActorLocation()).Size();
+											FVector TestPoint = P->GetActorLocation() + P->GetCapsuleComponent()->GetUnscaledCapsuleRadius() * (ClosestPoint - P->GetActorLocation()).GetSafeNormal();
 											float CharZ = P->GetActorLocation().Z;
 											float CapsuleHeight = P->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
 											TestPoint.Z = FMath::Clamp(ClosestPoint.Z, CharZ - CapsuleHeight, CharZ + CapsuleHeight);
@@ -576,7 +576,7 @@ bool UUTGameplayStatics::UTSuggestProjectileVelocity(UObject* WorldContextObject
 			// d = vt + .5 a t^2
 			const FVector TraceEnd = StartLoc + ProjVelocity * TimeInFlight + FVector(0.f, 0.f, 0.5f * -GravityZ * FMath::Square(TimeInFlight) - CollisionRadius);
 
-			if (TraceOption == ESuggestProjVelocityTraceOption::OnlyTraceWhileAsceding && TraceEnd.Z < TraceStart.Z)
+			if (TraceOption == ESuggestProjVelocityTraceOption::OnlyTraceWhileAscending && TraceEnd.Z < TraceStart.Z)
 			{
 				// falling, we are done tracing
 				break;
@@ -664,7 +664,9 @@ class UAudioComponent* UUTGameplayStatics::PlaySoundTeamAdjusted(USoundCue* Soun
 		return nullptr;
 	}
 
-	UAudioComponent* AudioComponent = FAudioDevice::CreateComponent(SoundToPlay, SoundTarget->GetWorld(), SoundTarget, false, false);
+	FAudioDevice::FCreateComponentParams Params(SoundTarget);
+
+	UAudioComponent* AudioComponent = FAudioDevice::CreateComponent(SoundToPlay, Params);
 	if (AudioComponent)
 	{
 		const bool bIsInGameWorld = AudioComponent->GetWorld()->IsGameWorld();
@@ -827,7 +829,9 @@ void UUTGameplayStatics::SetBestTime(UObject* WorldContextObject, FName TimingSe
 		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(PC->Player);
 		if (LP && LP->GetProgressionStorage())
 		{
+			LP->SetTutorialFinished(TimingSection);
 			LP->GetProgressionStorage()->SetBestTime(TimingSection, InBestTime);
+			LP->SaveProgression();
 		}
 	}
 }
@@ -845,6 +849,50 @@ bool UUTGameplayStatics::GetBestTime(UObject* WorldContextObject, FName TimingSe
 	}
 
 	return false;
+}
+
+bool UUTGameplayStatics::LineTraceForWorldBlockingOnly(UObject* WorldContextObject, const FVector Start, const FVector End, EDrawDebugTrace::Type DrawDebugType, FVector& HitLocation, FVector& HitNormal)
+{
+	bool bHit = false;
+
+	if (WorldContextObject == nullptr)
+	{
+		return bHit;
+	}
+
+	FHitResult Hit;
+	UWorld* World = WorldContextObject->GetWorld();
+	if (World)
+	{
+		bHit = World->LineTraceSingleByChannel(Hit, Start, End, ECC_Pawn, FCollisionQueryParams(), WorldResponseParams);
+		HitLocation = Hit.Location;
+		HitNormal = Hit.Normal;
+	}
+
+	if (DrawDebugType != EDrawDebugTrace::None)
+	{
+		FLinearColor TraceColor = FLinearColor::Red;
+		FLinearColor TraceHitColor = FLinearColor::Green;
+		float DrawTime = 5.0f;
+
+		bool bPersistent = DrawDebugType == EDrawDebugTrace::Persistent;
+		float LifeTime = (DrawDebugType == EDrawDebugTrace::ForDuration) ? DrawTime : 0.f;
+
+		if (bHit && Hit.bBlockingHit)
+		{
+			// Red up to the blocking hit, green thereafter
+			::DrawDebugLine(World, Start, Hit.ImpactPoint, TraceColor.ToFColor(true), bPersistent, LifeTime);
+			::DrawDebugLine(World, Hit.ImpactPoint, End, TraceHitColor.ToFColor(true), bPersistent, LifeTime);
+			::DrawDebugPoint(World, Hit.ImpactPoint, 16.f, TraceColor.ToFColor(true), bPersistent, LifeTime);
+		}
+		else
+		{
+			// no hit means all red
+			::DrawDebugLine(World, Start, End, TraceColor.ToFColor(true), bPersistent, LifeTime);
+		}
+	}
+
+	return bHit;
 }
 
 bool UUTGameplayStatics::LineTraceForObjectsSimple(UObject* WorldContextObject, const FVector Start, const FVector End, const TArray< TEnumAsByte<EObjectTypeQuery> > & ObjectTypes, bool bTraceComplex, EDrawDebugTrace::Type DrawDebugType, FVector& HitLocation, FVector& HitNormal, bool bIgnoreSelf)
@@ -911,18 +959,18 @@ void UUTGameplayStatics::RecordEvent_UTTutorialStarted(AUTPlayerController* UTPC
 }
 
 
-void UUTGameplayStatics::RecordEvent_UTTutorialCompleted(FString TutorialMap)
+void UUTGameplayStatics::RecordEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap)
 {
 	if (FUTAnalytics::IsAvailable())
 	{
-		FUTAnalytics::FireEvent_UTTutorialCompleted(TutorialMap);
+		FUTAnalytics::FireEvent_UTTutorialCompleted(UTPC, TutorialMap);
 	}
 }
 
-void UUTGameplayStatics::RecordEvent_UTTutorialPlayInstruction(int32 InstructionID)
+void UUTGameplayStatics::RecordEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, int32 InstructionID)
 {
 	if (FUTAnalytics::IsAvailable())
 	{
-		FUTAnalytics::FireEvent_UTTutorialPlayInstruction(InstructionID);
+		FUTAnalytics::FireEvent_UTTutorialPlayInstruction(UTPC, InstructionID);
 	}
 }

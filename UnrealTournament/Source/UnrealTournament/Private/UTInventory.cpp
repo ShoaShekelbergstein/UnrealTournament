@@ -27,6 +27,7 @@ AUTInventory::AUTInventory(const FObjectInitializer& ObjectInitializer)
 	InitialFlashScale = 5.f;
 	InitialFlashColor = FLinearColor::White;
 	bShowPowerupTimer = true;
+	bFixedRespawnInterval = false;
 
 	MenuDescription = NSLOCTEXT("UTWeapon","DefaultDescription","This space let intentionally blank");
 	IconColor = FLinearColor::White;
@@ -239,7 +240,7 @@ void AUTInventory::DropFrom(const FVector& StartLocation, const FVector& TossVel
 		}
 		Instigator = NULL;
 		SetOwner(NULL);
-		if (DroppedPickupClass != NULL)
+		if (DroppedPickupClass != NULL && !IsPendingKillPending())
 		{
 			// pull back spawn location if it is embedded in world geometry
 			FVector AdjustedStartLoc = StartLocation;
@@ -283,6 +284,11 @@ void AUTInventory::InitializeDroppedPickup(AUTDroppedPickup* Pickup)
 void AUTInventory::OnViewTargetChange_Implementation(AUTPlayerController* NewViewTarget)
 {
 
+}
+
+bool AUTInventory::StackLockerPickup(AUTInventory* ContainedInv)
+{
+	return StackPickup(ContainedInv);
 }
 
 bool AUTInventory::StackPickup_Implementation(AUTInventory* ContainedInv)

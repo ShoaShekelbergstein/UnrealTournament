@@ -199,6 +199,10 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 		bool bIgnoreShockballs;
 
+	/** Whether Hitscan shots are blocked by teammates. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+		bool bTeammatesBlockHitscan;
+
 	/** Custom Momentum scaling for friendly hitscanned pawns */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	float FriendlyMomentumScaling;
@@ -326,6 +330,9 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY(EditDefaultsOnly, Category = UI)
 	bool bHideInCrosshairMenu;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		FText HighlightText;
+
 	/** Hack for adjusting first person weapon mesh at different FOVs (until we have separate render pass for first person weapon. */
 	UPROPERTY(EditDefaultsOnly, Category="Weapon")
 	FVector FOVOffset;
@@ -340,6 +347,7 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	virtual void DetachFromHolster();
 
 	virtual void DropFrom(const FVector& StartLocation, const FVector& TossVelocity) override;
+	virtual bool StackLockerPickup(AUTInventory* ContainedInv) override;
 
 	virtual void InitializeDroppedPickup(class AUTDroppedPickup* Pickup);
 
@@ -663,11 +671,18 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	/** fires a shot and consumes ammo */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void FireShot();
+
 	/** blueprint override for firing
 	 * NOTE: do an authority check before spawning projectiles, etc as this function is called on both sides
 	 */
-	UFUNCTION(BlueprintImplementableEvent)
-	bool FireShotOverride();
+	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon")
+		bool FireShotOverride();
+
+	/** blueprint override for handling instant hit fire result (damage, etc.). 
+	@param Hit contains the hit result for the actor being damaged.
+	@param FireDir is the direction of the trace. */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon")
+		void OnHitScanDamage(const FHitResult& Hit, FVector FireDir);
 
 	/** plays an anim on the weapon and optionally hands
 	 * automatically handles fire rate modifiers by default, overridden if RateOverride is > 0.0
@@ -1057,6 +1072,7 @@ public:
 		FName ShotsStatsName;
 
 	virtual int32 GetWeaponKillStats(AUTPlayerState * PS) const;
+	virtual int32 GetWeaponKillStatsForRound(AUTPlayerState * PS) const;
 	virtual int32 GetWeaponDeathStats(AUTPlayerState * PS) const;
 	virtual float GetWeaponShotsStats(AUTPlayerState * PS) const;
 	virtual float GetWeaponHitsStats(AUTPlayerState * PS) const;

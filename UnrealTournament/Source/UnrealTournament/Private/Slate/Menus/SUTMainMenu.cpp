@@ -115,6 +115,24 @@ void SUTMainMenu::SetInitialPanel()
 
 FReply SUTMainMenu::OnShowHomePanel()
 {
+	//if we are leaving the tutorial panel, we may have canceled on boarding
+	if (FUTAnalytics::IsAvailable() && ActivePanel == TutorialPanel)
+	{
+		AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+		if (PC && !PC->SkipTutorialCheck())
+		{
+			UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(PC->Player);
+			if (UTLocalPlayer)
+			{
+				int32 TutorialMask = UTLocalPlayer->GetTutorialMask();
+				if (TutorialMask == 0 || (TutorialMask & TUTORIAL_SkillMoves) != TUTORIAL_SkillMoves) 
+				{
+					FUTAnalytics::FireEvent_UTCancelOnboarding(PC);
+				}
+			}
+		}
+	}
+
 	return SUTMenuBase::OnShowHomePanel();
 }
 
@@ -210,7 +228,7 @@ TSharedRef<SWidget> SUTMainMenu::AddPlayNow()
 	];
 
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayDM", "QuickPlay Deathmatch"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch,	EEpicDefaultRuleTags::Deathmatch));
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayCTF", "QuickPlay Capture the Flag"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::CTF));
+	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRun", "QuickPlay Flag Run"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRun));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayTSD", "QuickPlay Showdown"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::TEAMSHOWDOWN));
 	DropDownButton->AddSpacer();
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_ChallengesGame", "Challenges"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowGamePanel));
@@ -378,7 +396,11 @@ void SUTMainMenu::OpenDelayedMenu()
 			.PlayerOwner(PlayerOwner)
 			.GameRuleSets(AvailableGameRulesets)
 			.DialogSize(FVector2D(1920,1080))
+#if PLATFORM_WINDOWS
+			.ButtonMask(UTDIALOG_BUTTON_PLAY | UTDIALOG_BUTTON_LAN | UTDIALOG_BUTTON_CANCEL)
+#else
 			.ButtonMask(UTDIALOG_BUTTON_PLAY | UTDIALOG_BUTTON_CANCEL)
+#endif
 			.OnDialogResult(this, &SUTMainMenu::OnGameChangeDialogResult);
 		
 
@@ -396,7 +418,11 @@ void SUTMainMenu::OnGameChangeDialogResult(TSharedPtr<SCompoundWidget> Dialog, u
 {
 	if ( ButtonPressed != UTDIALOG_BUTTON_CANCEL && CreateGameDialog.IsValid() )
 	{
-		if (ButtonPressed == UTDIALOG_BUTTON_PLAY)
+		if (ButtonPressed == UTDIALOG_BUTTON_LAN)
+		{
+			StartGame(true);
+		}
+		else if (ButtonPressed == UTDIALOG_BUTTON_PLAY)
 		{
 			StartGame(false);
 		}
@@ -671,10 +697,12 @@ void SUTMainMenu::StartGame(bool bLanGame)
 	{
 		FString GameMode;
 		FString Description;
+		FString GameModeName;
+
 		TArray<FString> GameOptionsList;
 		int32 DesiredPlayerCount = 0;
 		int32 bTeamGame;
-		CreateGameDialog->GetCustomGameSettings(GameMode, StartingMap, Description, GameOptionsList, DesiredPlayerCount,bTeamGame);	
+		CreateGameDialog->GetCustomGameSettings(GameMode, StartingMap, Description, GameModeName, GameOptionsList, DesiredPlayerCount,bTeamGame);	
 		GameOptions = FString::Printf(TEXT("?Game=%s"), *GameMode);
 		for (int32 i = 0; i < GameOptionsList.Num(); i++)
 		{
@@ -695,7 +723,8 @@ void SUTMainMenu::StartGame(bool bLanGame)
 			if (FUTAnalytics::IsAvailable())
 			{
 				GameOptions += FUTAnalytics::AnalyticsLoggedGameOptionTrue;
-				FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("MainMenu - Custom Game - %s"),*GameMode));
+				
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("MainMenu - Custom Game - %s"),*GameModeName));
 			}
 		}
 	}
@@ -723,7 +752,15 @@ void SUTMainMenu::StartGame(bool bLanGame)
 		if (PlayerOwner.IsValid() && FUTAnalytics::IsAvailable() && CurrentRule)
 		{
 			GameOptions += FUTAnalytics::AnalyticsLoggedGameOptionTrue;
-			FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("MainMenu - Predefined Game Type - %s"), *CurrentRule->GameMode));
+			
+			if (DefaultGameMode)
+			{
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("MainMenu - Predefined Game Type - %s"), *DefaultGameMode->DisplayName.ToString()));
+			}
+			else
+			{
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("MainMenu - Predefined Game Type - %s"), *CurrentRule->GameMode));
+			}
 		}
 	}
 
@@ -736,8 +773,8 @@ void SUTMainMenu::StartGame(bool bLanGame)
 
 	if (bLanGame)
 	{
-		FString ExecPath = FPlatformProcess::GenerateApplicationPath(FApp::GetName(), FApp::GetBuildConfiguration());
-		FString Options = FString::Printf(TEXT("unrealtournament %s -log -server -LAN"), *URL);
+		FString ExecPath = TEXT("..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Shipping.exe");
+		FString Options = FString::Printf(TEXT("unrealtournament %s -log -server -LAN -AUTH_PASSWORD="), *URL);
 
 		IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 		if (OnlineSubsystem)
@@ -768,7 +805,7 @@ void SUTMainMenu::StartGame(bool bLanGame)
 	}
 	else
 	{
-		ConsoleCommand(TEXT("Open ") + URL);
+		ConsoleCommand(TEXT("Start ") + URL);
 	}
 
 	if (CreateGameDialog.IsValid())

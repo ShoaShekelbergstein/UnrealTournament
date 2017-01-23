@@ -109,7 +109,7 @@ void AUTProj_BioShot::OnBounce(const struct FHitResult& ImpactResult, const FVec
 {
 	Super::OnBounce(ImpactResult, ImpactVelocity);
 	ProjectileMovement->MaxSpeed = MaxSlideSpeed;
-	bCanTrack = true;
+	bCanTrack = TrackingRange > 0.0f;
 
 	// only one bounce sound
 	BounceSound = NULL;
@@ -200,9 +200,10 @@ void AUTProj_BioShot::Landed(UPrimitiveComponent* HitComp, const FVector& HitLoc
 {
 	if (!bLanded)
 	{
-		bCanTrack = true;
+		bCanTrack = (TrackingRange > 0.0f);
 		bLanded = true;
 		bCanHitInstigator = true;
+		InitialVisualOffset = FinalVisualOffset;
 
 		//Change the collision so that weapons make it explode
 		CollisionComp->SetCollisionProfileName("ProjectileShootable");
@@ -362,7 +363,7 @@ void AUTProj_BioShot::Track(AUTCharacter* NewTrackedPawn)
 void AUTProj_BioShot::TickActor(float DeltaTime, ELevelTick TickType, FActorTickFunction& ThisTickFunction)
 {
 	// Don't constantly explode in blueprint preview
-	if (GetWorld()->WorldType == EWorldType::Preview)
+	if (GetWorld()->WorldType == EWorldType::EditorPreview)
 	{
 		Super::TickActor(DeltaTime, TickType, ThisTickFunction);
 		return;

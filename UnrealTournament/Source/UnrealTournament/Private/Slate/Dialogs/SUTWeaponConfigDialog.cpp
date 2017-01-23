@@ -519,10 +519,9 @@ void SUTWeaponConfigDialog::ConstructPreviewWorld(FVector2D ViewportSize)
 	/********************* Create the preview world to render meshes */
 
 	// allocate a preview scene for rendering
-	PreviewWorld = UWorld::CreateWorld(EWorldType::Preview, true);
-	PreviewWorld->bHack_Force_UsesGameHiddenFlags_True = true;
+	PreviewWorld = UWorld::CreateWorld(EWorldType::GamePreview, true);
 	PreviewWorld->bShouldSimulatePhysics = true;
-	GEngine->CreateNewWorldContext(EWorldType::Preview).SetCurrentWorld(PreviewWorld);
+	GEngine->CreateNewWorldContext(EWorldType::GamePreview).SetCurrentWorld(PreviewWorld);
 	PreviewWorld->InitializeActorsForPlay(FURL(), true);
 	PreviewViewState.Allocate();
 	{
@@ -1827,6 +1826,14 @@ FReply SUTWeaponConfigDialog::OnResetClick()
 {
 	UUTProfileSettings* ProfileSettings = PlayerOwner->GetProfileSettings();
 	ProfileSettings->ResetProfile(EProfileResetType::Weapons);
+
+	//Set weapon hand in case the reset profile changed it, so that it is replicated properly.
+	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+	if (UTPC)
+	{
+		UTPC->SetWeaponHand(ProfileSettings->WeaponHand);
+	}
+
 	PlayerOwner->SaveProfileSettings();
 
 	GetPlayerOwner()->CloseDialog(SharedThis(this));

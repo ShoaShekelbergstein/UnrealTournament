@@ -135,6 +135,9 @@ private:
 	/** Handle to delegate used to clean up the killcam world when its source world is cleaned up. */
 	FDelegateHandle OnWorldCleanupHandle;
 
+	/** Handle to PostLoadMap delegate. Used to set ShouldTick on the playback world when it's loaded. */
+	FDelegateHandle OnPostLoadMapHandle;
+
 	/** Cached time in seconds from the last call to KillcamGoToTime, for KillcamRestart */
 	float CachedGoToTimeSeconds;
 
@@ -163,4 +166,10 @@ private:
 
 	/** Chokepoint for switching the UI to the live world and hiding the killcam world and HUD */
 	void HideKillcamFromUser();
+	
+	/** Added as the delegate for PostLoadMap for the playback world. */
+	void OnPostLoadMap();
+
+	/** Sets ShouldTick on the playback world to false. */
+	void SetPlaybackWorldShouldTick(const bool bShouldTick);
 };

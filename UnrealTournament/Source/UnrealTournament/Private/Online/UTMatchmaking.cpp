@@ -10,6 +10,7 @@
 #include "UTMatchmakingSingleSession.h"
 #include "UTPlaylistManager.h"
 #include "UTMcpUtils.h"
+#include "UTLocalPlayer.h"
 #include "QosInterface.h"
 #include "QosRegionManager.h"
 
@@ -284,7 +285,11 @@ void UUTMatchmaking::CancelMatchmaking()
 {
 	if (Matchmaking)
 	{
-		ensure(ReservationBeaconClient == nullptr);
+		if (ReservationBeaconClient != nullptr)
+		{
+			CleanupReservationBeacon();
+		}
+
 		/*
 		if (QosEvaluator && QosEvaluator->IsActive())
 		{
@@ -940,6 +945,16 @@ void UUTMatchmaking::OnClientSessionIdChanged(const FString& SessionId)
 {
 	UE_LOG(LogOnline, Log, TEXT("OnClientSessionIdChanged %s"), *SessionId);
 	
+	// If we're not in the menus and last session matches the new session, we're probably in that server already
+	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController());
+	if (LP)
+	{
+		if (LP->LastSession.GetSessionIdStr() == SessionId && !LP->IsMenuGame())
+		{
+			return;
+		}
+	}
+
 	if (!SessionId.IsEmpty())
 	{
 		FMatchmakingParams MMParams;

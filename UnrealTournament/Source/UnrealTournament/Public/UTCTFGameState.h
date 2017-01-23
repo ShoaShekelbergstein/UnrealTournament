@@ -172,16 +172,14 @@ class UNREALTOURNAMENT_API AUTCTFGameState: public AUTGameState
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = CTF)
 	TArray<AUTCTFFlagBase*> FlagBases;
 
-	virtual bool AllowMinimapFor(AUTPlayerState* PS) override;
-
 	UPROPERTY(Replicated)
 	uint8 AdvantageTeamIndex;
 
-	UPROPERTY(Replicated)
-		int32 CTFRound;
+	UPROPERTY(BlueprintReadOnly, Replicated)
+	int32 CTFRound;
 
-	UPROPERTY(Replicated)
-		int32 NumRounds;
+	UPROPERTY(BlueprintReadOnly, Replicated)
+	int32 NumRounds;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
 		FText RedAdvantageStatus;

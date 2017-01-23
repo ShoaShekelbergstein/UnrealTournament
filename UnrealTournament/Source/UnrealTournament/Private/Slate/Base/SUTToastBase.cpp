@@ -102,7 +102,7 @@ void SUTToastBase::Tick( const FGeometry& AllottedGeometry, const double InCurre
 
 	if (Lifetime <= 0.0f)
 	{
-		PlayerOwner->ToastCompleted();
+		//PlayerOwner->ToastCompleted();
 	}
 }
 

@@ -106,6 +106,8 @@ protected:
 	FString LastTriedDemo;
 	bool bRetriedDemoAfterRedirects;
 
+	UPROPERTY(Transient)
+	bool bMovieWillAutocompleteWhenLoadFinishes;
 
 	/** Matchmaking singleton */
 	UPROPERTY(Transient)
@@ -217,6 +219,8 @@ protected:
 	virtual FText GetVignetteText() const;
 	virtual EVisibility GetLevelLoadTextVisibility() const;
 	virtual EVisibility GetCommunityVisibility() const;
+	virtual EVisibility GetEpicLogoVisibility() const;
+	virtual EVisibility GetVignetteVisibility() const;
 #endif
 
 	UPROPERTY()
@@ -226,5 +230,8 @@ protected:
 
 public:
 	virtual int32 GetBotSkillForTeamElo(int32 TeamElo);
+
+	/** If true, the loading movie will suppress the loading text.  Thnis is used for tutorial movies */
+	bool bSuppressLoadingText;
 };
 

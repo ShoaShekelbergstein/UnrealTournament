@@ -95,7 +95,7 @@ void SUTHUDSettingsDialog::Construct(const FArguments& InArgs)
 							.Padding(FMargin(25.0f, 0.0f, 0.0f, 0.0f))
 							.AutoWidth()
 							[
-								SAssignNew(GeneralSettingsTabButton, SUTButton)
+								SAssignNew(GeneralSettingsTabButton, SUTTabButton)
 								.IsToggleButton(true)
 								.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
 								.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
@@ -108,7 +108,7 @@ void SUTHUDSettingsDialog::Construct(const FArguments& InArgs)
 							.Padding(FMargin(25.0f, 0.0f, 0.0f, 0.0f))
 							.AutoWidth()
 							[
-								SAssignNew(WeaponBarSettingsTabButton, SUTButton)
+								SAssignNew(WeaponBarSettingsTabButton, SUTTabButton)
 								.IsToggleButton(true)
 								.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
 								.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
@@ -120,7 +120,7 @@ void SUTHUDSettingsDialog::Construct(const FArguments& InArgs)
 							.Padding(FMargin(25.0f, 0.0f, 0.0f, 0.0f))
 							.AutoWidth()
 							[
-								SAssignNew(NotificationsSettingsTabButton, SUTButton)
+								SAssignNew(NotificationsSettingsTabButton, SUTTabButton)
 								.IsToggleButton(true)
 								.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
 								.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
@@ -132,7 +132,7 @@ void SUTHUDSettingsDialog::Construct(const FArguments& InArgs)
 							.Padding(FMargin(25.0f, 0.0f, 0.0f, 0.0f))
 							.AutoWidth()
 							[
-								SAssignNew(QuickStatsSettingsTabButton, SUTButton)
+								SAssignNew(QuickStatsSettingsTabButton, SUTTabButton)
 								.IsToggleButton(true)
 								.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
 								.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
@@ -416,7 +416,7 @@ TSharedRef<SWidget> SUTHUDSettingsDialog::BuildGeneralTab()
 		+AddIntOption(NAME_HUDWidgetOpacity, NSLOCTEXT("HUDSETTINGS","OpacityLabel","General Opacity:"),NSLOCTEXT("SUTHUDSettingsDialog", "HUDOpacityTT", "Adjusts how transparent the HUD should be."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), int32(ProfileSettings->HUDWidgetOpacity * 100.0f), 0, 100)
 		//+AddIntOption(NAME_HUDWidgetBorderOpacity, NSLOCTEXT("HUDSETTINGS", "BorderOpacityLabel", "Border Opacity:"), NSLOCTEXT("SUTHUDSettingsDialog", "HUDBorderOpacityTT", "Adjusts how transparent the hard edge border around each element of the HUD should be."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), int32(ProfileSettings->HUDWidgetOpacity * 100.0f), 0, 100)
 		//+AddIntOption(NAME_HUDWidgetSlateOpacity, NSLOCTEXT("HUDSETTINGS", "SlateOpacityLabel", "Slate Opacity:"), NSLOCTEXT("SUTHUDSettingsDialog", "HUDSlateOpacityTT", "Adjusts how transparent the background portion of each HUD element should be."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), int32(ProfileSettings->HUDWidgetSlateOpacity * 100), 0, 100)
-		+AddIntOption(NAME_HUDWidgetScaleOverride, NSLOCTEXT("HUDSETTINGS", "ScaleLabel", "Scale:"), NSLOCTEXT("SUTHUDSettingsDialog", "HUDScaleTT", "Makes the HUD elements bigger or smaller."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), int32(ProfileSettings->HUDWidgetScaleOverride * 100.0f), 25, 300)
+		+AddIntOption(NAME_HUDWidgetScaleOverride, NSLOCTEXT("HUDSETTINGS", "ScaleLabel", "Scale:"), NSLOCTEXT("SUTHUDSettingsDialog", "HUDScaleTT", "Makes the HUD elements bigger or smaller."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), int32(ProfileSettings->HUDWidgetScaleOverride * 100.0f), 25, 150)
 
 		// Spacer....
 		+SVerticalBox::Slot().AutoHeight()
@@ -424,11 +424,11 @@ TSharedRef<SWidget> SUTHUDSettingsDialog::BuildGeneralTab()
 			SNew(SBox).HeightOverride(48)
 		]
 
-		+AddBoolOption(NAME_bQuickStatsHidden, NSLOCTEXT("SUTHUDSettingsDialog", "bQuickStatsHidden", "Show Health/Armor/Ammo on MiniHUD"), NSLOCTEXT("SUTHUDSettingsDialog", "bQuickStatsHiddenTT", "Check this box if you wish to show your health, ammo and armor on the mini-HUD."), !ProfileSettings->bQuickStatsHidden)
-		+AddBoolOption(NAME_bQuickInfoHidden, NSLOCTEXT("SUTHUDSettingsDialog", "bQuickInfoHidden", "Show Powerups/Flag on MiniHUD"), NSLOCTEXT("SUTHUDSettingsDialog", "bQuickInfoHiddenTT", "Check this box if you wish to show power up and flags on the mini-HUD."), !ProfileSettings->bQuickInfoHidden)
-		+AddBoolOption(NAME_bHideDamageIndicators, NSLOCTEXT("SUTHUDSettingsDialog", "bHideDamageIndicators", "Show Damage Dealt Indicator"), NSLOCTEXT("SUTHUDSettingsDialog", "bHideDamageIndicatorsTT", "Enable this to show the damage delt indicators that appear around the crosshair."), !ProfileSettings->bHideDamageIndicators)
-		+AddBoolOption(NAME_bHealthArcShown, NSLOCTEXT("SUTHUDSettingsDialog", "bHealthArcShown", "Show Health/Armor Arcs"), NSLOCTEXT("SUTHUDSettingsDialog", "bHealthArcShownTT", "Enable this to show the health and armor arcs around the crosshair."), ProfileSettings->bHealthArcShown)
-		+AddIntOption(NAME_HealthArcRadius, NSLOCTEXT("HUDSETTINGS", "HealthArcRadius", "Arc Radius:"), NSLOCTEXT("SUTHUDSettingsDialog", "HealthArcRadiusTT", "Set radius of Health/Armor arcs."), NSLOCTEXT("SUTHUDSettingsDialog", "Units", ""), ProfileSettings->HealthArcRadius, 15, 100);
+	+ AddBoolOption(NAME_bQuickStatsHidden, NSLOCTEXT("SUTHUDSettingsDialog", "bQuickStatsHidden", "Show Health/Armor/Ammo on MiniHUD"), NSLOCTEXT("SUTHUDSettingsDialog", "bQuickStatsHiddenTT", "Check this box if you wish to show your health, ammo and armor on the mini-HUD."), !ProfileSettings->bQuickStatsHidden)
+		+ AddBoolOption(NAME_bQuickInfoHidden, NSLOCTEXT("SUTHUDSettingsDialog", "bQuickInfoHidden", "Show Powerups/Flag on MiniHUD"), NSLOCTEXT("SUTHUDSettingsDialog", "bQuickInfoHiddenTT", "Check this box if you wish to show power up and flags on the mini-HUD."), !ProfileSettings->bQuickInfoHidden)
+		+ AddBoolOption(NAME_bHideDamageIndicators, NSLOCTEXT("SUTHUDSettingsDialog", "bHideDamageIndicators", "Show Damage Dealt Indicator"), NSLOCTEXT("SUTHUDSettingsDialog", "bHideDamageIndicatorsTT", "Enable this to show the damage delt indicators that appear around the crosshair."), !ProfileSettings->bHideDamageIndicators)
+		+ AddBoolOption(NAME_bHealthArcShown, NSLOCTEXT("SUTHUDSettingsDialog", "bHealthArcShown", "Show Health/Armor Arcs"), NSLOCTEXT("SUTHUDSettingsDialog", "bHealthArcShownTT", "Enable this to show the health and armor arcs around the crosshair."), ProfileSettings->bHealthArcShown)
+		+ AddIntOption(NAME_HealthArcRadius, NSLOCTEXT("HUDSETTINGS", "HealthArcRadius", "Arc Radius:"), NSLOCTEXT("SUTHUDSettingsDialog", "HealthArcRadiusTT", "Set radius of Health/Armor arcs."), NSLOCTEXT("SUTHUDSettingsDialog", "Units", ""), ProfileSettings->HealthArcRadius, 15, 100);
 }
 
 TSharedRef<SWidget> SUTHUDSettingsDialog::BuildWeaponBarTab()

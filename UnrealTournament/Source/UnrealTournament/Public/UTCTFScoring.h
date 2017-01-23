@@ -2,36 +2,12 @@
 /** Handles individual scoring in CTF matches. */
 
 #pragma once
+#include "UTBaseScoring.h"
+#include "UTATypes.h"
 #include "UTCTFScoring.generated.h"
 
-static const FName NAME_FlagCaptures(TEXT("FlagCaptures"));
-static const FName NAME_FlagReturns(TEXT("FlagReturns"));
-static const FName NAME_FlagAssists(TEXT("FlagAssists"));
-static const FName NAME_FlagHeldDeny(TEXT("FlagHeldDeny"));
-static const FName NAME_FlagHeldDenyTime(TEXT("FlagHeldDenyTime"));
-static const FName NAME_FlagHeldTime(TEXT("FlagHeldTime"));
-static const FName NAME_FlagReturnPoints(TEXT("FlagReturnPoints"));
-static const FName NAME_CarryAssist(TEXT("CarryAssist"));
-static const FName NAME_CarryAssistPoints(TEXT("CarryAssistPoints"));
-static const FName NAME_FlagCapPoints(TEXT("FlagCapPoints"));
-static const FName NAME_DefendAssist(TEXT("DefendAssist"));
-static const FName NAME_DefendAssistPoints(TEXT("DefendAssistPoints"));
-static const FName NAME_ReturnAssist(TEXT("ReturnAssist"));
-static const FName NAME_ReturnAssistPoints(TEXT("ReturnAssistPoints"));
-static const FName NAME_TeamCapPoints(TEXT("TeamCapPoints"));
-static const FName NAME_EnemyFCDamage(TEXT("EnemyFCDamage"));
-static const FName NAME_FCKills(TEXT("FCKills"));
-static const FName NAME_FCKillPoints(TEXT("FCKillPoints"));
-static const FName NAME_FlagSupportKills(TEXT("FlagSupportKills"));
-static const FName NAME_FlagSupportKillPoints(TEXT("FlagSupportKillPoints"));
-static const FName NAME_RegularKillPoints(TEXT("RegularKillPoints"));
-static const FName NAME_FlagGrabs(TEXT("FlagGrabs"));
-
-static const FName NAME_TeamFlagGrabs(TEXT("TeamFlagGrabs"));
-static const FName NAME_TeamFlagHeldTime(TEXT("TeamFlagHeldTime"));
-
 UCLASS()
-class UNREALTOURNAMENT_API AUTCTFScoring : public AInfo
+class UNREALTOURNAMENT_API AUTCTFScoring : public AUTBaseScoring
 {
 	GENERATED_UCLASS_BODY()
 
@@ -100,9 +76,11 @@ class UNREALTOURNAMENT_API AUTCTFScoring : public AInfo
 
 	virtual void BeginPlay() override;
 	virtual void FlagHeldTimer();
-	virtual void ScoreDamage(int32 DamageAmount, AUTPlayerState* Victim, AUTPlayerState* Attacker);
-	virtual void ScoreKill(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType);
-	virtual void ScoreObject(AUTCarriedObject* GameObject, AUTCharacter* HolderPawn, AUTPlayerState* Holder, FName Reason, float TimeLimit, int32 FlagCapScore=1);
+
+	virtual void InitFor(class AUTGameMode* Game) override;
+	virtual void ScoreDamage(int32 DamageAmount, AUTPlayerState* Victim, AUTPlayerState* Attacker) override;
+	virtual void ScoreKill(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType) override;
+	virtual void ScoreObject(AUTCarriedObject* GameObject, AUTCharacter* HolderPawn, AUTPlayerState* Holder, FName Reason, int32 FlagCapScore=1) override;
 
 	virtual bool WasThreateningFlagCarrier(AUTPlayerState *VictimPS, APawn* KilledPawn, AUTPlayerState *KillerPS);
 

@@ -12,11 +12,13 @@
 #include "UTProfileSettings.generated.h"
 
 
-static const uint32 CURRENT_PROFILESETTINGS_VERSION = 37;
+static const uint32 CURRENT_PROFILESETTINGS_VERSION = 40;
 static const uint32 VALID_PROFILESETTINGS_VERSION = 32;
 static const uint32 WEAPONBAR_FIXUP_VERSION = 33;
 static const uint32 COMMENU_FIXUP_VERSION = 34;
 static const uint32 ENABLE_DOUBLETAP_DODGE_FIXUP_VERSION = 37;
+static const uint32 DEFAULT_GROUPTAUNT_FIXUP_VERSION = 38;
+static const uint32 FRAMECAP_FIXUP_VERSION = 40;
 
 class UUTLocalPlayer;
 
@@ -371,6 +373,10 @@ public:
 	/** For backwards compatibility, maps to bCrouchTriggersSlide. */
 	UPROPERTY(BlueprintReadOnly, Category = Input)
 	uint32 bAllowSlideFromRun : 1;
+
+	/** Holds the default bot skill level this player wants to use */
+	UPROPERTY(BlueprintReadOnly, Category = System)
+	int32 DefaultBotSkillLevel;
 
 public:
 

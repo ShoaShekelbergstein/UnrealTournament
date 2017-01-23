@@ -15,12 +15,21 @@ AUTLobbyGameState::AUTLobbyGameState(const class FObjectInitializer& ObjectIniti
 {
 	AllMapsOnServerCount = -1;
 	AvailabelGameRulesetCount = -1;
+
+	static ConstructorHelpers::FObjectFinder<USoundBase> MenuMusicObj(TEXT("/Game/RestrictedAssets/Audio/Music/Music_UTMuenu_New01.Music_UTMuenu_New01")); 
+	LobbyMusic = MenuMusicObj.Object;
 }
 
 void AUTLobbyGameState::BeginPlay()
 {
 	Super::BeginPlay();
 	ServerMOTD = ServerMOTD.Replace(TEXT("\\n"), TEXT("\n"), ESearchCase::IgnoreCase);
+
+	if (GetWorld()->GetNetMode() != NM_DedicatedServer && LobbyMusic != nullptr)
+	{
+		UGameplayStatics::SpawnSoundAtLocation( this, LobbyMusic, FVector(0,0,0), FRotator::ZeroRotator, 1.0, 1.0 );		
+	}
+
 }
 
 void AUTLobbyGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
@@ -292,7 +301,7 @@ void AUTLobbyGameState::JoinMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerSt
 		if (MatchInfo->bDedicatedMatch)
 		{
 			MatchInfo->AddPlayer(NewPlayer);
-			NewPlayer->ClientConnectToInstance(MatchInfo->GameInstanceGUID, bAsSpectator);
+			NewPlayer->ClientConnectToInstance(MatchInfo->GameInstanceGUID, NewPlayer->DesiredTeamNum, bAsSpectator);
 			return;	
 		}
 		if (MatchInfo->IsBanned(NewPlayer->UniqueId))
@@ -332,11 +341,11 @@ void AUTLobbyGameState::JoinMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerSt
 	{
 		if (bAsSpectator)
 		{
-			NewPlayer->ClientMatchError(NSLOCTEXT("LobbyMessage","MatchIsStarting","The match you are trying to join is starting.  Please wait for it to begin before trying to spectate it."));	
+			NewPlayer->ClientMatchError(NSLOCTEXT("LobbyMessage","MatchIsStartingSpectate","The match you are trying to spectate is starting.  Please try again after it launches."));	
 		}
 		else
 		{
-			NewPlayer->ClientMatchError(NSLOCTEXT("LobbyMessage","MatchIsStarting","The match you are trying to join is starting.  Please wait for it to begin before trying to join it again."));	
+			NewPlayer->ClientMatchError(NSLOCTEXT("LobbyMessage","MatchIsStarting","The match you are trying to join is starting.  Please try again after it launches."));	
 		}
 		return;
 	}
@@ -351,7 +360,7 @@ void AUTLobbyGameState::JoinMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerSt
 		if (GM && MatchInfo->MatchHasRoom(bAsSpectator) )
 		{
 			MatchInfo->AddPlayer(NewPlayer);
-			NewPlayer->ClientConnectToInstance(MatchInfo->GameInstanceGUID, bAsSpectator);
+			NewPlayer->ClientConnectToInstance(MatchInfo->GameInstanceGUID, NewPlayer->DesiredTeamNum, bAsSpectator);
 			return;
 		}
 
@@ -501,14 +510,6 @@ void AUTLobbyGameState::LaunchGameInstance(AUTLobbyMatchInfo* MatchOwner, FStrin
 		{
 			GameURL += TEXT("?Private=1");
 		}
-
-		FString MapTitle = MatchOwner->InitialMapInfo->Title;
-		FString InstanceName = TEXT("your match");
-		if (!MatchOwner->CurrentRuleset->Title.IsEmpty() && !MapTitle.IsEmpty())
-		{
-			InstanceName = FString::Printf(TEXT("%s on %s"),*MatchOwner->CurrentRuleset->Title, *MapTitle);
-		}
-		GameURL += FString::Printf(TEXT("?ServerName=\"%s\""),*InstanceName);
 
 		int32 InstancePort = LobbyGame->StartingInstancePort + (LobbyGame->InstancePortStep * GameInstances.Num());
 

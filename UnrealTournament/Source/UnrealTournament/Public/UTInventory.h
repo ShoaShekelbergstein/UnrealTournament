@@ -108,6 +108,10 @@ public:
 	/** if set, item is always dropped when its holder dies if uses/charges/etc remain */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Inventory)
 	bool bAlwaysDropOnDeath;
+	/** If true, don't drop this inventory in team safe volumes. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Inventory)
+		bool bNoDropInTeamSafe;
+
 	/** particles played when picked up */
 	UPROPERTY(EditDefaultsOnly, Category = Pickup)
 	UParticleSystem* PickupEffect;
@@ -136,12 +140,22 @@ public:
 	UFUNCTION(BlueprintNativeEvent)
 	bool StackPickup(AUTInventory* ContainedInv);
 
+	/** Called to stack pickup from a weapon locker. */
+	virtual bool StackLockerPickup(AUTInventory* ContainedInv);
+
+
+
 	/** if set, inventory gets the ModifyDamageTaken() and PreventHeadShot() functions/events when the holder takes damage */
 	UPROPERTY(EditDefaultsOnly, Category = Events)
 	uint32 bCallDamageEvents : 1;
+
 	/** if set, receive OwnerEvent() calls for various holder events (jump, land, fire, etc) */
 	UPROPERTY(EditDefaultsOnly, Category = Events)
 	uint32 bCallOwnerEvent : 1;
+
+	/** Set if inventory is from weaponlocker. */
+	UPROPERTY(EditDefaultsOnly, Category = Events)
+		uint32 bFromLocker : 1;
 
 	// NOTE: return value is a workaround for blueprint bugs involving ref parameters and is not used
 	UFUNCTION(BlueprintNativeEvent)

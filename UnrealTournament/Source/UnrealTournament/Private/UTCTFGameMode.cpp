@@ -10,7 +10,6 @@
 #include "UTCountDownMessage.h"
 #include "UTPickup.h"
 #include "UTGameMessage.h"
-#include "UTIntermissionBeginInterface.h"
 #include "UTMutator.h"
 #include "UTCTFSquadAI.h"
 #include "UTWorldSettings.h"
@@ -21,6 +20,7 @@
 #include "UTCTFScoreboard.h"
 #include "SNumericEntryBox.h"
 #include "UTCharacterVoice.h"
+#include "UTCTFScoring.h"
 
 AUTCTFGameMode::AUTCTFGameMode(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -33,6 +33,7 @@ AUTCTFGameMode::AUTCTFGameMode(const FObjectInitializer& ObjectInitializer)
 	TimeLimit = 14;
 	QuickPlayersToStart = 8;
 	DisplayName = NSLOCTEXT("UTGameMode", "CTF", "Capture the Flag");
+	CTFScoringClass = AUTCTFScoring::StaticClass();
 }
 
 void AUTCTFGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -269,15 +270,6 @@ void AUTCTFGameMode::HandleMatchIntermission()
 		}
 		CTFGameState->bStopGameClock = true;
 		CTFGameState->SetTimeLimit(10);
-	}
-
-	// inform actors of intermission start
-	for (FActorIterator It(GetWorld()); It; ++It)
-	{
-		if (It->GetClass()->ImplementsInterface(UUTIntermissionBeginInterface::StaticClass()))
-		{
-			IUTIntermissionBeginInterface::Execute_IntermissionBegin(*It);
-		}
 	}
 
 	BroadcastLocalized(this, UUTCTFMajorMessage::StaticClass(), 11, NULL, NULL, NULL);

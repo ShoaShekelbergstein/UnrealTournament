@@ -29,7 +29,7 @@ void UUTPowerupUseMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisTex
 		{
 			PrefixText = FText::GetEmpty();
 			EmphasisText = UTPS ? FText::FromString(UTPS->PlayerName) : FText::GetEmpty();
-			EmphasisColor = UTPS  && UTPS->Team && (UTPS->Team->TeamIndex == 1) ? FLinearColor::Blue : FLinearColor::Red;
+			EmphasisColor = UTPS  && UTPS->Team ? UTPS->Team->TeamColor : FLinearColor::Red;
 			PostfixText = Powerup->NotifyMessage;
 			return;
 		}

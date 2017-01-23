@@ -31,6 +31,55 @@ void UUTProgressionStorage::TokenRevoke(FName TokenUniqueID)
 	TempFoundTokenUniqueIDs.Remove(TokenUniqueID);
 }
 
+bool UUTProgressionStorage::CheckTokens(FString TokenId, int32 MaxNumberOfTokens)
+{
+	TArray<FName> List;
+	FNumberFormattingOptions Options;
+	Options.MinimumIntegralDigits = 3;
+
+	for (int32 i = 0; i < MaxNumberOfTokens; i++)
+	{
+		List.Add(FName(*FString::Printf(TEXT("%s_token_%s"), *TokenId, *FText::AsNumber(i, &Options).ToString())));
+	}
+
+	bool bCompletedTutorial = true;
+	for (FName TestToken : List)
+	{
+		if (!FoundTokenUniqueIDs.Contains(TestToken))
+		{
+			bCompletedTutorial = false;
+			break;
+		}
+	}
+
+	return bCompletedTutorial;
+}
+
+bool UUTProgressionStorage::HasAnyTokens(FString TokenId, int32 MaxNumberOfTokens)
+{
+	TArray<FName> List;
+	FNumberFormattingOptions Options;
+	Options.MinimumIntegralDigits = 3;
+
+	for (int32 i = 0; i < MaxNumberOfTokens; i++)
+	{
+		List.Add(FName(*FString::Printf(TEXT("%s_token_%s"), *TokenId, *FText::AsNumber(i, &Options).ToString())));
+	}
+
+	bool bCompletedTutorial = false;
+	for (FName TestToken : List)
+	{
+		if (FoundTokenUniqueIDs.Contains(TestToken))
+		{
+			bCompletedTutorial = true;
+			break;
+		}
+	}
+
+	return bCompletedTutorial;
+}
+
+
 void UUTProgressionStorage::TokensCommit()
 {
 	for (FName ID : TempFoundTokenUniqueIDs)
@@ -42,9 +91,9 @@ void UUTProgressionStorage::TokensCommit()
 	if (!Achievements.Contains(AchievementIDs::TutorialComplete))
 	{
 		bool bCompletedTutorial = true;
-		static TArray<FName, TInlineAllocator<60>> TutorialTokens = []()
+		static TArray<FName, TInlineAllocator<70>> TutorialTokens = []()
 		{
-			TArray<FName, TInlineAllocator<60>> List;
+			TArray<FName, TInlineAllocator<70>> List;
 			FNumberFormattingOptions Options;
 			Options.MinimumIntegralDigits = 3;
 			for (int32 i = 0; i < 15; i++)
@@ -61,19 +110,27 @@ void UUTProgressionStorage::TokensCommit()
 			}
 			for (int32 i = 0; i < 5; i++)
 			{
-				List.Add(FName(*FString::Printf(TEXT("tuba_token_%s"), *FText::AsNumber(i, &Options).ToString())));
+				List.Add(FName(*FString::Printf(TEXT("FFA_token_%s"), *FText::AsNumber(i, &Options).ToString())));
 			}
 			for (int32 i = 0; i < 5; i++)
 			{
-				List.Add(FName(*FString::Printf(TEXT("outpost23_token_%s"), *FText::AsNumber(i, &Options).ToString())));
+				List.Add(FName(*FString::Printf(TEXT("TDM_token_%s"), *FText::AsNumber(i, &Options).ToString())));
 			}
 			for (int32 i = 0; i < 5; i++)
 			{
-				List.Add(FName(*FString::Printf(TEXT("face_token_%s"), *FText::AsNumber(i, &Options).ToString())));
+				List.Add(FName(*FString::Printf(TEXT("CTF_token_%s"), *FText::AsNumber(i, &Options).ToString())));
 			}
 			for (int32 i = 0; i < 5; i++)
 			{
-				List.Add(FName(*FString::Printf(TEXT("asdf_token_%s"), *FText::AsNumber(i, &Options).ToString())));
+				List.Add(FName(*FString::Printf(TEXT("Duel_token_%s"), *FText::AsNumber(i, &Options).ToString())));
+			}
+			for (int32 i = 0; i < 5; i++)
+			{
+				List.Add(FName(*FString::Printf(TEXT("SD_token_%s"), *FText::AsNumber(i, &Options).ToString())));
+			}
+			for (int32 i = 0; i < 5; i++)
+			{
+				List.Add(FName(*FString::Printf(TEXT("FR_token_%s"), *FText::AsNumber(i, &Options).ToString())));
 			}
 			return List;
 		}();
@@ -129,54 +186,165 @@ bool UUTProgressionStorage::GetBestTime(FName TimingName, float& OutBestTime)
 
 void UUTProgressionStorage::SetBestTime(FName TimingName, float InBestTime)
 {
-	BestTimes.Add(TimingName, InBestTime);
-	bNeedsUpdate = true;
-
-	// hacky halloween reward implementation
-	if (TimingName == AchievementIDs::FacePumpkins)
+	if (!BestTimes.Contains(TimingName) || BestTimes[TimingName] > InBestTime)
 	{
-		if (InBestTime >= 6666.0f)
+		BestTimes.Add(TimingName, InBestTime);
+		bNeedsUpdate = true;
+
+		// hacky halloween reward implementation
+		if (TimingName == AchievementIDs::FacePumpkins)
 		{
-			for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
+			if (InBestTime >= 6666.0f)
 			{
-				if (It->GetProgressionStorage() == this)
+				for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
 				{
-					It->AwardAchievement(AchievementIDs::FacePumpkins);
+					if (It->GetProgressionStorage() == this)
+					{
+						It->AwardAchievement(AchievementIDs::FacePumpkins);
+					}
 				}
 			}
-		}
 
-		if (InBestTime >= 5000.0f)
-		{
-			for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
+			if (InBestTime >= 5000.0f)
 			{
-				if (It->GetProgressionStorage() == this)
+				for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
 				{
-					It->AwardAchievement(AchievementIDs::PumpkinHead2015Level3);
+					if (It->GetProgressionStorage() == this)
+					{
+						It->AwardAchievement(AchievementIDs::PumpkinHead2015Level3);
+					}
 				}
 			}
-		}
 
-		if (InBestTime >= 1000.0f)
-		{
-			for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
+			if (InBestTime >= 1000.0f)
 			{
-				if (It->GetProgressionStorage() == this)
+				for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
 				{
-					It->AwardAchievement(AchievementIDs::PumpkinHead2015Level2);
+					if (It->GetProgressionStorage() == this)
+					{
+						It->AwardAchievement(AchievementIDs::PumpkinHead2015Level2);
+					}
 				}
 			}
-		}
 
-		if (InBestTime >= 200.0f)
-		{
-			for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
+			if (InBestTime >= 200.0f)
 			{
-				if (It->GetProgressionStorage() == this)
+				for (TObjectIterator<UUTLocalPlayer> It; It; ++It)
 				{
-					It->AwardAchievement(AchievementIDs::PumpkinHead2015Level1);
+					if (It->GetProgressionStorage() == this)
+					{
+						It->AwardAchievement(AchievementIDs::PumpkinHead2015Level1);
+					}
 				}
 			}
 		}
 	}
+}
+
+/** Kind of hacky fix up until we move to the ladder system */
+void UUTProgressionStorage::FixupBestTimes(int32& inTutorialMask)
+{
+	// These are converted
+	static FName OldMovementTrainingName = FName(TEXT("movementtraining_timingsection"));	
+	static FName OldWeaponTrainingName = FName(TEXT("weapontraining_timingsection"));	
+	static FName OldPickupTrainingName = FName(TEXT("pickuptraining_timingsection"));	
+
+	// These are just removed
+	static FName OldFlagRunTrainingName = FName(TEXT("flagrun_timingsection"));	
+	static FName OldDMTrainingName = FName(TEXT("deathmatch_timingsection"));
+	static FName OldTDMTrainingName = FName(TEXT("teamdeathmatch_timingsection"));
+	static FName OldCTFTrainingName = FName(TEXT("capturetheflag_timingsection"));
+	static FName OldDuelTrainingName = FName(TEXT("duel_timingsection"));
+
+	if (BestTimes.Contains(OldMovementTrainingName))
+	{
+		BestTimes.Add(ETutorialTags::TUTTAG_Movement, BestTimes[OldMovementTrainingName]);
+		BestTimes.Remove(OldMovementTrainingName);
+		inTutorialMask = inTutorialMask | TUTORIAL_Movement;
+	}
+		
+	if (BestTimes.Contains(OldWeaponTrainingName))
+	{
+		BestTimes.Add(ETutorialTags::TUTTAG_Weapons, BestTimes[OldWeaponTrainingName]);
+		BestTimes.Remove(OldWeaponTrainingName);
+		inTutorialMask = inTutorialMask | TUTOIRAL_Weapon;
+	}
+
+	if (BestTimes.Contains(OldPickupTrainingName))
+	{
+		BestTimes.Add(ETutorialTags::TUTTAG_Pickups, BestTimes[OldPickupTrainingName]);
+		BestTimes.Remove(OldPickupTrainingName);
+		inTutorialMask = inTutorialMask | TUTORIAL_Pickups;
+	}
+
+	if (BestTimes.Contains(OldFlagRunTrainingName))
+	{
+		BestTimes.Remove(OldFlagRunTrainingName);
+		inTutorialMask = inTutorialMask | TUTORIAL_FlagRun;
+	}
+
+	if (BestTimes.Contains(OldDMTrainingName))
+	{
+		BestTimes.Remove(OldDMTrainingName);
+		inTutorialMask = inTutorialMask | TUTORIAL_DM;
+	}
+
+	if (BestTimes.Contains(OldTDMTrainingName))
+	{
+		BestTimes.Remove(OldTDMTrainingName);
+		inTutorialMask = inTutorialMask | TUTORIAL_TDM;
+	}
+
+	if (BestTimes.Contains(OldCTFTrainingName))
+	{
+		BestTimes.Remove(OldCTFTrainingName);
+		inTutorialMask = inTutorialMask | TUTORIAL_CTF;
+	}
+
+	if (BestTimes.Contains(OldDuelTrainingName) )
+	{
+		BestTimes.Remove(OldDuelTrainingName);
+		inTutorialMask = inTutorialMask | TUTORIAL_Showdown;
+	}
+
+	if (CheckTokens(TEXT("movementtraining"),15))
+	{
+		inTutorialMask = inTutorialMask | TUTORIAL_Movement;
+	}
+		
+	if (CheckTokens(TEXT("weapontraining"),15))
+	{
+		inTutorialMask = inTutorialMask | TUTOIRAL_Weapon;
+	}
+
+	if (CheckTokens(TEXT("pickuptraining"),10))
+	{
+		inTutorialMask = inTutorialMask | TUTORIAL_Pickups;
+	}
+
+	if (CheckTokens(TEXT("FR"),5))
+	{
+		inTutorialMask = inTutorialMask | TUTORIAL_FlagRun;
+	}
+
+	if (CheckTokens(TEXT("FFA"),5))
+	{
+		inTutorialMask = inTutorialMask | TUTORIAL_DM;
+	}
+
+	if (CheckTokens(TEXT("TDM"),5))
+	{
+		inTutorialMask = inTutorialMask | TUTORIAL_TDM;
+	}
+
+	if (CheckTokens(TEXT("CTF"),5))
+	{
+		inTutorialMask = inTutorialMask | TUTORIAL_CTF;
+	}
+
+	if (CheckTokens(TEXT("Duel"),5) )
+	{
+		inTutorialMask = inTutorialMask | TUTORIAL_Showdown;
+	}
+
 }

@@ -4,6 +4,7 @@
 #include "UTCTFGameMode.h"
 #include "UTCTFScoring.h"
 #include "StatNames.h"
+#include "UTATypes.h"
 
 AUTCTFScoring::AUTCTFScoring(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -31,6 +32,11 @@ void AUTCTFScoring::BeginPlay()
 
 	FTimerHandle TempHandle;
 	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTCTFScoring::FlagHeldTimer, 1.0f, true);
+}
+
+void AUTCTFScoring::InitFor(class AUTGameMode* Game)
+{
+	CTFGameState = GetWorld()->GetGameState<AUTCTFGameState>();
 }
 
 void AUTCTFScoring::FlagHeldTimer()
@@ -83,7 +89,7 @@ float AUTCTFScoring::GetTotalHeldTime(AUTCarriedObject* GameObject)
 	return TotalHeldTime;
 }
 
-void AUTCTFScoring::ScoreObject(AUTCarriedObject* GameObject, AUTCharacter* ScoringPawn, AUTPlayerState* ScorerPS, FName Reason, float TimeLimit, int32 FlagCapScore)
+void AUTCTFScoring::ScoreObject(AUTCarriedObject* GameObject, AUTCharacter* ScoringPawn, AUTPlayerState* ScorerPS, FName Reason, int32 FlagCapScore)
 {
 	if (!CTFGameState)
 	{
@@ -202,7 +208,7 @@ void AUTCTFScoring::ScoreObject(AUTCarriedObject* GameObject, AUTCharacter* Scor
 		// flag kill or return enabling score gets bonus and assist
 		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 		{
-			AController* C = *Iterator;
+			AController* C = Iterator->Get();
 			AUTPlayerState* PS =  C ? Cast<AUTPlayerState>(C->PlayerState) : NULL;
 			if (PS && (PS != ScorerPS) && CTFGameState->OnSameTeam(PS, ScorerPS))
 			{

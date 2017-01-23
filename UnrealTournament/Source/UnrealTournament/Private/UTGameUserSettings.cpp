@@ -240,6 +240,8 @@ void UUTGameUserSettings::SetKeyboardLightingEnabled(bool NewKeyboardLightingEna
 #if !UE_SERVER
 void UUTGameUserSettings::BenchmarkDetailSettingsIfNeeded(UUTLocalPlayer* LocalPlayer)
 {
+	// breaks internal perf testing on non-desktop platforms
+#if PLATFORM_DESKTOP
 	if (ensure(LocalPlayer))
 	{
 		if (InitialBenchmarkState == -1)
@@ -259,6 +261,7 @@ void UUTGameUserSettings::BenchmarkDetailSettingsIfNeeded(UUTLocalPlayer* LocalP
 			ensure(InitialBenchmarkState == 1);
 		}
 	}
+#endif
 }
 #endif // !UE_SERVER
 
@@ -322,20 +325,8 @@ void UUTGameUserSettings::RunSynthBenchmark(bool bSaveSettingsOnceDetected)
 		UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
 		if (UTEngine != NULL)
 		{
-			int32 RefreshRate;
-			if (UTEngine->GetMonitorRefreshRate(RefreshRate))
-			{
-				if (RefreshRate >= 120)
-				{
-					UTEngine->FrameRateCap = 120;
-				}
-				else
-				{
-					UTEngine->FrameRateCap = 60;
-				}
-
-				UTEngine->SaveConfig();
-			}
+			UTEngine->FrameRateCap = FMath::Max(UTEngine->FrameRateCap, 120.f);
+			UTEngine->SaveConfig();
 		}
 
 		CorrectScreenPercentageOnHighResLowGPU(DetectedLevels);

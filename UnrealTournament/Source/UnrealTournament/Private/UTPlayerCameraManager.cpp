@@ -7,6 +7,7 @@
 #include "UTNoCameraVolume.h"
 #include "UTRemoteRedeemer.h"
 #include "UTDemoRecSpectator.h"
+#include "UTLineUpHelper.h"
 
 AUTPlayerCameraManager::AUTPlayerCameraManager(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -70,6 +71,13 @@ FName AUTPlayerCameraManager::GetCameraStyleWithOverrides() const
 	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
 	static const FName NAME_FirstPerson = FName(TEXT("FirstPerson"));
 	static const FName NAME_Default = FName(TEXT("Default"));
+	static const FName NAME_LineUpCam = FName(TEXT("LineUpCam"));
+
+	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
+	if (GameState && GameState->LineUpHelper && GameState->LineUpHelper->bIsActive)
+	{
+		return NAME_LineUpCam;
+	}
 
 	AActor* CurrentViewTarget = GetViewTarget();
 	ACameraActor* CameraActor = Cast<ACameraActor>(CurrentViewTarget);
@@ -83,13 +91,14 @@ FName AUTPlayerCameraManager::GetCameraStyleWithOverrides() const
 	{
 		return ((CurrentViewTarget == PCOwner->GetPawn()) || (CurrentViewTarget == PCOwner->GetSpectatorPawn())) ? NAME_FirstPerson : NAME_FreeCam;
 	}
-	else if (UTCharacter->IsDead() || UTCharacter->IsRagdoll() || UTCharacter->IsThirdPersonTaunting())
+	else if (UTCharacter->IsDead() || UTCharacter->IsRagdoll() || UTCharacter->IsThirdPersonTaunting() || (Cast<AUTDemoRecSpectator>(PCOwner) && ((AUTDemoRecSpectator *)(PCOwner))->IsKillcamSpectator()))
 	{
 		// force third person if target is dead, ragdoll or emoting
 		return NAME_FreeCam;
 	}
-	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
+
 	return (GameState != NULL) ? GameState->OverrideCameraStyle(PCOwner, CameraStyle) : CameraStyle;
+
 }
 
 void AUTPlayerCameraManager::UpdateCamera(float DeltaTime)
@@ -164,10 +173,40 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
 	static const FName NAME_RallyCam = FName(TEXT("RallyCam"));
 	static const FName NAME_GameOver = FName(TEXT("GameOver"));
+	static const FName NAME_LineUpCam = FName(TEXT("LineUpCam"));
 
 	FName SavedCameraStyle = CameraStyle;
 	CameraStyle = (CameraStyle == NAME_RallyCam) ? NAME_RallyCam : GetCameraStyleWithOverrides();
 
+	//if we have a line up active, change our ViewTarget to be the line-up target and setup camera settings
+	if (CameraStyle == NAME_LineUpCam)
+	{
+		AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
+
+		OutVT.POV.FOV = DefaultFOV;
+		OutVT.POV.OrthoWidth = DefaultOrthoWidth;
+		OutVT.POV.bConstrainAspectRatio = false;
+		OutVT.POV.ProjectionMode = bIsOrthographic ? ECameraProjectionMode::Orthographic : ECameraProjectionMode::Perspective;
+		OutVT.POV.PostProcessBlendWeight = 1.0f;
+
+		AActor* LineUpCam = (GameState && GameState->LineUpHelper) ?  GameState->LineUpHelper->GetCameraActorForLineUp(GetWorld(), GameState->LineUpHelper->LastActiveType) : nullptr;
+		if (LineUpCam)
+		{
+			OutVT.Target = LineUpCam;
+			OutVT.POV.Location = LineUpCam->GetActorLocation();
+			OutVT.POV.Rotation = LineUpCam->GetActorRotation();
+		}
+		else
+		{
+			OutVT.POV.Location = PCOwner->GetFocalLocation();
+			OutVT.POV.Rotation = PCOwner->GetControlRotation();
+		}
+		ApplyCameraModifiers(DeltaTime, OutVT.POV);
+
+		// Synchronize the actor with the view target results
+		SetActorLocationAndRotation(OutVT.POV.Location, OutVT.POV.Rotation, false);
+	}
+	
 	// smooth third person camera all the time
 	if (OutVT.Target == PCOwner)
 	{
@@ -194,9 +233,9 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		OutVT.POV.ProjectionMode = bIsOrthographic ? ECameraProjectionMode::Orthographic : ECameraProjectionMode::Perspective;
 		OutVT.POV.PostProcessBlendWeight = 1.0f;
 
-		if (UTPC)
+		if (UTPC && UTPC->UTPlayerState)
 		{
-			OutVT.POV.Location = UTPC->RallyLocation;
+			OutVT.POV.Location = UTPC->UTPlayerState->RallyLocation;
 			OutVT.POV.Rotation = UTPC->GetViewTarget()->GetActorRotation();
 		}
 		else
@@ -276,7 +315,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		}
 
 		bool bGameOver = (UTPC != nullptr && UTPC->GetStateName() == NAME_GameOver);
-		bool bUseDeathCam = !bViewingInstantReplay && !bGameOver && UTCharacter && (UTCharacter->IsDead() || UTCharacter->IsRagdoll());
+		bool bUseDeathCam = !bViewingInstantReplay && !bGameOver && UTCharacter && (UTCharacter->IsDead() || UTCharacter->IsRagdoll()) && UTPC && UTPC->DeathCamFocus && !UTPC->DeathCamFocus->IsPendingKillPending() && (UTPC->DeathCamFocus != TargetActor);
 
 		float CameraDistance = bUseDeathCam ? DeathCamDistance : FreeCamDistance;
 		FVector CameraOffset = bUseDeathCam ? DeathCamOffset : FreeCamOffset;
@@ -286,7 +325,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 			CameraOffset = EndGameFreeCamOffset;
 		}
 		FRotator Rotator = (!UTPC || UTPC->bSpectatorMouseChangesView) ? PCOwner->GetControlRotation() : UTPC->GetSpectatingRotation(Loc, DeltaTime);
-		if (bUseDeathCam && UTPC && UTPC->DeathCamFocus)
+		if (bUseDeathCam)
 		{
 			float ZoomFactor = FMath::Clamp(1.5f*UTPC->GetFrozenTime() - 0.8f, 0.f, 1.f);
 			float DistanceScaling = 1.f - ZoomFactor;
@@ -303,17 +342,16 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 				float ZoomedFOV = DefaultFOV * FMath::Clamp(360000.f / FMath::Max(1.f, ViewDist), 0.3f, 1.f);
 				OutVT.POV.FOV = DefaultFOV * (1.f - ZoomFactor) + ZoomedFOV*ZoomFactor;
 			}
-			if (UTPC->IsInState(NAME_Inactive) && UTPC->DeathCamFocus && !UTPC->DeathCamFocus->IsPendingKillPending() && (UTPC->DeathCamFocus != TargetActor)
-				&& (!UTPC->IsFrozen() || (UTPC->GetFrozenTime() > 0.25f)) && (GetWorld()->GetTimeSeconds() - UTPC->DeathCamTime < 3.f) && (GetWorld()->GetTimeSeconds() - UTPC->DeathCamFocus->GetLastRenderTime() < 0.1f))
+			if (UTPC->IsInState(NAME_Inactive)
+				&& (!UTPC->IsFrozen() || (UTPC->GetFrozenTime() > 0.25f)) && (GetWorld()->GetTimeSeconds() - UTPC->DeathCamTime < 3.f))
 			{
-
 				// custom camera control for dead players
 				// still for a short while, then look at killer
 				FRotator ViewRotation = UTPC->GetControlRotation();
 				ViewRotation.Yaw = FMath::UnwindDegrees(ViewRotation.Yaw);
 				ViewRotation.Pitch = FMath::UnwindDegrees(ViewRotation.Pitch);
 				ViewRotation.Roll = 0.f;
-				FRotator DesiredViewRotation = (UTPC->DeathCamFocus->GetActorLocation() + FVector(0.f,0.f, 83.f) - OutVT.POV.Location).Rotation();
+				FRotator DesiredViewRotation = (UTPC->DeathCamFocus->GetActorLocation() + FVector(0.f, 0.f, 83.f) - OutVT.POV.Location).Rotation();
 				DesiredViewRotation.Yaw = FMath::UnwindDegrees(DesiredViewRotation.Yaw);
 				DesiredViewRotation.Pitch = bZoomIn ? FMath::UnwindDegrees(DesiredViewRotation.Pitch) : FMath::Clamp(FMath::UnwindDegrees(DesiredViewRotation.Pitch), -8.f, -5.f);
 				float DeltaYaw = FMath::RadiansToDegrees(FMath::FindDeltaAngleRadians(FMath::DegreesToRadians(ViewRotation.Yaw), FMath::DegreesToRadians(DesiredViewRotation.Yaw)));
@@ -322,6 +360,11 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 				ViewRotation.Pitch += 15.f*DeltaTime*DeltaPitch;
 				UTPC->SetControlRotation(ViewRotation);
 				Rotator = ViewRotation;
+
+				if ((GetWorld()->GetTimeSeconds() - UTPC->DeathCamFocus->GetLastRenderTime() > 0.2f) && !UTPC->LineOfSightTo(UTPC->DeathCamFocus))
+				{
+					UTPC->DeathCamFocus = nullptr;
+				}
 			}
 			else
 			{

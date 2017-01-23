@@ -421,6 +421,12 @@ private:
 	/** node or Actor bot is currently moving to */
 	UPROPERTY()
 	FRouteCacheItem MoveTarget;
+	/** previously set MoveTarget, used to check for bot being stuck when it thinks it's on a valid path */
+	UPROPERTY()
+	FRouteCacheItem PrevMoveTarget;
+	/** repeats of same MoveTarget */
+	UPROPERTY()
+	int32 RepeatMoveFailCount;
 protected:
 	/** path link that connects currently occupied node to MoveTarget */
 	UPROPERTY()
@@ -473,13 +479,13 @@ public:
 			return MoveTargetPoints[0];
 		}
 	}
-	void SetMoveTarget(const FRouteCacheItem& NewMoveTarget, const TArray<FComponentBasedPosition>& NewMovePoints = TArray<FComponentBasedPosition>());
+	void SetMoveTarget(const FRouteCacheItem& NewMoveTarget, const TArray<FComponentBasedPosition>& NewMovePoints = TArray<FComponentBasedPosition>(), const FUTPathLink& NewCurrentPath = FUTPathLink());
 	/** set move target and force direct move to that point (don't query the navmesh) */
-	inline void SetMoveTargetDirect(const FRouteCacheItem& NewMoveTarget)
+	inline void SetMoveTargetDirect(const FRouteCacheItem& NewMoveTarget, const FUTPathLink& NewCurrentPath = FUTPathLink())
 	{
 		TArray<FComponentBasedPosition> NewMovePoints;
 		NewMovePoints.Add(FComponentBasedPosition(NewMoveTarget.GetLocation(GetPawn())));
-		SetMoveTarget(NewMoveTarget, NewMovePoints);
+		SetMoveTarget(NewMoveTarget, NewMovePoints, NewCurrentPath);
 		if (GetCharacter() != NULL)
 		{
 			MoveTimer = 1.0f + (NewMoveTarget.GetLocation(GetPawn()) - GetPawn()->GetActorLocation()).Size() / GetCharacter()->GetCharacterMovement()->MaxWalkSpeed;
@@ -837,6 +843,10 @@ public:
 	virtual void DoCamp()
 	{
 		StartNewAction(CampAction);
+	}
+	inline bool IsCamping() const
+	{
+		return CurrentAction == CampAction;
 	}
 	/** hunt specified enemy (assumed not currently attackable), attempting to predict its path and intercept it at an advantageous position */
 	virtual void DoHunt(APawn* NewHuntTarget);

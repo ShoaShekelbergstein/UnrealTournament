@@ -197,7 +197,7 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 		RenderObj_Texture(FlagBackground);
 		if (bPlayerCanRally)
 		{
-			DrawRallyIcon(DeltaTime);		
+			DrawRallyIcon(DeltaTime, GameState ? GameState->CurrentRallyPoint : nullptr);		
 		}
 
 		if (bPlayerCanRally || bShowFlagInfo)
@@ -212,20 +212,23 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 		FlagIcon.UVs = FlagHolderIconUVs;
 		FlagIcon.bUseTeamColors = false;
 		FlagIcon.RenderOpacity = 1.0f;
-		FLinearColor TeamColor = (PS && PS->Team && PS->Team->TeamIndex == 1) ? FLinearColor::Blue : FLinearColor::Red;
+		FLinearColor TeamColor = (PS && PS->Team && PS->Team->TeamIndex == 1) ? REDHUDCOLOR : BLUEHUDCOLOR;
 		FlagIcon.RenderColor = (bPlayerCanRally|| bShowTimer) ? FLinearColor::Yellow : TeamColor;
 		RenderObj_Texture(FlagIcon);
 
 		if (bPlayerCanRally)
 		{
-			FlagText.Text = UTHUDOwner->RallyLabel;
-			RenderObj_Text(FlagText);
+			if (!PS->CarriedObject)
+			{
+				FlagText.Text = UTHUDOwner->RallyLabel;
+				RenderObj_Text(FlagText);
+			}
 		}
 		else if (bShowTimer)
 		{
 			int32 RemainingTime = PS->CarriedObject && GameState && GameState->CurrentRallyPoint
-				? 1 + GameState->CurrentRallyPoint->ReplicatedCountdown
-				: 1 + FMath::Max(int32(PS->RemainingRallyDelay), (GameState && GameState->CurrentRallyPoint) ? GameState->CurrentRallyPoint->ReplicatedCountdown : 0);
+				? FMath::Min(int32(GameState->CurrentRallyPoint->RallyReadyDelay), 1 + GameState->CurrentRallyPoint->ReplicatedCountdown/10)
+				: 1 + FMath::Max(int32(PS->RemainingRallyDelay), (GameState && GameState->CurrentRallyPoint) ? GameState->CurrentRallyPoint->ReplicatedCountdown/10 : 0);
 			FlagText.Text = FText::AsNumber(RemainingTime);
 			RenderObj_Text(FlagText);
 		}
@@ -244,14 +247,31 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 	}
 }
 
-void UUTHUDWidget_Paperdoll::DrawRallyIcon(float DeltaTime)
+void UUTHUDWidget_Paperdoll::DrawRallyIcon(float DeltaTime, AUTRallyPoint* RallyPoint)
 {
 	FlagIcon.UVs = RallyIconUVs;
-	FlagIcon.bUseTeamColors = true;
 	FlagIcon.RenderScale = 1.0f;
+	FlagIcon.bUseTeamColors = true;
+	if (RallyPoint && (RallyPoint->RallyTimeRemaining > 0.f))
+	{
+		FLinearColor RealColor = FlagBackground.RenderColor;
+		FlagBackground.RenderColor = FLinearColor::Gray;
+		float RealWidth = FlagBackground.Size.X;
+		FlagBackground.Size.X *= 0.1f*RallyPoint->RallyTimeRemaining;
+		float RealUVUL = FlagBackground.UVs.UL;
+		FlagBackground.UVs.UL *= 0.1f*RallyPoint->RallyTimeRemaining;
+		float RealPosX = FlagBackground.Position.X;
+		FlagBackground.Position.X -= 0.5f*(RealWidth - FlagBackground.Size.X);
+		RenderObj_Texture(FlagBackground);
+		FlagBackground.RenderColor = RealColor;
+		FlagBackground.Size.X = RealWidth;
+		FlagBackground.UVs.UL = RealUVUL;
+		FlagBackground.Position.X = RealPosX;
 
+	}
 	for (int32 i = 0; i < RallyAnimTimers.Num(); i++)
 	{
+
 		RallyAnimTimers[i] += DeltaTime;
 		if (RallyAnimTimers[i] > RALLY_ANIMATION_TIME) RallyAnimTimers[i] = 0;
 		float DrawPosition = (RallyAnimTimers[i] / RALLY_ANIMATION_TIME);

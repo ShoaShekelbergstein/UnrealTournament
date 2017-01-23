@@ -10,7 +10,7 @@ AUTPickupHealth::AUTPickupHealth(const FObjectInitializer& ObjectInitializer)
 {
 	HealAmount = 25;
 	BaseDesireability = 0.4f;
-	PickupMessageString = NSLOCTEXT("PickupMessage", "HealthPickedUp", "Health");
+	PickupMessageString = NSLOCTEXT("PickupMessage", "HealthPickedUp", "Health +50");
 }
 
 void AUTPickupHealth::BeginPlay()
@@ -104,7 +104,7 @@ void AUTPickupHealth::GiveTo_Implementation(APawn* Target)
 				PS->Team->ModifyStatsValue(StatsNameCount, 1);
 			}
 
-			AUTGameState* GS = Cast<AUTGameState>(GetWorld()->GameState);
+			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 			if (GS != nullptr)
 			{
 				GS->ModifyStatsValue(StatsNameCount, 1);

@@ -66,6 +66,7 @@ AUTPickup::AUTPickup(const FObjectInitializer& ObjectInitializer)
 	TeamSide = 255;
 	bOverride_TeamSide = false;
 	IconColor = FLinearColor::White;
+	bSpawnOncePerRound = false;
 }
 
 void AUTPickup::SetTacCom(bool bTacComEnabled)
@@ -81,6 +82,7 @@ void AUTPickup::SetTacCom(bool bTacComEnabled)
 void AUTPickup::BeginPlay()
 {
 	Super::BeginPlay();
+	bFixedRespawnInterval = false;
 
 	if (BaseEffect != NULL && BaseTemplateAvailable != NULL)
 	{
@@ -113,6 +115,7 @@ FCanvasIcon AUTPickup::GetMinimapIcon() const
 
 void AUTPickup::Reset_Implementation()
 {
+	bHasSpawnedThisRound = false;
 	GetWorld()->GetTimerManager().ClearTimer(WakeUpTimerHandle);
 	if (bDelayedSpawn)
 	{
@@ -238,21 +241,30 @@ void AUTPickup::StartSleeping_Implementation()
 	SetActorEnableCollision(false);
 	if (RespawnTime > 0.0f)
 	{
-		if (!bFixedRespawnInterval || !GetWorld()->GetTimerManager().IsTimerActive(WakeUpTimerHandle))
+		if (bSpawnOncePerRound && bHasSpawnedThisRound)
 		{
-			GetWorld()->GetTimerManager().SetTimer(WakeUpTimerHandle, this, &AUTPickup::WakeUpTimer, RespawnTime, false);
-		}
-		if (TimerEffect != NULL && TimerEffect->Template != NULL)
-		{
-			// FIXME: workaround for particle bug; screen facing particles don't handle negative scale correctly
-			FVector FixedScale = TimerEffect->GetComponentScale();
-			FixedScale = FVector(FMath::Abs<float>(FixedScale.X), FMath::Abs<float>(FixedScale.Y), FMath::Abs<float>(FixedScale.Z));
-			TimerEffect->SetWorldScale3D(FixedScale);
-
 			TimerEffect->SetFloatParameter(NAME_Progress, 0.0f);
 			TimerEffect->SetFloatParameter(NAME_RespawnTime, RespawnTime);
-			TimerEffect->SetHiddenInGame(false);
-			PrimaryActorTick.SetTickFunctionEnable(true);
+			TimerEffect->SetHiddenInGame(true);
+		}
+		else
+		{
+			if (!bFixedRespawnInterval || !GetWorld()->GetTimerManager().IsTimerActive(WakeUpTimerHandle))
+			{
+				GetWorld()->GetTimerManager().SetTimer(WakeUpTimerHandle, this, &AUTPickup::WakeUpTimer, RespawnTime, false);
+			}
+			if (TimerEffect != NULL && TimerEffect->Template != NULL)
+			{
+				// FIXME: workaround for particle bug; screen facing particles don't handle negative scale correctly
+				FVector FixedScale = TimerEffect->GetComponentScale();
+				FixedScale = FVector(FMath::Abs<float>(FixedScale.X), FMath::Abs<float>(FixedScale.Y), FMath::Abs<float>(FixedScale.Z));
+				TimerEffect->SetWorldScale3D(FixedScale);
+
+				TimerEffect->SetFloatParameter(NAME_Progress, 0.0f);
+				TimerEffect->SetFloatParameter(NAME_RespawnTime, RespawnTime);
+				TimerEffect->SetHiddenInGame(false);
+				PrimaryActorTick.SetTickFunctionEnable(true);
+			}
 		}
 	}
 
@@ -296,9 +308,10 @@ void AUTPickup::PlayTakenEffects(bool bReplicate)
 }
 void AUTPickup::WakeUp_Implementation()
 {
+	bHasSpawnedThisRound = true;
 	SetPickupHidden(false);
 	GetWorld()->GetTimerManager().ClearTimer(WakeUpTimerHandle);
-	if (bFixedRespawnInterval)
+	if (bFixedRespawnInterval && !bSpawnOncePerRound)
 	{
 		// start timer for next time
 		GetWorld()->GetTimerManager().SetTimer(WakeUpTimerHandle, this, &AUTPickup::WakeUpTimer, RespawnTime, false);
@@ -337,7 +350,7 @@ void AUTPickup::WakeUpTimer()
 			WakeUp();
 		}
 	}
-	else
+	else if (!bFixedRespawnInterval)
 	{
 		// it's possible we're out of sync, so set up a state that indicates the pickup should respawn any time now, but isn't yet available
 		if (TimerEffect != NULL)
@@ -382,12 +395,9 @@ void AUTPickup::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	UWorld* World = GetWorld();
-	if (RespawnTime > 0.0f && !State.bActive && World->GetTimerManager().IsTimerActive(WakeUpTimerHandle))
+	if (TimerEffect && (RespawnTime > 0.0f) && !State.bActive && World->GetTimerManager().IsTimerActive(WakeUpTimerHandle))
 	{
-		if (TimerEffect != NULL)
-		{
-			TimerEffect->SetFloatParameter(NAME_Progress, 1.0f - World->GetTimerManager().GetTimerRemaining(WakeUpTimerHandle) / RespawnTime);
-		}
+		TimerEffect->SetFloatParameter(NAME_Progress, 1.0f - World->GetTimerManager().GetTimerRemaining(WakeUpTimerHandle) / RespawnTime);
 	}
 }
 
@@ -436,7 +446,7 @@ void AUTPickup::PostNetReceive()
 
 void AUTPickup::OnRep_RespawnTimeRemaining()
 {
-	if (!State.bActive)
+	if (!State.bActive && (RespawnTimeRemaining != GetWorld()->GetTimerManager().GetTimerRemaining(WakeUpTimerHandle)))
 	{
 		GetWorld()->GetTimerManager().SetTimer(WakeUpTimerHandle, this, &AUTPickup::WakeUpTimer, RespawnTimeRemaining, false);
 	}
@@ -465,6 +475,8 @@ void AUTPickup::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutL
 	DOREPLIFETIME(AUTPickup, bFixedRespawnInterval);
 	// warning: we rely on this ordering
 	DOREPLIFETIME(AUTPickup, bReplicateReset);
+	DOREPLIFETIME(AUTPickup, bSpawnOncePerRound);
+	DOREPLIFETIME(AUTPickup, bHasSpawnedThisRound);
 	DOREPLIFETIME(AUTPickup, State);
 	DOREPLIFETIME_CONDITION(AUTPickup, RespawnTimeRemaining, COND_InitialOnly);
 }

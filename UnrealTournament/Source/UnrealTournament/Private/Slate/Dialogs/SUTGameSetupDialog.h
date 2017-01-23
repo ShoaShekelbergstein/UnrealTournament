@@ -12,6 +12,7 @@
 #include "UTReplicatedGameRuleset.h"
 #include "../Panels/SUTCreateGamePanel.h"
 #include "UTGameEngine.h"
+#include "../Widgets/SUTSlider.h"
 
 #if !UE_SERVER
 
@@ -153,8 +154,8 @@ private:
 
 public:
 	SLATE_BEGIN_ARGS(SUTGameSetupDialog)
-	: _DialogTitle(NSLOCTEXT("SUTGameSetupDialog", "Title", "GAME SETTINGS"))
-	, _DialogSize(FVector2D(1700, 1040))
+	: _DialogTitle(NSLOCTEXT("SUTGameSetupDialog", "Title", "CREATE A MATCH"))
+	, _DialogSize(FVector2D(1920, 1080))
 	, _bDialogSizeIsRelative(false)
 	, _DialogPosition(FVector2D(0.5f,0.5f))
 	, _DialogAnchorPoint(FVector2D(0.5f,0.5f))
@@ -187,7 +188,7 @@ public:
 		return CurrentCategory == FName(TEXT("Custom"));
 	}
 
-	void GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32& bTeamGame);
+	void GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, FString& GameModeName, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32& bTeamGame);
 
 	void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime);
 
@@ -214,9 +215,11 @@ protected:
 	TSharedPtr<SButton> MapsButton;
 
 	TSharedPtr<SVerticalBox> MapBox;
+	TSharedPtr<SVerticalBox> RulesInfoBox;
 	TSharedPtr<SVerticalBox> HideBox;
 
 	TSharedPtr<SUTCreateGamePanel> CustomPanel;
+	TSharedPtr<SVerticalBox> CustomBox;
 
 	FText GetMatchRulesTitle() const;
 	FText GetMatchRulesDescription() const;
@@ -232,12 +235,6 @@ protected:
 	void BuildMapPanel();
 
 	void OnSubMenuSelect(int32 MenuCmdId, TSharedPtr<SUTComboButton> Sender);
-
-	TSharedPtr<SUTComboButton> BotSkillButton;
-	virtual TSharedRef<class SWidget> BuildCustomButtonBar();
-	FText GetBotSkillText() const;
-	void OnBotMenuSelect(int32 MenuCmdId, TSharedPtr<SUTComboButton> Sender);
-
 	void TextureLoadComplete(const FName& InPackageName, UPackage* LoadedPackage, EAsyncLoadingResult::Type Result);
 
 	// Will be true if this dialog was opened while connected to a hub.
@@ -262,10 +259,31 @@ protected:
 
 	int32 DesiredMapIndex;
 
+	TSharedRef<SWidget> BuildBotSkill();
+	FReply OnBotSkillClick(int32 NewSkill);
+	TArray<TSharedPtr<SUTTabButton>> BotSkillButtons;
+
+	virtual void AddButtonsToLeftOfButtonBar(uint32& ButtonCount);
+	
+	TSharedPtr<SCheckBox> cbRankLocked;
+	TSharedPtr<SCheckBox> cbSpectatable;
+	TSharedPtr<SCheckBox> cbPrivateMatch;
+
+	TSharedPtr<SUTSlider> sBotSkill;
+
+	bool bBeginnerMatch;
+	bool bUserTurnedOffRankCheck;
+	void RankCheckChanged(ECheckBoxState NewState);
+
+	FText GetBotSkillText() const;
+	virtual void OnBotSkillChanged(float NewValue);
+
+	int32 CurrentTabIndex;
+
 public:
 	FString GetSelectedMap();
 
-
+	void ConfigureMatchInfo(TWeakObjectPtr<AUTLobbyMatchInfo> MatchInfo);
 
 };
 

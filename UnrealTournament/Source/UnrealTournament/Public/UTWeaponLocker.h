@@ -14,8 +14,6 @@ struct FWeaponLockerItem
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AUTWeapon> WeaponType;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 ExtraAmmo;
 };
 
 UCLASS(Abstract)

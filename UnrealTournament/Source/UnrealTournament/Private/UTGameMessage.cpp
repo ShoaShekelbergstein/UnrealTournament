@@ -26,10 +26,13 @@ UUTGameMessage::UUTGameMessage(const class FObjectInitializer& ObjectInitializer
 	PotentialSpeedHack = NSLOCTEXT("UTGameMessage", "Speedhack", "Server or network hitching.");
 	OnDeck = NSLOCTEXT("UTGameMessage", "MatchStarting", "The match is starting.");
 	WeaponLocked = NSLOCTEXT("UTGameMessage", "WeaponLocked", "Cannot unequip this weapon until it is fired.");
+	DoorOpened = NSLOCTEXT("UTGameMessage", "DoorOpened", "The door has opened!");
+	DoorClosed = NSLOCTEXT("UTGameMessage", "DoorClosed", "The door has closed!");
 	bIsStatusAnnouncement = true;
+	bPlayDuringInstantReplay = false;
 }
 
-int32 UUTGameMessage::GetFontSizeIndex(int32 MessageIndex) const
+int32 UUTGameMessage::GetFontSizeIndex(int32 MessageIndex, bool bTargetsLocalPlayer) const
 {
 	return ((MessageIndex == 0) || (MessageIndex == 1) || (MessageIndex == 7) || (MessageIndex == 9) || (MessageIndex == 10) || (MessageIndex == 16)) ? 2 : 1;
 }
@@ -40,7 +43,7 @@ float UUTGameMessage::GetScaleInSize_Implementation(int32 MessageIndex) const
 	{
 		return 1.f;
 	}
-	return (GetFontSizeIndex(MessageIndex) > 1) ? 3.f : 4.f;
+	return 3.f;
 }
 
 FLinearColor UUTGameMessage::GetMessageColor_Implementation(int32 MessageIndex) const
@@ -64,7 +67,7 @@ void UUTGameMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText, FTe
 		PrefixText = YouAreOn;
 		PostfixText = FText::GetEmpty();
 		EmphasisText = (Switch== 9) ? RedTeamName : BlueTeamName;
-		EmphasisColor = (Switch == 9) ? FLinearColor::Red : FLinearColor::Blue;
+		EmphasisColor = (Switch == 9) ? REDHUDCOLOR : BLUEHUDCOLOR;
 		return;
 	}
 	Super::GetEmphasisText(PrefixText, EmphasisText, PostfixText, EmphasisColor, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
@@ -114,6 +117,10 @@ FText UUTGameMessage::GetText(int32 Switch = 0, bool bTargetsPlayerState1 = fals
 			return GetDefault<UUTGameMessage>(GetClass())->OnDeck;
 		case 99:
 			return GetDefault<UUTGameMessage>(GetClass())->WeaponLocked;
+		case 200:
+			return GetDefault<UUTGameMessage>(GetClass())->DoorOpened;
+		case 201:
+			return GetDefault<UUTGameMessage>(GetClass())->DoorClosed;
 		default:
 			return FText::GetEmpty();
 	}

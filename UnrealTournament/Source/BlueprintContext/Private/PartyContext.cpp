@@ -327,7 +327,7 @@ void UPartyContext::HandleJoinPartyFailure(EJoinPartyCompletionResult Result, in
 	UUTLocalPlayer* LocalPlayer = GetOwningPlayer<UUTLocalPlayer>();
 	if (LocalPlayer)
 	{
-		LocalPlayer->ShowToast(NSLOCTEXT("UPartyContext", "FailPartyJoin", "Could not join party, it may be in matchmaking"));
+		LocalPlayer->ShowToast(NSLOCTEXT("UPartyContext", "FailPartyJoin", "Failed to join party"));
 	}
 }
 
@@ -413,6 +413,22 @@ bool UPartyContext::IsPartyLeader(const FUniqueNetIdRepl& PartyMemberId)
 	}
 
 	return false;
+}
+
+FUniqueNetIdRepl UPartyContext::GetPartyLeader()
+{
+	UUTGameInstance* GameInstance = GetGameInstance<UUTGameInstance>();
+	check(GameInstance);
+	UUTParty* UTParty = GameInstance->GetParties();
+	check(UTParty);
+
+	UPartyGameState* PersistentParty = UTParty->GetPersistentParty();
+	if (ensure(PersistentParty))
+	{
+		return PersistentParty->GetPartyLeader();
+	}
+
+	return FUniqueNetIdRepl();
 }
 
 void UPartyContext::PromotePartyMemberToLeader(const FUniqueNetIdRepl& PartyMemberId)

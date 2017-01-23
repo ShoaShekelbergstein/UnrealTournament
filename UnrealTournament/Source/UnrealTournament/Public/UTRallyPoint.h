@@ -29,6 +29,16 @@ class UNREALTOURNAMENT_API AUTRallyPoint : public AUTGameObjective, public IUTRe
 
 	FTimerHandle EndRallyHandle;
 
+	FTimerHandle WarnNoFlagHandle;
+
+	virtual void WarnNoFlag(AUTCharacter* Toucher);
+
+	virtual void UpdateRallyReadyCountdown(float NewValue);
+
+	/** Min remaining time if FC steps off */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = RallyPoint)
+		float MinPersistentRemaining;
+
 	/** Minimum powered up time */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = RallyPoint)
 		float MinimumRallyTime;
@@ -36,8 +46,18 @@ class UNREALTOURNAMENT_API AUTRallyPoint : public AUTGameObjective, public IUTRe
 	UPROPERTY(BlueprintReadOnly, Category = Objective)
 		float RallyReadyCountdown;
 
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = RallyPoint)
+	/** Replicate 10 * RallyReadyCountdown */
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnReplicatedCountdown, Category = RallyPoint)
 		int32 ReplicatedCountdown;
+
+	UPROPERTY(BlueprintReadOnly, Category = RallyPoint)
+		float ClientCountdown;
+
+	UPROPERTY(BlueprintReadOnly, Category = RallyPoint)
+		float RallyTimeRemaining;
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRallyTimeRemaining, Category = RallyPoint)
+		float ReplicatedRallyTimeRemaining;
 
 	UPROPERTY(ReplicatedUsing = OnAvailableEffectChanged, BlueprintReadOnly)
 		bool bShowAvailableEffect;
@@ -52,7 +72,7 @@ class UNREALTOURNAMENT_API AUTRallyPoint : public AUTGameObjective, public IUTRe
 	UPROPERTY(Replicated, BlueprintReadOnly)
 		bool bIsEnabled;
 
-	UPROPERTY(ReplicatedUsing = OnRallyChargingChanged, BlueprintReadOnly)
+	UPROPERTY(ReplicatedUsing = OnRallyChargingChanged, BlueprintReadOnly, Category = RallyPoint)
 		FName RallyPointState;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = RallyPoint)
@@ -112,6 +132,17 @@ class UNREALTOURNAMENT_API AUTRallyPoint : public AUTGameObjective, public IUTRe
 	UPROPERTY()
 		float LastEnemyRallyWarning;
 
+	/** What to display on the Rally Beacon for flag carriers */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RallyPoint)
+		FText RallyBeaconText;
+
+	/** Location name for this RallyPoint.  If not set, use the game volume's VolumeName. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RallyPoint)
+		FText LocationText;
+
+	UFUNCTION()
+		void OnReplicatedCountdown();
+
 	FTimerHandle EnemyRallyWarningHandle;
 
 	virtual void WarnEnemyRally();
@@ -126,6 +157,9 @@ class UNREALTOURNAMENT_API AUTRallyPoint : public AUTGameObjective, public IUTRe
 	virtual void GenerateDefensePoints() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void PostRenderFor(APlayerController *PC, UCanvas *Canvas, FVector CameraPosition, FVector CameraDir) override;
+
+	/** Draw rally charging thermometer. */
+	virtual void DrawChargingThermometer(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, bool bFixedPosition);
 
 	UPROPERTY()
 		bool bBeaconWasLeft;
@@ -153,10 +187,16 @@ class UNREALTOURNAMENT_API AUTRallyPoint : public AUTGameObjective, public IUTRe
 		int32 RallyOffset;
 
 	UFUNCTION()
+		void OnRallyTimeRemaining();
+
+	UFUNCTION()
 	void OnAvailableEffectChanged();
 
 	UFUNCTION()
 		void OnRallyChargingChanged();
+
+	UFUNCTION(BlueprintImplementableEvent, Category=RallyPoint)
+		void OnRallyStateChanged();
 
 	virtual void ChangeAmbientSoundPitch(USoundBase* InAmbientSound, float NewPitch);
 

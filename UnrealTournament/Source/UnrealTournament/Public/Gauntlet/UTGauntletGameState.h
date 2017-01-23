@@ -39,5 +39,16 @@ public:
 	// Returns a pointer to the most important flag base or nullptr if there isn't one
 	virtual void GetImportantFlagBase(int32 TeamNum, TArray<AUTCTFFlagBase*>& ImportantBases);
 
+	virtual FText GetGameStatusText(bool bForScoreboard) override;
+
+	virtual void ToggleScoreboards() 
+	{
+	}
+
+	// The player state of the last person to score.
+	AUTPlayerState* LastScorer;
+
+	virtual FText GetRoundStatusText(bool bForScoreboard);
+
 
 };

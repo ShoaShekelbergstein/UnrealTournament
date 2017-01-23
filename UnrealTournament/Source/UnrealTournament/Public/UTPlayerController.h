@@ -154,6 +154,10 @@ public:
 	UFUNCTION(unreliable, client)
 		void UTClientPlaySound(class USoundBase* Sound);
 
+	/** Called when weapon firing has been enabled to handle any firing buttons held down while firing was disabled. */
+	UFUNCTION(unreliable, client)
+		void ClientVerifyFiringInputs();
+
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 	virtual void InitInputSystem() override;
@@ -168,7 +172,8 @@ public:
 	virtual void BeginInactiveState() override;
 	virtual FRotator GetControlRotation() const override;
 	virtual void SetPlayer(UPlayer* InPlayer) override;
-
+	virtual AActor* GetViewTarget() const override;
+	virtual void BeginSpectatingState() override;
 
 	virtual void ViewStartSpot();
 
@@ -181,7 +186,10 @@ public:
 	virtual void CheckAutoWeaponSwitch(class AUTWeapon* TestWeapon);
 
 	UFUNCTION(Unreliable, Client)
-		void ClientWarnEnemyBehind(AUTPlayerState* TeamPS, AUTCharacter* Targeter);
+		void ClientWarnEnemyBehind(AUTPlayerState* TeamPS, AUTCharacter* Targeter, TSubclassOf<UUTCharacterVoice> TeammateVoice);
+
+	UFUNCTION(Reliable, client)
+		void ClientAnnounceRoundScore(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 RoundBonus, uint8 Reason);
 
 	UPROPERTY(GlobalConfig)
 	bool bHearsTaunts;
@@ -271,12 +279,6 @@ public:
 		virtual void RequestRally();
 
 	UPROPERTY()
-		FVector RallyLocation;
-
-	UPROPERTY()
-		class AUTRallyPoint* RallyPoint;
-
-	UPROPERTY()
 		float EndRallyTime;
 
 	UFUNCTION(server, reliable, withvalidation)
@@ -291,24 +293,18 @@ public:
 	UFUNCTION(exec)
 	virtual void ToggleScoreboard(bool bShow);
 
-	UFUNCTION(client,reliable)
-	virtual void ClientSetLineUpCamera(UWorld* World, LineUpTypes IntroType);
+	UFUNCTION(client, reliable)
+	virtual void ClientPrepareForLineUp();
 
 	UFUNCTION(client, reliable)
 	virtual void ClientSetActiveLineUp(bool bNewIsActive, LineUpTypes LastType);
 
-	virtual void BeginRallyTo(AUTRallyPoint* RallyTarget, const FVector& NewRallyLocation, float Delay);
-
-	// valid server side only
-	virtual bool IsCurrentlyRallying();
-
-	FTimerHandle RallyTimerHandle;
-
-	virtual void CompleteRally();
-
 	UFUNCTION(client, reliable)
 	virtual void ClientToggleScoreboard(bool bShow);
-	
+
+	UFUNCTION(client, reliable)
+		virtual void ClientDrawLine(FVector Start, FVector End, FColor Color, float Duration) const;
+
 	UPROPERTY()
 		float ScoreboardDelayOnDeath;
 
@@ -374,7 +370,7 @@ public:
 
 	/**	Client replicated function that get's called when it's half-time. */
 	UFUNCTION(client, reliable)
-	void ClientHalftime();
+	void ClientPrepareForIntermission();
 
 	/** Switch to best current camera while spectating. */
 	virtual void ChooseBestCamera();
@@ -910,8 +906,10 @@ protected:
 	void PrevWeapon();
 	void NextWeapon();
 
-	UFUNCTION(exec)
+	UFUNCTION()
 	void ActivateSpecial();
+	UFUNCTION()
+	void ReleaseSpecial();
 
 	void ToggleTranslocator();
 
@@ -1007,10 +1005,16 @@ protected:
 	 */
 	TArray< FDeferredFireInput, TInlineAllocator<2> > DeferredFireInputs;
 
+private:
+	/** Used to trigger firing coming out of weapon firing disallowed. */
+	bool bFirePressed;
+	bool bAltFirePressed;
+
+public:
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerActivatePowerUpPress();
-	
-	void TeamNotifiyOfPowerupUse();
+protected:
+	void TeamNotifyOfPowerupUse();
 
 public:
 
@@ -1246,7 +1250,7 @@ public:
 
 	/** Sent by the server when the possessed pawn is killed */
 	UFUNCTION(Client, Reliable)
-	void ClientPlayKillcam(AController* KillingController, APawn* PawnToFocus, FVector_NetQuantize FocusLoc);
+	void ClientPlayKillcam(AController* KillingController, APawn* PawnToFocus, FVector_NetQuantize FocusLoc, int32 FocusYaw);
 
 	UPROPERTY()
 		AActor* DeathCamFocus;
@@ -1296,11 +1300,16 @@ public:
 	// Will return true if this player can perform a rally
 	bool CanPerformRally() const;
 
+	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
+
 protected:
 	void InitializeHeartbeatManager();
 
 	UPROPERTY()
 	class UUTHeartbeatManager* HeartbeatManager;
+
+
+
 };
 
 

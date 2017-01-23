@@ -45,8 +45,15 @@ void UUTHUDWidget_TeamGameClock::Draw_Implementation(float DeltaTime)
 	AUTPlayerState* PS = UTC ? Cast<AUTPlayerState>(UTC->PlayerState) : NULL;
 	if (UTGameState && UTGameState->bTeamGame && PS && PS->Team)
 	{
+		RoleText.bHidden = false;
+		TeamNameText.bHidden = false;
 		TeamNameText.Text = PS->Team->TeamName;
 		TeamNameText.RenderColor = PS->Team->TeamColor;
+	}
+	else
+	{
+		RoleText.bHidden = true;
+		TeamNameText.bHidden = true;
 	}
 
 	TSharedPtr<GenericApplication> GenericApplication = FSlateApplication::Get().GetPlatformApplication();

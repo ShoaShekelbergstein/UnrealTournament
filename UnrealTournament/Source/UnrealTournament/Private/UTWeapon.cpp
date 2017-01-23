@@ -24,6 +24,8 @@
 #include "UTDroppedPickup.h"
 #include "UTAnnouncer.h"
 #include "UTProj_ShockBall.h"
+#include "UTTeamDeco.h"
+#include "UTProj_WeaponScreen.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUTWeapon, Log, All);
 
@@ -100,11 +102,13 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 
 	BaseAISelectRating = 0.55f;
 	DisplayName = NSLOCTEXT("PickupMessage", "WeaponPickedUp", "Weapon");
+	HighlightText = NSLOCTEXT("Weapon", "HighlightText", "Weapon Master");
 	bShowPowerupTimer = false;
 
 	bCheckHeadSphere = false;
 	bCheckMovingHeadSphere = false;
 	bIgnoreShockballs = false;
+	bTeammatesBlockHitscan = false;
 
 	WeightSpeedPctModifier = 1.0f;
 
@@ -191,7 +195,7 @@ void AUTWeapon::InstanceMuzzleFlashArray(AActor* Weap, TArray<UParticleSystemCom
 				{
 					if (Cast<UParticleSystemComponent>(ConstructionNodes[j]->ComponentTemplate) == MFArray[k])
 					{
-						MFArray[k] = Cast<UParticleSystemComponent>((UObject*)FindObjectWithOuter(Weap, ConstructionNodes[j]->ComponentTemplate->GetClass(), ConstructionNodes[j]->VariableName));
+						MFArray[k] = Cast<UParticleSystemComponent>((UObject*)FindObjectWithOuter(Weap, ConstructionNodes[j]->ComponentTemplate->GetClass(), ConstructionNodes[j]->GetVariableName()));
 					}
 				}
 			}
@@ -294,15 +298,15 @@ void AUTWeapon::GivenTo(AUTCharacter* NewOwner, bool bAutoActivate)
 			break;
 		}
 	}
-}
 
-void AUTWeapon::ClientGivenTo_Internal(bool bAutoActivate)
-{
 	if (bMustBeHolstered && UTOwner && (HasAnyAmmo() || bCanRegenerateAmmo))
 	{
 		AttachToHolster();
 	}
+}
 
+void AUTWeapon::ClientGivenTo_Internal(bool bAutoActivate)
+{
 	// make sure we initialized our state; this can be triggered if the weapon is spawned at game startup, since BeginPlay() will be deferred
 	if (CurrentState == NULL)
 	{
@@ -427,34 +431,41 @@ bool AUTWeapon::FollowsInList(AUTWeapon* OtherWeapon)
 
 void AUTWeapon::StartFire(uint8 FireModeNum)
 {
-	if (!UTOwner || !UTOwner->IsFiringDisabled())
+	if (UTOwner && UTOwner->IsFiringDisabled())
 	{
-		bool bClientFired = BeginFiringSequence(FireModeNum, false);
-		if (Role < ROLE_Authority)
-		{
-			UUTWeaponStateFiring* CurrentFiringState = FiringState.IsValidIndex(FireModeNum) ? FiringState[FireModeNum] : nullptr;
-			if (CurrentFiringState)
-			{
-				FireEventIndex++;
-				if (FireEventIndex == 255)
-				{
-					FireEventIndex = 0;
-				}
-			}
-			if (UTOwner)
-			{
-				float ZOffset = uint8(FMath::Clamp(UTOwner->GetPawnViewLocation().Z - UTOwner->GetActorLocation().Z + 127.5f, 0.f, 255.f));
-				if (ZOffset != uint8(FMath::Clamp(UTOwner->BaseEyeHeight + 127.5f, 0.f, 255.f)))
-				{
-					ServerStartFireOffset(FireModeNum, FireEventIndex, ZOffset, bClientFired);
-					QueueResendFire(true, FireModeNum, FireEventIndex, ZOffset, bClientFired);
-					return;
-				}
-			}
-			ServerStartFire(FireModeNum, FireEventIndex, bClientFired);
-			QueueResendFire(true, FireModeNum, FireEventIndex, 0, bClientFired);
-		}
+		return;
 	}
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (GS && GS->PreventWeaponFire())
+	{
+		return;
+	}
+	bool bClientFired = BeginFiringSequence(FireModeNum, false);
+	if (Role < ROLE_Authority)
+	{
+		UUTWeaponStateFiring* CurrentFiringState = FiringState.IsValidIndex(FireModeNum) ? FiringState[FireModeNum] : nullptr;
+		if (CurrentFiringState)
+		{
+			FireEventIndex++;
+			if (FireEventIndex == 255)
+			{
+				FireEventIndex = 0;
+			}
+		}
+		if (UTOwner)
+		{
+			float ZOffset = uint8(FMath::Clamp(UTOwner->GetPawnViewLocation().Z - UTOwner->GetActorLocation().Z + 127.5f, 0.f, 255.f));
+			if (ZOffset != uint8(FMath::Clamp(UTOwner->BaseEyeHeight + 127.5f, 0.f, 255.f)))
+			{
+				ServerStartFireOffset(FireModeNum, FireEventIndex, ZOffset, bClientFired);
+				QueueResendFire(true, FireModeNum, FireEventIndex, ZOffset, bClientFired);
+				return;
+			}
+		}
+		ServerStartFire(FireModeNum, FireEventIndex, bClientFired);
+		QueueResendFire(true, FireModeNum, FireEventIndex, 0, bClientFired);
+	}
+
 }
 
 void AUTWeapon::ResendNextFireEvent()
@@ -1595,44 +1606,77 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 {
 	ECollisionChannel TraceChannel = COLLISION_TRACE_WEAPONNOCHARACTER;
 	FCollisionQueryParams QueryParams(GetClass()->GetFName(), true, UTOwner);
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (TraceRadius <= 0.0f)
 	{
-		if (!GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndTrace, TraceChannel, QueryParams))
+		int32 SkipActorCount = 3;
+		while (SkipActorCount > 0)
 		{
-			Hit.Location = EndTrace;
-		}
-		else if (bIgnoreShockballs && Hit.Actor.IsValid() && Cast<AUTProj_ShockBall>(Hit.Actor.Get()))
-		{
-			int32 HitShockballCount = 3;
-			QueryParams.AddIgnoredActor(Hit.Actor.Get());
-			while (HitShockballCount > 0)
+			int32 NewSkipActorCount = 0;
+			if (!GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndTrace, TraceChannel, QueryParams))
 			{
-				if (!GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndTrace, TraceChannel, QueryParams))
+				Hit.Location = EndTrace;
+			}
+			else if (Hit.Actor.IsValid())
+			{
+				if (bIgnoreShockballs && Cast<AUTProj_ShockBall>(Hit.Actor.Get()))
 				{
-					Hit.Location = EndTrace;
-					HitShockballCount = 0;
-				}
-				else if (Hit.Actor.IsValid() && Cast<AUTProj_ShockBall>(Hit.Actor.Get()))
-				{
-					HitShockballCount--;
 					QueryParams.AddIgnoredActor(Hit.Actor.Get());
+					NewSkipActorCount = SkipActorCount--;
 				}
-				else
+				else if (UTOwner && Cast<AUTTeamDeco>(Hit.Actor.Get()) && !((AUTTeamDeco *)(Hit.Actor.Get()))->bBlockTeamProjectiles)
 				{
-					HitShockballCount = 0;
+					if (GS && GS->OnSameTeam(UTOwner, Hit.Actor.Get()))
+					{
+						QueryParams.AddIgnoredActor(Hit.Actor.Get());
+						NewSkipActorCount = SkipActorCount--;
+					}
+				}
+				else if (Cast<AUTProj_WeaponScreen>(Hit.Actor.Get()) != nullptr && GS != nullptr && GS->OnSameTeam(UTOwner, ((AUTProj_WeaponScreen*)Hit.Actor.Get())->Instigator))
+				{
+					QueryParams.AddIgnoredActor(Hit.Actor.Get());
+					NewSkipActorCount = SkipActorCount--;
 				}
 			}
+			SkipActorCount = NewSkipActorCount;
 		}
 	}
 	else
 	{
-		if (GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndTrace, FQuat::Identity, TraceChannel, FCollisionShape::MakeSphere(TraceRadius), QueryParams))
+		int32 SkipActorCount = 2;
+		while (SkipActorCount > 0)
 		{
-			Hit.Location += (EndTrace - StartLocation).GetSafeNormal() * TraceRadius; // so impact point is still on the surface of the target collision
-		}
-		else
-		{
-			Hit.Location = EndTrace;
+			int32 NewSkipActorCount = 0;
+			if (!GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndTrace, FQuat::Identity, TraceChannel, FCollisionShape::MakeSphere(TraceRadius), QueryParams))
+			{
+				Hit.Location = EndTrace;
+			}
+			else
+			{
+				Hit.Location += (EndTrace - StartLocation).GetSafeNormal() * TraceRadius; // so impact point is still on the surface of the target collision
+				if (Hit.Actor.IsValid())
+				{
+					if (bIgnoreShockballs && Cast<AUTProj_ShockBall>(Hit.Actor.Get()))
+					{
+						QueryParams.AddIgnoredActor(Hit.Actor.Get());
+						NewSkipActorCount = SkipActorCount--;
+					}
+					else if (UTOwner && Cast<AUTTeamDeco>(Hit.Actor.Get()) && !((AUTTeamDeco *)(Hit.Actor.Get()))->bBlockTeamProjectiles)
+					{
+						if (GS && GS->OnSameTeam(UTOwner, Hit.Actor.Get()))
+						{
+							QueryParams.AddIgnoredActor(Hit.Actor.Get());
+							NewSkipActorCount = SkipActorCount--;
+						}
+					}
+					else if (Cast<AUTProj_WeaponScreen>(Hit.Actor.Get()) != nullptr && GS != nullptr && GS->OnSameTeam(UTOwner, ((AUTProj_WeaponScreen*)Hit.Actor.Get())->Instigator))
+					{
+						QueryParams.AddIgnoredActor(Hit.Actor.Get());
+						NewSkipActorCount = SkipActorCount--;
+					}
+				}
+			}
+			SkipActorCount = NewSkipActorCount;
 		}
 	}
 	if (!(Hit.Location - StartLocation).IsNearlyZero())
@@ -1644,7 +1688,7 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 		for (FConstPawnIterator Iterator = GetWorld()->GetPawnIterator(); Iterator; ++Iterator)
 		{
 			AUTCharacter* Target = Cast<AUTCharacter>(*Iterator);
-			if (Target && (Target != UTOwner))
+			if (Target && (Target != UTOwner) && (bTeammatesBlockHitscan || !GS || !GS->OnSameTeam(UTOwner, Target)))
 			{
 				// find appropriate rewind position, and test against trace from StartLocation to Hit.Location
 				FVector TargetLocation = ((PredictionTime > 0.f) && (Role == ROLE_Authority)) ? Target->GetRewindLocation(PredictionTime) : Target->GetActorLocation();
@@ -1785,6 +1829,7 @@ void AUTWeapon::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 		{
 			PS->ModifyStatsValue(HitsStatsName, 1);
 		}
+		OnHitScanDamage(Hit, FireDir);
 		Hit.Actor->TakeDamage(InstantHitInfo[CurrentFireMode].Damage, FUTPointDamageEvent(InstantHitInfo[CurrentFireMode].Damage, Hit, FireDir, InstantHitInfo[CurrentFireMode].DamageType, FireDir * GetImpartedMomentumMag(Hit.Actor.Get())), UTOwner->Controller, this);
 	}
 	if (OutHit != NULL)
@@ -1944,6 +1989,7 @@ AUTProjectile* AUTWeapon::SpawnNetPredictedProjectile(TSubclassOf<AUTProjectile>
 		{
 			UTOwner->LastFiredProjectile = NewProjectile;
 			NewProjectile->ShooterLocation = UTOwner->GetActorLocation();
+			NewProjectile->ShooterRotation = UTOwner->GetActorRotation();
 		}
 		if (Role == ROLE_Authority)
 		{
@@ -2018,9 +2064,29 @@ void AUTWeapon::UpdateTiming()
 	CurrentState->UpdateTiming();
 }
 
+bool AUTWeapon::StackLockerPickup(AUTInventory* ContainedInv)
+{
+	// end with currentammo+1 or dropped weapon's ammo, whichever is greater
+	int32 DefaultAmmo = GetClass()->GetDefaultObject<AUTWeapon>()->Ammo;
+	int32 Amount = Cast<AUTWeapon>(ContainedInv) ? Cast<AUTWeapon>(ContainedInv)->Ammo : DefaultAmmo;
+	Amount = FMath::Min(Amount, DefaultAmmo - Ammo);
+	Amount = FMath::Max(Amount, 1);
+	AddAmmo(Amount);
+	return true;
+}
+
 bool AUTWeapon::StackPickup_Implementation(AUTInventory* ContainedInv)
 {
-	AddAmmo(ContainedInv != NULL ? Cast<AUTWeapon>(ContainedInv)->Ammo : GetClass()->GetDefaultObject<AUTWeapon>()->Ammo);
+	int32 Amount = GetClass()->GetDefaultObject<AUTWeapon>()->Ammo;
+	if (ContainedInv != nullptr)
+	{
+		if (bFromLocker && ContainedInv->bFromLocker)
+		{
+			return StackLockerPickup(ContainedInv);
+		}
+		Amount = Cast<AUTWeapon>(ContainedInv)->Ammo;
+	}
+	AddAmmo(Amount);
 	return true;
 }
 
@@ -2386,6 +2452,7 @@ void AUTWeapon::UpdateOverlaysShared(AActor* WeaponActor, AUTCharacter* InOwner,
 				if (PSC == NULL)
 				{
 					PSC = NewObject<UParticleSystemComponent>(InOverlayMesh);
+					PSC->SecondsBeforeInactive = 0.0f;
 					PSC->SetAbsolute(false, false, true);
 					PSC->RegisterComponent();
 				}
@@ -2409,6 +2476,10 @@ void AUTWeapon::UpdateOverlaysShared(AActor* WeaponActor, AUTCharacter* InOwner,
 							PSC->bAutoDestroy = true;
 							PSC->DeactivateSystem();
 							PSC->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+							// failsafe destruction timer
+							FTimerHandle Useless;
+							TWeakObjectPtr<UParticleSystemComponent> WeakPSC = PSC;
+							PSC->GetWorld()->GetTimerManager().SetTimer(Useless, FTimerDelegate::CreateLambda([WeakPSC]() { if (WeakPSC.IsValid()) { WeakPSC->DestroyComponent(); } }), 5.0f, false);
 						}
 						else
 						{
@@ -2430,6 +2501,10 @@ void AUTWeapon::UpdateOverlaysShared(AActor* WeaponActor, AUTCharacter* InOwner,
 					PSC->bAutoDestroy = true;
 					PSC->DeactivateSystem();
 					PSC->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+					// failsafe destruction timer
+					FTimerHandle Useless;
+					TWeakObjectPtr<UParticleSystemComponent> WeakPSC = PSC;
+					PSC->GetWorld()->GetTimerManager().SetTimer(Useless, FTimerDelegate::CreateLambda([WeakPSC]() { if (WeakPSC.IsValid()) { WeakPSC->DestroyComponent(); } }), 5.0f, false);
 				}
 				else
 				{
@@ -2739,6 +2814,23 @@ int32 AUTWeapon::GetWeaponKillStats(AUTPlayerState* PS) const
 	return KillCount;
 }
 
+int32 AUTWeapon::GetWeaponKillStatsForRound(AUTPlayerState* PS) const
+{
+	int32 KillCount = 0;
+	if (PS)
+	{
+		if (KillStatsName != NAME_None)
+		{
+			KillCount += PS->GetRoundStatsValue(KillStatsName);
+		}
+		if (AltKillStatsName != NAME_None)
+		{
+			KillCount += PS->GetRoundStatsValue(AltKillStatsName);
+		}
+	}
+	return KillCount;
+}
+
 int32 AUTWeapon::GetWeaponDeathStats(AUTPlayerState* PS) const
 {
 	int32 DeathCount = 0;
@@ -2997,6 +3089,13 @@ bool AUTWeapon::CanSwitchTo()
 
 void AUTWeapon::RegisterAllComponents()
 {
+	// in editor and preview, just register all the components right now
+	if (GetWorld()->WorldType == EWorldType::Editor || GetWorld()->WorldType == EWorldType::EditorPreview || GetWorld()->WorldType == EWorldType::GamePreview)
+	{
+		Super::RegisterAllComponents();
+		return;
+	}
+
 	TInlineComponentArray<USceneComponent*> AllSceneComponents;
 	GetComponents(AllSceneComponents);
 

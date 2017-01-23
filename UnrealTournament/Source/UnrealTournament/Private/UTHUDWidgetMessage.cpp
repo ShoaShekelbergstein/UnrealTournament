@@ -90,7 +90,7 @@ void UUTHUDWidgetMessage::AgeMessages_Implementation(float DeltaTime)
 
 		// Age out the message.
 		MessageQueue[QueueIndex].LifeLeft -= DeltaTime;
-		if (MessageQueue[QueueIndex].LifeLeft <= 0.0)
+		if (MessageQueue[QueueIndex].LifeLeft <= 0.f)
 		{
 			// If this queue message has an UMG widget, clear it too
 			if (MessageQueue[QueueIndex].UMGWidget.IsValid())
@@ -188,6 +188,8 @@ void UUTHUDWidgetMessage::ClearMessage(FLocalizedMessageData& Message)
 	Message.bHasBeenRendered = false;
 	Message.Text = FText::GetEmpty();
 	Message.EmphasisText = FText::GetEmpty();
+	Message.PrefixText = FText::GetEmpty();
+	Message.PostfixText = FText::GetEmpty();
 	Message.OptionalObject = NULL;
 	Message.DrawColor = FLinearColor::White;
 	Message.LifeLeft = 0.f;
@@ -266,6 +268,8 @@ void UUTHUDWidgetMessage::ReceiveLocalMessage(TSubclassOf<class UUTLocalMessage>
 
 void UUTHUDWidgetMessage::AddMessage(int32 QueueIndex, TSubclassOf<class UUTLocalMessage> MessageClass, uint32 MessageIndex, FText LocalMessageText, int32 MessageCount, APlayerState* RelatedPlayerState_1, APlayerState* RelatedPlayerState_2, UObject* OptionalObject)
 {
+	if (UTHUDOwner == nullptr) return; // We can't do anything without a hud owner
+
 	// If this MessageQueue has an associated UMG widget, we have to kill it before adding the new one.
 	bool bHadToClear = false;
 	if (MessageQueue[QueueIndex].UMGWidget.IsValid())
@@ -330,7 +334,7 @@ void UUTHUDWidgetMessage::AddMessage(int32 QueueIndex, TSubclassOf<class UUTLoca
 void UUTHUDWidgetMessage::LayoutMessage(int32 QueueIndex, TSubclassOf<class UUTLocalMessage> MessageClass, uint32 MessageIndex, FText LocalMessageText, int32 MessageCount, APlayerState* RelatedPlayerState_1, APlayerState* RelatedPlayerState_2, UObject* OptionalObject)
 {
 	MessageQueue[QueueIndex].DrawColor = GetDefault<UUTLocalMessage>(MessageClass)->GetMessageColor(MessageIndex);
-	int32 FontIndex = GetDefault<UUTLocalMessage>(MessageClass)->GetFontSizeIndex(MessageIndex);
+	int32 FontIndex = GetDefault<UUTLocalMessage>(MessageClass)->GetFontSizeIndex(MessageIndex, UTHUDOwner && UTHUDOwner->UTPlayerOwner && UTHUDOwner->UTPlayerOwner->UTPlayerState && (RelatedPlayerState_1 == UTHUDOwner->UTPlayerOwner->UTPlayerState));
 	MessageQueue[QueueIndex].DisplayFont = (UTHUDOwner != nullptr) ? UTHUDOwner->GetFontFromSizeIndex(FontIndex) : nullptr;
 	MessageQueue[QueueIndex].ShadowDirection = (FontIndex == 1) ? LargeShadowDirection : SmallShadowDirection;
 	MessageQueue[QueueIndex].OptionalObject = OptionalObject;

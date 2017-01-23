@@ -27,7 +27,7 @@ AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 	AmmoCost[0] = 1;
 	AmmoCost[1] = 1;
 	FOVOffset = FVector(0.6f, 1.f, 1.f);
-	Ammo = 70;
+	Ammo = 60;
 	MaxAmmo = 200;
 	AmmoWarningAmount = 25;
 	AmmoDangerAmount = 10;
@@ -37,7 +37,7 @@ AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 	BeamPulseInterval = 0.4f;
 	BeamPulseMomentum = -220000.0f;
 	BeamPulseAmmoCost = 4;
-	PullWarmupTime = 0.25f;
+	PullWarmupTime = 0.15f;
 	LinkPullDamage = 0;
 	ReadyToPullColor = FLinearColor::White;
 
@@ -60,6 +60,7 @@ AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 
 	TutorialAnnouncements.Add(TEXT("PriLinkGun"));
 	TutorialAnnouncements.Add(TEXT("SecLinkGun"));
+	HighlightText = NSLOCTEXT("Weapon", "LinkHighlightText", "Plasma Boy");
 }
 
 void AUTWeap_LinkGun::AttachToOwner_Implementation()
@@ -264,6 +265,10 @@ void AUTWeap_LinkGun::Tick(float DeltaTime)
 			PulseLoc = Hit.Location;
 		}*/
 	}
+	else if (UTOwner != nullptr)
+	{
+		UTOwner->PulseTarget = nullptr;
+	}
 }
 
 void AUTWeap_LinkGun::StartLinkPull()
@@ -274,6 +279,7 @@ void AUTWeap_LinkGun::StartLinkPull()
 	{
 		LastBeamPulseTime = GetWorld()->TimeSeconds;
 		PulseTarget = CurrentLinkedTarget;
+		UTOwner->PulseTarget = PulseTarget;
 		PulseLoc = PulseTarget->GetActorLocation();
 		UTOwner->TargetEyeOffset.Y = LinkPullKickbackY;
 		ServerSetPulseTarget(CurrentLinkedTarget);
@@ -318,6 +324,7 @@ void AUTWeap_LinkGun::ServerSetPulseTarget_Implementation(AActor* InTarget)
 	{
 		// use owner to target direction instead of exactly the weapon orientation so that shooting below center doesn't cause the pull to send them over the shooter's head
 		const FVector Dir = (PulseTarget->GetActorLocation() - PulseStart).GetSafeNormal();
+		UTOwner->PulseTarget = PulseTarget;
 		PulseLoc = PulseTarget->GetActorLocation();
 		PulseTarget->TakeDamage(LinkPullDamage, FUTPointDamageEvent(0.0f, Hit, Dir, BeamPulseDamageType, BeamPulseMomentum * Dir), UTOwner->Controller, this);
 		UUTGameplayStatics::UTPlaySound(GetWorld(), PullSucceeded, UTOwner, SRT_All, false, FVector::ZeroVector, Cast<AUTPlayerController>(PulseTarget->GetInstigatorController()), UTOwner, true, SAT_WeaponFire);
@@ -383,7 +390,7 @@ void AUTWeap_LinkGun::CheckBotPulseFire()
 	{
 		AUTBot* B = Cast<AUTBot>(UTOwner->Controller);
 		if ( B != NULL && B->WeaponProficiencyCheck() && B->GetEnemy() != NULL && B->GetTarget() == B->GetEnemy() &&
-			(B->IsCharging() || B->GetSquad()->MustKeepEnemy(B->GetEnemy()) || B->RelativeStrength(B->GetEnemy()) < 0.0f) )
+			(B->IsCharging() || B->GetSquad()->MustKeepEnemy(B, B->GetEnemy()) || B->RelativeStrength(B->GetEnemy()) < 0.0f) )
 		{
 			bool bTryPulse = FMath::FRand() < (B->IsFavoriteWeapon(GetClass()) ? 0.1f : 0.05f);
 			if (bTryPulse)

@@ -9,36 +9,45 @@
 #include "UTCTFGameState.h"
 #include "UTCTFRoundGameState.h"
 #include "UTCTFRoundGame.h"
+#include "UTCTFGameMode.h"
+#include "UTFlagRunGameState.h"
 
 AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	bIsPlacingPlayers = false;
 	bAlwaysRelevant = true;
+
+	TimerDelayForIntro = 0.f;
+	TimerDelayForIntermission = 9.f;
+	TimerDelayForEndMatch = 9.f;
 }
 
 void AUTLineUpHelper::HandleLineUp(LineUpTypes ZoneType)
 {
 	LastActiveType = ZoneType;
 
-	if (ZoneType == LineUpTypes::Intro)
+	if (GetWorld())
 	{
-		HandleIntro(ZoneType);
-	}
-	else if (ZoneType == LineUpTypes::Intermission)
-	{
-		HandleIntermission(ZoneType);
-	}
-	else if (ZoneType == LineUpTypes::PostMatch)
-	{
-		HandleEndMatchSummary(ZoneType);
+		if (ZoneType == LineUpTypes::Intro)
+		{
+			HandleIntro(ZoneType);
+		}
+		else if (ZoneType == LineUpTypes::Intermission)
+		{
+			HandleIntermission(ZoneType);
+		}
+		else if (ZoneType == LineUpTypes::PostMatch)
+		{
+			HandleEndMatchSummary(ZoneType);
+		}
 	}
 }
 
 void AUTLineUpHelper::HandleIntro(LineUpTypes IntroType)
 {
 	bIsActive = true;
-	MovePlayers(IntroType);
+	MovePlayersDelayed(IntroType, IntroHandle, TimerDelayForIntro);
 }
 
 void AUTLineUpHelper::CleanUp()
@@ -51,7 +60,6 @@ void AUTLineUpHelper::CleanUp()
 		}
 
 		bIsActive = false;
-		LastActiveType = LineUpTypes::Invalid;
 		
 		if (GetWorld())
 		{
@@ -60,37 +68,51 @@ void AUTLineUpHelper::CleanUp()
 				AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
 				if (UTPC)
 				{
+					CleanUpPlayerAfterLineUp(UTPC);
 					UTPC->ClientSetActiveLineUp(false, LineUpTypes::Invalid);
 				}
 			}
-		}
 
-		DestroySpawnedClones();
-	}
-}
-
-void AUTLineUpHelper::SpawnPlayerClones(LineUpTypes LineUpType)
-{
-	if (GetWorld())
-	{
-		AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GameState);
-		if ((UTGS != nullptr) && (UTGS->ShouldUseInGameSummary(LineUpType)))
-		{
-			for (int PlayerIndex = 0; PlayerIndex < UTGS->PlayerArray.Num(); ++PlayerIndex)
+			AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+			if (UTGS)
 			{
-				AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTGS->PlayerArray[PlayerIndex]);
-				if (UTPS)
+				UTGS->LeadLineUpPlayer = nullptr;
+
+				//If we are in the end game / map vote we don't need to destroy our spawned clones and should 
+				//let them stick around and look fancy while voting / stats are being displayed
+				if ((UTGS->GetMatchState() != MatchState::WaitingPostMatch) && (UTGS->GetMatchState() != MatchState::MapVoteHappening))
 				{
-					SpawnClone(UTPS, FTransform());
+					DestroySpawnedClones();
 				}
 			}
-
-			SortPlayers();
-			MovePreviewCharactersToLineUpSpawns(LineUpType);
 		}
 	}
 }
-			
+		
+void AUTLineUpHelper::CleanUpPlayerAfterLineUp(AUTPlayerController* UTPC)
+{
+	if (UTPC != nullptr)
+	{
+		//Clear any active taunts
+		AUTCharacter* UTChar = UTPC->GetUTCharacter();
+		if (UTChar && UTChar->CurrentTaunt && UTChar->GetMesh())
+		{
+			UAnimInstance* AnimInstance = UTChar->GetMesh()->GetAnimInstance();
+			if (AnimInstance != nullptr)
+			{
+				AnimInstance->Montage_Stop(0.0f, UTChar->CurrentTaunt);
+			}
+		}
+
+		if (UTPC->UTPlayerState)
+		{
+			UTPC->UTPlayerState->EmoteReplicationInfo.EmoteCount = 0;
+		}
+		
+		UTPC->SetEmoteSpeed(1.0f);
+		UTPC->FlushPressedKeys();
+	}
+}
 
 void AUTLineUpHelper::DestroySpawnedClones()
 {
@@ -98,7 +120,10 @@ void AUTLineUpHelper::DestroySpawnedClones()
 	{
 		for (int index = 0; index < PlayerPreviewCharacters.Num(); ++index)
 		{
-			PlayerPreviewCharacters[index]->Destroy();
+			if (PlayerPreviewCharacters[index])
+			{
+				PlayerPreviewCharacters[index]->Destroy();
+			}
 		}
 		PlayerPreviewCharacters.Empty();
 	}
@@ -107,7 +132,10 @@ void AUTLineUpHelper::DestroySpawnedClones()
 	{
 		for (int index = 0; index < PreviewWeapons.Num(); ++index)
 		{
-			PreviewWeapons[index]->Destroy();
+			if (PreviewWeapons[index])
+			{
+				PreviewWeapons[index]->Destroy();
+			}
 		}
 		PreviewWeapons.Empty();
 	}
@@ -115,18 +143,79 @@ void AUTLineUpHelper::DestroySpawnedClones()
 
 void AUTLineUpHelper::HandleIntermission(LineUpTypes IntermissionType)
 {
-	bIsActive = true;
-	MovePlayers(IntermissionType);
+	MovePlayersDelayed(IntermissionType, IntermissionHandle, TimerDelayForIntermission);
+}
+
+void AUTLineUpHelper::MovePlayersDelayed(LineUpTypes ZoneType, FTimerHandle& TimerHandleToStart, float TimeDelay)
+{
+	GetWorld()->GetTimerManager().ClearTimer(IntroHandle);
+	GetWorld()->GetTimerManager().ClearTimer(IntermissionHandle);
+	GetWorld()->GetTimerManager().ClearTimer(MatchSummaryHandle);
+	
+	AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
+
+	if ((TimeDelay > SMALL_NUMBER))
+	{
+		SetupDelayedLineUp();
+		GetWorld()->GetTimerManager().SetTimer(TimerHandleToStart, FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::MovePlayers, ZoneType), TimeDelay, false);
+	}
+	else
+	{
+		MovePlayers(ZoneType);
+	}
+}
+
+void AUTLineUpHelper::SetupDelayedLineUp()
+{
+	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+	{
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
+		if (UTPC)
+		{
+			AUTCharacter* UTChar = Cast<AUTCharacter>(UTPC->GetPawn());
+			if (UTChar)
+			{
+				UTChar->TurnOff();
+				ForceCharacterAnimResetForLineUp(UTChar);
+			}
+
+			UTPC->FlushPressedKeys();
+
+			UTPC->ClientPrepareForLineUp();
+		}
+	}
 }
 
 void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 {	
+	static const FName NAME_LineUpCam = FName(TEXT("LineUpCam"));
 	bIsPlacingPlayers = true;
+	bIsActive = true;
 
 	if (GetWorld() && GetWorld()->GetAuthGameMode())
 	{
 		AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
 		
+		//Setup LineUp weapon. Favorite weapon if set, current weapon otherwise
+		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+		{
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
+			if (UTPC)
+			{
+				AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTPC->PlayerState);
+				AUTCharacter* UTChar = Cast<AUTCharacter>(UTPC->GetPawn());
+				if (UTPS && UTChar)
+				{
+					UTPS->LineUpWeapon = (UTPS->FavoriteWeapon != NULL)? UTPS->FavoriteWeapon : UTChar->GetWeaponClass();
+				}
+			}
+		}
+
+		if (UTGM)
+		{
+			UTGM->RemoveAllPawns();
+		}
+
 		//Go through all controllers and spawn/respawn pawns
 		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 		{
@@ -155,29 +244,133 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 				AUTPlayerController* UTPC = Cast<AUTPlayerController>(C);
 				if (UTPC)
 				{
+					UTPC->SetCameraMode(NAME_LineUpCam);
 					UTPC->ClientSetActiveLineUp(true, ZoneType);
 				}
 			}
 		}
-	
+
+		FlagFixUp();
 		SortPlayers();
 		MovePreviewCharactersToLineUpSpawns(ZoneType);
+
+		//Setup LeadPlayer, not done in Sort because players will be deleted as part of MovePreivewCharactersToLineUpSpawns
+		if (PlayerPreviewCharacters.Num() > 0)
+		{
+			AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+			if (UTGS)
+			{
+				UTGS->LeadLineUpPlayer = Cast<AUTPlayerState>(PlayerPreviewCharacters[0]->PlayerState);
+			}
+		}
 
 		//Go back through characters now that they are moved and turn them off
 		for (AUTCharacter* UTChar : PlayerPreviewCharacters)
 		{
 			UTChar->TurnOff();
-			
-			//Want to still update the animations and bones even though we have turned off the Pawn, so re-enable those.
-			if (UTChar->GetMesh())
-			{
-				UTChar->GetMesh()->bPauseAnims = false;
-				//UTChar->GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
-			}
+			UTChar->DeactivateSpawnProtection();
+			ForceCharacterAnimResetForLineUp(UTChar);
+			SpawnPlayerWeapon(UTChar);
 		}
 	}
 
 	bIsPlacingPlayers = false;
+}
+
+void AUTLineUpHelper::FlagFixUp()
+{
+	if (GetWorld() && GetWorld()->GetAuthGameMode())
+	{
+		AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
+		if (UTGM)
+		{
+			AUTCTFFlag* OffenseFlag = nullptr;
+			AUTFlagRunGameState* UTFRGS = UTGM->GetGameState<AUTFlagRunGameState>();
+			if (UTFRGS)
+			{
+				OffenseFlag = UTFRGS->GetOffenseFlag();
+			}
+
+			if (OffenseFlag)
+			{
+				AController* FlagController = nullptr;
+				if (OffenseFlag->Holder)
+				{
+					FlagController = Cast<AController>(OffenseFlag->Holder->GetOwner());
+				}
+				else if (OffenseFlag->LastHolder)
+				{
+					FlagController = Cast<AController>(OffenseFlag->LastHolder->GetOwner());
+				}
+
+				if (FlagController && FlagController->GetPawn())
+				{
+					OffenseFlag->SetHolder(Cast<AUTCharacter>(FlagController->GetPawn()));
+				}
+				else
+				{
+					OffenseFlag->Destroy();
+				}
+			}
+		}
+	}
+}
+
+void AUTLineUpHelper::SpawnPlayerWeapon(AUTCharacter* UTChar)
+{
+	//If we already have a weapon attachment, keep that
+	if (UTChar)
+	{
+		AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTChar->PlayerState);
+		TSubclassOf<AUTWeapon> WeaponClass = NULL;
+
+		if (UTPS)
+		{
+			WeaponClass = UTPS->LineUpWeapon ? UTPS->LineUpWeapon->GetDefaultObject<AUTWeapon>()->GetClass() : NULL;
+		}
+
+		//Default to Link Gun
+		if (!WeaponClass)
+		{
+			WeaponClass = LoadClass<AUTWeapon>(NULL, TEXT("/Game/RestrictedAssets/Weapons/LinkGun/BP_LinkGun.BP_LinkGun_C"), NULL, LOAD_None, NULL);
+		}
+		
+		//Remove all inventory so that when we add this weapon in, it is equipped.
+		UTChar->DiscardAllInventory();
+		
+		FActorSpawnParameters WeaponSpawnParams;
+		WeaponSpawnParams.Instigator = UTChar;
+		WeaponSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		WeaponSpawnParams.bNoFail = true;
+
+		AUTWeapon* PreviewWeapon = GetWorld()->SpawnActor<AUTWeapon>(WeaponClass, FVector(0, 0, 0), FRotator(0, 0, 0), WeaponSpawnParams);
+		if (PreviewWeapon)
+		{
+			PreviewWeapons.Add(PreviewWeapon);
+			
+			PreviewWeapon->bAlwaysRelevant = true;
+			PreviewWeapon->SetReplicates(true);
+			UTChar->AddInventory(PreviewWeapon, true);
+			
+			//Bots will not auto-switch to new weapon
+			AUTBot* BotController = Cast<AUTBot>(UTChar->Controller);
+			if (BotController)
+			{
+				BotController->SwitchToBestWeapon();
+			}
+		}
+	}
+}
+
+
+void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
+{
+	if (UTChar && UTChar->GetMesh())
+	{
+		//Want to still update the animations and bones even though we have turned off the Pawn, so re-enable those.
+		UTChar->GetMesh()->bPauseAnims = false;
+		UTChar->GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
+	}
 }
 
 void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType)
@@ -235,31 +428,21 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 		TArray<AUTCharacter*> PreviewsMarkedForDestroy;
 		for (AUTCharacter* PreviewChar : PlayerPreviewCharacters)
 		{
+			FTransform SpawnTransform = SpawnList->GetActorTransform();
+
 			if ((PreviewChar->GetTeamNum() == RedAndWinningTeamNumber) && (RedSpawns.Num() > RedIndex))
 			{
-				FTransform SpawnTransform = SpawnList->GetActorTransform();
 				SpawnTransform = RedSpawns[RedIndex] * SpawnTransform;
-				
-				PreviewChar->TeleportTo(SpawnTransform.GetTranslation(), SpawnTransform.GetRotation().Rotator(),false, true);
-				PreviewChar->Controller->SetControlRotation(SpawnTransform.GetRotation().Rotator());
 				++RedIndex;
 			}
 			else if ((PreviewChar->GetTeamNum() == BlueAndLosingTeamNumber) && (BlueSpawns.Num() > BlueIndex))
 			{
-				FTransform SpawnTransform = SpawnList->GetActorTransform();
 				SpawnTransform = BlueSpawns[BlueIndex] * SpawnTransform;
-
-				PreviewChar->TeleportTo(SpawnTransform.GetTranslation(), SpawnTransform.GetRotation().Rotator(), false, true);
-				PreviewChar->Controller->SetControlRotation(SpawnTransform.GetRotation().Rotator());
 				++BlueIndex;
 			}
 			else if (FFASpawns.Num() > FFAIndex)
 			{
-				FTransform SpawnTransform = SpawnList->GetActorTransform();
 				SpawnTransform = FFASpawns[FFAIndex] * SpawnTransform;
-
-				PreviewChar->TeleportTo(SpawnTransform.GetTranslation(), SpawnTransform.GetRotation().Rotator(), false, true);
-				PreviewChar->Controller->SetControlRotation(SpawnTransform.GetRotation().Rotator());
 				++FFAIndex;
 			}
 			//If they are not part of the line up display... remove them
@@ -267,10 +450,24 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 			{
 				PreviewsMarkedForDestroy.Add(PreviewChar);
 			}
+
+			PreviewChar->bIsTranslocating = true; // Hack to get rid of teleport effect
+
+			PreviewChar->TeleportTo(SpawnTransform.GetTranslation(), SpawnTransform.GetRotation().Rotator(), false, true);
+			PreviewChar->Controller->SetControlRotation(SpawnTransform.GetRotation().Rotator());
+			PreviewChar->Controller->ClientSetRotation(SpawnTransform.GetRotation().Rotator());
+
+			PreviewChar->bIsTranslocating = false;
 		}
 
 		for (AUTCharacter* DestroyCharacter : PreviewsMarkedForDestroy)
 		{
+			//Destroy any carried objects before destroying pawn.
+			if (DestroyCharacter->GetCarriedObject())
+			{
+				DestroyCharacter->GetCarriedObject()->Destroy();
+			}
+
 			AUTPlayerController* UTPC = Cast<AUTPlayerController>(DestroyCharacter->GetController());
 			if (UTPC)
 			{
@@ -300,7 +497,7 @@ LineUpTypes AUTLineUpHelper::GetLineUpTypeToPlay(UWorld* World)
 	AUTCTFRoundGame* CTFGM = Cast<AUTCTFRoundGame>(World->GetAuthGameMode());
 
 	//The first intermission of CTF Round Game is actually an intro
-	if ((UTGS->GetMatchState() == MatchState::PlayerIntro) || ((UTGS->GetMatchState() == MatchState::MatchIntermission) && UTCTFRoundGameGS && (UTCTFRoundGameGS->CTFRound == 1) && (!CTFGM || CTFGM->FlagScorer == nullptr)))
+	if ((UTGS->GetMatchState() == MatchState::PlayerIntro) || ((UTGS->GetMatchState() == MatchState::MatchIntermission) && UTCTFRoundGameGS && (UTCTFRoundGameGS->CTFRound == 1) && (!UTCTFRoundGameGS || UTCTFRoundGameGS->GetScoringPlays().Num() == 0)))
 	{
 		if (UTGS->ShouldUseInGameSummary(LineUpTypes::Intro))
 		{
@@ -374,129 +571,9 @@ AActor* AUTLineUpHelper::GetCameraActorForLineUp(UWorld* World, LineUpTypes Zone
 
 static int32 WeaponIndex = 0;
 
-void AUTLineUpHelper::SpawnClone(AUTPlayerState* PS, const FTransform& Location)
-{
-	if (!GetWorld())
-	{
-		return;
-	}
-
-	AUTWeaponAttachment* PreviewWeapon = nullptr;
-	UAnimationAsset* PlayerPreviewAnim = nullptr;
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	TSubclassOf<class APawn> DefaultPawnClass = Cast<UClass>(StaticLoadObject(UClass::StaticClass(), NULL, *GetDefault<AUTGameMode>()->PlayerPawnObject.ToStringReference().ToString(), NULL, LOAD_NoWarn));
-
-	AUTCharacter* PlayerPreviewMesh = GetWorld()->SpawnActor<AUTCharacter>(DefaultPawnClass, Location.GetTranslation(), Location.Rotator(), SpawnParams);
-
-	if (PlayerPreviewMesh)
-	{
-		// We need to get our tick functions registered, this seemed like best way to do it
-		PlayerPreviewMesh->RegisterAllActorTickFunctions(true, true);
-
-		PlayerPreviewMesh->PlayerState = PS; //PS needed for team colors
-		PlayerPreviewMesh->DeactivateSpawnProtection();
-
-		PlayerPreviewMesh->ApplyCharacterData(PS->GetSelectedCharacter());
-		PlayerPreviewMesh->NotifyTeamChanged();
-
-		PlayerPreviewMesh->SetHatClass(PS->HatClass);
-		PlayerPreviewMesh->SetHatVariant(PS->HatVariant);
-		PlayerPreviewMesh->SetEyewearClass(PS->EyewearClass);
-		PlayerPreviewMesh->SetEyewearVariant(PS->EyewearVariant);
-
-		int32 WeaponIndexToSpawn = 0;
-		if (!PreviewWeapon)
-		{
-			UClass* PreviewAttachmentType = PS->FavoriteWeapon ? PS->FavoriteWeapon->GetDefaultObject<AUTWeapon>()->AttachmentType : NULL;
-			if (!PreviewAttachmentType)
-			{
-				UClass* PreviewAttachments[6];
-				PreviewAttachments[0] = LoadClass<AUTWeaponAttachment>(NULL, TEXT("/Game/RestrictedAssets/Weapons/LinkGun/BP_LinkGun_Attach.BP_LinkGun_Attach_C"), NULL, LOAD_None, NULL);
-				PreviewAttachments[1] = LoadClass<AUTWeaponAttachment>(NULL, TEXT("/Game/RestrictedAssets/Weapons/Sniper/BP_Sniper_Attach.BP_Sniper_Attach_C"), NULL, LOAD_None, NULL);
-				PreviewAttachments[2] = LoadClass<AUTWeaponAttachment>(NULL, TEXT("/Game/RestrictedAssets/Weapons/RocketLauncher/BP_Rocket_Attachment.BP_Rocket_Attachment_C"), NULL, LOAD_None, NULL);
-				PreviewAttachments[3] = LoadClass<AUTWeaponAttachment>(NULL, TEXT("/Game/RestrictedAssets/Weapons/ShockRifle/ShockAttachment.ShockAttachment_C"), NULL, LOAD_None, NULL);
-				PreviewAttachments[4] = LoadClass<AUTWeaponAttachment>(NULL, TEXT("/Game/RestrictedAssets/Weapons/Flak/BP_Flak_Attach.BP_Flak_Attach_C"), NULL, LOAD_None, NULL);
-				PreviewAttachments[5] = PreviewAttachments[3];
-				WeaponIndexToSpawn = WeaponIndex % 6;
-				PreviewAttachmentType = PreviewAttachments[WeaponIndexToSpawn];
-				WeaponIndex++;
-			}
-			if (PreviewAttachmentType != NULL)
-			{
-				FActorSpawnParameters WeaponSpawnParams;
-				WeaponSpawnParams.Instigator = PlayerPreviewMesh;
-				WeaponSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-				WeaponSpawnParams.bNoFail = true;
-			
-				PreviewWeapon = GetWorld()->SpawnActor<AUTWeaponAttachment>(PreviewAttachmentType, FVector(0, 0, 0), FRotator(0, 0, 0), WeaponSpawnParams);
-			}
-		}
-		if (PreviewWeapon)
-		{
-			if (PreviewWeapon->HasActorBegunPlay())
-			{
-				PreviewWeapon->AttachToOwner();
-			}
-
-			PreviewWeapons.Add(PreviewWeapon);
-		}
-
-		if (PS->IsFemale())
-		{
-			switch (WeaponIndexToSpawn)
-			{
-			case 1:
-				PlayerPreviewAnim = LoadObject<UAnimationAsset>(NULL, TEXT("/Game/RestrictedAssets/Animations/Universal/Misc_Poses/MatchPoseFemale_Sniper.MatchPoseFemale_Sniper"));
-				break;
-			case 2:
-				PlayerPreviewAnim = LoadObject<UAnimationAsset>(NULL, TEXT("/Game/RestrictedAssets/Animations/Universal/Misc_Poses/MatchPoseFemale_Flak_B.MatchPoseFemale_Flak_B"));
-				break;
-			case 4:
-				PlayerPreviewAnim = LoadObject<UAnimationAsset>(NULL, TEXT("/Game/RestrictedAssets/Animations/Universal/Misc_Poses/MatchPoseFemale_Flak.MatchPoseFemale_Flak"));
-				break;
-			case 0:
-			case 3:
-			case 5:
-			default:
-				PlayerPreviewAnim = LoadObject<UAnimationAsset>(NULL, TEXT("/Game/RestrictedAssets/Animations/Universal/Misc_Poses/MatchPoseFemale_ShockRifle.MatchPoseFemale_ShockRifle"));
-			}
-		}
-		else
-		{
-			switch (WeaponIndexToSpawn)
-			{
-			case 1:
-				PlayerPreviewAnim = LoadObject<UAnimationAsset>(NULL, TEXT("/Game/RestrictedAssets/Animations/Universal/Misc_Poses/MatchPose_Sniper.MatchPose_Sniper"));
-				break;
-			case 2:
-				PlayerPreviewAnim = LoadObject<UAnimationAsset>(NULL, TEXT("/Game/RestrictedAssets/Animations/Universal/Misc_Poses/MatchPose_Flak_B.MatchPose_Flak_B"));
-				break;
-			case 4:
-				PlayerPreviewAnim = LoadObject<UAnimationAsset>(NULL, TEXT("/Game/RestrictedAssets/Animations/Universal/Misc_Poses/MatchPose_Flak.MatchPose_Flak"));
-				break;
-			case 0:
-			case 3:
-			case 5:
-			default:
-				PlayerPreviewAnim = LoadObject<UAnimationAsset>(NULL, TEXT("/Game/RestrictedAssets/Animations/Universal/Misc_Poses/MatchPose_ShockRifle.MatchPose_ShockRifle"));
-			}
-		}
-
-		PreviewAnimations.AddUnique(PlayerPreviewAnim);
-
-		PlayerPreviewMesh->GetMesh()->PlayAnimation(PlayerPreviewAnim, true);
-		PlayerPreviewMesh->GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
-
-		PlayerPreviewCharacters.Add(PlayerPreviewMesh);
-	}
-}
-
 void AUTLineUpHelper::HandleEndMatchSummary(LineUpTypes SummaryType)
 {
-	bIsActive = true;
-	MovePlayers(SummaryType);
+	MovePlayersDelayed(SummaryType, MatchSummaryHandle, TimerDelayForEndMatch);
 }
 
 void AUTLineUpHelper::SortPlayers()
@@ -506,7 +583,19 @@ void AUTLineUpHelper::SortPlayers()
 	{
 		AUTPlayerState* PSA = Cast<AUTPlayerState>(A.PlayerState);
 		AUTPlayerState* PSB = Cast<AUTPlayerState>(B.PlayerState);
-		return !PSB || (PSA && (PSA->Score > PSB->Score));
+
+		AUTCTFFlag* AUTFlagA = nullptr;
+		AUTCTFFlag* AUTFlagB = nullptr;
+		if (PSA)
+		{
+			AUTFlagA = Cast<AUTCTFFlag>(PSA->CarriedObject);
+		}
+		if (PSB)
+		{
+			AUTFlagB = Cast<AUTCTFFlag>(PSB->CarriedObject);
+		}
+
+		return !PSB || (AUTFlagA) || (PSA && (PSA->Score > PSB->Score) && !AUTFlagB);
 	};
 	PlayerPreviewCharacters.Sort(SortFunc);
 }

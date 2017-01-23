@@ -114,7 +114,10 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 							FUTAnalytics::FireEvent_UTTutorialStarted(Cast<AUTPlayerController>(PC),FString("Onboarding"));
 						}
 
-						GetWorld()->ServerTravel(TEXT("/Game/RestrictedAssets/Tutorials/TUT-MovementTraining?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTutorialGameMode.UTTutorialGameMode_C?timelimit=0?TutorialMask=1"), true, true);
+						if (PC->GetUTLocalPlayer())
+						{
+							PC->GetUTLocalPlayer()->LaunchTutorial(ETutorialTags::TUTTAG_Movement);
+						}
 						return;
 	#endif
 					}
@@ -134,6 +137,11 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 			// NOTE: If we are in a party, never return to the tutorial menu
 			if (LP != NULL && !LP->IsInAnActiveParty())
 			{
+				if (FUTAnalytics::IsAvailable())
+				{
+					FUTAnalytics::FireEvent_UTTutorialStarted(Cast<AUTPlayerController>(PC), FString("Onboarding"));
+				}
+
 				LP->OpenTutorialMenu();
 			}
 			// make sure this doesn't get kept around

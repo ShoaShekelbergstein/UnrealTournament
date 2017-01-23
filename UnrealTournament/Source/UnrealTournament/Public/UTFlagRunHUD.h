@@ -11,6 +11,7 @@ class UNREALTOURNAMENT_API AUTFlagRunHUD : public AUTHUD_CTF
 {
 	GENERATED_UCLASS_BODY()
 
+	virtual bool ScoreboardIsUp() override;
 	virtual void DrawHUD() override;
 	virtual void NotifyMatchStateChange() override;
 	virtual void BeginPlay() override;
@@ -25,8 +26,11 @@ class UNREALTOURNAMENT_API AUTFlagRunHUD : public AUTHUD_CTF
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, NoClear)
 		FCanvasIcon BlueTeamIcon;
 
-	UPROPERTY()
-		float WinConditionMessageTime;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, NoClear)
+	FCanvasIcon RedTeamOverlay;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, NoClear)
+	FCanvasIcon BlueTeamOverlay;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
 		FText DefendersMustStop;
@@ -50,6 +54,9 @@ class UNREALTOURNAMENT_API AUTFlagRunHUD : public AUTHUD_CTF
 		FText AttackersMustScoreTimeWin;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
+		FText AttackersMustScoreShort;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
 		FText BlueTeamText;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
@@ -58,10 +65,15 @@ class UNREALTOURNAMENT_API AUTFlagRunHUD : public AUTHUD_CTF
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
 		FText MustScoreText;
 
+	UPROPERTY()
+		bool bUseShortWinMessage;
+
 	int32 RedPlayerCount;
 	int32 BluePlayerCount;
 
-	virtual void DrawWinConditions(UFont* InFont, float XPos, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage) override;
+	virtual float DrawWinConditions(UFont* InFont, float XPos, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage, bool bSkipDrawing=false) override;
 
-	virtual void DrawPlayerIcon(FCanvasIcon PlayerIcon, FLinearColor DrawColor, float LiveScaling, float XOffset, float YOffset, float IconSize);
+	virtual void DrawPlayerIcon(AUTPlayerState* PlayerState, float LiveScaling, float XOffset, float YOffset, float IconSize, bool bDrawLives);
+	// get sorted array of players for which we should draw icons at the top of the HUD
+	virtual void GetPlayerListForIcons(TArray<AUTPlayerState*>& SortedPlayers);
 };

@@ -14,6 +14,7 @@ void SUTFriendsPopupWindow::Construct(const FArguments& InArgs)
 	PlayerOwner = InArgs._PlayerOwner;
 	checkSlow(PlayerOwner != NULL);
 	ChildSlot
+		.Padding(0.0f,36.0f,0.0f,0.0f)
 		.VAlign(VAlign_Fill)
 		.HAlign(HAlign_Fill)
 		[
@@ -33,7 +34,7 @@ void SUTFriendsPopupWindow::Construct(const FArguments& InArgs)
 				.Padding(0)
 				.BorderImage(FCoreStyle::Get().GetBrush("NoBorder"))
 				[
-					SNew(SUTChatWidget, PlayerOwner->PlayerController)
+					SNew(SUTChatWidget)
 				]
 			]
 			+SOverlay::Slot()
@@ -45,7 +46,7 @@ void SUTFriendsPopupWindow::Construct(const FArguments& InArgs)
 				.Padding(0)
 				.BorderImage(FCoreStyle::Get().GetBrush("NoBorder"))
 				[
-					SNew(SUTFriendsWidget, PlayerOwner->PlayerController)
+					SNew(SUTFriendsWidget)
 /*					.FriendStyle(&SocialAsset->Style)*/
 				]
 			]

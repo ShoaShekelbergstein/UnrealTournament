@@ -56,8 +56,16 @@ class UNREALTOURNAMENT_API AUTPickup : public AActor, public IUTResetInterface, 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Pickup)
 	uint32 bDelayedSpawn : 1;
 	/** if set, pickup respawns every RespawnTime seconds regardless of when it was picked up last */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = Pickup)
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = Pickup)
 	uint32 bFixedRespawnInterval : 1;
+
+	/** if set, pickup only spawns once until reset */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = Pickup)
+		uint32 bSpawnOncePerRound : 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = Pickup)
+		uint32 bHasSpawnedThisRound : 1;
+
 	/** one-shot particle effect played when the pickup is taken */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
 	UParticleSystem* TakenParticles;

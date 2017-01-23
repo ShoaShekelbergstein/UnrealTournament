@@ -203,6 +203,7 @@ void AUTCTFFlag::Drop(AController* Killer)
 					GM->BroadcastLocalized(this, UUTCTFRewardMessage::StaticClass(), 6, Killer->PlayerState, Holder, NULL);
 					GM->AddDeniedEventToReplay(Killer->PlayerState, Holder, Holder->Team);
 					KillerState->AddCoolFactorEvent(100.0f);
+					KillerState->ModifyStatsValue(NAME_FlagDenials, 1);
 				}
 			}
 		}
@@ -230,15 +231,18 @@ void AUTCTFFlag::Drop(AController* Killer)
 	// Toss is out
 	TossObject(LastHoldingPawn);
 
-	if (bGradualAutoReturn && (PastPositions.Num() > 0) && (Holder == nullptr))
+	if (bGradualAutoReturn && (Holder == nullptr))
 	{
-		if ((GetActorLocation() - PastPositions[PastPositions.Num() - 1].Location).Size() < MinGradualReturnDist)
-		{
-			PastPositions.RemoveAt(PastPositions.Num() - 1);
-		}
-		if (PastPositions.Num() > 0)// fimxesteve why?
+		RemoveInvalidPastPositions();
+		if (PastPositions.Num() > 0)
 		{
 			PutGhostFlagAt(PastPositions[PastPositions.Num() - 1]);
+		}
+		else if (HomeBase)
+		{
+			FFlagTrailPos BasePosition;
+			BasePosition.Location = GetHomeLocation();
+			PutGhostFlagAt(BasePosition);
 		}
 	}
 }
@@ -494,7 +498,7 @@ void AUTCTFFlag::Tick(float DeltaTime)
 	{
 		for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 		{
-			APlayerController* PlayerController = *Iterator;
+			APlayerController* PlayerController = Iterator->Get();
 			if (PlayerController && PlayerController->IsLocalPlayerController() && PlayerController->GetViewTarget())
 			{
 				FVector Dir = GetActorLocation() - PlayerController->GetViewTarget()->GetActorLocation();

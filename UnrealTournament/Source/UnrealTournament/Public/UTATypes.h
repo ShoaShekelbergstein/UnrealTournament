@@ -22,11 +22,18 @@ const uint16 UTDIALOG_BUTTON_APPLY = 0x2000;
 const uint16 TUTORIAL_Movement = 0x0001;
 const uint16 TUTOIRAL_Weapon = 0x0002;
 const uint16 TUTORIAL_Pickups = 0x0004;
+const uint16 TUTORIAL_SkillMoves = TUTORIAL_Movement | TUTOIRAL_Weapon | TUTORIAL_Pickups;
+
 const uint16 TUTORIAL_DM = 0x0008;
 const uint16 TUTORIAL_TDM = 0x0010;
 const uint16 TUTORIAL_CTF = 0x0020;
 const uint16 TUTORIAL_Duel = 0x0040;
 const uint16 TUTORIAL_FlagRun = 0x0080;
+const uint16 TUTORIAL_Showdown = 0x0100;
+const uint16 TUTORIAL_Gameplay = TUTORIAL_DM | TUTORIAL_FlagRun | TUTORIAL_Showdown;
+const uint16 TUTORIAL_Hardcore = TUTORIAL_CTF | TUTORIAL_TDM | TUTORIAL_Duel;
+
+const uint16 TUTORIAL_All = TUTORIAL_SkillMoves | TUTORIAL_Gameplay | TUTORIAL_Hardcore;
 
 const int32 DEFAULT_RANK_CHECK = 0;
 const int32 NEW_USER_ELO = 1000;
@@ -36,6 +43,9 @@ const int32 MAXENTRYROUTES = 5;
 const int32 MAX_CHAT_TEXT_SIZE = 384;
 
 const float RALLY_ANIMATION_TIME = 1.2;
+
+const FLinearColor REDHUDCOLOR = FLinearColor(1.0f, 0.05f, 0.0f, 1.0f);
+const FLinearColor BLUEHUDCOLOR = FLinearColor(0.1f, 0.1f, 1.0f, 1.0f);
 
 UENUM()
 namespace EGameStage
@@ -73,6 +83,36 @@ namespace ETextVertPos
 		MAX,
 	};
 }
+
+static const FName NAME_FlagCaptures(TEXT("FlagCaptures"));
+static const FName NAME_FlagReturns(TEXT("FlagReturns"));
+static const FName NAME_FlagAssists(TEXT("FlagAssists"));
+static const FName NAME_FlagHeldDeny(TEXT("FlagHeldDeny"));
+static const FName NAME_FlagHeldDenyTime(TEXT("FlagHeldDenyTime"));
+static const FName NAME_FlagHeldTime(TEXT("FlagHeldTime"));
+static const FName NAME_FlagReturnPoints(TEXT("FlagReturnPoints"));
+static const FName NAME_CarryAssist(TEXT("CarryAssist"));
+static const FName NAME_CarryAssistPoints(TEXT("CarryAssistPoints"));
+static const FName NAME_FlagCapPoints(TEXT("FlagCapPoints"));
+static const FName NAME_DefendAssist(TEXT("DefendAssist"));
+static const FName NAME_DefendAssistPoints(TEXT("DefendAssistPoints"));
+static const FName NAME_ReturnAssist(TEXT("ReturnAssist"));
+static const FName NAME_ReturnAssistPoints(TEXT("ReturnAssistPoints"));
+static const FName NAME_TeamCapPoints(TEXT("TeamCapPoints"));
+static const FName NAME_EnemyFCDamage(TEXT("EnemyFCDamage"));
+static const FName NAME_FCKills(TEXT("FCKills"));
+static const FName NAME_FCKillPoints(TEXT("FCKillPoints"));
+static const FName NAME_FlagSupportKills(TEXT("FlagSupportKills"));
+static const FName NAME_FlagSupportKillPoints(TEXT("FlagSupportKillPoints"));
+static const FName NAME_RegularKillPoints(TEXT("RegularKillPoints"));
+static const FName NAME_FlagGrabs(TEXT("FlagGrabs"));
+static const FName NAME_TeamFlagGrabs(TEXT("TeamFlagGrabs"));
+static const FName NAME_TeamFlagHeldTime(TEXT("TeamFlagHeldTime"));
+static const FName NAME_RalliesPowered(TEXT("RalliesPowered"));
+static const FName NAME_Rallies(TEXT("Rallies"));
+static const FName NAME_FlagDenials(TEXT("FlagDenials"));
+static const FName NAME_RedeemerRejected(TEXT("RedeemerRejected"));
+
 
 const FName NAME_Custom = FName(TEXT("Custom"));
 const FName NAME_RedCountryFlag = FName(TEXT("Red.Team"));
@@ -112,6 +152,7 @@ namespace GameVolumeSpeechType
 	const FName GV_Ruins = FName(TEXT("GV_Ruins"));
 	const FName GV_SniperTower = FName(TEXT("GV_SniperTower"));
 	const FName GV_Flak = FName(TEXT("GV_Flak"));
+	const FName GV_Waterfall = FName(TEXT("GV_Waterfall"));
 }
 
 namespace PickupSpeechType
@@ -161,9 +202,11 @@ namespace StatusMessage
 	const FName ImOnOffense = FName(TEXT("ImOnOffense"));
 	const FName SpreadOut = FName(TEXT("SpreadOut"));
 	const FName BaseUnderAttack = FName(TEXT("BaseUnderAttack"));
+	const FName Incoming = FName(TEXT("Incoming"));
 	const FName Affirmative = FName(TEXT("Affirmative"));
 	const FName Negative = FName(TEXT("Negative"));
 	const FName EnemyRally = FName(TEXT("EnemyRally"));
+	const FName RallyNow = FName(TEXT("RallyNow"));
 	const FName FindFC = FName(TEXT("FindFC"));
 	const FName LastLife = FName(TEXT("LastLife"));
 	const FName EnemyLowLives = FName(TEXT("EnemyLowLives"));
@@ -201,6 +244,35 @@ namespace HighlightNames
 	const FName ParticipationAward = FName(TEXT("ParticipationAward"));
 	const FName KillsAward = FName(TEXT("KillsAward"));
 	const FName DamageAward = FName(TEXT("DamageAward"));
+
+	const FName MostKillsTeam = FName(TEXT("MostKillsTeam"));
+	const FName RedeemerRejection = FName(TEXT("RedeemerRejection"));
+	const FName FlagDenials = FName(TEXT("FlagDenials"));
+	const FName WeaponKills = FName(TEXT("WeaponKills"));
+	const FName KillingBlowsAward = FName(TEXT("KillingBlowsAward"));
+	const FName MostKillingBlowsAward = FName(TEXT("MostKillingBlowsAward"));
+	const FName CoupDeGrace = FName(TEXT("Coup de Grace"));
+	const FName FlagCap = FName(TEXT("FlagCap"));
+
+	const FName BadMF = FName(TEXT("BadMF"));
+	const FName LikeABoss = FName(TEXT("LikeABoss"));
+	const FName DeathIncarnate = FName(TEXT("DeathIncarnate"));
+	const FName NaturalBornKiller = FName(TEXT("NaturalBornKiller"));
+	const FName SpecialForces = FName(TEXT("SpecialForces"));
+	const FName HiredGun = FName(TEXT("HiredGun"));
+	const FName CoolBeans = FName(TEXT("CoolBeans"));
+	const FName BobLife = FName(TEXT("BobLife"));
+	const FName HappyToBeHere = FName(TEXT("HappyToBeHere"));
+	const FName HardToKill = FName(TEXT("HardToKill"));
+	const FName Rallies = FName(TEXT("Rallies"));
+	const FName RallyPointPowered = FName(TEXT("RallyPointPowered"));
+	const FName HatTrick = FName(TEXT("HatTrick"));
+	const FName NotSureIfSerious = FName(TEXT("NotSureIfSerious"));
+	const FName ComeAtMeBro = FName(TEXT("ComeAtMeBro"));
+	const FName ThisIsSparta = FName(TEXT("ThisIsSparta"));
+	const FName AllOutOfBubbleGum = FName(TEXT("AllOutOfBubbleGum"));
+	const FName GameOver = FName(TEXT("GameOver"));
+	const FName LikeTheWind = FName(TEXT("LikeTheWind"));
 }
 
 namespace ArmorTypeName
@@ -387,7 +459,7 @@ struct UNREALTOURNAMENT_API FLocalizedMessageData
 	UPROPERTY()
 		FAnnouncementInfo AnnouncementInfo;
 
-	virtual bool ShouldDraw_Implementation(bool bShowScores)
+	bool ShouldDraw_Implementation(bool bShowScores)
 	{
 		return bShowScores;
 	}
@@ -409,7 +481,6 @@ struct UNREALTOURNAMENT_API FLocalizedMessageData
 	{
 		UMGWidget.Reset();
 	}
-
 };
 
 USTRUCT(BlueprintType)
@@ -452,6 +523,10 @@ struct FHUDRenderObject
 		RenderColor = FLinearColor::White;
 		RenderOpacity = 1.0f;
 	};
+
+	virtual ~FHUDRenderObject()
+	{
+	}
 
 public:
 	virtual float GetWidth() { return Size.X * RenderScale; }
@@ -506,6 +581,10 @@ struct FHUDRenderObject_Texture : public FHUDRenderObject
 		bUseTeamColors = false;
 		bIsBorderElement = false;
 		Rotation = 0.0f;
+	}
+
+	virtual ~FHUDRenderObject_Texture()
+	{
 	}
 
 public:
@@ -589,6 +668,10 @@ struct FHUDRenderObject_Text : public FHUDRenderObject
 		HorzPosition = ETextHorzPos::Left;
 		VertPosition = ETextVertPos::Top;
 		BackgroundColor = FLinearColor(0.0f,0.0f,0.0f,0.0f);
+	}
+
+	virtual ~FHUDRenderObject_Text()
+	{
 	}
 
 public:
@@ -2060,3 +2143,78 @@ public:
 };
 
 static FName NAME_Vignettes(TEXT("Vignettes"));
+
+namespace EMenuCommand
+{
+	const FName MC_QuickPlayDM = FName(TEXT("MenuOption_QuickPlayDM"));
+	const FName MC_QuickPlayCTF = FName(TEXT("MenuOption_QuickPlayCTF"));
+	const FName MC_QuickPlayFlagrun = FName(TEXT("MenuOption_QuickPlayFlagrun"));
+	const FName MC_QuickPlayShowdown = FName(TEXT("MenuOption_QuickPlayShowdown"));
+	const FName MC_Challenges = FName(TEXT("MenuOption_QuickPlayChallenges"));
+	const FName MC_FindAMatch = FName(TEXT("MenuOption_FindAMatch"));
+}
+
+namespace ETutorialTags
+{
+	const FName TUTTAG_Movement = FName(TEXT("MovementTutorial"));
+	const FName TUTTAG_Weapons = FName(TEXT("WeaponsTutorial"));
+	const FName TUTTAG_Pickups = FName(TEXT("PickupTutorial"));
+	const FName TUTTAG_DM = FName(TEXT("DMTutorial"));
+	const FName TUTTAG_Flagrun = FName(TEXT("FlagRunTutorial"));
+	const FName TUTTAG_Showdown = FName(TEXT("ShowdownTutorial"));
+	const FName TUTTAG_TDM = FName(TEXT("TDMTutorial"));
+	const FName TUTTAG_CTF = FName(TEXT("CTFTutorial"));
+	const FName TUTTAG_Duel = FName(TEXT("DuelTutorial"));
+
+	// This tag is used to force the game to play the next tutorial in the progression based on what the
+	// player has already played.  See UUTLocalPlayer::LaunchTutorial
+	const FName TUTTAG_Progress = FName(TEXT("NextTutorialProgression"));
+}
+
+UENUM()
+namespace ETutorialSections
+{
+	enum Type
+	{
+		SkillMoves,
+		Gameplay,
+		Hardcore,
+		MAX,
+	};
+}
+
+
+USTRUCT()
+struct FTutorialData
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	UPROPERTY(Config)
+	FName Tag;
+
+	UPROPERTY(Config)
+	uint16 Mask;
+
+	UPROPERTY(Config)
+	FString Map;
+
+	UPROPERTY(Config)
+	FString LaunchArgs;
+
+	UPROPERTY(Config)
+	FString LoadingMovie;
+
+	UPROPERTY(Config)
+	FString LoadingText;
+
+	FTutorialData()
+		: Tag(NAME_None)
+		, Mask(0x00)
+		, Map(TEXT(""))
+		, LaunchArgs(TEXT(""))
+		, LoadingMovie(TEXT(""))
+	{
+	}
+
+};

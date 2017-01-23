@@ -52,14 +52,12 @@ class UNREALTOURNAMENT_API AUTCTFRoundGame : public AUTCTFBaseGame
 	UPROPERTY()
 		bool bFirstRoundInitialized;
 
-	UPROPERTY()
-		bool bHaveAnnouncedRound;
-
 	/*  Victory due to secondary score (best total capture time) */
 	UPROPERTY(BlueprintReadOnly, Category = CTF)
 		bool bSecondaryWin;
 
 	virtual void PlayEndOfMatchMessage() override;
+	virtual void DefaultTimer() override;
 
 	UPROPERTY(BlueprintReadOnly)
 		int32 FlagPickupDelay;
@@ -100,9 +98,7 @@ class UNREALTOURNAMENT_API AUTCTFRoundGame : public AUTCTFBaseGame
 	/** Update tiebreaker value based on new round bonus. Tiebreaker is positive if Red is ahead, negative if blue is ahead. */
 	virtual void UpdateTiebreak(int32 Bonus, int32 TeamIndex);
 
-	virtual void RemoveLosers(int32 LoserTeam, int32 FlagTeam);
-
-	virtual void AnnounceWin(AUTTeamInfo* WinningTeam, uint8 Reason);
+	virtual void AnnounceWin(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 Reason);
 
 	virtual void CheckRoundTimeVictory();
 
@@ -131,11 +127,13 @@ class UNREALTOURNAMENT_API AUTCTFRoundGame : public AUTCTFBaseGame
 	virtual void CheckGameTime() override;
 	virtual void HandleMatchIntermission() override;
 	virtual void ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType) override;
+	virtual void HandleRollingAttackerRespawn(AUTPlayerState* OtherPS);
 	virtual float AdjustNearbyPlayerStartScore(const AController* Player, const AController* OtherController, const ACharacter* OtherCharacter, const FVector& StartLoc, const APlayerStart* P) override;
 	virtual bool SkipPlacement(AUTCharacter* UTChar) override;
 	virtual void EndPlayerIntro() override;
 	virtual void InitGameState() override;
 	virtual void SetPlayerStateInactive(APlayerState* NewPlayerState) override;
+	virtual float GetScoreForXP(class AUTPlayerState* PS) override;
 
 	virtual void EndTeamGame(AUTTeamInfo* Winner, FName Reason);
 

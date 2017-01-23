@@ -103,7 +103,6 @@ void AUTWeaponLocker::SetWeaponList(TArray<FWeaponLockerItem> InList)
 			{
 				if (OtherItem.WeaponType == NewItem.WeaponType)
 				{
-					OtherItem.ExtraAmmo += NewItem.ExtraAmmo;
 					bFound = true;
 					break;
 				}
@@ -283,16 +282,14 @@ void AUTWeaponLocker::GiveTo_Implementation(APawn* Target)
 		for (const FWeaponLockerItem& Item : WeaponList)
 		{
 			AUTInventory* Existing = P->FindInventoryType(Item.WeaponType, true);
-			if (Existing == NULL || !Existing->StackPickup(nullptr))
+			if (Existing == NULL || !Existing->StackLockerPickup(nullptr))
 			{
 				FActorSpawnParameters Params;
 				Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 				Params.Instigator = P;
-				P->AddInventory(GetWorld()->SpawnActor<AUTInventory>(Item.WeaponType, GetActorLocation(), GetActorRotation(), Params), true);
-			}
-			if (Item.ExtraAmmo != 0)
-			{
-				P->AddAmmo(FStoredAmmo{Item.WeaponType, Item.ExtraAmmo});
+				AUTInventory* NewInventory = GetWorld()->SpawnActor<AUTInventory>(Item.WeaponType, GetActorLocation(), GetActorRotation(), Params);
+				NewInventory->bFromLocker = true;
+				P->AddInventory(NewInventory, true);
 			}
 
 			//Add to the stats pickup count
@@ -308,7 +305,7 @@ void AUTWeaponLocker::GiveTo_Implementation(APawn* Target)
 						PS->Team->ModifyStatsValue(Inventory->StatsNameCount, 1);
 					}
 
-					AUTGameState* GS = Cast<AUTGameState>(GetWorld()->GameState);
+					AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 					if (GS != nullptr)
 					{
 						GS->ModifyStatsValue(Inventory->StatsNameCount, 1);
@@ -345,7 +342,7 @@ void AUTWeaponLocker::PlayTakenEffects(bool bReplicate)
 		}
 		for (const FWeaponLockerItem& Item : WeaponList)
 		{
-			TakenSound = (Item.WeaponType != NULL) ? TakenSound = Item.WeaponType->GetDefaultObject<AUTWeapon>()->PickupSound : GetClass()->GetDefaultObject<AUTPickupInventory>()->TakenSound;
+			TakenSound = (Item.WeaponType != NULL) ? TakenSound = Item.WeaponType->GetDefaultObject<AUTWeapon>()->PickupSound : GetClass()->GetDefaultObject<AUTPickup>()->TakenSound;
 			UUTGameplayStatics::UTPlaySound(GetWorld(), TakenSound, this, SRT_None, false, FVector::ZeroVector, NULL, NULL, false);
 		}
 	}
@@ -372,7 +369,25 @@ void AUTWeaponLocker::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 float AUTWeaponLocker::BotDesireability_Implementation(APawn* Asker, AController* RequestOwner, float TotalDistance)
 {
-	return IsTaken(Asker) ? 0.0f : 1.0f; // FIXME: real rating
+	AUTCharacter* UTC = Cast<AUTCharacter>(Asker);
+	if (IsTaken(Asker) || UTC == nullptr)
+	{
+		return 0.0f;
+	}
+	else
+	{
+		// FIXME: accumulate real rating
+		// for now, want if would gain weapon or significant ammo
+		for (const FWeaponLockerItem& Item : WeaponList)
+		{
+			AUTWeapon* Existing = Cast<AUTWeapon>(UTC->FindInventoryType(Item.WeaponType, true));
+			if (Existing == nullptr || Existing->Ammo < Item.WeaponType.GetDefaultObject()->Ammo / 2)
+			{
+				return 1.0f;
+			}
+		}
+		return 0.0f;
+	}
 }
 float AUTWeaponLocker::DetourWeight_Implementation(APawn* Asker, float TotalDistance)
 {

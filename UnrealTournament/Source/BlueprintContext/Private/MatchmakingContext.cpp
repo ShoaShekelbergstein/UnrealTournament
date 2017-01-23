@@ -126,8 +126,7 @@ void UMatchmakingContext::StartMatchmaking(int32 InPlaylistId)
 			int32 MaxPartySize = 0;
 			if (!GameInstance->GetPlaylistManager()->GetMaxTeamInfoForPlaylist(InPlaylistId, TeamCount, TeamSize, MaxPartySize))
 			{
-				// Playlist probably doesn't exist :/ Show an error dialog
-				LocalPlayer->MessageBox(LOCTEXT("NoPlaylistTitle", "Invalid Playlist"), LOCTEXT("NoPlaylist", "This playlist doesn't exist, please choose another."));
+				LocalPlayer->MessageBox(LOCTEXT("NoPlaylistTitle", "Match-Making Unavailable"), LOCTEXT("NoPlaylist", "The match-making system is currently offline.  Please try again later or use the server browser to find a match."));
 				return;
 			}
 

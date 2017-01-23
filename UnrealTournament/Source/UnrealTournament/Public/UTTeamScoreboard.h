@@ -24,6 +24,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		bool bUseRoundKills;
 
+	UPROPERTY()
+		int32 PendingScore;
+
+	UPROPERTY()
+		float RedScoreScaling;
+
+	UPROPERTY()
+		float BlueScoreScaling;
+
 protected:
 	virtual void DrawTeamPanel(float RenderDelta, float& YOffset);
 	virtual void DrawPlayerScores(float RenderDelta, float& DrawY);

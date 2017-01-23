@@ -2,7 +2,6 @@
 #include "UnrealTournament.h"
 #include "UTHUDWidget_CTFFlagStatus.h"
 #include "UTCTFGameState.h"
-#include "UTSecurityCameraComponent.h"
 
 UUTHUDWidget_CTFFlagStatus::UUTHUDWidget_CTFFlagStatus(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -114,7 +113,14 @@ void UUTHUDWidget_CTFFlagStatus::DrawFlagStatus(AUTCTFGameState* GameState, FVec
 		
 			if (FlagHolder)
 			{
-				FlagHolderNameTemplate.Text = ((FlagHolder == UTHUDOwner->UTPlayerOwner->UTPlayerState) && !bAlwaysDrawFlagHolderName) ? YouHaveFlagText : FText::FromString(FlagHolder->PlayerName);
+				if (bAlwaysDrawFlagHolderName)
+				{
+					FlagHolderNameTemplate.Text = FText::FromString(FlagHolder->PlayerName);
+				}
+				else
+				{
+					FlagHolderNameTemplate.Text = (FlagHolder == UTHUDOwner->UTPlayerOwner->UTPlayerState) ? YouHaveFlagText : FText::GetEmpty();
+				}
 				RenderObj_Text(FlagHolderNameTemplate, IndicatorPosition);
 			}
 
@@ -131,7 +137,7 @@ void UUTHUDWidget_CTFFlagStatus::DrawFlagStatus(AUTCTFGameState* GameState, FVec
 			{
 				RenderObj_TextureAt(DroppedIconTemplate, XPos, YPos, 1.5f*AppliedStatusScale*DroppedIconTemplate.GetWidth(), 1.5f*AppliedStatusScale *DroppedIconTemplate.GetHeight());
 				UFont* TinyFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->TinyFont;
-				DrawText(GetFlagReturnTime(Flag), XPos, YPos, TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 2.f*AppliedStatusScale, 1.f, FLinearColor::White, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);
+				DrawText(GetFlagReturnTime(Flag), XPos, YPos, TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 2.f*AppliedStatusScale, UTHUDOwner->GetHUDWidgetOpacity(), FLinearColor::White, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);
 			}
 		}
 	}

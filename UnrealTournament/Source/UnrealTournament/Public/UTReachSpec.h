@@ -73,4 +73,19 @@ class UNREALTOURNAMENT_API UUTReachSpec : public UObject
 	{
 		return false;
 	}
+
+public:
+	inline bool IsDisabledByFailures() const
+	{
+		return RepeatFailCount > 3 || GetTypedOuter<UWorld>()->TimeSeconds - TemporaryDisableTime < 10.0f;
+	}
+	void DisableDueToFailure()
+	{
+		RepeatFailCount++;
+		TemporaryDisableTime = GetTypedOuter<UWorld>()->TimeSeconds;
+	}
+protected:
+	float TemporaryDisableTime;
+	UPROPERTY()
+	int32 RepeatFailCount;
 };

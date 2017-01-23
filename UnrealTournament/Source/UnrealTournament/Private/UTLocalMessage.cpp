@@ -5,6 +5,7 @@
 #include "Engine/Console.h"
 #include "UTLocalMessage.h"
 #include "UTHUD.h"
+#include "UTLineUpHelper.h"
 #include "UTAnnouncer.h"
 #include "Engine/DemoNetDriver.h"
 
@@ -24,6 +25,7 @@ UUTLocalMessage::UUTLocalMessage(const class FObjectInitializer& ObjectInitializ
 	FontSizeIndex = 2;
 	bPlayDuringIntermission = true;
 	bCombineEmphasisText = false;
+	bPlayDuringInstantReplay = true;
 }
 
 bool UUTLocalMessage::IsOptionalSpoken(int32 MessageIndex) const
@@ -31,7 +33,7 @@ bool UUTLocalMessage::IsOptionalSpoken(int32 MessageIndex) const
 	return bOptionalSpoken;
 }
 
-int32 UUTLocalMessage::GetFontSizeIndex(int32 MessageIndex) const
+int32 UUTLocalMessage::GetFontSizeIndex(int32 MessageIndex, bool bTargetsLocalPlayer) const
 {
 	return FontSizeIndex;
 }
@@ -230,7 +232,7 @@ FName UUTLocalMessage::GetAnnouncementName_Implementation(int32 Switch, const UO
 
 float UUTLocalMessage::GetAnnouncementSpacing_Implementation(int32 Switch, const UObject* OptionalObject) const
 {
-	return 0.2f;
+	return 0.1f;
 }
 
 USoundBase* UUTLocalMessage::GetAnnouncementSound_Implementation(int32 Switch, const UObject* OptionalObject) const

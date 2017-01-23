@@ -4,6 +4,7 @@
 
 #include "UTCTFFlag.h"
 #include "UTFlagReturnTrail.h"
+#include "UTCTFFlagBase.h"
 #include "UTGauntletFlag.generated.h"
 
 UCLASS()
@@ -31,7 +32,7 @@ public:
 	UPROPERTY(Replicated)
 	float SwapTimer;
 
-	void Tick(float DeltaSeconds);
+	virtual void Tick(float DeltaTime) override;	
 	virtual void ChangeState(FName NewCarriedObjectState);
 	virtual void PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir);
 
@@ -54,11 +55,15 @@ public:
 	virtual void Destroyed();
 	virtual void SendHome();
 
+	virtual void FinalRestingPlace(AUTCTFFlagBase* NewBase);
+
 	UPROPERTY()
 	bool bDebugGPS;
 
 	UPROPERTY()
 	bool bDisableGPS;
+
+	virtual void BeginPlay();
 
 
 protected:

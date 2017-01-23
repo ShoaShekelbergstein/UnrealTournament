@@ -473,6 +473,10 @@ void AUTBasePlayerController::StartGUIDJoin()
 		OnCancelGUIDFindSessionCompleteDelegateHandle = OnlineSessionInterface->AddOnCancelFindSessionsCompleteDelegate_Handle(OnCancelGUIDFindSessionCompleteDelegate);
 		OnlineSessionInterface->CancelFindSessions();
 	}
+	else
+	{
+		UE_LOG(UT,Warning,TEXT("Not in a proper session.  Things will be broken."));
+	}
 }
 
 void AUTBasePlayerController::OnCancelGUIDFindSessionComplete(bool bWasSuccessful)
@@ -488,6 +492,11 @@ void AUTBasePlayerController::OnCancelGUIDFindSessionComplete(bool bWasSuccessfu
 		OnlineSessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(OnFindGUIDSessionCompleteDelegateHandle);
 		AttemptGUIDJoin();
 	}
+	else
+	{
+		UE_LOG(UT,Warning,TEXT("Did not have valid search settings after a cancel.  Things will be broken."));
+	}
+
 }
 
 
@@ -517,16 +526,16 @@ void AUTBasePlayerController::AttemptGUIDJoin()
 
 		TSharedRef<FUTOnlineGameSearchBase> SearchSettingsRef = GUIDSessionSearchSettings.ToSharedRef();
 
-		if (OnlineSessionInterface.IsValid())
-		{
-			OnlineSessionInterface->CancelFindSessions();				
-		}
-
 		OnFindGUIDSessionCompleteDelegate.BindUObject(this, &AUTBasePlayerController::OnFindSessionsComplete);
 		OnFindGUIDSessionCompleteDelegateHandle = OnlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(OnFindGUIDSessionCompleteDelegate);
 
 		OnlineSessionInterface->FindSessions(0, SearchSettingsRef);
 	}
+	else
+	{
+		UE_LOG(UT,Warning,TEXT("No Session to Join.  Things will be broken."));
+	}
+
 }
 
 void AUTBasePlayerController::OnFindSessionsComplete(bool bWasSuccessful)
@@ -950,6 +959,8 @@ void AUTBasePlayerController::ServerReceiveStatsID_Implementation(const FString&
 	{
 		if (NewStatsID != UTPlayerState->StatsID)
 		{
+			UE_LOG(LogOnlineParty, Display, TEXT("%s sent stats id %s"), *UTPlayerState->PlayerName, *NewStatsID);
+
 			UTPlayerState->StatsID = NewStatsID;
 			UTPlayerState->ReadStatsFromCloud();
 			UTPlayerState->ReadMMRFromBackend();
@@ -1150,11 +1161,10 @@ void AUTBasePlayerController::ImportKeyBinds()
 
 void AUTBasePlayerController::MarkTutorialAsCompleted(int32 TutorialMask)
 {
-	UUTProfileSettings* ProfileSettings = GetProfileSettings();
-	if (TutorialMask > 0 && ProfileSettings != nullptr)
+	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
+	if (LocalPlayer)
 	{
-		ProfileSettings->TutorialMask |= TutorialMask;
-		SaveProfileSettings();
+		LocalPlayer->SetTutorialFinished(TutorialMask);
 	}
 }
 
@@ -1187,13 +1197,14 @@ bool AUTBasePlayerController::SkipTutorialCheck()
 	return false;
 }
 
-void AUTBasePlayerController::SetLoadingMovieToPlay(const FString& MoviePath)
+void AUTBasePlayerController::SetLoadingMovieToPlay(const FString& MoviePath, bool bSuppressLoadingText)
 {
 #if !UE_SERVER
 	UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(GetGameInstance());
 	if (!MoviePath.IsEmpty() && UTGameInstance)
 	{
 		UTGameInstance->LoadingMovieToPlay = MoviePath;
+		UTGameInstance->bSuppressLoadingText =  bSuppressLoadingText;
 	}
 #endif
 	
@@ -1207,4 +1218,42 @@ void AUTBasePlayerController::UTDumpOnlineSessionState()
 void AUTBasePlayerController::UTDumpPartyState()
 {
 	UOnlineEngineInterface::Get()->DumpPartyState(GetWorld());
+}
+
+void AUTBasePlayerController::LaunchTutorial(FName TutorialName)
+{
+	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
+	if (LocalPlayer)
+	{
+		LocalPlayer->LaunchTutorial(TutorialName);
+	}
+}
+
+void AUTBasePlayerController::NextTutorial()
+{
+	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
+	if (LocalPlayer)
+	{
+		LocalPlayer->NextTutorial();
+	}
+}
+
+void AUTBasePlayerController::RepeatTutorial()
+{
+	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
+	if (LocalPlayer)
+	{
+		LocalPlayer->RestartTutorial();
+	}
+}
+
+FText AUTBasePlayerController::GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const
+{
+	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
+	if (LocalPlayer)
+	{
+		return LocalPlayer->GetTutorialSectionText(Section);
+	}
+
+	return FText::GetEmpty();
 }

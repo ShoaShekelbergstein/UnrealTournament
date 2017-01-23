@@ -4,6 +4,7 @@
 #include "SUTControlSettingsDialog.h"
 #include "../SUWindowsStyle.h"
 #include "../SKeyBind.h"
+#include "SScrollBox.h"
 
 #if !UE_SERVER
 
@@ -37,14 +38,14 @@ void SUTControlSettingsDialog::Construct(const FArguments& InArgs)
 				.AutoHeight()
 				[
 					SNew(SBox)
-					.HeightOverride(46)
+					.HeightOverride(55)
 					[
 						SNew(SHorizontalBox)
 						+ SHorizontalBox::Slot()
 						.FillWidth(1.0f)
 						[
 							SNew(SImage)
-							.Image(SUWindowsStyle::Get().GetBrush("UT.TopMenu.MidFill"))
+							.Image(SUTStyle::Get().GetBrush("UT.HeaderBackground.Dark"))
 						]
 					]
 				]
@@ -57,7 +58,7 @@ void SUTControlSettingsDialog::Construct(const FArguments& InArgs)
 				.AutoHeight()
 				[
 					SNew(SBox)
-					.HeightOverride(46)
+					.HeightOverride(55)
 					[
 						SNew(SHorizontalBox)
 		
@@ -67,10 +68,10 @@ void SUTControlSettingsDialog::Construct(const FArguments& InArgs)
 						[
 							SAssignNew(KeyboardSettingsTabButton, SUTTabButton)
 							.ContentPadding(FMargin(15.0f, 10.0f, 70.0f, 0.0f))
-							.ButtonStyle(SUWindowsStyle::Get(), "UT.TopMenu.OptionTabButton")
-							.ClickMethod(EButtonClickMethod::MouseDown)
+							.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
+							.IsToggleButton(true)
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 							.Text(NSLOCTEXT("SUTControlSettingsDialog", "ControlTabKeyboard", "Keyboard"))
-							.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.SmallTextStyle")
 							.OnClicked(this, &SUTControlSettingsDialog::OnTabClickKeyboard)
 						]
 
@@ -79,9 +80,9 @@ void SUTControlSettingsDialog::Construct(const FArguments& InArgs)
 						[
 							SAssignNew(MouseSettingsTabButton, SUTTabButton)
 							.ContentPadding(FMargin(15.0f, 10.0f, 70.0f, 0.0f))
-							.ButtonStyle(SUWindowsStyle::Get(), "UT.TopMenu.OptionTabButton")
-							.ClickMethod(EButtonClickMethod::MouseDown)
-							.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.SmallTextStyle")
+							.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
+							.IsToggleButton(true)
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 							.Text(NSLOCTEXT("SUTControlSettingsDialog", "ControlTabMouse", "Mouse"))
 							.OnClicked(this, &SUTControlSettingsDialog::OnTabClickMouse)
 						]
@@ -91,9 +92,9 @@ void SUTControlSettingsDialog::Construct(const FArguments& InArgs)
 						[
 							SAssignNew(MovementSettingsTabButton, SUTTabButton)
 							.ContentPadding(FMargin(15.0f, 10.0f, 70.0f, 0.0f))
-							.ButtonStyle(SUWindowsStyle::Get(), "UT.TopMenu.OptionTabButton")
-							.ClickMethod(EButtonClickMethod::MouseDown)
-							.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.SmallTextStyle")
+							.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
+							.IsToggleButton(true)
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 							.Text(NSLOCTEXT("SUTControlSettingsDialog", "ControlTabMovement", "Movement"))
 							.OnClicked(this, &SUTControlSettingsDialog::OnTabClickMovement)
 						]
@@ -206,7 +207,7 @@ TSharedRef<SWidget> SUTControlSettingsDialog::BuildKeyboardTab()
 	[
 		SNew(SBox).HeightOverride(700)
 		[
-			SNew(SScrollBox)
+			SAssignNew(ScrollBox, SScrollBox)
 			.Orientation(Orient_Vertical)
 			+SScrollBox::Slot().Padding(0.0f,5.0f,0.0f,0.0f)
 			[
@@ -277,6 +278,7 @@ TSharedRef<SWidget> SUTControlSettingsDialog::BuildKeyboardTab()
 							SNew(STextBlock)
 							.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
 							.Text(Bind->KeyConfig->MenuText)
+							.ColorAndOpacity(TAttribute<FSlateColor>::Create(TAttribute<FSlateColor>::FGetter::CreateSP(this, &SUTControlSettingsDialog::GetLabelColorAndOpacity, Bind)))
 						]
 						+ SHorizontalBox::Slot()
 						.Padding(10.0f, 4.0f, 10.0f, 4.0f)
@@ -317,6 +319,20 @@ TSharedRef<SWidget> SUTControlSettingsDialog::BuildKeyboardTab()
 	}
 	return KeyboardBox.ToSharedRef();
 }
+
+FSlateColor SUTControlSettingsDialog::GetLabelColorAndOpacity(TSharedPtr<FKeyBindTracker> Tracker) const
+{
+	if (Tracker.IsValid())
+	{
+		if (Tracker->PrimaryKeyBindWidget.IsValid() && Tracker->PrimaryKeyBindWidget->GetKey() == EKeys::Invalid &&
+			Tracker->SecondaryKeyBindWidget.IsValid() && Tracker->SecondaryKeyBindWidget->GetKey() == EKeys::Invalid)
+		{
+			return FSlateColor(FLinearColor::Yellow);
+		}
+	}
+	return FSlateColor(FLinearColor::White);
+}
+
 
 TSharedRef<SWidget> SUTControlSettingsDialog::BuildMouseTab()
 {
@@ -716,7 +732,7 @@ TSharedRef<SWidget> SUTControlSettingsDialog::BuildMovementTab()
 				[
 					SNew(STextBlock)
 					.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
-					.Text(NSLOCTEXT("SUTControlSettingsDialog", "Slide From Crouch", "Crouch button will trigger slide if moving."))
+					.Text(NSLOCTEXT("SUTControlSettingsDialog", "Slide From Crouch", "Crouch button will trigger slide if moving"))
 				]
 			]
 			+ SHorizontalBox::Slot()
@@ -757,6 +773,12 @@ FReply SUTControlSettingsDialog::OKClick()
 		if (BindList[i]->PrimaryKeyBindWidget->GetKey() == EKeys::Invalid &&
 			BindList[i]->SecondaryKeyBindWidget->GetKey() == EKeys::Invalid)
 		{
+
+			if (ScrollBox.IsValid())
+			{
+				ScrollBox->ScrollDescendantIntoView(BindList[i]->PrimaryKeyBindWidget, false, SScrollBox::EDescendantScrollDestination::IntoView);
+			}
+
 			GetPlayerOwner()->ShowMessage
 					(
 						NSLOCTEXT("SUTControlSettingsDialog", "EmptyBindingTitle", "Missing Key"),

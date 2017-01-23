@@ -130,7 +130,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		FText ScoreMessageText;
 
-	virtual void DrawWinConditions(UFont* InFont, float XPos, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage);
+	virtual float DrawWinConditions(UFont* InFont, float XPos, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage, bool bSkipDrawing = false);
 
 	// The Global Opacity for Hud Widgets
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
@@ -151,6 +151,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = HUD)
 		class UUTHUDWidgetMessage_KillIconMessages* KillIconWidget;
+
+	UPROPERTY(BlueprintReadOnly, Category = HUD)
+		class UUTHUDWidgetAnnouncements* AnnouncementWidget;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = HUD)
 		FVector2D ScoreboardKillFeedPosition;
@@ -263,6 +266,9 @@ public:
 	// We override PostRender so that we can cache bunch of vars that need caching.
 	virtual void PostRender();
 
+	/** Whether scoreboard should be displayed this tick. */
+	virtual bool ScoreboardIsUp();
+
 	/** Primary draw call for the HUD */
 	virtual void DrawHUD() override;
 
@@ -363,6 +369,12 @@ public:
 	/** Set true to force weapon bar to immediately update. */
 	UPROPERTY()
 	bool bHUDWeaponBarSettingChanged;
+
+	UPROPERTY()
+		float MiniMapIconAlpha;
+
+	UPROPERTY()
+		float MiniMapIconMuting;
 
 	// Allows the user to override the scaling factor for their hud.
 	UFUNCTION(BlueprintCallable, Category=HUD)
@@ -479,6 +491,15 @@ public:
 
 	UPROPERTY()
 		FText BoostLabel;
+
+	UPROPERTY()
+		FText GroupTauntLabel;
+
+	UPROPERTY()
+		FText TauntOneLabel;
+
+	UPROPERTY()
+		FText TauntTwoLabel;
 
 	UPROPERTY()
 		FText ShowScoresLabel;
@@ -639,8 +660,11 @@ public:
 
 protected:
 
+	UPROPERTY()
 	TArray<UUTRadialMenu*> RadialMenus;
+	UPROPERTY()
 	UUTRadialMenu_Coms* ComsMenu;
+	UPROPERTY()
 	UUTRadialMenu_WeaponWheel* WeaponWheel;
 
 public:
@@ -648,6 +672,7 @@ public:
 	/**
 	 *	returns true if a given umg widget is active on the stack
 	 **/
+
 	bool IsUMGWidgetActive(TWeakObjectPtr<UUTUMGHudWidget> TestWidget);
 
 	/**
@@ -662,6 +687,9 @@ public:
 	virtual void DeactivateUMGHudWidget(FString UMGHudWidgetClassName);
 	virtual void DeactivateActualUMGHudWidget(TWeakObjectPtr<UUTUMGHudWidget> WidgetToDeactivate);
 
+	/**/
+	virtual void ClearAllUMGWidgets();
+
 	/**
 	 *	Look up the crosshair information for a given weapon.  Returns the default object for the crosshair and passes out 
 	 *  the customization info.
@@ -671,6 +699,9 @@ public:
 
 	virtual void DrawActorOverlays(FVector Viewpoint, FRotator ViewRotation) override;
 
+	/** Holds the atlats that make up the base character portraits*/
+	UPROPERTY()
+	UTexture2D* CharacterPortraitAtlas;
 
 protected:
 	TArray<TWeakObjectPtr<UUTUMGHudWidget>> UMGHudWidgetStack;

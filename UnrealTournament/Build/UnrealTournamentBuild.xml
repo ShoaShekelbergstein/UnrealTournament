@@ -70,7 +70,7 @@
 
 	<Agent Name="Build UnrealTournament Editor Win64" Type="CompileWin64">
 		<Node Name="Update Version Files">
-			<SetVersion Change="$(Change)" Branch="$(EscapedBranch)" If="$(IsBuildMachine)"/>
+			<SetVersion Change="$(Change)" CompatibleChange="$(CodeChange)" Branch="$(EscapedBranch)" If="$(IsBuildMachine)"/>
 		</Node>
 		<Node Name="Compile UnrealHeaderTool Win64" Requires="Update Version Files">
 			<Compile Target="UnrealHeaderTool" Platform="Win64" Configuration="Development" Arguments="-precompile"/>
@@ -118,6 +118,16 @@
 	</Agent>
 	
 	<Agent Name="Make Windows Builds" Type="Win64">
+		<Node Name="Cook WindowsServer" Requires="Compile UnrealTournamentEditor Win64;Compile Tools Windows" NotifyOnWarnings="false">
+			<Cook Project="$(ProjectFile)" Platform="WindowsServer"/>
+		</Node>
+		<Node Name="Stage Windows Server Win64" Requires="Compile UT Server Win64;Cook WindowsServer">
+			<Command Name="UnrealTournamentProto_BasicBuild" Arguments="-SkipBuild -SkipCook -Chunk -clientconfig=None -serverconfig=Shipping -TargetPlatform=Win64 -StagingDir=&quot;$(LocalStagingDir)&quot;"/>
+		</Node>
+		<Node Name="Publish WindowsServer Win64" Requires="Stage Windows Server Win64">
+			<Copy Files="..." From="$(LocalStagingDir)/WindowsServer" To="$(BuildDir)/WindowsServer"/>
+			<SymStore Files="#Compile UT Server Win64" StoreDir="$(WindowsSymbolsDir)" Product="UnrealTournamentServer" Platform="Win64" If="$(EnableSymStore)"/>
+		</Node>
 		<Node Name="Cook WindowsNoEditor" Requires="Compile UnrealTournamentEditor Win64;Compile Tools Windows" NotifyOnWarnings="false">
 			<Cook Project="$(ProjectFile)" Platform="WindowsNoEditor"/>
 		</Node>
@@ -140,11 +150,12 @@
 			<Tag Files="#ToSign" Filter="*.exe;*.dll" With="#ToSign_Trimmed"/>
 			<Sign Files="#ToSign_Trimmed" If="$(IsBuildMachine)"/>
 		</Node>
-		<Node Name="Chunk WindowsNoEditor" Requires="Stage WindowsNoEditor" Token="$(BuildDir)/WindowsNoEditor/WindowsNoEditor-Win32.token">
+		<Node Name="Chunk WindowsNoEditor" Requires="Stage WindowsNoEditor; Stage Windows Server Win64" Token="$(BuildDir)/WindowsNoEditor/WindowsNoEditor-Win32.token">
+			<Copy Files="..." From="$(LocalStagingDir)/WindowsServer" To="$(LocalStagingDir)/WindowsNoEditor/WindowsServer"/>
 			<Tag Files="$(LocalStagingDir)/WindowsNoEditor/Engine/Binaries/.../Win32/...;$(LocalStagingDir)/WindowsNoEditor/UnrealTournament/Binaries/.../Win32/..." Except="*.pdb" With="#Win32Binaries"/>
-			<Tag Files="$(LocalStagingDir)/WindowsNoEditor/Engine/Binaries/.../Win64/...;$(LocalStagingDir)/WindowsNoEditor/UnrealTournament/Binaries/.../Win64/..." Except="*.pdb" With="#Win64Binaries"/>
+			<Tag Files="$(LocalStagingDir)/WindowsNoEditor/Engine/Binaries/.../Win64/...;$(LocalStagingDir)/WindowsNoEditor/UnrealTournament/Binaries/.../Win64/...;$(LocalStagingDir)/WindowsNoEditor/WindowsServer/..." Except="*.pdb" With="#Win64Binaries"/>
 			<Tag Files="$(LocalStagingDir)/WindowsNoEditor/..." Except="#Win32Binaries;#Win64Binaries;*.pdb" With="#StagingDir"/>
-			
+      
 			<Property Name="Win32Launch" Value="Engine/Binaries/Win32/UE4-Win32-Shipping.exe"/>
 			<Property Name="Win64Launch" Value="Engine/Binaries/Win64/UE4-Win64-Shipping.exe"/>
 			<Property Name="LaunchArgs" Value="UnrealTournament"/>
@@ -163,32 +174,19 @@
 			<LabelBuild AppName="$(AppName)" BuildVersion="$(BuildVersion)" Platform="Windows" Label="$(LabelName)" McpConfig="$(McpConfig)"/>
 		</Node>
 		<Node Name="Publish WindowsNoEditor" Requires="Stage WindowsNoEditor">
-			<Copy Files="..." FromDir="$(LocalStagingDir)/WindowsNoEditor" ToDir="$(BuildDir)/WindowsNoEditor"/>
-			<SymStore Files="#Compile UT Client Win32" StoreDir="$(WindowsSymbolsDir)" Product="UnrealTournament" If="$(EnableSymStore)"/>
-			<SymStore Files="#Compile UT Client Win64" StoreDir="$(WindowsSymbolsDir)" Product="UnrealTournament" If="$(EnableSymStore)"/>
+			<Copy Files="..." From="$(LocalStagingDir)/WindowsNoEditor" To="$(BuildDir)/WindowsNoEditor"/>
+			<SymStore Files="#Compile UT Client Win32" StoreDir="$(WindowsSymbolsDir)" Product="UnrealTournament" Platform="Win32" If="$(EnableSymStore)"/>
+			<SymStore Files="#Compile UT Client Win64" StoreDir="$(WindowsSymbolsDir)" Product="UnrealTournament" Platform="Win64" If="$(EnableSymStore)"/>
 		</Node>
 	</Agent>
 	
-	<Agent Name="Make Windows Server Build" Type="Win64">
-		<Node Name="Cook WindowsServer" Requires="Compile UnrealTournamentEditor Win64;Compile Tools Windows" NotifyOnWarnings="false">
-			<Cook Project="$(ProjectFile)" Platform="WindowsServer"/>
-		</Node>
-		<Node Name="Stage Windows Server Win64" Requires="Compile UT Server Win64;Cook WindowsServer">
-			<Command Name="UnrealTournamentProto_BasicBuild" Arguments="-SkipBuild -SkipCook -Chunk -clientconfig=None -serverconfig=Shipping -TargetPlatform=Win64 -StagingDir=&quot;$(LocalStagingDir)&quot;"/>
-		</Node>
-		<Node Name="Publish WindowsServer Win64" Requires="Stage Windows Server Win64">
-			<Copy Files="..." FromDir="$(LocalStagingDir)/WindowsServer" ToDir="$(BuildDir)/WindowsServer"/>
-			<SymStore Files="#Compile UT Server Win64" StoreDir="$(WindowsSymbolsDir)" Product="UnrealTournamentServer" If="$(EnableSymStore)"/>
-		</Node>
-	</Agent>
-
 	<Agent Name="Make Windows Editor Build" Type="Win64">
 		<Node Name="Copy Editor Win64" Requires="Compile Tools Windows">
 			<Property Name="EngineReceiptsDir" Value="$(RootDir)/Engine/Binaries/Win64"/>
 			<Property Name="UTReceiptsDir" Value="$(RootDir)/UnrealTournament/Binaries/Win64"/>
 			
 			<TagReceipt Files="$(UTReceiptsDir)/UnrealTournamentEditor.target;$(EngineReceiptsDir)/UnrealEngineLauncherProxy.target;$(EngineReceiptsDir)/CrashReportClient-Win64-Shipping.target;$(EngineReceiptsDir)/ShaderCompileWorker.target;$(EngineReceiptsDir)/UnrealCEFSubProcess.target;$(EngineReceiptsDir)/UnrealLightmass.target;$(EngineReceiptsDir)/UnrealPak.target;$(EngineReceiptsDir)/BootstrapPackagedGame-Win64-Shipping.target" ProjectDir="$(RootDir)/UnrealTournament" BuildProducts="true" RuntimeDependencies="true" With="#TargetsToCopy"/>
-			<Tag Files="#TargetsToCopy" Except=".../*-Simplygon*;.../*-DDCUtils*;.../*-HTML5*.dylib;.../UnrealFrontend*;.../UnrealHeaderTool*;.../ARM/...;.../ImgTec/...;.../IntelISPCTexComp/...;.../Perforce/...;.../Qualcomm/...;.../svn/...;.../PhysX/.../*.dll.pdb;.../PhysX/.../*.pdb" With="#TrimmedTargets"/>
+			<Tag Files="#TargetsToCopy" Except=".../*-Simplygon*;.../*-DDCUtils*;.../UnrealFrontend*;.../UnrealHeaderTool*;.../ARM/...;.../ImgTec/...;.../IntelISPCTexComp/...;.../Perforce/...;.../Qualcomm/...;.../svn/...;.../PhysX/.../*.dll.pdb;.../PhysX/.../*.pdb" With="#TrimmedTargets"/>
 			<Tag Files="$(EngineReceiptsDir)/*" Filter="*.target" With="#TrimmedTargets"/>
 			<Tag Files="$(UTReceiptsDir)/*" Filter="*.target" With="#TrimmedTargets"/>
 			
@@ -197,6 +195,7 @@
 			<Tag Files="$(RootDir)/Engine/Binaries/DotNET/AutomationScripts/NoRedist/UnrealTournament.Automation.dll" With="#TrimmedTargets"/>
 
 			<Tag Files="$(RootDir)/Engine/Binaries/Win64/AgentInterface.dll" With="#TrimmedTargets"/>
+      <Tag Files="$(RootDir)/Engine/Binaries/Win64/AgentInterface.dll" With="#TrimmedTargets"/>
 			
 			<Tag Files="$(RootDir)/Engine/Build/BatchFiles/*" With="#TrimmedTargets"/>
 			<Tag Files="$(RootDir)/Engine/Build/BatchFiles/BuilderScripts/..." With="#TrimmedTargets"/>
@@ -207,6 +206,8 @@
 			<Tag Files="$(RootDir)/Engine/Config/Windows/..." With="#TrimmedTargets"/>
 			
 			<Tag Files="$(RootDir)/Engine/Content/..." With="#TrimmedTargets"/>
+			<Tag Files="$(RootDir)/Engine/Plugins/.../Content/..." Except=".../NotForLicensees/...;.../EpicInternal/...;.../NoRedist/..." With="#TrimmedTargets"/>
+			<Tag Files="$(RootDir)/Engine/Plugins/Editor/PluginBrowser/Resources/..." With="#TrimmedTargets"/>
 			<Tag Files="$(RootDir)/Engine/Documentation/Source/Shared/..." With="#TrimmedTargets"/>
 			<Tag Files="$(RootDir)/Engine/Programs/..." Except=".../BuildPatchTool/...;.../UnrealBuildTool/...;.../UnrealGameSync/...;.../UnrealPak/...;.../UnrealFrontEnd/Profiles/...;.../UnrealHeaderTool/Saved/..." With="#TrimmedTargets"/>
 			<Tag Files="$(RootDir)/Engine/Shaders/..." With="#TrimmedTargets"/>
@@ -224,8 +225,10 @@
 			<Tag Files="$(RootDir)/UnrealTournament/Plugins/Online/NotForLicensees/OnlineSubsystemMcp/..." Filter="*.dll;*.uplugin" With="#FinalTrim"/>
 			<Tag Files="$(RootDir)/UnrealTournament/Plugins/NotForLicensees/Social/..." Filter="*.dll;*.uplugin" With="#FinalTrim"/>
       <Tag Files="$(RootDir)/UnrealTournament/Plugins/NotForLicensees/OnlineGameplayFramework/..." Filter="*.dll;*.uplugin" With="#FinalTrim"/>
-			
-			<Copy Files="#FinalTrim" FromDir="" ToDir="$(LocalStagingDir)/UT-Build/Win64"/>
+
+			<Copy Files="#FinalTrim" From="$(RootDir)" To="$(LocalStagingDir)/UT-Build/Win64"/>
+      <Copy Files="..." From="$(RootDir)/Engine/Binaries/ThirdParty/AppLocalDependencies/Win64/Microsoft.VC140.CRT" To="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64"/>
+      <Copy Files="..." From="$(RootDir)/Engine/Binaries/ThirdParty/AppLocalDependencies/Win64/UCRT" To="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64"/>
 			
 			<!-- Retag everything in the staged folder to sign it -->
 			<TagReceipt Files="$(UTReceiptsDir)/UnrealTournamentEditor.target;$(EngineReceiptsDir)/UnrealEngineLauncherProxy.target;$(EngineReceiptsDir)/CrashReportClient-Win64-Shipping.target;$(EngineReceiptsDir)/ShaderCompileWorker.target;$(EngineReceiptsDir)/UnrealCEFSubProcess.target;$(EngineReceiptsDir)/UnrealLightmass.target;$(EngineReceiptsDir)/UnrealPak.target;$(EngineReceiptsDir)/BootstrapPackagedGame-Win64-Shipping.target" ProjectDir="$(LocalStagingDir)/UT-Build/Win64/UnrealTournament" EngineDir="$(LocalStagingDir)/UT-Build/Win64/Engine" BuildProducts="true" RuntimeDependencies="false" With="#TargetsToSign"/>
@@ -233,8 +236,8 @@
 			<Sign Files="#TargetsToSign_Trimmed" If="$(IsBuildMachine)"/>
 		</Node>
 		<Node Name="EditorDDC Win64" Requires="Copy Editor Win64" NotifyOnWarnings="false">
-			<Copy Files="UE4Editor-DDCUtils.dll" FromDir="$(RootDir)/Engine/Binaries/Win64/NotForLicensees" ToDir="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64/NotForLicensees"/>
-			<Copy Files="EpicInternal.txt" FromDir="$(RootDir)/Engine/Build/NotForLicensees" ToDir="$(LocalStagingDir)/UT-Build/Win64/Engine/Build/NotForLicensees"/>
+			<Copy Files="UE4Editor-DDCUtils.dll" From="$(RootDir)/Engine/Binaries/Win64/NotForLicensees" To="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64/NotForLicensees"/>
+			<Copy Files="EpicInternal.txt" From="$(RootDir)/Engine/Build/NotForLicensees" To="$(LocalStagingDir)/UT-Build/Win64/Engine/Build/NotForLicensees"/>
 			<Commandlet Name="DerivedDataCache" Project="$(LocalStagingDir)/UT-Build/Win64/UnrealTournament/UnrealTournament.uproject" EditorExe="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64/UE4Editor.exe" Arguments="-TargetPlatform=Windows -fill -DDC=CreateInstalledEnginePak -Map=Example_Map"/>
 			<Delete Files="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64/NotForLicensees/UE4Editor-DDCUtils.dll" DeleteEmptyDirectories="true"/>
 			<Delete Files="$(LocalStagingDir)/UT-Build/Win64/Engine/Build/NotForLicensees/EpicInternal.txt" DeleteEmptyDirectories="true"/>
@@ -250,7 +253,7 @@
 			<LabelBuild AppName="$(EditorAppName)" BuildVersion="$(BuildVersion)" Platform="Windows" Label="$(LabelName)" McpConfig="$(McpConfig)"/>
 		</Node>
 		<Node Name="Publish Editor Win64" Requires="EditorDDC Win64">
-			<Copy Files="..." FromDir="$(LocalStagingDir)/UT-Build/Win64" ToDir="$(BuildDir)/WindowsEditor"/>
+			<Copy Files="..." From="$(LocalStagingDir)/UT-Build/Win64" To="$(BuildDir)/WindowsEditor"/>
 		</Node>
 	</Agent>	
 
@@ -266,8 +269,8 @@
 			<Tag Files="Engine/Source/...;Engine/Plugins/...;UnrealTournament/Source/...;UnrealTournament/Plugins/..." Filter="*.c;*.h;*.cpp;*.hpp;*.inl" Except="Engine/Source/ThirdParty/..." With="#SourceFiles" If="$(EnableSymStore)"/>
 			<SrcSrv BinaryFiles="#BinaryFiles" SourceFiles="#SourceFiles" Branch="$(Branch)" Change="$(Change)" If="'$(EnableSymStore)' == true And ('$(WithWindowsClients)' == true Or '$(WithWindowsClients)' == true)"/>
 			<SrcSrv BinaryFiles="#BinaryFiles_Server" SourceFiles="#SourceFiles" Branch="$(Branch)" Change="$(Change)" If="'$(EnableSymStore)' == true And '$(WithWin64Server)' == true"/>
-			<SymStore Files="#BinaryFiles" StoreDir="$(WindowsSymbolsDir)" Product="UnrealTournament" If="$(EnableSymStore) And ('$(WithWindowsClients)' == true Or '$(WithWindowsClients)' == true)"/>
-			<SymStore Files="#BinaryFiles_Server" StoreDir="$(WindowsSymbolsDir)" Product="UnrealTournament" If="$(EnableSymStore) And '$(WithWin64Server)' == true"/>
+			<SymStore Files="#BinaryFiles" StoreDir="$(WindowsSymbolsDir)" Product="UnrealTournament" Platform="Win64" If="$(EnableSymStore) And ('$(WithWindowsClients)' == true Or '$(WithWindowsClients)' == true)"/>
+			<SymStore Files="#BinaryFiles_Server" StoreDir="$(WindowsSymbolsDir)" Product="UnrealTournament" Platform="Win64" If="$(EnableSymStore) And '$(WithWin64Server)' == true"/>
 		</Node>
 	</Agent>
 
@@ -332,7 +335,7 @@
 			<LabelBuild AppName="$(AppName)" BuildVersion="$(BuildVersion)" Platform="Mac" Label="$(LabelName)" McpConfig="$(McpConfig)"/>
 		</Node>
 		<Node Name="Publish Mac" Requires="Stage Mac">
-			<Copy Files="..." FromDir="$(LocalStagingDir)/MacNoEditor" ToDir="$(BuildDir)/MacNoEditor"/>
+			<Copy Files="..." From="$(LocalStagingDir)/MacNoEditor" To="$(BuildDir)/MacNoEditor"/>
 		</Node>
 	</Agent>
 
@@ -350,8 +353,7 @@
             <TagReceipt Files="$(EngineReceiptsDir)/UnrealAtoS.target" EngineDir="$(RootDir)/Engine" ProjectDir="$(RootDir)/UnrealTournament" BuildProducts="true" RuntimeDependencies="true" With="#TargetsToCopy"/>
             <TagReceipt Files="$(EngineReceiptsDir)/DsymExporter.target" EngineDir="$(RootDir)/Engine" ProjectDir="$(RootDir)/UnrealTournament" BuildProducts="true" RuntimeDependencies="true" With="#TargetsToCopy"/>
             <TagReceipt Files="$(EngineReceiptsDir)/UnrealPak.target" EngineDir="$(RootDir)/Engine" ProjectDir="$(RootDir)/UnrealTournament" BuildProducts="true" RuntimeDependencies="true" With="#TargetsToCopy"/>
-            
-            <Tag Files="#TargetsToCopy" Except=".../*-Simplygon*;.../*-DDCUtils*;.../*-HTML5*.dylib;.../UnrealFrontend*;.../UnrealFrontEnd/...;.../UnrealHeaderTool*;.../ARM/...;.../ImgTec/...;.../IntelISPCTexComp/...;$(RootDir)/.../Perforce/...;.../Qualcomm/...;.../svn/..." With="#TrimmedTargets"/>
+            <Tag Files="#TargetsToCopy" Except=".../*-Simplygon*;.../*-DDCUtils*;.../UnrealFrontend*;.../UnrealFrontEnd/...;.../UnrealHeaderTool*;.../ARM/...;.../ImgTec/...;.../IntelISPCTexComp/...;$(RootDir)/.../Perforce/...;.../Qualcomm/...;.../svn/..." With="#TrimmedTargets"/>
 			<Tag Files="$(EngineReceiptsDir)/*" Filter="*.target" Except="UnrealFrontend*;*UnrealHeaderTool*" With="#TrimmedTargets"/>
 			<Tag Files="$(UTReceiptsDir)/*" Filter="*.target" With="#TrimmedTargets"/>
 
@@ -365,6 +367,8 @@
 			<Tag Files="$(RootDir)/Engine/Config/Mac/..." With="#TrimmedTargets"/>
 
 			<Tag Files="$(RootDir)/Engine/Content/..." With="#TrimmedTargets"/>
+			<Tag Files="$(RootDir)/Engine/Plugins/.../Content/..." Except=".../NotForLicensees/...;.../EpicInternal/...;.../NoRedist/..." With="#TrimmedTargets"/>
+			<Tag Files="$(RootDir)/Engine/Plugins/Editor/PluginBrowser/Resources/..." With="#TrimmedTargets"/>
 			<Tag Files="$(RootDir)/Engine/Documentation/Source/Shared/..." With="#TrimmedTargets"/>
 			<Tag Files="$(RootDir)/Engine/Programs/..." Except=".../BuildPatchTool/...;.../UnrealBuildTool/...;.../UnrealGameSync/...;.../UnrealPak/...;.../UnrealFrontEnd/Profiles/...;.../UnrealHeaderTool/Saved/..." With="#TrimmedTargets"/>
 			<Tag Files="$(RootDir)/Engine/Shaders/..." With="#TrimmedTargets"/>
@@ -382,7 +386,7 @@
 			<Tag Files="$(RootDir)/UnrealTournament/Plugins/NotForLicensees/Social/..." Filter="*.dylib;*.uplugin" With="#FinalTrim"/>
       <Tag Files="$(RootDir)/UnrealTournament/Plugins/NotForLicensees/OnlineGameplayFramework/..." Filter="*.dylib;*.uplugin" With="#FinalTrim"/>
 
-			<Copy Files="#FinalTrim" FromDir="" ToDir="$(LocalStagingDir)/UT-Build/Mac"/>
+			<Copy Files="#FinalTrim" From="$(RootDir)" To="$(LocalStagingDir)/UT-Build/Mac"/>
             <Property Name="StagingDirUTBinaries" Value="$(LocalStagingDir)/UT-Build/Mac/UnrealTournament/Binaries/Mac"/>
             <Property Name="StagingDirEngineBinaries" Value="$(LocalStagingDir)/UT-Build/Mac/Engine/Binaries/Mac"/>
             <TagReceipt Files="$(StagingDirUTBinaries)/UnrealTournamentEditor.target" EngineDir="$(LocalStagingDir)/UT-Build/Mac/Engine" ProjectDir="$(LocalStagingDir)/UT-Build/Mac/UnrealTournament" BuildProducts="true" RuntimeDependencies="false" With="#ToSign"/>
@@ -410,7 +414,7 @@
 			<LabelBuild AppName="$(EditorAppName)" BuildVersion="$(BuildVersion)" Platform="Mac" Label="Live" McpConfig="$(McpConfig)"/>
 		</Node>
 		<Node Name="Publish Editor Mac" Requires="EditorDDC Mac">
-			<Copy Files="..." FromDir="$(LocalStagingDir)/UT-Build/Mac" ToDir="$(BuildDir)/MacEditor"/>
+			<Copy Files="..." From="$(LocalStagingDir)/UT-Build/Mac" To="$(BuildDir)/MacEditor"/>
 		</Node>
 	</Agent>
 	
@@ -456,7 +460,7 @@
 			<Command Name="UnrealTournamentProto_BasicBuild" Arguments="-SkipBuild -SkipCook -Chunk -clientconfig=Shipping -serverconfig=None -TargetPlatform=Linux -StagingDir=&quot;$(LocalStagingDir)&quot;"/>
 		</Node>
 		<Node Name="Publish LinuxNoEditor" Requires="Stage LinuxNoEditor">
-			<Copy Files="..." FromDir="$(LocalStagingDir)/LinuxNoEditor" ToDir="$(BuildDir)/LinuxNoEditor"/>
+			<Copy Files="..." From="$(LocalStagingDir)/LinuxNoEditor" To="$(BuildDir)/LinuxNoEditor"/>
 		</Node>
 	</Agent>
 
@@ -472,7 +476,7 @@
 			<Command Name="UnrealTournamentProto_BasicBuild" Arguments="-SkipBuild -SkipCook -Chunk -clientconfig=None -serverconfig=Shipping -TargetPlatform=Linux -StagingDir=&quot;$(LocalStagingDir)&quot;"/>
 		</Node>
 		<Node Name="Publish LinuxServer" Requires="Stage LinuxServer">
-			<Copy Files="..." FromDir="$(LocalStagingDir)/LinuxServer" ToDir="$(BuildDir)/LinuxServer"/>
+			<Copy Files="..." From="$(LocalStagingDir)/LinuxServer" To="$(BuildDir)/LinuxServer"/>
 		</Node>
 	</Agent>
 
@@ -523,7 +527,7 @@
 	<Property Name="Windows Build Targets" Value="$(Windows Build Targets)Publish WindowsServer Win64;" If="$(WithWin64Server)"/>
 	<Property Name="Windows Build Targets" Value="$(Windows Build Targets)Publish Editor Win64;" If="$(WithWin64Editor)"/>
 	<Property Name="Windows Build Targets" Value="$(Windows Build Targets)Chunk Editor Win64;Post Editor Win64;Audit Chunks Editor Win64;" If="$(WithWin64Editor) And $(EnableMCP)"/>
-	<Property Name="Windows Build Targets" Value="$(Windows Build Targets)Compile UT Test Windows;" If="$(IncludeTestExes)"/>
+	<Property Name="Windows Build Targets" Value="$(Windows Build Targets)Compile UT Test Windows;" If="$(IncludeTestExes) And ($(WithWindowsClients) Or $(WithWin64Server))"/>
 	<Aggregate Name="Make Windows Game" Requires="$(Windows Build Targets)"/>
 
 	<Property Name="Mac Build Targets" Value=""/>
@@ -531,13 +535,13 @@
 	<Property Name="Mac Build Targets" Value="$(Mac Build Targets)Post Mac;Chunk Mac;Audit Chunks Game Mac;" If="$(WithMacClient) And $(EnableMCP)"/>
 	<Property Name="Mac Build Targets" Value="$(Mac Build Targets)Publish Editor Mac;" If="$(WithMacEditor)"/>
 	<Property Name="Mac Build Targets" Value="$(Mac Build Targets)Chunk Editor Mac;Post Editor Mac;Audit Chunks Editor Mac;" If="$(WithMacEditor) And $(EnableMCP)"/>
-	<Property Name="Mac Build Targets" Value="$(Mac Build Targets)Compile UT Test Mac;" If="$(IncludeTestExes)"/>
+	<Property Name="Mac Build Targets" Value="$(Mac Build Targets)Compile UT Test Mac;" If="$(IncludeTestExes) And $(WithMacClient)"/>
 	<Aggregate Name="Make Mac Game" Requires="$(Mac Build Targets)"/>
 
 	<Property Name="Linux Build Targets" Value=""/>
 	<Property Name="Linux Build Targets" Value="$(Linux Build Targets)Publish LinuxNoEditor;" If="$(WithLinuxClient)"/>
 	<Property Name="Linux Build Targets" Value="$(Linux Build Targets)Publish LinuxServer;" If="$(WithLinuxServer)"/>
-	<Property Name="Linux Build Targets" Value="$(Linux Build Targets)Compile UT Test Linux;" If="$(IncludeTestExes)"/>
+	<Property Name="Linux Build Targets" Value="$(Linux Build Targets)Compile UT Test Linux;" If="$(IncludeTestExes) And ($(WithLinuxClient) Or $(WithLinuxServer))"/>
 	<Aggregate Name="Make Linux Game" Requires="$(Linux Build Targets)"/>
 
 	<Property Name="Standard Build Targets" Value="Make Windows Game;Make Mac Game;Make Linux Game;"/>
@@ -546,7 +550,7 @@
 	<!-- Other tasks -->
 	<Agent Name="Nightly Cleanup" Type="Win64">
 		<Node Name="Purge Old Symbols">
-			<AgeStore StoreDir="$(WindowsSymbolsDir)" Days="14"/>
+			<AgeStore StoreDir="$(WindowsSymbolsDir)" Days="14" Platform="Win64"/>
 		</Node>
 		<Node Name="Clean Temp Storage">
 			<Command Name="CleanTempStorage" Arguments="-Days=$(DaysToKeepOldTempStorage) -TempStoragedir=&quot;$(OutputDir)\TempStorage&quot;"/>
@@ -555,5 +559,5 @@
 	
 	<Aggregate Name="Nightly Maintenance" Requires="Purge Old Symbols;Clean Temp Storage"/>
 	
-	<Notify Targets="Standard Build" Users="chad.garyet@epicgames.com;peter.knepley@epicgames.com;david.deyoung@epicgames.com" Submitters=".../Build/...;.../Source/..."/>
+	<Notify Targets="Standard Build" Users="chad.garyet@epicgames.com;peter.knepley@epicgames.com;david.deyoung@epicgames.com;jaymee.stanford@epicgames.com;utqa@epicgames.com" Submitters=".../Build/...;.../Source/..."/>
 </BuildGraph>

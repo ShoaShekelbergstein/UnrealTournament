@@ -41,7 +41,7 @@ void UUTHUDWidget_FlagRunStatus::DrawIndicators(AUTCTFGameState* GameState, FVec
 			AUTCTFFlag* Flag = Cast<AUTCTFFlag>(GameState->FlagBases[OffensiveTeam]->GetCarriedObject());
 			if (Flag && (Flag->ObjectState != CarriedObjectState::Delivered))
 			{
-				DrawFlagStatus(GameState, PlayerViewPoint, PlayerViewRotation, OffensiveTeam, FVector2D(0.0f, 0.0f), GameState->FlagBases[OffensiveTeam], Flag, Flag->Holder);
+				DrawFlagStatus(GameState, PlayerViewPoint, PlayerViewRotation, OffensiveTeam, FVector2D(0.0f, 100.0f), GameState->FlagBases[OffensiveTeam], Flag, Flag->Holder);
 				DrawFlagWorld(GameState, PlayerViewPoint, PlayerViewRotation, OffensiveTeam, GameState->FlagBases[OffensiveTeam], Flag, Flag->Holder);
 			}
 		}
@@ -142,6 +142,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 							? Holder->GetMesh()->GetComponentLocation() + FVector(0.f, 0.f, Holder->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() * 2.25f)
 							: Flag->GetActorLocation() + FVector(0.f, 0.f, Flag->Collision->GetUnscaledCapsuleHalfHeight() * 0.75f);
 		FVector DrawScreenPosition = GetAdjustedScreenPosition(WorldPosition, PlayerViewPoint, ViewDir, Dist, Edge, bDrawEdgeArrow, TeamNum);
+		DrawScreenPosition.Y -= 36.f*RenderScale;
 
 		// Look to see if we should be displaying the in-world indicator for the flag.
 		float CurrentWorldTime = GameState->GetWorld()->GetTimeSeconds();
@@ -167,22 +168,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 		float X, Y;
 		float Scale = Canvas->ClipX / 1920.f;
 		Canvas->TextSize(TinyFont, FString("+999   A999"), X, Y, Scale, Scale);
-		if (!bDrawEdgeArrow)
-		{
-			float MinDistSq = FMath::Square(0.06f*GetCanvas()->ClipX);
-			float ActualDistSq = FMath::Square(DrawScreenPosition.X - 0.5f*GetCanvas()->ClipX) + FMath::Square(DrawScreenPosition.Y - 0.5f*GetCanvas()->ClipY);
-			if (ActualDistSq > MinDistSq)
-			{
-				if (!Holder || (ViewDist < Holder->TeamPlayerIndicatorMaxDistance))
-				{
-					DrawScreenPosition.Y -= 3.5f*Y;
-				}
-				else
-				{
-					DrawScreenPosition.Y -= (ViewDist < Holder->SpectatorIndicatorMaxDistance) ? 2.5f*Y : 1.5f*Y;
-				}
-			}
-		}
+
 		DrawScreenPosition.X -= RenderPosition.X;
 		DrawScreenPosition.Y -= RenderPosition.Y;
 

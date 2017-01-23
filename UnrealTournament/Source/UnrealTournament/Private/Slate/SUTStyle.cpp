@@ -73,6 +73,8 @@ const FColor Disabled(189,189,189,255);
 const FColor Shaded(4,4,4,200);
 
 
+const FColor SelectedColor(64,62,48,255);
+
 const FColor TestRed(128,0,0,255);
 const FColor TestBlue(0,0,128,255);
 const FColor TestGreen(0,128,0,255);
@@ -381,7 +383,6 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 	Style.Set("UT.HeaderBackground.SuperDark.ListA", new FSlateColorBrush(SuperDarkListA));
 	Style.Set("UT.HeaderBackground.SuperDark.ListB", new FSlateColorBrush(SuperDarkListB));
 
-
 	Style.Set("UT.HeaderBackground.Dark", new FSlateColorBrush(Dark));
 	Style.Set("UT.HeaderBackground.Navy", new FSlateColorBrush(Navy));
 	Style.Set("UT.HeaderBackground.DeepRed", new FSlateColorBrush(DeepRed));
@@ -409,8 +410,17 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 
 	Style.Set("UT.TabButton", FButtonStyle()
 		.SetNormal( FSlateColorBrush(Dark) )
-		.SetHovered( FSlateColorBrush(Hovered) )
+		.SetHovered( FSlateColorBrush(SuperDarkListA) )
 		.SetPressed( FSlateColorBrush(TabSelected) )
+		.SetDisabled( FSlateColorBrush(Disabled) )
+		.SetHoveredSound(ButtonHoverSound)
+		.SetPressedSound(ButtonPressSound) 
+		);
+
+	Style.Set("UT.OptionButton", FButtonStyle()
+		.SetNormal( FSlateColorBrush(Dark) )
+		.SetHovered( FSlateColorBrush(SuperDarkListA) )
+		.SetPressed( FSlateColorBrush(SelectedColor) )
 		.SetDisabled( FSlateColorBrush(Disabled) )
 		.SetHoveredSound(ButtonHoverSound)
 		.SetPressedSound(ButtonPressSound) 
@@ -558,6 +568,7 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 	}
 
 	Style.Set("UT.HomePanel.NewFragCenter", new IMAGE_BRUSH("UTStyle/MainPanel/NewFragCenter", FVector2D(180,180), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f)));
+	Style.Set("UT.HomePanel.NewFragCenter.Transparent", new IMAGE_BRUSH("UTStyle/MainPanel/FragCenterEmblemTransparent", FVector2D(644,644), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f)));
 
 	Style.Set("UT.HomePanel.FragCenterLogo", new IMAGE_BRUSH("UTStyle/MainPanel/FragCenterEmblem", FVector2D(644, 644), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f)));
 	Style.Set("UT.HomePanel.Flak", new IMAGE_BRUSH( "UTStyle/MainPanel/Flak", FVector2D(180,180), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
@@ -567,6 +578,9 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 	Style.Set("UT.HomePanel.TeamShowdownBadge", new IMAGE_BRUSH( "UTStyle/MainPanel/TeamShowdownBadge", FVector2D(250,270), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
 	Style.Set("UT.HomePanel.Replays", new IMAGE_BRUSH( "UTStyle/MainPanel/Replays", FVector2D(180,180), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
 	Style.Set("UT.HomePanel.Live", new IMAGE_BRUSH( "UTStyle/MainPanel/Live", FVector2D(180,180), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
+	Style.Set("UT.HomePanel.BasicTraining", new IMAGE_BRUSH( "UTStyle/MainPanel/BasicTraining", FVector2D(800,220), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
+	Style.Set("UT.HomePanel.Challenges", new IMAGE_BRUSH( "UTStyle/MainPanel/ChallangesBackground", FVector2D(800,220), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
+	Style.Set("UT.HomePanel.ChallengesNewIcon", new IMAGE_BRUSH( "UTStyle/MainPanel/NewChallenge72x72", FVector2D(72,72), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
 
 	Style.Set("UT.HomePanel.Button", FButtonStyle()
 		.SetNormal( FSlateNoResource(FVector2D(256.0f, 256.0f) ))
@@ -857,7 +871,8 @@ void SUTStyle::SetLoginStyle(TSharedRef<FSlateStyleSet> StyleRef)
 
 	Style.Set("UT.Login.Offline.TextStyle", FTextBlockStyle()
 		.SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Bold", 22))
-		.SetColorAndOpacity(FLinearColor(FColor(220, 93, 33, 255))));
+		.SetColorAndOpacity(FLinearColor::White));
+		//.SetColorAndOpacity(FLinearColor(FColor(220, 93, 33, 255))));
 
 
 }
@@ -884,10 +899,17 @@ const ISlateStyle& SUTStyle::Get()
 
 const FSlateColor SUTStyle::GetSlateColor( const FName PropertyName, const ANSICHAR* Specifier)
 {
-	if (PropertyName == FName(TEXT("FocusTextColor"))) return FSlateColor(FLinearColor(1.0,1.0,1.0,1.0));
+	if (PropertyName == FName(TEXT("NormalTextColor"))) return FSlateColor(FLinearColor(1.0,1.0,1.0,1.0));
+	else if (PropertyName == FName(TEXT("FocusTextColor"))) return FSlateColor(FLinearColor(1.0,1.0,1.0,1.0));
 	else if (PropertyName == FName(TEXT("HoverTextColor"))) return FSlateColor(FLinearColor(0.0,0.0,0.0,1.0));
 	else if (PropertyName == FName(TEXT("PressedTextColor"))) return FSlateColor(FLinearColor(0.0,0.0,0.0,1.0));
 	else if (PropertyName == FName(TEXT("DisabledTextColor"))) return FSlateColor(FLinearColor(0.0,0.0,0.0,1.0));
+
+	else if (PropertyName == FName(TEXT("TabNormalTextColor"))) return FSlateColor(FLinearColor(1.0,1.0,1.0,1.0));
+	else if (PropertyName == FName(TEXT("TabFocusTextColor"))) return FSlateColor(FLinearColor(1.0,1.0,1.0,1.0));
+	else if (PropertyName == FName(TEXT("TabHoverTextColor"))) return FSlateColor(FLinearColor(1.0,1.0,1.0,1.0));
+	else if (PropertyName == FName(TEXT("TabPressedTextColor"))) return FSlateColor(FLinearColor(0.0,0.0,0.0,1.0));
+	else if (PropertyName == FName(TEXT("TabDisabledTextColor"))) return FSlateColor(FLinearColor(0.0,0.0,0.0,1.0));
 	
 	return FSlateColor(FLinearColor(0.6,0.6,0.6,1.0));
 }

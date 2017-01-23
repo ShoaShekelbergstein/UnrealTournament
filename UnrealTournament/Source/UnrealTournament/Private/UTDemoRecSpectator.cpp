@@ -5,6 +5,7 @@
 #include "UTDemoNetDriver.h"
 #include "UTKillcamPlayback.h"
 #include "UTHUD_InstantReplay.h"
+#include "UTLocalMessage.h"
 
 DEFINE_LOG_CATEGORY(LogUTDemoRecSpectator);
 
@@ -41,11 +42,11 @@ void AUTDemoRecSpectator::ViewQueuedNetId()
 	}
 
 	APlayerState* PS = nullptr;
-	for (int32 i = 0; i < GetWorld()->GameState->PlayerArray.Num(); i++)
+	for (int32 i = 0; i < GetWorld()->GetGameState()->PlayerArray.Num(); i++)
 	{
-		if (GetWorld()->GameState->PlayerArray[i]->UniqueId == QueuedViewTargetNetId)
+		if (GetWorld()->GetGameState()->PlayerArray[i]->UniqueId == QueuedViewTargetNetId)
 		{
-			PS = GetWorld()->GameState->PlayerArray[i];
+			PS = GetWorld()->GetGameState()->PlayerArray[i];
 			QueuedViewTargetNetId = FUniqueNetIdRepl();
 			ViewPlayerState(PS);
 			UE_LOG(LogUTDemoRecSpectator, Log, TEXT("Found queued net id!"));
@@ -163,13 +164,14 @@ void AUTDemoRecSpectator::ViewAPlayer(int32 dir)
 APlayerState* AUTDemoRecSpectator::GetNextViewablePlayer(int32 dir)
 {
 	int32 CurrentIndex = -1;
+	AGameState* GameState = GetWorld()->GetGameState<AGameState>();
 	if (PlayerCameraManager->ViewTarget.GetTargetPawn() != NULL)
 	{
 		APlayerState* TestPS = PlayerCameraManager->ViewTarget.GetTargetPawn()->PlayerState;
 		// Find index of current viewtarget's PlayerState
-		for (int32 i = 0; i < GetWorld()->GameState->PlayerArray.Num(); i++)
+		for (int32 i = 0; i < GameState->PlayerArray.Num(); i++)
 		{
-			if (TestPS == GetWorld()->GameState->PlayerArray[i])
+			if (TestPS == GameState->PlayerArray[i])
 			{
 				CurrentIndex = i;
 				break;
@@ -179,9 +181,9 @@ APlayerState* AUTDemoRecSpectator::GetNextViewablePlayer(int32 dir)
 
 	// Find next valid viewtarget in appropriate direction
 	int32 NewIndex;
-	for (NewIndex = CurrentIndex + dir; (NewIndex >= 0) && (NewIndex < GetWorld()->GameState->PlayerArray.Num()); NewIndex = NewIndex + dir)
+	for (NewIndex = CurrentIndex + dir; (NewIndex >= 0) && (NewIndex < GameState->PlayerArray.Num()); NewIndex = NewIndex + dir)
 	{
-		APlayerState* const PlayerStateIter = GetWorld()->GameState->PlayerArray[NewIndex];
+		APlayerState* const PlayerStateIter = GameState->PlayerArray[NewIndex];
 		if (PlayerStateIter != NULL && !PlayerStateIter->bOnlySpectator)
 		{
 			for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
@@ -195,10 +197,10 @@ APlayerState* AUTDemoRecSpectator::GetNextViewablePlayer(int32 dir)
 	}
 
 	// wrap around
-	CurrentIndex = (NewIndex < 0) ? GetWorld()->GameState->PlayerArray.Num() : -1;
-	for (NewIndex = CurrentIndex + dir; (NewIndex >= 0) && (NewIndex < GetWorld()->GameState->PlayerArray.Num()); NewIndex = NewIndex + dir)
+	CurrentIndex = (NewIndex < 0) ? GameState->PlayerArray.Num() : -1;
+	for (NewIndex = CurrentIndex + dir; (NewIndex >= 0) && (NewIndex < GameState->PlayerArray.Num()); NewIndex = NewIndex + dir)
 	{
-		APlayerState* const PlayerStateIter = GetWorld()->GameState->PlayerArray[NewIndex];
+		APlayerState* const PlayerStateIter = GameState->PlayerArray[NewIndex];
 		if (PlayerStateIter != NULL && !PlayerStateIter->bOnlySpectator)
 		{
 			for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
@@ -504,4 +506,42 @@ void AUTDemoRecSpectator::MulticastReceiveLocalizedMessage_Implementation(TSubcl
 	}
 
 	ClientReceiveLocalizedMessage(Message, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
+}
+
+void AUTDemoRecSpectator::ClientReceiveLocalizedMessage_Implementation(TSubclassOf<ULocalMessage> Message, int32 Switch, APlayerState* RelatedPlayerState_1, APlayerState* RelatedPlayerState_2, UObject* OptionalObject)
+{
+	TSubclassOf<UUTLocalMessage> UTMessage(*Message);
+	if (UTMessage && !UTMessage.GetDefaultObject()->bPlayDuringInstantReplay && IsKillcamSpectator())
+	{
+		return;
+	}
+
+	if (GetWorld()->GetNetMode() == NM_Client)
+	{
+		UDemoNetDriver* DemoDriver = GetWorld()->DemoNetDriver;
+		if (DemoDriver)
+		{
+			AUTDemoRecSpectator* DemoRecSpec = Cast<AUTDemoRecSpectator>(DemoDriver->SpectatorController);
+			
+			if (DemoRecSpec && (GetWorld()->GetTimeSeconds() - DemoRecSpec->LastKillcamSeekTime) < 2.0f)
+			{
+				return;
+			}
+		}
+	}
+
+	UGameInstance* GameInstance = GetWorld()->GetGameInstance();
+	if (GameInstance != nullptr)
+	{
+		UUTGameViewportClient* ViewportClient = Cast<UUTGameViewportClient>(GameInstance->GetGameViewportClient());
+		if (ViewportClient != nullptr)
+		{
+			if (ViewportClient->GetActiveWorldOverride() == nullptr)
+			{
+				return;
+			}
+		}
+	}
+
+	Super::ClientReceiveLocalizedMessage_Implementation(Message, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
 }

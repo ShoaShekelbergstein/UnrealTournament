@@ -5,6 +5,7 @@
 #include "UTTeamInterface.h"
 #include "Online.h"
 #include "OnlineSubsystemTypes.h"
+#include "OnlineUserCloudInterface.h"
 #include "UTDamageType.h"
 #include "UTHat.h"
 #include "UTHatLeader.h"
@@ -278,6 +279,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = PlayerState)
 		int32 ThisLifeDamageDone;
 
+	/** Deaths by this player this round - not replciated. */
+	UPROPERTY(BlueprintReadWrite, Category = PlayerState)
+		int32 RoundDeaths;
+
 	/** Enemy kills by this player this life. */
 	UPROPERTY(BlueprintReadWrite, replicated, Category = PlayerState)
 		int32 ThisLifeKills;
@@ -325,14 +330,31 @@ public:
 	UPROPERTY(BlueprintReadOnly, replicated, Category = PlayerState)
 	AUTPlayerState* LastKillerPlayerState;
 
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerController)
-		bool bCanRally;
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
+	bool bCanRally;
 
-	UPROPERTY(BlueprintReadOnly, Category = PlayerController)
-		float NextRallyTime;
+	UPROPERTY(BlueprintReadOnly, Category = PlayerState)
+	float NextRallyTime;
 
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerController)
-		uint8 RemainingRallyDelay;
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
+	uint8 RemainingRallyDelay;
+
+	UPROPERTY()
+	FVector RallyLocation;
+
+	UPROPERTY()
+	class AUTRallyPoint* RallyPoint;
+
+	virtual void BeginRallyTo(AUTRallyPoint* RallyTarget, const FVector& NewRallyLocation, float Delay);
+
+	FTimerHandle RallyTimerHandle;
+	// valid server side only
+	bool IsCurrentlyRallying()
+	{
+		return GetWorldTimerManager().IsTimerActive(RallyTimerHandle);
+	}
+
+	virtual void CompleteRally();
 
 	UPROPERTY(BlueprintReadOnly, Category = PlayerState, replicated)
 	bool bIsRconAdmin;
@@ -349,6 +371,9 @@ public:
 
 	UPROPERTY()
 	int32 PartySize;
+
+	UPROPERTY()
+	FString PartyLeader;
 
 	// Player Stats 
 
@@ -370,6 +395,10 @@ public:
 	/** Set at end of match and half-time. */
 	UPROPERTY(replicated)
 		TSubclassOf<class AUTWeapon> FavoriteWeapon;
+
+	/** Weapon that will be used during the LineUp by the player**/
+	UPROPERTY()
+		TSubclassOf<class AUTWeapon> LineUpWeapon;
 
 	UPROPERTY()
 	int32 ElapsedTime;
@@ -593,6 +622,12 @@ public:
 	UPROPERTY(replicated)
 	TSubclassOf<AUTTaunt> Taunt2Class;
 
+	UPROPERTY()
+	TSubclassOf<AUTTaunt> OldTauntClass;
+
+	UPROPERTY()
+	TSubclassOf<AUTTaunt> OldTaunt2Class;
+
 	UFUNCTION(Server, Reliable, WithValidation)
 	virtual void ServerReceiveTaunt2Class(const FString& NewTauntClass);
 
@@ -634,6 +669,19 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = PlayerState)
 	FName Avatar;
 
+	/** whether to draw the name as part of the in-world death indicator or just the skull icon */
+	UPROPERTY(Replicated)
+	bool bDrawNameOnDeathIndicator;
+
+	/** HUD icon for player displays; overrides character data if set */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = PlayerState)
+	FCanvasIcon HUDIcon;
+
+	inline const FCanvasIcon& GetHUDIcon() const
+	{
+		return HUDIcon.Texture != nullptr ? HUDIcon : SelectedCharacter.GetDefaultObject()->DefaultCharacterPortrait;
+	}
+
 protected:
 	/*  Used to determine whether boost can be triggered. */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = PlayerState)
@@ -646,9 +694,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = PlayerState)
 	void SetRemainingBoosts(uint8 NewRemainingBoosts);
 
-	/** if gametype supports a boost recharge/cooldown timer, the time that needs to pass for RemainingBoosts to be incremented */
+	/** if gametype supports a boost recharge/cooldown timer, progress to a new boost charge */
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = PlayerState)
-	float BoostRechargeTimeRemaining;
+	float BoostRechargePct;
 
 	UPROPERTY()
 	TArray<class AUTInventory*> PreservedKeepOnDeathInventoryList;
@@ -775,6 +823,9 @@ private:
 	/** map of additional stats used for scoring display. */
 	TMap< FName, float > StatsData;
 
+	/** map of per round stats used for scoring display. GameMode/scoring responsible for clearing this between rounds. */
+	TMap< FName, float > RoundStatsData;
+
 public:
 	/** Last time StatsData was updated - used when replicating the data. */
 	UPROPERTY()
@@ -783,6 +834,11 @@ public:
 	/** Accessors for StatsData. */
 	UFUNCTION(BlueprintCallable, Category = PlayerState)
 	float GetStatsValue(FName StatsName) const;
+
+	UFUNCTION(BlueprintCallable, Category = PlayerState)
+		float GetRoundStatsValue(FName StatsName) const;
+
+	void ClearRoundStats();
 
 	void SetStatsValue(FName StatsName, float NewValue);
 	void ModifyStatsValue(FName StatsName, float Change);
@@ -807,6 +863,8 @@ public:
 	int32 RankedCTFRank;
 	UPROPERTY(Replicated)
 	int32 RankedShowdownRank;
+	UPROPERTY(Replicated)
+	int32 RankedFlagRunRank;
 	
 	/** Note only valid up to 255, enough to figure out beginner badges. */
 	UPROPERTY(Replicated)
@@ -827,6 +885,8 @@ public:
 	uint8 RankedCTFMatchesPlayed;
 	UPROPERTY(Replicated)
 	uint8 RankedShowdownMatchesPlayed;
+	UPROPERTY(Replicated)
+	uint8 RankedFlagRunMatchesPlayed;
 
 	UPROPERTY(Replicated)
 	int32 TrainingLevel;
@@ -1182,6 +1242,22 @@ public:
 
 private:
 	virtual void ForceUpdatePlayerInfo();
+
+public:
+
+	UPROPERTY()
+	bool bReported;
+
+	/** Returns the team info for this player or null if it doesn't exist */
+	UFUNCTION(BlueprintCallable, Category = Team)
+	AUTTeamInfo* GetTeamInfo()
+	{
+		return Team;
+	}
+
+	/** The worldtime when this player state was last attached to an actual pawn.  This is only valid on the server */
+	UPROPERTY()
+	float LastSpawnTime;
 
 };
 

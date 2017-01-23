@@ -61,7 +61,7 @@ static const FString SecureAnalyticsEndpoint = TEXT("https://datarouter.ol.epicg
 
 void FUTAnalytics::Initialize()
 {
-	if (IsRunningCommandlet())
+	if (IsRunningCommandlet() || GIsEditor)
 	{
 		return;
 	}
@@ -117,6 +117,10 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 #define AddGenericParamName(ParamName) \
 	GenericParamNames[EGenericAnalyticParam::ParamName] = TEXT(#ParamName)
 
+	AddGenericParamName(PlayerGUID);
+	AddGenericParamName(PlayerList);
+	AddGenericParamName(ServerInstanceGUID);
+	AddGenericParamName(ServerMatchGUID);
 	AddGenericParamName(MatchTime);
 	AddGenericParamName(MapName);
 	AddGenericParamName(GameModeName);
@@ -147,6 +151,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(WeaponName);
 	AddGenericParamName(NumKills);
 	AddGenericParamName(UTServerWeaponKills);
+	AddGenericParamName(WeaponInfo);
 
 	AddGenericParamName(UTFPSCharts);
 	AddGenericParamName(UTServerFPSCharts);
@@ -170,6 +175,9 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 
 	AddGenericParamName(UTEnterMatch);
 	AddGenericParamName(EnterMethod);
+	AddGenericParamName(UTStartRankedMatch);
+	AddGenericParamName(UTEndRankedMatch);
+	AddGenericParamName(ELOPlayerInfo);
 
 	AddGenericParamName(UTTutorialPickupToken);
 	AddGenericParamName(TokenID);
@@ -179,10 +187,13 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 
 	AddGenericParamName(UTTutorialStarted);
 	AddGenericParamName(UTTutorialCompleted);
+	AddGenericParamName(UTCancelOnboarding);
 	AddGenericParamName(TutorialMap);
 	AddGenericParamName(MovementTutorialCompleted);
 	AddGenericParamName(WeaponTutorialCompleted);
 	AddGenericParamName(PickupsTutorialCompleted);
+
+	AddGenericParamName(RealServerFPS);
 }
 
 void FUTAnalytics::Shutdown()
@@ -223,9 +234,9 @@ void FUTAnalytics::LoginStatusChanged(FString NewAccountID)
 
 void FUTAnalytics::PrivateSetUserID(const FString& AccountID, EAccountSource AccountSource)
 {
-	// Set the UserID to "MachineID|AccountID|OSID|AccountIDSource".
+	// Set the UserID to "LoginID|AccountID|OSID|AccountIDSource".
 	const TCHAR* AccountSourceStr = AccountSource == EAccountSource::EFromRegistry ? TEXT("Reg") : TEXT("OSS");
-	Analytics->SetUserID(FString::Printf(TEXT("%s|%s|%s|%s"), *FPlatformMisc::GetMachineId().ToString(EGuidFormats::Digits).ToLower(), *AccountID, *FPlatformMisc::GetOperatingSystemId(), AccountSourceStr));
+	Analytics->SetUserID(FString::Printf(TEXT("%s|%s|%s|%s"), *FPlatformMisc::GetLoginId(), *AccountID, *FPlatformMisc::GetOperatingSystemId(), AccountSourceStr));
 	// remember the current value so we don't spuriously restart the session if the user logs in later with the same ID.
 	CurrentAccountID = AccountID;
 	CurrentAccountSource = AccountSource;
@@ -248,10 +259,20 @@ FString FUTAnalytics::GetGenericParamName(EGenericAnalyticParam::Type InGenericP
 	}
 }
 
-void FUTAnalytics::SetInitialParameters(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime)
+void FUTAnalytics::SetClientInitialParameters(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime)
 {
 	if (UTPC)
 	{
+		if (UTPC->GetWorld())
+		{
+			AUTGameState* UTGS = UTPC->GetWorld()->GetGameState<AUTGameState>();
+			if (UTGS)
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGS->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGS->ReplayID));
+			}
+		}
+
 		if (bNeedMatchTime == true)
 		{
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MatchTime), GetMatchTime(UTPC)));
@@ -260,15 +281,15 @@ void FUTAnalytics::SetInitialParameters(AUTPlayerController* UTPC, TArray<FAnaly
 		FString MapName = GetMapName(UTPC);
 		const int32 Team = UTPC->GetTeamNum();
 		
-		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTPC->PlayerState);
-		
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(UTPC)));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MapName), MapName));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::Platform), GetPlatform()));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::Team), Team));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), GetGameModeName(UTPC)));
 	}
 }
 
-void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime)
+void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime, bool bIsRankedMatch)
 {
 	if (bNeedMatchTime)
 	{
@@ -278,6 +299,29 @@ void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalytic
 	if (UTGM)
 	{
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), UTGM->DisplayName.ToString()));
+		
+		if (UTGM->UTGameState)
+		{
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGM->UTGameState->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGM->UTGameState->ReplayID));
+		}
+
+		if (UTGM->GetWorld())
+		{
+			//Add all ELO information
+			TMap<FString, int32> ELOStats;
+			for (FConstPlayerControllerIterator It = UTGM->GetWorld()->GetPlayerControllerIterator(); It; ++It)
+			{
+				AUTPlayerController* UTPC = Cast<AUTPlayerController>(*It);
+				if (UTPC && UTPC->UTPlayerState && !UTPC->UTPlayerState->bOnlySpectator)
+				{
+					ELOStats.Add(GetEpicAccountName(UTPC), UTGM->GetEloFor(UTPC->UTPlayerState, bIsRankedMatch));
+				}
+			}
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ELOPlayerInfo), ELOStats));
+		}
+
+		AddPlayerListToParameters(UTGM, ParamArray);
 	}
 
 	FString MapName = GetMapName(UTGM);
@@ -306,6 +350,26 @@ void FUTAnalytics::SetServerInitialParameters(TArray<FAnalyticsEventAttribute>& 
 	ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::NumClients), PerfCountersGet(TEXT("NumClients"), 0)));
 #endif
 
+}
+
+void FUTAnalytics::AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray)
+{
+	if (UTGM && UTGM->GetWorld())
+	{
+		TMap<FString,int32> PlayerGUIDs;
+
+		for (FConstControllerIterator It = UTGM->GetWorld()->GetControllerIterator(); It; ++It)
+		{
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*It);
+			if (UTPC && UTPC->PlayerState && !UTPC->PlayerState->bOnlySpectator)
+			{
+				PlayerGUIDs.Add(GetEpicAccountName(UTPC),UTPC->GetTeamNum());
+			}
+		}
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerList), PlayerGUIDs));
+
+	}
 }
 
 FString FUTAnalytics::GetPlatform()
@@ -390,6 +454,42 @@ FString FUTAnalytics::GetMapName(AUTGameMode* UTGM)
 	return MapName;
 }
 
+FString FUTAnalytics::GetGameModeName(AUTPlayerController* UTPC)
+{
+	FString GameModeName;
+	if (UTPC && UTPC->GetWorld())
+	{
+		AUTGameState* UTGS = Cast<AUTGameState>(UTPC->GetWorld()->GetGameState());
+		if (UTGS)
+		{
+			const AUTGameMode* UTGM = UTGS->GetDefaultGameMode<AUTGameMode>();
+			if (UTGM)
+			{
+				GameModeName = UTGM->DisplayName.ToString();
+			}
+		}
+	}
+
+	return GameModeName;
+}
+
+FString FUTAnalytics::GetEpicAccountName(AUTPlayerController* UTPC)
+{
+	if (UTPC && UTPC->GetWorld() && UTPC->UTPlayerState)
+	{
+		AUTGameState* UTGS = UTPC->GetWorld()->GetGameState<AUTGameState>();
+		if (UTGS)
+		{
+			TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*UTPC->UTPlayerState->StatsID));
+			FText EpicAccountName = UTGS->GetEpicAccountNameForAccount(UserId);
+
+			return EpicAccountName.ToString();
+		}
+	}
+
+	return FString();
+}
+
 /*
 * @EventName UTFPSCharts
 *
@@ -397,7 +497,9 @@ FString FUTAnalytics::GetMapName(AUTGameMode* UTGM)
 *
 * @Type Sent by client
 *
+* @EventParam PlayerGUID string The GUID identifying the player.
 * @EventParam MapName string The name of the played map
+* @EventParam GameModeName string The name of the currently played game mode
 * @EventParam PlaylistId int32 The playlist of the current match (4=PvP, 5=Coop, 6=Solo)
 * @EventParam Bucket_%i_%i_TimePercentage float The percentage of time that the FPS amount was between x - y
 * @EventParam Hitch_%i_%i_HitchCount int32 The number of hitches between x - y milliseconds long
@@ -468,7 +570,7 @@ void FUTAnalytics::FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnal
 		const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
 		if (AnalyticsProvider.IsValid())
 		{
-			SetInitialParameters(UTPC, InParamArray, false);
+			SetClientInitialParameters(UTPC, InParamArray, false);
 			AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTFPSCharts), InParamArray);
 		}
 	}
@@ -482,6 +584,7 @@ void FUTAnalytics::FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnal
 * @Type Sent by the server for the match
 *
 * @EventParam MapName string The name of the played map
+* @EventParam GameModeName string The name of the currently played game mode
 * @EventParam Bucket_%i_%i_TimePercentage float The percentage of time that the FPS amount was between x - y
 * @EventParam Hitch_%i_%i_HitchCount int32 The number of hitches between x - y milliseconds long
 * @EventParam Hitch_%i_%i_HitchTime float The time spent in hitchy frames that lasted between x - y milliseconds long
@@ -506,7 +609,7 @@ void FUTAnalytics::FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnal
 * @EventParam PostProcessQuality int32 The post process quality of the server
 * @EventParam TextureQuality int32 The texture quality of the server
 * @EventParam FXQuality int32 The effects quality of the server
-* @EventParam AvgFPS float The average fps of the server
+* @EventParam AvgFPS float This value is used to show performance of the server. IE: If this value is 600, we could run 10 servers per core at 60fps or 20 servers per core at 30 fps.
 * @EventParam PercentAbove30 float The time percentage when the fps was above 30
 * @EventParam PercentAbove60 float The time percentage when the fps was above 60
 * @EventParam PercentAbove120 float The time percentage when the fps was above 120
@@ -520,11 +623,15 @@ void FUTAnalytics::FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnal
 * @EventParam PercentGameThreadBound float The percentage of game thread bound frames
 * @EventParam PercentRenderThreadBound float The percentage of render thread bound frames
 * @EventParam PercentGPUBound float The percentage of GPU bound frames
+* @EventParam RealServerFPS float This value is the actual server FPS.
 *
 * @Comments
 */
 void FUTAnalytics::FireEvent_UTServerFPSCharts(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& InParamArray)
 {
+	extern float ENGINE_API GAverageFPS;
+	InParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RealServerFPS), GAverageFPS));
+	
 	if (UTGM)
 	{
 		SetMatchInitialParameters(UTGM, InParamArray, false);
@@ -634,10 +741,13 @@ void FUTAnalytics::FireEvent_UTServerWeaponKills(AUTGameMode* UTGM, TMap<TSubcla
 		SetMatchInitialParameters(UTGM, ParamArray, true);
 		SetServerInitialParameters(ParamArray);
 
+		TMap<FString, int32> WeaponInfo;
 		for (auto& KillElement : *KillsArray)
 		{
-			ParamArray.Add(FAnalyticsEventAttribute(*KillElement.Key->GetName(), KillElement.Value));
+			WeaponInfo.Add(*KillElement.Key->GetName(), KillElement.Value);
 		}
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::WeaponInfo), WeaponInfo));
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTServerWeaponKills), ParamArray);
 	}
@@ -653,6 +763,7 @@ void FUTAnalytics::FireEvent_UTServerWeaponKills(AUTGameMode* UTGM, TMap<TSubcla
 * @EventParam Platform string The platform the client is on.
 * @EventParam Location string The context location of the player
 * @EventParam SocialPartyCount int32 The number of people in a players social party (counts the player as a party member)
+* @EventParam GameModeName string The Name of the game mode the player is currently in.
 * @EventParam RegionId the region reported by the user (automatic from ping, or self selected in settings)
 *
 * @Comments
@@ -665,10 +776,14 @@ void FUTAnalytics::FireEvent_PlayerContextLocationPerMinute(AUTPlayerController*
 		if (AnalyticsProvider.IsValid())
 		{
 			TArray<FAnalyticsEventAttribute> ParamArray;
+			
+			SetClientInitialParameters(UTPC, ParamArray, true);
+			
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::Platform), GetPlatform()));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::Location), PlayerContextLocation));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::SocialPartyCount), NumSocialPartyMembers));
-			
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), GetGameModeName(UTPC)));
+
 			if (FQosInterface::Get()->GetRegionId().IsEmpty() || (FQosInterface::Get()->GetRegionId() == "None"))
 			{
 				UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(UTPC->GetLocalPlayer());
@@ -731,7 +846,9 @@ void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDef
 			if (AnalyticsProvider.IsValid())
 			{
 				TArray<FAnalyticsEventAttribute> ParamArray;
-		
+				
+				SetMatchInitialParameters(UTGame, ParamArray, true);
+
 				int LivesRemaining = 0;
 				int PlayersEliminated = 0;
 				for (APlayerState* PS : UTGS->PlayerArray)
@@ -789,12 +906,14 @@ void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDef
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_EnterMatch(FString EnterMethod)
+void FUTAnalytics::FireEvent_EnterMatch(AUTPlayerController* UTPC, FString EnterMethod)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
 	if (AnalyticsProvider.IsValid())
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetClientInitialParameters(UTPC, ParamArray, false);
 
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::EnterMethod), EnterMethod));
 
@@ -813,12 +932,14 @@ void FUTAnalytics::FireEvent_EnterMatch(FString EnterMethod)
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_UTTutorialPickupToken(FString TokenID)
+void FUTAnalytics::FireEvent_UTTutorialPickupToken(AUTPlayerController* UTPC, FString TokenID)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
 	if (AnalyticsProvider.IsValid())
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetClientInitialParameters(UTPC, ParamArray, true);
 
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TokenID), TokenID));
 
@@ -837,12 +958,14 @@ void FUTAnalytics::FireEvent_UTTutorialPickupToken(FString TokenID)
 * @EventParam OptionalObjectName FString Name of the object this tutorial is about. IE: If it is a weapon it will be the weapon name
 * @Comments
 */
-void FUTAnalytics::FireEvent_UTTutorialPlayInstruction(int32 AnnoucementID, FString OptionalObjectName)
+void FUTAnalytics::FireEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, int32 AnnoucementID, FString OptionalObjectName)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
 	if (AnalyticsProvider.IsValid())
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetClientInitialParameters(UTPC, ParamArray, true);
 
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::AnnouncementID), AnnoucementID));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::OptionalObjectName), OptionalObjectName));
@@ -875,6 +998,8 @@ void FUTAnalytics::FireEvent_UTTutorialStarted(AUTPlayerController* UTPC, FStrin
 
 		if (UTPC)
 		{
+			SetClientInitialParameters(UTPC, ParamArray, true);
+
 			UUTProfileSettings* ProfileSettings = UTPC->GetProfileSettings();
 			if (ProfileSettings)
 			{
@@ -901,15 +1026,67 @@ void FUTAnalytics::FireEvent_UTTutorialStarted(AUTPlayerController* UTPC, FStrin
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_UTTutorialCompleted(FString TutorialMap)
+void FUTAnalytics::FireEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
 	if (AnalyticsProvider.IsValid())
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 
+		SetClientInitialParameters(UTPC, ParamArray, true);
+		
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TutorialMap), TutorialMap));
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTTutorialCompleted), ParamArray);
+	}
+}
+
+/*
+* @EventName UTCancelOnboarding
+*
+* @Trigger Fires when a client is forced into onboarding, and cancels out of the onboarding process
+*
+* @Type Sent by the Client
+*
+* @EventParam PlayerGUID string GUID to identify the player
+* 
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTCancelOnboarding(AUTPlayerController* UTPC)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetClientInitialParameters(UTPC, ParamArray, false);
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTCancelOnboarding), ParamArray);
+	}
+}
+
+void FUTAnalytics::FireEvent_UTStartRankedMatch(AUTGameMode* UTGM)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetMatchInitialParameters(UTGM, ParamArray, false, true);
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTStartRankedMatch), ParamArray);
+	}
+}
+
+void FUTAnalytics::FireEvent_UTEndRankedMatch(AUTGameMode* UTGM)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+		
+		SetMatchInitialParameters(UTGM, ParamArray, false, true);
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTEndRankedMatch), ParamArray);
 	}
 }

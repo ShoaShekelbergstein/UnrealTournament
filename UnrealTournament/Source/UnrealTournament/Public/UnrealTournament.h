@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Engine.h"
+#include "Online.h"
 #include "ParticleDefinitions.h"
 
 UNREALTOURNAMENT_API DECLARE_LOG_CATEGORY_EXTERN(UT, Log, All);
@@ -17,6 +18,7 @@ UNREALTOURNAMENT_API DECLARE_LOG_CATEGORY_EXTERN(UTConnection, Log, All);
 #define COLLISION_PAWNOVERLAP ECC_GameTraceChannel5
 #define COLLISION_TRACE_WEAPONNOCHARACTER ECC_GameTraceChannel6
 #define COLLISION_TRANSDISK ECC_GameTraceChannel7
+#define COLLISION_GAMEVOLUME ECC_GameTraceChannel8
 
 #include "UTATypes.h"
 #include "UTTeamInterface.h"

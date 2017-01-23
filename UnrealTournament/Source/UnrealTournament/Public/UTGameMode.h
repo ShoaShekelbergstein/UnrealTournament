@@ -5,6 +5,7 @@
 #include "UTServerBeaconLobbyClient.h"
 #include "UTReplicatedLoadoutInfo.h"
 #include "UTAntiCheatModularFeature.h"
+#include "UTBotPlayer.h"
 #include "UTGameMode.generated.h"
 
 UNREALTOURNAMENT_API DECLARE_LOG_CATEGORY_EXTERN(LogUTGame, Log, All);
@@ -21,6 +22,8 @@ namespace MatchState
 	extern UNREALTOURNAMENT_API const FName MatchIntermission;				// The game is in a round intermission
 	extern UNREALTOURNAMENT_API const FName MatchExitingIntermission;		// Exiting Halftime
 	extern UNREALTOURNAMENT_API const FName MatchRankedAbandon;				// Exiting Halftime
+	extern UNREALTOURNAMENT_API const FName WaitingTravel;					// The client is awaying travel to the next map
+
 }
 
 USTRUCT()
@@ -390,7 +393,7 @@ public:
 
 	/** class used for AI bots */
 	UPROPERTY(EditAnywhere, NoClear, BlueprintReadWrite, Category = Classes)
-	TSubclassOf<class AUTBot> BotClass;
+	TSubclassOf<class AUTBotPlayer> BotClass;
 
 	/** cached list of UTBotCharacter assets from the asset registry, so we don't need to query the registry every time we add a bot */
 	TArray<FAssetData> BotAssets;
@@ -537,17 +540,18 @@ public:
 
 	virtual void GiveDefaultInventory(APawn* PlayerPawn);
 
-	virtual float OverrideRespawnTime(TSubclassOf<AUTInventory> InventoryType);
+	virtual float OverrideRespawnTime(AUTPickupInventory* Pickup, TSubclassOf<AUTInventory> InventoryType);
 
 	/** Return true if playerstart P should be avoided for this game mode. */
 	virtual bool AvoidPlayerStart(class AUTPlayerStart* P);
 
-	virtual void StartNewPlayer(APlayerController* NewPlayer);
+	virtual void InitializeHUDForPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual bool ShouldSpawnAtStartSpot(AController* Player) override;
 	virtual class AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = TEXT("")) override;
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 	virtual float RatePlayerStart(APlayerStart* P, AController* Player);
 	virtual float AdjustNearbyPlayerStartScore(const AController* Player, const AController* OtherController, const ACharacter* OtherCharacter, const FVector& StartLoc, const APlayerStart* P);
+	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
 
 	virtual bool ReadyToStartMatch_Implementation() override;
 
@@ -608,25 +612,25 @@ protected:
 	virtual UUTBotCharacter* ChooseRandomCharacter(uint8 TeamNum);
 
 	/** Adds a bot to the game */
-	virtual class AUTBot* AddBot(uint8 TeamNum = 255);
+	virtual class AUTBotPlayer* AddBot(uint8 TeamNum = 255);
 
-	virtual class AUTBot* AddNamedBot(const FString& BotName, uint8 TeamNum = 255);
-	virtual class AUTBot* AddAssetBot(const FStringAssetReference& BotAssetPath, uint8 TeamNum = 255);
+	virtual class AUTBotPlayer* AddNamedBot(const FString& BotName, uint8 TeamNum = 255);
+	virtual class AUTBotPlayer* AddAssetBot(const FStringAssetReference& BotAssetPath, uint8 TeamNum = 255);
 	/** check for adding/removing bots to satisfy BotFillCount */
 	virtual void CheckBotCount();
 	/** returns whether we should allow removing the given bot to satisfy the desired player/bot count settings
 	 * generally used to defer destruction of bots that currently are important to the current game state, like flag carriers
 	 */
-	virtual bool AllowRemovingBot(AUTBot* B);
+	virtual bool AllowRemovingBot(AUTBotPlayer* B);
 
 	/** give bot a unique name based on the possible names in the given BotData */
-	virtual void SetUniqueBotName(AUTBot* B, const class UUTBotCharacter* BotData);
+	virtual void SetUniqueBotName(AUTBotPlayer* B, const class UUTBotCharacter* BotData);
 public:
 	/** adds a bot to the game, ignoring game settings */
 	UFUNCTION(Exec, BlueprintCallable, Category = AI)
-	virtual class AUTBot* ForceAddBot(uint8 TeamNum = 255);
+	virtual class AUTBotPlayer* ForceAddBot(uint8 TeamNum = 255);
 	UFUNCTION(Exec, BlueprintCallable, Category = AI)
-	virtual class AUTBot* ForceAddNamedBot(const FString& BotName, uint8 TeamNum = 255);
+	virtual class AUTBotPlayer* ForceAddNamedBot(const FString& BotName, uint8 TeamNum = 255);
 	/** sets bot count, ignoring startup settings */
 	UFUNCTION(Exec, BlueprintCallable, Category = AI)
 	virtual void SetBotCount(uint8 NewCount);
@@ -760,7 +764,8 @@ protected:
 	virtual void UpdateSkillRating();
 	virtual void SendLogoutAnalytics(class AUTPlayerState* PS);
 
-	virtual void AwardXP();
+	virtual void AwardXP(); 
+	virtual float GetScoreForXP(class AUTPlayerState* PS);
 
 	void ReportRankedMatchResults(const FString& MatchRatingType);
 	void GetRankedTeamInfo(int32 TeamId, struct FRankedTeamInfo& RankedTeamInfoOut);
@@ -876,8 +881,8 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category="Game")
 	bool PlayerCanAltRestart( APlayerController* Player );
 
-	virtual void HandleRallyRequest(AUTPlayerController* PC) {};
-	virtual void CompleteRallyRequest(AUTPlayerController* PC) {};
+	virtual bool HandleRallyRequest(AController* C) { return false; }
+	virtual void CompleteRallyRequest(AController* C) {}
 
 	virtual void GetGameURLOptions(const TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps, TArray<FString>& OptionsList, int32& DesiredPlayerCount);
 
@@ -988,5 +993,11 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category=Onboarding)
 	int32 TutorialMask;
 
+	/** preload assets on client that are loaded on server but aren't immediately used by/replicated to client so they may not be loaded
+	 * example: pawn classes for class-based modes
+	 * prevents client hitches when the objects are replicated the first time
+	 */
+	virtual void PreloadClientAssets(TArray<UObject*>& ObjList) const
+	{}
 };
 

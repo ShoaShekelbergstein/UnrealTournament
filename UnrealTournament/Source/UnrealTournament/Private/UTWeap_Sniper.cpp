@@ -43,6 +43,7 @@ AUTWeap_Sniper::AUTWeap_Sniper(const FObjectInitializer& ObjectInitializer)
 	WeaponSkinCustomizationTag = EpicWeaponSkinCustomizationTags::Sniper;
 	TutorialAnnouncements.Add(TEXT("PriSniper"));
 	TutorialAnnouncements.Add(TEXT("SecSniper"));
+	HighlightText = NSLOCTEXT("Weapon", "SniperHighlightText", "One Man One Bullet");
 }
 
 float AUTWeap_Sniper::GetHeadshotScale() const
@@ -176,6 +177,7 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 				DamageType = HeadshotDamageType;
 			}
 		}
+		OnHitScanDamage(Hit, FireDir);
 		Hit.Actor->TakeDamage(Damage, FUTPointDamageEvent(Damage, Hit, FireDir, DamageType, FireDir * InstantHitInfo[CurrentFireMode].Momentum), UTOwner->Controller, this);
 
 		if ((Role == ROLE_Authority) && bIsHeadShot && C && (C->Health > 0))

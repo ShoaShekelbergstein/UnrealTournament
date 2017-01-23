@@ -38,6 +38,7 @@ void AUTProj_Grenade_Sticky::BeginPlay()
 void AUTProj_Grenade_Sticky::ArmGrenade()
 {
 	bArmed = true;
+	InitialVisualOffset = FinalVisualOffset;
 }
 
 void AUTProj_Grenade_Sticky::ShutDown()
@@ -91,4 +92,24 @@ void AUTProj_Grenade_Sticky::Explode_Implementation(const FVector& HitLocation, 
 		Super::Explode_Implementation(HitLocation, HitNormal, HitComp);
 		MyFakeProjectile = SavedFakeProjectile;
 	}
+}
+
+uint8 AUTProj_Grenade_Sticky::GetInstigatorTeamNum()
+{
+	AController* Controller = GetInstigatorController();
+	
+	const IUTTeamInterface* TeamInterfaceController = Cast<IUTTeamInterface>(Controller);
+	if (TeamInterfaceController != NULL)
+	{
+		return TeamInterfaceController->GetTeamNum();
+	}
+
+	APawn* Pawn = GetInstigator();
+	const IUTTeamInterface* TeamInterfacePawn = Cast<IUTTeamInterface>(Pawn);
+	if (TeamInterfacePawn != NULL)
+	{
+		return TeamInterfacePawn->GetTeamNum();
+	}
+
+	return 0;
 }

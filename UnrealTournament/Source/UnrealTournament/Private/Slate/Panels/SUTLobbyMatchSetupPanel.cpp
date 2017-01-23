@@ -613,20 +613,10 @@ FReply SUTLobbyMatchSetupPanel::StartMatchClicked()
 		if (MatchInfo->CurrentState == ELobbyMatchState::WaitingForPlayers)
 		{
 			MatchInfo->ServerStartMatch();
-		
-			if (PlayerOwner.IsValid() && FUTAnalytics::IsAvailable())
-			{
-				FUTAnalytics::FireEvent_EnterMatch(FString("HUB - Start Match"));
-			}
 		}
 		else
 		{
 			MatchInfo->ServerAbortMatch();
-		
-			if (PlayerOwner.IsValid() && FUTAnalytics::IsAvailable())
-			{
-				FUTAnalytics::FireEvent_EnterMatch(FString("HUB - Abort Match"));
-			}
 		}
 	}
 
@@ -798,6 +788,7 @@ ECheckBoxState SUTLobbyMatchSetupPanel::GetFriendsOnlyState() const
 
 void SUTLobbyMatchSetupPanel::OnGameChangeDialogResult(TSharedPtr<SCompoundWidget> Dialog, uint16 ButtonPressed)
 {
+	bool bLaunch = false;
 	if (ButtonPressed == UTDIALOG_BUTTON_OK && MatchInfo.IsValid() && SetupDialog.IsValid() )
 	{
 		if (SetupDialog->IsCustomSettings())
@@ -805,11 +796,13 @@ void SUTLobbyMatchSetupPanel::OnGameChangeDialogResult(TSharedPtr<SCompoundWidge
 			FString GameMode;
 			FString StartingMap;
 			FString Description;
+			FString GameModeName;
+
 			TArray<FString> GameOptions;
 
 			int32 DesiredPlayerCount = 0;
 			int32 bTeamGame = 0;
-			SetupDialog->GetCustomGameSettings(GameMode, StartingMap, Description, GameOptions, DesiredPlayerCount, bTeamGame);
+			SetupDialog->GetCustomGameSettings(GameMode, StartingMap, Description, GameModeName, GameOptions, DesiredPlayerCount, bTeamGame);
 			MatchInfo->ServerCreateCustomRule(GameMode, StartingMap, Description, GameOptions, SetupDialog->BotSkillLevel, DesiredPlayerCount, bTeamGame != 0);
 		}
 
@@ -824,6 +817,7 @@ void SUTLobbyMatchSetupPanel::OnGameChangeDialogResult(TSharedPtr<SCompoundWidge
 
 			FString StartingMap = SetupDialog->GetSelectedMap();
 			MatchInfo->ServerSetRules(SetupDialog->SelectedRuleset->UniqueTag, StartingMap, SetupDialog->BotSkillLevel, bIsInParty);
+			bLaunch = true;
 		}
 	}
 	else if (ButtonPressed == UTDIALOG_BUTTON_CANCEL)
@@ -839,6 +833,9 @@ void SUTLobbyMatchSetupPanel::OnGameChangeDialogResult(TSharedPtr<SCompoundWidge
 	}
 
 	SetupDialog.Reset();
+
+	if (bLaunch) StartMatchClicked();
+
 }
 
 const FSlateBrush* SUTLobbyMatchSetupPanel::GetGameModeBadge() const

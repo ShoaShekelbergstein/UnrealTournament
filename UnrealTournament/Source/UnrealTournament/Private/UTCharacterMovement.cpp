@@ -166,10 +166,12 @@ void UUTCharacterMovement::UpdateBasedMovement(float DeltaSeconds)
 			if (!LiftVelocity.IsZero())
 			{
 				UUTReachSpec_Lift* LiftPath = NULL;
+				FUTPathLink LiftPathLink;
 				int32 ExitRouteIndex = INDEX_NONE;
 				if ((B->GetCurrentPath().ReachFlags & R_JUMP) && B->GetCurrentPath().Spec.IsValid())
 				{
 					LiftPath = Cast<UUTReachSpec_Lift>(B->GetCurrentPath().Spec.Get());
+					LiftPathLink = B->GetCurrentPath();
 				}
 				// see if bot's next path is a lift jump (need to check this for fast moving lifts, because CurrentPath won't change until bot reaches lift center which in certain cases might be too late)
 				else if (B->GetMoveTarget().Node != NULL)
@@ -181,6 +183,7 @@ void UUTCharacterMovement::UpdateBasedMovement(float DeltaSeconds)
 							int32 LinkIndex = B->GetMoveTarget().Node->GetBestLinkTo(B->GetMoveTarget().TargetPoly, B->RouteCache[i + 1], CharacterOwner, CharacterOwner->GetNavAgentPropertiesRef(), GetUTNavData(GetWorld()));
 							if (LinkIndex != INDEX_NONE && (B->GetMoveTarget().Node->Paths[LinkIndex].ReachFlags & R_JUMP) && B->GetMoveTarget().Node->Paths[LinkIndex].Spec.IsValid())
 							{
+								LiftPathLink = B->GetMoveTarget().Node->Paths[LinkIndex];
 								LiftPath = Cast<UUTReachSpec_Lift>(B->GetMoveTarget().Node->Paths[LinkIndex].Spec.Get());
 								ExitRouteIndex = i + 1;
 							}
@@ -300,7 +303,7 @@ void UUTCharacterMovement::UpdateBasedMovement(float DeltaSeconds)
 						{
 							TArray<FComponentBasedPosition> MovePoints;
 							new(MovePoints) FComponentBasedPosition(LiftPath->LiftExitLoc);
-							B->SetMoveTarget(B->RouteCache[ExitRouteIndex], MovePoints);
+							B->SetMoveTarget(B->RouteCache[ExitRouteIndex], MovePoints, LiftPathLink);
 						}
 						else if (B->GetMoveBasedPosition().Base != NULL && B->GetMoveBasedPosition().Base->GetOwner() == LiftPath->Lift)
 						{
@@ -311,7 +314,7 @@ void UUTCharacterMovement::UpdateBasedMovement(float DeltaSeconds)
 						else
 						{
 							// this makes sure the bot skips any leftover point on the lift center that it doesn't need anymore
-							B->SetMoveTargetDirect(B->GetMoveTarget());
+							B->SetMoveTargetDirect(B->GetMoveTarget(), B->GetCurrentPath());
 						}
 					}
 				}
@@ -368,6 +371,10 @@ void UUTCharacterMovement::ClearFallingStateFlags()
 	if (UTCharOwner)
 	{
 		UTCharOwner->bApplyWallSlide = false;
+		if (UTCharOwner->Role != ROLE_Authority)
+		{
+			UTCharOwner->bRepFloorSliding = false;
+		}
 	}
 	bExplicitJump = false;
 	ClearRestrictedJump();
@@ -735,7 +742,7 @@ bool UUTCharacterMovement::CanDodge()
 
 bool UUTCharacterMovement::CanJump()
 {
-	return (IsMovingOnGround() || CanMultiJump()) && CanEverJump() && !bWantsToCrouch && !bIsFloorSliding;
+	return (IsMovingOnGround() || CanMultiJump()) && CanEverJump() && !bIsFloorSliding;
 }
 
 bool UUTCharacterMovement::IsCarryingFlag() const
@@ -1016,6 +1023,10 @@ void UUTCharacterMovement::PerformFloorSlide(const FVector& DodgeDir, const FVec
 		if (UTChar)
 		{
 			UTChar->MovementEventUpdated(EME_Slide, DodgeDir);
+			if (UTChar->Role != ROLE_Authority)
+			{
+				UTChar->bRepFloorSliding = true;
+			}
 		}
 		AUTPlayerState* PS = CharacterOwner ? Cast<AUTPlayerState>(CharacterOwner->PlayerState) : NULL;
 		if (PS)
@@ -1350,6 +1361,22 @@ void UUTCharacterMovement::OnTeleported()
 	}
 }
 
+void UUTCharacterMovement::OnLineUp()
+{
+	if (CharacterOwner->Role == ROLE_SimulatedProxy)
+	{
+		FNetworkPredictionData_Client_Character* ClientData = GetPredictionData_Client_Character();
+		if (ClientData)
+		{
+			ClientData->MeshTranslationOffset.Z = 0.0f;
+		}
+	}
+	else
+	{
+		//UpdatedComponent->SetRelativeLocationAndRotation(FVector(ForceInitToZero), FRotator(ForceInitToZero));
+	}
+}
+
 void UUTCharacterMovement::ProcessLanded(const FHitResult& Hit, float remainingTime, int32 Iterations)
 {
 	bIsAgainstWall = false;
@@ -1387,6 +1414,10 @@ void UUTCharacterMovement::ProcessLanded(const FHitResult& Hit, float remainingT
 	if (UTCharOwner)
 	{
 		UTCharOwner->bApplyWallSlide = false;
+		if (UTCharOwner->Role != ROLE_Authority)
+		{
+			UTCharOwner->bRepFloorSliding = bIsFloorSliding;
+		}
 	}
 	bExplicitJump = false;
 	ClearRestrictedJump();
@@ -1558,6 +1589,11 @@ void UUTCharacterMovement::CheckJumpInput(float DeltaTime)
 			{
 				UE_LOG(UTNet, Warning, TEXT("SPRINTING NOW %d"), bIsSprinting);
 			}*/
+			AUTCharacter* UTCharOwner = Cast<AUTCharacter>(CharacterOwner);
+			if (UTCharOwner && (UTCharOwner->Role != ROLE_Authority))
+			{
+				UTCharOwner->bRepFloorSliding = bIsFloorSliding;
+			}
 		}
 
 		if (!bIsFloorSliding && bWasFloorSliding)
@@ -1729,6 +1765,17 @@ float UUTCharacterMovement::SlideAlongSurface(const FVector& Delta, float Time, 
 		bSlidingAlongWall = true;
 	}
 	return Super::SlideAlongSurface(Delta, Time, InNormal, Hit, bHandleImpact);
+}
+
+void UUTCharacterMovement::HandleSwimmingWallHit(const FHitResult& Hit, float DeltaTime)
+{
+	AUTCharacter* UTCharOwner = Cast<AUTCharacter>(CharacterOwner);
+	if (UTCharOwner && !UTCharOwner->HeadIsUnderWater())
+	{
+		FHitResult UpHit(1.f);
+		SafeMoveUpdatedComponent(FVector(0.f, 0.f, OutofWaterZ*DeltaTime) - Hit.Normal * 20.f*DeltaTime, UpdatedComponent->GetComponentQuat(), true, UpHit);
+		Velocity.Z = OutofWaterZ;
+	}
 }
 
 void UUTCharacterMovement::PhysSwimming(float deltaTime, int32 Iterations)
@@ -2180,6 +2227,10 @@ void UUTCharacterMovement::PhysFalling(float deltaTime, int32 Iterations)
 			Velocity = Velocity.GetClampedToMaxSize(GetPhysicsVolume()->TerminalVelocity);
 		}
 		//UE_LOG(UT, Warning, TEXT("FINAL VELOCITY at %f vel %f %f %f"), GetCurrentSynchTime(), Velocity.X, Velocity.Y, Velocity.Z);
+		if (bDrawJumps)
+		{
+			DrawDebugLine(GetWorld(), OldLocation, CharacterOwner->GetActorLocation(), FColor::Green, true);// , 0.f, 0, 8.f);
+		}
 	}
 }
 

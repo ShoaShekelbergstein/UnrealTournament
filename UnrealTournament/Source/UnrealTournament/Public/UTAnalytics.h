@@ -45,39 +45,43 @@ public:
 	static void FireEvent_PlayerContextLocationPerMinute(AUTPlayerController* UTPC, FString& PlayerContextLocation, const int32 NumSocialPartyMembers);
 	static void FireEvent_UTServerFPSCharts(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& InParamArray);
 	static void FireEvent_UTServerWeaponKills(AUTGameMode* UTGM, TMap<TSubclassOf<UDamageType>, int32>* KillsArray);
+	static void FireEvent_UTStartRankedMatch(AUTGameMode* UTGM);
+	static void FireEvent_UTEndRankedMatch(AUTGameMode* UTGM);
+
+	/* Client metrics */
+	static void FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& InParamArray);
+	static void FireEvent_EnterMatch(AUTPlayerController* UTPC, FString EnterMethod);
+	static void FireEvent_UTTutorialPickupToken(AUTPlayerController* UTPC, FString TokenID);
+	static void FireEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, int32 InstructionID, FString OptionalObjectName = FString());
+	static void FireEvent_UTTutorialStarted(AUTPlayerController* UTPC, FString TutorialMap);
+	static void FireEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap);
+	static void FireEvent_UTCancelOnboarding(AUTPlayerController* UTPC);
+
+	/* GameMode Metrics*/
+	static void FireEvent_FlagRunRoundEnd(class AUTFlagRunGame* UTGame, bool bIsDefenseRoundWin, bool bIsFinalRound);
 
 	//Param name generalizer
 	static FString GetGenericParamName(EGenericAnalyticParam::Type InGenericParam);
 
-	static void SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime);
+	/*Parameter Array Helpers*/
+	static void SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime, bool bIsRankedMatch = false);
 	static void SetServerInitialParameters(TArray<FAnalyticsEventAttribute>& ParamArray);
-	static void SetInitialParameters(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime);
-
-	/* Client metrics */
-	static void FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& InParamArray);
-	static void FireEvent_EnterMatch(FString EnterMethod);
-
-	static void FireEvent_UTTutorialPickupToken(FString TokenID);
-	static void FireEvent_UTTutorialPlayInstruction(int32 InstructionID, FString OptionalObjectName = FString());
-	static void FireEvent_UTTutorialStarted(AUTPlayerController* UTPC, FString TutorialMap);
-	static void FireEvent_UTTutorialCompleted(FString TutorialMap);
-
-	/* GameMode Metrics*/
-	static void FireEvent_FlagRunRoundEnd(class AUTFlagRunGame* UTGame, bool bIsDefenseRoundWin, bool bIsFinalRound);
+	static void SetClientInitialParameters(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime);
+	static void AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray);
 
 private:
 	/** Initialize the FString Array of Analytic Parameters */
 	static void InitializeAnalyticParameterNames();
 
 /** Analytics Helper Functions */
-public:
+private:
 	static FString GetPlatform();
 	static int32 GetMatchTime(AUTPlayerController* UTPC);
 	static int32 GetMatchTime(AUTGameMode* UTGM);
 	static FString GetMapName(AUTPlayerController* UTPC);
 	static FString GetMapName(AUTGameMode* UTGM);
-
-private:
+	static FString GetGameModeName(AUTPlayerController* UTPC);
+	static FString GetEpicAccountName(AUTPlayerController* UTPC);
 	static FString GetBuildType();
 
 	enum class EAccountSource

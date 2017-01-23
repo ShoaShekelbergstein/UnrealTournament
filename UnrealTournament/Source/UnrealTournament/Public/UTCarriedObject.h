@@ -6,7 +6,6 @@
 #include "UTCarriedObjectMessage.h"
 #include "UTTeamInterface.h"
 #include "UTProjectileMovementComponent.h"
-#include "UTSecurityCameraComponent.h"
 #include "UTCarriedObject.generated.h"
 
 class AUTCarriedObject;
@@ -127,10 +126,6 @@ class UNREALTOURNAMENT_API AUTCarriedObject : public AActor, public IUTTeamInter
 	UPROPERTY(BlueprintReadWrite, Category = GameObject)
 		AUTPlayerState* LastPinger;
 
-		// Last time there was a voice notification of enemy flag carrier
-	UPROPERTY(BlueprintReadWrite, Category = GameObject)
-		float LastPingVerbalTime;
-
 	// How long a non-enemy ping is valid
 	UPROPERTY(EditDefaultsOnly, Category = GameObject)
 		float PingedDuration;
@@ -160,13 +155,6 @@ class UNREALTOURNAMENT_API AUTCarriedObject : public AActor, public IUTTeamInter
 	UPROPERTY(BlueprintReadOnly, Category = GameObject)
 		float EnteredEnemyBaseTime;
 
-	virtual bool SetDetectingCamera(class UUTSecurityCameraComponent* NewDetectingCamera);
-
-	virtual class UUTSecurityCameraComponent* GetDetectingCamera();
-protected:
-	UPROPERTY(BlueprintReadOnly, Category = GameObject)
-	class UUTSecurityCameraComponent* DetectingCamera;
-
 private:
 	UPROPERTY()
 	TArray<AUTGhostFlag*> MyGhostFlags;
@@ -184,6 +172,7 @@ public:
 	UFUNCTION()
 	virtual void OnRep_Team()
 	{
+		UpdateHolderTrailTeam();
 	}
 
 	// Where to display this object relative to the home base
@@ -417,6 +406,8 @@ public:
 
 	virtual void SendNeedFlagAnnouncement();
 
+	virtual void RemoveInvalidPastPositions();
+
 protected:
 	// Server Side - Holds a reference to the pawn that is holding this object
 	UPROPERTY(BlueprintReadOnly, Category = GameObject)
@@ -471,6 +462,8 @@ protected:
 	virtual void TossObject(AUTCharacter* ObjectHolder);
 
 	virtual bool TeleportTo(const FVector& DestLocation, const FRotator& DestRotation, bool bIsATest = false, bool bNoCheck = false) override;
+
+	virtual void UpdateHolderTrailTeam();
 
 	/** used to prevent overlaps from triggering from within the drop code where it could cause inconvenient side effects */
 	bool bIsDropping;

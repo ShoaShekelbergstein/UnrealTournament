@@ -33,6 +33,8 @@ UUTCharacterVoice::UUTCharacterVoice(const FObjectInitializer& ObjectInitializer
 
 	StatusOffsets.Add(StatusMessage::ImGoingIn, KEY_CALLOUTS + 100);
 	StatusOffsets.Add(StatusMessage::BaseUnderAttack, KEY_CALLOUTS + 200);
+	StatusOffsets.Add(StatusMessage::Incoming, KEY_CALLOUTS + 250);
+	// only game volume speech after FIRSTGAMEVOLUMESPEECH = KEY_CALLOUTS + 299 
 	StatusOffsets.Add(GameVolumeSpeechType::GV_Bridge, KEY_CALLOUTS + 300);
 	StatusOffsets.Add(GameVolumeSpeechType::GV_River, KEY_CALLOUTS + 400);
 	StatusOffsets.Add(GameVolumeSpeechType::GV_Antechamber, KEY_CALLOUTS + 500);
@@ -65,6 +67,8 @@ UUTCharacterVoice::UUTCharacterVoice(const FObjectInitializer& ObjectInitializer
 	StatusOffsets.Add(GameVolumeSpeechType::GV_Ruins, KEY_CALLOUTS + 3300);
 	StatusOffsets.Add(GameVolumeSpeechType::GV_SniperTower, KEY_CALLOUTS + 3400);
 	StatusOffsets.Add(GameVolumeSpeechType::GV_Flak, KEY_CALLOUTS + 3500);
+	StatusOffsets.Add(GameVolumeSpeechType::GV_Waterfall, KEY_CALLOUTS + 3600);
+	// only game volume speech before LASTGAMEVOLUMESPEECH = KEY_CALLOUTS + 5000 
 
 	StatusOffsets.Add(StatusMessage::EnemyRally, KEY_CALLOUTS + 5000);
 	StatusOffsets.Add(StatusMessage::FindFC, KEY_CALLOUTS + 5001);
@@ -76,11 +80,16 @@ UUTCharacterVoice::UUTCharacterVoice(const FObjectInitializer& ObjectInitializer
 	StatusOffsets.Add(StatusMessage::BehindYou, KEY_CALLOUTS + 5008);
 	StatusOffsets.Add(StatusMessage::RedeemerSpotted, KEY_CALLOUTS + 5009);
 	StatusOffsets.Add(StatusMessage::GetTheFlag, KEY_CALLOUTS + 5010);
+	StatusOffsets.Add(StatusMessage::RallyNow, KEY_CALLOUTS + 5011);
 
+	//FIRSTPICKUPSPEECH = KEY_CALLOUTS + 5099;
 	StatusOffsets.Add(PickupSpeechType::RedeemerPickup, KEY_CALLOUTS + 5100);
 	StatusOffsets.Add(PickupSpeechType::UDamagePickup, KEY_CALLOUTS + 5200);
 	StatusOffsets.Add(PickupSpeechType::ShieldbeltPickup, KEY_CALLOUTS + 5300);
-	StatusOffsets.Add(StatusMessage::RedeemerKills, KEY_CALLOUTS + 5400);	
+	// LASTPICKUPSPEECH = KEY_CALLOUTS + 9999;
+
+
+	StatusOffsets.Add(StatusMessage::RedeemerKills, KEY_CALLOUTS + 10000);	
 
 	TauntText = NSLOCTEXT("UTCharacterVoice", "Taunt", ": {TauntMessage}");
 	StatusTextFormat = NSLOCTEXT("UTCharacterVoice", "StatusFormat", " at {LastKnownLocation}: {TauntMessage}");
@@ -103,7 +112,7 @@ FName UUTCharacterVoice::GetFallbackLines(FName InName) const
 
 bool UUTCharacterVoice::IsOptionalSpoken(int32 MessageIndex) const
 {
-	return bOptionalSpoken && (MessageIndex < KEY_CALLOUTS);
+	return bOptionalSpoken && (MessageIndex < StatusBaseIndex+KEY_CALLOUTS);
 }
 
 int32 UUTCharacterVoice::GetDestinationIndex(int32 MessageIndex) const
@@ -195,7 +204,7 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 	}
 	else if (Switch >= StatusBaseIndex)
 	{
-		if (Switch < KEY_CALLOUTS)
+		if (Switch < StatusBaseIndex + KEY_CALLOUTS)
 		{
 			if (Switch == GetStatusIndex(StatusMessage::NeedBackup))
 			{
@@ -295,6 +304,14 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 					return EmptySpeech;
 				}
 				return BaseUnderAttackMessages[FMath::RandRange(0, BaseUnderAttackMessages.Num() - 1)];
+			}
+			else if (Switch == GetStatusIndex(StatusMessage::Incoming))
+			{
+				if (IncomingMessages.Num() == 0)
+				{
+					return EmptySpeech;
+				}
+				return IncomingMessages[FMath::RandRange(0, IncomingMessages.Num() - 1)];
 			}
 			else if (Switch / 100 == GetStatusIndex(GameVolumeSpeechType::GV_Bridge) / 100)
 			{
@@ -424,6 +441,10 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 			{
 				return GetGVLine(FlakLines, Switch - GetStatusIndex(GameVolumeSpeechType::GV_Flak));
 			}
+			else if (Switch / 100 == GetStatusIndex(GameVolumeSpeechType::GV_Waterfall) / 100)
+			{
+				return GetGVLine(WaterfallLines, Switch - GetStatusIndex(GameVolumeSpeechType::GV_Waterfall));
+			}
 			else if (Switch / 100 == GetStatusIndex(PickupSpeechType::UDamagePickup) / 100)
 			{
 				return (Switch - GetStatusIndex(PickupSpeechType::UDamagePickup) == 0) ? UDamageAvailableLine : UDamagePickupLine;
@@ -448,6 +469,10 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 			else if (Switch == GetStatusIndex(StatusMessage::EnemyRally))
 			{
 				return (EnemyRallyMessages.Num() == 0) ? EmptySpeech : EnemyRallyMessages[FMath::RandRange(0, EnemyRallyMessages.Num() - 1)];
+			}
+			else if (Switch == GetStatusIndex(StatusMessage::RallyNow))
+			{
+				return (RallyNowMessages.Num() == 0) ? EmptySpeech : RallyNowMessages[FMath::RandRange(0, RallyNowMessages.Num() - 1)];
 			}
 			else if (Switch == GetStatusIndex(StatusMessage::FindFC))
 			{
@@ -531,26 +556,71 @@ bool UUTCharacterVoice::ShouldPlayAnnouncement(const FClientReceiveData& ClientD
 	}
 }
 
+bool UUTCharacterVoice::IsFlagLocationUpdate(int32 Switch) const
+{
+	return (Switch > StatusBaseIndex + FIRSTGAMEVOLUMESPEECH) && (Switch < StatusBaseIndex + LASTGAMEVOLUMESPEECH) && (Switch % 10 < 2);
+}
+
+bool UUTCharacterVoice::IsPickupUpdate(int32 Switch) const
+{
+	return (Switch > StatusBaseIndex + FIRSTPICKUPSPEECH) && (Switch < StatusBaseIndex + LASTPICKUPSPEECH);
+}
+
 bool UUTCharacterVoice::InterruptAnnouncement(const FAnnouncementInfo AnnouncementInfo, const FAnnouncementInfo OtherAnnouncementInfo) const
 {
-	return (AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass) && (AnnouncementInfo.Switch >= KEY_CALLOUTS) && (OtherAnnouncementInfo.Switch < KEY_CALLOUTS);
+	if (AnnouncementInfo.Switch == GetStatusIndex(StatusMessage::Incoming))
+	{
+		return (AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass)
+			|| OtherAnnouncementInfo.MessageClass->GetDefaultObject<UUTLocalMessage>()->IsOptionalSpoken(OtherAnnouncementInfo.Switch)
+			|| (OtherAnnouncementInfo.MessageClass->GetDefaultObject<UUTLocalMessage>()->GetAnnouncementPriority(OtherAnnouncementInfo) < 1.f);
+	}
+	if ((AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass) && (AnnouncementInfo.Switch >= StatusBaseIndex + KEY_CALLOUTS))
+	{
+		bool bNewIsFlagLocUpdate = IsFlagLocationUpdate(AnnouncementInfo.Switch);
+		bool bOldIsFlagLocUpdate = IsFlagLocationUpdate(OtherAnnouncementInfo.Switch);
+		if ((OtherAnnouncementInfo.Switch < StatusBaseIndex + KEY_CALLOUTS) || (bNewIsFlagLocUpdate && (bOldIsFlagLocUpdate || IsPickupUpdate(OtherAnnouncementInfo.Switch))))
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 bool UUTCharacterVoice::CancelByAnnouncement_Implementation(int32 Switch, const UObject* OptionalObject, TSubclassOf<UUTLocalMessage> OtherMessageClass, int32 OtherSwitch, const UObject* OtherOptionalObject) const
 {
 	if (GetClass() == OtherMessageClass)
 	{
-		return (Switch < KEY_CALLOUTS) && (OtherSwitch >= KEY_CALLOUTS);
+		if (Switch < StatusBaseIndex + KEY_CALLOUTS)
+		{
+			return (OtherSwitch >= StatusBaseIndex + KEY_CALLOUTS);
+		}
+		if ((OtherSwitch < StatusBaseIndex + FIRSTGAMEVOLUMESPEECH) || (Switch < StatusBaseIndex + FIRSTGAMEVOLUMESPEECH))
+		{
+			return false;
+		}
+		if ((OtherSwitch >= StatusBaseIndex + KEY_CALLOUTS) && (OtherSwitch < StatusBaseIndex + LASTGAMEVOLUMESPEECH) && (Switch < StatusBaseIndex + LASTGAMEVOLUMESPEECH) && (OtherSwitch % 10 < 2) && (Switch % 10 < 2))
+		{
+			return true;
+		}
+		return false;
 	}
 	else
 	{
-		return (Switch < KEY_CALLOUTS);
+		return (Switch < StatusBaseIndex + KEY_CALLOUTS);
 	}
 }
 
 float UUTCharacterVoice::GetAnnouncementPriority(const FAnnouncementInfo AnnouncementInfo) const
 {
-	return (AnnouncementInfo.Switch >= KEY_CALLOUTS) ? 0.5f : 0.1f;
+	if (AnnouncementInfo.Switch == GetStatusIndex(StatusMessage::Incoming))
+	{
+		return 1.1f;
+	}
+	if (IsFlagLocationUpdate(AnnouncementInfo.Switch))
+	{
+		return 0.7f;
+	}
+	return (AnnouncementInfo.Switch >= StatusBaseIndex + KEY_CALLOUTS) ? 0.5f : 0.1f;
 }
 
 int32 UUTCharacterVoice::GetStatusIndex(FName NewStatus) const

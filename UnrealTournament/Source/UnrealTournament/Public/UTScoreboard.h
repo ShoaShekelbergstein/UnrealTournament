@@ -111,6 +111,8 @@ public:
 	UPROPERTY()
 		float LastScorePanelYOffset;
 
+	virtual void NotifyMatchStateChange() {};
+
 	virtual void PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCanvas* InCanvas, FVector2D InCanvasCenter);
 
 	virtual bool ShouldDrawScoringStats() { return false; };
@@ -187,9 +189,6 @@ public:
 		bool bHaveWarmup;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
-		FText MinimapToggleText;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		bool bDrawMinimapInScoreboard;
 
 	/** If true force Epic account names on scoreboard. */
@@ -210,7 +209,7 @@ protected:
 	}
 
 	virtual void DrawGamePanel(float RenderDelta, float& YOffset);
-	virtual void DrawGameOptions(float RenderDelta, float& YOffset);
+	virtual void DrawGameOptions(float RenderDelta, float& YOffset, float RightEdge);
 
 	virtual void DrawTeamPanel(float RenderDelta, float& YOffset);
 	virtual void DrawMinimap(float RenderDelta);
@@ -221,8 +220,6 @@ protected:
 	virtual void DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float RenderDelta, float XOffset, float YOffset);
 	virtual void DrawPlayerScore(AUTPlayerState* PlayerState, float XOffset, float YOffset, float Width, FLinearColor DrawColor);
 	virtual void DrawReadyText(AUTPlayerState* PlayerState, float XOffset, float YOffset, float Width);
-
-	virtual void DrawServerPanel(float RenderDelta, float YOffset);
 
 	/** Color to display ready text. */
 	FLinearColor ReadyColor;

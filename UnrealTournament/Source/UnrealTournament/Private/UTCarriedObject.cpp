@@ -10,7 +10,6 @@
 #include "UTLift.h"
 #include "UTFlagReturnTrail.h"
 #include "UTGhostFlag.h"
-#include "UTSecurityCameraComponent.h"
 #include "UTGameVolume.h"
 #include "UTCTFRoundGameState.h"
 #include "UTCTFRoundGame.h"
@@ -68,11 +67,6 @@ void AUTCarriedObject::Destroyed()
 	}
 
 	ClearGhostFlags();
-}
-
-UUTSecurityCameraComponent* AUTCarriedObject::GetDetectingCamera()
-{
-	return DetectingCamera;
 }
 
 void AUTCarriedObject::GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const
@@ -173,6 +167,26 @@ void AUTCarriedObject::DetachFrom(USkeletalMeshComponent* AttachToMesh)
 	}
 }
 
+void AUTCarriedObject::UpdateHolderTrailTeam()
+{
+	if (!HolderTrail)
+	{
+		return;
+	}
+	float TrailLength = 0.f;
+	if (Team)
+	{
+		HolderTrail->SetColorParameter(FName(TEXT("Color")), Team->TeamColor);
+		for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+		{
+			AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+			TrailLength = (PC && GetTeamNum() == PC->GetTeamNum()) ? 0.5f : 0.f;
+			break;
+		}
+	}
+	HolderTrail->SetFloatParameter(FName(TEXT("Lifespan")), TrailLength);
+}
+
 void AUTCarriedObject::ClientUpdateAttachment(bool bNowAttached)
 {
 	if (HolderTrail)
@@ -194,18 +208,7 @@ void AUTCarriedObject::ClientUpdateAttachment(bool bNowAttached)
 				HolderTrail->RegisterComponent();
 
 				HolderTrail->AttachToComponent(RootComponent->GetAttachParent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, Holder3PSocketName);
-				float TrailLength = 0.f;
-				if (Team)
-				{
-					HolderTrail->SetColorParameter(FName(TEXT("Color")), Team->TeamColor);
-					for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
-					{
-						AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-						TrailLength = (PC && GetTeamNum() == PC->GetTeamNum()) ? 0.5f : 0.f;
-						break;
-					}
-				}
-				HolderTrail->SetFloatParameter(FName(TEXT("Lifespan")), TrailLength);
+				UpdateHolderTrailTeam();
 			}
 		}
 	}
@@ -482,6 +485,16 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 	{
 		PC->UTClientPlaySound(HolderPickupSound);
 	}
+	AUTGameVolume* GV = Cast<AUTGameVolume>(HoldingPawn->GetPawnPhysicsVolume());
+	if (GV && GV->bIsNoRallyZone && !GV->bIsTeamSafeVolume)
+	{
+		// play alarm
+		if (GetWorld()->GetTimeSeconds() - EnteredEnemyBaseTime > 2.f)
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), GV->AlarmSound, HoldingPawn, SRT_All, false, FVector::ZeroVector, NULL, NULL, false);
+		}
+		EnteredEnemyBaseTime = GetWorld()->GetTimeSeconds();
+	}
 
 	SendGameMessage(4, Holder, NULL);
 
@@ -525,10 +538,14 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 		}
 	}
 	UpdateOutline();
+
+	// FIXME DEBUG
+	ensure(Holder == nullptr || Holder->CarriedObject == this);
 }
 
 void AUTCarriedObject::NoLongerHeld(AController* InstigatedBy)
 {
+	LastHolder = Holder;
 	// Have the holding pawn drop the object
 	if (HoldingPawn != NULL)
 	{
@@ -546,20 +563,20 @@ void AUTCarriedObject::NoLongerHeld(AController* InstigatedBy)
 				}
 			}
 		}
+		TGuardValue<bool> DropGuard(bIsDropping, true); // make sure touch doesn't happen here, TossObject() will take care of it
 		DetachFrom(HoldingPawn->GetMesh());
 	}
-	LastHolder = Holder;
-	if (Holder != NULL)
+	if (LastHolder != NULL)
 	{
-		Holder->bSpecialTeamPlayer = false;
-		Holder->bSpecialPlayer = false;
+		LastHolder->bSpecialTeamPlayer = false;
+		LastHolder->bSpecialPlayer = false;
 		if (GetNetMode() != NM_DedicatedServer)
 		{
-			Holder->OnRepSpecialPlayer();
-			Holder->OnRepSpecialTeamPlayer();
+			LastHolder->OnRepSpecialPlayer();
+			LastHolder->OnRepSpecialTeamPlayer();
 		}
-		Holder->ClearCarriedObject(this);
-		Holder->ForceNetUpdate();
+		LastHolder->ClearCarriedObject(this);
+		LastHolder->ForceNetUpdate();
 	}
 
 	LastHoldingPawn = HoldingPawn;
@@ -711,29 +728,42 @@ void AUTCarriedObject::Drop(AController* Killer)
 	// Toss is out
 	TossObject(LastHoldingPawn);
 
-	if (bGradualAutoReturn && (PastPositions.Num() > 0) && (Holder == nullptr))
+	if (bGradualAutoReturn && (Holder == nullptr))
 	{
-		if ((GetActorLocation() - PastPositions[PastPositions.Num() - 1].Location).Size() < MinGradualReturnDist)
-		{
-			PastPositions.RemoveAt(PastPositions.Num() - 1);
-		}
+		RemoveInvalidPastPositions();
 		if (PastPositions.Num() > 0)
 		{
 			PutGhostFlagAt(PastPositions[PastPositions.Num() - 1]);
 			PastPositions.RemoveAt(PastPositions.Num() - 1);
 		}
+		else if (HomeBase)
+		{
+			FFlagTrailPos BasePosition;
+			BasePosition.Location = GetHomeLocation();
+			PutGhostFlagAt(BasePosition);
+		}
 	}
 }
 
-bool AUTCarriedObject::SetDetectingCamera(class UUTSecurityCameraComponent* NewDetectingCamera)
+void AUTCarriedObject::RemoveInvalidPastPositions()
 {
-	if (DetectingCamera && NewDetectingCamera && ((GetActorLocation() - DetectingCamera->K2_GetComponentLocation()).SizeSquared() < (GetActorLocation() - NewDetectingCamera->K2_GetComponentLocation()).SizeSquared()))
+	AUTGameVolume* GV = Cast<AUTGameVolume>(Collision->GetPhysicsVolume());
+	bool bInNoRallyZone = GV && GV->bIsNoRallyZone;
+	bool bRemovingPositions = true;
+	while ((PastPositions.Num() > 0) && bRemovingPositions)
 	{
-		// change only if new one is closer
-		return false;
+		bRemovingPositions = false;
+		if ((GetActorLocation() - PastPositions[PastPositions.Num() - 1].Location).Size() < MinGradualReturnDist)
+		{
+			PastPositions.RemoveAt(PastPositions.Num() - 1);
+			bRemovingPositions = true;
+		}
+		else if (!bInNoRallyZone && PastPositions[PastPositions.Num() - 1].bIsInNoRallyZone)
+		{
+			PastPositions.RemoveAt(PastPositions.Num() - 1);
+			bRemovingPositions = true;
+		}
 	}
-	DetectingCamera = NewDetectingCamera;
-	return true;
 }
 
 void AUTCarriedObject::Use()
@@ -803,10 +833,6 @@ void AUTCarriedObject::SendHome()
 			// don't gradual return during intermissions
 			return;
 		}
-		if ((GetActorLocation() - PastPositions[PastPositions.Num() - 1].Location).Size() < MinGradualReturnDist)
-		{
-			PastPositions.RemoveAt(PastPositions.Num() - 1);
-		}
 		if (PastPositions.Num() > 0)
 		{
 			bool bWantsGhostFlag = false;
@@ -816,30 +842,31 @@ void AUTCarriedObject::SendHome()
 			SetActorLocationAndRotation(PastPositions[PastPositions.Num() - 1].Location, GetActorRotation());
 			if (ObjectState != CarriedObjectState::Held)
 			{
-			PastPositions.RemoveAt(PastPositions.Num() - 1);
-			if (PastPositions.Num() > 0)
-			{
-				if ((GetActorLocation() - PastPositions[PastPositions.Num() - 1].Location).Size() < MinGradualReturnDist)
-				{
-					PastPositions.RemoveAt(PastPositions.Num() - 1);
-				}
+				PastPositions.RemoveAt(PastPositions.Num() - 1);
+				RemoveInvalidPastPositions();
 				if (PastPositions.Num() > 0)
 				{
 					PutGhostFlagAt(PastPositions[PastPositions.Num() - 1]);
 					bWantsGhostFlag = true;
 				}
-			}
-			if ((GetWorld()->GetTimeSeconds() - LastDroppedMessageTime > AutoReturnTime - 2.f) && GameState && !GameState->IsMatchIntermission() && !GameState->HasMatchEnded())
-			{
-				LastDroppedMessageTime = GetWorld()->GetTimeSeconds();
-				SendGameMessage((Team && (Team->TeamIndex == 0)) ? 0 : 1, NULL, NULL);
-				if (GetWorld()->GetTimeSeconds() - LastNeedFlagMessageTime > 15.f)
+				else if (HomeBase)
 				{
-					SendNeedFlagAnnouncement();
+					FFlagTrailPos BasePosition;
+					BasePosition.Location = GetHomeLocation();
+					PutGhostFlagAt(BasePosition);
+					bWantsGhostFlag = true;
 				}
-			}
-			OnObjectStateChanged();
-			ForceNetUpdate();
+				if ((GetWorld()->GetTimeSeconds() - LastDroppedMessageTime > AutoReturnTime - 2.f) && GameState && !GameState->IsMatchIntermission() && !GameState->HasMatchEnded())
+				{
+					LastDroppedMessageTime = GetWorld()->GetTimeSeconds();
+					SendGameMessage((Team && (Team->TeamIndex == 0)) ? 0 : 1, NULL, NULL);
+					if (GetWorld()->GetTimeSeconds() - LastNeedFlagMessageTime > 15.f)
+					{
+						SendNeedFlagAnnouncement();
+					}
+				}
+				OnObjectStateChanged();
+				ForceNetUpdate();
 			}
 			if (!bWantsGhostFlag)
 			{

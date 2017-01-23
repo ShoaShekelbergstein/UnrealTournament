@@ -12,6 +12,9 @@
 #include "UTWeaponRedirector.h"
 #include "UTProj_WeaponScreen.h"
 #include "UTRepulsorBubble.h"
+#include "UTTeamDeco.h"
+#include "UTDemoNetDriver.h"
+#include "UTDemoRecSpectator.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUTProjectile, Log, All);
 
@@ -541,7 +544,7 @@ void AUTProjectile::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& 
 
 void AUTProjectile::PreReplication(IRepChangedPropertyTracker & ChangedPropertyTracker)
 {
-	if (bForceNextRepMovement || bReplicateUTMovement)
+	if ((bForceNextRepMovement || bReplicateUTMovement) && (Role == ROLE_Authority))
 	{
 		GatherCurrentMovement();
 		bForceNextRepMovement = false;
@@ -627,7 +630,7 @@ void AUTProjectile::PostNetReceiveLocationAndRotation()
 		MyFakeProjectile->ReplicatedMovement.Rotation = GetActorRotation();
 		MyFakeProjectile->PostNetReceiveLocationAndRotation();
 	}
-	else
+	else if (Role != ROLE_Authority)
 	{
 		// tick particle systems for e.g. SpawnPerUnit trails
 		if (!bTearOff && !bExploded) // if torn off ShutDown() will do this
@@ -688,11 +691,11 @@ void AUTProjectile::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AAc
 		else if (CollisionComp != NULL)
 		{
 			USphereComponent* TestComp = (PawnOverlapSphere != NULL && PawnOverlapSphere->GetUnscaledSphereRadius() > CollisionComp->GetUnscaledSphereRadius()) ? PawnOverlapSphere : CollisionComp;
-			OtherComp->SweepComponent(Hit, GetActorLocation() - GetVelocity() * 10.0, GetActorLocation() + GetVelocity(), TestComp->GetCollisionShape(), TestComp->bTraceComplexOnMove);
+			OtherComp->SweepComponent(Hit, GetActorLocation() - GetVelocity() * 10.f, GetActorLocation() + GetVelocity(), FQuat::Identity, TestComp->GetCollisionShape(), TestComp->bTraceComplexOnMove);
 		}
 		else
 		{
-			OtherComp->LineTraceComponent(Hit, GetActorLocation() - GetVelocity() * 10.0, GetActorLocation() + GetVelocity(), FCollisionQueryParams(GetClass()->GetFName(), false, this));
+			OtherComp->LineTraceComponent(Hit, GetActorLocation() - GetVelocity() * 10.f, GetActorLocation() + GetVelocity(), FCollisionQueryParams(GetClass()->GetFName(), false, this));
 		}
 
 		ProcessHit(OtherActor, OtherComp, Hit.Location, Hit.Normal);
@@ -739,6 +742,8 @@ void AUTProjectile::OnBounce(const struct FHitResult& ImpactResult, const FVecto
 	}
 	if ((MyFakeProjectile == NULL) && (Cast<AUTProjectile>(ImpactResult.Actor.Get()) == NULL || InteractsWithProj(Cast<AUTProjectile>(ImpactResult.Actor.Get()))))
 	{
+		InitialVisualOffset = FinalVisualOffset;
+
 		// Spawn bounce effect
 		if (GetNetMode() != NM_DedicatedServer)
 		{
@@ -783,11 +788,17 @@ bool AUTProjectile::ShouldIgnoreHit_Implementation(AActor* OtherActor, UPrimitiv
 	// don't blow up from our side on weapon shields; let the shield do that so it can change damage/kill credit
 	// ignore client-side actors if will bounce
 	// special case not blowing up on Repulsor bubble so that we can reflect / absorb projectiles
-	return ( ((Cast<AUTTeleporter>(OtherActor) != NULL || Cast<AVolume>(OtherActor) != NULL) && !GetVelocity().IsZero())
-			|| (Cast<AUTRepulsorBubble>(OtherActor) != NULL)
-			|| (Cast<AUTProjectile>(OtherActor) != NULL && !InteractsWithProj(Cast<AUTProjectile>(OtherActor)))
-			|| Cast<AUTProj_WeaponScreen>(OtherActor) != NULL )
-			|| (ProjectileMovement->bShouldBounce && (Role != ROLE_Authority) && OtherActor && OtherActor->bTearOff);
+	AUTTeamDeco* Deco = Cast<AUTTeamDeco>(OtherActor);
+	if (Deco && !Deco->bBlockTeamProjectiles && Instigator)
+	{
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+		return GS && GS->OnSameTeam(Instigator, Deco);
+	}
+	return (((Cast<AUTTeleporter>(OtherActor) != NULL || Cast<AVolume>(OtherActor) != NULL) && !GetVelocity().IsZero())
+		|| (Cast<AUTRepulsorBubble>(OtherActor) != NULL)
+		|| (Cast<AUTProjectile>(OtherActor) != NULL && !InteractsWithProj(Cast<AUTProjectile>(OtherActor)))
+		|| Cast<AUTProj_WeaponScreen>(OtherActor) != NULL)
+		|| (ProjectileMovement->bShouldBounce && (Role != ROLE_Authority) && OtherActor && OtherActor->bTearOff);
 }
 
 void AUTProjectile::ProcessHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp, const FVector& HitLocation, const FVector& HitNormal)
@@ -795,51 +806,60 @@ void AUTProjectile::ProcessHit_Implementation(AActor* OtherActor, UPrimitiveComp
 	UE_LOG(UT, Verbose, TEXT("%s::ProcessHit fake %d has master %d has fake %d OtherActor:%s"), *GetName(), bFakeClientProjectile, (MasterProjectile != NULL), (MyFakeProjectile != NULL), OtherActor ? *OtherActor->GetName() : TEXT("NULL"));
 
 	// note: on clients we assume spawn time impact is invalid since in such a case the projectile would generally have not survived to be replicated at all
-	if ( OtherActor != this && (OtherActor != Instigator || Instigator == NULL || bCanHitInstigator) && OtherComp != NULL && !bExploded  && (Role == ROLE_Authority || bHasSpawnedFully)
-		 && !ShouldIgnoreHit(OtherActor, OtherComp) )
+	if (OtherActor != this && (OtherActor != Instigator || Instigator == NULL || bCanHitInstigator) && OtherComp != NULL && !bExploded && (Role == ROLE_Authority || bHasSpawnedFully))
 	{
-		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (!bCanHitTeammates && GS && !GS->bTeamProjHits && Cast<AUTCharacter>(OtherActor) && Instigator && (Instigator != OtherActor) && GS->OnSameTeam(OtherActor, Instigator))
+		if (ShouldIgnoreHit(OtherActor, OtherComp))
 		{
-			// ignore team hits
-			return;
+			if ((Role != ROLE_Authority) && OtherActor && OtherActor->bTearOff)
+			{ 
+				DamageImpactedActor(OtherActor, OtherComp, HitLocation, HitNormal);
+			}
 		}
-		if (MyFakeProjectile && !MyFakeProjectile->IsPendingKillPending())
+		else
 		{
-			MyFakeProjectile->ProcessHit_Implementation(OtherActor, OtherComp, HitLocation, HitNormal);
-			Destroy();
-			return;
-		}
-		if (OtherActor != NULL)
-		{
-			DamageImpactedActor(OtherActor, OtherComp, HitLocation, HitNormal);
-		}
-
-		ImpactedActor = OtherActor;
-		Explode(HitLocation, HitNormal, OtherComp);
-		ImpactedActor = NULL;
-
-		if (Cast<AUTProjectile>(OtherActor) != NULL)
-		{
-			// since we'll probably be destroyed or lose collision here, make sure we trigger the other projectile so shootable projectiles colliding is consistent (both explode)
-
-			UPrimitiveComponent* MyCollider = CollisionComp;
-			if (CollisionComp == NULL || CollisionComp->GetCollisionObjectType() != COLLISION_PROJECTILE_SHOOTABLE)
+			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+			if (!bCanHitTeammates && GS && !GS->bTeamProjHits && Cast<AUTCharacter>(OtherActor) && Instigator && (Instigator != OtherActor) && GS->OnSameTeam(OtherActor, Instigator))
 			{
-				// our primary collision component isn't the shootable one; try to find one that is
-				TArray<UPrimitiveComponent*> Components;
-				GetComponents<UPrimitiveComponent>(Components);
-				for (int32 i = 0; i < Components.Num(); i++)
-				{
-					if (Components[i]->GetCollisionObjectType() == COLLISION_PROJECTILE_SHOOTABLE)
-					{
-						MyCollider = Components[i];
-						break;
-					}
-				}
+				// ignore team hits
+				return;
+			}
+			if (MyFakeProjectile && !MyFakeProjectile->IsPendingKillPending())
+			{
+				MyFakeProjectile->ProcessHit_Implementation(OtherActor, OtherComp, HitLocation, HitNormal);
+				Destroy();
+				return;
+			}
+			if (OtherActor != NULL)
+			{
+				DamageImpactedActor(OtherActor, OtherComp, HitLocation, HitNormal);
 			}
 
-			((AUTProjectile*)OtherActor)->ProcessHit(this, MyCollider, HitLocation, -HitNormal);
+			ImpactedActor = OtherActor;
+			Explode(HitLocation, HitNormal, OtherComp);
+			ImpactedActor = NULL;
+
+			if (Cast<AUTProjectile>(OtherActor) != NULL)
+			{
+				// since we'll probably be destroyed or lose collision here, make sure we trigger the other projectile so shootable projectiles colliding is consistent (both explode)
+
+				UPrimitiveComponent* MyCollider = CollisionComp;
+				if (CollisionComp == NULL || CollisionComp->GetCollisionObjectType() != COLLISION_PROJECTILE_SHOOTABLE)
+				{
+					// our primary collision component isn't the shootable one; try to find one that is
+					TArray<UPrimitiveComponent*> Components;
+					GetComponents<UPrimitiveComponent>(Components);
+					for (int32 i = 0; i < Components.Num(); i++)
+					{
+						if (Components[i]->GetCollisionObjectType() == COLLISION_PROJECTILE_SHOOTABLE)
+						{
+							MyCollider = Components[i];
+							break;
+						}
+					}
+				}
+
+				((AUTProjectile*)OtherActor)->ProcessHit(this, MyCollider, HitLocation, -HitNormal);
+			}
 		}
 	}
 }
@@ -907,6 +927,21 @@ void AUTProjectile::DamageImpactedActor_Implementation(AActor* OtherActor, UPrim
 
 void AUTProjectile::Explode_Implementation(const FVector& HitLocation, const FVector& HitNormal, UPrimitiveComponent* HitComp)
 {
+	if (GetWorld()->GetNetMode() == NM_Client)
+	{
+		UDemoNetDriver* DemoDriver = GetWorld()->DemoNetDriver;
+		if (DemoDriver)
+		{
+			AUTDemoRecSpectator* DemoRecSpec = Cast<AUTDemoRecSpectator>(DemoDriver->SpectatorController);
+			if (DemoRecSpec && (GetWorld()->GetTimeSeconds() - DemoRecSpec->LastKillcamSeekTime) < 2.0f)
+			{
+				bExploded = true;
+				Destroy();
+				return;
+			}
+		}
+	}
+
 	if (!bExploded)
 	{
 		bExploded = true;
@@ -1082,6 +1117,25 @@ float AUTProjectile::GetTimeToLocation(const FVector& TargetLoc) const
 float AUTProjectile::GetMaxDamageRadius_Implementation() const
 {
 	return DamageParams.OuterRadius;
+}
+
+void AUTProjectile::PrepareForIntermission()
+{
+	if (ProjectileMovement != nullptr)
+	{
+		ProjectileMovement->StopMovementImmediately();
+	}
+
+	TArray<USceneComponent*> Components;
+	GetComponents<USceneComponent>(Components);
+	for (int32 i = 0; i < Components.Num(); i++)
+	{
+		UAudioComponent* Audio = Cast<UAudioComponent>(Components[i]);
+		if (Audio != NULL)
+		{
+			Audio->Stop();
+		}
+	}
 }
 
 

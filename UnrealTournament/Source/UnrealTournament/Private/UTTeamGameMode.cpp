@@ -17,6 +17,7 @@
 #include "UTBotCharacter.h"
 #include "AnalyticsEventAttribute.h"
 #include "IAnalyticsProvider.h"
+#include "UTATypes.h"
 
 UUTTeamInterface::UUTTeamInterface(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -28,10 +29,10 @@ AUTTeamGameMode::AUTTeamGameMode(const FObjectInitializer& ObjectInitializer)
 {
 	NumTeams = 2;
 	bBalanceTeams = true;
-	new(TeamColors) FLinearColor(1.0f, 0.05f, 0.0f, 1.0f);
-	new(TeamColors) FLinearColor(0.1f, 0.1f, 1.0f, 1.0f);
-	new(TeamColors) FLinearColor(0.0f, 1.0f, 0.0f, 1.0f);
-	new(TeamColors) FLinearColor(1.0f, 1.0f, 0.0f, 1.0f);
+	TeamColors.Add(REDHUDCOLOR);
+	TeamColors.Add(BLUEHUDCOLOR);
+	TeamColors.Add(FLinearColor(0.0f, 1.0f, 0.0f, 1.0f));
+	TeamColors.Add(FLinearColor(1.0f, 1.0f, 0.0f, 1.0f));
 
 	TeamNames.Add(NSLOCTEXT("UTTeamGameMode", "Team0Name", "Red"));
 	TeamNames.Add(NSLOCTEXT("UTTeamGameMode", "Team1Name", "Blue"));
@@ -115,24 +116,46 @@ APlayerController* AUTTeamGameMode::Login(class UPlayer* NewPlayer, ENetRole InR
 {
 	APlayerController* PC = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
 
-	if (PC != NULL && !PC->PlayerState->bOnlySpectator)
+	if (PC && PC->PlayerState && !PC->PlayerState->bOnlySpectator)
 	{
-		if (!bRankedSession && !bIsQuickMatch)
-		{
 			// FIXMESTEVE Does team get overwritten in postlogin if inactive player?
-			uint8 DesiredTeam = (GetNetMode() == NM_Standalone) ? 1 : uint8(FMath::Clamp<int32>(UGameplayStatics::GetIntOption(Options, TEXT("Team"), 255), 0, 255));
-			ChangeTeam(PC, DesiredTeam, false);
-		}
-		else
-		{
-			uint8 DesiredTeam = 0;
-			AUTGameSessionRanked* UTGameSession = Cast<AUTGameSessionRanked>(GameSession);
-			if (UTGameSession)
+			uint8 DesiredTeam = 1;
+
+			if (bRankedSession)
 			{
-				DesiredTeam = UTGameSession->GetTeamForPlayer(UniqueId);
+				AUTGameSessionRanked* UTGameSession = Cast<AUTGameSessionRanked>(GameSession);
+				if (UTGameSession)
+				{
+					DesiredTeam = UTGameSession->GetTeamForPlayer(UniqueId);
+				}
 			}
+			else if (GetNetMode() != NM_Standalone)
+			{
+				DesiredTeam = uint8(FMath::Clamp<int32>(UGameplayStatics::GetIntOption(Options, TEXT("Team"), 255), 0, 255));
+
+				if (DesiredTeam == 255)
+				{
+					AUTPlayerState* UTPS = Cast<AUTPlayerState>(PC->PlayerState);
+					if (UTPS && UTPS->PartySize > 1)
+					{
+						// Check if there's other party members in the server and try to put them in
+						for (int32 i = 0; i < GameState->PlayerArray.Num(); i++)
+						{
+							if (UTPS != GameState->PlayerArray[i])
+							{
+								AUTPlayerState* PossibleLeaderPS = Cast<AUTPlayerState>(GameState->PlayerArray[i]);
+								if (PossibleLeaderPS && PossibleLeaderPS->PartyLeader == UTPS->PartyLeader)
+								{
+									DesiredTeam = PossibleLeaderPS->GetTeamNum();
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+
 			ChangeTeam(PC, DesiredTeam, false);
-		}
 	}
 
 	return PC;
@@ -171,7 +194,7 @@ bool AUTTeamGameMode::PlayerWonChallenge()
 
 bool AUTTeamGameMode::ShouldBalanceTeams(bool bInitialTeam) const
 {
-	return !bRankedSession && bBalanceTeams && (!bInitialTeam || HasMatchStarted() || GetMatchState() == MatchState::CountdownToBegin);
+	return !bRankedSession && bBalanceTeams && (HasMatchStarted() || GetMatchState() == MatchState::CountdownToBegin);
 }
 
 bool AUTTeamGameMode::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroadcast)
@@ -220,8 +243,8 @@ bool AUTTeamGameMode::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroad
 				{
 					for (int32 i = 0; i < Teams.Num(); i++)
 					{
-						// don't allow switching to a team with more players, or equal players if the player is on a team now
-						if (i != NewTeam && Teams[i]->GetNumHumans() - ((PS->Team != NULL && PS->Team->TeamIndex == i) ? 1 : 0)  < Teams[NewTeam]->GetNumHumans())
+						// if this isn't smallest team, use PickBalancedTeam() to get right team
+						if (i != NewTeam && Teams[i]->GetSize() <= Teams[NewTeam]->GetSize())
 						{
 							bForceTeam = true;
 							break;
@@ -339,21 +362,29 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 	// if in doubt choose team with bots on it as the bots will leave if necessary to balance
 	{
 		TArray< AUTTeamInfo*, TInlineAllocator<4> > TeamsWithBots;
+		AUTTeamInfo* TeamWithMostBots = nullptr;
+		int32 TeamWithMostBotsCount = 0;
 		for (AUTTeamInfo* TestTeam : BestTeams)
 		{
 			bool bHasBots = false;
+			int32 BotCount = 0;
 			TArray<AController*> Members = TestTeam->GetTeamMembers();
 			for (AController* C : Members)
 			{
 				if (Cast<AUTBot>(C) != NULL)
 				{
 					bHasBots = true;
-					break;
+					BotCount++;
 				}
 			}
 			if (bHasBots)
 			{
 				TeamsWithBots.Add(TestTeam);
+			}
+			if (BotCount > TeamWithMostBotsCount)
+			{ 
+				TeamWithMostBotsCount = BotCount;
+				TeamWithMostBots = TestTeam;
 			}
 		}
 		if (TeamsWithBots.Num() > 0)
@@ -366,6 +397,12 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 				}
 			}
 
+			if (TeamWithMostBots != nullptr)
+			{
+				return TeamWithMostBots->TeamIndex;
+			}
+
+			// This has the potential to pick an undesired team in games with greater than 2 teams
 			return TeamsWithBots[FMath::RandHelper(TeamsWithBots.Num())]->TeamIndex;
 		}
 	}
@@ -428,7 +465,7 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 			{
 				if (TestTeam != WorstTeam)
 				{
-					return TestTeam->TeamIndex;
+						return TestTeam->TeamIndex;
 				}
 			}
 		}
@@ -438,11 +475,11 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 	{
 		if (BestTeams[i]->TeamIndex == RequestedTeam)
 		{
-			return RequestedTeam;
+				return RequestedTeam;
 		}
 	}
 
-	return BestTeams[FMath::RandHelper(BestTeams.Num())]->TeamIndex;
+		return BestTeams[FMath::RandHelper(BestTeams.Num())]->TeamIndex;
 }
 
 void AUTTeamGameMode::HandlePlayerIntro()
@@ -572,7 +609,7 @@ void AUTTeamGameMode::CheckBotCount()
 			TArray<AController*> Members = Team->GetTeamMembers();
 			for (AController* C : Members)
 			{
-				AUTBot* B = Cast<AUTBot>(C);
+				AUTBotPlayer* B = Cast<AUTBotPlayer>(C);
 				if (B != NULL)
 				{
 					if (AllowRemovingBot(B))
@@ -836,7 +873,7 @@ void AUTTeamGameMode::PlayEndOfMatchMessage()
 	{
 		for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 		{
-			APlayerController* Controller = *Iterator;
+			APlayerController* Controller = Iterator->Get();
 			if (Controller && Controller->IsA(AUTPlayerController::StaticClass()))
 			{
 				AUTPlayerController* PC = Cast<AUTPlayerController>(Controller);
@@ -876,6 +913,9 @@ void AUTTeamGameMode::SendEndOfGameStats(FName Reason)
 				FString TeamName = FString::Printf(TEXT("TeamScore%i"), i);
 				ParamArray.Add(FAnalyticsEventAttribute(TeamName, UTGameState->Teams[i]->Score));
 			}
+
+			FUTAnalytics::SetMatchInitialParameters(this, ParamArray, true);
+
 			FUTAnalytics::GetProvider().RecordEvent(TEXT("EndTeamMatch"), ParamArray);
 		}
 	}
@@ -887,9 +927,9 @@ void AUTTeamGameMode::SendEndOfGameStats(FName Reason)
 		UpdateSkillRating();
 
 		const double CloudStatsStartTime = FPlatformTime::Seconds();
-		for (int32 i = 0; i < GetWorld()->GameState->PlayerArray.Num(); i++)
+		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 		{
-			AUTPlayerState* PS = Cast<AUTPlayerState>(GetWorld()->GameState->PlayerArray[i]);
+			AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
 			if (PS != NULL)
 			{
 				PS->SetStatsValue(NAME_MatchesPlayed, 1);
@@ -904,7 +944,7 @@ void AUTTeamGameMode::SendEndOfGameStats(FName Reason)
 					PS->SetStatsValue(NAME_Losses, 1);
 				}
 
-				PS->AddMatchToStats(GetWorld()->GetMapName(), GetClass()->GetPathName(), &Teams, &GetWorld()->GameState->PlayerArray, &InactivePlayerArray);
+				PS->AddMatchToStats(GetWorld()->GetMapName(), GetClass()->GetPathName(), &Teams, &UTGameState->PlayerArray, &InactivePlayerArray);
 				
 				PS->WriteStatsToCloud();
 			}
@@ -932,7 +972,7 @@ void AUTTeamGameMode::SendEndOfGameStats(FName Reason)
 					PS->SetStatsValue(NAME_Losses, 1);
 				}
 
-				PS->AddMatchToStats(GetWorld()->GetMapName(), GetClass()->GetPathName(), &Teams, &GetWorld()->GameState->PlayerArray, &InactivePlayerArray);
+				PS->AddMatchToStats(GetWorld()->GetMapName(), GetClass()->GetPathName(), &Teams, &UTGameState->PlayerArray, &InactivePlayerArray);
 				
 				PS->WriteStatsToCloud();
 			}

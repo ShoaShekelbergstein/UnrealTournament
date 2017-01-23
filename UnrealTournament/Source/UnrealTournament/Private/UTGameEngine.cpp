@@ -11,12 +11,21 @@
 #include "UTConsole.h"
 #include "UTFlagInfo.h"
 #include "UTLobbyGameMode.h"
+#include "UTMenuGameMode.h"
 #include "UTGameInstance.h"
 #include "IAnalyticsProvider.h"
 #if !UE_SERVER
 #include "SlateBasics.h"
 #include "MoviePlayer.h"
 #include "SUWindowsStyle.h"
+#endif
+#if PLATFORM_WINDOWS
+#undef ERROR_SUCCESS
+#undef ERROR_IO_PENDING
+#undef E_NOTIMPL
+#undef E_FAIL
+#undef S_OK
+#include "WindowsHWrapper.h"
 #endif
 
 // prevent setting MipBias to an intentionally broken value to make textures turn solid color
@@ -54,6 +63,10 @@ UUTGameEngine::UUTGameEngine(const FObjectInitializer& ObjectInitializer)
 	WeaponRef = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/ShockRifle/ShockRifle.ShockRifle_C"));
 	AlwaysLoadedWeaponsStringRefs.Add(WeaponRef);
 	WeaponRef = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/Sniper/BP_Sniper.BP_Sniper_C"));
+	AlwaysLoadedWeaponsStringRefs.Add(WeaponRef);
+	WeaponRef = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/LightningRifle/BP_LightningRifle.BP_LightningRifle_C"));
+	AlwaysLoadedWeaponsStringRefs.Add(WeaponRef);
+	WeaponRef = FStringAssetReference(TEXT("/Game/RestrictedAssets/Weapons/GrenadeLauncher/BP_GrenadeLauncher.BP_GrenadeLauncher_C"));
 	AlwaysLoadedWeaponsStringRefs.Add(WeaponRef);
 
 	static ConstructorHelpers::FObjectFinder<UTexture2D> DefaultLevelScreenshotObj(TEXT("Texture2D'/Game/RestrictedAssets/Textures/_T_NSA_2_D._T_NSA_2_D'"));
@@ -311,28 +324,9 @@ void UUTGameEngine::Tick(float DeltaSeconds, bool bIdleMode)
 		FWorldContext& Context = WorldList[WorldIdx];
 		if (!Context.TravelURL.IsEmpty())
 		{
-			FURL DefaultURL;
-			DefaultURL.LoadURLConfig(TEXT("DefaultPlayer"), GGameIni);
-			FURL NewURL(&DefaultURL, *Context.TravelURL, TRAVEL_Absolute);
-			for (int32 i = 0; i < DefaultURL.Op.Num(); i++)
-			{
-				FString OpKey;
-				DefaultURL.Op[i].Split(TEXT("="), &OpKey, NULL);
-				if (!NewURL.HasOption(*OpKey))
-				{
-					new(NewURL.Op) FString(DefaultURL.Op[i]);
-				}
-			}
 			UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(GetLocalPlayerFromControllerId(GWorld,0));
-			if (UTLocalPlayer)
+			if (UTLocalPlayer != NULL)
 			{
-				if (NewURL.HasOption(TEXT("Rank")))
-				{
-					NewURL.RemoveOption(TEXT("Rank"));
-				}
-
-				NewURL.AddOption(*FString::Printf(TEXT("Rank=%i"),UTLocalPlayer->GetBaseELORank()));
-
 				//Hide the console when traveling to a new map
 				UUTConsole* UTConsole = (UTLocalPlayer->ViewportClient != nullptr) ? Cast<UUTConsole>(UTLocalPlayer->ViewportClient->ViewportConsole) : nullptr;
 				if (UTConsole != nullptr)
@@ -341,8 +335,6 @@ void UUTGameEngine::Tick(float DeltaSeconds, bool bIdleMode)
 					UTConsole->FakeGotoState(NAME_None);
 				}
 			}
-
-			Context.TravelURL = NewURL.ToString();
 		}
 	}
 	
@@ -359,6 +351,26 @@ EBrowseReturnVal::Type UUTGameEngine::Browse( FWorldContext& WorldContext, FURL 
 	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(GetLocalPlayerFromControllerId(WorldContext.World(),0));
 	if (UTLocalPlayer != NULL)
 	{
+		FURL DefaultURL;
+		DefaultURL.LoadURLConfig(TEXT("DefaultPlayer"), GGameIni);
+		FURL NewURL(&DefaultURL, *URL.ToString(), TRAVEL_Absolute);
+		for (int32 i = 0; i < DefaultURL.Op.Num(); i++)
+		{
+			FString OpKey;
+			DefaultURL.Op[i].Split(TEXT("="), &OpKey, NULL);
+			if (!NewURL.HasOption(*OpKey))
+			{
+				new(NewURL.Op) FString(DefaultURL.Op[i]);
+			}
+		}
+
+		if (NewURL.HasOption(TEXT("Rank")))
+		{
+			NewURL.RemoveOption(TEXT("Rank"));
+		}
+
+		NewURL.AddOption(*FString::Printf(TEXT("Rank=%i"),UTLocalPlayer->GetBaseELORank()));
+
 		UUTProfileSettings* ProfileSettings = UTLocalPlayer->GetProfileSettings();
 		if (ProfileSettings && ProfileSettings->bNeedProfileWriteOnLevelChange)
 		{
@@ -376,6 +388,8 @@ EBrowseReturnVal::Type UUTGameEngine::Browse( FWorldContext& WorldContext, FURL 
 		{
 			UTLocalPlayer->ClearDefaultURLOption(TEXT("Team"));
 		}
+
+		URL = NewURL;
 	}
 
 #if !UE_SERVER && !UE_EDITOR
@@ -452,7 +466,7 @@ float UUTGameEngine::GetMaxTickRate(float DeltaTime, bool bAllowFrameRateSmoothi
 				MaxTickRate = FMath::Clamp(NetDriver->NetServerMaxTickRate, 10, 120);
 
 				// Allow hubs to override the tick rate
-				AUTLobbyGameMode* LobbyGame = Cast<AUTLobbyGameMode>(World->GetAuthGameMode());
+				AUTLobbyGameMode* LobbyGame = World->GetAuthGameMode<AUTLobbyGameMode>();
 				if (LobbyGame)
 				{
 					MaxTickRate = LobbyGame->LobbyMaxTickRate;
@@ -507,6 +521,20 @@ float UUTGameEngine::GetMaxTickRate(float DeltaTime, bool bAllowFrameRateSmoothi
 				float NetRateClamp = float(LocalPlayer->CurrentNetSpeed) / 100.f;
 				MaxTickRate = MaxTickRate > 0 ? FMath::Min(MaxTickRate, NetRateClamp) : NetRateClamp;
 			}
+		}
+	}
+
+	AUTMenuGameMode* MenuGame = Cast<AUTMenuGameMode>(World->GetAuthGameMode());
+	if (MenuGame)
+	{
+		const float MaxMenuTickRate = 160.0f;
+		if (MaxTickRate > 0)
+		{
+			MaxTickRate = FMath::Min(MaxMenuTickRate, MaxTickRate);
+		}
+		else
+		{
+			MaxTickRate = MaxMenuTickRate;
 		}
 	}
 
@@ -867,6 +895,7 @@ void UUTGameEngine::OnLoadingMoviePlaybackFinished()
 
 void UUTGameEngine::PromptForEULAAcceptance()
 {
+#if PLATFORM_DESKTOP
 	if (bFirstRun)
 	{
 		FString PasswordStr;
@@ -891,6 +920,7 @@ void UUTGameEngine::PromptForEULAAcceptance()
 		SaveConfig();
 		GConfig->Flush(false);
 	}
+#endif
 }
 
 UUTLevelSummary* UUTGameEngine::LoadLevelSummary(const FString& MapName)
@@ -986,7 +1016,7 @@ UUTFlagInfo* UUTGameEngine::GetFlag(FName FlagName)
 
 bool UUTGameEngine::HandleReconnectCommand( const TCHAR* Cmd, FOutputDevice& Ar, UWorld *InWorld )
 {
-	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(GetLocalPlayerFromControllerId(GWorld,0));
+	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(GetLocalPlayerFromControllerId(InWorld,0));
 	if (UTLocalPlayer)
 	{
 		UTLocalPlayer->Reconnect(false);

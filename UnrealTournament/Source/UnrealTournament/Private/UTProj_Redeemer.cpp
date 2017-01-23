@@ -7,6 +7,8 @@
 #include "UTProj_Redeemer.h"
 #include "UTCTFRewardMessage.h"
 #include "UTRedeemerLaunchAnnounce.h"
+#include "UTDemoNetDriver.h"
+#include "UTDemoRecSpectator.h"
 
 AUTProj_Redeemer::AUTProj_Redeemer(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -69,7 +71,11 @@ void AUTProj_Redeemer::RedeemerDenied(AController* InstigatedBy)
 	if (GM)
 	{
 		APlayerState* InstigatorPS = InstigatorController ? InstigatorController->PlayerState : NULL;
-		APlayerState* InstigatedbyPS = InstigatedBy ? InstigatedBy->PlayerState : NULL;
+		AUTPlayerState* InstigatedbyPS = InstigatedBy ? Cast<AUTPlayerState>(InstigatedBy->PlayerState) : NULL;
+		if (InstigatedbyPS)
+		{
+			InstigatedbyPS->ModifyStatsValue(NAME_RedeemerRejected, 1);
+		}
 		GM->BroadcastLocalized(this, UUTCTFRewardMessage::StaticClass(), 0, InstigatedbyPS, InstigatorPS, NULL);
 	}
 }
@@ -162,6 +168,7 @@ void AUTProj_Redeemer::OnShotDown()
 
 		// fall to ground, explode after a delay
 		ProjectileMovement->ProjectileGravityScale = 1.0f;
+		ProjectileMovement->Velocity *= 0.5f;
 		ProjectileMovement->MaxSpeed += 2000.0f; // make room for gravity
 		ProjectileMovement->bShouldBounce = true;
 		ProjectileMovement->Bounciness = 0.25f;
@@ -208,6 +215,21 @@ void AUTProj_Redeemer::PlayShotDownEffects()
 
 void AUTProj_Redeemer::Explode_Implementation(const FVector& HitLocation, const FVector& HitNormal, UPrimitiveComponent* HitComp)
 {
+	if (GetWorld()->GetNetMode() == NM_Client)
+	{
+		UDemoNetDriver* DemoDriver = GetWorld()->DemoNetDriver;
+		if (DemoDriver)
+		{
+			AUTDemoRecSpectator* DemoRecSpec = Cast<AUTDemoRecSpectator>(DemoDriver->SpectatorController);
+			if (DemoRecSpec && (GetWorld()->GetTimeSeconds() - DemoRecSpec->LastKillcamSeekTime) < 2.0f)
+			{
+				bExploded = true;
+				Destroy();
+				return;
+			}
+		}
+	}
+
 	if (!bExploded)
 	{
 		AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
@@ -231,6 +253,8 @@ void AUTProj_Redeemer::Explode_Implementation(const FVector& HitLocation, const 
 		}
 		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		CollisionComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		ProjectileMovement->ProjectileGravityScale = 0.f;
+		ProjectileMovement->Velocity = FVector::ZeroVector;
 		ProjectileMovement->SetActive(false);
 
 		TArray<USceneComponent*> Components;
@@ -294,7 +318,7 @@ void AUTProj_Redeemer::ExplodeStage(float RangeMultiplier)
 			int32 LiveEnemyCount = 0;
 			for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 			{
-				AController* C = *Iterator;
+				AController* C = Iterator->Get();
 				AUTPlayerState* TeamPS = C ? Cast<AUTPlayerState>(C->PlayerState) : nullptr;
 				if (TeamPS && C->GetPawn() && !GS->OnSameTeam(InstigatorController, C))
 				{
@@ -304,14 +328,15 @@ void AUTProj_Redeemer::ExplodeStage(float RangeMultiplier)
 			KillCount += LiveEnemyCount;
 		}
 
-		UUTGameplayStatics::UTHurtRadius(this, AdjustedDamageParams.BaseDamage, AdjustedDamageParams.MinimumDamage, AdjustedMomentum, ExplodeHitLocation, RangeMultiplier * AdjustedDamageParams.InnerRadius, RangeMultiplier * AdjustedDamageParams.OuterRadius, AdjustedDamageParams.DamageFalloff,
+		float MinDamage = (RangeMultiplier * AdjustedDamageParams.OuterRadius < CollisionFreeRadius) ? 200.f : AdjustedDamageParams.MinimumDamage;
+		UUTGameplayStatics::UTHurtRadius(this, AdjustedDamageParams.BaseDamage, MinDamage, AdjustedMomentum, ExplodeHitLocation, RangeMultiplier * AdjustedDamageParams.InnerRadius, RangeMultiplier * AdjustedDamageParams.OuterRadius, AdjustedDamageParams.DamageFalloff,
 			MyDamageType, IgnoreActors, this, InstigatorController, FFInstigatorController, FFDamageType, CollisionFreeRadius);
 		if (StatusPS)
 		{
 			int32 LiveEnemyCount = 0;
 			for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 			{
-				AController* C = *Iterator;
+				AController* C = Iterator->Get();
 				AUTPlayerState* TeamPS = C ? Cast<AUTPlayerState>(C->PlayerState) : nullptr;
 				if (TeamPS && C->GetPawn() && !GS->OnSameTeam(InstigatorController, C))
 				{
@@ -389,7 +414,7 @@ void AUTProj_Redeemer::Tick(float DeltaTime)
 	// this is done in Tick() so that it handles edge cases like viewer changing teams
 	if (GetNetMode() != NM_DedicatedServer)
 	{
-		AUTGameState* GS = Cast<AUTGameState>(GetWorld()->GetGameState());
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 		IUTTeamInterface* TeamOwner = Cast<IUTTeamInterface>(Instigator);
 		bool bShowOutline = false;
 		if (GS != nullptr && TeamOwner != nullptr && !bExploded)

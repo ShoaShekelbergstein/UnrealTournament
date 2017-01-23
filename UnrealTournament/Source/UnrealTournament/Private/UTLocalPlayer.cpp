@@ -29,6 +29,7 @@
 #include "SUTHUDSettingsDialog.h"
 #include "SUTQuickMatchWindow.h"
 #include "SUTQuickChatWindow.h"
+#include "SUTWebMessage.h"
 #include "SUTJoinInstanceWindow.h"
 #include "SUTFriendsPopupWindow.h"
 #include "SUTDownloadAllDialog.h"
@@ -79,6 +80,8 @@
 #include "UTDemoNetDriver.h"
 #include "UTAnalytics.h"
 #include "QosInterface.h"
+#include "SUTReportUserDialog.h"
+#include "UTUMGWidget_Toast.h"
 
 #if WITH_SOCIAL
 #include "Social.h"
@@ -88,8 +91,9 @@ UUTLocalPlayer::UUTLocalPlayer(const class FObjectInitializer& ObjectInitializer
 	: Super(ObjectInitializer)
 {
 	bInitialSignInAttempt = true;
-	LastProfileCloudWriteTime = 0;
-	ProfileCloudWriteCooldownTime = 15;
+	LastProfileCloudWriteTime = 0.0f;
+	LastProgressionCloudWriteTime = 0.0f;
+	ProfileCloudWriteCooldownTime = 12.0f;
 	bShowSocialNotification = false;
 	ServerPingBlockSize = 30;
 	bSuppressToastsInGame = false;
@@ -117,6 +121,9 @@ UUTLocalPlayer::UUTLocalPlayer(const class FObjectInitializer& ObjectInitializer
 	KillcamPlayback = ObjectInitializer.CreateDefaultSubobject<UUTKillcamPlayback>(this, TEXT("KillcamPlayback"));
 	LoginPhase = ELoginPhase::NotLoggedIn;
 	bSuppressDownloadDialog = false;
+
+	bQuickmatchOnLevelChange = false;
+
 }
 
 UUTLocalPlayer::~UUTLocalPlayer()
@@ -328,6 +335,7 @@ void UUTLocalPlayer::PlayerAdded(class UGameViewportClient* InViewportClient, in
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("OSMinor"), OSMinor));
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("CPUVendor"), FPlatformMisc::GetCPUVendor()));
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("CPUBrand"), FPlatformMisc::GetCPUBrand()));
+		FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
 		FUTAnalytics::GetProvider().RecordEvent( TEXT("SystemInfo"), ParamArray );
 	}
 
@@ -379,7 +387,7 @@ bool UUTLocalPlayer::IsMenuGame()
 
 	if (GetWorld()->GetNetMode() == NM_Standalone)
 	{
-		AUTMenuGameMode* GM = Cast<AUTMenuGameMode>(GetWorld()->GetAuthGameMode());
+		AUTMenuGameMode* GM = GetWorld()->GetAuthGameMode<AUTMenuGameMode>();
 		return GM != NULL;
 	}
 	return false;
@@ -616,7 +624,7 @@ TSharedPtr<class SUTDialogBase>  UUTLocalPlayer::ShowMessage(FText MessageTitle,
 			.OnDialogResult(Callback);
 	}
 
-	OpenDialog( NewDialog.ToSharedRef() );
+	OpenDialog( NewDialog.ToSharedRef(), 2001);
 	return NewDialog;
 }
 
@@ -1117,6 +1125,12 @@ void UUTLocalPlayer::OnLoginStatusChanged(int32 LocalUserNum, ELoginStatus::Type
 		
 		OnPlayerLoggedOut().Broadcast();
 
+		// Close the friends panel if it's showing.
+		if (bShowingFriendsMenu)
+		{
+			ToggleFriendsAndChat();
+		}
+
 		if (bPendingLoginCreds)
 		{
 			bPendingLoginCreds = false;
@@ -1170,7 +1184,7 @@ void UUTLocalPlayer::ShowRankedReconnectDialog(const FString& UniqueID)
 	{
 		FDateTime LastRankedMatchTime;
 		FDateTime::Parse(LastRankedMatchTimeString, LastRankedMatchTime);
-		if ((FDateTime::Now() - LastRankedMatchTime).GetHours() < 1)
+		if ((FDateTime::Now() - LastRankedMatchTime).GetMinutes() < 5.0f)
 		{
 			// Ask player if they want to try to rejoin last ranked game
 			ShowMessage(NSLOCTEXT("UTLocalPlayer", "RankedReconnectTitle", "Reconnect To Last Match?"),
@@ -1387,73 +1401,35 @@ void UUTLocalPlayer::RemoveChatArchiveChangedDelegate(FDelegateHandle DelegateHa
 void UUTLocalPlayer::ShowAdminMessage(FString Message)
 {
 #if !UE_SERVER
-
-	// Build the Toast to Show...
-
-	TSharedPtr<SUTAdminMessageToast> Msg;
-	SAssignNew(Msg, SUTAdminMessageToast)
-		.PlayerOwner(this)
-		.Lifetime(10)
-		.ToastText(FText::FromString(Message));
-
-	if (Msg.IsValid())
-	{
-		ToastList.Add(Msg);
-
-		// Auto show if it's the first toast..
-		if (ToastList.Num() == 1)
-		{
-			AddToastToViewport(ToastList[0]);
-		}
-	}
+	ShowToast(FText::FromString(Message), 10);
 #endif
 
 }
 
-void UUTLocalPlayer::ShowToast(FText ToastText)
+void UUTLocalPlayer::ShowToast(FText ToastText, float Lifetime)
 {
 #if !UE_SERVER
 
-	if (GetWorld()->GetNetMode() == ENetMode::NM_Client && bSuppressToastsInGame) return;
+	if ((GetWorld() == nullptr) || (GetWorld()->GetNetMode() == ENetMode::NM_Client && bSuppressToastsInGame)) return;
 
 	// Build the Toast to Show...
-
-	TSharedPtr<SUTToastBase> Toast;
-	SAssignNew(Toast, SUTToastBase)
-		.PlayerOwner(this)
-		.ToastText(ToastText);
-
-	if (Toast.IsValid())
+	UUTUMGWidget_Toast* Toast = Cast<UUTUMGWidget_Toast>(OpenUMGWidget(TEXT("/Game/RestrictedAssets/UI/UMGMenuElements/UTGenericToastWidget.UTGenericToastWidget")));
+	if (Toast != nullptr)
 	{
-		ToastList.Add(Toast);
-
-		// Auto show if it's the first toast..
-		if (ToastList.Num() > 0 && ToastList[0].IsValid())
-		{
-			AddToastToViewport(ToastList[0]);
-		}
+		Toast->Message = ToastText;
+		Toast->Duration = Lifetime;
+		ToastStack.Add(Toast);
 	}
 #endif
 }
 
+void UUTLocalPlayer::ToastCompleted(UUTUMGWidget_Toast* Toast)
+{
 #if !UE_SERVER
-void UUTLocalPlayer::AddToastToViewport(TSharedPtr<SUTToastBase> ToastToDisplay)
-{
-	GEngine->GameViewport->AddViewportWidgetContent( SNew(SWeakWidget).PossiblyNullContent(ToastToDisplay.ToSharedRef()),10000);
-}
-
-void UUTLocalPlayer::ToastCompleted()
-{
-	GEngine->GameViewport->RemoveViewportWidgetContent(ToastList[0].ToSharedRef());
-	ToastList.RemoveAt(0,1);
-
-	if (ToastList.Num() > 0)
-	{
-		AddToastToViewport(ToastList[0]);
-	}
-}
-
+	ToastStack.Remove(Toast);
 #endif
+}
+
 
 FString UUTLocalPlayer::GetProfileFilename()
 {
@@ -1636,6 +1612,8 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("HatPath"), CurrentProfileSettings->HatPath));
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("LeaderHatPath"), CurrentProfileSettings->LeaderHatPath));
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("LocalXP"), CurrentProfileSettings->LocalXP));
+				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 				FUTAnalytics::GetProvider().RecordEvent(TEXT("CloudProfileLoaded"), ParamArray);
 			}
 
@@ -1665,7 +1643,6 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 					SaveProfileSettings();
 				}
 
-				EpicFlagCheck();
 				return;
 			}
 			else
@@ -1681,16 +1658,10 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 		}
 		else 
 		{
-			if (CurrentProfileSettings == NULL) // Create a new profile settings object
-			{
-				CurrentProfileSettings = NewObject<UUTProfileSettings>(GetTransientPackage(),UUTProfileSettings::StaticClass());
-				CurrentProfileSettings->ResetProfile(EProfileResetType::All);
-			}
-
+			CurrentProfileSettings = NewObject<UUTProfileSettings>(GetTransientPackage(),UUTProfileSettings::StaticClass());
+			CurrentProfileSettings->ResetProfile(EProfileResetType::All);
 			ReadMMRFromBackend();
 		}
-
-		EpicFlagCheck();
 
 		PlayerNickname = GetAccountDisplayName().ToString();
 		SaveConfig();
@@ -1704,6 +1675,7 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 
 		if (bWasSuccessful)
 		{
+
 			// Create the current profile.
 			if (CurrentProgression == NULL)
 			{
@@ -1749,10 +1721,16 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 
 			CurrentProgression->Serialize(Ar);
 			CurrentProgression->VersionFixup();
+			
+			int32 CurrentTutorialMask = GetTutorialMask();
+			CurrentProgression->FixupBestTimes(CurrentTutorialMask);
+			if (CurrentTutorialMask != GetTutorialMask())
+			{
+				SetTutorialMask(CurrentTutorialMask);
+			}
 
 			UE_LOG(UT, Verbose, TEXT("Progression: Achievements %d, Stars %d"), CurrentProgression->Achievements.Num(), CurrentProgression->TotalChallengeStars);
 
-			// set PlayerState progressionv variables if in main menu/single player
 			if (PlayerController != NULL)
 			{
 				AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -1770,14 +1748,7 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 
 		if (CurrentProfileSettings)
 		{
-			float BestTime;
-			if (CurrentProgression->GetBestTime(FName(TEXT("movementtraining_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTORIAL_Movement;
-			if (CurrentProgression->GetBestTime(FName(TEXT("weapontraining_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTOIRAL_Weapon;
-			if (CurrentProgression->GetBestTime(FName(TEXT("pickuptraining_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTORIAL_Pickups;
-			if (CurrentProgression->GetBestTime(FName(TEXT("deathmatch_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTORIAL_DM;
-			if (CurrentProgression->GetBestTime(FName(TEXT("teamdeathmatch_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTORIAL_TDM;
-			if (CurrentProgression->GetBestTime(FName(TEXT("capturetheflag_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTORIAL_CTF;
-			if (CurrentProgression->GetBestTime(FName(TEXT("duel_timingsection")), BestTime) ) CurrentProfileSettings->TutorialMask |= TUTORIAL_Duel;
+			CurrentProfileSettings->VersionFixup();
 		}
 
 		bProgressionReadFromCloud = true;
@@ -1852,7 +1823,6 @@ void UUTLocalPlayer::SaveProfileSettings()
 
 		if ( IsLoggedIn() )
 		{
-
 			// Build a blob of the profile contents
 			TArray<uint8> FileContents;
 			FMemoryWriter MemoryWriter(FileContents, true);
@@ -1873,6 +1843,9 @@ void UUTLocalPlayer::SaveProfileSettings()
 				TSharedPtr<const FUniqueNetId> UserID = OnlineIdentityInterface->GetUniquePlayerId(GetControllerId());
 				if (OnlineUserCloudInterface.IsValid() && UserID.IsValid())
 				{
+					SavingMask |= 0x01;
+					ShowSavingWidget();
+
 					LastProfileCloudWriteTime = FApp::GetCurrentTime();
 					OnlineUserCloudInterface->WriteUserFile(*UserID, GetProfileFilename(), FileContents);
 				}
@@ -1895,23 +1868,32 @@ void UUTLocalPlayer::SaveProgression()
 {
 	if ( CurrentProgression != NULL && IsLoggedIn() )
 	{
-		CurrentProgression->Updated();
-
-		// Build a blob of the profile contents
-		TArray<uint8> FileContents;
-		FMemoryWriter MemoryWriter(FileContents, true);
-		FObjectAndNameAsStringProxyArchive Ar(MemoryWriter, false);
-		Ar << CloudProfileMagicNumberVersion1;
-		int32 UE4Ver = Ar.UE4Ver();
-		Ar << UE4Ver;
-		CurrentProgression->Serialize(Ar);
-
-		// Save the blob to the cloud
-		TSharedPtr<const FUniqueNetId> UserID = OnlineIdentityInterface->GetUniquePlayerId(GetControllerId());
-		if (OnlineUserCloudInterface.IsValid() && UserID.IsValid())
+		if (FApp::GetCurrentTime() - LastProgressionCloudWriteTime < ProfileCloudWriteCooldownTime)
 		{
-			LastProfileCloudWriteTime = FApp::GetCurrentTime();
-			OnlineUserCloudInterface->WriteUserFile(*UserID, GetProgressionFilename(), FileContents);
+			GetWorld()->GetTimerManager().SetTimer(ProgressionWriteTimerHandle, this, &UUTLocalPlayer::SaveProgression, ProfileCloudWriteCooldownTime - (FApp::GetCurrentTime() - LastProgressionCloudWriteTime), false);
+		}
+		else
+		{
+			SavingMask |= 0x02;
+			ShowSavingWidget();
+			CurrentProgression->Updated();
+
+			// Build a blob of the profile contents
+			TArray<uint8> FileContents;
+			FMemoryWriter MemoryWriter(FileContents, true);
+			FObjectAndNameAsStringProxyArchive Ar(MemoryWriter, false);
+			Ar << CloudProfileMagicNumberVersion1;
+			int32 UE4Ver = Ar.UE4Ver();
+			Ar << UE4Ver;
+			CurrentProgression->Serialize(Ar);
+
+			// Save the blob to the cloud
+			TSharedPtr<const FUniqueNetId> UserID = OnlineIdentityInterface->GetUniquePlayerId(GetControllerId());
+			if (OnlineUserCloudInterface.IsValid() && UserID.IsValid())
+			{
+				LastProgressionCloudWriteTime = FApp::GetCurrentTime();
+				OnlineUserCloudInterface->WriteUserFile(*UserID, GetProgressionFilename(), FileContents);
+			}
 		}
 	}
 }
@@ -1926,11 +1908,12 @@ void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueN
 	// Make sure this was our filename
 	if (FileName == GetProfileFilename())
 	{
+		SavingMask = SavingMask & 0xFE;
 		if (bWasSuccessful)
 		{
 			LastProfileCloudWriteTime = FApp::GetCurrentTime();
 			FText Saved = NSLOCTEXT("MCP", "ProfileSaved", "Profile Saved");
-			ShowToast(Saved);
+			//ShowToast(Saved);
 		}
 		else
 		{
@@ -1943,10 +1926,11 @@ void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueN
 	}
 	else if (FileName == GetProgressionFilename())
 	{
+		SavingMask = SavingMask & 0xFD;
 		if (bWasSuccessful)
 		{
 			FText Saved = NSLOCTEXT("MCP", "ProgressionSaved", "Progression Saved");
-			ShowToast(Saved);
+			//ShowToast(Saved);
 		}
 		else
 		{
@@ -1956,6 +1940,10 @@ void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueN
 	#endif
 		}
 	}
+
+	HideSavingWidget();
+
+
 }
 
 void UUTLocalPlayer::SetNickname(FString NewName)
@@ -2045,6 +2033,10 @@ void UUTLocalPlayer::ReadSpecificELOFromBackend(const FString& MatchRatingType)
 			{
 				bRankedSession = true;
 			}
+			else if (MatchRatingType == NAME_RankedFlagRunSkillRating.ToString())
+			{
+				bRankedSession = true;
+			}
 
 			int32 OldLevel = 0;
 			int32 OldBadge = 0;
@@ -2075,6 +2067,7 @@ void UUTLocalPlayer::ReadSpecificELOFromBackend(const FString& MatchRatingType)
 	// Refresh ranked league if we played ranked
 	if (MatchRatingType == NAME_RankedDuelSkillRating.ToString() ||
 		MatchRatingType == NAME_RankedCTFSkillRating.ToString() ||
+		MatchRatingType == NAME_RankedFlagRunSkillRating.ToString() ||
 		MatchRatingType == NAME_RankedShowdownSkillRating.ToString())
 	{
 		McpUtils->GetAccountLeague(MatchRatingType, [this, MatchRatingType](const FOnlineError& Result, const FAccountLeague& Response)
@@ -2319,6 +2312,7 @@ void UUTLocalPlayer::ReadMMRFromBackend()
 	MatchRatingTypes.Add(TEXT("RankedDuelSkillRating"));
 	MatchRatingTypes.Add(TEXT("RankedCTFSkillRating"));
 	MatchRatingTypes.Add(TEXT("RankedShowdownSkillRating"));
+	MatchRatingTypes.Add(TEXT("RankedFlagRunSkillRating"));
 	// This should be a weak ptr here, but UTLocalPlayer is unlikely to go away
 	TWeakObjectPtr<UUTLocalPlayer> WeakLocalPlayer(this);
 	McpUtils->GetBulkAccountMmr(MatchRatingTypes, [WeakLocalPlayer](const FOnlineError& Result, const FBulkAccountMmr& Response)
@@ -2360,6 +2354,7 @@ void UUTLocalPlayer::ReadMMRFromBackend()
 					FMMREntry ShowdownMMR;
 					FMMREntry FlagRunMMR;
 					FMMREntry RankedShowdownMMR;
+					FMMREntry RankedFlagRunMMR;
 					FMMREntry RankedCTFMMR;
 					FMMREntry RankedDuelMMR;
 
@@ -2370,6 +2365,7 @@ void UUTLocalPlayer::ReadMMRFromBackend()
 					WeakLocalPlayer->GetMMREntry(NAME_ShowdownSkillRating.ToString(), ShowdownMMR);
 					WeakLocalPlayer->GetMMREntry(NAME_FlagRunSkillRating.ToString(), FlagRunMMR);
 					WeakLocalPlayer->GetMMREntry(NAME_RankedShowdownSkillRating.ToString(), RankedShowdownMMR);
+					WeakLocalPlayer->GetMMREntry(NAME_RankedFlagRunSkillRating.ToString(), RankedFlagRunMMR);
 					WeakLocalPlayer->GetMMREntry(NAME_RankedCTFSkillRating.ToString(), RankedCTFMMR);
 					WeakLocalPlayer->GetMMREntry(NAME_RankedDuelSkillRating.ToString(), RankedDuelMMR);
 
@@ -2380,6 +2376,7 @@ void UUTLocalPlayer::ReadMMRFromBackend()
 					UTPS->ShowdownRank = ShowdownMMR.MMR;
 					UTPS->FlagRunRank = FlagRunMMR.MMR;
 					UTPS->RankedShowdownRank = RankedShowdownMMR.MMR;
+					UTPS->RankedFlagRunRank = RankedFlagRunMMR.MMR;
 					UTPS->RankedCTFRank = RankedCTFMMR.MMR;
 					UTPS->RankedDuelRank = RankedDuelMMR.MMR;
 
@@ -2390,6 +2387,7 @@ void UUTLocalPlayer::ReadMMRFromBackend()
 					UTPS->ShowdownMatchesPlayed = FMath::Min(255, ShowdownMMR.MatchesPlayed);
 					UTPS->FlagRunMatchesPlayed = FMath::Min(255, FlagRunMMR.MatchesPlayed);
 					UTPS->RankedShowdownMatchesPlayed = FMath::Min(255, RankedShowdownMMR.MatchesPlayed);
+					UTPS->RankedFlagRunMatchesPlayed = FMath::Min(255, RankedFlagRunMMR.MatchesPlayed);
 					UTPS->RankedCTFMatchesPlayed = FMath::Min(255, RankedCTFMMR.MatchesPlayed);
 					UTPS->RankedDuelMatchesPlayed = FMath::Min(255, RankedDuelMMR.MatchesPlayed);
 				}
@@ -2399,11 +2397,13 @@ void UUTLocalPlayer::ReadMMRFromBackend()
 		// This will be bad if the local player goes away here.
 		if (WeakLocalPlayer.IsValid()) 
 		{
+			WeakLocalPlayer->EpicFlagCheck();
 			WeakLocalPlayer->LoadProgression();
 		}
 
 	});
 
+	ReadLeagueFromBackend(NAME_RankedFlagRunSkillRating.ToString());
 	ReadLeagueFromBackend(NAME_RankedShowdownSkillRating.ToString());
 	ReadLeagueFromBackend(NAME_RankedCTFSkillRating.ToString());
 	ReadLeagueFromBackend(NAME_RankedDuelSkillRating.ToString());
@@ -2549,6 +2549,8 @@ void UUTLocalPlayer::SetHatPath(const FString& NewHatPath)
 				TArray<FAnalyticsEventAttribute> ParamArray;
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("HatPath"), NewHatPath));
+				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 				FUTAnalytics::GetProvider().RecordEvent( TEXT("HatChanged"), ParamArray );
 			}
 			PS->ServerReceiveHatClass(NewHatPath);
@@ -2591,6 +2593,8 @@ void UUTLocalPlayer::SetLeaderHatPath(const FString& NewLeaderHatPath)
 				TArray<FAnalyticsEventAttribute> ParamArray;
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("LeaderHatPath"), NewLeaderHatPath));
+				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 				FUTAnalytics::GetProvider().RecordEvent( TEXT("LeaderHatChanged"), ParamArray );
 			}
 			PS->ServerReceiveLeaderHatClass(NewLeaderHatPath);
@@ -2634,6 +2638,8 @@ void UUTLocalPlayer::SetEyewearPath(const FString& NewEyewearPath)
 				TArray<FAnalyticsEventAttribute> ParamArray;
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("EyewearPath"), NewEyewearPath));
+				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 				FUTAnalytics::GetProvider().RecordEvent( TEXT("CharacterChanged"), ParamArray );
 			}
 
@@ -2669,6 +2675,8 @@ void UUTLocalPlayer::SetCharacterPath(const FString& NewCharacterPath)
 		TArray<FAnalyticsEventAttribute> ParamArray;
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
 		ParamArray.Add(FAnalyticsEventAttribute(TEXT("CharacterPath"), NewCharacterPath));
+		FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 		FUTAnalytics::GetProvider().RecordEvent( TEXT("CharacterChanged"), ParamArray );
 	}
 
@@ -2867,18 +2875,29 @@ TSharedPtr<SUTFriendsPopupWindow> UUTLocalPlayer::GetFriendsPopup()
 	{
 		SAssignNew(FriendsMenu, SUTFriendsPopupWindow)
 			.PlayerOwner(this);
+
+		if (FriendsMenu.IsValid())
+		{
+			FriendsMenu->SetOnCloseClicked(FOnClicked::CreateUObject(this, &UUTLocalPlayer::ToggleFriendsAndChat));
+		}
 	}
 	return FriendsMenu;
 }
+
+#endif
 
 void UUTLocalPlayer::SetShowingFriendsPopup(bool bShowing)
 {
 	bShowingFriendsMenu = bShowing;
 }
-#endif
 
 void UUTLocalPlayer::ReturnToMainMenu()
 {
+	PendingQuickmatchType = TEXT("");
+	bQuickmatchOnLevelChange = false;
+
+	InvalidateLastSession();
+
 	HideMenu();
 
 #if !UE_SERVER
@@ -2944,33 +2963,35 @@ bool UUTLocalPlayer::JoinSession(const FOnlineSessionSearchResult& SearchResult,
 	ConnectDesiredTeam = DesiredTeam;
 	bCancelJoinSession = false;
 	FUniqueNetIdRepl UniqueId = OnlineIdentityInterface->GetUniquePlayerId(0);
-	if (!UniqueId.IsValid())
+
+	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
+	if (IsLoggedIn() && PartyContext)
 	{
-		return false;
+		int32 PartySize = PartyContext->GetPartySize();
+		FUniqueNetIdRepl PartyLeaderId = PartyContext->GetPartyLeader();
+		SetDefaultURLOption(TEXT("PartySize"), FString::FromInt(PartySize));
+		SetDefaultURLOption(TEXT("PartyLeader"), PartyLeaderId.ToString());
+	}
+	
+	bJoinSessionInProgress = true;
+
+	PendingSession = SearchResult;
+	if (OnlineSessionInterface->GetSessionSettings(GameSessionName) != nullptr)
+	{
+		UE_LOG(UT, Log, TEXT("--- Already in a Session -- Deferring while I clean it up"));
+		bDelayedJoinSession = true;
+		LeaveSession();
 	}
 	else
 	{
+		OnJoinSessionCompleteDelegate = OnlineSessionInterface->AddOnJoinSessionCompleteDelegate_Handle(FOnJoinSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnJoinSessionComplete));
 
-		bJoinSessionInProgress = true;
-
-		PendingSession = SearchResult;
-		if (OnlineSessionInterface->IsPlayerInSession(GameSessionName, *UniqueId))
-		{
-			UE_LOG(UT, Log, TEXT("--- Already in a Session -- Deferring while I clean it up"));
-			bDelayedJoinSession = true;
-			LeaveSession();
-		}
-		else
-		{
-			OnJoinSessionCompleteDelegate = OnlineSessionInterface->AddOnJoinSessionCompleteDelegate_Handle(FOnJoinSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnJoinSessionComplete));
-
-			SearchResult.Session.SessionSettings.Get(SETTING_TRUSTLEVEL, CurrentSessionTrustLevel);
-			bAttemptingForceJoin = false;
-			bCancelJoinSession = false;
-			OnlineSessionInterface->JoinSession(0, GameSessionName, SearchResult);
-		}
-		return true;
+		SearchResult.Session.SessionSettings.Get(SETTING_TRUSTLEVEL, CurrentSessionTrustLevel);
+		bAttemptingForceJoin = false;
+		bCancelJoinSession = false;
+		OnlineSessionInterface->JoinSession(0, GameSessionName, SearchResult);
 	}
+	return true;
 }
 
 void UUTLocalPlayer::JoinPendingSession()
@@ -3045,7 +3066,7 @@ void UUTLocalPlayer::OnJoinSessionComplete(FName SessionName, EOnJoinSessionComp
 
 		UUTGameInstance* GameInstance = CastChecked<UUTGameInstance>(GetGameInstance());
 		UUTParty* Party = GameInstance->GetParties();
-		if (Party)
+		if (Party && PendingSession.IsValid())
 		{
 			Party->SetSession(LastSession);
 		}
@@ -3099,7 +3120,7 @@ void UUTLocalPlayer::OnJoinSessionComplete(FName SessionName, EOnJoinSessionComp
 			Context.LastURL.RemoveOption(TEXT("Friend"));
 			Context.LastURL.RemoveOption(TEXT("Session"));
 			
-			PlayerController->ClientTravel(ConnectionString, ETravelType::TRAVEL_Partial,false);
+			PlayerController->ClientTravel(ConnectionString, ETravelType::TRAVEL_Absolute,false);
 
 			bWantsToConnectAsSpectator = false;
 			UE_LOG(UT,Verbose,TEXT("----- Joined "));
@@ -3138,8 +3159,7 @@ void UUTLocalPlayer::LeaveSession()
 {
 	if (OnlineIdentityInterface.IsValid())
 	{
-		TSharedPtr<const FUniqueNetId> UserId = OnlineIdentityInterface->GetUniquePlayerId(0);
-		if (UserId.IsValid() && OnlineSessionInterface.IsValid() && OnlineSessionInterface->IsPlayerInSession(GameSessionName, *UserId))
+		if (OnlineSessionInterface.IsValid() && OnlineSessionInterface->GetSessionSettings(GameSessionName) != nullptr)
 		{
 			OnlineSessionInterface->EndSession(GameSessionName);
 		}
@@ -3335,10 +3355,13 @@ void UUTLocalPlayer::OnFindFriendSessionComplete(int32 LocalUserNum, bool bWasSu
 
 FName UUTLocalPlayer::GetCountryFlag()
 {
-	if (CurrentProfileSettings)
+#if WITH_PROFILE
+	UUtMcpProfile* McpProfile = GetMcpProfileManager()->GetMcpProfileAs<UUtMcpProfile>(EUtMcpProfile::Profile);
+	if (McpProfile)
 	{
-		return CurrentProfileSettings->CountryFlag;
+		return McpProfile->GetCountryFlag();
 	}
+#endif
 	if (PlayerController)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -3350,30 +3373,15 @@ FName UUTLocalPlayer::GetCountryFlag()
 	return NAME_None;
 }
 
-void UUTLocalPlayer::SetCountryFlag(FName NewFlag, bool bSave)
-{
-	if (CurrentProfileSettings)
-	{
-		CurrentProfileSettings->CountryFlag = NewFlag;
-		if (bSave)
-		{
-			SaveProfileSettings();
-		}
-	}
-
-	AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerController);
-	if (PC != NULL)
-	{
-		PC->ServerReceiveCountryFlag(NewFlag);
-	}
-}
-
 FName UUTLocalPlayer::GetAvatar()
 {
-	if (CurrentProfileSettings)
+#if WITH_PROFILE
+	UUtMcpProfile* McpProfile = GetMcpProfileManager()->GetMcpProfileAs<UUtMcpProfile>(EUtMcpProfile::Profile);
+	if (McpProfile)
 	{
-		return CurrentProfileSettings->Avatar;
+		return McpProfile->GetAvatar();
 	}
+#endif
 
 	if (PlayerController)
 	{
@@ -3383,15 +3391,20 @@ FName UUTLocalPlayer::GetAvatar()
 	return NAME_None;
 }
 
-void UUTLocalPlayer::SetAvatar(FName NewAvatar, bool bSave)
+void UUTLocalPlayer::SetCountryFlagAndAvatar(FName NewFlag, FName NewAvatar)
 {
-	if (CurrentProfileSettings)
+#if WITH_PROFILE
+	UUtMcpProfile* McpProfile = GetMcpProfileManager()->GetMcpProfileAs<UUtMcpProfile>(EUtMcpProfile::Profile);
+	if (McpProfile)
 	{
-		CurrentProfileSettings->Avatar = NewAvatar;
-		if (bSave)
-		{
-			SaveProfileSettings();
-		}
+		McpProfile->SetAvatarAndFlag(NewAvatar.ToString(), NewFlag.ToString());
+	}
+#endif
+
+	AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerController);
+	if (PC != NULL)
+	{
+		PC->ServerReceiveCountryFlag(NewFlag);
 	}
 
 	AUTBasePlayerController * BasePC = Cast<AUTBasePlayerController>(PlayerController);
@@ -3404,9 +3417,44 @@ void UUTLocalPlayer::SetAvatar(FName NewAvatar, bool bSave)
 #if !UE_SERVER
 void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 {
+	bQuickmatchOnLevelChange = false;
+	PendingQuickmatchType = TEXT("");
+
 	if (IsLoggedIn() && OnlineSessionInterface.IsValid())
 	{
-		if (0) //QuickMatchType == EEpicDefaultRuleTags::CTF)
+		// Look to see if the player has played this tutorial before.
+
+		FName DesiredTutorial;
+		if (QuickMatchType == EEpicDefaultRuleTags::Deathmatch) DesiredTutorial = ETutorialTags::TUTTAG_DM;
+		if (QuickMatchType == EEpicDefaultRuleTags::TDM) DesiredTutorial = ETutorialTags::TUTTAG_TDM;
+		if (QuickMatchType == EEpicDefaultRuleTags::FlagRun) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
+		if (QuickMatchType == EEpicDefaultRuleTags::CTF) DesiredTutorial = ETutorialTags::TUTTAG_CTF;
+		if (QuickMatchType == EEpicDefaultRuleTags::TEAMSHOWDOWN) DesiredTutorial = ETutorialTags::TUTTAG_Showdown;
+		if (QuickMatchType == EEpicDefaultRuleTags::DUEL) DesiredTutorial = ETutorialTags::TUTTAG_Duel;
+
+
+		int32 DesiredTutorialMask = 0;
+		// Create a quick lookup table.
+		for (int32 i=0; i < TutorialData.Num(); i++)
+		{
+			if (TutorialData[i].Tag == DesiredTutorial)
+			{
+				DesiredTutorialMask = TutorialData[i].Mask;
+				break;
+			}
+		}
+
+		if (!FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")))
+		{
+			if ( !IsInAnActiveParty() && DesiredTutorialMask != 0 && !IsTutorialMaskCompleted(DesiredTutorialMask) )
+			{
+				// We need to play this tutorial instead.
+				LaunchTutorial(DesiredTutorial, QuickMatchType);
+				return;
+			}
+		}
+
+		if (1)
 		{
 			// Use matchmaking for quickmatch
 			if (ServerBrowserWidget.IsValid() && ServerBrowserWidget->IsRefreshing())
@@ -3418,15 +3466,19 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 			int32 NewPlaylistId = 0;
 			if (QuickMatchType == EEpicDefaultRuleTags::Deathmatch)
 			{
-				NewPlaylistId = 4;
+				NewPlaylistId = 12;
 			}
 			else if (QuickMatchType == EEpicDefaultRuleTags::CTF)
 			{
-				NewPlaylistId = 3;
+				NewPlaylistId = 11;
 			}
 			else if (QuickMatchType == EEpicDefaultRuleTags::TEAMSHOWDOWN)
 			{
-				NewPlaylistId = 5;
+				NewPlaylistId = 13;
+			}
+			else if (QuickMatchType == EEpicDefaultRuleTags::FlagRun)
+			{
+				NewPlaylistId = 14;
 			}
 			else
 			{
@@ -3441,7 +3493,7 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 
 				if (FUTAnalytics::IsAvailable())
 				{
-					FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("QuickMatch - %s"), *QuickMatchType));
+					FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("QuickMatch - %s"), *QuickMatchType));
 				}
 			}
 		}
@@ -3479,7 +3531,7 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 
 				if (FUTAnalytics::IsAvailable())
 				{
-					FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("QuickMatch - %s"), *QuickMatchType));
+					FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("QuickMatch - %s"), *QuickMatchType));
 				}
 			}
 		}
@@ -3576,7 +3628,7 @@ void UUTLocalPlayer::ShowPlayerInfo(TWeakObjectPtr<AUTPlayerState> Target, bool 
 	}
 	else
 	{
-		if (DesktopSlateWidget.IsValid() && !IsMenuGame() && Cast<AUTLobbyGameState>(GetWorld()->GameState) == nullptr && GetWorld()->GetNetMode() != NM_Standalone)
+		if (DesktopSlateWidget.IsValid() && !IsMenuGame() && GetWorld()->GetGameState<AUTLobbyGameState>() == nullptr && GetWorld()->GetNetMode() != NM_Standalone)
 		{
 			HideMenu();
 		}
@@ -4404,25 +4456,30 @@ void UUTLocalPlayer::YoutubeUploadResult(TSharedPtr<SCompoundWidget> Widget, uin
 	}
 	else
 	{
+		bool bNeedsYoutubeSignup = false;
 		SUTYoutubeUploadDialog* UploadDialog = (SUTYoutubeUploadDialog*)Widget.Get();
 		TSharedRef< TJsonReader<> > JsonReader = TJsonReaderFactory<>::Create(UploadDialog->UploadFailMessage);
 		TSharedPtr< FJsonObject > JsonObject;
-		FJsonSerializer::Deserialize(JsonReader, JsonObject);
-		const TSharedPtr<FJsonObject>* ErrorObject;
-		bool bNeedsYoutubeSignup = false;
-		if (JsonObject->TryGetObjectField(TEXT("error"), ErrorObject))
+		if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
 		{
-			const TArray<TSharedPtr<FJsonValue>>* ErrorArray;
-			if ((*ErrorObject)->TryGetArrayField(TEXT("errors"), ErrorArray))
+			if (JsonObject.IsValid())
 			{
-				for (int32 Idx = 0; Idx < ErrorArray->Num(); Idx++)
+				const TSharedPtr<FJsonObject>* ErrorObject;
+				if (JsonObject->TryGetObjectField(TEXT("error"), ErrorObject))
 				{
-					FString ErrorReason;
-					if ((*ErrorArray)[Idx]->AsObject()->TryGetStringField(TEXT("reason"), ErrorReason))
+					const TArray<TSharedPtr<FJsonValue>>* ErrorArray;
+					if ((*ErrorObject)->TryGetArrayField(TEXT("errors"), ErrorArray))
 					{
-						if (ErrorReason == TEXT("youtubeSignupRequired"))
+						for (int32 Idx = 0; Idx < ErrorArray->Num(); Idx++)
 						{
-							bNeedsYoutubeSignup = true;
+							FString ErrorReason;
+							if ((*ErrorArray)[Idx]->AsObject()->TryGetStringField(TEXT("reason"), ErrorReason))
+							{
+								if (ErrorReason == TEXT("youtubeSignupRequired"))
+								{
+									bNeedsYoutubeSignup = true;
+								}
+							}
 						}
 					}
 				}
@@ -4497,8 +4554,15 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 		bCloseUICalledDuringMoviePlayback = true;
 		return;
 	}
+
+	for (int32 i=0; i < UMGWidgetStack.Num(); i++)
+	{
+		CloseUMGWidget(UMGWidgetStack[i]);
+	}
+
+	ToastStack.Empty();
 #endif
-	
+
 	bCloseUICalledDuringMoviePlayback = false;
 
 	ChatArchive.Empty();
@@ -4553,16 +4617,11 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 	CloseQuickChat();
 	HideHUDSettings();
 	HideRedirectDownload();
-
+	CloseWebMessage();
+	CloseSavingWidget();
 	while (WindowStack.Num() > 0)
 	{
 		CloseWindow(WindowStack[0]);
-	}
-
-	if (ToastList.Num() > 0)
-	{
-		GEngine->GameViewport->RemoveViewportWidgetContent(ToastList[0].ToSharedRef());
-		ToastList.Empty();
 	}
 
 #endif
@@ -4825,6 +4884,8 @@ void UUTLocalPlayer::ChallengeCompleted(FName ChallengeTag, int32 Stars)
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("ChallengeTag"), ChallengeTag.ToString()));
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("Stars"), Stars));
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("TotalStars"), AllStars));
+			FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 			FUTAnalytics::GetProvider().RecordEvent(TEXT("ChallengeComplete"), ParamArray);
 		}
 	}
@@ -4833,7 +4894,7 @@ void UUTLocalPlayer::ChallengeCompleted(FName ChallengeTag, int32 Stars)
 bool UUTLocalPlayer::QuickMatchCheckFull()
 {
 #if !UE_SERVER
-	if (QuickMatchDialog.IsValid())
+	if (QuickMatchDialog.IsValid() || MatchmakingDialog.IsValid())
 	{
 		FTimerHandle TmpHandle;
 		GetWorld()->GetTimerManager().SetTimer(TmpHandle, this, &UUTLocalPlayer::RestartQuickMatch, 0.5f, false);
@@ -4922,11 +4983,29 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 					}
 				}
 
-				if ((uint32)MCPPulledData.CurrentVersionNumber >  FNetworkVersion::GetNetworkCompatibleChangelist())
+				uint32 MyVersion = FNetworkVersion::GetNetworkCompatibleChangelist();
+				UE_LOG(UT,Warning,TEXT("Compatible Network Version: %i"), MyVersion)
+
+				if ((uint32)MCPPulledData.CurrentVersionNumber > MyVersion )
 				{
 #if !UE_SERVER
-					ShowMessage(NSLOCTEXT("UTLocalPlayer", "NeedtoUpdateTitle", "New Version Available"), NSLOCTEXT("UTLocalPlayer", "NeedtoUpdateMsg", "There is a newer version of game available.  Would you like to open the launcher and upgrade now?"), UTDIALOG_BUTTON_YES + UTDIALOG_BUTTON_NO, FDialogResultDelegate::CreateUObject(this, &UUTLocalPlayer::OnUpgradeResults),FVector2D(0.25,0.25));					
+					ShowWebMessage(NSLOCTEXT("UTLocalPlayer","NeedtoUpdateTitle","New Version Available"), TEXT("http://epic.gm/ood"));
 #endif
+				}
+				else if (IsMenuGame())
+				{
+					if (MCPPulledData.CurrentVersionNumber > LastLoadedVersionNumber)
+					{
+						// Delete the web cache to insure the new version is loaded.  CEFBrowser should give you a LoadURLIgnoringCache but it doesn't
+						FString WebCacheIndex = FPaths::GameSavedDir() + TEXT("/webcache/index");
+						FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*WebCacheIndex);
+
+						// Open a Web page with better info
+						ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), TEXT("http://epic.gm/updt"));
+					
+						LastLoadedVersionNumber = (uint32)MCPPulledData.CurrentVersionNumber;
+						SaveConfig();
+					}
 				}
 
 			}
@@ -4960,7 +5039,8 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 
 bool UUTLocalPlayer::IsRankedMatchmakingEnabled(int32 PlaylistId)
 {
-	return ActiveRankedPlaylists.Contains(PlaylistId);
+	UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
+	return ActiveRankedPlaylists.Contains(PlaylistId) && GI && IsTutorialMaskCompleted(GI->GetPlaylistManager()->GetPlaylistRequireTutorialMask(PlaylistId));
 }
 
 void UUTLocalPlayer::ShowAdminDialog(AUTRconAdminInfo* AdminInfo)
@@ -5251,6 +5331,8 @@ void UUTLocalPlayer::HandleProfileNotification(const FOnlineNotification& Notifi
 		{
 			TArray<FAnalyticsEventAttribute> ParamArray;
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("XP"), Payload.XP));
+			FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
+
 			FUTAnalytics::GetProvider().RecordEvent(TEXT("XPProgress"), ParamArray);
 		}
 	}
@@ -5337,7 +5419,19 @@ FString UUTLocalPlayer::StripOptionsFromAddress(FString HostAddress) const
 
 void UUTLocalPlayer::Reconnect(bool bSpectator)
 {
-	if (LastSession.IsValid())
+	if (!LastRankedMatchSessionId.IsEmpty())
+	{
+		UMatchmakingContext* MatchmakingContext = Cast<UMatchmakingContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UMatchmakingContext::StaticClass()));
+		if (MatchmakingContext)
+		{
+			MatchmakingContext->AttemptReconnect(LastRankedMatchUniqueId);
+		}
+		LastRankedMatchUniqueId.Empty();
+		LastRankedMatchSessionId.Empty();
+		LastRankedMatchTimeString.Empty();
+		SaveConfig();
+	}
+	else if (LastSession.IsValid())
 	{
 		bAttemptingForceJoin = false;
 		JoinSession(LastSession, bLastSessionWasASpectator);
@@ -5904,10 +5998,52 @@ void UUTLocalPlayer::LoginProcessComplete()
 
 void UUTLocalPlayer::SetTutorialFinished(int32 TutorialMask)
 {
-	if (CurrentProfileSettings != nullptr)
+	for (int32 i=0; i < TutorialData.Num(); i++)
 	{
-		CurrentProfileSettings->TutorialMask |= TutorialMask;
-		SaveProfileSettings();
+		if (TutorialData[i].Mask == TutorialMask)
+		{
+			SetTutorialFinished(TutorialData[i].Tag);
+			break;
+		}
+	}
+}
+
+void UUTLocalPlayer::SetTutorialFinished(FName TutorialTag)
+{
+	for (int32 i=0; i < TutorialData.Num(); i++)
+	{
+		if (TutorialData[i].Tag == TutorialTag)
+		{
+			int32 TutorialMask = TutorialData[i].Mask;
+			if ( !IsTutorialMaskCompleted(TutorialMask) )
+			{
+				SetTutorialMask(TutorialMask);
+
+				// Look to see if it's time to give a toast.  We need a better type of achievement toast.  Maybe play UMG here or something
+
+				if (TutorialMask == 0x01)	// We have completed the first tutorial...
+				{
+					ShowToast(NSLOCTEXT("Unlocks","FirstTimer","Achievement: No Longer a Noob!"),6.0f);			
+				}
+				else if (TutorialMask <= TUTORIAL_Pickups && IsTutorialMaskCompleted(TUTORIAL_SkillMoves) )
+				{
+					ShowToast(NSLOCTEXT("Unlocks","OfflineChallengesUnlocked","Achievement: Got the Skills"),6.0f);			
+				}
+
+				if (TutorialMask > TUTORIAL_Pickups)
+				{
+					if (TutorialMask == TUTORIAL_DM)
+					{
+						ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlocked","Achievement: Fragger\nDeathmatch Quickmatch Unlocked!"),6.0f);			
+					}
+					if (TutorialMask == TUTORIAL_CTF)
+					{
+						ShowToast(NSLOCTEXT("Unlocks","CTFQuickMatchUnlocked","Achievement: Flag Runner\nCapture the Flag Quickmatch Unlocked!"),6.0f);			
+					}
+				}
+			}
+			break;
+		}
 	}
 }
 
@@ -5971,6 +6107,11 @@ bool UUTLocalPlayer::SkipTutorialCheck()
 	}
 #endif
 
+	if (LastSession.Session.OwningUserId.IsValid() || LastSession.Session.SessionInfo.IsValid())
+	{
+		return true;
+	}
+
 	// Add any additional checks here to abort the tutorial check
 
 	return false;
@@ -6003,13 +6144,521 @@ void UUTLocalPlayer::HideRedirectDownload()
 #endif
 }
 
-bool UUTLocalPlayer::IsInAnActiveParty()
+bool UUTLocalPlayer::IsInAnActiveParty() const
 {
-	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
-	if (PartyContext)
+	if (GetWorld())
 	{
-		return PartyContext->GetPartySize() > 1;
+		UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
+		if (PartyContext)
+		{
+			return PartyContext->GetPartySize() > 1;
+		}
 	}
 	
 	return false;
 }
+
+bool UUTLocalPlayer::IsMenuOptionLocked(FName MenuCommand) const
+{
+	if (CurrentProfileSettings != nullptr)
+	{
+		if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			
+		{
+			return !IsTutorialMaskCompleted(TUTORIAL_DM);
+		}
+		if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)			
+		{
+			return !IsTutorialMaskCompleted(TUTORIAL_FlagRun);
+		}
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		
+		{
+			return !IsTutorialMaskCompleted(TUTORIAL_CTF);
+		}
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	
+		{
+			return !IsTutorialMaskCompleted(TUTORIAL_Showdown);
+		}
+		else if (MenuCommand == EMenuCommand::MC_Challenges)		
+		{
+			return false;
+		}
+	}
+
+	return false;
+}
+
+EVisibility UUTLocalPlayer::IsMenuOptionLockVisible(FName MenuCommand) const
+{
+	return IsMenuOptionLocked(MenuCommand) ? EVisibility::Visible : EVisibility::Collapsed;
+}
+
+bool UUTLocalPlayer::IsMenuOptionEnabled(FName MenuCommand) const
+{
+	return IsMenuOptionLocked(MenuCommand);
+
+}
+
+FText UUTLocalPlayer::GetMenuCommandTooltipText(FName MenuCommand) const 
+{
+	if ( !IsInAnActiveParty() && IsMenuOptionLocked(MenuCommand) )
+	{
+		if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			return NSLOCTEXT("SUTHomePanel", "QuickPlayDMLocked","Before you can play Deathmatch online, you need to complete the Deathmatch training in Basic Training.");
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTFLocked","Before you can play Capture the Flag online, you need to complete the CTF training in Basic Training.");
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayShowdownLocked","Before you can play Showdown online, you need to complete the Showdown training in Basic Training.");
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrunLocked","Before you can play Flag Run online, you need to complete the flag run training in Basic Training.");
+		else if (MenuCommand == EMenuCommand::MC_Challenges)		return NSLOCTEXT("SUTHomePanel", "QuickPlayChallengesLocked","Challenges are not yet available.  Please complete the movement, weapons and pickup training in Basic Training.");
+		else if (MenuCommand == EMenuCommand::MC_FindAMatch)		return NSLOCTEXT("SUTHomePanel", "QuickPlayFindAMatchLocked","Online play is unavailable until you complete the movement, weapons and pickup and one game mode training in Basic Training.");
+	}
+	else
+	{
+		if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			return NSLOCTEXT("SUTHomePanel", "QuickPlayDM","Quickly find and join an online deathmatch game against players close to your skill level.");
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTF","Quickly find and join an online capture the flag game against players close to your skill level");
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrun","Quickly find and join an online FlagRun game against players close to your skill level.");
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayShowdown","Quickly find and join a 3v3 Showdown against players close to your skill level.");
+		else if (MenuCommand == EMenuCommand::MC_Challenges)		return NSLOCTEXT("SUTHomePanel", "QuickPlayChallenges","Test your skills offline against our world class AI.");
+		else if (MenuCommand == EMenuCommand::MC_FindAMatch)		return NSLOCTEXT("SUTHomePanel", "QuickPlayFindAMatch","Head online and find games to play.");
+	}
+	return FText::GetEmpty();
+}
+
+void UUTLocalPlayer::LaunchTutorial(FName TutorialName, const FString& DesiredQuickmatchType)
+{
+	LastTutorial = TutorialName;
+	if (!DesiredQuickmatchType.IsEmpty())
+	{
+		PendingQuickmatchType = DesiredQuickmatchType;
+		bQuickmatchOnLevelChange = true;
+	}
+
+	if (TutorialName == ETutorialTags::TUTTAG_Progress)
+	{
+		// Look to see where the player is in the tutorial progression and pick the next tutorial.
+
+		if ( !IsTutorialMaskCompleted(TUTOIRAL_Weapon) )			TutorialName = ETutorialTags::TUTTAG_Weapons;
+		else if (!IsTutorialMaskCompleted(TUTORIAL_Pickups) )	TutorialName = ETutorialTags::TUTTAG_Pickups;
+		else if (!IsTutorialMaskCompleted(TUTORIAL_DM) )			TutorialName = ETutorialTags::TUTTAG_DM;
+		else if (!IsTutorialMaskCompleted(TUTORIAL_FlagRun) )	TutorialName = ETutorialTags::TUTTAG_Flagrun;
+		else if (!IsTutorialMaskCompleted(TUTORIAL_Showdown) )	TutorialName = ETutorialTags::TUTTAG_Showdown;
+		else if (!IsTutorialMaskCompleted(TUTORIAL_CTF) )		TutorialName = ETutorialTags::TUTTAG_CTF;
+		else if (!IsTutorialMaskCompleted(TUTORIAL_Duel) )		TutorialName = ETutorialTags::TUTTAG_Duel;
+
+		else TutorialName =	ETutorialTags::TUTTAG_Movement;
+	}
+
+	for (int32 i = 0; i < TutorialData.Num(); i++)
+	{
+		if (TutorialData[i].Tag == TutorialName)
+		{
+			UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
+			if (GI)
+			{
+				GI->LoadingMovieToPlay = TutorialData[i].LoadingMovie;
+				GI->LevelLoadText = FText::FromString(TutorialData[i].LoadingText);
+				GI->bSuppressLoadingText = true;
+			}
+
+			FString URL = TutorialData[i].Map + TutorialData[i].LaunchArgs + FString::Printf(TEXT("?TutorialMask=%i"),TutorialData[i].Mask);
+			GetWorld()->ServerTravel(URL,true,false);
+			FUTAnalytics::FireEvent_UTTutorialStarted(Cast<AUTPlayerController>(PlayerController), TutorialName.ToString());
+			return;
+		}
+	}
+}
+
+bool UUTLocalPlayer::LaunchPendingQuickmatch()
+{
+	if (bQuickmatchOnLevelChange)
+	{
+#if !UE_SERVER
+		StartQuickMatch(PendingQuickmatchType);
+#endif
+		return true;
+	}
+	return false;
+}
+
+void UUTLocalPlayer::RestartTutorial()
+{
+	if (LastTutorial != NAME_None)
+	{
+		LaunchTutorial(LastTutorial);
+	}
+}
+
+void UUTLocalPlayer::NextTutorial()
+{
+	for (int32 i = 0; i < TutorialData.Num(); i++)
+	{
+		if (TutorialData[i].Tag == LastTutorial)
+		{
+			int32 NextTutorialIndex = (i + 1) % TutorialData.Num();
+			if (TutorialData.IsValidIndex(NextTutorialIndex))
+			{
+				LaunchTutorial(TutorialData[NextTutorialIndex].Tag, TEXT(""));
+				break;
+			}
+		}
+	}
+}
+
+FText UUTLocalPlayer::GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const
+{
+	if (Section == ETutorialSections::SkillMoves)
+	{
+		if ( IsTutorialMaskCompleted(TUTORIAL_SkillMoves) )
+		{
+			return NSLOCTEXT("TutorialText","Completed","!! COMPLETED !!");
+		}
+		
+		return NSLOCTEXT("TutorialText","SkillMoves","Learn the basic skills needed to compete in the tournament.");
+	}
+
+	if (Section == ETutorialSections::Gameplay)
+	{
+		if ( IsTutorialMaskCompleted(TUTORIAL_Gameplay) )
+		{
+			return NSLOCTEXT("TutorialText","Completed","!! COMPLETED !!");
+		}
+		
+		return NSLOCTEXT("TutorialText","Gameplay","Learn how to play the most popular game modes before you play online.");
+	}
+
+	if (Section == ETutorialSections::Hardcore)
+	{
+		if ( IsTutorialMaskCompleted(TUTORIAL_Hardcore) )
+		{
+			return NSLOCTEXT("TutorialText","Completed","!! COMPLETED !!");
+		}
+		return NSLOCTEXT("TutorialText","Classic","Classic game modes that have stood the test of time.");
+	}
+
+	return FText::GetEmpty();
+}
+
+bool UUTLocalPlayer::IsTutorialMaskCompleted(int32 TutorialMask) const
+{
+	return ( GetTutorialMask() & TutorialMask ) == TutorialMask;
+}
+
+
+bool UUTLocalPlayer::IsTutorialCompleted(FName TutorialName) const
+{
+	bool bCompleted = false;
+	for (int32 i=0; i < TutorialData.Num(); i++)
+	{
+		if (TutorialData[i].Tag == TutorialName)
+		{
+			bCompleted = IsTutorialMaskCompleted(TutorialData[i].Mask);
+			break;
+		}
+	}
+	return bCompleted;
+}
+
+FText UUTLocalPlayer::GetBestTutorialTime(FName TutorialName)
+{
+	float BestTime = 0.0f;
+	for (int32 i=0; i < TutorialData.Num(); i++)
+	{
+		if (TutorialData[i].Tag == TutorialName)
+		{
+			if (CurrentProgression)
+			{
+				CurrentProgression->GetBestTime(TutorialName, BestTime);
+			}
+			break;
+		}
+	}
+
+	return UUTGameEngine::ConvertTime(FText::GetEmpty(), FText::GetEmpty(), BestTime, true, true, true);
+}
+
+
+FReply UUTLocalPlayer::ToggleFriendsAndChat()
+{
+#if PLATFORM_LINUX
+	// Need launcher so this doesn't work on linux right now
+	return FReply::Handled();
+#endif
+#if !UE_SERVER
+	if (bShowingFriendsMenu)
+	{
+		TSharedPtr<SUTFriendsPopupWindow> Popup = GetFriendsPopup();
+		if (Popup.IsValid())
+		{
+			GEngine->GameViewport->RemoveViewportWidgetContent(Popup.ToSharedRef());
+			SetShowingFriendsPopup(false);
+		}
+	}
+	else
+	{
+		TSharedPtr<SUTFriendsPopupWindow> Popup = GetFriendsPopup();
+		if (Popup.IsValid())
+		{
+			GEngine->GameViewport->AddViewportWidgetContent(Popup.ToSharedRef(), 6000);
+			SetShowingFriendsPopup(true);
+		}
+	}
+#endif
+	return FReply::Handled();
+}
+
+
+bool UUTLocalPlayer::HasProgressionKey(FName RequiredKey)
+{
+	// Eventually, this key list will be pulled from the MCP or somewhere.  But until them, here is a big if/then/else block :)
+
+	if (RequiredKey == FName(TEXT("PROGRESSION_KEY_NoLongerANoob")))
+	{
+		return IsTutorialMaskCompleted(TUTORIAL_SkillMoves);
+	}
+
+	return false;
+}
+
+bool UUTLocalPlayer::HasProgressionKeys(TArray<FName> RequiredKeys)
+{
+	for (int32 i = 0; i < RequiredKeys.Num(); i++)
+	{
+		if (!HasProgressionKey(RequiredKeys[i]))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void UUTLocalPlayer::ShowWebMessage(FText Caption, FString Url)
+{
+#if !UE_SERVER
+	if (!WebMessageDialog.IsValid())
+	{
+		SAssignNew(WebMessageDialog, SUTWebMessage)
+			.PlayerOwner(this);
+
+		OpenDialog(WebMessageDialog.ToSharedRef(), 2000);
+		WebMessageDialog->Browse(Caption, Url);
+	}
+#endif
+}
+
+void UUTLocalPlayer::CloseWebMessage()
+{
+#if !UE_SERVER
+	if (WebMessageDialog.IsValid())
+	{
+		CloseDialog(WebMessageDialog.ToSharedRef());
+		WebMessageDialog.Reset();
+	}
+#endif
+}
+
+void UUTLocalPlayer::ReportAbuse(TWeakObjectPtr<class AUTPlayerState> Troll)
+{
+#if !UE_SERVER
+	if (!AbuseDialog.IsValid())
+	{
+		SAssignNew(AbuseDialog, SUTReportUserDialog)
+			.PlayerOwner(this)
+			.Troll(Troll);
+
+		OpenDialog(AbuseDialog.ToSharedRef(), 1000);
+	}
+#endif
+}
+void UUTLocalPlayer::CloseAbuseDialog()
+{
+#if !UE_SERVER
+	if (AbuseDialog.IsValid())
+	{
+		CloseDialog(AbuseDialog.ToSharedRef());
+		AbuseDialog.Reset();
+	}
+#endif
+}
+
+void UUTLocalPlayer::ShowSavingWidget()
+{
+#if !UE_SERVER
+	if (SavingWidget == nullptr)
+	{
+		SavingWidget = OpenUMGWidget(TEXT("/Game/RestrictedAssets/UI/UMGMenuElements/UTSavingWidget.UTSavingWidget"));
+	}
+#endif
+}
+
+void UUTLocalPlayer::HideSavingWidget()
+{
+	if (SavingWidget != nullptr && SavingMask == 0x00)
+	{
+		SavingWidget->SimpleEvent(FName(TEXT("Close")));
+	}
+}
+
+void UUTLocalPlayer::CloseSavingWidget()
+{
+#if !UE_SERVER
+	if (SavingWidget != nullptr)
+	{
+		CloseUMGWidget(SavingWidget);
+		SavingWidget = nullptr;
+		SavingMask = 0x00;
+	}
+#endif
+}
+
+
+UUTUMGWidget* UUTLocalPlayer::OpenUMGWidget(const FString& UMGClass)
+{
+	UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
+	if (GI != nullptr) 
+	{
+		// Attempt to look up the class as given
+		UClass* UMGWidgetClass = LoadClass<UUserWidget>(NULL, *UMGClass, NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
+
+		// If that failed, try adding the _C definition incase someone forgot it
+		if (UMGWidgetClass == nullptr)
+		{
+			FString FixedClassName = UMGClass + TEXT("_C");
+			UMGWidgetClass = LoadClass<UUserWidget>(NULL, *FixedClassName, NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
+		}
+
+		if (UMGWidgetClass)
+		{
+			UUTUMGWidget* FinalWidget = CreateWidget<UUTUMGWidget>(GI, UMGWidgetClass);
+			if (FinalWidget != nullptr)
+			{
+				return OpenExistingUMGWidget(FinalWidget);
+			}
+		}
+	}
+	return nullptr;
+}
+
+UUTUMGWidget* UUTLocalPlayer::OpenExistingUMGWidget(UUTUMGWidget* WidgetToOpen)
+{
+	if (WidgetToOpen != nullptr)
+	{
+		int32 Cnt = 0;
+		for (int32 i=0; i < UMGWidgetStack.Num(); i++)
+		{	
+			if (UMGWidgetStack[i]->GetClass() == WidgetToOpen->GetClass())
+			{
+				Cnt++;
+			}
+		}
+
+		if (WidgetToOpen->bUniqueUMG && Cnt > 0) return nullptr;	// Don't add widgets if they are unique and already exist.
+
+		// If there are multiples of this widget open, offset them.
+		GEngine->GameViewport->AddViewportWidgetContent(WidgetToOpen->TakeWidget(), WidgetToOpen->DisplayZOrder - Cnt);
+		
+		// Clamp the stack.
+		Cnt = FMath::Clamp<int32>(Cnt,0,4);
+		if (Cnt > 0)
+		{
+			WidgetToOpen->SetPositionInViewport(WidgetToOpen->StackingOffset * Cnt,true);
+		}
+
+		if (WidgetToOpen->WidgetTag == NAME_None)
+		{
+			WidgetToOpen->WidgetTag = FName(*WidgetToOpen->GetName());
+		}
+
+		WidgetToOpen->AssociateLocalPlayer(this);
+		WidgetToOpen->WidgetOpened();
+
+		UMGWidgetStack.Add(WidgetToOpen);
+
+	}
+	return WidgetToOpen;
+}
+
+UUTUMGWidget* UUTLocalPlayer::FindUMGWidget(const FName SearchTag)
+{
+
+	for (int32 i=0; i < UMGWidgetStack.Num(); i++)
+	{
+		if (UMGWidgetStack[i] != nullptr && UMGWidgetStack[i]->WidgetTag == SearchTag)
+		{
+			return UMGWidgetStack[i];
+		}
+	}
+
+	return nullptr;
+}
+
+void UUTLocalPlayer::CloseUMGWidgetByTag(const FName Tag)
+{
+	UUTUMGWidget* WidgetToClose = FindUMGWidget(Tag);	
+	if (WidgetToClose != nullptr)
+	{
+		CloseUMGWidget(WidgetToClose);
+	}
+}
+
+void UUTLocalPlayer::CloseUMGWidget(UUTUMGWidget* WidgetToClose)
+{
+	if (WidgetToClose != nullptr)
+	{
+		GEngine->GameViewport->RemoveViewportWidgetContent(WidgetToClose->TakeWidget());
+		WidgetToClose->WidgetClosed();
+
+		UMGWidgetStack.Remove(WidgetToClose);
+	}
+}
+
+int32 UUTLocalPlayer::GetTutorialMask() const
+{
+	int32 TutorialMask = 0x00;
+	if (CurrentProfileSettings)
+	{
+		TutorialMask |= CurrentProfileSettings->TutorialMask;
+	}
+	if (CurrentProgression)
+	{
+		TutorialMask |= CurrentProgression->TutorialMask;
+	}
+
+	return TutorialMask;
+}
+
+void UUTLocalPlayer::SetTutorialMask(int32 BitToSet)
+{
+	int32 TutorialMask = GetTutorialMask();
+	TutorialMask = TutorialMask | BitToSet;
+
+	if (CurrentProgression)
+	{
+		CurrentProgression->TutorialMask = TutorialMask;
+	}
+	if (CurrentProfileSettings)
+	{
+		CurrentProfileSettings->TutorialMask = TutorialMask;
+	}
+
+	SaveProfileSettings();
+	SaveProgression();
+}
+
+void UUTLocalPlayer::ClearTutorialMask(int32 BitToClear)
+{
+	int32 TutorialMask = GetTutorialMask();
+	TutorialMask = TutorialMask & (~BitToClear);
+	
+	if (CurrentProgression)
+	{
+		CurrentProgression->TutorialMask = TutorialMask;
+	}
+	if (CurrentProfileSettings)
+	{
+		CurrentProfileSettings->TutorialMask = TutorialMask;
+	}
+
+	SaveProfileSettings();
+	SaveProgression();
+
+}
+
+

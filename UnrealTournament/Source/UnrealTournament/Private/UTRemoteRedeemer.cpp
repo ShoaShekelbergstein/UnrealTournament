@@ -10,6 +10,8 @@
 #include "UTWorldSettings.h"
 #include "UTProj_WeaponScreen.h"
 #include "UTRedeemerLaunchAnnounce.h"
+#include "UTDemoNetDriver.h"
+#include "UTDemoRecSpectator.h"
 
 AUTRemoteRedeemer::AUTRemoteRedeemer(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -227,6 +229,21 @@ void AUTRemoteRedeemer::Destroyed()
 
 void AUTRemoteRedeemer::BlowUp(FVector HitNormal)
 {
+	if (GetWorld()->GetNetMode() == NM_Client)
+	{
+		UDemoNetDriver* DemoDriver = GetWorld()->DemoNetDriver;
+		if (DemoDriver)
+		{
+			AUTDemoRecSpectator* DemoRecSpec = Cast<AUTDemoRecSpectator>(DemoDriver->SpectatorController);
+			if (DemoRecSpec && (GetWorld()->GetTimeSeconds() - DemoRecSpec->LastKillcamSeekTime) < 2.0f)
+			{
+				bExploded = true;
+				Destroy();
+				return;
+			}
+		}
+	}
+
 	if (!bExploded)
 	{
 		TArray<UAudioComponent*> AudioComponents;
@@ -256,7 +273,9 @@ void AUTRemoteRedeemer::BlowUp(FVector HitNormal)
 				WS->AddTimedMaterialParameter(OverlayMI, FName(TEXT("Static")), OverlayStaticCurve);
 			}
 		}
-
+		ProjectileMovement->Velocity = FVector::ZeroVector;
+		ProjectileMovement->ProjectileGravityScale = 0.f;
+		ProjectileMovement->Acceleration = FVector::ZeroVector;
 		ProjectileMovement->SetActive(false);
 		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		CollisionComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -275,8 +294,9 @@ void AUTRemoteRedeemer::BlowUp(FVector HitNormal)
 		{
 			ECollisionChannel TraceChannel = COLLISION_TRACE_WEAPONNOCHARACTER;
 			FCollisionQueryParams QueryParams(GetClass()->GetFName(), true, Instigator);
+			QueryParams.AddIgnoredActor(this);
 			FHitResult Hit;
-			FVector EndTrace = ExplosionCenter + 100.f * HitNormal; // move up by maxstepheight
+			FVector EndTrace = ExplosionCenter + 150.f * HitNormal; 
 			bool bHitGeometry = GetWorld()->LineTraceSingleByChannel(Hit, ExplosionCenter, EndTrace, TraceChannel, QueryParams);
 			ExplosionCenter = bHitGeometry ? 0.5f*(ExplosionCenter + Hit.Location) : EndTrace;
 		}
@@ -288,12 +308,28 @@ void AUTRemoteRedeemer::ExplodeTimed()
 {
 	if (!bExploded && Role == ROLE_Authority)
 	{
-		BlowUp();
+		BlowUp(FVector(0.f, 0.f, 1.f));
 	}
 }
 
 void AUTRemoteRedeemer::OnShotDown()
 {
+	if (GetWorld()->GetNetMode() == NM_Client)
+	{
+		UDemoNetDriver* DemoDriver = GetWorld()->DemoNetDriver;
+		if (DemoDriver)
+		{
+			AUTDemoRecSpectator* DemoRecSpec = Cast<AUTDemoRecSpectator>(DemoDriver->SpectatorController);
+			if (DemoRecSpec && (GetWorld()->GetTimeSeconds() - DemoRecSpec->LastKillcamSeekTime) < 2.0f)
+			{
+				bExploded = true;
+				bShotDown = true;
+				Destroy();
+				return;
+			}
+		}
+	}
+
 	if (!bExploded)
 	{
 		bShotDown = true;
@@ -306,6 +342,8 @@ void AUTRemoteRedeemer::OnShotDown()
 
 		// fall to ground, explode after a delay
 		ProjectileMovement->SetActive(true);
+		ProjectileMovement->Velocity *= 0.5f;
+		ProjectileMovement->Acceleration = FVector::ZeroVector;
 		ProjectileMovement->ProjectileGravityScale = 1.0f;
 		ProjectileMovement->MaxSpeed += 2000.0f; // make room for gravity
 		ProjectileMovement->bShouldBounce = true;
@@ -466,7 +504,7 @@ bool AUTRemoteRedeemer::ServerBlowUp_Validate()
 void AUTRemoteRedeemer::ServerBlowUp_Implementation()
 {
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (GS && GS->IsMatchInProgress() && !GS->IsMatchIntermission() && !bShotDown)
+	if (GS && !GS->HasMatchEnded() && !GS->IsMatchIntermission() && !bShotDown)
 	{
 		BlowUp();
 	}
@@ -510,7 +548,7 @@ void AUTRemoteRedeemer::ExplodeStage(float RangeMultiplier)
 				int32 LiveEnemyCount = 0;
 				for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 				{
-					AController* C = *Iterator;
+					AController* C = Iterator->Get();
 					AUTPlayerState* TeamPS = C ? Cast<AUTPlayerState>(C->PlayerState) : nullptr;
 					if (TeamPS && C->GetPawn() && !GS->OnSameTeam(GetController(), C))
 					{
@@ -521,14 +559,15 @@ void AUTRemoteRedeemer::ExplodeStage(float RangeMultiplier)
 			}
 
 			//DrawDebugSphere(GetWorld(), ExplosionCenter, RangeMultiplier*AdjustedDamageParams.OuterRadius, 12, FColor::Green, true, -1.f);
-			UUTGameplayStatics::UTHurtRadius(this, AdjustedDamageParams.BaseDamage, AdjustedDamageParams.MinimumDamage, DefaultRedeemer->Momentum, ExplosionCenter, RangeMultiplier * AdjustedDamageParams.InnerRadius, RangeMultiplier * AdjustedDamageParams.OuterRadius, AdjustedDamageParams.DamageFalloff,
+			float MinDamage = (RangeMultiplier * AdjustedDamageParams.OuterRadius < DefaultRedeemer->CollisionFreeRadius) ? 200.f : AdjustedDamageParams.MinimumDamage;
+			UUTGameplayStatics::UTHurtRadius(this, AdjustedDamageParams.BaseDamage, MinDamage, DefaultRedeemer->Momentum, ExplosionCenter, RangeMultiplier * AdjustedDamageParams.InnerRadius, RangeMultiplier * AdjustedDamageParams.OuterRadius, AdjustedDamageParams.DamageFalloff,
 				DefaultRedeemer->MyDamageType, IgnoreActors, this, DamageInstigator, nullptr, nullptr, DefaultRedeemer->CollisionFreeRadius);
 			if (StatusPS)
 			{
 				int32 LiveEnemyCount = 0;
 				for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 				{
-					AController* C = *Iterator;
+					AController* C = Iterator->Get();
 					AUTPlayerState* TeamPS = C ? Cast<AUTPlayerState>(C->PlayerState) : nullptr;
 					if (TeamPS && C->GetPawn() && !GS->OnSameTeam(GetController(), C))
 					{
@@ -682,7 +721,7 @@ void AUTRemoteRedeemer::Tick(float DeltaSeconds)
 	{
 		Cast<AUTPlayerController>(GetController())->UTClientPlaySound(FuelWarningSound);
 	}
-	if (Role != ROLE_SimulatedProxy)
+	if ((Role != ROLE_SimulatedProxy) && !bExploded && !bShotDown)
 	{
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 		if (GS && (GS->IsMatchIntermission() || GS->HasMatchEnded()))
@@ -718,7 +757,7 @@ void AUTRemoteRedeemer::Tick(float DeltaSeconds)
 	// this is done in Tick() so that it handles edge cases like viewer changing teams
 	if (GetNetMode() != NM_DedicatedServer)
 	{
-		AUTGameState* GS = Cast<AUTGameState>(GetWorld()->GetGameState());
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 		bool bShowOutline = false;
 		if (GS != nullptr && !bExploded)
 		{
@@ -769,7 +808,11 @@ void AUTRemoteRedeemer::RedeemerDenied(AController* InstigatedBy)
 	if (GM)
 	{
 		APlayerState* InstigatorPS = GetController() ? GetController()->PlayerState : NULL;;
-		APlayerState* InstigatedbyPS = InstigatedBy ? InstigatedBy->PlayerState : NULL;
+		AUTPlayerState* InstigatedbyPS = InstigatedBy ? Cast<AUTPlayerState>(InstigatedBy->PlayerState) : NULL;
+		if (InstigatedbyPS)
+		{
+			InstigatedbyPS->ModifyStatsValue(NAME_RedeemerRejected, 1);
+		}
 		GM->BroadcastLocalized(this, UUTCTFRewardMessage::StaticClass(), 0, InstigatedbyPS, InstigatorPS, NULL);
 	}
 }

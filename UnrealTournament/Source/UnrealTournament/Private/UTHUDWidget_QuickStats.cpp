@@ -353,7 +353,7 @@ void UUTHUDWidget_QuickStats::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCa
 			if (bPlayerCanRally || bShowTimer)
 			{
 				FlagInfo.IconColor = FLinearColor::Yellow;
-				FlagInfo.Label = UTHUDOwner->RallyLabel;
+				FlagInfo.Label = UTPlayerState->CarriedObject ? FText::GetEmpty() : UTHUDOwner->RallyLabel;
 			}
 			else
 			{
@@ -384,8 +384,8 @@ void UUTHUDWidget_QuickStats::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCa
 			else if (bShowTimer)
 			{
 				int32 RemainingTime = UTPlayerState->CarriedObject && GameState && GameState->CurrentRallyPoint
-											? 1 + GameState->CurrentRallyPoint->ReplicatedCountdown
-											: 1 + FMath::Max(int32(UTPlayerState->RemainingRallyDelay), (GameState && GameState->CurrentRallyPoint) ? GameState->CurrentRallyPoint->ReplicatedCountdown : 0);
+											? FMath::Min(int32(GameState->CurrentRallyPoint->RallyReadyDelay), 1 + GameState->CurrentRallyPoint->ReplicatedCountdown/10)
+											: 1 + FMath::Max(int32(UTPlayerState->RemainingRallyDelay), (GameState && GameState->CurrentRallyPoint) ? GameState->CurrentRallyPoint->ReplicatedCountdown/10 : 0);
 				FlagInfo.Label = FText::AsNumber(RemainingTime);
 			}
 
@@ -579,7 +579,6 @@ void UUTHUDWidget_QuickStats::DrawStat(FVector2D StatOffset, FStatInfo& Info, FH
 
 		if (Info.HighlightStrength> 0)
 		{
-
 			float HighlightStrength = FMath::Clamp<float>(Info.HighlightStrength, 0.0f, 1.0f);
 
 			HorizontalHighlight.RenderColor = FLinearColor(0.82f,0.0f,0.0f,1.0f);
@@ -680,9 +679,22 @@ void UUTHUDWidget_QuickStats::PingBoostWidget()
 
 void UUTHUDWidget_QuickStats::DrawIconUnderlay(FVector2D StatOffset)
 {
-	RallyFlagIcon.bUseTeamColors = true;
-	RallyFlagIcon.RenderScale = 1.0f;
+	AUTFlagRunGameState* GameState = UTHUDOwner->GetWorld()->GetGameState<AUTFlagRunGameState>();
+	AUTRallyPoint* RallyPoint = GameState ? GameState->CurrentRallyPoint : nullptr;
+	if (RallyPoint && (RallyPoint->RallyTimeRemaining > 0.f))
+	{
+		HorizontalHighlight.RenderColor = FLinearColor::Yellow;
+		HorizontalHighlight.RenderOpacity = 1.f;
+		float Height = HorizontalBackground.Size.Y * 0.1f*RallyPoint->RallyTimeRemaining;
+		HorizontalHighlight.Size.Y = Height;
+		HorizontalHighlight.UVs.VL = Height;
+		FVector2D DrawOffset = StatOffset;
+		DrawOffset.Y -= (HorizontalBackground.Size.Y * 0.5f);
+		RenderObj_Texture(HorizontalHighlight, DrawOffset);
+	}
 
+	RallyFlagIcon.RenderScale = 1.0f;
+	RallyFlagIcon.bUseTeamColors = true;
 	for (int32 i = 0; i < RallyAnimTimers.Num(); i++)
 	{
 		RallyAnimTimers[i] += RenderDelta;

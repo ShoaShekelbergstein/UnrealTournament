@@ -18,6 +18,7 @@
 #include "UTDefensePoint.h"
 #include "UTAIAction_Camp.h"
 #include "UTLift.h"
+#include "UTFlagRunGame.h"
 
 void FBotEnemyInfo::Update(EAIEnemyUpdateType UpdateType, const FVector& ViewerLoc)
 {
@@ -406,6 +407,11 @@ void AUTBot::ResetPerceptionProperties()
 
 void AUTBot::SetPawn(APawn* InPawn)
 {
+	if (InPawn == NULL)
+	{
+		StartNewAction(NULL);
+	}
+
 	if (GetPawn() != NULL)
 	{
 		GetPawn()->OnActorHit.RemoveDynamic(this, &AUTBot::NotifyBump);
@@ -991,7 +997,34 @@ void AUTBot::UpdateTrackingError(bool bNewEnemy)
 		TrackingPredictionError = MaxTrackingPredictionError * (2.f * FMath::FRand() - 1.f);
 		if (bNewEnemy)
 		{
-			AdjustedMaxTrackingOffsetError = MaxTrackingOffsetError;
+			// reduce target switch error if enemy was detected prior to target switch
+			float KnownEnemyReduction = 0.0f;
+			if (Enemy != NULL)
+			{
+				// TODO: would really like "time enemy has been constantly visible" here, so enemies that stay in bot's view are easier to switch to
+				if (IsEnemyVisible(Enemy))
+				{
+					KnownEnemyReduction += 0.01f;
+					if (UTLineOfSightTo(Enemy, FVector::ZeroVector, false, Enemy->GetTargetLocation(GetPawn()) + Enemy->GetVelocity()))
+					{
+						KnownEnemyReduction += 0.02f;
+						if (UTLineOfSightTo(Enemy, FVector::ZeroVector, false, Enemy->GetTargetLocation(GetPawn()) + Enemy->GetVelocity() * 3.0f))
+						{
+							KnownEnemyReduction += 0.03f;
+						}
+					}
+				}
+				else
+				{
+					const FBotEnemyInfo* Info = GetEnemyInfo(Enemy, true);
+					if (GetWorld()->TimeSeconds - Info->LastFullUpdateTime < 0.25f && Info->LastFullUpdateTime > GetEnemyInfo(Enemy, false)->LastFullUpdateTime)
+					{
+						// teammates told me enemy was here
+						KnownEnemyReduction += 0.02f;
+					}
+				}
+			}
+			AdjustedMaxTrackingOffsetError = MaxTrackingOffsetError * (1.0f - KnownEnemyReduction * (Skill + Personality.Alertness * 2.0f));
 		}
 		bool bStoppedEnemy = (Enemy == NULL || (TrackedVelocity.IsNearlyZero() && GetEnemyInfo(Enemy, true)->CanUseExactLocation(GetWorld()->TimeSeconds)));
 		bool bAmStopped = (GetPawn() != NULL && GetPawn()->GetVelocity().IsNearlyZero());
@@ -1017,12 +1050,13 @@ void AUTBot::UpdateTrackingError(bool bNewEnemy)
 	}
 }
 
-void AUTBot::SetMoveTarget(const FRouteCacheItem& NewMoveTarget, const TArray<FComponentBasedPosition>& NewMovePoints)
+void AUTBot::SetMoveTarget(const FRouteCacheItem& NewMoveTarget, const TArray<FComponentBasedPosition>& NewMovePoints, const FUTPathLink& NewCurrentPath)
 {
+	PrevMoveTarget = MoveTarget;
 	MoveTarget = NewMoveTarget;
 	MoveTargetPoints = NewMovePoints;
 	bAdjusting = false;
-	CurrentPath = FUTPathLink();
+	CurrentPath = NewCurrentPath;
 	if (NavData == NULL || !NavData->GetPolyCenter(NavData->UTFindNearestPoly(GetPawn()->GetNavAgentLocation(), GetPawn()->GetSimpleCollisionCylinderExtent()), LastReachedMovePoint))
 	{
 		LastReachedMovePoint = GetPawn()->GetActorLocation();
@@ -1163,8 +1197,9 @@ void AUTBot::ConsiderTranslocation()
 void AUTBot::SetDefaultFocus()
 {
 	const bool bStrafeCheck = !MoveTarget.IsValid() || Skill + Personality.MovementAbility > 1.7f + FMath::FRand();
+	const bool bChargingFire = GetUTChar() != nullptr && GetUTChar()->GetWeapon() != nullptr && GetUTChar()->GetWeapon()->IsPreparingAttack();
 	const FVector MoveDir = (GetMovePoint() - GetPawn()->GetActorLocation()).GetSafeNormal();
-	if (GetTarget() != NULL && bLastCanAttackSuccess && (bStrafeCheck || ((GetTarget()->GetTargetLocation() - GetPawn()->GetActorLocation()).GetSafeNormal() | MoveDir) > 0.85f))
+	if (GetTarget() != NULL && bLastCanAttackSuccess && (bStrafeCheck || bChargingFire || ((GetTarget()->GetTargetLocation() - GetPawn()->GetActorLocation()).GetSafeNormal() | MoveDir) > 0.85f))
 	{
 		SetFocus(GetTarget());
 	}
@@ -1198,8 +1233,11 @@ void AUTBot::DisplayDebug(UCanvas* Canvas, const FDebugDisplayInfo& DebugDisplay
 {
 	Super::DisplayDebug(Canvas, DebugDisplay, YL, YPos);
 
+	Canvas->SetDrawColor(255, 255, 255);
+	Canvas->DrawText(GEngine->GetSmallFont(), FString::Printf(TEXT("MoveTarget: %s[%s] - Focus: %s[%s]"), MoveTarget.Actor.IsValid() ? *MoveTarget.Actor->GetName() : TEXT(""), *MoveTarget.GetLocation(GetPawn()).ToString(), (GetFocusActor() != nullptr) ? *GetFocusActor()->GetName() : TEXT(""), *GetFocalPoint().ToString()), 4.0f, YPos);
+	YPos += YL;
 	Canvas->SetDrawColor(0, 255, 0);
-	Canvas->DrawText(GEngine->GetSmallFont(), FString::Printf(TEXT("ORDERS: %s"), *Squad->GetCurrentOrders(this).ToString()), 4.0f, YPos);
+	Canvas->DrawText(GEngine->GetSmallFont(), FString::Printf(TEXT("ORDERS: %s"), (Squad != nullptr) ? *Squad->GetCurrentOrders(this).ToString() : TEXT("NO SQUAD")), 4.0f, YPos);
 	YPos += YL;
 	Canvas->DrawText(GEngine->GetSmallFont(), GoalString, 4.0f, YPos);
 	YPos += YL;
@@ -1268,7 +1306,13 @@ void AUTBot::ApplyWeaponAimAdjust(FVector TargetLoc, FVector& FocalPoint)
 			{
 				DefaultProj = MyWeap->ProjClass[NextFireMode].GetDefaultObject();
 				// handle leading
-				if (bLeadTarget && GetTarget() != NULL && GetTarget() == GetFocusActor())
+				bool bReallyLeadTarget = bLeadTarget;
+				// always lead critical enemies at low skill unless they're human as that better normalizes offense/defense effectiveness
+				if (!bReallyLeadTarget && GetTarget() == Enemy && Squad->MustKeepEnemy(this, Enemy))
+				{
+					bReallyLeadTarget = (Skill >= 2.0f || Cast<APlayerController>(Enemy->Controller) == nullptr);
+				}
+				if (bReallyLeadTarget && GetTarget() != NULL && GetTarget() == GetFocusActor())
 				{
 					FVector FireLocation = GetPawn()->GetActorLocation();
 					FireLocation.Z += GetPawn()->BaseEyeHeight;
@@ -1751,11 +1795,8 @@ void AUTBot::NotifyMoveBlocked(const FHitResult& Impact)
 			// adjust around friendly or inactive Pawns
 			if (HitPawn != NULL && (HitPawn->GetController() == NULL || IsTeammate(HitPawn)))
 			{
-				FVector VelDir = (MoveTarget.GetLocation(GetPawn()) - GetPawn()->GetActorLocation()).GetSafeNormal();
-				VelDir.Z = 0;
-				FVector OtherDir = HitPawn->GetActorLocation() - GetPawn()->GetActorLocation();
-				OtherDir.Z = 0;
-				OtherDir = OtherDir.GetSafeNormal();
+				FVector VelDir = (MoveTarget.GetLocation(GetPawn()) - GetPawn()->GetActorLocation()).GetSafeNormal2D();
+				FVector OtherDir = (HitPawn->GetActorLocation() - GetPawn()->GetActorLocation()).GetSafeNormal2D();
 				if ((VelDir | OtherDir) > 0.8f)
 				{
 					FVector SideDir(VelDir.Y, -1.0f * VelDir.X, 0.0f);
@@ -1775,7 +1816,7 @@ void AUTBot::NotifyMoveBlocked(const FHitResult& Impact)
 			}
 			// crouch if path says we should
 			// FIXME: what if going for detour in the middle of crouch path? (dropped pickup, etc)
-			else if ((CurrentPath.IsSet() && CurrentPath.CollisionHeight < FMath::TruncToInt(GetCharacter()->GetSimpleCollisionHalfHeight())) || (MoveTarget.Node != nullptr && MoveTarget.Node->MinPolyEdgeSize.Height < FMath::TruncToInt(GetCharacter()->GetSimpleCollisionHalfHeight())))
+			else if ((CurrentPath.IsSet() && CurrentPath.CollisionHeight < FMath::TruncToInt(GetCharacter()->GetSimpleCollisionHalfHeight())) || (!CurrentPath.IsSet() && MoveTarget.Node != nullptr && MoveTarget.Node->MinPolyEdgeSize.Height < FMath::TruncToInt(GetCharacter()->GetSimpleCollisionHalfHeight())))
 			{
 				if ((CurrentPath.IsSet() ? CurrentPath.CollisionHeight : MoveTarget.Node->MinPolyEdgeSize.Height) < FMath::TruncToInt(GetCharacter()->GetCharacterMovement()->CrouchedHalfHeight))
 				{
@@ -1915,7 +1956,7 @@ void AUTBot::NotifyMoveBlocked(const FHitResult& Impact)
 						( !UTChar->UTCharacterMovement->bIsDodging && Enemy != NULL && (GetWorld()->TimeSeconds - GetEnemyInfo(Enemy, false)->LastSeenTime < 5.0f || HasOtherVisibleEnemy()) &&
 							Skill >= 3.0f && GetWorld()->TimeSeconds - UTChar->LastTakeHitTime > 2.0f - Skill * 0.2f - Personality.ReactionTime * 0.5f ) )
 				{
-					if (FMath::FRand() < 0.5f + 0.5f * Personality.Jumpiness && (Enemy == NULL || Impact.Actor != Enemy))
+					if (FMath::FRand() < 0.4f + 0.4f * Personality.Jumpiness && (Enemy == NULL || Impact.Actor != Enemy))
 					{
 						FVector Start = GetPawn()->GetActorLocation();
 						// reject if on special path, unless above dest already and dodge is in its direction, or in direct combat and prefer evasiveness
@@ -2580,6 +2621,13 @@ void AUTBot::ExecuteWhatToDoNext()
 
 	SCOPE_CYCLE_COUNTER(STAT_AI_ExecuteWhatToDoNext);
 
+	// generally will get replaced but this helps track unintended fallthroughs in the decision code
+	GoalString = FString::Printf(TEXT("WhatToDoNext at %f"), GetWorld()->TimeSeconds);
+
+	// remember previous MoveTarget if we failed to reach it
+	// need to make sure we don't consider it a fail if the decision code gets restarted mid-move for unrelated reasons
+	const FRouteCacheItem OldMoveTarget = (MoveTimer <= 0.0f && !MoveTarget.IsValid()) ? PrevMoveTarget : FRouteCacheItem();
+	
 	Target = NULL;
 	TranslocTarget = FVector::ZeroVector;
 	if (GetCharacter() != NULL)
@@ -2617,7 +2665,7 @@ void AUTBot::ExecuteWhatToDoNext()
 		else
 		{
 			// maybe lose enemy if haven't had any contact and isn't a high priority
-			if (!Squad->MustKeepEnemy(Enemy) && !IsEnemyVisible(Enemy))
+			if (!Squad->MustKeepEnemy(this, Enemy) && !IsEnemyVisible(Enemy))
 			{
 				// decide if should lose enemy
 				if (Squad->IsDefending(this))
@@ -2634,7 +2682,14 @@ void AUTBot::ExecuteWhatToDoNext()
 			}
 		}
 
-		if ((Squad == NULL || !Squad->CheckSquadObjectives(this)) && !ShouldDefendPosition())
+		// low skill bots have a chance to get distracted by nearby visible enemy and try to fight them off
+		// this helps minimize bots running away too effectively at low skill levels because their movement speed is higher than other bots' and newbie humans' ability to target them
+		bool bLowSkillEnemyFocus = false;
+		if (!bLeadTarget && Enemy != nullptr && IsEnemyVisible(Enemy) && (Enemy->GetActorLocation() - GetPawn()->GetActorLocation()).Size() < 2000.0f)
+		{
+			bLowSkillEnemyFocus = (UTChar != nullptr && UTChar->UTCharacterMovement->bIsSprinting) || FMath::FRand() < 0.3f - (Skill * 0.1f);
+		}
+		if ((bLowSkillEnemyFocus || Squad == NULL || !Squad->CheckSquadObjectives(this)) && !ShouldDefendPosition())
 		{
 			if (Enemy != NULL && !NeedsWeapon())
 			{
@@ -2683,15 +2738,55 @@ void AUTBot::ExecuteWhatToDoNext()
 			FName Orders = Squad->GetCurrentOrders(this);
 			if (Orders != AnnouncedOrders && FMath::FRand() < 0.1f)
 			{
-				if (Orders == NAME_Attack)
+				// no attack/defend announcements in FlagRun
+				if (GetWorld()->GetAuthGameMode<AUTFlagRunGame>() == nullptr)
 				{
-					SendVoiceMessage(StatusMessage::ImOnOffense);
-				}
-				else if (Orders == NAME_Defend)
-				{
-					SendVoiceMessage(StatusMessage::ImOnDefense);
+					if (Orders == NAME_Attack)
+					{
+						SendVoiceMessage(StatusMessage::ImOnOffense);
+					}
+					else if (Orders == NAME_Defend)
+					{
+						SendVoiceMessage(StatusMessage::ImOnDefense);
+					}
 				}
 				AnnouncedOrders = Orders;
+			}
+		}
+
+		if (OldMoveTarget.IsValid() && OldMoveTarget == MoveTarget && CurrentAction == WaitForMoveAction && GetPawn() != nullptr)
+		{
+			RepeatMoveFailCount++;
+			if (RepeatMoveFailCount > 6)
+			{
+				GoalString = FString::Printf(TEXT("Give up failed move attempt, try random wander (prev: %s)"), *GoalString);
+				SetMoveTargetDirect(FRouteCacheItem(GetPawn()->GetActorLocation() + FMath::VRand() * FVector(500.0f, 500.0f, 0.0f)));
+			}
+			else if (RepeatMoveFailCount > 3)
+			{
+				FUTPathLink Path;
+				NavNodeRef StartPoly = NavData->FindAnchorPoly(GetPawn()->GetNavAgentLocation(), GetPawn(), GetPawn()->GetNavAgentPropertiesRef());
+				if (StartPoly != INVALID_NAVNODEREF)
+				{
+					UUTPathNode* StartNode = NavData->GetNodeFromPoly(StartPoly);
+					if (StartNode != NULL)
+					{
+						int32 LinkIndex = StartNode->GetBestLinkTo(StartPoly, MoveTarget, GetPawn(), GetPawn()->GetNavAgentPropertiesRef(), NavData);
+						if (LinkIndex != INDEX_NONE)
+						{
+							Path = StartNode->Paths[LinkIndex];
+						}
+					}
+				}
+				if (Path.IsSet() && Path.Spec.IsValid())
+				{
+					Path.Spec->DisableDueToFailure();
+				}
+				// try jumping, in case we're stuck on a ledge
+				else if (GetCharacter() != nullptr)
+				{
+					GetCharacter()->GetCharacterMovement()->DoJump(false);
+				}
 			}
 		}
 	}
@@ -2758,7 +2853,7 @@ void AUTBot::ChooseAttackMode()
 	else
 	*/
 	{
-		if (/*!bFrustrated && */!Squad->MustKeepEnemy(Enemy))
+		if (/*!bFrustrated && */!Squad->MustKeepEnemy(this, Enemy))
 		{
 			float RetreatThreshold = Personality.Aggressiveness;
 			if (!NeedsWeapon())
@@ -2903,7 +2998,7 @@ void AUTBot::FightEnemy(bool bCanCharge, float EnemyStrength)
 		}
 		if (!bCanAttack)
 		{
-			if (Squad->MustKeepEnemy(Enemy))
+			if (Squad->MustKeepEnemy(this, Enemy))
 			{
 				GoalString = "Hunt priority enemy";
 				DoHunt(Enemy);
@@ -2920,7 +3015,7 @@ void AUTBot::FightEnemy(bool bCanCharge, float EnemyStrength)
 				//DoStakeOut();
 				DoRangedAttackOn(Enemy); // FIXME temp replacement
 			}
-			else if (((CurrentAggression < 1.0f && !LostContact(3.0f + 2.0f * FMath::FRand())) || IsSniping())/* && CanStakeOut()*/)
+			else if (((CurrentAggression < 1.0f && !LostContact(3.0f + 2.0f * FMath::FRand())) || IsSniping()) && GetWorld()->TimeSeconds - GetEnemyInfo(Enemy, false)->LastSeenTime < 2.5f + FMath::Max<float>(-1.0f, 3.0f * (FMath::FRand() + 2.0f * (EnemyStrength - CurrentAggression))))
 			{
 				GoalString = "Stake Out2";
 				//DoStakeOut();
@@ -3114,9 +3209,9 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 			HuntingInterceptNode = NULL;
 			HuntInterceptFailedTime = -100000.0f;
 		}
-		const FBotEnemyInfo* EnemyInfo = GetEnemyInfo(NewHuntTarget, true);
+		const FBotEnemyInfo EnemyInfo = *GetEnemyInfo(NewHuntTarget, true);
 		TArray<FPredictedGoal> CheckSpots;
-		Squad->GetPossibleEnemyGoals(this, EnemyInfo, CheckSpots);
+		Squad->GetPossibleEnemyGoals(this, &EnemyInfo, CheckSpots);
 		// eliminate spots we've checked already or have visibility to now
 		TArray<FPredictedGoal> RemainingSpots = CheckSpots;
 		for (int32 i = RemainingSpots.Num() - 1; i >= 0; i--)
@@ -3140,23 +3235,23 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 			}
 		}
 		TArray<FRouteCacheItem> HuntEndpoints;
-		if (RemainingSpots.Num() == 0 && GetWorld()->TimeSeconds - EnemyInfo->LastFullUpdateTime < 2.0f && (EnemyInfo->LastKnownLoc - GetPawn()->GetActorLocation()).Size() > GetPawn()->GetSimpleCollisionRadius() * 4.0f)
+		if (RemainingSpots.Num() == 0 && GetWorld()->TimeSeconds - EnemyInfo.LastFullUpdateTime < 2.0f && (EnemyInfo.LastKnownLoc - GetPawn()->GetActorLocation()).Size() > GetPawn()->GetSimpleCollisionRadius() * 4.0f)
 		{
 			// we know where the enemy is or was recently, just go with that for now
-			NavNodeRef Poly = NavData->FindAnchorPoly(EnemyInfo->LastKnownLoc, EnemyInfo->GetPawn(), EnemyInfo->GetPawn()->GetNavAgentPropertiesRef());
+			NavNodeRef Poly = NavData->FindAnchorPoly(EnemyInfo.LastKnownLoc, EnemyInfo.GetPawn(), EnemyInfo.GetPawn()->GetNavAgentPropertiesRef());
 			if (Poly == INVALID_NAVNODEREF)
 			{
 				// enemy may be jumping, etc so try tracing to ground
 				// note: navmesh raycasts are sadly 2D only so we can't trace against the mesh, have to use world geo first
 				FHitResult Hit;
-				if (GetWorld()->LineTraceSingleByChannel(Hit, EnemyInfo->LastKnownLoc, EnemyInfo->LastKnownLoc - FVector(0.0f, 0.0f, 10000.0f), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams))
+				if (GetWorld()->LineTraceSingleByChannel(Hit, EnemyInfo.LastKnownLoc, EnemyInfo.LastKnownLoc - FVector(0.0f, 0.0f, 10000.0f), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams))
 				{
-					Poly = NavData->FindAnchorPoly(Hit.Location, EnemyInfo->GetPawn(), EnemyInfo->GetPawn()->GetNavAgentPropertiesRef());
+					Poly = NavData->FindAnchorPoly(Hit.Location, EnemyInfo.GetPawn(), EnemyInfo.GetPawn()->GetNavAgentPropertiesRef());
 				}
 			}
 			if (Poly != INVALID_NAVNODEREF)
 			{
-				new(HuntEndpoints) FRouteCacheItem(NavData->GetNodeFromPoly(Poly), EnemyInfo->LastKnownLoc, Poly);
+				new(HuntEndpoints) FRouteCacheItem(NavData->GetNodeFromPoly(Poly), EnemyInfo.LastKnownLoc, Poly);
 			}
 		}
 		else
@@ -3185,23 +3280,23 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 					}
 				}
 			}
-			else if (EnemyInfo->LastFullUpdateTime > HuntInterceptFailedTime)
+			else if (EnemyInfo.LastFullUpdateTime > HuntInterceptFailedTime)
 			{
 				// calculate minimum amount of time enemy will have progressed from our starting point before we could possibly catch up
 				// note: this is an optimization, more correct would be to evaluate in the below pathfinding step
 				const float MoveSpeed = FMath::Max<float>(1.0f, GetPawn()->GetMovementComponent() ? GetPawn()->GetMovementComponent()->GetMaxSpeed() : 0);
-				float SkipTime = FMath::Max<float>(GetWorld()->TimeSeconds - EnemyInfo->LastFullUpdateTime, (GetPawn()->GetActorLocation() - EnemyInfo->LastKnownLoc).Size() / MoveSpeed);
+				float SkipTime = FMath::Max<float>(GetWorld()->TimeSeconds - EnemyInfo.LastFullUpdateTime, (GetPawn()->GetActorLocation() - EnemyInfo.LastKnownLoc).Size() / MoveSpeed);
 
 				TArray<FRouteCacheItem> PathPredictionGoals;
 				for (const FPredictedGoal& TestSpot : CheckSpots)
 				{
-					NavNodeRef Poly = NavData->UTFindNearestPoly(TestSpot.Location, NavData->GetPOIExtent(EnemyInfo->GetPawn()));
+					NavNodeRef Poly = NavData->UTFindNearestPoly(TestSpot.Location, NavData->GetPOIExtent(EnemyInfo.GetPawn()));
 					if (Poly != INVALID_NAVNODEREF)
 					{
 						FRouteCacheItem NewItem(NavData->GetNodeFromPoly(Poly), TestSpot.Location, Poly);
 						// for enemy path prediction include any point that we could prevent them from reaching (using straight line distance for simplicity and performance)
 						// or that are critical so we have to try even if it's probably hopeless
-						if (TestSpot.bCritical || (TestSpot.Location - EnemyInfo->LastKnownLoc).Size() > MoveSpeed * SkipTime)
+						if (TestSpot.bCritical || (TestSpot.Location - EnemyInfo.LastKnownLoc).Size() > MoveSpeed * SkipTime)
 						{
 							PathPredictionGoals.Add(NewItem);
 						}
@@ -3218,7 +3313,7 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 				float Weight = 0.0f;
 				TArray<FRouteCacheItem> EnemyRouteCache;
 				TArray<int32> EnemyRouteCosts;
-				if (NavData->FindBestPath(EnemyInfo->GetPawn(), EnemyInfo->GetPawn()->GetNavAgentPropertiesRef(), this, NodeEval, EnemyInfo->LastKnownLoc, Weight, false, EnemyRouteCache, &EnemyRouteCosts))
+				if (NavData->FindBestPath(EnemyInfo.GetPawn(), EnemyInfo.GetPawn()->GetNavAgentPropertiesRef(), this, NodeEval, EnemyInfo.LastKnownLoc, Weight, false, EnemyRouteCache, &EnemyRouteCosts))
 				{
 					// remove those points that the enemy is predicted to have or will have passed by the time we could get there
 					
@@ -3498,7 +3593,7 @@ EBotMonitoringStatus AUTBot::ShouldTriggerTranslocation(const FVector& CurrentDe
 		}
 	}
 	// if it gets us closer to enemy we are charging or chasing (and won't hit him outright for telefrag)
-	else if (Enemy != NULL && GetFocusActor() == Enemy && (IsCharging() || Squad->MustKeepEnemy(Enemy)))
+	else if (Enemy != NULL && GetFocusActor() == Enemy && (IsCharging() || Squad->MustKeepEnemy(this, Enemy)))
 	{
 		const FVector EnemyLoc = GetEnemyLocation(Enemy, true);
 		if ( (EnemyLoc - CurrentDest).Size() < (EnemyLoc - GetPawn()->GetActorLocation()).Size() - 500.0f &&
@@ -3908,7 +4003,8 @@ void AUTBot::ReceiveInstantWarning(AUTCharacter* Shooter, const FVector& FireDir
 {
 	if (Shooter != NULL && Shooter->GetWeapon() != NULL && GetPawn() != NULL)
 	{
-		if (Skill >= 4.0f && (Enemy != NULL || FMath::FRand() < Personality.Alertness) && FMath::FRand() < 0.2f * (Skill + Personality.Tactics) - 0.33f) // TODO: if 1 on 1 (T)DM be more alert? maybe enemy will usually be set so doesn't matter
+		const bool bRepeaterWeapon = Shooter->GetWeapon()->bRecommendSuppressiveFire;
+		if (Skill >= (bRepeaterWeapon ? 3.0f : 4.0f) && (Enemy != NULL || FMath::FRand() < Personality.Alertness) && FMath::FRand() < 0.2f * (Skill + Personality.Tactics) - 0.33f) // TODO: if 1 on 1 (T)DM be more alert? maybe enemy will usually be set so doesn't matter
 		{
 			FVector EnemyDir = Shooter->GetActorLocation() - GetPawn()->GetActorLocation();
 			EnemyDir.Z = 0;
@@ -3924,8 +4020,15 @@ void AUTBot::ReceiveInstantWarning(AUTCharacter* Shooter, const FVector& FireDir
 
 				UpdateEnemyInfo(Shooter, EUT_TookDamage);
 
-				// TODO: what about repeater weapons? should still try to dodge sometimes, but this check will always fail
-				const float DodgeTime = Shooter->GetWeapon()->GetRefireTime(Shooter->GetWeapon()->GetCurrentFireMode()) - 0.15 - 0.1 * FMath::FRand(); // TODO: based on collision size 
+				float DodgeTime;
+				if (bRepeaterWeapon)
+				{
+					DodgeTime = 2.0f - (0.1f + 0.1f * FMath::FRand()) * (Skill + Personality.ReactionTime);
+				}
+				else
+				{
+					DodgeTime = Shooter->GetWeapon()->GetRefireTime(Shooter->GetWeapon()->GetCurrentFireMode()) - 0.15 - 0.1 * FMath::FRand(); // TODO: based on collision size 
+				}
 				if (DodgeTime > 0.0)
 				{
 					SetWarningTimer(NULL, Shooter, DodgeTime);
@@ -4207,7 +4310,7 @@ int32 AUTBot::GetRouteDist() const
 
 void AUTBot::PickNewEnemy()
 {
-	if ((Enemy == NULL || Enemy->Controller == NULL || !Squad->MustKeepEnemy(Enemy) || !CanAttack(Enemy, GetEnemyLocation(Enemy, true), false)) && GetPawn() != NULL)
+	if ((Enemy == NULL || Enemy->Controller == NULL || !Squad->MustKeepEnemy(this, Enemy) || !CanAttack(Enemy, GetEnemyLocation(Enemy, true), false)) && GetPawn() != NULL)
 	{
 		LastPickEnemyTime = GetWorld()->TimeSeconds;
 
@@ -4234,7 +4337,7 @@ void AUTBot::PickNewEnemy()
 						}
 					}
 				}
-				if (!bLostEnemy || Squad->MustKeepEnemy(EnemyInfo.GetPawn()))
+				if (!bLostEnemy || Squad->MustKeepEnemy(this, EnemyInfo.GetPawn()))
 				{
 					float Rating = RateEnemy(EnemyInfo);
 					// enemy rating may call weapon script, anything could happen
@@ -4338,10 +4441,15 @@ float AUTBot::RateEnemy(const FBotEnemyInfo& EnemyInfo)
 
 bool AUTBot::IsImportantEnemyUpdate(APawn* TestEnemy, EAIEnemyUpdateType UpdateType)
 {
-	if (UpdateType == EUT_HealthUpdate || UpdateType == EUT_HeardApprox || UpdateType == EUT_DealtDamage)
+	if (GetPawn() == nullptr || UpdateType == EUT_HealthUpdate || UpdateType == EUT_HeardApprox || UpdateType == EUT_DealtDamage)
 	{
 		// updates that don't give us a fix on their position and movement aren't worth re-evaluating for
 		return false;
+	}
+	// always re-evaluate if important enemy status changed and not currently targeted
+	else if (TestEnemy != Enemy && Squad->MustKeepEnemy(this, TestEnemy))
+	{
+		return true;
 	}
 	else
 	{
@@ -4488,7 +4596,7 @@ void AUTBot::SetEnemy(APawn* NewEnemy)
 			}
 		}
 		// don't interrupt in progress translocation
-		else if (TranslocTarget.IsZero() || UTChar == NULL || UTChar->GetWeapon() == NULL || UTChar->GetWeapon()->BaseAISelectRating >= 0.5f || (Enemy != NULL && Squad->MustKeepEnemy(Enemy)))
+		else if (TranslocTarget.IsZero() || UTChar == NULL || UTChar->GetWeapon() == NULL || UTChar->GetWeapon()->BaseAISelectRating >= 0.5f || (Enemy != NULL && Squad->MustKeepEnemy(this, Enemy)))
 		{
 			WhatToDoNext();
 		}
@@ -4623,18 +4731,17 @@ bool AUTBot::UTLineOfSightTo(const AActor* Other, FVector ViewPoint, bool bAlter
 		CollisionParams.AddIgnoredActor(Other);
 
 		bool bHit = GetWorld()->LineTraceTestByChannel(ViewPoint, TargetLocation, ECC_Visibility, CollisionParams);
-		if (bOtherIsRagdoll)
+		if (bOtherIsRagdoll && bHit)
 		{
 			// actor location will be near/in the ground for ragdolls, push up
 			TargetLocation.Z += Other->GetSimpleCollisionHalfHeight();
 			bHit = GetWorld()->LineTraceTestByChannel(ViewPoint, TargetLocation, ECC_Visibility, CollisionParams);
 		}
-		// TODO: suddenly we switch back to GetActorLocation() instead of TargetLocation? Seems incorrect...
 		if (Other == Enemy)
 		{
 			if (bHit)
 			{
-				bHit = GetWorld()->LineTraceTestByChannel(ViewPoint, Enemy->GetActorLocation() + FVector(0.0f, 0.0f, Enemy->BaseEyeHeight + (bOtherIsRagdoll ? Enemy->GetSimpleCollisionHalfHeight() : 0.0f)), ECC_Visibility, CollisionParams);
+				bHit = GetWorld()->LineTraceTestByChannel(ViewPoint, TargetLocation + FVector(0.0f, 0.0f, Enemy->BaseEyeHeight + (bOtherIsRagdoll ? Enemy->GetSimpleCollisionHalfHeight() : 0.0f)), ECC_Visibility, CollisionParams);
 			}
 			if (!bHit)
 			{
@@ -4684,7 +4791,7 @@ bool AUTBot::UTLineOfSightTo(const AActor* Other, FVector ViewPoint, bool bAlter
 
 		//try checking sides - look at dist to four side points, and cull furthest and closest
 		FVector Points[4];
-		const FVector OtherLoc = Other->GetActorLocation();
+		const FVector OtherLoc = TargetLocation;
 		const float OtherRadius = Other->GetSimpleCollisionRadius();
 		Points[0] = OtherLoc - FVector(OtherRadius, -1 * OtherRadius, 0);
 		Points[1] = OtherLoc + FVector(OtherRadius, OtherRadius, 0);

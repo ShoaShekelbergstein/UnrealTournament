@@ -379,6 +379,8 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	UFUNCTION(BlueprintCallable, Category = Taunt)
 	void PlayTauntByClass(TSubclassOf<AUTTaunt> TauntToPlay, float EmoteSpeed = 1.0f);
 
+	void ResetTaunt();
+
 	UFUNCTION()
 	void OnEmoteEnded(UAnimMontage* Montage, bool bInterrupted);
 
@@ -519,6 +521,10 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	UFUNCTION(BlueprintCallable, Category = Pawn)
 	virtual	void AllAmmo();
 
+	void ClientCheatWalk_Implementation() override;
+	void ClientCheatFly_Implementation() override;
+	void ClientCheatGhost_Implementation() override;
+
 	// use this to iterate inventory
 	template<typename> friend class TInventoryIterator;
 
@@ -584,6 +590,8 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	/** call to propagate a named character event (jumping, firing, etc) to all inventory items with bCallOwnerEvent = true */
 	UFUNCTION(BlueprintCallable, Category = "Pawn")
 	virtual void InventoryEvent(FName EventName);
+
+	virtual void PrepareForIntermission();
 
 	/** switches weapons; handles client/server sync, safe to call on either side.  Uses classic groups, temporary until we have full weapon switching configurability menu. FIXMESTEVE */
 	UFUNCTION(BlueprintCallable, Category = "Pawn")
@@ -674,6 +682,10 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	/** Updated on client when FlashCount is replicated. */
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
 		float LastWeaponFireTime;
+
+	/** Set on successful link pull for other clients. */
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Weapon")
+		AActor* PulseTarget;
 
 	/** set when client is locally simulating FlashLocation so ignore any replicated value */
 	bool bLocalFlashLoc;
@@ -783,6 +795,9 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 		bool bHaveTargetVisual;
 
 	virtual void TargetedBy(APawn* Targeter, AUTPlayerState* PS);
+
+	virtual void FlagPingedBy(AUTPlayerState* PS);
+
 
 	/** Last time this character targeted or hit  an enemy. */
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = Pawn)
@@ -981,6 +996,9 @@ public:
 	UFUNCTION(exec)
 		void OVV(FName InName, FVector value);
 
+	UFUNCTION(exec)
+		void JumpVis();
+	
 	UFUNCTION(BlueprintCallable, Category = Pawn)
 	void SetHeadScale(float NewHeadScale);
 
@@ -1132,7 +1150,7 @@ public:
 
 	virtual void DeactivateSpawnProtection();
 
-	virtual void AddDefaultInventory(TArray<TSubclassOf<AUTInventory>> DefaultInventoryToAdd);
+	virtual void AddDefaultInventory(const TArray<TSubclassOf<AUTInventory>>& DefaultInventoryToAdd);
 
 	UFUNCTION(BlueprintCallable, Category = Pawn)
 	bool IsDead() const;

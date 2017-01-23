@@ -53,7 +53,7 @@ class UNREALTOURNAMENT_API UUTMultiKillMessage : public UUTLocalMessage
 
 	virtual FLinearColor GetMessageColor_Implementation(int32 MessageIndex) const override
 	{
-		return FLinearColor::Red;
+		return REDHUDCOLOR;
 	}
 
 	virtual bool ShouldPlayAnnouncement(const FClientReceiveData& ClientData) const override

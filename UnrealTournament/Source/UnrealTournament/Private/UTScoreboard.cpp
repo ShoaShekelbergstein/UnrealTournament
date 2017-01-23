@@ -61,7 +61,6 @@ UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) 
 	NotReadyText = NSLOCTEXT("UTScoreboard", "NOTREADY", "");
 	WarmupText = NSLOCTEXT("UTScoreboard", "WARMUP", "WARMUP");
 	WarmupWarningText = NSLOCTEXT("UTScoreboard", "WarmupWarningText", "If players are warming up, will wait for match to fill before starting.");
-	MinimapToggleText = NSLOCTEXT("UTScoreboard", "MinimapToggle", "Press {key} to toggle Minimap");
 	
 	ReadyColor = FLinearColor::White;
 	ReadyScale = 1.f;
@@ -106,7 +105,7 @@ void UUTScoreboard::Draw_Implementation(float RenderDelta)
 	Super::Draw_Implementation(RenderDelta);
 
 	bHaveWarmup = false;
-	float YOffset = 16.f*RenderScale;
+	float YOffset = 8.f*RenderScale;
 	DrawGamePanel(RenderDelta, YOffset);
 	DrawTeamPanel(RenderDelta, YOffset);
 	DrawScorePanel(RenderDelta, YOffset);
@@ -118,7 +117,6 @@ void UUTScoreboard::Draw_Implementation(float RenderDelta)
 	{
 		DrawCurrentLifeStats(RenderDelta, YOffset);
 	}
-	DrawServerPanel(RenderDelta, FooterPosY);
 
 	DrawMinimap(RenderDelta);
 	if (bHaveWarmup)
@@ -131,85 +129,81 @@ void UUTScoreboard::DrawMinimap(float RenderDelta)
 {
 	if (bDrawMinimapInScoreboard && UTGameState && UTHUDOwner && !UTHUDOwner->IsPendingKillPending())
 	{
-		bool bToggledMinimap = !UTGameState->HasMatchStarted() && (!UTPlayerOwner || !UTPlayerOwner->UTPlayerState || !UTPlayerOwner->UTPlayerState->bIsWarmingUp);
-		const float MapSize = (UTGameState && UTGameState->bTeamGame) ? FMath::Min(Canvas->ClipX - 2.f*ScaledEdgeSize - 2.f*ScaledCellWidth - MinimapPadding*RenderScale, 0.9f*Canvas->ClipY - 120.f * RenderScale)
-			: FMath::Min(0.5f*Canvas->ClipX, 0.9f*Canvas->ClipY - 120.f * RenderScale);
-		if (!bToggledMinimap || !UTHUDOwner->bShowScores)
-		{
-			float MapYPos = FMath::Max(120.f*RenderScale, MinimapCenter.Y*Canvas->ClipY - 0.5f*MapSize);
-			FVector2D LeftCorner = FVector2D(MinimapCenter.X*Canvas->ClipX - 0.5f*MapSize, MapYPos);
-			DrawTexture(UTHUDOwner->ScoreboardAtlas, LeftCorner.X, LeftCorner.Y, MapSize, MapSize, 149, 138, 32, 32, 0.5f, FLinearColor::Black);
-			UTHUDOwner->DrawMinimap(FColor(192, 192, 192, 220), MapSize, LeftCorner);
-		}
-		if (bToggledMinimap)
-		{
-			FFormatNamedArguments Args;
-			Args.Add("key", UTHUDOwner->ShowScoresLabel);
-			FText MinimapMessage = FText::Format(MinimapToggleText, Args);
-			float YPos = (UTGameState && UTGameState->bTeamGame) ? MinimapCenter.Y*Canvas->ClipY + 0.51f*MapSize : MinimapCenter.Y*Canvas->ClipY + 0.49f*MapSize;
-			DrawText(MinimapMessage, MinimapCenter.X*Canvas->ClipX - 0.5f*MapSize, YPos, UTHUDOwner->TinyFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
-		}
+		const float MapSize = (UTGameState && UTGameState->bTeamGame) ? FMath::Min(Canvas->ClipX - 2.f*ScaledEdgeSize - 2.f*ScaledCellWidth - MinimapPadding*RenderScale, 0.93f*Canvas->ClipY - 120.f * RenderScale)
+			: FMath::Min(0.5f*Canvas->ClipX, 0.93f*Canvas->ClipY - 120.f * RenderScale);
+
+		float MapYPos = FMath::Max(120.f*RenderScale, MinimapCenter.Y*Canvas->ClipY - 0.5f*MapSize);
+		FVector2D LeftCorner = FVector2D(MinimapCenter.X*Canvas->ClipX - 0.5f*MapSize, MapYPos);
+		DrawTexture(UTHUDOwner->ScoreboardAtlas, LeftCorner.X, LeftCorner.Y, MapSize, MapSize, 149, 138, 32, 32, 0.5f, FLinearColor::Black);
+		UTHUDOwner->DrawMinimap(FColor(192, 192, 192, 220), MapSize, LeftCorner);
 	}
 }
 
 void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 {
-	float LeftEdge = 10.f * RenderScale;
-
-	// Draw the Background
-	DrawTexture(UTHUDOwner->ScoreboardAtlas,LeftEdge,YOffset, RenderSize.X - 2.f*LeftEdge, 72.f*RenderScale, 4.f*RenderScale,2,124, 128, 1.0);
-
-	// Draw the Logo
-	DrawTexture(UTHUDOwner->ScoreboardAtlas, LeftEdge + 80.f * RenderScale, YOffset + 36.f * RenderScale, 150.5f * RenderScale, 49.f * RenderScale, 162,14,301, 98.0, 1.f, FLinearColor::White, FVector2D(0.5f, 0.5f));
-	
-	// Draw the Spacer Bar
-	DrawTexture(UTHUDOwner->ScoreboardAtlas, LeftEdge + 180.f * RenderScale, YOffset + 30.f * RenderScale, 4.f * RenderScale, 72.f * RenderScale, 488, 13, 4, 99, 1.0f, FLinearColor::White, FVector2D(0.0f, 0.5f));
-	FText MapName = UTHUDOwner ? FText::FromString(UTHUDOwner->GetWorld()->GetMapName().ToUpper()) : FText::GetEmpty();
-	FText GameName = FText::GetEmpty();
-	if (UTGameState && UTGameState->GameModeClass)
-	{
-		AUTGameMode* DefaultGame = UTGameState->GameModeClass->GetDefaultObject<AUTGameMode>();
-		if (DefaultGame) 
-		{
-			GameName = FText::FromString(DefaultGame->DisplayName.ToString().ToUpper());
-		}
-	}
+	float MessageX = 0.f;
+	float MessageY = 0.f;
+	FText GameMessage = FText::GetEmpty();
 	if (UTHUDOwner->ScoreMessageText.IsEmpty())
-	{ 
+	{
+		FText MapName = UTHUDOwner ? FText::FromString(UTHUDOwner->GetWorld()->GetMapName().ToUpper()) : FText::GetEmpty();
+		FText GameName = FText::GetEmpty();
+		if (UTGameState && UTGameState->GameModeClass)
+		{
+			AUTGameMode* DefaultGame = UTGameState->GameModeClass->GetDefaultObject<AUTGameMode>();
+			if (DefaultGame)
+			{
+				GameName = FText::FromString(DefaultGame->DisplayName.ToString().ToUpper());
+			}
+		}
 		FFormatNamedArguments Args;
 		Args.Add("GameName", FText::AsCultureInvariant(GameName));
 		Args.Add("MapName", FText::AsCultureInvariant(MapName));
-		FText GameMessage = FText::Format(GameMessageText, Args);
-		DrawText(GameMessage, 220.f*RenderScale, YOffset + 36.f*RenderScale, UTHUDOwner->MediumFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center); 
+		GameMessage = FText::Format(GameMessageText, Args);
+		Canvas->StrLen(UTHUDOwner->MediumFont, GameMessageText.ToString(), MessageX, MessageY);
+		MessageX *= RenderScale;
 	}
 	else
 	{
-		UTHUDOwner->DrawWinConditions(UTHUDOwner->MediumFont, 220.f*RenderScale, YOffset + 4.f*RenderScale, Canvas->ClipX, RenderScale, false);
+		MessageX = UTHUDOwner->DrawWinConditions(UTHUDOwner->MediumFont, 220.f*RenderScale, YOffset + 4.f*RenderScale, Canvas->ClipX, RenderScale, true, true);
 	}
 
-	DrawGameOptions(RenderDelta, YOffset);
+	// Draw the Background
+	float LeftEdge = 0.5f*(Canvas->ClipX - FMath::Clamp(MessageX+100.f*RenderScale, 520.f, Canvas->ClipX));
+	DrawTexture(UTHUDOwner->ScoreboardAtlas,LeftEdge - 16.f*RenderScale,YOffset, RenderSize.X - 2.f*LeftEdge + 32.f*RenderScale, 72.f*RenderScale, 4.f*RenderScale,2,124, 128, 1.0);
+
+	if (UTHUDOwner->ScoreMessageText.IsEmpty())
+	{ 
+		DrawText(GameMessage, LeftEdge, YOffset + 36.f*RenderScale, UTHUDOwner->MediumFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
+	}
+	else
+	{
+		UTHUDOwner->DrawWinConditions(UTHUDOwner->MediumFont, LeftEdge, YOffset + 4.f*RenderScale, Canvas->ClipX, RenderScale, false);
+	}
+
+	DrawGameOptions(RenderDelta, YOffset, RenderSize.X - LeftEdge);
 	YOffset += 72.f*RenderScale;	// The size of this zone.
 }
 
-void UUTScoreboard::DrawGameOptions(float RenderDelta, float& YOffset)
+void UUTScoreboard::DrawGameOptions(float RenderDelta, float& YOffset, float RightEdge)
 {
 	if (UTGameState)
 	{
 		FText StatusText = UTGameState->GetGameStatusText(true);
 		if (!StatusText.IsEmpty())
 		{
-			DrawText(StatusText, Canvas->ClipX - 100.f*RenderScale, YOffset + 48.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Right, ETextVertPos::Center);
+			DrawText(StatusText, RightEdge, YOffset + 48.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Right, ETextVertPos::Center);
 		}
 		else if (UTGameState->GoalScore > 0)
 		{
 			// Draw Game Text
 			FText Score = FText::Format(UTGameState->GoalScoreText, FText::AsNumber(UTGameState->GoalScore));
-			DrawText(Score, Canvas->ClipX - 100.f*RenderScale, YOffset + 48.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Right, ETextVertPos::Center);
+			DrawText(Score, RightEdge, YOffset + 48.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Right, ETextVertPos::Center);
 		}
 
 		float DisplayedTime = UTGameState ? UTGameState->GetClockTime() : 0.f;
 		FText Timer = UTHUDOwner->ConvertTime(FText::GetEmpty(), FText::GetEmpty(), DisplayedTime, false, true, true);
-		DrawText(Timer, Canvas->ClipX - 100.f*RenderScale, YOffset + 22.f*RenderScale, UTHUDOwner->NumberFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Right, ETextVertPos::Center);
+		DrawText(Timer, RightEdge, YOffset + 22.f*RenderScale, UTHUDOwner->NumberFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Right, ETextVertPos::Center);
 	}
 }
 
@@ -563,33 +557,6 @@ void UUTScoreboard::DrawPlayerScore(AUTPlayerState* PlayerState, float XOffset, 
 {
 	DrawText(FText::AsNumber(int32(PlayerState->Score)), XOffset + (Width * ColumnHeaderScoreX), YOffset + ColumnY, UTHUDOwner->SmallFont, RenderScale, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
 	DrawText(FText::AsNumber(PlayerState->Deaths), XOffset + (Width * ColumnHeaderDeathsX), YOffset + ColumnY, UTHUDOwner->TinyFont, RenderScale, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
-}
-
-void UUTScoreboard::DrawServerPanel(float RenderDelta, float YOffset)
-{
-	if (UTGameState && (UTGameState->GetMatchState() != MatchState::PlayerIntro))
-	{
-		FText SpectatorMessage, ShortMessage;
-		if (UTHUDOwner->SpectatorMessageWidget)
-		{
-			SpectatorMessage = UTHUDOwner->SpectatorMessageWidget->GetSpectatorMessageText(ShortMessage);
-		}
-		bool bShortMessage = !ShortMessage.IsEmpty();
-		if (!SpectatorMessage.IsEmpty() && !bShortMessage)
-		{
-			if ((UTGameState->PlayerArray.Num() < 26) && !ShouldDrawScoringStats())
-			{
-				// Only draw if there is room above spectator panel
-				UTHUDOwner->SpectatorMessageWidget->PreDraw(RenderDelta, UTHUDOwner, Canvas, CanvasCenter);
-				UTHUDOwner->SpectatorMessageWidget->DrawSimpleMessage(SpectatorMessage, RenderDelta, ShortMessage);
-			}
-			else
-			{
-				DrawTexture(UTHUDOwner->ScoreboardAtlas, ScaledEdgeSize, YOffset, Canvas->ClipX - 2.f*ScaledEdgeSize, 38.f*RenderScale, 4, 132, 30, 38, 1.0);
-				DrawText(SpectatorMessage, ScaledEdgeSize + 10.f*RenderScale, YOffset + 13.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
-			}
-		}
-	}
 }
 
 int32 UUTScoreboard::SelectionHitTest(FVector2D InPosition)

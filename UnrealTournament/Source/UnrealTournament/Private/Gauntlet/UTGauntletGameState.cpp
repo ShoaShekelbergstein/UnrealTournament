@@ -85,3 +85,26 @@ void AUTGauntletGameState::GetImportantFlagBase(int32 InTeamNum, TArray<AUTCTFFl
 		}
 	}
 }
+
+FText AUTGauntletGameState::GetGameStatusText(bool bForScoreboard)
+{
+	if (HasMatchEnded())
+	{
+		return GameOverStatus;
+	}
+	else if (GetMatchState() == MatchState::MapVoteHappening)
+	{
+		return MapVoteStatus;
+	}
+	else if (IsMatchIntermission())
+	{
+		return IntermissionStatus;
+	}
+
+	return GetRoundStatusText(bForScoreboard);
+}
+
+FText AUTGauntletGameState::GetRoundStatusText(bool bForScoreboard)
+{
+	return FText::Format(NSLOCTEXT("UTGauntletGameState","GauntletRoundFormat","Round {0}"), FText::AsNumber(CTFRound));
+}

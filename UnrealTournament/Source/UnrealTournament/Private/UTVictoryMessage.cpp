@@ -82,7 +82,7 @@ void UUTVictoryMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText, 
 	if (WinningTeam != nullptr)
 	{
 		EmphasisText = (WinningTeam->TeamIndex == 0) ? RedTeamName : BlueTeamName;
-		EmphasisColor = (WinningTeam->TeamIndex == 0) ? FLinearColor::Red : FLinearColor::Blue;
+		EmphasisColor = WinningTeam->TeamColor;
 
 		if (Switch >= 4)
 		{
@@ -94,7 +94,7 @@ void UUTVictoryMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText, 
 	else if ((RelatedPlayerState_1 != RelatedPlayerState_2) && (RelatedPlayerState_1 != nullptr))
 	{
 		EmphasisText = FText::FromString(RelatedPlayerState_1->PlayerName);
-		EmphasisColor = FLinearColor::Red;
+		EmphasisColor = REDHUDCOLOR;
 		return;
 	}
 

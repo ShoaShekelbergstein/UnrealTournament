@@ -20,6 +20,9 @@ protected:
 	FHUDRenderObject_Texture BackgroundSlate;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RenderObject")
+	TArray<FHUDRenderObject_Texture> TeamIcons;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RenderObject")
 	FHUDRenderObject_Texture StarIcon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RenderObject")
@@ -27,6 +30,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RenderObject")
 	FHUDRenderObject_Text ClockText;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RenderObject")
+	FHUDRenderObject_Text ScoreText;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RenderObject")
 	FHUDRenderObject_Texture FlagIcon;

@@ -187,6 +187,9 @@ class UNREALTOURNAMENT_API UUTGameplayStatics : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, Category = "Collision", meta = (bIgnoreSelf = "true", WorldContext = "WorldContextObject", DisplayName = "LineTraceForObjectsSimple", Keywords = "raycast"))
 	static bool LineTraceForObjectsSimple(UObject* WorldContextObject, const FVector Start, const FVector End, const TArray< TEnumAsByte<EObjectTypeQuery> > & ObjectTypes, bool bTraceComplex, EDrawDebugTrace::Type DrawDebugType, FVector& HitLocation, FVector& HitNormal, bool bIgnoreSelf);
 
+	UFUNCTION(BlueprintCallable, Category = "Collision", meta = (WorldContext = "WorldContextObject"))
+	static bool LineTraceForWorldBlockingOnly(UObject* WorldContextObject, const FVector Start, const FVector End, EDrawDebugTrace::Type DrawDebugType, FVector& HitLocation, FVector& HitNormal);
+
 	/** get current level name
 	 * bShortName true: DM-SomeMap
 	 * bShortName false: /Game/RestrictedAssets/Maps/DM-SomeMap
@@ -228,19 +231,19 @@ class UNREALTOURNAMENT_API UUTGameplayStatics : public UBlueprintFunctionLibrary
 	static void RecordEvent_UTTutorialStarted(AUTPlayerController* UTPC, FString TutorialMap);
 
 	UFUNCTION(BlueprintCallable, Category = "UTAnalytics")
-	static void RecordEvent_UTTutorialCompleted(FString TutorialMap);
+	static void RecordEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap);
 
 	UFUNCTION(BlueprintCallable, Category = "UTAnalytics")
-	static void RecordEvent_UTTutorialPlayInstruction(int32 InstructionID);
+	static void RecordEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, int32 InstructionID);
 
 	/** returns the game mode class
 	 * this function works on clients whereas GetGameMode() -> GetClass() does not
 	 */
 	UFUNCTION(BlueprintPure, Category = "Game", meta = (WorldContext = "WorldContextObject"))
-	static TSubclassOf<AGameMode> GetGameClass(UObject* WorldContextObject)
+	static TSubclassOf<AGameModeBase> GetGameClass(UObject* WorldContextObject)
 	{
 		UWorld* const World = GEngine->GetWorldFromContextObject(WorldContextObject);
-		AGameState* GS = (World != nullptr) ? World->GetGameState() : nullptr;
+		AGameStateBase* GS = (World != nullptr) ? World->GetGameState() : nullptr;
 		return (GS != nullptr) ? GS->GameModeClass : nullptr;
 	}
 };

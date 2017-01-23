@@ -321,6 +321,7 @@ void SUTLoginDialog::Construct(const FArguments& InArgs)
 
 				+SVerticalBox::Slot()
 				.AutoHeight()
+				.Padding(10.0f, 16.0f, 10.0f, 0.0f)
 				.HAlign(HAlign_Center)
 				[
 					SNew(SHorizontalBox)
@@ -328,9 +329,10 @@ void SUTLoginDialog::Construct(const FArguments& InArgs)
 					.AutoWidth()
 					[
 						SNew(SButton)
-						.ButtonStyle(SUTStyle::Get(), "UT.Login.EmptyButton")
+						//.ButtonStyle(SUTStyle::Get(), "UT.Login.EmptyButton")
+						.ButtonStyle(SUTStyle::Get(), "UT.Login.Button")
 						.OnClicked(this, &SUTLoginDialog::OnCloseClick)
-						.ContentPadding(FMargin(0.0f, 0.0f, 0.0f, 0.0f))
+						.ContentPadding(FMargin(10.0f, 0.0f, 10.0f, 0.0f))
 						[
 							SNew(STextBlock)
 							.Text(NSLOCTEXT("Login", "PlayOffline", "Play Offline"))
@@ -537,6 +539,20 @@ EVisibility SUTLoginDialog::GetLoadingVis() const
 
 void SUTLoginDialog::SetErrorText(FText NewErrorText)
 {
+	// Parse out the error text.
+
+	FString ErrorAsString = NewErrorText.ToString();
+	int32 ErrorCodePos = INDEX_NONE;
+	if ( ErrorAsString.FindLastChar(TEXT('='),ErrorCodePos) )
+	{
+		ErrorAsString.RemoveAt(0,ErrorCodePos+1);
+		ErrorAsString = ErrorAsString.Trim();
+		if ( ErrorAsString == TEXT("18031") )
+		{
+			NewErrorText = NSLOCTEXT("SUTLoginDialog","BadCredentials","The Username or Password you have entered was not found.");
+		}
+	}
+
 	ErrorText->SetText(NewErrorText);
 }
 

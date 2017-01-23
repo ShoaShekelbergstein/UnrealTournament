@@ -4,6 +4,7 @@
 #include "UTPlayerInput.h"
 #include "GameFramework/InputSettings.h"
 #include "Runtime/JsonUtilities/Public/JsonUtilities.h"
+#include "UTGameEngine.h"
 
 static FName NAME_TapForward(TEXT("TapForward"));
 static FName NAME_TapBack(TEXT("TapBack"));
@@ -14,6 +15,7 @@ UUTProfileSettings::UUTProfileSettings(const FObjectInitializer& ObjectInitializ
 : Super(ObjectInitializer)
 {
 	bNeedProfileWriteOnLevelChange = false;
+	DefaultBotSkillLevel = 2;
 }
 
 void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
@@ -30,9 +32,9 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		HatVariant = 0;
 		EyewearPath = TEXT("");
 		EyewearVariant = 0;
-		GroupTauntPath = TEXT("");
 		TauntPath = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/Taunt_Boom.Taunt_Boom_C");
 		Taunt2Path = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/Taunt_Bow.Taunt_Bow_C");
+		GroupTauntPath = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/GroupTaunt_FacePalm.GroupTaunt_FacePalm_C");
 		CharacterPath = TEXT("");
 		CountryFlag = FName(TEXT("Unreal"));
 		Avatar = FName("UT.Avatar.0");
@@ -129,6 +131,9 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		MatchmakingRegion = TEXT("");
 		bPushToTalk = true;
 		bHearsTaunts = DefaultUTPlayerController ? DefaultUTPlayerController->bHearsTaunts : true;
+
+		DefaultBotSkillLevel = 2;
+
 	}
 
 	if (SectionToReset == EProfileResetType::All || SectionToReset == EProfileResetType::Weapons)
@@ -140,7 +145,7 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::Sniper, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::Sniper, 9, 9.0f, DefaultWeaponCrosshairs::Sniper, FLinearColor::White, 1.0f));
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::IGShockRifle, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::IGShockRifle, 4, 4.0f, DefaultWeaponCrosshairs::Cross1, FLinearColor::White, 1.0f));
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::ShockRifle, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::ShockRifle, 4, 4.0f, DefaultWeaponCrosshairs::Circle5, FLinearColor::White, 1.0f));
-		WeaponCustomizations.Add(EpicWeaponCustomizationTags::FlakCannon, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::FlakCannon, 7, 7.0f, DefaultWeaponCrosshairs::Bracket5, FLinearColor::White, 1.0f));
+		WeaponCustomizations.Add(EpicWeaponCustomizationTags::FlakCannon, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::FlakCannon, 7, 7.0f, DefaultWeaponCrosshairs::Bracket5, FLinearColor::White, 0.8f));
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::LinkGun, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::LinkGun, 5, 5.0f, DefaultWeaponCrosshairs::Bracket1, FLinearColor::White, 1.0f));
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::Minigun, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::Minigun, 6, 6.0f, DefaultWeaponCrosshairs::Circle4, FLinearColor::White, 1.0f));
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::BioRifle, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::BioRifle, 3, 3.0f, DefaultWeaponCrosshairs::Bracket3, FLinearColor::White, 1.0f));
@@ -152,6 +157,8 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		bAutoWeaponSwitch = true;
 		bCustomWeaponCrosshairs = false;
 		bSingleCustomWeaponCrosshair = false;
+		
+		WeaponHand = EWeaponHand::HAND_Right;
 
 		WeaponWheelMapping.Empty();
 		WeaponWheelMapping.Add(8);
@@ -175,8 +182,7 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	FKeyConfigurationInfo Key;
 
 	// Move
-
-	Key = FKeyConfigurationInfo("MoveForward", EControlCategory::Movement, EKeys::W, EKeys::Up, EKeys::Invalid, NSLOCTEXT("Keybinds","MoveForward","Move Forward"));
+	Key = FKeyConfigurationInfo("MoveForward", EControlCategory::Movement, EKeys::W, EKeys::Up, EKeys::Gamepad_LeftY, NSLOCTEXT("Keybinds","MoveForward","Move Forward"));
 	Key.AddAxisMapping("MoveForward", 1.0f);
 	Key.AddActionMapping("TapForward");
 	outGameActions.Add(Key);
@@ -197,7 +203,6 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	outGameActions.Add(Key);
 
 	// Turn
-
 	Key = FKeyConfigurationInfo("TurnLeft", EControlCategory::Movement, EKeys::Left, EKeys::Invalid, EKeys::Invalid, NSLOCTEXT("Keybinds", "TurnLeft", "Turn Left"));
 	Key.AddAxisMapping("TurnRate", -1.0f);
 	outGameActions.Add(Key);
@@ -207,7 +212,6 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	outGameActions.Add(Key);
 
 	// Actions
-
 	Key = FKeyConfigurationInfo("Jump", EControlCategory::Movement, EKeys::SpaceBar, EKeys::Invalid, EKeys::Gamepad_FaceButton_Bottom, NSLOCTEXT("Keybinds", "Jump", "Jump"));
 	Key.AddAxisMapping("MoveUp", 1.0f);
 	Key.AddActionMapping("Jump");
@@ -218,16 +222,15 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	Key.AddActionMapping("Crouch");
 	outGameActions.Add(Key);
 
-	Key = FKeyConfigurationInfo("Slide", EControlCategory::Movement, EKeys::LeftShift, EKeys::Invalid, EKeys::Invalid, NSLOCTEXT("Keybinds", "Slide", "Slide"));
+	Key = FKeyConfigurationInfo("Slide", EControlCategory::Movement, EKeys::ThumbMouseButton, EKeys::Invalid, EKeys::Invalid, NSLOCTEXT("Keybinds", "Slide", "Slide"));
 	Key.AddActionMapping("Slide");
 	outGameActions.Add(Key);
 
-	Key = FKeyConfigurationInfo("SingleTapDodge", EControlCategory::Movement, EKeys::V, EKeys::Invalid, EKeys::Gamepad_DPad_Down, NSLOCTEXT("Keybinds", "SingleTapDodge", "One Tap Dodge"));
+	Key = FKeyConfigurationInfo("SingleTapDodge", EControlCategory::Movement, EKeys::LeftShift, EKeys::V, EKeys::Gamepad_DPad_Down, NSLOCTEXT("Keybinds", "SingleTapDodge", "One Tap Dodge"));
 	Key.AddActionMapping("SingleTapDodge");
 	outGameActions.Add(Key);
 
 	// Combat
-
 	Key = FKeyConfigurationInfo("Fire", EControlCategory::Combat, EKeys::LeftMouseButton, EKeys::Invalid, EKeys::Gamepad_RightTrigger, NSLOCTEXT("Keybinds", "Fire", "Fire"));
 	Key.AddActionMapping("StartFire");
 	Key.AddActionMapping("StopFire");
@@ -255,7 +258,7 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	outGameActions.Add(Key);
 
 	Key = FKeyConfigurationInfo("ActivateSpecial", EControlCategory::Combat, EKeys::Q, EKeys::Invalid, EKeys::Invalid, NSLOCTEXT("Keybinds", "ActivateSepcial", "Activate Powerup / Toggle Translocator"));
-	Key.AddCustomBinding("ActivateSpecial");
+	Key.AddActionMapping("ActivateSpecial");
 	outGameActions.Add(Key);
 
 /*
@@ -268,9 +271,7 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	Key.AddActionMapping("ToggleWeaponWheel");
 	outGameActions.Add(Key);
 
-
 	// Weapon
-
 	Key = FKeyConfigurationInfo("SwitchWeapon1", EControlCategory::Weapon, EKeys::One, EKeys::Invalid, EKeys::Invalid, NSLOCTEXT("Keybinds", "SwitchWeapon1", "Select Weapon Group 1"));
 	Key.AddCustomBinding("SwitchWeapon 1");
 	outGameActions.Add(Key);
@@ -312,7 +313,6 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	outGameActions.Add(Key);
 
 	// Taunts
-
 	Key = FKeyConfigurationInfo("Taunt1", EControlCategory::Taunts, EKeys::J, EKeys::Invalid, EKeys::Gamepad_DPad_Left, NSLOCTEXT("Keybinds", "Taunt1", "Taunt #1"));
 	Key.AddActionMapping("PlayTaunt");
 	outGameActions.Add(Key);
@@ -326,7 +326,6 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	outGameActions.Add(Key);
 
 	// UI
-
 	Key = FKeyConfigurationInfo("ShowMenu", EControlCategory::UI, EKeys::Escape, EKeys::Invalid, EKeys::Gamepad_Special_Right, NSLOCTEXT("Keybinds", "ShowMenu", "Show Menu"));
 	Key.AddActionMapping("ShowMenu");
 	outGameActions.Add(Key);
@@ -356,7 +355,6 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	outGameActions.Add(Key);
 
 	// Misc
-
 	Key = FKeyConfigurationInfo("FeignDeath", EControlCategory::Misc, EKeys::H, EKeys::Invalid, EKeys::Invalid, NSLOCTEXT("Keybinds", "FeignDeath", "Feign Death"));
 	Key.AddCustomBinding("FeignDeath");
 	outGameActions.Add(Key);
@@ -513,6 +511,11 @@ bool UUTProfileSettings::ValidateGameActions()
 		{
 			if (DefaultGameActions[i].GameActionTag == GameActions[j].GameActionTag)
 			{
+				// copy the mappings so that this handles the case of changing how an action works without changing the name
+				// (e.g. switch from an exec function to an input component delegate)
+				GameActions[j].ActionMappings = DefaultGameActions[i].ActionMappings;
+				GameActions[j].CustomBindings = DefaultGameActions[i].CustomBindings;
+				GameActions[j].SpectatorBindings = DefaultGameActions[i].SpectatorBindings;
 				bFound = true;
 				break;
 			}
@@ -538,10 +541,32 @@ bool UUTProfileSettings::VersionFixup()
 		WeaponCustomizations[EpicWeaponCustomizationTags::Sniper].DefaultCrosshairTag = DefaultWeaponCrosshairs::Sniper;
 	}
 
+	if (SettingsRevisionNum < FRAMECAP_FIXUP_VERSION)
+	{
+		if (WeaponCustomizations.Contains(EpicWeaponCustomizationTags::FlakCannon))
+		{
+			WeaponCustomizations[EpicWeaponCustomizationTags::FlakCannon].CrosshairScaleOverride = 0.8f;
+		}
+		UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
+		if (UTEngine != NULL)
+		{
+			UTEngine->FrameRateCap = FMath::Max(UTEngine->FrameRateCap, 120.f);
+			UTEngine->SaveConfig();
+		}
+	}
+
 	if (SettingsRevisionNum < WEAPONBAR_FIXUP_VERSION)
 	{
 		bUseWeaponColors = true;
 		HUDWidgetWeaponbarInactiveOpacity = 0.6f;
+	}
+
+	if (SettingsRevisionNum < DEFAULT_GROUPTAUNT_FIXUP_VERSION)
+	{
+		if (GroupTauntPath.IsEmpty())
+		{
+			GroupTauntPath = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/GroupTaunt_FacePalm.GroupTaunt_FacePalm_C");
+		}
 	}
 
 	int32 WeaponWheelIndex = -1;
@@ -583,10 +608,6 @@ bool UUTProfileSettings::VersionFixup()
 			{
 				bMiddleMouseUsed = true;
 			}
-			else if (GameActions[i].CustomBindings[j].KeyName == EKeys::ThumbMouseButton)
-			{
-				bThumbMouseUsed =  true;
-			}
 		}
 	}
 
@@ -601,12 +622,7 @@ bool UUTProfileSettings::VersionFixup()
 			{
 				GameActions[WeaponWheelIndex].PrimaryKey = EKeys::MiddleMouseButton;
 			}
-			else if (!bThumbMouseUsed)
-			{
-				GameActions[WeaponWheelIndex].PrimaryKey = EKeys::ThumbMouseButton;
-			}
 		}
-	
 	}
 
 	if (SelectTransIndex >= 0)
@@ -671,8 +687,6 @@ void UUTProfileSettings::GetWeaponCustomization(FName WeaponCustomizationTag, FW
 		else
 		{
 			outWeaponCustomizationInfo.CrosshairTag = WeaponCustomizations[WeaponCustomizationTag].DefaultCrosshairTag;
-			outWeaponCustomizationInfo.CrosshairColorOverride = FLinearColor::White;
-			outWeaponCustomizationInfo.CrosshairScaleOverride = 1.0f;
 		}
 	}
 	else

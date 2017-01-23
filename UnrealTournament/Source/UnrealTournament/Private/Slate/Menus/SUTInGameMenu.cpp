@@ -233,6 +233,8 @@ void SUTInGameMenu::WriteQuitMidGameAnalytics()
 					ParamArray.Add(FAnalyticsEventAttribute(TEXT("FPS"), GAverageFPS));
 					ParamArray.Add(FAnalyticsEventAttribute(TEXT("Kills"), PS->Kills));
 					ParamArray.Add(FAnalyticsEventAttribute(TEXT("Deaths"), PS->Deaths));
+					FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerOwner->PlayerController), ParamArray, true);
+
 					FUTAnalytics::GetProvider().RecordEvent(TEXT("QuitMidGame"), ParamArray);
 				}
 			}
@@ -243,14 +245,23 @@ void SUTInGameMenu::WriteQuitMidGameAnalytics()
 FReply SUTInGameMenu::OnReturnToMainMenu()
 {
 	bool bIsRankedGame = false;
+	bool bIsQuickMatch = false;
 	AUTGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
-	if (GameState && GameState->bRankedSession)
+	if (GameState)
 	{
-		bIsRankedGame = true;
+		if (GameState->bRankedSession)
+		{
+			bIsRankedGame = true;
+		}
+		if (GameState->bIsQuickMatch)
+		{
+			bIsQuickMatch = true;
+		}
 	}
+	
 
 	const bool bIsPartyLeader = PlayerOwner->IsPartyLeader();
-	if (!bIsPartyLeader || bIsRankedGame)
+	if (!bIsPartyLeader || bIsRankedGame || bIsQuickMatch)
 	{
 		UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(PlayerOwner->GetWorld(), UPartyContext::StaticClass()));
 		if (PartyContext)
@@ -465,11 +476,11 @@ void SUTInGameMenu::ShowHomePanel()
 		{
 			if (PlayerOwner->GetWorld()->GetGameState<AUTLobbyGameState>())
 			{
-				Msg = NSLOCTEXT("SUTInGameMenu", "SUTInGameMenuBack", "Are you sure you want to leave the hub and return to the main menu?");
+				Msg = NSLOCTEXT("SUTInGameMenu", "SUTInGameMenuBack", "Are you sure you want to leave the hub and return to the main menu? If you are in a party, you will leave your current party.");
 			}
 			else
 			{
-				Msg = NSLOCTEXT("SUTInGameMenu", "SUTInGameMenuBackDefault", "Are you sure you want to leave the game and return to the main menu?");
+				Msg = NSLOCTEXT("SUTInGameMenu", "SUTInGameMenuBackDefault", "Are you sure you want to leave the game and return to the main menu? If you are in a party, you will leave your current party.");
 			}
 		}
 

@@ -2,6 +2,7 @@
 
 #include "UnrealTournament.h"
 #include "UTLocalPlayer.h"
+#include "SlateApplication.h"
 #include "SlateBasics.h"
 #include "SlateExtras.h"
 #include "Slate/SlateGameResources.h"
@@ -1363,6 +1364,11 @@ void SUTServerBrowserPanel::OnFindLANSessionsComplete(bool bWasSuccessful)
 		UE_LOG(UT,Log,TEXT("Server List Request Failed!!!"));
 	}
 
+	if (!PlayerOwner->IsLoggedIn() && AllInternetServers.Num() == 0 && AllHubServers.Num() == 0 && LanSearchSettings->SearchResults.Num() == 0)
+	{
+		PlayerOwner->ShowAuth();
+	}
+
 	SetBrowserState(EBrowserState::BrowserIdle);
 }
 
@@ -1547,15 +1553,21 @@ void SUTServerBrowserPanel::AddHub(TSharedPtr<FServerData> Hub)
 
 	for (int32 i=0; i < AllHubServers.Num() ; i++)
 	{
-		if (AllHubServers[i].IsValid() && AllHubServers[i]->SearchResult.IsValid() && !AllHubServers[i]->bFakeHUB)
+		if (AllHubServers[i].IsValid())
 		{
-			if (AllHubServers[i]->GetId() == Hub->GetId())
+			if (AllHubServers[i]->SearchResult.IsValid())
 			{
-				if (AllHubServers[i] != Hub)
+				if(!AllHubServers[i]->bFakeHUB)
 				{
-					AllHubServers[i]->Update(Hub);
+					if (AllHubServers[i]->GetId() == Hub->GetId())
+					{
+						if (AllHubServers[i] != Hub)
+						{
+							AllHubServers[i]->Update(Hub);
+						}
+						return; 
+					}
 				}
-				return; 
 			}
 
 			if (AllHubServers[i]->IP == Hub->IP && AllHubServers[i]->Name.Equals(Hub->Name, ESearchCase::IgnoreCase))
@@ -1564,7 +1576,6 @@ void SUTServerBrowserPanel::AddHub(TSharedPtr<FServerData> Hub)
 				AllHubServers[i]->Update(Hub);
 				return;
 			}
-
 		}
 	}
 
@@ -1750,7 +1761,7 @@ void SUTServerBrowserPanel::ConnectTo(FServerData ServerData,bool bSpectate)
 {
 	if (FUTAnalytics::IsAvailable())
 	{
-		FUTAnalytics::FireEvent_EnterMatch(FString::Printf(TEXT("Server - %s"), *ServerData.GameModeName));
+		FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("Server - %s"), *ServerData.GameModeName));
 	}
 
 	if ((ServerData.Flags & SERVERFLAG_Restricted) > 0)
@@ -2429,7 +2440,6 @@ void SUTServerBrowserPanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
 	{
 		RefreshServers();
 	}
-
 	PlayerOwner->GetWorld()->GetTimerManager().SetTimer(RefreshTimerHandle, FTimerDelegate::CreateSP(this, &SUTServerBrowserPanel::RefreshSelectedServer), 30.f, true);
 }
 
@@ -2681,5 +2691,14 @@ void SUTServerBrowserPanel::ConnectIPDialogResult(TSharedPtr<SCompoundWidget> Wi
 	}
 }
 
+
+FReply SUTServerBrowserPanel::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
+{
+	if (InKeyEvent.GetKey() == EKeys::F5 && BrowserState == EBrowserState::BrowserIdle) 
+	{
+		RefreshServers();
+	}
+	return FReply::Unhandled();
+}
 
 #endif

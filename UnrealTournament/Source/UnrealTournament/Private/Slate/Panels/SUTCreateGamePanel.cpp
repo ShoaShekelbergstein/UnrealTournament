@@ -102,10 +102,9 @@ SUTCreateGamePanel::~SUTCreateGamePanel()
 
 TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> InitialSelectedGameClass)
 {
-
 	SAssignNew(GamePanel,SVerticalBox)
-	+ SVerticalBox::Slot()
-	.Padding(FMargin(60.0f, 60.0f, 60.0f, 60.0f))
+	+ SVerticalBox::Slot().FillHeight(1.0f)
+	.Padding(FMargin(60.0f, 60.0f, 60.0f, 20.0f))
 	[
 		SNew(SVerticalBox)
 
@@ -302,14 +301,12 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 					]
 				]
 			]
-
-
 		]
 
 		// Game Settings and mutators
 		+SVerticalBox::Slot()
-		.AutoHeight()
 		.Padding(FMargin(0.0f,30.0f,0.0f,0.0f))
+		.FillHeight(1.0f)
 		[
 			SNew(SHorizontalBox)
 			// Game Settings
@@ -798,7 +795,7 @@ FReply SUTCreateGamePanel::ConfigureMutator()
 	return FReply::Handled();
 }
 
-void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32 BotSkillLevel, int32& bTeamGame)
+void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, FString& GameModeName, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32 BotSkillLevel, int32& bTeamGame)
 {
 	StartingMap = MapList->GetSelectedItem().IsValid() ? MapList->GetSelectedItem().Get()->MapPackageName : TEXT("");
 	AUTGameMode* DefaultGameMode = SelectedGameClass->GetDefaultObject<AUTGameMode>();
@@ -810,6 +807,8 @@ void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& Start
 		DefaultGameMode->UILastStartingMap = StartingMap;
 
 		GameMode = SelectedGameClass->GetPathName();
+
+		GameModeName = DefaultGameMode->DisplayName.ToString();
 
 		Description = FString::Printf(TEXT("A custom %s match with custom settings.\n"), *DefaultGameMode->DisplayName.ToString());			
 
@@ -857,6 +856,7 @@ void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& Start
 		Description = Description.Replace(TEXT("="),TEXT(" = "));
 	}
 }
+
 
 void SUTCreateGamePanel::GetCustomMutatorOptions(UClass* MutatorClass, FString& Description, TArray<FString>&GameOptions)
 {

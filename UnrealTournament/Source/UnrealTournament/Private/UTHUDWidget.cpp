@@ -12,7 +12,6 @@ namespace ERenderObjectType
 	const FName TextObject = FName(TEXT("HUDRenderObject_Text"));
 }
 
-
 DECLARE_CYCLE_STAT(TEXT("CanvasTextItem Time"), STAT_Canvas_TextItemTime, STATGROUP_Canvas);
 void FUTCanvasTextItem::Draw(FCanvas* InCanvas)
 {
@@ -309,8 +308,9 @@ UUTHUDWidget::UUTHUDWidget(const class FObjectInitializer& ObjectInitializer) : 
 	bIgnoreHUDOpacity = false;
 }
 
-void UUTHUDWidget::InitializeWidget(AUTHUD* Hud)
+void UUTHUDWidget::InitializeWidget(AUTHUD* InHUD)
 {
+	UTHUDOwner = InHUD;
 	for (TFieldIterator<UStructProperty> PropIt(GetClass()); PropIt; ++PropIt)
 	{
 		UStructProperty* Prop = NULL;
@@ -524,7 +524,24 @@ FVector2D UUTHUDWidget::DrawText(FText Text, float X, float Y, UFont* Font, bool
 			UE_LOG(UT, Warning, TEXT("%s draw text with font %s"), *GetName(), *Font->GetName());
 		}*/
 		
-		Canvas->StrLen(Font, Text.ToString(), XL, YL);
+		const bool bHasLineBreak = Text.ToString().Contains(TEXT("\n"));
+		// canvas code is broken for strings with line breaks, split them manually
+		TArray<FString> Pieces;
+		if (bHasLineBreak)
+		{
+			Text.ToString().ParseIntoArrayLines(Pieces);
+			for (const FString& Next : Pieces)
+			{
+				float TestXL, TestYL;
+				Canvas->StrLen(Font, Next, TestXL, TestYL);
+				XL = FMath::Max<float>(TestXL, XL);
+				YL += TestYL;
+			}
+		}
+		else
+		{
+			Canvas->StrLen(Font, Text.ToString(), XL, YL);
+		}
 		TextSize = FVector2D(XL,YL); // Save for Later
 
 		if (bScaleByDesignedResolution)
@@ -532,9 +549,20 @@ FVector2D UUTHUDWidget::DrawText(FText Text, float X, float Y, UFont* Font, bool
 			X *= RenderScale;
 			Y *= RenderScale;
 		}
+		const float TextScaling = bScaleByDesignedResolution ? RenderScale*TextScale : TextScale;
+
+		if (TextHorzAlignment == ETextHorzPos::Center && bHasLineBreak)
+		{
+			TGuardValue<bool> ScaleGuard(bScaleByDesignedResolution, false);
+			for (const FString& Next : Pieces)
+			{
+				FVector2D DrawnSize = DrawText(FText::FromString(Next), X, Y, Font, bDrawShadow, ShadowDirection, ShadowColor, bDrawOutline, OutlineColor, TextScaling, DrawOpacity, DrawColor, BackColor, TextHorzAlignment, TextVertAlignment, RenderInfo);
+				Y += DrawnSize.Y * TextScaling * ((TextVertAlignment == ETextVertPos::Center) ? 0.5f : 1.0f);
+			}
+			return TextSize;
+		}
 
 		FVector2D RenderPos = FVector2D(RenderPosition.X + X,RenderPosition.Y + Y);
-		float TextScaling = bScaleByDesignedResolution ? RenderScale*TextScale : TextScale;
 		// Handle Justification
 		if (TextHorzAlignment != ETextHorzPos::Left || TextVertAlignment != ETextVertPos::Top )
 		{

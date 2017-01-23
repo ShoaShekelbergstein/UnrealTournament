@@ -94,6 +94,7 @@ protected:
 
 	TSharedPtr<SUTPanelBase> HomePanel;
 
+	virtual FReply OpenBuildNotes();
 	virtual FReply OpenTPSReport();
 	virtual FReply OpenCredits();
 	virtual FReply OnMenuHTTPButton(FString URL);
@@ -136,7 +137,6 @@ private:
 protected:
 	bool bNeedsPlayerOptions;
 	bool bNeedsWeaponOptions;
-	bool bShowingFriends;
 
 	int32 TickCountDown;
 	virtual void OpenDelayedMenu();

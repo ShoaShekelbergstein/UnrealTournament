@@ -10,10 +10,8 @@
 
 #if !UE_SERVER
 
-void SUTFriendsWidget::Construct(const FArguments& InArgs, const FLocalPlayerContext& InCtx)
+void SUTFriendsWidget::Construct(const FArguments& InArgs)
 {
-	Ctx = InCtx;
-
 	//grab the OnClose del
 	OnCloseDelegate = InArgs._OnClose;
 

@@ -46,7 +46,7 @@ namespace UnrealTournamentGame.Automation
 			this.S3BucketName = InS3BucketName;
 			this.BuildString = InBuildString;
 			this.Debug = InDebug;
-			this.InstallSumo = "true";
+			this.InstallSumo = "false";
 			this.GameBinaryPath = "Engine/Binaries/Linux";
 			this.GameLogPath = "/UnrealTournament/Saved/Logs";
 			this.GameSavedPath = "/UnrealTournament/Saved";
@@ -218,9 +218,11 @@ namespace UnrealTournamentGame.Automation
 					default:
 						Deployment2Command("deployment_create", AwsArgsNa1, "true", 1);
 						Deployment2Command("deployment_create", AwsNaHub1, "true", 1);
+						Deployment2Command("deployment_create", AwsEuHub1, "true", 1);
 
 						Deployment2Command("deployment_create", AwsArgsNa1, "get_pending", MaxRetries);
 						Deployment2Command("deployment_create", AwsNaHub1, "get_pending", MaxRetries);
+						Deployment2Command("deployment_create", AwsEuHub1, "get_pending", MaxRetries);
 						break;
 				}
 			}

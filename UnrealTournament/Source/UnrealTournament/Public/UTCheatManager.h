@@ -118,4 +118,10 @@ class UNREALTOURNAMENT_API UUTCheatManager : public UCheatManager
 
 	UFUNCTION(exec)
 	void EstimateWaitTimes();
+
+	UFUNCTION(exec)
+	void UnlockTutorials();
+
+	UFUNCTION(exec)
+	void TestAMDAllocation();
 };

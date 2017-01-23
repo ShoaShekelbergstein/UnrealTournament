@@ -136,14 +136,28 @@ class UNREALTOURNAMENT_API UUTWeaponStateFiringChargedRocket : public UUTWeaponS
 			bCharging = false;
 			if (RocketLauncher->NumLoadedRockets > 0)
 			{
-				RocketLauncher->SetLeadRocket();
-				FireLoadedRocket();
+				AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
+				if (GameState && (GameState->HasMatchEnded() || GameState->IsMatchIntermission()))
+				{
+					RocketLauncher->NumLoadedRockets = 0;
+				}
+				else
+				{
+					RocketLauncher->SetLeadRocket();
+					FireLoadedRocket();
+				}
 			}
 		}
 	}
 
 	virtual void FireLoadedRocket()
 	{
+		AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
+		if (GameState && (GameState->HasMatchEnded() || GameState->IsMatchIntermission()))
+		{
+			RocketLauncher->NumLoadedRockets = 0;
+
+		}
 		if (RocketLauncher->NumLoadedRockets > 0)
 		{
 			FireShot();
@@ -184,6 +198,10 @@ class UNREALTOURNAMENT_API UUTWeaponStateFiringChargedRocket : public UUTWeaponS
 			if (RocketLauncher->NumLoadedRockets > 0)
 			{
 				FireLoadedRocket();
+				if (GetOuterAUTWeapon()->GetCurrentState() == this)
+				{
+					GetOuterAUTWeapon()->GetWorldTimerManager().SetTimer(RefireCheckHandle, this, &UUTWeaponStateFiring::RefireCheckTimer, GetOuterAUTWeapon()->GetRefireTime(GetOuterAUTWeapon()->GetCurrentFireMode()), false);
+				}
 			}
 			else
 			{

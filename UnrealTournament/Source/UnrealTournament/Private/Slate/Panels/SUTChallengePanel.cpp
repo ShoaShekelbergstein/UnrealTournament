@@ -635,6 +635,7 @@ void SUTChallengePanel::GenerateChallengeList()
 			if (PlayerOwner->ChallengeRevisionNumber < ChallengeManager->RevisionNumber)
 			{
 				PlayerOwner->ChallengeRevisionNumber = ChallengeManager->RevisionNumber;
+				PlayerOwner->SaveConfig();
 			}
 		}
 
@@ -1083,8 +1084,9 @@ void SUTChallengePanel::StartChallenge(int32 Difficulty)
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("Challenge"), SelectedChallenge.ToString()));
 			ParamArray.Add(FAnalyticsEventAttribute(TEXT("Difficulty"), Difficulty));
 			FUTAnalytics::GetProvider().RecordEvent( TEXT("StartChallenge"), ParamArray );
+			FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerOwner->PlayerController), ParamArray, false);
 
-			FUTAnalytics::FireEvent_EnterMatch("Challenge");
+			FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), "Challenge");
 
 			Options += FUTAnalytics::AnalyticsLoggedGameOptionTrue;
 		}

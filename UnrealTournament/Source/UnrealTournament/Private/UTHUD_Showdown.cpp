@@ -5,7 +5,6 @@
 #include "UTShowdownGameMessage.h"
 #include "UTPlayerStart.h"
 #include "UTHUDWidgetMessage_KillIconMessages.h"
-#include "SUTPowerupSelectWindow.h"
 #include "UTTeamShowdownGame.h"
 #include "UTPickupAmmo.h"
 
@@ -80,7 +79,7 @@ void AUTHUD_Showdown::NotifyKill(APlayerState* POVPS, APlayerState* KillerPS, AP
 		// already notified
 		return;
 	}
-	AUTGameState* GS = Cast<AUTGameState>(GetWorld()->GetGameState());
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (GS && GS->OnSameTeam(POVPS, VictimPS))
 	{
 		if (GetWorldTimerManager().IsTimerActive(PlayTeamKillHandle))

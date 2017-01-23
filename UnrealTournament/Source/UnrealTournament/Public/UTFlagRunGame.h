@@ -25,12 +25,6 @@ public:
 		float LastEntryDefenseWarningTime;
 
 	UPROPERTY()
-		int32 GoldBonusTime;
-
-	UPROPERTY()
-		int32 SilverBonusTime;
-
-	UPROPERTY()
 		int32 GoldScore;
 
 	UPROPERTY()
@@ -79,13 +73,13 @@ public:
 		FName LastDefenderSpawnGroup;
 
 	virtual class AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = TEXT("")) override;
-	virtual void AnnounceWin(AUTTeamInfo* WinningTeam, uint8 Reason) override;
+	virtual void AnnounceWin(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 Reason) override;
 	virtual void NotifyFirstPickup(AUTCarriedObject* Flag) override;
 
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
-	virtual float OverrideRespawnTime(TSubclassOf<AUTInventory> InventoryType) override;
-	virtual void HandleRallyRequest(AUTPlayerController* PC) override;
-	virtual void CompleteRallyRequest(AUTPlayerController* PC) override;
+	virtual float OverrideRespawnTime(AUTPickupInventory* Pickup, TSubclassOf<AUTInventory> InventoryType) override;
+	virtual bool HandleRallyRequest(AController* C) override;
+	virtual void CompleteRallyRequest(AController* C) override;
 	virtual bool CheckForWinner(AUTTeamInfo* ScoringTeam) override;
 	virtual int32 PickCheatWinTeam() override;
 	virtual bool AvoidPlayerStart(class AUTPlayerStart* P) override;
@@ -95,7 +89,6 @@ public:
 	virtual int32 GetFlagCapScore() override;
 	virtual int32 GetDefenseScore() override;
 	virtual void BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo* ScoringTeam, int32 OldScore = 0) override;
-	virtual void InitGameState() override;
 	virtual void CheckRoundTimeVictory() override;
 	virtual void ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType) override;
 	virtual void HandleTeamChange(AUTPlayerState* PS, AUTTeamInfo* OldTeam) override;
@@ -109,8 +102,11 @@ public:
 	virtual void HandleMatchIntermission() override;
 	virtual void CheatScore() override;
 	virtual void DefaultTimer() override;
+	virtual void PlayEndOfMatchMessage() override;
 
 	virtual void UpdateSkillRating() override;
+
+	virtual FString GetRankedLeagueName() override;
 
 	virtual float RatePlayerStart(APlayerStart* P, AController* Player) override;
 
@@ -123,6 +119,7 @@ public:
 
 	virtual bool SupportsInstantReplay() const override;
 	virtual void FindAndMarkHighScorer() override;
+	virtual void HandleRollingAttackerRespawn(AUTPlayerState* OtherPS) override;
 
 protected:
 

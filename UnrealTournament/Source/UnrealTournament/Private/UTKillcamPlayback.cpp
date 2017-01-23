@@ -12,6 +12,8 @@
 #include "UTDemoNetDriver.h"
 #include "UTProj_Redeemer.h"
 #include "UTRemoteRedeemer.h"
+#include "UTCharacter.h"
+#include "UTRallyPoint.h"
 
 TAutoConsoleVariable<int32> CVarUTEnableInstantReplay(
 	TEXT("UT.EnableInstantReplay"),
@@ -39,6 +41,22 @@ UUTKillcamPlayback::UUTKillcamPlayback()
 }
 
 DEFINE_LOG_CATEGORY_STATIC(LogUTKillcam, Log, All);
+
+void UUTKillcamPlayback::OnPostLoadMap()
+{
+	FCoreUObjectDelegates::PostLoadMap.Remove(OnPostLoadMapHandle);
+	SetPlaybackWorldShouldTick(false);
+}
+
+void UUTKillcamPlayback::SetPlaybackWorldShouldTick(const bool bShouldTick)
+{
+	// Even ticking the playback world while it's paused can have significant overhead. Prevent any ticking of this world
+	// at all until we actually need to display it to the user.
+	if (KillcamWorld)
+	{
+		//KillcamWorld->SetShouldTick(bShouldTick);
+	}
+}
 
 void UUTKillcamPlayback::BeginDestroy()
 {
@@ -139,6 +157,7 @@ void UUTKillcamPlayback::PlayKillcamReplay(const FString& ReplayUniqueName)
 	// Currently, loading the killcam world seamlessly is not supported, so force a synchronous load for now
 	AdditionalOptions.Add(TEXT("AsyncLoadWorldOverride=0"));
 
+	OnPostLoadMapHandle = FCoreUObjectDelegates::PostLoadMap.AddUObject(this, &UUTKillcamPlayback::OnPostLoadMap);
 	GameInstance->PlayReplay(ReplayUniqueName, KillcamWorld, AdditionalOptions);
 
 	UWorld* CachedSourceWorld = SourceWorld.Get();
@@ -223,6 +242,8 @@ void UUTKillcamPlayback::KillcamGoToTime(const float TimeInSeconds, const FNetwo
 				}
 			}
 		}
+
+		SetPlaybackWorldShouldTick(true);
 
 		KillcamWorld->DemoNetDriver->AddNonQueuedGUIDForScrubbing(FocusActor);
 		KillcamWorld->DemoNetDriver->GotoTimeInSeconds(TimeInSeconds,
@@ -379,6 +400,7 @@ void UUTKillcamPlayback::OnKillcamReady(bool bWasSuccessful, FNetworkGUID InKill
 		return;
 	}
 
+	SpecController->LastKillcamSeekTime = KillcamWorld->GetTimeSeconds();
 	SpecController->QueuedPlayerStateToView = nullptr;
 	SpecController->QueuedViewTargetGuid.Reset();
 	SpecController->QueuedViewTargetNetId = FUniqueNetIdRepl();
@@ -424,7 +446,7 @@ void UUTKillcamPlayback::OnCoolMomentCamReady(bool bWasSuccessful, FUniqueNetIdR
 		return;
 	}
 
-	if (KillcamWorld == nullptr || KillcamWorld->DemoNetDriver == nullptr || KillcamWorld->GameState == nullptr)
+	if (KillcamWorld == nullptr || KillcamWorld->DemoNetDriver == nullptr || KillcamWorld->GetGameState() == nullptr)
 	{
 		// Cancel killcam
 		KillcamStop();
@@ -440,11 +462,11 @@ void UUTKillcamPlayback::OnCoolMomentCamReady(bool bWasSuccessful, FUniqueNetIdR
 	}
 	
 	APlayerState* PS = nullptr;
-	for (int32 i = 0; i < KillcamWorld->GameState->PlayerArray.Num(); i++)
+	for (int32 i = 0; i < KillcamWorld->GetGameState()->PlayerArray.Num(); i++)
 	{
-		if (KillcamWorld->GameState->PlayerArray[i]->UniqueId == InCoolMomentViewTargetNetId)
+		if (KillcamWorld->GetGameState()->PlayerArray[i]->UniqueId == InCoolMomentViewTargetNetId)
 		{
-			PS = KillcamWorld->GameState->PlayerArray[i];
+			PS = KillcamWorld->GetGameState()->PlayerArray[i];
 		}
 	}
 
@@ -488,17 +510,37 @@ void UUTKillcamPlayback::HideKillcamFromUser()
 	{
 		return;
 	}
+	
+	SetPlaybackWorldShouldTick(false);
 
-	// Clean up actors that have looping sounds
+	for (TActorIterator<AUTPlayerController> It(KillcamWorld); It; ++It)
+	{
+		if (It->Announcer)
+		{
+			It->Announcer->ClearAnnouncements();
+		}
+	}
+
+	AUTGameState* GS = KillcamWorld->GetGameState<AUTGameState>();
+	if (GS)
+	{
+		GS->PrepareForIntermission();
+	}
+
+	// Destroy any client side actors
 	for (TActorIterator<AUTProjectile> It(KillcamWorld); It; ++It)
 	{
 		It->Destroy();
 	}
-
-	// Clean up actors that have looping sounds
 	for (TActorIterator<AUTRemoteRedeemer> It(KillcamWorld); It; ++It)
 	{
 		It->Destroy();
+	}
+
+	for (TActorIterator<AUTCharacter> It(KillcamWorld); It; ++It)
+	{
+		It->SetAmbientSound(NULL);
+		It->SetLocalAmbientSound(NULL);
 	}
 
 	for (FActorIterator It(KillcamWorld); It; ++It)

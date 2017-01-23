@@ -34,6 +34,7 @@ AUTWeap_ShockRifle::AUTWeap_ShockRifle(const FObjectInitializer& ObjectInitializ
 
 	FiringViewKickback = -50.f;
 	FiringViewKickbackY = 20.f;
+	HighlightText = NSLOCTEXT("Weapon", "ShockHighlightText", "Don't Tase Me Bro");
 }
 
 void AUTWeap_ShockRifle::AttachToOwner_Implementation()
@@ -397,6 +398,16 @@ int32 AUTWeap_ShockRifle::GetWeaponKillStats(AUTPlayerState * PS) const
 	if (PS)
 	{
 		KillCount += PS->GetStatsValue(NAME_ShockComboKills);
+	}
+	return KillCount;
+}
+
+int32 AUTWeap_ShockRifle::GetWeaponKillStatsForRound(AUTPlayerState * PS) const
+{
+	int32 KillCount = Super::GetWeaponKillStatsForRound(PS);
+	if (PS)
+	{
+		KillCount += PS->GetRoundStatsValue(NAME_ShockComboKills);
 	}
 	return KillCount;
 }

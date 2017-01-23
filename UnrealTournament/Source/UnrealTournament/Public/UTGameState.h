@@ -40,7 +40,15 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	FString ServerDescription;
 
 	UPROPERTY()
-		float MusicVolume;
+	float MusicVolume;
+
+	/** objects game class requested client pre-loading for via PreloadClientAssets()
+	 * this array prevents those items from GC'ing prior to usage being replicated and is only used on clients
+	 */
+	UPROPERTY()
+	TArray<UObject*> PreloadedAssets;
+
+	virtual void OnRep_GameModeClass() override;
 
 	/** teams, if the game type has them */
 	UPROPERTY(BlueprintReadOnly, Category = GameState)
@@ -55,6 +63,9 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = GameState)
 	uint32 bRankedSession : 1;
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = GameState)
+	uint32 bIsQuickMatch : 1;
 
 	/** True if players are allowed to switch teams (if team game). */
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = GameState)
@@ -142,6 +153,10 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	/** Used to limit frequency of enemy entering base messages. */
 	UPROPERTY()
 		float LastEnemyEnteringBaseTime;
+
+	/** Used to limit frequency of enemy FC entering base messages. */
+	UPROPERTY()
+		float LastEnemyFCEnteringBaseTime;
 
 	/** Used to limit frequency of entering enemy base messages. */
 	UPROPERTY()
@@ -356,6 +371,8 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 
 	virtual void ReceivedGameModeClass() override;
 
+	virtual void StartRecordingReplay();
+
 	virtual FText GetGameStatusText(bool bForScoreboard = false);
 
 	virtual FLinearColor GetGameStatusColor();
@@ -477,6 +494,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game")
 		virtual void ClearHighlights();
 
+	UFUNCTION(BlueprintCallable, Category = "Game")
+		virtual bool PreventWeaponFire();
+
 	virtual void UpdateMatchHighlights();
 
 	/** On server side - generate a list of highlights for each player.  Every UTPlayerStates' MatchHighlights array will have been cleared when this is called. */
@@ -490,6 +510,8 @@ public:
 	/** After all major highlights added, fill in some minor ones if there is space left. */
 	UFUNCTION(BlueprintNativeEvent, Category = "Game")
 		void AddMinorHighlights(AUTPlayerState* PS);
+
+	virtual int32 NumHighlightsNeeded();
 
 	virtual FText FormatPlayerHighlightText(AUTPlayerState* PS, int32 Index);
 
@@ -581,7 +603,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = GameState)
 	TSubclassOf<AGameMode> GetGameModeClass() const
 	{
-		return GameModeClass;
+		return TSubclassOf<AGameMode>(*GameModeClass);
 	}
 
 	virtual void MakeJsonReport(TSharedPtr<FJsonObject> JsonObject);
@@ -599,12 +621,6 @@ public:
 	/** maximum number of boost charges that can be recharged through the timer */
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	int32 BoostRechargeMaxCharges;
-	/** boost recharge rate while alive */
-	UPROPERTY(BlueprintReadWrite, Replicated)
-	float BoostRechargeRateAlive;
-	/** boost recharge rate while dead */
-	UPROPERTY(BlueprintReadWrite, Replicated)
-	float BoostRechargeRateDead;
 
 	// Flags that this match no longer allows for a party join
 	UPROPERTY(BlueprintReadOnly, Replicated)
@@ -620,6 +636,7 @@ public:
 	UPROPERTY(Replicated, GlobalConfig, EditAnywhere, BlueprintReadWrite, Category = GameState)
 	bool bDisableVoteKick;
 
+	virtual void PrepareForIntermission();
 
 	//User Info Query for all players in the match
 public:
@@ -642,8 +659,9 @@ protected:
 	void OnHitchDetected(float DurationInSeconds);
 
 	bool bRunFPSChart;
-	/** Running hitch chart */
-	FHitchChartEntry HitchChart[STAT_FPSChart_LastHitchBucketStat - STAT_FPSChart_FirstHitchStat];
+
+	TSharedPtr<FPerformanceTrackingChart> GameplayFPSChart;
+
 	/** Handle to the delegate bound for hitch detection */
 	FDelegateHandle OnHitchDetectedHandle;
 
@@ -660,17 +678,7 @@ protected:
 	/** Threshold after which we consider that the server is unplayable and report that. */
 	UPROPERTY(Config)
 	int32 MaxUnplayableHitchesToTolerate;
-
-	/** Helper structure for hitch entries. */
-	struct FHitchChartEntry
-	{
-		/** Number of hitches */
-		int32 HitchCount;
-
-		/** Time spent in this bucket */
-		double TimeSpentHitching;
-	};
-
+	
 protected:
 	float UserInfoQueryRetryTime;
 	FTimerHandle UserInfoQueryRetryHandle;
@@ -684,6 +692,9 @@ protected:
 	/** Array holding net ids to query*/
 	TArray<TSharedRef<const FUniqueNetId>> CurrentUsersToQuery;
 
+	/** Allows the game to change the client's music volume based on the state of the game */
+	void ManageMusicVolume(float DeltaTime);
+
 public:
 	// This is the GUID if the current servers.  See UTBaseGameMode for more information
 	UPROPERTY(Replicated)
@@ -692,8 +703,16 @@ public:
 	UPROPERTY(Replicated)
 	AUTLineUpHelper* LineUpHelper;
 
+	UPROPERTY(Replicated)
+	AUTPlayerState* LeadLineUpPlayer;
+
 	// Returns true if the replication of the MapVote list is completed
 	bool IsMapVoteListReplicationCompleted();
+
+	virtual bool HasMatchEnded() const;
+
+	UPROPERTY(Replicated)
+	FString ReplayID;
 
 };
 

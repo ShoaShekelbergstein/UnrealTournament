@@ -29,6 +29,10 @@ struct FPlaylistItem
 	FString TeamEloRating;
 	UPROPERTY()
 	TArray<FString> MapNames;
+	UPROPERTY()
+	FString SlateBadgeName;
+	UPROPERTY()
+	int32 RequiredTutorialMask;
 };
 
 UCLASS(config = Game, notplaceable)
@@ -58,7 +62,15 @@ public:
 
 	int32 GetNumPlaylists() { return Playlist.Num(); }
 
+	bool GetPlaylistId(int32 PlaylistIndex, int32& PlaylistId);
+
 	bool GetPlaylistName(int32 PlaylistId, FString& OutPlaylistName);
+
+	FName GetPlaylistSlateBadge(int32 PlaylistId);
+
+	int32 GetPlaylistRequireTutorialMask(int32 PlaylistId);
+
+	bool GetGameModeForPlaylist(int32 PlaylistId, FString& GameMode);
 
 	bool IsPlaylistRanked(int32 PlaylistId);
 };

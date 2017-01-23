@@ -604,6 +604,21 @@ public:
 		}
 	}
 
+#if WITH_EDITOR
+	virtual void ConditionalConstructGenerator() override
+	{
+		// hack to remember build status across save/load
+		const bool bFirstTime = !NavDataGenerator.IsValid();
+
+		Super::ConditionalConstructGenerator();
+
+		if (bFirstTime && bNeedsRebuild)
+		{
+			GetWorld()->GetNavigationSystem()->AddDirtyArea(FBox(FVector(-WORLD_MAX), FVector(WORLD_MAX)), ENavigationDirtyFlag::All);
+		}
+	}
+#endif
+
 private:
 #if WITH_EDITORONLY_DATA
 	/** how long the last node build took (including special paths)

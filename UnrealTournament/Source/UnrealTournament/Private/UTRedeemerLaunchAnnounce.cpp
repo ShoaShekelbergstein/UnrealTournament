@@ -55,7 +55,7 @@ void UUTRedeemerLaunchAnnounce::PrecacheAnnouncements_Implementation(class UUTAn
 
 float UUTRedeemerLaunchAnnounce::GetAnnouncementPriority(const FAnnouncementInfo AnnouncementInfo) const
 {
-	return (AnnouncementInfo.Switch == 2) ? 0.8f : 0.9f;
+	return 1.f;
 }
 
 bool UUTRedeemerLaunchAnnounce::ShouldPlayAnnouncement(const FClientReceiveData& ClientData) const
@@ -73,7 +73,7 @@ bool UUTRedeemerLaunchAnnounce::InterruptAnnouncement(const FAnnouncementInfo An
 	if (AnnouncementInfo.Switch == 2)
 	{
 		// by default interrupt messages of same type, and countdown messages
-		return (GetClass() == OtherAnnouncementInfo.MessageClass) || Cast<UUTCharacterVoice>(OtherAnnouncementInfo.MessageClass->GetDefaultObject());
+		return (GetClass() == OtherAnnouncementInfo.MessageClass) || Cast<UUTLocalMessage>(OtherAnnouncementInfo.MessageClass->GetDefaultObject())->IsOptionalSpoken(OtherAnnouncementInfo.Switch);
 	}
 	return Super::InterruptAnnouncement(AnnouncementInfo, OtherAnnouncementInfo);
 }

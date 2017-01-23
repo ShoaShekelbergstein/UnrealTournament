@@ -10,6 +10,20 @@
 class AUTGauntletFlagDispenser;
 class AUTGauntletGameState;
 
+namespace MatchState
+{
+	// After you score, the game enters this state for a small period of time
+	// so that the person who cap'd the flag can taunt.
+	extern UNREALTOURNAMENT_API const FName GauntletScoreSummary;				
+
+	// When the score summary phase is over, if there isn't a winner, the screen will fade to black
+	extern UNREALTOURNAMENT_API const FName GauntletFadeToBlack;				
+
+	// The next ROUND message is being displayed
+	extern UNREALTOURNAMENT_API const FName GauntletRoundAnnounce;				
+}
+
+
 UCLASS()
 class UNREALTOURNAMENT_API AUTGauntletGame : public AUTCTFRoundGame
 {
@@ -41,7 +55,29 @@ class UNREALTOURNAMENT_API AUTGauntletGame : public AUTCTFRoundGame
 	virtual bool CheckScore_Implementation(AUTPlayerState* Scorer) override;
 	virtual void InitFlagForRound(class AUTCarriedObject* Flag);
 	virtual void HandleExitingIntermission() override;
+
+	virtual void CheckGameTime() override;
+
+	virtual void BeginGame() override;
+
+	virtual void SetMatchState(FName NewState) override;
+	virtual void ScoreObject_Implementation(AUTCarriedObject* GameObject, AUTCharacter* HolderPawn, AUTPlayerState* Holder, FName Reason) override;
+	virtual void HandleFlagCapture(AUTCharacter* HolderPawn, AUTPlayerState* Holder) override;
+	virtual void BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo* ScoringTeam, int32 OldScore = 0);
+	virtual void GiveDefaultInventory(APawn* PlayerPawn);
+	virtual void ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType) override;
+
 protected:
+
+	UPROPERTY(BlueprintReadWrite,Category=Game)
+	float ScoreSummaryDuration;
+
+	UPROPERTY(BlueprintReadWrite,Category=Game)
+	float FadeToBlackDuration;
+
+	UPROPERTY(BlueprintReadWrite,Category=Game)
+	float RoundAnnounceDuration;
+
 
 	UPROPERTY()
 	AUTGauntletGameState* GauntletGameState;
@@ -49,4 +85,17 @@ protected:
 	// How long does a flag have to sit idle for it to return to the neutral position.  Use ?FlagSwapTime=x to set.  Set to 0 to be instantly pick-up-able 
 	UPROPERTY()
 	int32 FlagSwapTime;
+
+	virtual void EndScoreSummary();
+	virtual void EndFadeToBlack();
+	virtual void EndRoundAnnounce();
+
+	virtual void ForceEndOfRound();
+
+	UPROPERTY()
+	TArray<TAssetSubclassOf<AUTWeapon>> DefaultWeaponLoadoutObjects;
+
+	virtual bool IsPlayerOnLifeLimitedTeam(AUTPlayerState* PlayerState) const;
+
+
 };

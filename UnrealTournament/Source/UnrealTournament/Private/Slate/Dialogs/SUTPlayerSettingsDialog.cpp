@@ -56,6 +56,7 @@ void SUTPlayerSettingsDialog::Construct(const FArguments& InArgs)
 	PreviewWeapon = nullptr;
 	bSpinPlayer = true;
 	bLeaderHatSelectedLast = false;
+	bSkipPlayingGroupTauntBGMusic = false;
 
 	bSkipWorldRender = true;
 
@@ -94,10 +95,9 @@ void SUTPlayerSettingsDialog::Construct(const FArguments& InArgs)
 	}
 
 	// allocate a preview scene for rendering
-	PlayerPreviewWorld = UWorld::CreateWorld(EWorldType::Preview, true);
-	PlayerPreviewWorld->bHack_Force_UsesGameHiddenFlags_True = true;
+	PlayerPreviewWorld = UWorld::CreateWorld(EWorldType::GamePreview, true);
 	PlayerPreviewWorld->bShouldSimulatePhysics = true;
-	GEngine->CreateNewWorldContext(EWorldType::Preview).SetCurrentWorld(PlayerPreviewWorld);
+	GEngine->CreateNewWorldContext(EWorldType::GamePreview).SetCurrentWorld(PlayerPreviewWorld);
 	PlayerPreviewWorld->InitializeActorsForPlay(FURL(), true);
 	ViewState.Allocate();
 	{
@@ -878,14 +878,18 @@ void SUTPlayerSettingsDialog::Construct(const FArguments& InArgs)
 		{
 			if (GroupTauntPathList[i] == GetPlayerOwner()->GetGroupTauntPath())
 			{
+				bSkipPlayingGroupTauntBGMusic = true;
 				GroupTauntComboBox->SetSelectedItem(GroupTauntList[i]);
+				bSkipPlayingGroupTauntBGMusic = false;
 				bFoundSelectedGroupTaunt = true;
 				break;
 			}
 		}
 		if (!bFoundSelectedGroupTaunt && TauntPathList.Num() > 0)
 		{
+			bSkipPlayingGroupTauntBGMusic = true;
 			GroupTauntComboBox->SetSelectedItem(GroupTauntList[0]);
+			bSkipPlayingGroupTauntBGMusic = false;
 		}
 
 		bool bFoundSelectedTaunt = false;
@@ -1037,14 +1041,7 @@ FReply SUTPlayerSettingsDialog::OKClick()
 	GetPlayerOwner()->SetNickname(PlayerName->GetText().ToString());
 	ProfileSettings->PlayerName = PlayerName->GetText().ToString();  
 
-	if (SelectedFlag.IsValid())
-	{
-		GetPlayerOwner()->SetCountryFlag(SelectedFlag->GetFName(), false);
-		if (ProfileSettings) ProfileSettings->CountryFlag = SelectedFlag->GetFName();
-	}
-
-	GetPlayerOwner()->SetAvatar(SelectedAvatar);
-	if (ProfileSettings) ProfileSettings->Avatar = SelectedAvatar;
+	GetPlayerOwner()->SetCountryFlagAndAvatar(SelectedFlag.IsValid() ? SelectedFlag->GetFName() : GetPlayerOwner()->GetCountryFlag(), SelectedAvatar);
 
 	// FOV
 	float NewFOV = FMath::TruncToFloat(FOV->GetValue() * (FOV_CONFIG_MAX - FOV_CONFIG_MIN) + FOV_CONFIG_MIN);
@@ -1287,6 +1284,21 @@ void SUTPlayerSettingsDialog::OnGroupTauntSelected(TSharedPtr<FString> NewSelect
 	if (NewSelection.IsValid())
 	{
 		SelectedGroupTaunt->SetText(*NewSelection.Get());
+
+		if (PlayerPreviewMesh != nullptr)
+		{
+			int32 TauntIndex = GroupTauntList.Find(NewSelection);
+			UClass* TauntClass = LoadObject<UClass>(NULL, *GroupTauntPathList[TauntIndex]);
+			if (TauntClass)
+			{
+				PlayerPreviewMesh->PlayGroupTaunt(TSubclassOf<AUTGroupTaunt>(TauntClass));
+				if (!bSkipPlayingGroupTauntBGMusic && TauntClass->GetDefaultObject<AUTGroupTaunt>()->BGMusic)
+				{
+					UGameplayStatics::PlaySound2D(PlayerPreviewMesh->GetWorld(), TauntClass->GetDefaultObject<AUTGroupTaunt>()->BGMusic);
+				}
+				//PlayerPreviewMesh->GetMesh()->PlayAnimation(TauntClass->GetDefaultObject<AUTGroupTaunt>()->TauntMontage, true);
+			}
+		}
 	}
 }
 
@@ -1489,6 +1501,8 @@ void SUTPlayerSettingsDialog::RecreatePlayerPreview()
 	{
 		PlayerPreviewWorld->Tick(LEVELTICK_All, 0.0);
 	}
+	
+	PlayerPreviewMesh->BeginPlay();
 
 	if ( PreviewWeapon )
 	{

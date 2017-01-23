@@ -293,6 +293,14 @@ void UUTGameInstance::StartRecordingReplay(const FString& Name, const FString& F
 	check(CurrentWorld->DemoNetDriver != NULL);
 
 	CurrentWorld->DemoNetDriver->SetWorld(CurrentWorld);
+
+	// Set the new demo driver as the current collection's driver
+	FLevelCollection* CurrentLevelCollection = CurrentWorld->FindCollectionByType(ELevelCollectionType::DynamicSourceLevels);
+	if (CurrentLevelCollection)
+	{
+		CurrentLevelCollection->SetDemoNetDriver(CurrentWorld->DemoNetDriver);
+	}
+
 	/*
 	if (DemoURL.Map == TEXT("_DeathCam"))
 	{
@@ -528,13 +536,16 @@ bool UUTGameInstance::ClientTravelToSession(int32 ControllerId, FName InSessionN
 			APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), ControllerId);
 			if (PC)
 			{
+				bool bRanked = false;
 				UUTParty* Parties = GetParties();
 				if (Parties)
 				{
 					UUTPartyGameState* PartyGameState = Parties->GetUTPersistentParty();
 					if (PartyGameState)
 					{
+						bRanked = PartyGameState->IsMatchRanked();
 						URL += TEXT("?PartySize=") + FString::FromInt(PartyGameState->GetPartySize());
+						URL += TEXT("?PartyLeader=") + PartyGameState->GetPartyLeader()->ToString();
 					}
 					//Parties->NotifyPreClientTravel();
 				}
@@ -647,6 +658,11 @@ void UUTGameInstance::BeginLevelLoading(const FString& LevelName)
 	MovieVignettes.Empty();
 	VignetteIndex = 0;
 
+	if (LevelLoadText.ToString().Contains(TEXT("UT-Entry")))
+	{
+		LevelLoadText = NSLOCTEXT("UTGameInstance","MainMenu","Returning to Main Menu");
+	}
+
 	IUnrealTournamentFullScreenMovieModule* const FullScreenMovieModule = FModuleManager::LoadModulePtr<IUnrealTournamentFullScreenMovieModule>("UnrealTournamentFullScreenMovie");
 	if (FullScreenMovieModule != nullptr)
 	{
@@ -663,22 +679,16 @@ void UUTGameInstance::BeginLevelLoading(const FString& LevelName)
 
 	if (CleanLevelName.ToLower() == TEXT("tut-movementtraining") )
 	{
-
 		UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetFirstGamePlayer());
-		if (LocalPlayer && 
-				(LocalPlayer->LoginPhase == ELoginPhase::Offline || 
-						(LocalPlayer->LoginPhase == ELoginPhase::LoggedIn 
-							&& LocalPlayer->GetProfileSettings() != nullptr 
-							&& ((LocalPlayer->GetProfileSettings()->TutorialMask & TUTORIAL_Movement) != TUTORIAL_Movement) 
-						)
-				)
-			)
-
+		if (LocalPlayer)
 		{
-			MovieVignettes.Add( FMapVignetteInfo(TEXT("intro_full"), FText::GetEmpty()));
-			MovieVignettes.Add( FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
-			PlayLoadingMovies(false);	
-			return;
+			if ( !LocalPlayer->IsTutorialMaskCompleted(TUTORIAL_Movement) )
+			{
+				MovieVignettes.Add( FMapVignetteInfo(TEXT("intro_full"), FText::GetEmpty()));
+				MovieVignettes.Add( FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
+				PlayLoadingMovies(false);	
+				return;
+			}
 		}
 	}
 
@@ -687,12 +697,13 @@ void UUTGameInstance::BeginLevelLoading(const FString& LevelName)
 		MovieVignettes.Add( FMapVignetteInfo(LoadingMovieToPlay, FText::GetEmpty()));
 		MovieVignettes.Add( FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
 		LoadingMovieToPlay = TEXT("");
-		PlayLoadingMovies(false);	
+		PlayLoadingMovies(!bSuppressLoadingText);	
 		return;
 	}
 
 	// Now Try to find the map asset for this map.
 
+	TArray<FMapVignetteInfo> MapVignettes;
 	for (const FAssetData& Asset : MapAssets)
 	{
 		if (Asset.PackageName.ToString() == LevelName)
@@ -700,30 +711,28 @@ void UUTGameInstance::BeginLevelLoading(const FString& LevelName)
 			const FString* VignetteArrayAsString = Asset.TagsAndValues.Find(NAME_Vignettes);
 			if (VignetteArrayAsString != nullptr)
 			{
-				FindField<UProperty>(UUTLevelSummary::StaticClass(), NAME_Vignettes)->ImportText(**VignetteArrayAsString, &MovieVignettes, 0, nullptr);
+				FindField<UProperty>(UUTLevelSummary::StaticClass(), NAME_Vignettes)->ImportText(**VignetteArrayAsString, &MapVignettes, 0, nullptr);
 			}
 		}
+	}
+
+	while (MapVignettes.Num() > 0)
+	{
+		int32 Next = int32( float(MapVignettes.Num()) * FMath::FRand());
+		if (!MapVignettes[Next].MovieFilename.IsEmpty())
+		{
+			MovieVignettes.Add(MapVignettes[Next]);
+		}
+		MapVignettes.RemoveAt(Next);	
 	}
 
 	if (MovieVignettes.Num() == 0)
 	{
 		MovieVignettes.Add( FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
 	}
-	else
-	{
-		// Make sure every vignette has a filename
-		for (auto Vignette : MovieVignettes)
-		{
-			if (Vignette.MovieFilename.IsEmpty())
-			{
-				Vignette.MovieFilename = TEXT("load_generic_nosound");
-			}
-		}
-	
-	}
-	VignetteIndex = int32(  FMath::FRand() * MovieVignettes.Num() );
 
-	PlayLoadingMovies(false);
+	VignetteIndex = 0;
+	PlayLoadingMovies(true);
 
 #endif
 }
@@ -731,6 +740,9 @@ void UUTGameInstance::BeginLevelLoading(const FString& LevelName)
 #if !UE_SERVER
 void UUTGameInstance::OnMoviePlaybackFinished()
 {
+
+	bSuppressLoadingText = false;
+
 	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetFirstGamePlayer());
 	if (LocalPlayer)
 	{
@@ -781,7 +793,7 @@ FText UUTGameInstance::GetLevelLoadText() const
 	{
 		return LevelLoadText;
 	}
-	else if (GetMoviePlayer().IsValid() && GetMoviePlayer()->WillAutoCompleteWhenLoadFinishes())
+	else if (bMovieWillAutocompleteWhenLoadFinishes)
 	{
 		return FText::GetEmpty();
 	}
@@ -811,6 +823,16 @@ EVisibility UUTGameInstance::GetLevelLoadThrobberVisibility() const
 EVisibility UUTGameInstance::GetLevelLoadTextVisibility() const
 {
 	return EVisibility::Visible;
+}
+
+EVisibility UUTGameInstance::GetEpicLogoVisibility() const
+{
+	return bSuppressLoadingText ? EVisibility::Collapsed : EVisibility::Visible;
+}
+
+EVisibility UUTGameInstance::GetVignetteVisibility() const
+{
+	return bSuppressLoadingText ? EVisibility::Collapsed : EVisibility::Visible;
 }
 
 void UUTGameInstance::CreateLoadingMovieOverlay()
@@ -898,6 +920,7 @@ void UUTGameInstance::CreateLoadingMovieOverlay()
 						[
 							SNew(SImage)
 							.Image(SUTStyle::Get().GetBrush("UT.Logo.Loading"))
+							.Visibility(TAttribute<EVisibility>::Create(TAttribute<EVisibility>::FGetter::CreateUObject(this, &UUTGameInstance::GetEpicLogoVisibility)))
 						]
 					]
 				]
@@ -924,6 +947,7 @@ void UUTGameInstance::CreateLoadingMovieOverlay()
 						.Justification(ETextJustify::Right)
 						.DecoratorStyleSet(&SUTStyle::Get())
 						.AutoWrapText(false)
+						.Visibility(TAttribute<EVisibility>::Create(TAttribute<EVisibility>::FGetter::CreateUObject(this, &UUTGameInstance::GetVignetteVisibility)))
 					]
 				]
 			]
@@ -933,7 +957,7 @@ void UUTGameInstance::CreateLoadingMovieOverlay()
 
 void UUTGameInstance::PlayLoadingMovies(bool bStopWhenLoadingIsComnpleted) 
 {
-	CreateLoadingMovieOverlay();;
+	CreateLoadingMovieOverlay();
 	if (LoadingMovieOverlay.IsValid())
 	{						 
 		FString MovieName = TEXT("");
@@ -943,6 +967,12 @@ void UUTGameInstance::PlayLoadingMovies(bool bStopWhenLoadingIsComnpleted)
 		}
 
 		PlayMovie(MovieName, LoadingMovieOverlay, true, bStopWhenLoadingIsComnpleted, EMoviePlaybackType::MT_LoadingLoop, true);
+
+		bMovieWillAutocompleteWhenLoadFinishes = false;
+		if (GetMoviePlayer().IsValid())
+		{
+			bMovieWillAutocompleteWhenLoadFinishes = GetMoviePlayer()->WillAutoCompleteWhenLoadFinishes();
+		}
 	}
 }
 

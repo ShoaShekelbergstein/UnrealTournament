@@ -1,5 +1,11 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
+#include "AllowWindowsPlatformTypes.h" 
+
+#include "CUESDK.h"
+
+#include "HideWindowsPlatformTypes.h"
+
 #include "CorsairRGB.h"
 
 #include "UnrealTournament.h"
@@ -66,6 +72,18 @@ void FCorsairRGB::Tick(float DeltaTime)
 	
 	if (!bCorsairSDKEnabled)
 	{
+		return;
+	}
+
+	UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
+	if (UserSettings && !UserSettings->IsKeyboardLightingEnabled())
+	{
+		if (bCorsairSDKEnabled)
+		{
+			CorsairReleaseControl(CAM_ExclusiveLightingControl);
+			bCorsairSDKEnabled = false;
+		}
+
 		return;
 	}
 

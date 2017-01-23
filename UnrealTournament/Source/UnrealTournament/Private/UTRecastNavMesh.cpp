@@ -32,10 +32,12 @@
 
 void DrawDebugRoute(UWorld* World, APawn* QueryPawn, const TArray<FRouteCacheItem>& Route)
 {
+#if ENABLE_DRAW_DEBUG
 	for (const FRouteCacheItem& RoutePoint : Route)
 	{
 		DrawDebugSphere(World, RoutePoint.GetLocation(QueryPawn), 16.0f, 8, FColor(0, 255, 0));
 	}
+#endif // ENABLE_DRAW_DEBUG
 }
 
 UUTPathBuilderInterface::UUTPathBuilderInterface(const FObjectInitializer& ObjectInitializer)
@@ -67,6 +69,7 @@ AUTRecastNavMesh::AUTRecastNavMesh(const FObjectInitializer& ObjectInitializer)
 
 	SizeSteps.Add(FCapsuleSize(46, 108));
 	SizeSteps.Add(FCapsuleSize(46, 69));
+	SizeSteps.Add(FCapsuleSize(92, 216));
 	JumpTestThreshold2D = 2048.0f;
 	ScoutClass = AUTCharacter::StaticClass();
 }
@@ -94,25 +97,6 @@ void AUTRecastNavMesh::PostLoad()
 	UNavigationSystem::StaticClass()->GetDefaultObject()->PostInitProperties();
 
 	PathNodes.Remove(NULL); // really shouldn't happen but no need to crash for it
-
-	// FIXME: temporary backwards compat with a last minute change
-	for (UUTPathNode* Node : PathNodes)
-	{
-		for (FUTPathLink& Path : Node->Paths)
-		{
-			if (Path.CollisionHeight == 106)
-			{
-				Path.CollisionHeight = 108;
-			}
-		}
-	}
-	for (FCapsuleSize& Size : SizeSteps)
-	{
-		if (Size.Height == 106)
-		{
-			Size.Height = 108;
-		}
-	}
 
 	// init lookup hashes
 	for (UUTPathNode* Node : PathNodes)
@@ -248,8 +232,9 @@ void AUTRecastNavMesh::SetNodeSize(UUTPathNode* Node)
 	}
 	if (bFirstEdge)
 	{
-		// node consists of a single, disconnected poly - use min size
-		Node->MinPolyEdgeSize = FCapsuleSize(FMath::TruncToInt(AgentRadius), FMath::TruncToInt(AgentHeight * 0.5f));
+		// node consists of a single, disconnected poly - use default size
+		// TODO: maybe point check poly center?
+		Node->MinPolyEdgeSize = GetHumanPathSize();
 	}
 }
 
@@ -451,7 +436,7 @@ bool AUTRecastNavMesh::OnlyJumpReachable(APawn* Scout, FVector Start, const FVec
 			while (!GetWorld()->SweepSingleByChannel(Hit, Start, Start + FVector(0.0f, 0.0f, AgentMaxStepHeight), FQuat::Identity, ECC_Pawn, ScoutShape, FCollisionQueryParams()) &&
 					!GetWorld()->SweepSingleByChannel(Hit, Start + FVector(0.0f, 0.0f, AgentMaxStepHeight), Start + MoveSlice + FVector(0.0f, 0.0f, AgentMaxStepHeight), FQuat::Identity, ECC_Pawn, ScoutShape, FCollisionQueryParams()) &&
 					GetWorld()->SweepSingleByChannel(Hit, Start + MoveSlice + FVector(0.0f, 0.0f, AgentMaxStepHeight), Start + MoveSlice - FVector(0.0f, 0.0f, 50.0f), FQuat::Identity, ECC_Pawn, ScoutShape, FCollisionQueryParams()) &&
-					!Hit.bStartPenetrating )
+					Hit.Normal.Z >= Char->GetCharacterMovement()->GetWalkableFloorZ() && !Hit.bStartPenetrating )
 			{
 				bAnyHit = true;
 				Start = Hit.Location + Hit.Normal;
@@ -517,9 +502,6 @@ int32 AUTRecastNavMesh::CalcPolyDistance(NavNodeRef StartPoly, NavNodeRef EndPol
 	else
 	{
 		// use pathing distance instead
-		int32 MaxNodes = 100;
-		NavNodeRef* Path = (NavNodeRef*)FMemory_Alloca(MaxNodes * sizeof(NavNodeRef));
-		int32 NodeCount = 0;
 		dtQueryResult PathData;
 		dtStatus PathResult = InternalQuery.findPath(StartPoly, EndPoly, RecastStart, RecastEnd, GetDefaultDetourFilter(), PathData, &Distance);
 		if (!dtStatusSucceed(PathResult) || PathResult & DT_PARTIAL_RESULT)
@@ -693,6 +675,10 @@ void AUTRecastNavMesh::BuildNodeNetwork()
 			{
 				if (Builder->IsDestinationOnly())
 				{
+					if (It->GetName() == TEXT("BaseJumpPad4_1184"))
+					{
+						int i = 3;
+					}
 					// we need to make sure to grab all encompassing polys into the new PathNode as it will have special properties
 					// and Recast may have split the polys inside the extent of the POI
 					const FVector UnrealCenter = It->GetActorLocation();
@@ -701,7 +687,7 @@ void AUTRecastNavMesh::BuildNodeNetwork()
 					RecastExtent = FVector(RecastExtent[0], RecastExtent[2], RecastExtent[1]);
 					TArray<NavNodeRef> FinalPolys;
 					{
-						NavNodeRef ResultPolys[10];
+						NavNodeRef ResultPolys[20];
 						int32 NumPolys = 0;
 						InternalQuery.queryPolygons((float*)&RecastCenter, (float*)&RecastExtent, GetDefaultDetourFilter(), ResultPolys, &NumPolys, ARRAY_COUNT(ResultPolys));
 						if (NumPolys == 0)
@@ -823,47 +809,51 @@ void AUTRecastNavMesh::BuildNodeNetwork()
 							i = Link.next;
 							if (InternalMesh->isValidPolyRef(Link.ref))
 							{
-								FCapsuleSize OtherSize = GetSteppedEdgeSize(PolyRef, PolyData, TileData, Link);
-								APhysicsVolume* OtherVolume = FindPhysicsVolume(GetWorld(), GetPolyCenter(Link.ref) + FVector(0.0f, 0.0f, AgentCapsule.GetCapsuleHalfHeight()), AgentCapsule);
+								UUTPathNode* DestNode = PolyToNode.FindRef(Link.ref);
 								// TODO: max distance between nodes? Maybe based on pct of mesh size?
-								if (!bOffMeshLink && OtherSize == Node->MinPolyEdgeSize && OtherVolume == Node->PhysicsVolume && !PolyToNode.Contains(Link.ref))
+								if (!bOffMeshLink && DestNode == nullptr)
 								{
-									ensure(!Node->Polys.Contains(Link.ref)); // should have ended up below if this is the case
-									// we only want one walk path connecting the same two pathnodes, so check this poly for other adjacent nodes
-									// if one is found such that this poly would create a second walk connection, put this poly in a new node instead
-									bool bAddedNode = false;
-									const dtPoly* NewPolyData = NULL;
-									const dtMeshTile* NewTileData = NULL;
-									InternalMesh->getTileAndPolyByRef(Link.ref, &NewTileData, &NewPolyData);
-									if (NewPolyData != NULL && NewTileData != NULL)
+									FCapsuleSize OtherSize = GetSteppedEdgeSize(PolyRef, PolyData, TileData, Link);
+									APhysicsVolume* OtherVolume = FindPhysicsVolume(GetWorld(), GetPolyCenter(Link.ref) + FVector(0.0f, 0.0f, AgentCapsule.GetCapsuleHalfHeight()), AgentCapsule);
+									if (OtherSize == Node->MinPolyEdgeSize && OtherVolume == Node->PhysicsVolume)
 									{
-										uint32 j = NewPolyData->firstLink;
-										while (j != DT_NULL_LINK && j < uint32(NewTileData->header->maxLinkCount))
+										ensure(!Node->Polys.Contains(Link.ref)); // should have ended up below if this is the case
+										// we only want one walk path connecting the same two pathnodes, so check this poly for other adjacent nodes
+										// if one is found such that this poly would create a second walk connection, put this poly in a new node instead
+										bool bAddedNode = false;
+										const dtPoly* NewPolyData = NULL;
+										const dtMeshTile* NewTileData = NULL;
+										InternalMesh->getTileAndPolyByRef(Link.ref, &NewTileData, &NewPolyData);
+										if (NewPolyData != NULL && NewTileData != NULL)
 										{
-											const dtLink& NewLink = InternalMesh->getLink(NewTileData, j);
-											j = NewLink.next;
-											UUTPathNode* TestNode = PolyToNode.FindRef(NewLink.ref);
-											if ( TestNode != NULL && TestNode != Node &&
-												(TestNode->Paths.ContainsByPredicate([Node](const FUTPathLink& TestItem) { return TestItem.End == Node; }) || Node->Paths.ContainsByPredicate([TestNode](const FUTPathLink& TestItem) { return TestItem.End == TestNode; })) )
+											uint32 j = NewPolyData->firstLink;
+											while (j != DT_NULL_LINK && j < uint32(NewTileData->header->maxLinkCount))
 											{
-												UUTPathNode* NewNode = NewObject<UUTPathNode>(this);
-												NewNode->PhysicsVolume = OtherVolume;
-												PathNodes.Add(NewNode);
-												PolyToNode.Add(Link.ref, NewNode);
-												NewNode->Polys.Add(Link.ref);
-												NewNode->MinPolyEdgeSize = OtherSize;
+												const dtLink& NewLink = InternalMesh->getLink(NewTileData, j);
+												j = NewLink.next;
+												UUTPathNode* TestNode = PolyToNode.FindRef(NewLink.ref);
+												if ( TestNode != NULL && TestNode != Node &&
+													(TestNode->Paths.ContainsByPredicate([Node](const FUTPathLink& TestItem) { return TestItem.End == Node; }) || Node->Paths.ContainsByPredicate([TestNode](const FUTPathLink& TestItem) { return TestItem.End == TestNode; })) )
+												{
+													UUTPathNode* NewNode = NewObject<UUTPathNode>(this);
+													NewNode->PhysicsVolume = OtherVolume;
+													PathNodes.Add(NewNode);
+													PolyToNode.Add(Link.ref, NewNode);
+													NewNode->Polys.Add(Link.ref);
+													NewNode->MinPolyEdgeSize = OtherSize;
 
-												bAddedNode = true;
-												break;
+													bAddedNode = true;
+													break;
+												}
 											}
 										}
+										if (!bAddedNode)
+										{
+											Node->Polys.Add(Link.ref);
+											PolyToNode.Add(Link.ref, Node);
+										}
+										bAnyNodeExpanded = true;
 									}
-									if (!bAddedNode)
-									{
-										Node->Polys.Add(Link.ref);
-										PolyToNode.Add(Link.ref, Node);
-									}
-									bAnyNodeExpanded = true;
 								}
 								else
 								{
@@ -872,7 +862,6 @@ void AUTRecastNavMesh::BuildNodeNetwork()
 									if (Water == NULL || Water->WaterCurrentDirection.IsZero() || (Water->WaterCurrentDirection | (GetPolyCenter(Link.ref) - GetPolyCenter(PolyRef))) > 0.0f)
 									{
 										// create a path link to the neighboring tile
-										UUTPathNode* DestNode = PolyToNode.FindRef(Link.ref);
 										if (DestNode != NULL && DestNode != Node)
 										{
 											bool bFound = false;
@@ -899,6 +888,7 @@ void AUTRecastNavMesh::BuildNodeNetwork()
 			}
 		}
 		// search for islands and add a node, then repeat the expansion/linking
+		TArray<NavNodeRef> IslandPolys;
 		for (int32 i = InternalMesh->getMaxTiles() - 1; i >= 0; i--)
 		{
 			const dtMeshTile* TileData = InternalMesh->getTile(i);
@@ -909,30 +899,43 @@ void AUTRecastNavMesh::BuildNodeNetwork()
 					NavNodeRef PolyRef = InternalMesh->encodePolyId(TileData->salt, i, j);
 					if (!PolyToNode.Contains(PolyRef) && !BlockedPolys.Contains(PolyRef))
 					{
-						// Recast will generate polys on the inside of solid geometry
-						// attempt to detect this and skip pathnode generation to improve performance
-						FCollisionResponseParams StaticOnly(ECR_Ignore);
-						StaticOnly.CollisionResponse.WorldStatic = ECR_Block;
-						if (GetWorld()->OverlapBlockingTestByChannel(GetPolySurfaceCenter(PolyRef) + FVector(0.0f, 0.0f, AgentHeight * 0.25f), FQuat::Identity, ECC_Pawn, FCollisionShape::MakeSphere(0.0f), FCollisionQueryParams::DefaultQueryParam, StaticOnly))
+						// check if this poly is connected to one that we've already handled in a prior iteration of the loop
+						bool bAlreadyProcessed = false;
+						for (NavNodeRef OtherIslandPoly : IslandPolys)
 						{
-							BlockedPolys.Add(PolyRef);
+							const FVector RecastStart = Unreal2RecastPoint(GetPolyCenter(PolyRef));
+							const FVector RecastEnd = Unreal2RecastPoint(GetPolyCenter(OtherIslandPoly));
+							dtQueryResult PathData;
+							dtStatus PathResult = InternalQuery.findPath(PolyRef, OtherIslandPoly, (float*)&RecastStart, (float*)&RecastEnd, GetDefaultDetourFilter(), PathData, nullptr);
+							if (dtStatusSucceed(PathResult) && !(PathResult & DT_PARTIAL_RESULT))
+							{
+								bAlreadyProcessed = true;
+								break;
+							}
 						}
-						else
+						if (!bAlreadyProcessed)
 						{
-							UUTPathNode* Node = NewObject<UUTPathNode>(this);
-							PathNodes.Add(Node);
-							PolyToNode.Add(PolyRef, Node);
-							Node->PhysicsVolume = FindPhysicsVolume(GetWorld(), GetPolyCenter(PolyRef) + FVector(0.0f, 0.0f, AgentCapsule.GetCapsuleHalfHeight()), AgentCapsule);
-							Node->Polys.Add(PolyRef);
-							SetNodeSize(Node);
-							bNodesAdded = true;
-							break; // TODO: not a good plan, way too slow
+							// Recast will generate polys on the inside of solid geometry
+							// attempt to detect this and skip pathnode generation to improve performance
+							FCollisionResponseParams StaticOnly(ECR_Ignore);
+							StaticOnly.CollisionResponse.WorldStatic = ECR_Block;
+							if (GetWorld()->OverlapBlockingTestByChannel(GetPolySurfaceCenter(PolyRef) + FVector(0.0f, 0.0f, AgentHeight * 0.25f), FQuat::Identity, ECC_Pawn, FCollisionShape::MakeSphere(0.0f), FCollisionQueryParams::DefaultQueryParam, StaticOnly))
+							{
+								BlockedPolys.Add(PolyRef);
+							}
+							else
+							{
+								UUTPathNode* Node = NewObject<UUTPathNode>(this);
+								PathNodes.Add(Node);
+								PolyToNode.Add(PolyRef, Node);
+								Node->PhysicsVolume = FindPhysicsVolume(GetWorld(), GetPolyCenter(PolyRef) + FVector(0.0f, 0.0f, AgentCapsule.GetCapsuleHalfHeight()), AgentCapsule);
+								Node->Polys.Add(PolyRef);
+								SetNodeSize(Node);
+								IslandPolys.Add(PolyRef);
+								bNodesAdded = true;
+							}
 						}
 					}
-				}
-				if (bNodesAdded)
-				{
-					break; // TODO: not a good plan, way too slow
 				}
 			}
 		}
@@ -2580,6 +2583,10 @@ bool AUTRecastNavMesh::HasReachedTarget(APawn* Asker, const FNavAgentProperties&
 			{
 				// jump pad trigger will pop the route itself
 				return false;
+			}
+			else if (Target.Actor.IsValid() && Target.Actor->GetRootComponent() != nullptr && Target.Actor->GetRootComponent()->GetCollisionResponseToComponent(Asker->GetRootComponent()) == ECR_Overlap)
+			{
+				return Target.Actor->IsOverlappingActor(Asker);
 			}
 			else if (Target.IsDirectTarget() || !Target.Node.IsValid())
 			{
