@@ -130,6 +130,7 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 
 	MiniMapIconAlpha = 1.f;
 	MiniMapIconMuting = 0.8f;
+	MinimapScaleX = 1.f;
 }
 
 void AUTHUD::Destroyed()

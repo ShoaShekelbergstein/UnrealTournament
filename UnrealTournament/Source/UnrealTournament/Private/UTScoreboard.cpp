@@ -128,12 +128,18 @@ void UUTScoreboard::DrawMinimap(float RenderDelta)
 {
 	if (bDrawMinimapInScoreboard && UTGameState && UTHUDOwner && !UTHUDOwner->IsPendingKillPending())
 	{
-		const float MapSize = (UTGameState && UTGameState->bTeamGame) ? FMath::Min(Canvas->ClipX - 2.f*ScaledEdgeSize - 2.f*ScaledCellWidth - MinimapPadding*RenderScale, 0.93f*Canvas->ClipY - 120.f * RenderScale)
-			: FMath::Min(0.5f*Canvas->ClipX, 0.93f*Canvas->ClipY - 120.f * RenderScale);
+		float MapScaleX = (UTHUDOwner->MinimapScaleX > 0.f) ? UTHUDOwner->MinimapScaleX : 1.f;
+		float MapSize = (UTGameState && UTGameState->bTeamGame)
+				? (Canvas->ClipX - 2.f*ScaledEdgeSize - 2.f*ScaledCellWidth - MinimapPadding*RenderScale)/MapScaleX 
+				: 0.5f*Canvas->ClipX;
 
-		float MapYPos = FMath::Max(120.f*RenderScale, MinimapCenter.Y*Canvas->ClipY - 0.5f*MapSize);
+		MapSize = FMath::Min(MapSize, 0.93f*Canvas->ClipY - 200.f * RenderScale);
+		float MapYPos = FMath::Max(200.f*RenderScale, MinimapCenter.Y*Canvas->ClipY - 0.5f*MapSize);
 		FVector2D LeftCorner = FVector2D(MinimapCenter.X*Canvas->ClipX - 0.5f*MapSize, MapYPos);
-		DrawTexture(UTHUDOwner->ScoreboardAtlas, LeftCorner.X, LeftCorner.Y, MapSize*UTHUDOwner->MinimapScaleX, MapSize, 149, 138, 32, 32, 0.5f, FLinearColor::Black);
+		float BackgroundScale = 1.f - 0.75f*(1.f - MapScaleX);
+		float BackgroundX = LeftCorner.X + MapSize * 0.5f * (1.f - BackgroundScale);
+		DrawTexture(UTHUDOwner->ScoreboardAtlas, BackgroundX, LeftCorner.Y, MapSize*BackgroundScale, MapSize, 149, 138, 32, 32, 0.5f, FLinearColor::Black);
+		LeftCorner.X += MapSize * 0.5f * (1.f - MapScaleX);
 		UTHUDOwner->DrawMinimap(FColor(192, 192, 192, 220), MapSize, LeftCorner);
 	}
 }
