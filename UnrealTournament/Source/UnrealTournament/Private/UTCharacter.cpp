@@ -5679,6 +5679,38 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 			HighlightTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
 			Canvas->DrawItem(HighlightTextItem);
 		}
+		else
+		{
+			ScreenPosition.Y += TextYL - 1.75f*BarHeight;
+			AUTHUD* UTHUD = Cast<AUTHUD>(PC->MyHUD);
+			if (UTHUD && (UTHUD->ELOBadges.Num() > 0))
+			{
+				AUTGameMode* DefaultGame = GS && GS->GameModeClass ? GS->GameModeClass->GetDefaultObject<AUTGameMode>() : NULL;
+				bool bRankedSession = GS ? GS->bRankedSession : false;
+				if (DefaultGame)
+				{
+					int32 Badge = 0;
+					int32 Level = 0;
+					UTPS->GetBadgeFromELO(DefaultGame, bRankedSession, Badge, Level);
+					Badge = FMath::Min(Badge, UTHUD->ELOBadges.Num() - 1);
+					FLinearColor BadgeColor = FLinearColor::Green;
+					Canvas->SetLinearDrawColor(FLinearColor::Black);
+					Canvas->DrawTile(UTHUD->ELOBadges[Badge], ScreenPosition.X - 42.f*Scale, ScreenPosition.Y- 2.f*Scale, 52.f*Scale, 52.f*Scale, 0.f, 0.f, 48.f, 48.f);
+					Canvas->SetLinearDrawColor(BadgeColor);
+					Canvas->DrawTile(UTHUD->ELOBadges[Badge], ScreenPosition.X - 40.f*Scale, ScreenPosition.Y, 48.f*Scale, 48.f*Scale, 0.f, 0.f, 48.f, 48.f);
+
+					float LevelXL, LevelYL;
+					Canvas->TextSize(UTHUD->MediumFont, FText::AsNumber(Level).ToString(), LevelXL, LevelYL, 1.0f, 1.0f);
+					FUTCanvasTextItem BadgeTextItem(FVector2D(FMath::TruncToFloat(ScreenPosition.X - 0.5f*TextXL*Scale - 12.f*Scale), FMath::TruncToFloat(ScreenPosition.Y - 0.25f*TextYL*Scale)), FText::AsNumber(Level), UTHUD->MediumFont, BeaconTextColor, NULL);
+					BadgeTextItem.Scale = FVector2D(Scale, Scale);
+					BadgeTextItem.BlendMode = SE_BLEND_Translucent;
+					BadgeTextItem.bOutlined = true;
+					BadgeTextItem.OutlineColor = FLinearColor::Black;
+					BadgeTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
+					Canvas->DrawItem(BadgeTextItem);
+				}
+			}
+		}
 	}
 }
 

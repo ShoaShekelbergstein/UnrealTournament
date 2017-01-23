@@ -132,6 +132,21 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 	MiniMapIconMuting = 0.8f;
 	MinimapScaleX = 1.f;
 	LastHoveredActorChangeTime = -1000.0f;
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> ELOBadgeGreen(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankBadge_Beginner_48x48.UT_RankBadge_Beginner_48x48'"));
+	ELOBadges.Add(ELOBadgeGreen.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> ELOBadgeBronze(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankBadge_Steel_48x48.UT_RankBadge_Steel_48x48'"));
+	ELOBadges.Add(ELOBadgeBronze.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> ELOBadgeSilver(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankBadge_Gold_48x48.UT_RankBadge_Gold_48x48'"));
+	ELOBadges.Add(ELOBadgeSilver.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> ELOBadgeGold(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankBadge_Tarydium_48x48.UT_RankBadge_Tarydium_48x48'"));
+	ELOBadges.Add(ELOBadgeGold.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> ELOBadgeTarydium(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankBadge_Tarydium_48x48.UT_RankBadge_Tarydium_48x48'"));
+	ELOBadges.Add(ELOBadgeTarydium.Object);
 }
 
 void AUTHUD::Destroyed()
