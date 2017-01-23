@@ -20,6 +20,8 @@ TextureStreamingBuild.cpp : Contains definitions to build texture streaming data
 #include "Engine/StaticMesh.h"
 #include "Streaming/TextureStreamingHelpers.h"
 #include "UObject/UObjectIterator.h"
+#include "Logging/MessageLog.h"
+#include "Misc/UObjectToken.h"
 
 DEFINE_LOG_CATEGORY(TextureStreamingBuild);
 #define LOCTEXT_NAMESPACE "TextureStreamingBuild"
@@ -354,8 +356,24 @@ int32* FStreamingTextureLevelContext::GetBuildDataIndexRef(UTexture2D* Texture2D
 			const int32* LevelIndex = TextureGuidToLevelIndex->Find(Texture2D->GetLightingGuid());
 			if (LevelIndex) // If the index is found in the map, the index is valid in BoundStates
 			{
-				Texture2D->LevelIndex = *LevelIndex;
-				BoundStates[*LevelIndex].Texture = Texture2D; // Update the mapping now!
+				// Here we need to support the unfortunate case where 2 textures have the same GUID.
+				// If this happens, BoundState.Texture will already be set.
+				FTextureBoundState& BoundState = BoundStates[*LevelIndex];
+				if (!BoundState.Texture)
+				{
+					Texture2D->LevelIndex = *LevelIndex;
+					BoundState.Texture = Texture2D; // Update the mapping now!
+				}
+				else
+				{
+					FMessageLog("AssetCheck").Error()
+						->AddToken(FUObjectToken::Create(BoundState.Texture))
+						->AddToken(FUObjectToken::Create(Texture2D))
+						->AddToken(FTextToken::Create( NSLOCTEXT("AssetCheck", "TextureError_NonUniqueLightingGuid", "Same lighting guid, modify one of them to fix the issue.") ) );
+
+					// This will fallback not using the precomputed data, or for the other texture using the wrong precomputed data.
+					return nullptr;
+				}
 			}
 			else // Otherwise add a dummy entry to prevent having to search in the map multiple times.
 			{
@@ -364,8 +382,9 @@ int32* FStreamingTextureLevelContext::GetBuildDataIndexRef(UTexture2D* Texture2D
 		}
 
 		FTextureBoundState& BoundState = BoundStates[Texture2D->LevelIndex];
+		check(BoundState.Texture == Texture2D);
 
-		if (BoundState.BuildDataTimestamp == BuildDataTimestamp && BoundState.Texture == Texture2D)
+		if (BoundState.BuildDataTimestamp == BuildDataTimestamp)
 		{
 			return &BoundState.BuildDataIndex; // Only return the bound static if it has data relative to this component.
 		}
