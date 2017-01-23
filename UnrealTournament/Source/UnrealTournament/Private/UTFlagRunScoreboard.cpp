@@ -588,7 +588,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 				Args.Add("RoundNum", FText::AsNumber(1));
 				Args.Add("NumRounds", FText::AsNumber(GS->NumRounds));
 				FText FormattedTitle = FText::Format(Title, Args);
-				DrawText(FormattedTitle, MinimapCenter.X*Canvas->ClipX, TextYPos, UTHUDOwner->MediumFont, RenderScale, 1.0f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
+				DrawText(FormattedTitle, MinimapCenter.X*Canvas->ClipX, TextYPos, UTHUDOwner->MediumFont, FVector2D(1.f, 1.f), FLinearColor::Black,RenderScale, 1.0f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
 				float TextXPos = 0.5f*Canvas->ClipX - 0.47f*Width;
 				TextYPos += 44.f*RenderScale;
 
@@ -621,7 +621,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 				for (int32 LineIndex = 0; LineIndex < NumLines; LineIndex++)
 				{
 					FText NextLine = bIsOnDefense ? DefendLines[LineIndex] : AttackLines[LineIndex];
-					DrawText(NextLine, TextXPos, TextYPos, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
+					DrawText(NextLine, TextXPos, TextYPos, UTHUDOwner->SmallFont, FVector2D(1.f, 1.f), FLinearColor::Black, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
 					TextYPos += NextLine.IsEmpty() ? 12.f*RenderScale : 32.f*RenderScale;
 				}
 			}

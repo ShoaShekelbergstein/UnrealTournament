@@ -1584,10 +1584,12 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 			Pos.Y = bInvertMinimap ? Pos.Y + GV->MinimapOffset.Y * Canvas->ClipX /1280.f : Pos.Y - GV->MinimapOffset.Y * Canvas->ClipX / 1280.f;
 			float XL, YL;
 			Canvas->TextSize(TinyFont, GV->VolumeName.ToString(), XL, YL);
+			XL *= RenderScale;
+			YL *= RenderScale;
 			Canvas->DrawColor = FColor(0, 0, 0, 64);
 			Canvas->DrawTile(SpawnHelpTextBG.Texture, Pos.X - XL * 0.5f, Pos.Y - 0.29f*YL, XL, 0.8f*YL, 149, 138, 32, 32, BLEND_Translucent);
 			Canvas->DrawColor = FColor::White;
-			Canvas->DrawText(TinyFont, GV->VolumeName, Pos.X - XL * 0.5f, Pos.Y - 0.5f*YL);
+			Canvas->DrawText(TinyFont, GV->VolumeName, Pos.X - XL * 0.5f, Pos.Y - 0.5f*YL, RenderScale, RenderScale);
 		}
 	}
 
@@ -1656,11 +1658,17 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 		float XL, YL;
 		Canvas->DrawColor = NamedPickup->IconColor.ToFColor(false);
 		Canvas->TextSize(TinyFont, NamedPickup->GetDisplayName().ToString(), XL, YL);
+		XL *= RenderScale;
+		YL *= RenderScale;
 		FColor TextColor = Canvas->DrawColor;
 		Canvas->DrawColor = FColor(0, 0, 0, 64);
 		Canvas->DrawTile(SpawnHelpTextBG.Texture, NamedPickupPos.X - XL * 0.5f, NamedPickupPos.Y - 26.0f * RenderScale - 0.8f*YL, XL, 0.8f*YL, 149, 138, 32, 32, BLEND_Translucent);
 		Canvas->DrawColor = TextColor;
-		Canvas->DrawText(TinyFont, NamedPickup->GetDisplayName(), NamedPickupPos.X - XL * 0.5f, NamedPickupPos.Y - 26.0f * RenderScale - YL);
+
+		FStatsFontInfo FontInfo;
+		FontInfo.TextRenderInfo.bEnableShadow = true;
+		FontInfo.TextFont = TinyFont;
+		Canvas->DrawText(TinyFont, NamedPickup->GetDisplayName(), NamedPickupPos.X - XL * 0.5f, NamedPickupPos.Y - 26.0f * RenderScale - YL, RenderScale, RenderScale, FontInfo.TextRenderInfo);
 	}
 }
 
