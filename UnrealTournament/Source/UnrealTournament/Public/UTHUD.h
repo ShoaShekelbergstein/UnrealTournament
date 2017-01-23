@@ -287,6 +287,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "HUD")
 		uint32 bDrawMinimap : 1;
 
+	/** Scale and clip minimap X direction by this factor. */
+	UPROPERTY(BlueprintReadOnly, Category = "HUD")
+		float MinimapScaleX;
+
 	/** icon for player on the minimap (rotated BG that indicates direction) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, NoClear)
 		UTexture2D* PlayerMinimapTexture;

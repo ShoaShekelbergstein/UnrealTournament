@@ -1375,6 +1375,7 @@ void AUTHUD::UpdateMinimapTexture(UCanvas* C, int32 Width, int32 Height)
 		if (LevelBox.IsValid)
 		{
 			LevelBox = LevelBox.ExpandBy(LevelBox.GetSize() * 0.01f); // extra so edges aren't right up against the texture
+			MinimapScaleX = FMath::Min(1.f, LevelBox.GetExtent().X / LevelBox.GetExtent().Y);
 			CalcMinimapTransform(LevelBox, Width, Height);
 			for (TMap<const UUTPathNode*, FNavMeshTriangleList>::TConstIterator It(TriangleMap); It; ++It)
 			{
@@ -1430,7 +1431,7 @@ void AUTHUD::DrawMinimap(const FColor& DrawColor, float MapSize, FVector2D DrawP
 	{
 		CreateMinimapTexture();
 	}
-
+	DrawPos.X -= 0.5f*MapSize*(1.f - MinimapScaleX);
 	FVector ScaleFactor(MapSize / MinimapTexture->GetSurfaceWidth(), MapSize / MinimapTexture->GetSurfaceHeight(), 1.0f);
 	MapToScreen = FTranslationMatrix(FVector(DrawPos, 0.0f) / ScaleFactor) * FScaleMatrix(ScaleFactor);
 	bInvertMinimap = ShouldInvertMinimap();
@@ -1447,11 +1448,11 @@ void AUTHUD::DrawMinimap(const FColor& DrawColor, float MapSize, FVector2D DrawP
 		Canvas->DrawColor = DrawColor;
 		if (bInvertMinimap)
 		{
-			Canvas->DrawTile(MinimapTexture, MapToScreen.GetOrigin().X - MapSize, MapToScreen.GetOrigin().Y - MapSize, MapSize, MapSize, 0.0f, MinimapTexture->GetSurfaceHeight(), -1.f * MinimapTexture->GetSurfaceWidth(), -1.f *MinimapTexture->GetSurfaceHeight());
+			Canvas->DrawTile(MinimapTexture, MapToScreen.GetOrigin().X - MapSize * (1.f - 0.5f*(1.f - MinimapScaleX)), MapToScreen.GetOrigin().Y - MapSize, MapSize*MinimapScaleX, MapSize, MinimapTexture->GetSurfaceWidth() * (1.f - 0.5f*(1.f - MinimapScaleX)), MinimapTexture->GetSurfaceHeight(), -1.f * MinimapTexture->GetSurfaceWidth()*MinimapScaleX, -1.f *MinimapTexture->GetSurfaceHeight());
 		}
 		else
 		{
-			Canvas->DrawTile(MinimapTexture, MapToScreen.GetOrigin().X, MapToScreen.GetOrigin().Y, MapSize, MapSize, 0.0f, 0.0f, MinimapTexture->GetSurfaceWidth(), MinimapTexture->GetSurfaceHeight());
+			Canvas->DrawTile(MinimapTexture, MapToScreen.GetOrigin().X + 0.5f*MapSize*(1.f - MinimapScaleX), MapToScreen.GetOrigin().Y, MapSize*MinimapScaleX, MapSize, 0.5f*MinimapTexture->GetSurfaceWidth()*(1.f - MinimapScaleX), 0.0f, MinimapTexture->GetSurfaceWidth()*MinimapScaleX, MinimapTexture->GetSurfaceHeight());
 		}
 		DrawMinimapSpectatorIcons();
 	}
