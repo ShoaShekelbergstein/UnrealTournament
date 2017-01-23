@@ -186,21 +186,30 @@ void AUTCTFBaseGame::ScoreDamage_Implementation(int32 DamageAmount, AUTPlayerSta
 void AUTCTFBaseGame::ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType)
 {
 	CTFScoring->ScoreKill(Killer, Other, KilledPawn, DamageType);
-	if ((Killer != NULL && Killer != Other))
+	if (Killer != NULL)
 	{
-		AddKillEventToReplay(Killer, Other, DamageType);
-
 		AUTPlayerState* AttackerPS = Cast<AUTPlayerState>(Killer->PlayerState);
-		if (AttackerPS != NULL)
+		if (Killer != Other)
 		{
-			if (!bFirstBloodOccurred)
+			AddKillEventToReplay(Killer, Other, DamageType);
+			if (AttackerPS != NULL)
 			{
-				BroadcastLocalized(this, UUTFirstBloodMessage::StaticClass(), 0, AttackerPS, NULL, NULL);
-				bFirstBloodOccurred = true;
+				if (!bFirstBloodOccurred)
+				{
+					BroadcastLocalized(this, UUTFirstBloodMessage::StaticClass(), 0, AttackerPS, NULL, NULL);
+					bFirstBloodOccurred = true;
+				}
+				AUTPlayerState* OtherPlayerState = Other ? Cast<AUTPlayerState>(Other->PlayerState) : NULL;
+				AttackerPS->IncrementKills(DamageType, true, OtherPlayerState);
+				TrackKillAssists(Killer, Other, KilledPawn, DamageType, AttackerPS, OtherPlayerState);
 			}
-			AUTPlayerState* OtherPlayerState = Other ? Cast<AUTPlayerState>(Other->PlayerState) : NULL;
-			AttackerPS->IncrementKills(DamageType, true, OtherPlayerState);
-			TrackKillAssists(Killer, Other, KilledPawn, DamageType, AttackerPS, OtherPlayerState);
+		}
+		else
+		{
+			if (AttackerPS != nullptr)
+			{
+				AttackerPS->ModifyStatsValue(NAME_Suicides, 1);
+			}
 		}
 	}
 	if (BaseMutator != NULL)

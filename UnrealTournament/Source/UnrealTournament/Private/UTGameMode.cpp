@@ -1440,6 +1440,14 @@ void AUTGameMode::ScoreKill_Implementation(AController* Killer, AController* Oth
 		{
 			OtherPlayerState->AdjustScore(-1);
 		}
+		if (Killer != nullptr)
+		{
+			AUTPlayerState * KillerPlayerState = Cast<AUTPlayerState>(Killer->PlayerState);
+			if (KillerPlayerState != nullptr)
+			{
+				KillerPlayerState->ModifyStatsValue(NAME_Suicides, 1);
+			}
+		}
 	}
 	else 
 	{

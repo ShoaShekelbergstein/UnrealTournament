@@ -632,10 +632,6 @@ void AUTPlayerState::IncrementKills(TSubclassOf<UDamageType> DamageType, bool bE
 		}
 		ModifyStatsValue(NAME_Kills, 1);
 	}
-	else
-	{
-		ModifyStatsValue(NAME_Suicides, 1);
-	}
 }
 
 void AUTPlayerState::AnnounceWeaponSpree(TSubclassOf<UUTDamageType> UTDamage)
