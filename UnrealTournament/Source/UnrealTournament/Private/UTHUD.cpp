@@ -131,6 +131,7 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 	MiniMapIconAlpha = 1.f;
 	MiniMapIconMuting = 0.8f;
 	MinimapScaleX = 1.f;
+	LastHoveredActorChangeTime = -1000.0f;
 }
 
 void AUTHUD::Destroyed()
@@ -1426,11 +1427,48 @@ void AUTHUD::UpdateMinimapTexture(UCanvas* C, int32 Width, int32 Height)
 	}
 }
 
+AActor* AUTHUD::FindHoveredIconActor() const
+{
+	AActor* BestHovered = NULL;
+	float BestHoverDist = 40.f;
+	if ((GetInputMode() == EInputMode::EIM_GameAndUI) || (MyUTScoreboard && MyUTScoreboard->IsInteractive()))
+	{
+		FVector2D ClickPos;
+		UTPlayerOwner->GetMousePosition(ClickPos.X, ClickPos.Y);
+		for (TActorIterator<AUTPickup> It(GetWorld()); It; ++It)
+		{
+			FCanvasIcon Icon = It->GetMinimapIcon();
+			if (Icon.Texture != NULL)
+			{
+				FVector2D Pos(WorldToMapToScreen(It->GetActorLocation()));
+				float NewHoverDist = (ClickPos - Pos).Size();
+				if (NewHoverDist < BestHoverDist)
+				{
+					BestHovered = *It;
+					BestHoverDist = NewHoverDist;
+				}
+			}
+		}
+	}
+	return BestHovered;
+}
+
 void AUTHUD::DrawMinimap(const FColor& DrawColor, float MapSize, FVector2D DrawPos)
 {
 	if (MinimapTexture == NULL)
 	{
 		CreateMinimapTexture();
+	}
+
+	AActor* NewHoveredActor = FindHoveredIconActor();
+	if (NewHoveredActor != LastHoveredActor)
+	{
+		if (UTPlayerOwner != nullptr)
+		{
+			UTPlayerOwner->PlayMenuSelectSound();
+		}
+		LastHoveredActorChangeTime = GetWorld()->RealTimeSeconds;
+		LastHoveredActor = NewHoveredActor;
 	}
 	DrawPos.X -= 0.5f*MapSize*(1.f - MinimapScaleX);
 	FVector ScaleFactor(MapSize / MinimapTexture->GetSurfaceWidth(), MapSize / MinimapTexture->GetSurfaceHeight(), 1.0f);

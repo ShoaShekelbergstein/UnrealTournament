@@ -63,7 +63,7 @@ class UNREALTOURNAMENT_API AUTHUD_Showdown : public AUTHUD_TeamDM
 	virtual void DrawPlayerList();
 
 	// get Actor for icon mouse pointer is hovering over
-	virtual AActor* FindHoveredIconActor() const;
+	virtual AActor* FindHoveredIconActor() const override;
 
 	virtual void NotifyKill(APlayerState* POVPS, APlayerState* KillerPS, APlayerState* VictimPS) override;
 

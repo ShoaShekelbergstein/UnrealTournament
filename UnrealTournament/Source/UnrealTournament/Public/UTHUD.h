@@ -591,6 +591,9 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 		float LastHoveredActorChangeTime;
 
+	// get Actor for icon mouse pointer is hovering over
+	virtual AActor* FindHoveredIconActor() const;
+
 	/** transformation matrix from world locations to minimap locations */
 	FMatrix MinimapTransform;
 
