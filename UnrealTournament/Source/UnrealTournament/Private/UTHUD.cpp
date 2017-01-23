@@ -1481,7 +1481,6 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 		if (Icon.Texture != NULL)
 		{
 			FVector2D Pos(WorldToMapToScreen(It->GetActorLocation()));
-			const float Ratio = Icon.UL / Icon.VL;
 			FLinearColor MutedColor = (LastHoveredActor == *It) ? It->IconColor: It->IconColor * MiniMapIconMuting;
 			MutedColor.A = (LastHoveredActor == *It) ? 1.f : MiniMapIconAlpha;
 			float IconSize = (LastHoveredActor == *It) ? (48.0f * RenderScale * FMath::InterpEaseOut<float>(1.0f, 1.25f, FMath::Min<float>(0.2f, GetWorld()->RealTimeSeconds - LastHoveredActorChangeTime) * 5.0f, 2.0f)) : (32.0f * RenderScale);
@@ -1496,7 +1495,7 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 				IconSize = IconSize * (1.f + Scaling);
 			}
 			Canvas->DrawColor = MutedColor.ToFColor(false);
-			Canvas->DrawTile(Icon.Texture, Pos.X - 0.5f * Ratio * IconSize, Pos.Y - 0.5f * IconSize, Ratio * IconSize, IconSize, Icon.U, Icon.V, Icon.UL, Icon.VL);
+			Canvas->DrawTile(Icon.Texture, Pos.X - 0.5f * IconSize, Pos.Y - 0.5f * IconSize, IconSize, IconSize, Icon.U, Icon.V, Icon.UL, Icon.VL);
 			if (LastHoveredActor == *It)
 			{
 				NamedPickup = *It;
