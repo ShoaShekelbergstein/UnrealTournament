@@ -141,6 +141,12 @@ public:
 	virtual void DisableButton(uint16 ButtonID);
 
 	bool bSkipWorldRender;
+
+	virtual bool bRemainOpenThroughTravel()
+	{
+		return false;
+	}
+
 };
 
 

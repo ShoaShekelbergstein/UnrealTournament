@@ -646,7 +646,7 @@ void SUTGameSetupDialog::SelectMap(int32 MapIndex)
 
 FReply SUTGameSetupDialog::OnMapClick(int32 MapIndex)
 {
-	if (!MapPlayList[MapIndex].MapInfo->bHasRights)
+	if (MapPlayList.IsValidIndex(MapIndex) && MapPlayList[MapIndex].MapInfo.IsValid() && !MapPlayList[MapIndex].MapInfo->bHasRights)
 	{
 		DesiredMapIndex = MapIndex;
 		MapPlayList[MapIndex].Button->UnPressed();
