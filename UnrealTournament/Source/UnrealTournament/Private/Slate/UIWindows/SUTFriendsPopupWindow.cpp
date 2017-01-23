@@ -40,7 +40,7 @@ void SUTFriendsPopupWindow::Construct(const FArguments& InArgs)
 			+SOverlay::Slot()
 			.HAlign(HAlign_Right)
 			.VAlign(VAlign_Top)
-			.Padding(FMargin(15.0f, 30.0f))
+			.Padding(FMargin(15.0f, 13.0f))
 			[
 				SNew(SBorder)
 				.Padding(0)

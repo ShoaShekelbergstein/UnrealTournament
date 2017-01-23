@@ -169,7 +169,7 @@ void SUTStyle::SetFonts(TSharedRef<FSlateStyleSet> StyleRef)
 	Style.Set("UT.Font.Notice.Gold", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Regular", FONT_SIZE_Notice)).SetColorAndOpacity(FLinearColor(255.0, 255.0, 96 / 255.0 ,1.0)));
 	Style.Set("UT.Font.Notice.Blue", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Regular", FONT_SIZE_Notice)).SetColorAndOpacity(FLinearColor(25.0/255.0,48.0 / 255.0,180.0 / 255, 1.0)));
 
-	Style.Set("UT.Font.MenuBarText", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Regular", FONT_SIZE_Large)).SetColorAndOpacity(FLinearColor::White));
+	Style.Set("UT.Font.MenuBarText", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Bold", FONT_SIZE_Medium)).SetColorAndOpacity(FLinearColor::White));
 
 	Style.Set("UT.Font.ServerBrowser.List.Header", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Bold", FONT_SIZE_Browser)).SetColorAndOpacity(FLinearColor::White));
 	Style.Set("UT.Font.ServerBrowser.List.Normal", TTF_FONT("/UTStyle/Fonts/Lato/Lato-Regular", FONT_SIZE_Browser));

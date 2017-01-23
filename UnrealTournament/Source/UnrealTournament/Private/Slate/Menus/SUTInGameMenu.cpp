@@ -61,7 +61,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 					[
 						SNew(STextBlock)
 						.Text(NSLOCTEXT("SUTMenuBase","MenuBar_ChangeTeam","CHANGE TEAM"))
-						.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.TextStyle")
+						.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
 					]
 				]
 			];
@@ -86,7 +86,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 							[
 								SNew(STextBlock)
 								.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_StartMatch", "START MATCH"))
-								.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.TextStyle")
+								.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
 							]
 						]
 					];
@@ -108,7 +108,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 							[
 								SNew(STextBlock)
 								.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "CHANGE READY"))
-								.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.TextStyle")
+								.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
 							]
 						]
 					];
@@ -131,7 +131,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 				[
 					SNew(STextBlock)
 					.Text(this, &SUTInGameMenu::GetMapVoteTitle)
-					.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.TextStyle")
+					.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
 				]
 			]
 		];
@@ -152,7 +152,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 				[
 					SNew(STextBlock)
 					.Text(NSLOCTEXT("SUTMenuBase","MenuBar_MatchSummary","MATCH SUMMARY"))
-					.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.TextStyle")
+					.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
 				]
 			]
 		];
