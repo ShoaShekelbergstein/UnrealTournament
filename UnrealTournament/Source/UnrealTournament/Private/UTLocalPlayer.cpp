@@ -5734,8 +5734,28 @@ void UUTLocalPlayer::VerifyChatWidget()
 		SAssignNew(ChatWidget, SUTChatEditBox, this)
 		.Style(SUTStyle::Get(), "UT.ChatEditBox")
 		.MinDesiredWidth(500.0f)
-		.MaxTextSize(MAX_CHAT_TEXT_SIZE);
+		.MaxTextSize(MAX_CHAT_TEXT_SIZE)
+		.OnConsoleKeyPressed(FUTChatEditConsoleKeyDelegate::CreateUObject(this, &UUTLocalPlayer::ChatWidgetConsoleKeyPressed));
 	}
+
+	if (ChatWidget.IsValid() && GetProfileSettings())
+	{
+
+		const FKeyConfigurationInfo* KeyConfig = GetProfileSettings()->FindGameAction(FName(TEXT("ShowConsole")));
+		if (KeyConfig)
+		{
+			ChatWidget->ConsoleKeyName = KeyConfig->PrimaryKey.GetFName();
+		}
+	}
+}
+
+void UUTLocalPlayer::ChatWidgetConsoleKeyPressed()
+{
+	if (ViewportClient->ViewportConsole)
+	{
+		ViewportClient->ViewportConsole->FakeGotoState(FName(TEXT("Typing")));
+	}
+
 }
 
 TSharedPtr<SUTChatEditBox> UUTLocalPlayer::GetChatWidget()

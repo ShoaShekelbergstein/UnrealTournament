@@ -569,6 +569,13 @@ void AUTHUD::NotifyMatchStateChange()
 			bShowScores = false;
 			bForceScores = false;
 		}
+		else if (GS->GetMatchState() == MatchState::WaitingToStart)
+		{
+			// We have to give a short delay before bringing up this menu because in most cases, we
+			// are still in the moving loading code.
+			FTimerHandle TmpHandle;
+			GetWorldTimerManager().SetTimer(TmpHandle, this, &AUTHUD::ShowUTMenu, 0.5f, false);
+		}
 		else if (GS->GetMatchState() == MatchState::WaitingPostMatch)
 		{
 			if (GS->GameModeClass != nullptr)
@@ -2085,3 +2092,11 @@ void AUTHUD::ClearAllUMGWidgets()
 	}
 }
 
+void AUTHUD::ShowUTMenu()
+{
+	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;
+	if (PlayerOwner)
+	{
+		UTLP->ShowMenu(TEXT(""));
+	}
+}

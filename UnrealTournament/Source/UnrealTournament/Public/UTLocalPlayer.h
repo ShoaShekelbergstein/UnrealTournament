@@ -1308,6 +1308,8 @@ protected:
 	// a save of some data is in progress (progression or profile).
 	uint8 SavingMask; 
 
+	void ChatWidgetConsoleKeyPressed();
+
 public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
 	void CloseSavingWidget();

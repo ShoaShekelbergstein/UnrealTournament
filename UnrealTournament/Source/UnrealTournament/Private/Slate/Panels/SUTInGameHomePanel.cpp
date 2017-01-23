@@ -51,11 +51,15 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			[
-				SNew(SBox).HeightOverride(42)
+				SNew(SHorizontalBox)
+				+SHorizontalBox::Slot().AutoWidth()
 				[
-					SAssignNew(ChatBar, SUTChatBar, PlayerOwner)
-					.InitialChatDestination(ChatDestinations::Local)
-				]
+					SNew(SBox).HeightOverride(42).WidthOverride(450)
+					[
+						SAssignNew(ChatBar, SUTChatBar, PlayerOwner)
+						.InitialChatDestination(ChatDestinations::Local)
+					]
+				] 
 			]
 		]
 	];
@@ -411,7 +415,7 @@ FReply SUTInGameHomePanel::OnMouseButtonUp(const FGeometry& MyGeometry, const FP
 			UUTScoreboard* SB = PC->MyUTHUD->GetScoreboard();
 			if (SB)
 			{
-				if ( MouseEvent.GetEffectingButton() == EKeys::RightMouseButton )
+				//if ( MouseEvent.GetEffectingButton() == EKeys::RightMouseButton )
 				{
 					if (SB->AttemptSelection(MousePosition))
 					{
@@ -424,6 +428,7 @@ FReply SUTInGameHomePanel::OnMouseButtonUp(const FGeometry& MyGeometry, const FP
 						HideContextMenu();
 					}
 				}
+/*
 				else
 				{
 					HideContextMenu();
@@ -434,9 +439,14 @@ FReply SUTInGameHomePanel::OnMouseButtonUp(const FGeometry& MyGeometry, const FP
 					}
 					else
 					{
-						PlayerOwner->HideMenu();
+						AUTGameState* UTGameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
+						if (UTGameState == nullptr || UTGameState->GetMatchState() != MatchState::WaitingToStart)
+						{
+							PlayerOwner->HideMenu();
+						}
 					}
 				}
+*/
 			}
 
 			UUTHUDWidget_ReplayTimeSlider* ReplayTimeSlider = PC->MyUTHUD->GetReplayTimeSlider();

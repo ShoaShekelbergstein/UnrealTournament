@@ -710,6 +710,8 @@ public:
 protected:
 	TArray<TWeakObjectPtr<UUTUMGHudWidget>> UMGHudWidgetStack;
 
+	UFUNCTION()
+	virtual void ShowUTMenu();
 
 
 };
