@@ -1449,6 +1449,38 @@ AActor* AUTHUD::FindHoveredIconActor() const
 				}
 			}
 		}
+		for (TActorIterator<AUTRallyPoint> It(GetWorld()); It; ++It)
+		{
+			AUTRallyPoint* RP = *It;
+			if (RP)
+			{
+				FVector2D Pos(WorldToMapToScreen(It->GetActorLocation()));
+				float NewHoverDist = (ClickPos - Pos).Size();
+				if (NewHoverDist < BestHoverDist)
+				{
+					BestHovered = *It;
+					BestHoverDist = NewHoverDist;
+				}
+			}
+		}
+		AUTCTFGameState* GS = GetWorld()->GetGameState<AUTCTFGameState>();
+		if (GS != nullptr)
+		{
+			for (int32 TeamIndex = 0; TeamIndex < 2; TeamIndex++)
+			{
+				AUTCTFFlagBase* Base = GS->GetFlagBase(TeamIndex);
+				if (Base)
+				{
+					FVector2D Pos(WorldToMapToScreen(Base->GetActorLocation()));
+					float NewHoverDist = (ClickPos - Pos).Size();
+					if (NewHoverDist < BestHoverDist)
+					{
+						BestHovered = Base;
+						BestHoverDist = NewHoverDist;
+					}
+				}
+			}
+		}
 	}
 	return BestHovered;
 }
@@ -1513,6 +1545,10 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 	// draw pickup icons
 	AUTPickup* NamedPickup = NULL;
 	FVector2D NamedPickupPos = FVector2D::ZeroVector;
+	AUTRallyPoint* NamedRallyPoint = NULL;
+	FVector2D NamedObjectivePos = FVector2D::ZeroVector;
+	FLinearColor NamedObjectiveColor = FLinearColor::White;
+
 	for (TActorIterator<AUTPickup> It(GetWorld()); It; ++It)
 	{
 		FCanvasIcon Icon = It->GetMinimapIcon();
@@ -1555,6 +1591,12 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 				FLinearColor RallyColor = FLinearColor::Gray;
 				float IconSizeX = 48.f*RenderScale;
 				float IconSizeY = 36.f*RenderScale;
+				if (LastHoveredActor == RP)
+				{
+					float Scaling = 1.5f * FMath::InterpEaseOut<float>(1.0f, 1.25f, FMath::Min<float>(0.2f, GetWorld()->RealTimeSeconds - LastHoveredActorChangeTime) * 5.0f, 2.0f);
+					IconSizeX *= Scaling;
+					IconSizeY *= Scaling;
+				}
 				if (GS && (GS->CurrentRallyPoint == RP) && (UTPlayerOwner->UTPlayerState->bOnlySpectator || GS->bEnemyRallyPointIdentified || (GS->bRedToCap == (UTPlayerOwner->UTPlayerState->Team->TeamIndex == 0))))
 				{
 					RallyColor = GS->bRedToCap ? REDHUDCOLOR : BLUEHUDCOLOR;
@@ -1569,6 +1611,12 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 				}
 				Canvas->DrawColor = RallyColor.ToFColor(false);
 				Canvas->DrawTile(HUDAtlas, Pos.X - 0.5f * IconSizeX, Pos.Y - 0.5f * IconSizeY, IconSizeX, IconSizeY, 832.f, 0.f, 64.f, 48.f);
+				if (LastHoveredActor == RP)
+				{
+					NamedRallyPoint = RP;
+					NamedObjectivePos = Pos;
+					NamedObjectiveColor = RallyColor;
+				}
 			}
 		}
 	}
@@ -1653,22 +1701,35 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 	}
 
 	// draw name last so it is on top of any conflicting icons
-	if (NamedPickup != NULL)
+	if (NamedPickup != nullptr)
 	{
 		float XL, YL;
-		Canvas->DrawColor = NamedPickup->IconColor.ToFColor(false);
 		Canvas->TextSize(TinyFont, NamedPickup->GetDisplayName().ToString(), XL, YL);
 		XL *= RenderScale;
 		YL *= RenderScale;
-		FColor TextColor = Canvas->DrawColor;
 		Canvas->DrawColor = FColor(0, 0, 0, 64);
 		Canvas->DrawTile(SpawnHelpTextBG.Texture, NamedPickupPos.X - XL * 0.5f, NamedPickupPos.Y - 26.0f * RenderScale - 0.8f*YL, XL, 0.8f*YL, 149, 138, 32, 32, BLEND_Translucent);
-		Canvas->DrawColor = TextColor;
+		Canvas->DrawColor = NamedPickup->IconColor.ToFColor(false);
 
 		FStatsFontInfo FontInfo;
 		FontInfo.TextRenderInfo.bEnableShadow = true;
 		FontInfo.TextFont = TinyFont;
 		Canvas->DrawText(TinyFont, NamedPickup->GetDisplayName(), NamedPickupPos.X - XL * 0.5f, NamedPickupPos.Y - 26.0f * RenderScale - YL, RenderScale, RenderScale, FontInfo.TextRenderInfo);
+	}
+	else if (NamedRallyPoint != nullptr)
+	{
+		float XL, YL;
+		Canvas->TextSize(TinyFont, NamedRallyPoint->RallyBeaconText.ToString(), XL, YL);
+		XL *= RenderScale;
+		YL *= RenderScale;
+		Canvas->DrawColor = FColor(0, 0, 0, 64);
+		Canvas->DrawTile(SpawnHelpTextBG.Texture, NamedObjectivePos.X - XL * 0.5f, NamedObjectivePos.Y - 26.0f * RenderScale - 0.8f*YL, XL, 0.8f*YL, 149, 138, 32, 32, BLEND_Translucent);
+		Canvas->DrawColor = FColor::White;
+
+		FStatsFontInfo FontInfo;
+		FontInfo.TextRenderInfo.bEnableShadow = true;
+		FontInfo.TextFont = TinyFont;
+		Canvas->DrawText(TinyFont, NamedRallyPoint->RallyBeaconText, NamedObjectivePos.X - XL * 0.5f, NamedObjectivePos.Y - 26.0f * RenderScale - YL, RenderScale, RenderScale, FontInfo.TextRenderInfo);
 	}
 }
 
