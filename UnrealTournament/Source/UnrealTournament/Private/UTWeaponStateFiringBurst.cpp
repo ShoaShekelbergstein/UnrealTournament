@@ -20,9 +20,23 @@ void UUTWeaponStateFiringBurst::BeginState(const UUTWeaponState* PrevState)
 		const AUTWeapon* DefWeapon = GetOuterAUTWeapon()->GetClass()->GetDefaultObject<AUTWeapon>();
 		GetOuterAUTWeapon()->Spread[GetOuterAUTWeapon()->GetCurrentFireMode()] = DefWeapon->Spread.IsValidIndex(GetOuterAUTWeapon()->GetCurrentFireMode()) ? DefWeapon->Spread[GetOuterAUTWeapon()->GetCurrentFireMode()] : 0.0f;
 	}
-	ShotTimeRemaining = -0.001f;
-	RefireCheckTimer();
+	if (StartupDelay > 0.0f)
+	{
+		ShotTimeRemaining = StartupDelay;
+		GetUTOwner()->SetFlashExtra(1, GetOuterAUTWeapon()->GetCurrentFireMode());
+	}
+	else
+	{
+		ShotTimeRemaining = -0.001f;
+		RefireCheckTimer();
+	}
 	GetOuterAUTWeapon()->OnStartedFiring();
+}
+
+void UUTWeaponStateFiringBurst::EndState()
+{
+	GetUTOwner()->SetFlashExtra(0, GetOuterAUTWeapon()->GetCurrentFireMode());
+	Super::EndState();
 }
 
 void UUTWeaponStateFiringBurst::IncrementShotTimer()
@@ -38,10 +52,13 @@ void UUTWeaponStateFiringBurst::UpdateTiming()
 void UUTWeaponStateFiringBurst::RefireCheckTimer()
 {
 	// query bot to consider whether to still fire, switch modes, etc
-	AUTBot* B = Cast<AUTBot>(GetUTOwner()->Controller);
-	if (B != NULL)
+	if (CurrentShot == BurstSize)
 	{
-		B->CheckWeaponFiring();
+		AUTBot* B = Cast<AUTBot>(GetUTOwner()->Controller);
+		if (B != NULL)
+		{
+			B->CheckWeaponFiring();
+		}
 	}
 
 	uint8 CurrentFireMode = GetOuterAUTWeapon()->GetCurrentFireMode();
