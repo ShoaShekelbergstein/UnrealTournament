@@ -3,7 +3,8 @@
 #include "UnrealTournament.h"
 #include "UTWeap_GrenadeLauncher.h"
 #include "UTProj_Grenade_Sticky.h"
-
+#include "UTLift.h"
+#include "UTTeamDeco.h"
 
 AUTProj_Grenade_Sticky::AUTProj_Grenade_Sticky(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -112,4 +113,90 @@ uint8 AUTProj_Grenade_Sticky::GetInstigatorTeamNum()
 	}
 
 	return 0;
+}
+
+float AUTProj_Grenade_Sticky::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
+{
+	float NewDamageAmount = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	if (NewDamageAmount > 0.0f && !bExploded)
+	{
+		if (bArmed)
+		{
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(EventInstigator);
+			if (UTPC)
+			{
+				uint8 DamagerTeamNum = UTPC->GetTeamNum();
+				if (DamagerTeamNum != GetInstigatorTeamNum())
+				{
+					PlayDamagedDetonationEffects();
+					InstigatorController = UTPC;
+					Explode(GetActorLocation(), FVector(0,0,1), nullptr);
+				}
+			}
+		}
+	}
+
+	return NewDamageAmount;
+}
+
+void AUTProj_Grenade_Sticky::OnStop(const FHitResult& Hit)
+{
+	Super::OnStop(Hit);
+
+	ArmGrenade();
+
+	PlayIdleEffects();
+
+	CollisionComp->SetCollisionObjectType(COLLISION_PROJECTILE_SHOOTABLE);
+
+	if (Hit.Actor.IsValid() && Cast<AUTLift>(Hit.Actor.Get()) == nullptr)
+	{
+		AttachToComponent(Hit.Actor->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+	}
+}
+
+void AUTProj_Grenade_Sticky::ProcessHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp, const FVector& HitLocation, const FVector& HitNormal)
+{
+	// If we're hitting a team wall, just ignore it
+	AUTTeamDeco* TeamDeco = Cast<AUTTeamDeco>(OtherActor);
+	if (TeamDeco)
+	{
+		if (!TeamDeco->bBlockTeamProjectiles && TeamDeco->GetTeamNum() == GetInstigatorTeamNum())
+		{
+			return;
+		}
+	}
+	
+	// If we hit a teammate that isn't ourselves, just ignore it
+	AUTCharacter* UTChar = Cast<AUTCharacter>(OtherActor);
+	if (UTChar)
+	{
+		if (GetInstigatorTeamNum() == UTChar->GetTeamNum() && GetInstigatorController() != UTChar->GetController())
+		{
+			return;
+		}
+	}
+
+	// Ignore projectile hits
+	AUTProjectile* UTProj = Cast<AUTProjectile>(OtherActor);
+	if (UTProj)
+	{
+		return;
+	}
+
+	// Ignore volume hits
+	AVolume* Volume = Cast<AVolume>(OtherActor);
+	if (Volume)
+	{
+		return;
+	}
+
+	ProjectileMovement->Velocity = FVector::ZeroVector;
+
+	ArmGrenade();
+
+	Super::ProcessHit_Implementation(OtherActor, OtherComp, HitLocation, HitNormal);
+
+	PlayIdleEffects();
 }
