@@ -18,6 +18,7 @@ public:
 		Cost = 5;
 		bCanPickupItems = false;
 		UTCharacterMovement->AutoSprintDelayInterval = 10000.0f;
+		UTCharacterMovement->bForceTeamCollision = true;
 	}
 	/** display name shown on HUD/scoreboard/etc */
 	UPROPERTY(EditDefaultsOnly)

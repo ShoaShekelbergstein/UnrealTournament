@@ -429,6 +429,7 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 	HomeBase->ObjectWasPickedUp(NewHolder, bWasHome);
 
 	HoldingPawn = NewHolder;
+	HoldingPawn->UTCharacterMovement->bForceTeamCollision = false;
 	AttachTo(HoldingPawn->GetMesh());
 	Holder = Cast<AUTPlayerState>(HoldingPawn->PlayerState);
 	PickedUpTime = GetWorld()->GetTimeSeconds();
@@ -563,6 +564,8 @@ void AUTCarriedObject::NoLongerHeld(AController* InstigatedBy)
 				}
 			}
 		}
+		HoldingPawn->UTCharacterMovement->bForceTeamCollision = HoldingPawn->GetClass()->GetDefaultObject<AUTCharacter>()->UTCharacterMovement->bForceTeamCollision;
+
 		TGuardValue<bool> DropGuard(bIsDropping, true); // make sure touch doesn't happen here, TossObject() will take care of it
 		DetachFrom(HoldingPawn->GetMesh());
 	}
