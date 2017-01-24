@@ -904,8 +904,6 @@ protected:
 
 	UFUNCTION()
 	void ActivateSpecial();
-	UFUNCTION()
-	void ReleaseSpecial();
 
 	void ToggleTranslocator();
 

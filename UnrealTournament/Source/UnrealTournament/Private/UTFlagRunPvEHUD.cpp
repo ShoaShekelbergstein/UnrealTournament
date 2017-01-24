@@ -22,16 +22,20 @@ void AUTFlagRunPvEHUD::BeginPlay()
 
 void AUTFlagRunPvEHUD::ToggleBoostWheel(bool bShow)
 {
-	bShowBoostWheel = bShow;
-
-	AUTCharacter* UTCharacter = UTPlayerOwner ? UTPlayerOwner->GetUTCharacter() : nullptr;
-	if (bShow && UTCharacter && !UTCharacter->IsDead())
+	if (bShowBoostWheel)
 	{
-		BoostWheel->BecomeInteractive();
+		// repeated presses switch which boost we want
+		BoostWheel->SelectedPowerup++;
+		
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+		if (GS->GetSelectableBoostByIndex(UTPlayerOwner->UTPlayerState, BoostWheel->SelectedPowerup) == nullptr)
+		{
+			BoostWheel->SelectedPowerup = 0;
+		}
 	}
 	else
 	{
-		BoostWheel->BecomeNonInteractive();
+		bShowBoostWheel = bShow;
 	}
 }
 
@@ -39,6 +43,11 @@ static FName NAME_PercentComplete(TEXT("PercentComplete"));
 
 void AUTFlagRunPvEHUD::DrawHUD()
 {
+	if (UTPlayerOwner == nullptr || UTPlayerOwner->GetUTCharacter() == nullptr || UTPlayerOwner->UTPlayerState == nullptr || UTPlayerOwner->UTPlayerState->GetRemainingBoosts() == 0)
+	{
+		bShowBoostWheel = false;
+	}
+
 	Super::DrawHUD();
 
 	if (UTPlayerOwner != nullptr && UTPlayerOwner->GetUTCharacter() != nullptr && UTPlayerOwner->UTPlayerState != nullptr && !ScoreboardIsUp())
@@ -103,4 +112,38 @@ void AUTFlagRunPvEHUD::GetPlayerListForIcons(TArray<AUTPlayerState*>& SortedPlay
 		}
 	}
 	SortedPlayers.Sort([](AUTPlayerState& A, AUTPlayerState& B) { return A.SelectionOrder > B.SelectionOrder; });
+}
+
+bool AUTFlagRunPvEHUD::ProcessInputKey(FKey Key, EInputEvent EventType)
+{
+	if (Super::ProcessInputKey(Key, EventType))
+	{
+		return true;
+	}
+	else if (bShowBoostWheel)
+	{
+		TArray<FKey> StartFireKeys;
+		TArray<FKey> StartAltFireKeys;
+		UTPlayerOwner->ResolveKeybindToFKey(TEXT("Fire"), StartFireKeys, true, false);
+		UTPlayerOwner->ResolveKeybindToFKey(TEXT("AltFire"), StartAltFireKeys, true, false);
+		if (StartFireKeys.Contains(Key))
+		{
+			BoostWheel->TriggerPowerup();
+			bShowBoostWheel = false;
+			return true;
+		}
+		else if (StartAltFireKeys.Contains(Key))
+		{
+			bShowBoostWheel = false;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
 }

@@ -507,7 +507,6 @@ void AUTPlayerController::SetupInputComponent()
 	InputComponent->BindAction("ToggleWeaponWheel", IE_Released, this, &AUTPlayerController::HideWeaponWheel);
 
 	InputComponent->BindAction("ActivateSpecial", IE_Pressed, this, &AUTPlayerController::ActivateSpecial);
-	InputComponent->BindAction("ActivateSpecial", IE_Released, this, &AUTPlayerController::ReleaseSpecial);
 
 	InputComponent->BindAction("PushToTalk", IE_Pressed, this, &AUTPlayerController::StartVOIPTalking);
 	InputComponent->BindAction("PushToTalk", IE_Released, this, &AUTPlayerController::StopVOIPTalking);
@@ -1005,14 +1004,6 @@ void AUTPlayerController::ActivateSpecial()
 	else
 	{
 		ToggleTranslocator();
-	}
-}
-void AUTPlayerController::ReleaseSpecial()
-{
-	AUTFlagRunPvEHUD* PvEHUD = Cast<AUTFlagRunPvEHUD>(MyHUD);
-	if (PvEHUD != nullptr)
-	{
-		PvEHUD->ToggleBoostWheel(false);
 	}
 }
 

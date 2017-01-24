@@ -23,6 +23,7 @@ protected:
 public:
 	virtual void BeginPlay() override;
 	virtual void ToggleBoostWheel(bool bShow);
+	virtual bool ProcessInputKey(FKey Key, EInputEvent EventType) override;
 	bool bShowBoostWheel;
 	virtual void DrawHUD() override;
 	virtual void GetPlayerListForIcons(TArray<AUTPlayerState*>& SortedPlayers) override;
