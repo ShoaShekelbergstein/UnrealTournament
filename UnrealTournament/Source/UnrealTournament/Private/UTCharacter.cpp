@@ -853,7 +853,7 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 			{
 				TrueController = DrivenVehicle->GetController();
 			}
-			bool bApplyDamageToCharacter = ((Game && Game->bDamageHurtsHealth && bDamageHurtsHealth) || (Cast<APlayerController>(TrueController) == nullptr && Cast<AUTBot>(TrueController) == nullptr);
+			bool bApplyDamageToCharacter = ((Game && Game->bDamageHurtsHealth && bDamageHurtsHealth) || (Cast<APlayerController>(TrueController) == nullptr && Cast<AUTBot>(TrueController) == nullptr));
 			if (bApplyDamageToCharacter)
 			{
 				ModifyDamageTaken(AppliedDamage, ResultDamage, ResultMomentum, HitArmor, HitInfo, EventInstigator, DamageCauser, DamageEvent.DamageTypeClass);
