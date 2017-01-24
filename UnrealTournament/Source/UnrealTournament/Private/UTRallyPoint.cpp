@@ -781,7 +781,7 @@ void AUTRallyPoint::DrawChargingThermometer(APlayerController* PC, UCanvas* Canv
 		float WidthScale = Canvas->ClipX / 1920.f;;
 		float HeightScale = WidthScale;
 		WidthScale *= 0.75f;
-		FLinearColor ChargeColor = FLinearColor::White;
+		FLinearColor ChargeColor = (RallyPointState == RallyPointStates::Charging) ? FLinearColor::White : REDHUDCOLOR;
 		float ChargePct = FMath::Clamp((RallyReadyDelay - ClientCountdown) / RallyReadyDelay, 0.f, 1.f);
 		UTexture* Texture = UTPC->MyUTHUD->HUDAtlas;
 		float DistanceScaling = 1.f;
