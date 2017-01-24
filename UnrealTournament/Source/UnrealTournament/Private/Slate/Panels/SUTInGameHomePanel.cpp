@@ -388,13 +388,16 @@ FReply SUTInGameHomePanel::ContextCommand(int32 CommandId, TWeakObjectPtr<AUTPla
 				case ECONTEXT_COMMAND_MutePlayer:
 				{
 					TSharedPtr<const FUniqueNetId> Id = TargetPlayerState->UniqueId.GetUniqueNetId();
-					if ( PlayerOwner->PlayerController->IsPlayerMuted(Id.ToSharedRef().Get()) )
+					if (Id.IsValid())
 					{
-						PC->ServerUnmutePlayer(TargetPlayerState->UniqueId);
-					}				
-					else
-					{
-						PC->ServerMutePlayer(TargetPlayerState->UniqueId);
+						if (PlayerOwner->PlayerController->IsPlayerMuted(Id.ToSharedRef().Get()))
+						{
+							PC->ServerUnmutePlayer(TargetPlayerState->UniqueId);
+						}
+						else
+						{
+							PC->ServerMutePlayer(TargetPlayerState->UniqueId);
+						}
 					}
 					HideContextMenu();
 					break;
