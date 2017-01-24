@@ -43,6 +43,10 @@ void SUTMenuBase::Construct(const FArguments& InArgs)
 
 void SUTMenuBase::OnMenuOpened(const FString& Parameters)
 {
+
+	AUTGameState* UTGameState = (PlayerOwner.IsValid() && PlayerOwner->GetWorld() != nullptr) ? PlayerOwner->GetWorld()->GetGameState<AUTGameState>() : nullptr;
+	if (UTGameState != nullptr) UTGameState->bLocalMenusAreActive = true;
+
 	GameViewportWidget = FSlateApplication::Get().GetKeyboardFocusedWidget();
 	FSlateApplication::Get().SetKeyboardFocus(SharedThis(this), EKeyboardFocusCause::Keyboard);
 
@@ -54,6 +58,9 @@ void SUTMenuBase::OnMenuOpened(const FString& Parameters)
 
 void SUTMenuBase::OnMenuClosed()
 {
+	AUTGameState* UTGameState = ( PlayerOwner.IsValid() && PlayerOwner->GetWorld() != nullptr) ? PlayerOwner->GetWorld()->GetGameState<AUTGameState>() : nullptr;
+	if (UTGameState != nullptr) UTGameState->bLocalMenusAreActive = false;
+
 	// Deactivate the current panel
 
 	if (ActivePanel.IsValid())

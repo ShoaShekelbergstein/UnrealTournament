@@ -718,6 +718,10 @@ public:
 	UPROPERTY(Replicated)
 	FString ReplayID;
 
+	// Will be set true on a client if their menu is opened.  We use this to override the
+	// code that fades out the level music while in a game
+	bool bLocalMenusAreActive;
+
 };
 
 

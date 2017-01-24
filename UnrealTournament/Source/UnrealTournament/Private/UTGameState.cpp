@@ -432,6 +432,7 @@ void AUTGameState::ManageMusicVolume(float DeltaTime)
 	{
 		UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings()); 
 		float DesiredVolume = IsMatchInProgress() && !IsMatchIntermission() ? UserSettings->GetSoundClassVolume(EUTSoundClass::GameMusic) : 1.f;
+		if (bLocalMenusAreActive) DesiredVolume = 1.0f;
 		MusicVolume = MusicVolume * (1.f - 0.5f*DeltaTime) + 0.5f*DeltaTime*DesiredVolume;
 		Settings->MusicComp->SetVolumeMultiplier(MusicVolume);
 	}
