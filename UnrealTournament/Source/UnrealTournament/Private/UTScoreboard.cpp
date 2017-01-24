@@ -490,7 +490,7 @@ void UUTScoreboard::DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float R
 	{
 		float Height = 8.0f;
 		float XL, YL;
-		Canvas->TextSize(UTHUDOwner->SmallFont, PlayerState->PlayerName, XL, YL, RenderScale, RenderScale);
+		Canvas->TextSize(UTHUDOwner->SmallFont, (PlayerState->PlayerName + PlayerState->ClanName), XL, YL, RenderScale, RenderScale);
 		float StrikeWidth = FMath::Min(0.475f*ScaledCellWidth, XL);
 		DrawTexture(UTHUDOwner->HUDAtlas, XOffset + (ScaledCellWidth * ColumnHeaderPlayerX), YOffset + ColumnY, StrikeWidth, Height, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Red);
 	}
