@@ -88,10 +88,13 @@ protected:
 	FTimerHandle MatchSummaryHandle;
 
 	/** preview actors */
+	UPROPERTY()
 	TArray<class AUTCharacter*> PlayerPreviewCharacters;
 
 	/** preview weapon */
+	UPROPERTY()
 	TArray<class AUTWeapon*> PreviewWeapons;
 
+	UPROPERTY()
 	TArray<class UAnimationAsset*> PreviewAnimations;
 };
