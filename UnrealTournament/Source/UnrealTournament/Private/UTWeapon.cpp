@@ -653,7 +653,7 @@ void AUTWeapon::ResendServerStartFire_Implementation(uint8 FireModeNum, uint8 In
 {
 	if (ValidateFireEventIndex(FireModeNum, InFireEventIndex) && UTOwner && !UTOwner->IsFiringDisabled())
 	{
-		UE_LOG(UT, Warning, TEXT("****RESENDStartFire mode %d %d"), FireModeNum, FireEventIndex);
+		//UE_LOG(UT, Warning, TEXT("****RESENDStartFire mode %d %d"), FireModeNum, FireEventIndex);
 		if (CurrentState == InactiveState && !UTOwner->IsLocallyControlled())
 		{
 			UTOwner->ClientVerifyWeapon();
@@ -675,7 +675,7 @@ void AUTWeapon::ResendServerStartFireOffset_Implementation(uint8 FireModeNum, ui
 {
 	if (ValidateFireEventIndex(FireModeNum, InFireEventIndex) && UTOwner && !UTOwner->IsFiringDisabled())
 	{
-		UE_LOG(UT, Warning, TEXT("****RESENDStartFireOffset mode %d %d"), FireModeNum, InFireEventIndex);
+		//UE_LOG(UT, Warning, TEXT("****RESENDStartFireOffset mode %d %d"), FireModeNum, InFireEventIndex);
 		if (CurrentState == InactiveState && !UTOwner->IsLocallyControlled())
 		{
 			UTOwner->ClientVerifyWeapon();

@@ -149,7 +149,7 @@ void UUTFlagRunScoreboard::DrawTeamPanel(float RenderDelta, float& YOffset)
 		float BackgroundY = YOffset - 2.f*Height;
 		int32 CurrentTiebreakValue = GS->TiebreakValue - PendingTiebreak;
 		float ChargePct = Width*FMath::Clamp(CurrentTiebreakValue, -100, 100) / 200.f;
-		FLinearColor TiebreakColor = (CurrentTiebreakValue > 0) ? GS->Teams[0]->TeamColor : FLinearColor::Blue; 
+		FLinearColor TiebreakColor = (CurrentTiebreakValue > 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
 		float ChargeOffset = (ChargePct < 0.f) ? 0.f : ChargePct;
 		DrawTexture(UTHUDOwner->HUDAtlas, 0.5f*Canvas->ClipX - ChargeOffset, BackgroundY, FMath::Abs(ChargePct), Height, 127.f, 641, 150.f, 21.f, 1.f, TiebreakColor, FVector2D(0.f, 0.5f));
 

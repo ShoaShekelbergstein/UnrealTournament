@@ -107,7 +107,7 @@ void UUTCTFRewardMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText
 		PrefixText = RejectedMessage;
 		EmphasisText = RelatedPlayerState_1 ? FText::FromString(RelatedPlayerState_1->PlayerName) : FText::GetEmpty();
 		AUTPlayerState* Denier = Cast<AUTPlayerState>(RelatedPlayerState_1);
-		EmphasisColor = Denier && Denier->Team && (Denier->Team->TeamIndex == 1) ? FLinearColor::Blue : FLinearColor::Red;
+		EmphasisColor = Denier && Denier->Team && (Denier->Team->TeamIndex == 1) ? BLUEHUDCOLOR : REDHUDCOLOR;
 		PostfixText = ExclamationPostfix;
 		return;
 	}
@@ -116,7 +116,7 @@ void UUTCTFRewardMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText
 		PrefixText = DeniedMessage;
 		EmphasisText = RelatedPlayerState_1 ? FText::FromString(RelatedPlayerState_1->PlayerName) : FText::GetEmpty();
 		AUTPlayerState* Denier = Cast<AUTPlayerState>(RelatedPlayerState_1);
-		EmphasisColor = Denier && Denier->Team && (Denier->Team->TeamIndex == 1) ? FLinearColor::Blue : FLinearColor::Red;
+		EmphasisColor = Denier && Denier->Team && (Denier->Team->TeamIndex == 1) ? BLUEHUDCOLOR : REDHUDCOLOR;
 		PostfixText = ExclamationPostfix;
 		return;
 	}

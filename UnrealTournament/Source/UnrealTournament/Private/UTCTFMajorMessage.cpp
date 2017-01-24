@@ -113,7 +113,7 @@ void UUTCTFMajorMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText,
 			EmphasisText = GV->VolumeName;
 			PostfixText = EnemyRallyPostfix;
 			AUTPlayerState* PS = Cast<AUTPlayerState>(RelatedPlayerState_1);
-			EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : FLinearColor::Red;
+			EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : REDHUDCOLOR;
 		}
 		else if (Cast<AUTRallyPoint>(OptionalObject))
 		{
@@ -121,7 +121,7 @@ void UUTCTFMajorMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText,
 			EmphasisText = Cast<AUTRallyPoint>(OptionalObject)->LocationText;
 			PostfixText = EnemyRallyPostfix;
 			AUTPlayerState* PS = Cast<AUTPlayerState>(RelatedPlayerState_1);
-			EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : FLinearColor::Red;
+			EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : REDHUDCOLOR;
 		}
 		else
 		{
@@ -132,7 +132,7 @@ void UUTCTFMajorMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText,
 				EmphasisText = Flag->GetHUDStatusMessage(nullptr);
 				PostfixText = EnemyRallyPostfix;
 				AUTPlayerState* PS = Cast<AUTPlayerState>(RelatedPlayerState_1);
-				EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : FLinearColor::Red;
+				EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : REDHUDCOLOR;
 			}
 			else
 			{
