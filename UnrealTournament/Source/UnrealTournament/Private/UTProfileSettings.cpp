@@ -38,8 +38,6 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		Taunt2Path = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/Taunt_Bow.Taunt_Bow_C");
 		GroupTauntPath = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/GroupTaunt_FacePalm.GroupTaunt_FacePalm_C");
 		CharacterPath = TEXT("");
-		CountryFlag = FName(TEXT("Unreal"));
-		Avatar = FName("UT.Avatar.0");
 
 		WeaponBob = 1.0f;
 		ViewBob = 1.0f;

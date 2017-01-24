@@ -135,12 +135,6 @@ public:
 	FString CharacterPath;
 
 	UPROPERTY(BlueprintReadOnly, Category = Character)
-	FName CountryFlag;
-
-	UPROPERTY(BlueprintReadOnly, Category = Character)
-	FName Avatar;
-
-	UPROPERTY(BlueprintReadOnly, Category = Character)
 	float WeaponBob;
 
 	UPROPERTY(BlueprintReadOnly, Category = Character)

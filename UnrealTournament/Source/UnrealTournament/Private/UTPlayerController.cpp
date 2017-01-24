@@ -3820,10 +3820,9 @@ void AUTPlayerController::ReceivedPlayer()
 		}
 
 		// Send over the country flag....
-		UUTProfileSettings* Settings = GetProfileSettings();
-		if (Settings != NULL)
+		if (LP != NULL)
 		{
-			FName CountryFlag = Settings->CountryFlag;
+			FName CountryFlag = LP->GetCountryFlag();
 
 			UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
 			if (UTEngine != nullptr)

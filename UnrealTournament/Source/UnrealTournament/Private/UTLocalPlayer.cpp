@@ -5459,9 +5459,9 @@ void UUTLocalPlayer::Reconnect(bool bSpectator)
 void UUTLocalPlayer::EpicFlagCheck()
 {
 	if (CurrentProfileSettings != NULL && CommunityRole == EUnrealRoles::Developer && 
-			CurrentProfileSettings->CountryFlag == FName(TEXT("Unreal")) && !CurrentProfileSettings->bForcedToEpicAtLeastOnce)
+			GetCountryFlag() == FName(TEXT("Unreal")) && !CurrentProfileSettings->bForcedToEpicAtLeastOnce)
 	{
-		CurrentProfileSettings->CountryFlag = FName(TEXT("Epic"));
+		SetCountryFlagAndAvatar(FName(TEXT("Epic")), GetAvatar());
 		CurrentProfileSettings->bForcedToEpicAtLeastOnce = true;
 		SaveProfileSettings();
 	}
