@@ -196,7 +196,10 @@ void AUTProj_Grenade_Sticky::ProcessHit_Implementation(AActor* OtherActor, UPrim
 
 	ArmGrenade();
 
-	Super::ProcessHit_Implementation(OtherActor, OtherComp, HitLocation, HitNormal);
+	if (UTChar != nullptr || TeamDeco != nullptr)
+	{
+		Super::ProcessHit_Implementation(OtherActor, OtherComp, HitLocation, HitNormal);
+	}
 
 	PlayIdleEffects();
 }
