@@ -611,6 +611,12 @@ void AUTHUD::NotifyMatchStateChange()
 		}
 		else if (GS->GetMatchState() == MatchState::PlayerIntro)
 		{
+
+			if (UTLP)
+			{
+				UTLP->HideMenu();
+			}
+
 			bool bShouldUseLineUp = false;
 			if (GS->LineUpHelper)
 			{
