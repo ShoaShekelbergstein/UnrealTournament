@@ -249,16 +249,19 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 					];
 				}
 
-				// Mute Player
-				MenuBox->AddSlot()
-				.AutoHeight()
-				[
-					SNew(SUTButton)
-					.OnClicked(this, &SUTInGameHomePanel::ContextCommand, ECONTEXT_COMMAND_MutePlayer, SelectedPlayer)
-					.ButtonStyle(SUTStyle::Get(),"UT.ContextMenu.Item")
-					.Text(this, &SUTInGameHomePanel::GetMuteLabelText)
-					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small")
-				];
+				if (!SelectedPlayer->bIsABot)
+				{
+					// Mute Player
+					MenuBox->AddSlot()
+						.AutoHeight()
+						[
+							SNew(SUTButton)
+							.OnClicked(this, &SUTInGameHomePanel::ContextCommand, ECONTEXT_COMMAND_MutePlayer, SelectedPlayer)
+						.ButtonStyle(SUTStyle::Get(), "UT.ContextMenu.Item")
+						.Text(this, &SUTInGameHomePanel::GetMuteLabelText)
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
+						];
+				}
 
 				MenuBox->AddSlot()
 				.AutoHeight()
@@ -274,7 +277,7 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 					]
 				];
 
-				if (!PlayerOwner->IsAFriend(SelectedPlayer->UniqueId))
+				if (!SelectedPlayer->bIsABot && !PlayerOwner->IsAFriend(SelectedPlayer->UniqueId))
 				{
 					MenuBox->AddSlot()
 					.AutoHeight()
