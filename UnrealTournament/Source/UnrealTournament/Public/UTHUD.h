@@ -454,6 +454,9 @@ public:
 	UPROPERTY()
 		TArray<UTexture2D*> ELOBadges;
 
+	UPROPERTY()
+		TArray<UTexture2D*> XPStars;
+
 protected:
 
 	// We cache the team color so we only have to look it up once at the start of the render pass

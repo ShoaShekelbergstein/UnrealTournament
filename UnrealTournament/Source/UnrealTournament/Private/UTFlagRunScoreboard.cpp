@@ -304,18 +304,18 @@ void UUTFlagRunScoreboard::GetScoringStars(int32& NumStars, FLinearColor& StarCo
 	if (GS != nullptr)
 	{
 		NumStars = 1;
-		StarColor = GS->BronzeBonusColor;
+		StarColor = BRONZECOLOR;
 		if (Reason == 0)
 		{
 			if (RoundBonus >= GS->GoldBonusThreshold)
 			{
 				NumStars = 3;
-				StarColor = GS->GoldBonusColor;
+				StarColor = GOLDCOLOR;
 			}
 			else if (RoundBonus >= GS->SilverBonusThreshold)
 			{
 				NumStars = 2;
-				StarColor = GS->SilverBonusColor;
+				StarColor = SILVERCOLOR;
 			}
 		}
 	}
@@ -337,7 +337,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 	float CurrentTime = GetWorld()->GetTimeSeconds() - ScoreReceivedTime;
 
 	int32 NumStars = 1;
-	FLinearColor BonusColor = GS->BronzeBonusColor;
+	FLinearColor BonusColor = BRONZECOLOR;
 	GetScoringStars(NumStars, BonusColor);
 
 	if (GS && GS->HasMatchEnded() && (CurrentTime >= 2.f + WooshStart + NumStars*WooshInterval + WooshTime + 1.f + FMath::Min(FMath::Abs(float(PendingTiebreak)), 20.f) * 0.05f + FMath::Max(0.f, FMath::Abs(float(PendingTiebreak)) - 20.f) * 0.025f))

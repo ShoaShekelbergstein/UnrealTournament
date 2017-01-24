@@ -46,6 +46,9 @@ const float RALLY_ANIMATION_TIME = 1.2;
 
 const FLinearColor REDHUDCOLOR = FLinearColor(1.0f, 0.05f, 0.0f, 1.0f);
 const FLinearColor BLUEHUDCOLOR = FLinearColor(0.1f, 0.1f, 1.0f, 1.0f);
+const FLinearColor GOLDCOLOR = FLinearColor(1.f, 0.9f, 0.15f);
+const FLinearColor SILVERCOLOR = FLinearColor(0.5f, 0.5f, 0.75f);
+const FLinearColor BRONZECOLOR = FLinearColor(0.48f, 0.25f, 0.18f);
 
 UENUM()
 namespace EGameStage

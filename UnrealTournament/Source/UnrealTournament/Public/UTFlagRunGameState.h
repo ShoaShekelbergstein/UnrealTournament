@@ -37,15 +37,6 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 	UPROPERTY()
 		FText BronzeBonusTimedText;
 
-	UPROPERTY()
-		FLinearColor GoldBonusColor;
-
-	UPROPERTY()
-		FLinearColor SilverBonusColor;
-
-	UPROPERTY()
-		FLinearColor BronzeBonusColor;
-
 	// Early ending time for this round
 	UPROPERTY(Replicated)
 		int32 EarlyEndTime;

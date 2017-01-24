@@ -23,13 +23,13 @@ public:
 			{
 				case 0:
 				case 1:
-					StarColor = GS->BronzeBonusColor;
+					StarColor = BRONZECOLOR;
 					break;
 				case 2:
-					StarColor = GS->SilverBonusColor;
+					StarColor = SILVERCOLOR;
 					break;
 				default:
-					StarColor = GS->GoldBonusColor;
+					StarColor = GOLDCOLOR;
 					break;
 			}
 		}

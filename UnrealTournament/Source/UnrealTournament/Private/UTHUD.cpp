@@ -145,8 +145,20 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 	static ConstructorHelpers::FObjectFinder<UTexture2D> ELOBadgeGold(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankBadge_Tarydium_48x48.UT_RankBadge_Tarydium_48x48'"));
 	ELOBadges.Add(ELOBadgeGold.Object);
 
-	static ConstructorHelpers::FObjectFinder<UTexture2D> ELOBadgeTarydium(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankBadge_Tarydium_48x48.UT_RankBadge_Tarydium_48x48'"));
-	ELOBadges.Add(ELOBadgeTarydium.Object);
+	static ConstructorHelpers::FObjectFinder<UTexture2D> OneStar(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankStar_One_48x48.UT_RankStar_One_48x48'"));
+	XPStars.Add(OneStar.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> TwoStar(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankStar_Two_48x48.UT_RankStar_Two_48x48'"));
+	XPStars.Add(TwoStar.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> ThreeStar(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankStar_Three_48x48.UT_RankStar_Three_48x48'"));
+	XPStars.Add(ThreeStar.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> FourStar(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankStar_Four_48x48.UT_RankStar_Four_48x48'"));
+	XPStars.Add(FourStar.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> FiveStar(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankStar_Five_48x48.UT_RankStar_Five_48x48'"));
+	XPStars.Add(FiveStar.Object);
 }
 
 void AUTHUD::Destroyed()

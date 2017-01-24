@@ -29,9 +29,6 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	FlagRunMessageSwitch = 0;
 	FlagRunMessageTeam = nullptr;
 	bPlayStatusAnnouncements = true;
-	GoldBonusColor = FLinearColor(1.f, 0.9f, 0.15f);
-	SilverBonusColor = FLinearColor(0.5f, 0.5f, 0.75f);
-	BronzeBonusColor = FLinearColor(0.48f, 0.25f, 0.18f);
 	bEnemyRallyPointIdentified = false;
 	EarlyEndTime = 0;
 	bTeamGame = true;
@@ -192,9 +189,9 @@ FLinearColor AUTFlagRunGameState::GetGameStatusColor()
 	{
 		switch(BonusLevel)
 		{
-			case 1: return BronzeBonusColor; break;
-			case 2: return SilverBonusColor; break;
-			case 3: return GoldBonusColor; break;
+			case 1: return BRONZECOLOR; break;
+			case 2: return SILVERCOLOR; break;
+			case 3: return GOLDCOLOR; break;
 		}
 	}
 	UE_LOG(UT, Warning, TEXT("WHITE"));

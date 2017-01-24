@@ -250,7 +250,7 @@ float AUTFlagRunHUD::DrawWinConditions(UFont* InFont, float XOffset, float YPos,
 		float BonusXL = 0.f;
 		float MustScoreXL = 0.f;
 		FText BonusType = GS->BronzeBonusText;
-		FLinearColor BonusColor = GS->BronzeBonusColor;
+		FLinearColor BonusColor = BRONZECOLOR;
 
 		int32 Switch = GS->FlagRunMessageSwitch;
 		int32 TimeNeeded = 0;
@@ -264,14 +264,14 @@ float AUTFlagRunHUD::DrawWinConditions(UFont* InFont, float XOffset, float YPos,
 		{
 		case 1: PostfixText = DefendersMustStop; break;
 		case 2: PostfixText = DefendersMustHold; break;
-		case 3: PostfixText = DefendersMustHold; BonusType = GS->SilverBonusText;  BonusColor = GS->SilverBonusColor; break;
+		case 3: PostfixText = DefendersMustHold; BonusType = GS->SilverBonusText;  BonusColor = SILVERCOLOR; break;
 		case 4: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTime : AttackersMustScore; break;
-		case 5: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTime : AttackersMustScore; BonusType = GS->SilverBonusText; BonusColor = GS->SilverBonusColor; break;
-		case 6: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTime : AttackersMustScore; BonusType = GS->GoldBonusText; BonusColor = GS->GoldBonusColor; break;
+		case 5: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTime : AttackersMustScore; BonusType = GS->SilverBonusText; BonusColor = SILVERCOLOR; break;
+		case 6: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTime : AttackersMustScore; BonusType = GS->GoldBonusText; BonusColor = GOLDCOLOR; break;
 		case 7: PostfixText = UnhandledCondition; break;
 		case 8: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTimeWin : AttackersMustScoreWin; break;
-		case 9: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTimeWin : AttackersMustScoreWin; BonusType = GS->SilverBonusText; BonusColor = GS->SilverBonusColor; break;
-		case 10: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTimeWin : AttackersMustScoreWin; BonusType = GS->GoldBonusText; BonusColor = GS->GoldBonusColor; break;
+		case 9: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTimeWin : AttackersMustScoreWin; BonusType = GS->SilverBonusText; BonusColor = SILVERCOLOR; break;
+		case 10: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTimeWin : AttackersMustScoreWin; BonusType = GS->GoldBonusText; BonusColor = GOLDCOLOR; break;
 		}	
 		if (bUseShortWinMessage)
 		{

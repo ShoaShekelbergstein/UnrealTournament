@@ -3685,11 +3685,6 @@ int32 AUTPlayerState::GetRankCheck(AUTBaseGameMode* DefaultGameMode)
 
 void AUTPlayerState::GetBadgeFromELO(AUTBaseGameMode* DefaultGameMode, bool bRankedSession, int32& BadgeLevel, int32& SubLevel) const
 {
-	if (bIsABot)
-	{
-		BadgeLevel = FMath::Rand() % 5;
-		SubLevel = FMath::Rand() % 5;
-	}
 	if (DefaultGameMode == nullptr)
 	{
 		DefaultGameMode = AUTBaseGameMode::StaticClass()->GetDefaultObject<AUTBaseGameMode>();
