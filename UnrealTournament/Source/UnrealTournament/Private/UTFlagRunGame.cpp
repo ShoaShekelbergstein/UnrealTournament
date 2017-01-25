@@ -1069,7 +1069,27 @@ AActor* AUTFlagRunGame::SetIntermissionCameras(uint32 TeamToWatch)
 	AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(CTFGameState);
 	if (FRGS)
 	{
-		return FRGS->FlagBases[(FRGS && FRGS->bRedToCap) ? 1 : 0];
+		bool bWasCap = false;
+		if (IsTeamOnOffense(TeamToWatch))
+		{
+			// check if annihilation
+			bool bFoundDefender = false;
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				AUTPlayerState* TeamPS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				if (TeamPS && TeamPS->Team && (TeamPS->Team->TeamIndex != TeamToWatch) && !TeamPS->bOutOfLives && !TeamPS->bIsInactive)
+				{
+					bFoundDefender = true;
+					break;
+				}
+			}
+			bWasCap = bFoundDefender;
+		}
+		if (bWasCap || (FRGS->ScoringPlayerState == nullptr))
+		{
+			return FRGS->FlagBases[(FRGS && FRGS->bRedToCap) ? 1 : 0];
+		}
+		return FRGS->ScoringPlayerState;
 	}
 	return nullptr;
 }
@@ -1109,6 +1129,31 @@ void AUTFlagRunGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AU
 
 void AUTFlagRunGame::ScoreAlternateWin(int32 WinningTeamIndex, uint8 Reason /* = 0 */)
 {
+	// Find last killer on winning team - must do before super call
+	if (UTGameState && (Teams.Num() > WinningTeamIndex) && Teams[WinningTeamIndex])
+	{
+		float BestScore = 0.f;
+		float LastKill = -1000.f;
+		UTGameState->ScoringPlayerState = nullptr;
+		for (int32 PlayerIdx = 0; PlayerIdx < Teams[WinningTeamIndex]->GetTeamMembers().Num(); PlayerIdx++)
+		{
+			if (Teams[WinningTeamIndex]->GetTeamMembers()[PlayerIdx] != nullptr)
+			{
+				AUTPlayerState *PS = Cast<AUTPlayerState>(Teams[WinningTeamIndex]->GetTeamMembers()[PlayerIdx]->PlayerState);
+				if ((PS != nullptr) && (PS->LastKillTime >= LastKill))
+				{
+					PS->Score = PS->RoundKillAssists + PS->RoundKills;
+					if ((UTGameState->ScoringPlayerState == nullptr) || (PS->Score > BestScore))
+					{
+						BestScore = PS->Score;
+						LastKill = PS->LastKillTime;
+						UTGameState->ScoringPlayerState = PS;
+					}
+				}
+			}
+		}
+	}
+
 	Super::ScoreAlternateWin(WinningTeamIndex, Reason);
 
 	if (FUTAnalytics::IsAvailable())
