@@ -79,7 +79,6 @@ AUTProj_BioShot::AUTProj_BioShot(const class FObjectInitializer& ObjectInitializ
 	InitialBlobPulseRate = 3.f;
 	BlobPulseTime = 0.f;
 	BlobPulseScaling = 0.1f;
-	bAlwaysShootable = true;
 }
 
 void AUTProj_BioShot::BeginPlay()
