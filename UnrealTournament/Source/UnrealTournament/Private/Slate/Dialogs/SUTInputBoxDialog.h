@@ -46,6 +46,12 @@ class UNREALTOURNAMENT_API SUTInputBoxDialog : public SUTDialogBase
 
 	FString GetInputText();
 
+	virtual bool bRemainOpenThroughTravel()
+	{
+		return true;
+	}
+
+
 protected:
 	TSharedPtr<class SEditableTextBox> EditBox;
 	FInputBoxFilterDelegate TextFilter;
