@@ -2405,6 +2405,14 @@ void AUTGameState::PrepareForIntermission()
 		}
 	}
 
+	for (FObjectIterator It(UParticleSystemComponent::StaticClass()); It; ++It)
+	{
+		UParticleSystemComponent* PSC = (UParticleSystemComponent*)*It;
+		if (PSC && !Cast<AUTWeapon>(PSC->GetOwner()))
+		{
+			PSC->CustomTimeDilation = 0.01f;
+		}
+	}
 }
 
 bool AUTGameState::HasMatchEnded() const
