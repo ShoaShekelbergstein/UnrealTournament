@@ -1168,6 +1168,11 @@ FReply SUTMatchPanel::DownloadAllButtonClicked()
 
 EVisibility SUTMatchPanel::GetMatchButtonVis() const
 {
+	if (!PlayerOwner->IsPartyLeader())
+	{
+		return EVisibility::Collapsed;
+	}
+	
 	AUTLobbyGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTLobbyGameState>();	
 	return (GameState && GameState->IsClientFullyInformed() ? EVisibility::Visible : EVisibility::Collapsed);
 }
