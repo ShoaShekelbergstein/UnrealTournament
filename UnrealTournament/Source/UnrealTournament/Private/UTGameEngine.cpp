@@ -381,7 +381,7 @@ EBrowseReturnVal::Type UUTGameEngine::Browse( FWorldContext& WorldContext, FURL 
 		// clear Team from URL when leaving server (go back to no preference)
 		if (URL.IsLocalInternal())
 		{
-			UTLocalPlayer->ClearDefaultURLOption(TEXT("Team"));
+			UTLocalPlayer->SetDefaultURLOption(TEXT("Team"), FString::FromInt(255));
 		}
 
 		URL = NewURL;
