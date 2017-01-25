@@ -75,13 +75,20 @@ FName AUTPlayerCameraManager::GetCameraStyleWithOverrides() const
 	static const FName NAME_RallyCam = FName(TEXT("RallyCam"));
 
 	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
-	if (GameState && GameState->LineUpHelper && GameState->LineUpHelper->bIsActive)
+	if (GameState)
 	{
-		return NAME_LineUpCam;
-	}
-	if ((CameraStyle == NAME_RallyCam) && GameState && GameState->IsMatchInProgress() && !GameState->IsMatchIntermission())
-	{
-		return NAME_RallyCam;
+		if (GameState->LineUpHelper && GameState->LineUpHelper->bIsActive)
+		{
+			return NAME_LineUpCam;
+		}
+		if (GameState->IsMatchIntermission())
+		{
+			return NAME_FreeCam;
+		}
+		if ((CameraStyle == NAME_RallyCam) && GameState->IsMatchInProgress())
+		{
+			return NAME_RallyCam;
+		}
 	}
 
 	AActor* CurrentViewTarget = GetViewTarget();

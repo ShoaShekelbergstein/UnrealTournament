@@ -3271,8 +3271,6 @@ void AUTPlayerController::ClientViewSpectatorPawn_Implementation(FViewTargetTran
 
 void AUTPlayerController::ClientPrepareForIntermission_Implementation()
 {
-	bSpectateBehindView = true;
-	BehindView(bSpectateBehindView);
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (GS)
 	{
