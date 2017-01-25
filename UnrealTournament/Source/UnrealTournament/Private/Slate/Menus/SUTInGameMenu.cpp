@@ -43,7 +43,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 		AUTGameState* GS = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
 		AUTPlayerState* PS = PlayerOwner->PlayerController ? Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState) : NULL;
 		bool bIsSpectator = PS && PS->bOnlySpectator;
-		if (GS && GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches && (!PS || !PS->bIsWarmingUp))
+		if (GS && GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches)
 		{
 			LeftMenuBar->AddSlot()
 			.Padding(5.0f,0.0f,0.0f,0.0f)
@@ -67,7 +67,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 			];
 		}
 
-		if (GS && (GS->GetMatchState() == MatchState::WaitingToStart) && (!PS || !PS->bIsWarmingUp))
+		if (GS && (GS->GetMatchState() == MatchState::WaitingToStart))
 		{
 			if (GS->GetNetMode() == NM_Standalone)
 			{
@@ -91,6 +91,28 @@ void SUTInGameMenu::BuildLeftMenuBar()
 						]
 					];
 			}
+			else if (PS && PS->bIsWarmingUp)
+			{
+				LeftMenuBar->AddSlot()
+					.Padding(5.0f, 0.0f, 0.0f, 0.0f)
+					.AutoWidth()
+					[
+						SNew(SUTButton)
+						.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
+					.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
+					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
+					[
+						SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot()
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_LeaveWarmup", "LEAVE WARM UP"))
+					.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
+					]
+					]
+					];
+			}
 			else if (!bIsSpectator)
 			{
 				LeftMenuBar->AddSlot()
@@ -107,7 +129,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 							.VAlign(VAlign_Center)
 							[
 								SNew(STextBlock)
-								.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "CHANGE READY"))
+								.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "WARM UP"))
 								.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
 							]
 						]
@@ -304,7 +326,7 @@ FReply SUTInGameMenu::OnReadyChangeClick()
 	if (PC)
 	{
 //		PC->PlayMenuSelectSound();
-		PC->ServerRestartPlayer();
+		PC->ServerToggleWarmup();
 		PlayerOwner->HideMenu();
 	}
 	return FReply::Handled();

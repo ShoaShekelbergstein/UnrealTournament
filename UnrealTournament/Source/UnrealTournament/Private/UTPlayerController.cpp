@@ -826,7 +826,7 @@ bool AUTPlayerController::InputKey(FKey Key, EInputEvent EventType, float Amount
 			ServerRestartPlayer();
 			return true;
 		}
-		else if (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && UTPlayerState->bReadyToPlay && !UTPlayerState->bOnlySpectator)
+		else if (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && !UTPlayerState->bOnlySpectator)
 		{
 			ServerToggleWarmup();
 			bPlayerIsWaiting = true;
@@ -2566,6 +2566,31 @@ AUTCharacter* AUTPlayerController::GetUTCharacter()
 	return UTCharacter;
 }
 
+void AUTPlayerController::ClientUpdateWarmup_Implementation(bool bNewWarmingUp)
+{
+	UUTLocalPlayer* UTLP = Cast<UUTLocalPlayer>(Player);
+	if (UTLP)
+	{
+		if (bNewWarmingUp)
+		{
+			if (UTPlayerState)
+			{
+				UTPlayerState->bIsWarmingUp = true;
+			}
+			UTLP->HideMenu();
+			return;
+		}
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+		if (GS && GS->GetMatchState() == MatchState::WaitingToStart)
+		{
+			if (UTPlayerState)
+			{
+				UTPlayerState->bIsWarmingUp = false;
+			}
+			UTLP->ShowMenu(TEXT(""));
+		}
+	}
+}
 
 bool AUTPlayerController::ServerToggleWarmup_Validate()
 {
@@ -2575,12 +2600,15 @@ bool AUTPlayerController::ServerToggleWarmup_Validate()
 void AUTPlayerController::ServerToggleWarmup_Implementation()
 {
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (!GS || (GS->GetMatchState() != MatchState::WaitingToStart) || !UTPlayerState || !UTPlayerState->bReadyToPlay)
+	if (!GS || (GS->GetMatchState() != MatchState::WaitingToStart) || !UTPlayerState)
 	{
 		return;
 	}
-	UTPlayerState->bIsWarmingUp = !UTPlayerState->bIsWarmingUp;
+	UTPlayerState->SetReadyToPlay(!UTPlayerState->bReadyToPlay);
+	UTPlayerState->bPendingTeamSwitch = false;
+	UTPlayerState->bIsWarmingUp = UTPlayerState->bReadyToPlay;
 	UTPlayerState->ForceNetUpdate();
+	ClientUpdateWarmup(UTPlayerState->bIsWarmingUp);
 	if (UTPlayerState->bIsWarmingUp)
 	{
 		if (!IsFrozen())
@@ -2621,7 +2649,7 @@ void AUTPlayerController::ServerRestartPlayer_Implementation()
 		return;
 	}
 	// Ready up if match hasn't started and not a ranked match
-	if (!UTGM->HasMatchStarted() && !UTGM->bRankedSession && UTPlayerState && !UTPlayerState->bIsWarmingUp)
+	if (!UTGM->HasMatchStarted() && !UTGM->bRankedSession)
 	{
 		if (UTPlayerState->bCaster)
 		{
@@ -2632,12 +2660,6 @@ void AUTPlayerController::ServerRestartPlayer_Implementation()
 				UTPlayerState->SetReadyToPlay(true);
 				UTPlayerState->ForceNetUpdate();
 			}
-		}
-		else if ((UTGM->GetMatchState() != MatchState::CountdownToBegin) && (UTGM->GetMatchState() != MatchState::PlayerIntro))
-		{
-			UTPlayerState->SetReadyToPlay(!UTPlayerState->bReadyToPlay);
-			UTPlayerState->bPendingTeamSwitch = false;
-			UTPlayerState->ForceNetUpdate();
 		}
 	}
 	//Half-time ready up for caster control
@@ -2687,10 +2709,6 @@ void AUTPlayerController::ServerSwitchTeam_Implementation()
 				return;
 			}
 			ChangeTeam(NewTeam);
-			if (UTPlayerState->bPendingTeamSwitch)
-			{
-				UTPlayerState->SetReadyToPlay(false);
-			}
 		}
 		else
 		{

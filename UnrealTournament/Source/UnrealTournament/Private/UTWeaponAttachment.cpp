@@ -352,7 +352,6 @@ void AUTWeaponAttachment::PlayBulletWhip()
 	}
 }
 
-// FIXMESTEVE - need to make play decision before delay
 void AUTWeaponAttachment::DelayedBulletWhip()
 {
 	if (BulletWhip != NULL)

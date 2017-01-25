@@ -191,6 +191,9 @@ public:
 	UFUNCTION(Reliable, client)
 		void ClientAnnounceRoundScore(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 RoundBonus, uint8 Reason);
 
+	UFUNCTION(Reliable, client)
+		void ClientUpdateWarmup(bool bNewWarmingUp);
+
 	UPROPERTY(GlobalConfig)
 	bool bHearsTaunts;
 

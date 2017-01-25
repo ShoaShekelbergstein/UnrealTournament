@@ -190,23 +190,25 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 				}
 				else
 				{
-					ShortMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "PressEnter", "Press [ENTER] to leave");
+					UUTLocalPlayer* LP = UTHUDOwner->UTPlayerOwner ? UTHUDOwner->UTPlayerOwner->GetUTLocalPlayer() : nullptr;
+					ShortMessage = (LP && LP->AreMenusOpen())
+						? NSLOCTEXT("UUTHUDWidget_Spectator", "ClickLeave", "Click on LEAVE WARM UP to leave")
+						: NSLOCTEXT("UUTHUDWidget_Spectator", "PressEnter", "Press [ENTER] to leave");
 					SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "Warmup", "Warm Up");
 				}
 			}
-			else if (UTPS && UTPS->bReadyToPlay && (UTPS->GetNetMode() != NM_Standalone))
-			{
-				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "IsReadyTeam", "You are ready, press [ENTER] to warm up.");
-			}
 			else if (UTGameState->PlayersNeeded > 0)
 			{
-				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayers", "Waiting for players to join. Press [FIRE] to ready up.");
+				UUTLocalPlayer* LP = UTHUDOwner->UTPlayerOwner ? UTHUDOwner->UTPlayerOwner->GetUTLocalPlayer() : nullptr;
+				SpectatorMessage = (LP && LP->AreMenusOpen())
+						? NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayersMenu", "Click on WARM UP to warm up.")
+						: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayers", "Press [ENTER] to warm up.");
 			}
 			else if (UTPS && UTPS->bCaster)
 			{
 				SpectatorMessage = (UTGameState->AreAllPlayersReady())
 					? NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForCaster", "All players are ready. Press [Enter] to start match.")
-					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForReady", "Waiting for players to ready up.");
+					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForReady", "Waiting for players.");
 			}
 			else if (UTGameState->bRankedSession)
 			{
@@ -214,7 +216,7 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 			}
 			else if (UTPS && UTPS->bOnlySpectator)
 			{
-				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForReady", "Waiting for players to ready up.");
+				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForReady", "Waiting for players.");
 			}
 			else if (UTHUDOwner->GetScoreboard() && UTHUDOwner->GetScoreboard()->IsInteractive())
 			{
@@ -222,9 +224,10 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 			}
 			else
 			{
-				SpectatorMessage = (UTGameState->bTeamGame && UTGameState->bAllowTeamSwitches)
-					? NSLOCTEXT("UUTHUDWidget_Spectator", "GetReadyTeam", "Press [FIRE] to ready up, [ALTFIRE] to change teams.")
-					: NSLOCTEXT("UUTHUDWidget_Spectator", "GetReady", "Press [FIRE] when you are ready.");
+				UUTLocalPlayer* LP = UTHUDOwner->UTPlayerOwner ? UTHUDOwner->UTPlayerOwner->GetUTLocalPlayer() : nullptr;
+				SpectatorMessage = (LP && LP->AreMenusOpen())
+					? NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayersMenu", "Click on WARM UP to warm up.")
+					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayers", "Press [ENTER] to warm up.");
 			}
 		}
 		else if (!UTGameState->HasMatchEnded())

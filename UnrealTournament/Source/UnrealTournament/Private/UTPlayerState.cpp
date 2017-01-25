@@ -3263,6 +3263,7 @@ void AUTPlayerState::SetReadyToPlay(bool bNewReadyState)
 {
 	bReadyToPlay = bNewReadyState;
 
+// FIXMESTEVE remove
 	uint8 NewReadyState = bReadyToPlay + (bPendingTeamSwitch >> 2);
 	if ((ReadySwitchCount > 2) && bReadyToPlay)
 	{
