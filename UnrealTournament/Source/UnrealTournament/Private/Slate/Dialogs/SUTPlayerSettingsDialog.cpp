@@ -1017,9 +1017,9 @@ void SUTPlayerSettingsDialog::OnNameTextChanged(const FText& NewText)
 		}
 	}
 
-	if (AdjustedText.Len() > 16)
+	if (AdjustedText.Len() > 8)
 	{
-		AdjustedText = AdjustedText.Left(16);
+		AdjustedText = AdjustedText.Left(8);
 	}
 
 	if (AdjustedText != NewText.ToString())

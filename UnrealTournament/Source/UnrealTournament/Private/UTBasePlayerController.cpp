@@ -118,7 +118,17 @@ void AUTBasePlayerController::ServerChangeClanName_Implementation(const FString&
 {
 	if (UTPlayerState)
 	{
-		UTPlayerState->ClanName = S;
+		// Unicode 160 is an empty space, not sure what other characters are broken in our font
+		FString ClampedName = (S.Len() > 8) ? S.Left(8) : S;
+		FString InvalidNameChars = FString(INVALID_NAME_CHARACTERS);
+		for (int32 i = ClampedName.Len() - 1; i >= 0; i--)
+		{
+			if (InvalidNameChars.GetCharArray().Contains(ClampedName.GetCharArray()[i]))
+			{
+				ClampedName.GetCharArray().RemoveAt(i);
+			}
+		}
+		UTPlayerState->ClanName = ClampedName;
 	}
 }
 
