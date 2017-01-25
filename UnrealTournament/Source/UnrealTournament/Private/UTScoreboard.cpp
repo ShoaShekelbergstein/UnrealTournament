@@ -414,7 +414,7 @@ void UUTScoreboard::DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float R
 
 		for (int32 i=0; i < UTGameState->PlayerArray.Num(); i++)
 		{
-			if (!UTGameState->PlayerArray[i]->bIsSpectator && !UTGameState->PlayerArray[i]->bOnlySpectator)		
+			if (!UTGameState->PlayerArray[i]->bIsSpectator && !UTGameState->PlayerArray[i]->bOnlySpectator && !UTGameState->PlayerArray[i]->bIsABot)		
 			{
 				if (!UTGameState->bOnlyTeamCanVoteKick || UTGameState->OnSameTeam(PlayerState,UTGameState->PlayerArray[i]) )
 				{

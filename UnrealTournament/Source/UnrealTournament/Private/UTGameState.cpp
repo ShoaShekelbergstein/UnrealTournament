@@ -1516,12 +1516,20 @@ void AUTGameState::VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter)
 			return;
 		}
 		
-
 		BadGuy->LogBanRequest(Voter);
 		Game->BroadcastLocalized(Voter, UUTGameMessage::StaticClass(), 13, Voter, BadGuy);
 
-		int32 NumPlayers = bOnlyTeamCanVoteKick ? BadGuy->Team->GetSize() : Game->NumPlayers;
-
+		int32 NumPlayers = 0;
+		for (int32 i = 0; i <PlayerArray.Num(); i++)
+		{
+			if (!PlayerArray[i]->bIsSpectator && !PlayerArray[i]->bOnlySpectator && !PlayerArray[i]->bIsABot)
+			{
+				if (!bOnlyTeamCanVoteKick || OnSameTeam(BadGuy, PlayerArray[i]))
+				{
+					NumPlayers += 1.0f;
+				}
+			}
+		}
 		float Perc = (float(BadGuy->CountBanVotes()) / float(NumPlayers)) * 100.0f;
 		BadGuy->KickCount = BadGuy->CountBanVotes();
 		UE_LOG(UT,Log,TEXT("[KICK VOTE] Target = %s - # of Votes = %i (%i players), % = %f"), * BadGuy->PlayerName, BadGuy->KickCount, NumPlayers, Perc);
