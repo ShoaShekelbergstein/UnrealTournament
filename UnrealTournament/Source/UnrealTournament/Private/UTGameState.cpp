@@ -2404,7 +2404,7 @@ void AUTGameState::PrepareForIntermission()
 			IUTIntermissionBeginInterface::Execute_IntermissionBegin(*It);
 		}
 	}
-
+	/*
 	for (FObjectIterator It(UParticleSystemComponent::StaticClass()); It; ++It)
 	{
 		UParticleSystemComponent* PSC = (UParticleSystemComponent*)*It;
@@ -2413,6 +2413,7 @@ void AUTGameState::PrepareForIntermission()
 			PSC->CustomTimeDilation = 0.01f;
 		}
 	}
+	*/
 }
 
 bool AUTGameState::HasMatchEnded() const
