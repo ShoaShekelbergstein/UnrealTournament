@@ -294,6 +294,7 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 				if (OwnerPlayerState && 
 						!UTGameState->bDisableVoteKick && 
 						!OwnerPlayerState->bOnlySpectator && 
+						!SelectedPlayer->bIsABot &&
 						(!UTGameState->bOnlyTeamCanVoteKick || UTGameState->OnSameTeam(OwnerPlayerState, SelectedPlayer.Get()))
 					)
 				{
