@@ -17,6 +17,7 @@ public:
 	virtual bool ShouldDraw_Implementation(bool bShowScores) override;
 
 protected:
+	UPROPERTY()
 	AUTWeapon* LastWeapon;
 
 };
