@@ -20,6 +20,10 @@ namespace UnrealBuildTool.Rules
 				}
                 );
 
+            PublicAdditionalLibraries.Add("avrt.lib");
+
+            AddEngineThirdPartyPrivateStaticDependencies(Target, "Kiss_FFT");
+
             PublicIncludePaths.Add("../../UnrealTournament/Plugins/CorsairRGB/Source/ThirdParty/CorsairRGB/include");
 
             if (Target.Platform == UnrealTargetPlatform.Win64)
