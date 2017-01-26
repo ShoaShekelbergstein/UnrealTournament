@@ -72,7 +72,8 @@ struct FMatchmakingParams
 		TeamElo(1500),
 		EloRange(10),
 		EloRangeRetries(0),
-		MinimumEloRangeBeforeHosting(100)
+		MinimumEloRangeBeforeHosting(100),
+		EloSearchStep(20)
 	{}
 
 	~FMatchmakingParams() {}
@@ -111,6 +112,8 @@ struct FMatchmakingParams
 	int32 EloRangeRetries;
 	UPROPERTY()
 	int32 MinimumEloRangeBeforeHosting;
+	UPROPERTY()
+	int32 EloSearchStep;
 	UPROPERTY()
 	FString SessionIdToSkip;
 };

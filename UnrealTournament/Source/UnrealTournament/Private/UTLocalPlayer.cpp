@@ -5543,6 +5543,8 @@ void UUTLocalPlayer::StartMatchmaking(int32 PlaylistId)
 		if (!MatchmakingParams.bRanked)
 		{
 			MatchmakingParams.EloRange = 100;
+			MatchmakingParams.MinimumEloRangeBeforeHosting = 300;
+			MatchmakingParams.EloSearchStep = 100;
 		}
 
 		bool bSuccessfullyStarted = Matchmaking->FindGatheringSession(MatchmakingParams);

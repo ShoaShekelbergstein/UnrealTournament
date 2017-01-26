@@ -155,7 +155,7 @@ void UUTMatchmakingGather::OnNoGatheringSessionsFound()
 	CurrentParams.EloRangeRetries++;
 	if (CurrentParams.EloRangeRetries > 3)
 	{
-		CurrentParams.EloRange = FMath::Min(CurrentParams.EloRange + 20.f, 1000.0f);
+		CurrentParams.EloRange = FMath::Min(CurrentParams.EloRange + CurrentParams.EloSearchStep, 1000);
 		CurrentParams.EloRangeRetries = 0;
 	}
 
