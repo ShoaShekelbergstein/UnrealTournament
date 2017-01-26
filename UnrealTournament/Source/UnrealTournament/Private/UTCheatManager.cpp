@@ -544,6 +544,44 @@ void UUTCheatManager::MatchmakeMyParty(int32 PlaylistId)
 	}
 }
 
+void UUTCheatManager::ViewBot()
+{
+	if (GetOuterAUTPlayerController()->Role == ROLE_Authority)
+	{
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+		if (GS->PlayerArray.Num() > 0)
+		{
+			int32 CurrentIndex = -1;
+			APawn* PTarget = Cast<APawn>(GetOuterAUTPlayerController()->GetViewTarget());
+			if (PTarget != nullptr && PTarget->PlayerState != nullptr)
+			{
+				CurrentIndex = GS->PlayerArray.Find(PTarget->PlayerState);
+			}
+			int32 Start = CurrentIndex;
+			bool bFoundBot = false;
+			do
+			{
+				CurrentIndex++;
+				if (CurrentIndex >= GS->PlayerArray.Num())
+				{
+					CurrentIndex = 0;
+				}
+				bFoundBot = GS->PlayerArray[CurrentIndex] != nullptr && Cast<AUTBot>(GS->PlayerArray[CurrentIndex]->GetOwner()) != nullptr;
+			} while (CurrentIndex != Start && !bFoundBot);
+			
+			if (bFoundBot)
+			{
+				GetOuterAUTPlayerController()->BehindView(GetOuterAUTPlayerController()->bSpectateBehindView);
+				GetOuterAUTPlayerController()->SetViewTarget(GS->PlayerArray[CurrentIndex]);
+			}
+			else
+			{
+				ViewSelf();
+			}
+		}
+	}
+}
+
 void UUTCheatManager::TestPaths(bool bHighJumps, bool bWallDodges, bool bLifts, bool bLiftJumps)
 {
 	AUTGameMode* Game = GetWorld()->GetAuthGameMode<AUTGameMode>();
