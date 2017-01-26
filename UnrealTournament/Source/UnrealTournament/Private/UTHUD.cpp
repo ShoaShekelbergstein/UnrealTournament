@@ -2126,8 +2126,9 @@ void AUTHUD::ClearAllUMGWidgets()
 
 void AUTHUD::ShowUTMenu()
 {
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;
-	if (PlayerOwner)
+	if (GS && UTLP && GS->GetMatchState() == MatchState::WaitingToStart)
 	{
 		UTLP->ShowMenu(TEXT(""));
 	}

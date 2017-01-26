@@ -5479,8 +5479,17 @@ void AUTCharacter::OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
 
 void AUTCharacter::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
 {
-	AUTPlayerState* UTPS = Cast<AUTPlayerState>(PlayerState);
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (GS && GS->LineUpHelper && GS->LineUpHelper->bIsActive)
+	{
+		PostRenderForInGameIntro(PC, Canvas, CameraPosition, CameraDir);
+		return;
+	}
+	AUTPlayerState* UTPS = Cast<AUTPlayerState>(PlayerState);
+	if (UTPS == nullptr)
+	{
+		return;
+	}
 	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PC);
 	const bool bSpectating = PC && PC->PlayerState && PC->PlayerState->bOnlySpectator;
 	const bool bTacCom = bSpectating && UTPC && UTPC->bTacComView;
@@ -5488,15 +5497,6 @@ void AUTCharacter::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector
 	const bool bRecentlyRendered = (GetWorld()->TimeSeconds - GetLastRenderTime() < 0.5f);
 	const bool bIsViewTarget = (PC->GetViewTarget() == this);
 
-	if (GS && GS->LineUpHelper && GS->LineUpHelper->bIsActive)
-	{
- 		PostRenderForInGameIntro(PC, Canvas, CameraPosition, CameraDir);
-		return;
-	}
-	if (UTPS == nullptr)
-	{
-		return;
-	}
 	FVector WorldPosition = GetMesh()->GetComponentLocation() + FVector(0.f, 0.f, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() * 2.25f);
 	UTPS->LastPostRenderedLocation = WorldPosition;
 	UTPS->bPawnWasPostRendered = true;
@@ -5686,6 +5686,8 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 		}
 		else
 		{
+			// Vary height of names to avoid overlaps
+
 			ScreenPosition.Y += TextYL - 1.75f*BarHeight;
 			AUTHUD* UTHUD = Cast<AUTHUD>(PC->MyHUD);
 			if (UTHUD && (UTHUD->ELOBadges.Num() > 0))
