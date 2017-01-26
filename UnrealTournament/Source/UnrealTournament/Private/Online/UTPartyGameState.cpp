@@ -292,8 +292,7 @@ void UUTPartyGameState::SetPartyCancelQuickMatch()
 bool UUTPartyGameState::IsInJoinableGameState() const
 {
 	if (PartyState.PartyProgression == EUTPartyState::Matchmaking ||
-		PartyState.PartyProgression == EUTPartyState::PostMatchmaking ||
-		PartyState.PartyProgression == EUTPartyState::TravelToServer)
+		PartyState.PartyProgression == EUTPartyState::PostMatchmaking)
 	{
 		return false;
 	}
