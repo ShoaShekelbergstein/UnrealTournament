@@ -1147,6 +1147,9 @@ void AUTRecastNavMesh::BuildSpecialLinks(int32 NumToProcess)
 
 			const float MoveSpeed = ScoutClass.GetDefaultObject()->GetCharacterMovement()->MaxWalkSpeed;
 			const FCapsuleSize PathSize = GetHumanPathSize();
+			const FCapsuleSize MaxPathSize = GetMaxPathSize();
+			const FCollisionShape ScoutShape = FCollisionShape::MakeCapsule(DefaultScout->GetCapsuleComponent()->GetUnscaledCapsuleRadius(), DefaultScout->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight());
+			const FCollisionShape MaxScoutShape = FCollisionShape::MakeCapsule(MaxPathSize.Radius, MaxPathSize.Height);
 			const FVector HeightAdjust(0.0f, 0.0f, PathSize.Height);
 
 			// HACK: avoid placing jumps to extra lift navmesh geometry created to work around lack of movable navmeshes
@@ -1247,14 +1250,18 @@ void AUTRecastNavMesh::BuildSpecialLinks(int32 NumToProcess)
 											{
 												// check for swim reachable
 												bool bSwimReachable = false;
+												bool bUseMaxSize = false;
 												bool bRequiresJumpUp = false;
-												const FCollisionShape ScoutShape = FCollisionShape::MakeCapsule(PathSize.Radius, PathSize.Height);
 												// ignore the NumSegments thing above for water volumes; we can definitely be more restrictive here because the AI can generally float to some other node if necessary
 												if (NumSegments > 1 || ((TestLoc - WallCenter).GetSafeNormal2D() | (WallCenter - PolyCenter).GetSafeNormal2D()) > 0.64f)
 												{
 													if (!GetWorld()->SweepTestByChannel(WallCenter, TestLoc, FQuat::Identity, ECC_Pawn, ScoutShape))
 													{
 														bSwimReachable = true;
+														if (!GetWorld()->SweepTestByChannel(WallCenter, TestLoc, FQuat::Identity, ECC_Pawn, MaxScoutShape))
+														{
+															bUseMaxSize = true;
+														}
 													}
 													else if (It.Value()->PhysicsVolume->bWaterVolume)
 													{
@@ -1280,6 +1287,10 @@ void AUTRecastNavMesh::BuildSpecialLinks(int32 NumToProcess)
 															}
 														}
 														bSwimReachable = !GetWorld()->SweepTestByChannel(NewWallCenter, NewTestLoc, FQuat::Identity, ECC_Pawn, ScoutShape);
+														if (bSwimReachable)
+														{
+															bUseMaxSize = !GetWorld()->SweepTestByChannel(NewWallCenter, NewTestLoc, FQuat::Identity, ECC_Pawn, MaxScoutShape);
+														}
 													}
 													else
 													{
@@ -1333,6 +1344,9 @@ void AUTRecastNavMesh::BuildSpecialLinks(int32 NumToProcess)
 																}
 															}
 														}
+														// FIXME HACK should trace test separately
+														bUseMaxSize = Node->MinPolyEdgeSize.Radius >= MaxPathSize.Radius && It.Value()->MinPolyEdgeSize.Radius >= MaxPathSize.Radius &&
+																		Node->MinPolyEdgeSize.Height >= MaxPathSize.Height && It.Value()->MinPolyEdgeSize.Height >= MaxPathSize.Height;
 													}
 													if (bSwimReachable)
 													{
@@ -1353,7 +1367,8 @@ void AUTRecastNavMesh::BuildSpecialLinks(int32 NumToProcess)
 														}
 														if (!bFound)
 														{
-															new(Node->Paths) FUTPathLink(Node, PolyRef, It.Value(), It.Key(), NULL, PathSize.Radius, PathSize.Height, ReachFlags);
+															const FCapsuleSize FinalPathSize = bUseMaxSize ? MaxPathSize : PathSize;
+															new(Node->Paths) FUTPathLink(Node, PolyRef, It.Value(), It.Key(), NULL, FinalPathSize.Radius, FinalPathSize.Height, ReachFlags);
 														}
 													}
 												}
@@ -1363,6 +1378,15 @@ void AUTRecastNavMesh::BuildSpecialLinks(int32 NumToProcess)
 												float RequiredJumpZ = 0.0f;
 												if (OnlyJumpReachable(DefaultScout, WallCenter, TestLoc, PolyRef, It.Key(), -1.0f, &RequiredJumpZ))
 												{
+													bool bUseMaxSize = false;
+													{
+														const float SavedRadius = DefaultScout->GetCapsuleComponent()->GetUnscaledCapsuleRadius();
+														const float SavedHeight = DefaultScout->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
+														DefaultScout->GetCapsuleComponent()->InitCapsuleSize(MaxPathSize.Radius, MaxPathSize.Height);
+														float Unused1 = 0.0f;
+														bUseMaxSize = OnlyJumpReachable(DefaultScout, WallCenter, TestLoc, PolyRef, It.Key(), -1.0f, &Unused1);
+														DefaultScout->GetCapsuleComponent()->InitCapsuleSize(SavedRadius, SavedHeight);
+													}
 													bool bNeedsJumpSpec = RequiredJumpZ > BaseJumpZ;
 													// TODO: account for MaxFallSpeed
 													bool bFound = false;
@@ -1414,7 +1438,8 @@ void AUTRecastNavMesh::BuildSpecialLinks(int32 NumToProcess)
 														{
 															ReachFlags |= R_SWIM;
 														}
-														FUTPathLink* NewLink = new(Node->Paths) FUTPathLink(Node, PolyRef, It.Value(), It.Key(), JumpSpec, PathSize.Radius, PathSize.Height, ReachFlags);
+														const FCapsuleSize FinalPathSize = bUseMaxSize ? MaxPathSize : PathSize;
+														FUTPathLink* NewLink = new(Node->Paths) FUTPathLink(Node, PolyRef, It.Value(), It.Key(), JumpSpec, FinalPathSize.Radius, FinalPathSize.Height, ReachFlags);
 													}
 												}
 											}
@@ -1445,7 +1470,6 @@ void AUTRecastNavMesh::BuildSpecialLinks(int32 NumToProcess)
 			// which won't be detected by the previous pass due to checking only jumps from poly walls
 			if (SpecialLinkBuildPass == 1)
 			{
-				FCollisionShape ScoutShape = FCollisionShape::MakeCapsule(DefaultScout->GetCapsuleComponent()->GetUnscaledCapsuleRadius(), DefaultScout->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight());
 				for (; SpecialLinkBuildNodeIndex < PathNodes.Num() && NumToProcess > 0; SpecialLinkBuildNodeIndex++, NumToProcess--)
 				{
 					UUTPathNode* Node = PathNodes[SpecialLinkBuildNodeIndex];
@@ -1553,7 +1577,9 @@ void AUTRecastNavMesh::BuildSpecialLinks(int32 NumToProcess)
 												JumpSpec->JumpStart = GetPolyCenter(StartPoly);
 												JumpSpec->JumpEnd = GetPolyCenter(EndPoly);
 												AllReachSpecs.Add(JumpSpec);
-												FUTPathLink* NewLink = new(StartNode->Paths) FUTPathLink(StartNode, StartPoly, Node, EndPoly, JumpSpec, PathSize.Radius, PathSize.Height, R_JUMP);
+												// match the jump up's collision size
+												// TODO: trying to preserve perf here but may need to trace in the end
+												FUTPathLink* NewLink = new(StartNode->Paths) FUTPathLink(StartNode, StartPoly, Node, EndPoly, JumpSpec, FMath::Max<int32>(Link.CollisionRadius, PathSize.Radius), FMath::Max<int32>(Link.CollisionHeight, PathSize.Height), R_JUMP);
 												CalcJumpPathDistance(*NewLink);
 												break;
 											}
@@ -2054,7 +2080,7 @@ float FUTReachParams::CalcAvailableSimpleJumpZ(APawn* Asker, float* RepeatableJu
 FUTReachParams::FUTReachParams(APawn* Asker, const FNavAgentProperties& AgentProps)
 {
 	Radius = FMath::TruncToInt(AgentProps.AgentRadius);
-	HalfHeight = FMath::TruncToInt(AgentProps.AgentHeight * 0.5f);
+	InitialHalfHeight = HalfHeight = FMath::TruncToInt(AgentProps.AgentHeight * 0.5f);
 	MaxFallSpeed = 0; // FIXME
 	MoveFlags = 0;
 	if (AgentProps.bCanJump)
@@ -2181,7 +2207,7 @@ bool AUTRecastNavMesh::FindBestPath(APawn* Asker, const FNavAgentProperties& Age
 			int32 NextDistance = 0;
 			for (int32 i = 0; i < CurrentNode->Node->Paths.Num(); i++)
 			{
-				if (CurrentNode->Node->Paths[i].End.IsValid() && CurrentNode->Node->Paths[i].Supports(ReachParams.Radius, ReachParams.HalfHeight, ReachParams.MoveFlags))
+				if (CurrentNode->Node->Paths[i].End.IsValid() && CurrentNode->Node->Paths[i].Supports(ReachParams.Radius, ReachParams.HalfHeight, ReachParams.InitialHalfHeight, ReachParams.MoveFlags))
 				{
 					FEvaluatedNode* NextNode = NodeMap.FindRef(CurrentNode->Node->Paths[i].End.Get());
 					if (NextNode == NULL)

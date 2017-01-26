@@ -40,6 +40,7 @@ struct FUTReachParams
 	// size as integer for quick path pass/fail
 	int32 Radius;
 	int32 HalfHeight;
+	int32 InitialHalfHeight; // ignoring any crouch/shrink capability
 	// compared with path ReachFlags
 	uint32 MoveFlags;
 	// max allowed falling speed for fall capable paths

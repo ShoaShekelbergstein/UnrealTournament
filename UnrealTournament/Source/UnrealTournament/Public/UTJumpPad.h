@@ -45,6 +45,9 @@ class UNREALTOURNAMENT_API AUTJumpPad : public AActor, public IUTPathBuilderInte
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = JumpPad)
 	bool bMaintainVelocity;
 
+	/** AI flag indicating that this jump pad is suitable for large sized jump capable units (larger than default human size) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AI)
+	bool bLargeUnitUsable;
 	/** if set AI using this jump pad will not air control while moving upwards - use in edge cases where the AI's attempt to help their jump makes them clip some edge or outcropping */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, Meta = (DisplayName = "Reduce AI Air Control"))
 	bool bAIReducedAirControl;
