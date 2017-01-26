@@ -850,12 +850,25 @@ public:
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = Pawn)
 	bool bDisallowWeaponFiring;
+
+	UPROPERTY(BlueprintReadOnly, Category = Pawn)
+		bool bDisallowWeaponSwitching;
+
 public:
 	/** allows disabling all weapon firing from this Pawn
 	 * NOT replicated, must be called on both sides to work properly
 	 */
 	UFUNCTION(BlueprintCallable, Category = Pawn)
 	virtual void DisallowWeaponFiring(bool bDisallowed);
+
+	/** Call after calling DissallowWeaponFiring(true) to re-enable weapon switching without enabling weapon firing.  NOT replicated. */
+	UFUNCTION(BlueprintCallable, Category = Pawn)
+		virtual void EnableWeaponSwitching();
+
+	inline bool IsSwitchingDisabled() const
+	{
+		return bDisallowWeaponSwitching;
+	}
 
 	inline bool IsFiringDisabled() const
 	{

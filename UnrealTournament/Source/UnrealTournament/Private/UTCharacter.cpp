@@ -1653,7 +1653,6 @@ void AUTCharacter::AnnounceShred(AUTPlayerController *KillerPC)
 		KillerPS->AddCoolFactorMinorEvent();
 		KillerPS->bAnnounceWeaponReward = true;
 		KillerPC->SendPersonalMessage(CloseFlakRewardMessageClass, KillerPS->GetStatsValue(FlakShredStatName), PlayerState, KillerPS);
-
 	}
 }
 
@@ -2970,7 +2969,7 @@ void AUTCharacter::InventoryEvent(FName EventName)
 
 void AUTCharacter::SwitchWeapon(AUTWeapon* NewWeapon)
 {
-	if (NewWeapon != NULL && !IsDead() && ((Weapon == nullptr) || !IsFiringDisabled()))
+	if (NewWeapon != NULL && !IsDead() && ((Weapon == nullptr) || !IsSwitchingDisabled()))
 	{
 		if (Role == ROLE_Authority)
 		{
@@ -6522,6 +6521,11 @@ bool AUTCharacter::IsFeigningDeath() const
 	return bFeigningDeath;
 }
 
+void AUTCharacter::EnableWeaponSwitching()
+{
+	bDisallowWeaponSwitching = false;
+}
+
 void AUTCharacter::DisallowWeaponFiring(bool bDisallowed)
 {
 	if (bDisallowed != bDisallowWeaponFiring)
@@ -6556,6 +6560,7 @@ void AUTCharacter::DisallowWeaponFiring(bool bDisallowed)
 			}
 		}
 	}
+	bDisallowWeaponSwitching = bDisallowWeaponFiring;
 }
 
 void AUTCharacter::TurnOff()

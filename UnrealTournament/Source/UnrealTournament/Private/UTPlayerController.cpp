@@ -1074,7 +1074,7 @@ void AUTPlayerController::ServerThrowWeapon_Implementation()
 
 void AUTPlayerController::SwitchWeaponInSequence(bool bPrev)
 {
-	if (UTCharacter != NULL && IsLocalPlayerController() && UTCharacter->TauntCount == 0 && !UTCharacter->IsFiringDisabled())
+	if (UTCharacter != NULL && IsLocalPlayerController() && UTCharacter->TauntCount == 0 && !UTCharacter->IsSwitchingDisabled())
 	{
 		LastWeaponPrevNextTime = GetWorld()->GetTimeSeconds();
 		if (UTCharacter->GetWeapon() == NULL)
