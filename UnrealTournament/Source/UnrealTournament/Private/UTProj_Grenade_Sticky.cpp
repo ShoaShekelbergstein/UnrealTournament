@@ -168,12 +168,21 @@ void AUTProj_Grenade_Sticky::ProcessHit_Implementation(AActor* OtherActor, UPrim
 		}
 	}
 	
-	// If we hit a teammate that isn't ourselves, just ignore it
 	AUTCharacter* UTChar = Cast<AUTCharacter>(OtherActor);
 	if (UTChar)
 	{
-		if (GetInstigatorTeamNum() == UTChar->GetTeamNum() && GetInstigatorController() != UTChar->GetController())
+		int32 InstTeamNum = GetInstigatorTeamNum();
+		if (InstTeamNum != 255)
 		{
+			if (GetInstigatorTeamNum() == UTChar->GetTeamNum())
+			{
+				// If we hit a teammate that isn't ourselves, just ignore it
+				return;
+			}
+		}
+		else if (InstigatorController == UTChar->Controller)
+		{
+			// If we hit ourselves in DM, just ignore it
 			return;
 		}
 	}
