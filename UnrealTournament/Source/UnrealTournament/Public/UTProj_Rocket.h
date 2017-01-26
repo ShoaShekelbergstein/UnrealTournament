@@ -40,16 +40,11 @@ class UNREALTOURNAMENT_API AUTProj_Rocket : public AUTProjectile
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Announcement)
 		TSubclassOf<class UUTRewardMessage> AirRocketRewardClass;
 
-	/** Following rockets in burst. */
-	UPROPERTY()
-		TArray<AUTProj_Rocket*> FollowerRockets;
-
 	UPROPERTY()
 		class UMaterialInstanceDynamic* MeshMI;
 
 	virtual void Destroyed() override;
 	virtual void Tick(float DeltaTime) override;
-	virtual void Explode_Implementation(const FVector& HitLocation, const FVector& HitNormal, UPrimitiveComponent* HitComp) override;
 	virtual void OnRep_Instigator() override;
 	virtual void PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir) override;
 

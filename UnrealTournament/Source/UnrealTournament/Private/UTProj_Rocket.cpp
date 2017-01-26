@@ -178,22 +178,3 @@ void AUTProj_Rocket::DamageImpactedActor_Implementation(AActor* OtherActor, UPri
 	}
 	bPendingSpecialReward = false;
 }
-
-void AUTProj_Rocket::Explode_Implementation(const FVector& HitLocation, const FVector& HitNormal, UPrimitiveComponent* HitComp)
-{
-	AUTCharacter* HitCharacter = Cast<AUTCharacter>(ImpactedActor);
-	bool bFollowersTrack = (!bExploded && (Role == ROLE_Authority) && (FollowerRockets.Num() > 0) && HitCharacter);
-
-	Super::Explode_Implementation(HitLocation, HitNormal, HitComp);
-	if (bFollowersTrack && HitCharacter && (HitCharacter->Health > 0))
-	{
-		for (int32 i = 0; i < FollowerRockets.Num(); i++)
-		{
-			if (FollowerRockets[i] && !FollowerRockets[i]->IsPendingKillPending())
-			{
-				FollowerRockets[i]->TargetActor = HitCharacter;
-				FollowerRockets[i]->AdjustmentSpeed = 24000.f;
-			}
-		}
-	}
-}
