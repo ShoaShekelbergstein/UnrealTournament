@@ -275,7 +275,7 @@ void AUTWeaponLocker::GiveTo_Implementation(APawn* Target)
 	if (P != NULL)
 	{
 		P->DeactivateSpawnProtection();
-		if (Cast<APlayerController>(P->GetController()) != nullptr)
+		if (P->PlayerState && (Cast<APlayerController>(P->GetController()) != nullptr))
 		{
 			((APlayerController*)P->GetController())->ClientReceiveLocalizedMessage(UUTPickupMessage::StaticClass(), 0, P->PlayerState, NULL, GetClass());
 		}
@@ -288,12 +288,15 @@ void AUTWeaponLocker::GiveTo_Implementation(APawn* Target)
 				Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 				Params.Instigator = P;
 				AUTInventory* NewInventory = GetWorld()->SpawnActor<AUTInventory>(Item.WeaponType, GetActorLocation(), GetActorRotation(), Params);
-				NewInventory->bFromLocker = true;
-				P->AddInventory(NewInventory, true);
+				if (NewInventory != nullptr)
+				{
+					NewInventory->bFromLocker = true;
+					P->AddInventory(NewInventory, true);
+				}
 			}
 
 			//Add to the stats pickup count
-			const AUTInventory* Inventory = Item.WeaponType.GetDefaultObject();
+			const AUTInventory* Inventory = (Item.WeaponType != nullptr) ? Item.WeaponType.GetDefaultObject() : nullptr;
 			if (Inventory && Inventory->StatsNameCount != NAME_None)
 			{
 				AUTPlayerState* PS = Cast<AUTPlayerState>(P->PlayerState);

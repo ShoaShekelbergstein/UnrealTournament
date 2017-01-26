@@ -34,7 +34,10 @@ DEFINE_LOG_CATEGORY(UTConnection);
 
 static uint32 UTGetNetworkVersion()
 {
-	return BUILT_FROM_CHANGELIST;
+	//return BUILT_FROM_CHANGELIST;
+
+	// 1.7.1 patch
+	return 3266206;
 }
 
 const FString ITEM_STAT_PREFIX = TEXT("ITEM_");

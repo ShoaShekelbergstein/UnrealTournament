@@ -268,7 +268,7 @@ bool AUTAsymCTFSquadAI::HuntEnemyFlag(AUTBot* B)
 				B->DoCamp();
 				return true;
 			}
-			else if (FollowAlternateRoute(B, Flag->HoldingPawn, SquadRoutes, true, true, "Continue prior route to flag carrier"))
+			else if (FollowAlternateRoute(B, Flag->HoldingPawn, SquadRoutes, true, true, TEXT("Continue prior route to flag carrier")))
 			{
 				return true;
 			}
@@ -276,13 +276,13 @@ bool AUTAsymCTFSquadAI::HuntEnemyFlag(AUTBot* B)
 		
 		if (Flag->HoldingPawn == B->GetEnemy())
 		{
-			B->GoalString = "Fight flag carrier";
+			B->GoalString = TEXT("Fight flag carrier");
 			// fight enemy
 			return false;
 		}
 		else
 		{
-			B->GoalString = "Hunt down enemy flag carrier";
+			B->GoalString = TEXT("Hunt down enemy flag carrier");
 			B->DoHunt(Flag->HoldingPawn);
 			return true;
 		}
@@ -296,7 +296,7 @@ bool AUTAsymCTFSquadAI::HuntEnemyFlag(AUTBot* B)
 	else
 	{
 		// use alternate route to reach flag so that defenders approach from multiple angles
-		return TryPathToFlag(B, SquadRoutes, "Camp dropped flag");
+		return TryPathToFlag(B, SquadRoutes, TEXT("Camp dropped flag"));
 	}
 }
 

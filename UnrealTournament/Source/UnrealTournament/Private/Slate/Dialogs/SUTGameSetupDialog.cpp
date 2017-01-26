@@ -109,13 +109,16 @@ void SUTGameSetupDialog::Construct(const FArguments& InArgs)
 void SUTGameSetupDialog::BuildCategories()
 {
 	TSharedPtr<SUTTabButton> Button;
-	
+
+	static FName CustomCategory = FName(TEXT("Custom"));
+
 	TArray<FName> Categories;
 	UUTEpicDefaultRulesets* DefaultRules = UUTEpicDefaultRulesets::StaticClass()->GetDefaultObject<UUTEpicDefaultRulesets>();
 	if (DefaultRules != nullptr)
 	{
 		for (int32 i=0; i < DefaultRules->RuleCategories.Num(); i++)
 		{
+			if (DefaultRules->RuleCategories[i].CategoryName == CustomCategory) continue;
 			Categories.Add(DefaultRules->RuleCategories[i].CategoryName);
 			TabButtonPanel->AddSlot()
 			.Padding(FMargin(25.0f,0.0f,0.0f,0.0f))
@@ -133,7 +136,33 @@ void SUTGameSetupDialog::BuildCategories()
 		}
 	}
 
-	FName CustomCategory = FName(TEXT("Custom"));
+	int32 TabIndex = Tabs.Num();
+
+	for (int32 i=0; i < GameRulesets.Num(); i++)
+	{
+		for (int32 CatIndex = 0; CatIndex < GameRulesets[i]->Categories.Num(); CatIndex++)
+		{
+			FName Category = GameRulesets[i]->Categories[CatIndex];
+			if (!Categories.Contains(Category) && Category != CustomCategory)
+			{
+				Categories.Add(Category);
+				TabButtonPanel->AddSlot()
+				.Padding(FMargin(25.0f,0.0f,0.0f,0.0f))
+				.AutoWidth()
+				[
+					SAssignNew(Button, SUTTabButton)
+					.ContentPadding(FMargin(15.0f, 10.0f, 15.0f, 0.0f))
+					.Text(FText::FromName(Category))
+					.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
+					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
+					.IsToggleButton(true)
+					.OnClicked(this, &SUTGameSetupDialog::OnTabButtonClick, TabIndex++)
+				];
+				Tabs.Add(FTabButtonInfo(Button, Category));
+			}
+		}
+	}
+
 	Categories.Add(CustomCategory);
 
 	TabButtonPanel->AddSlot()

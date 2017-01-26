@@ -136,6 +136,39 @@ void AUTReplicatedGameRuleset::SetRules(UUTGameRuleset* NewRules, const TArray<F
 		}
 	}
 
+	if (MapList.Num() == 0)
+	{
+		// Last ditch.. I DO NOT LIKE THIS.. but if there are no maps, fill it with all of the maps from the
+		// Asset list.
+	
+		for (int32 i=0; i < NewRules->MapPrefixes.Num(); i++)
+		{
+			if ( NewRules->MapPrefixes[i] == TEXT("") ) continue;
+
+			for (const FAssetData& Asset : MapAssets)
+			{
+				FString AssetPackageName = Asset.PackageName.ToString();
+				if ( Asset.AssetName.ToString().StartsWith(NewRules->MapPrefixes[i], ESearchCase::IgnoreCase) )
+				{
+					// Found the asset data for this map.  Build the FMapListInfo.
+					int32 Idx = AddMapAssetToMapList(Asset);
+
+					AUTBaseGameMode* DefaultBaseGameMode = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
+					if (DefaultBaseGameMode)
+					{
+						// Look to see if there are redirects for this map
+					
+						FPackageRedirectReference Redirect;
+						if ( DefaultBaseGameMode->FindRedirect(AssetPackageName, Redirect) )
+						{
+							MapList[Idx]->Redirect = Redirect;
+						}
+					}
+				}
+			}	
+		}
+	}
+
 	RequiredPackages = NewRules->RequiredPackages;
 	DisplayTexture = NewRules->DisplayTexture;
 	GameMode = NewRules->GameMode;

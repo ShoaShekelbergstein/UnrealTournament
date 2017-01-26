@@ -75,6 +75,38 @@
 			"Enabled": false
 		},
 		{
+			"Name": "OculusLibrary",
+			"Enabled": false
+		},
+		{
+			"Name": "OculusRift",
+			"Enabled": false
+		},
+		{
+			"Name": "OculusAudio",
+			"Enabled": false
+		},
+		{
+			"Name": "OculusInput",
+			"Enabled": false
+		},
+		{
+			"Name": "SteamVR",
+			"Enabled": false
+		},
+		{
+			"Name": "GearVR",
+			"Enabled": false
+		},
+		{
+			"Name": "GoogleVRHMD",
+			"Enabled": false
+		},
+		{
+			"Name": "GoogleVRController",
+			"Enabled": false
+		},
+		{
 			"Name": "LevelSequenceEditor",
 			"Enabled": true
 		},

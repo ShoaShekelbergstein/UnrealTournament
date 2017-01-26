@@ -68,7 +68,7 @@
 // development branches, licensee versions, or whether the engine version has been locked to maintain compatibility with a previous engine release. Prefer
 // BUILD_VERSION where a unique, product-specific identifier is required, or FEngineVersion::CompatibleWith() where relational comparisons between two 
 // versions is required.
-#define BUILT_FROM_CHANGELIST 3266206
+#define BUILT_FROM_CHANGELIST 3270765
 
 // Whether this build is "promoted"; that is, compiled by a build machine (rather than locally) and distributed in binary form. This disables certain features in
 // the engine relating to building locally (because they require intermediate files to be available), such as the hot-reload functionality in the editor.
@@ -86,7 +86,7 @@
 	#if ENGINE_IS_LICENSEE_VERSION
 		#define ENGINE_COMPATIBLE_CL_VERSION ENGINE_CURRENT_CL_VERSION
 	#else
-		#define ENGINE_COMPATIBLE_CL_VERSION 3266142
+		#define ENGINE_COMPATIBLE_CL_VERSION 3270765
 	#endif
 #else
 	#define ENGINE_COMPATIBLE_CL_VERSION 0
