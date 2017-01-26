@@ -655,7 +655,7 @@ namespace UnrealTournamentGame.Automation
 			do
 			{
 				CommandUtils.Log("Uploading server binaries zip file to Amazon S3 bucket {0}.", S3BucketName);
-				bSuccess = S3.PostFile(S3BucketName, S3Filename, ServerZipFilePath, "application/zip").bSuccess;
+				bSuccess = S3.PostMultipartFile(S3BucketName, S3Filename, ServerZipFilePath, 8, ContentType: "application/zip").bSuccess;
 				if (!bSuccess)
 				{
 					bool bDoRetry = Retries + 1 < MaxRetries;
