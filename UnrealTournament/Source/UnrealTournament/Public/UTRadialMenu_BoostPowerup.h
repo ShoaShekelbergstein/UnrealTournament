@@ -20,6 +20,7 @@ public:
 	virtual void TriggerPowerup();
 
 	int32 SelectedPowerup;
+	float RotationRemaining;
 
 protected:
 	virtual void Execute() override;

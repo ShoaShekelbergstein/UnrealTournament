@@ -39,6 +39,11 @@ void UUTRadialMenu_BoostPowerup::Draw_Implementation(float RenderDelta)
 		BounceTimer -= RenderDelta;
 	}
 
+	if (RotationRemaining > 0.0f)
+	{
+		RotationRemaining = FMath::Max<float>(0.0f, RotationRemaining - RenderDelta * 4.0f);
+	}
+
 	DrawMenu(ScreenCenter, RenderDelta);
 }
 
@@ -71,19 +76,38 @@ void UUTRadialMenu_BoostPowerup::DrawMenu(FVector2D ScreenCenter, float RenderDe
 				}
 			}
 		}
-		for (int32 i = FMath::Min<int32>(OffsetItems.Num() - 1, 1); i >= 0; i--)
+		for (int32 i = FMath::Min<int32>(OffsetItems.Num() - 1, 1); i >= (RotationRemaining > 0.0f ? -1 : 0); i--)
 		{
-			TSubclassOf<AUTInventory> NextItem = OffsetItems[i];
+			TSubclassOf<AUTInventory> NextItem = (i == -1) ? OffsetItems.Last() : OffsetItems[i];
 
 			const bool bCurrent = i == 0;
 
-			float Angle = GetMidSegmentAngle(i);
+			float Angle = FMath::Lerp<float>((i == -1) ? (GetMidSegmentAngle(Segments.Num() - 1) - 360.0f) : GetMidSegmentAngle(i), GetMidSegmentAngle(i + 1), RotationRemaining);
 			FVector2D DrawScreenPosition = Rotate(CenterPoint, Angle) + FVector2D(0.0f, 400.0f);
-			SegmentTemplate.RenderScale = bCurrent ? 1.2f : 0.6f; 
+			if (i == -1)
+			{
+				SegmentTemplate.RenderOpacity = RotationRemaining;
+				HighlightedSegmentTemplate.RenderOpacity = RotationRemaining;
+				WeaponIconTemplate.RenderOpacity = RotationRemaining;
+			}
+			else if (i == 1 && RotationRemaining > 0.0f)
+			{
+				const float NewOpacity = 1.0f - RotationRemaining;
+				SegmentTemplate.RenderOpacity = NewOpacity;
+				HighlightedSegmentTemplate.RenderOpacity = NewOpacity;
+				WeaponIconTemplate.RenderOpacity = NewOpacity;
+			}
+			else
+			{
+				SegmentTemplate.RenderOpacity = 1.0f;
+				HighlightedSegmentTemplate.RenderOpacity = 1.0f;
+				WeaponIconTemplate.RenderOpacity = 1.0f;
+			}
+			SegmentTemplate.RenderScale = bCurrent ? (1.2f - 0.6f * RotationRemaining) : 0.6f; 
 			RenderObj_TextureAtWithRotation(SegmentTemplate, DrawScreenPosition, Angle);
 			if (bCurrent)
 			{
-				HighlightedSegmentTemplate.RenderScale = bCurrent ? 1.2f : 0.6f; 
+				HighlightedSegmentTemplate.RenderScale = SegmentTemplate.RenderScale;
 				RenderObj_TextureAtWithRotation(HighlightedSegmentTemplate, DrawScreenPosition, Angle);
 			}
 
@@ -94,7 +118,7 @@ void UUTRadialMenu_BoostPowerup::DrawMenu(FVector2D ScreenCenter, float RenderDe
 			WeaponIconTemplate.UVs.V = NextItem.GetDefaultObject()->HUDIcon.V;
 			WeaponIconTemplate.UVs.VL = NextItem.GetDefaultObject()->HUDIcon.VL;
 			WeaponIconTemplate.RenderOffset = FVector2D(0.5f,0.5f);
-			WeaponIconTemplate.RenderScale = bCurrent ? 1.0f : 0.75f;
+			WeaponIconTemplate.RenderScale = bCurrent ? (1.0f - 0.25f * RotationRemaining) : 0.75f;
 
 			// Draw it in black a little bigger
 			WeaponIconTemplate.RenderColor = FLinearColor::Black;

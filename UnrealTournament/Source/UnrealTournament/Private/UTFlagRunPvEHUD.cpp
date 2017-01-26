@@ -32,6 +32,7 @@ void AUTFlagRunPvEHUD::ToggleBoostWheel(bool bShow)
 		{
 			BoostWheel->SelectedPowerup = 0;
 		}
+		BoostWheel->RotationRemaining = 1.0f;
 	}
 	else
 	{
