@@ -2682,6 +2682,15 @@ void AUTBot::ExecuteWhatToDoNext()
 			}
 		}
 
+		// if we're being spawn camped but are in a protected spawn area, try to shoot enemy from here
+		bool bHideInSpawnArea = false;
+		if (UTChar != nullptr && Enemy != nullptr && UTChar->LastGameVolume != nullptr && UTChar->LastGameVolume->bIsTeamSafeVolume && IsEnemyVisible(Enemy) && CanAttack(Enemy, Enemy->GetActorLocation(), true))
+		{
+			GoalString = TEXT("Stay in spawn protected volume and shoot spawn campers");
+			DoRangedAttackOn(Enemy);
+			return;
+		}
+
 		// low skill bots have a chance to get distracted by nearby visible enemy and try to fight them off
 		// this helps minimize bots running away too effectively at low skill levels because their movement speed is higher than other bots' and newbie humans' ability to target them
 		bool bLowSkillEnemyFocus = false;
@@ -2853,7 +2862,15 @@ void AUTBot::ChooseAttackMode()
 	else
 	*/
 	{
-		if (/*!bFrustrated && */!Squad->MustKeepEnemy(this, Enemy))
+		// always retreat if enemy is spawn protected
+		AUTCharacter* EnemyChar = Cast<AUTCharacter>(Enemy);
+		if (EnemyChar != nullptr && EnemyChar->LastGameVolume != nullptr && EnemyChar->LastGameVolume->bIsTeamSafeVolume && IsEnemyVisible(EnemyChar))
+		{
+			GoalString = TEXT("Retreat because enemy is in spawn volume");
+			DoRetreat();
+			return;
+		}
+		else if (/*!bFrustrated && */!Squad->MustKeepEnemy(this, Enemy))
 		{
 			float RetreatThreshold = Personality.Aggressiveness;
 			if (!NeedsWeapon())
@@ -2863,7 +2880,7 @@ void AUTBot::ChooseAttackMode()
 			}
 			if (EnemyStrength > RetreatThreshold)
 			{
-				GoalString = "Retreat";
+				GoalString = TEXT("Retreat");
 				// send retreating voice message
 				if (FMath::FRand() < 0.05f)
 				{
