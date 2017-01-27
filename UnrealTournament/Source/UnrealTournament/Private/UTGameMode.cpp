@@ -3220,10 +3220,10 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 			}
 		}
 
-		UTGameState->PlayersNeeded = FMath::Max(0, GameSession->MaxPlayers - NumPlayers - NumBots);
+		UTGameState->PlayersNeeded = FMath::Max(0, GameSession->MaxPlayers - NumPlayers);
 		if (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers)
 		{
-			UTGameState->PlayersNeeded = FMath::Max(0, MinPlayersToStart - NumPlayers - NumBots);
+			UTGameState->PlayersNeeded = FMath::Max(0, MinPlayersToStart - NumPlayers);
 		}
 		if (((GetNetMode() == NM_Standalone) || bDevServer || (UTGameState->PlayersNeeded == 0)) && (NumPlayers + NumSpectators > 0))
 		{
@@ -3251,10 +3251,11 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 			{
 				StartDelay--;
 				UTGameState->SetRemainingTime(FMath::Max(0, StartDelay));
-				if (!bRankedSession && (StartDelay < 3) && !bForceNoBots && !bDevServer)
+				if (!bRankedSession && (StartDelay < 2) && !bForceNoBots && !bDevServer)
 				{
 					// if not competitive match, fill with bots if have waited long enough
 					BotFillCount = FMath::Max(BotFillCount, FMath::Min(GameSession->MaxPlayers, 10));
+					CheckBotCount();
 				}
 			}
 			return (StartDelay <= 0);

@@ -180,7 +180,7 @@ public:
 		uint32 bIsQuickMatch : 1;
 
 	/** If TRUE, force dead players to respawn immediately. Can be overridden with ForceRespawn=x on the url */
-	UPROPERTY(Config, EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = Game)
 	bool bForceRespawn;
 
 	UPROPERTY(EditDefaultsOnly)
@@ -253,7 +253,7 @@ public:
 	float StartPlayTime;
 
 	/** add bots until NumPlayers + NumBots is this number */
-	UPROPERTY(config)
+	UPROPERTY(BlueprintReadWrite, Category = "MatchStart")
 	int32 BotFillCount;
 
 	// How long a player must wait before respawning.  Set to 0 for no delay.
