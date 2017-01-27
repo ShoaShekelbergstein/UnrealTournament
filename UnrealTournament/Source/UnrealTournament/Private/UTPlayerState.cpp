@@ -122,6 +122,7 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME(AUTPlayerState, BoostRechargePct);
 	DOREPLIFETIME(AUTPlayerState, ShowdownRank);
 	DOREPLIFETIME(AUTPlayerState, RankedShowdownRank);
+	DOREPLIFETIME(AUTPlayerState, FlagRunRank);
 	DOREPLIFETIME(AUTPlayerState, DuelRank);
 	DOREPLIFETIME(AUTPlayerState, CTFRank);
 	DOREPLIFETIME(AUTPlayerState, TDMRank);
