@@ -197,22 +197,11 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 					SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "Warmup", "Warm Up");
 				}
 			}
-			else if (UTGameState->PlayersNeeded > 0)
-			{
-				UUTLocalPlayer* LP = UTHUDOwner->UTPlayerOwner ? UTHUDOwner->UTPlayerOwner->GetUTLocalPlayer() : nullptr;
-				SpectatorMessage = (LP && LP->AreMenusOpen())
-						? NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayersMenu", "Click on WARM UP to warm up.")
-						: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayers", "Press [ENTER] to warm up.");
-			}
 			else if (UTPS && UTPS->bCaster)
 			{
 				SpectatorMessage = (UTGameState->AreAllPlayersReady())
 					? NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForCaster", "All players are ready. Press [Enter] to start match.")
-					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForReady", "Waiting for players.");
-			}
-			else if (UTGameState->bRankedSession)
-			{
-				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "RankedSessionStart", "Your game will start shortly.");
+					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForReady", "Waiting for players to warm up.");
 			}
 			else if (UTPS && UTPS->bOnlySpectator)
 			{
@@ -220,13 +209,14 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 			}
 			else if (UTHUDOwner->GetScoreboard() && UTHUDOwner->GetScoreboard()->IsInteractive())
 			{
-				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "CloseMenu", "Click on START MATCH to begin.");
+				SpectatorMessage = (UTHUDOwner->GetNetMode() == NM_Standalone) 
+					? NSLOCTEXT("UUTHUDWidget_Spectator", "StartMatchFromMenu", "Click on START MATCH to begin.")
+					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayersMenu", "Click on WARM UP to warm up.");
 			}
 			else
 			{
-				UUTLocalPlayer* LP = UTHUDOwner->UTPlayerOwner ? UTHUDOwner->UTPlayerOwner->GetUTLocalPlayer() : nullptr;
-				SpectatorMessage = (LP && LP->AreMenusOpen())
-					? NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayersMenu", "Click on WARM UP to warm up.")
+				SpectatorMessage = (UTHUDOwner->GetNetMode() == NM_Standalone)
+					? NSLOCTEXT("UUTHUDWidget_Spectator", "StartMatchFromFire", "Press [FIRE] to begin.")
 					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayers", "Press [ENTER] to warm up.");
 			}
 		}
