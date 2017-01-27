@@ -23,7 +23,6 @@ void AUTLobbyMatchInfo::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-
 AUTLobbyMatchInfo::AUTLobbyMatchInfo(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer
 	.DoNotCreateDefaultSubobject(TEXT("Sprite")))
@@ -438,22 +437,15 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 		else if (!CurrentRuleset->bCustomRuleset)
 		{
 			// Custom rules already have their bot info set
-
-			// If the BotFill wasn't specified on in the GameOptions section of the rule, then use the map to determine the bot count
 			if ( CurrentRuleset->GameOptions.Find(TEXT("BotFill="),ESearchCase::IgnoreCase) == INDEX_NONE )
 			{
-				int32 OptimalPlayerCount = CurrentRuleset->bTeamGame ? InitialMapInfo->OptimalTeamPlayerCount : InitialMapInfo->OptimalPlayerCount;
-
-				int32 DesiredBotFill = BotSkillLevel >= 0 ? FMath::Clamp<int32>(OptimalPlayerCount,0, CurrentRuleset->MaxPlayers) : 0;
-				if (DesiredBotFill < CurrentRuleset->MinPlayersToStart) DesiredBotFill = CurrentRuleset->MinPlayersToStart;
-
 				if (BotSkillLevel >= 0)
 				{
-					GameURL += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), DesiredBotFill, FMath::Clamp<int32>(BotSkillLevel,0,7));			
+					GameURL += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), FMath::Min(CurrentRuleset->MaxPlayers, 10), FMath::Clamp<int32>(BotSkillLevel,0,7));
 				}
 				else
 				{
-					GameURL += FString::Printf(TEXT("?BotFill=%i"), DesiredBotFill);			
+					GameURL += FString::Printf(TEXT("?ForceNoBots=1"));			
 				}
 			}
 		}
