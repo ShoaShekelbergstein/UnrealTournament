@@ -497,10 +497,9 @@ void FCaptureAudioWorker::InitAudioLoopback()
 	}
 }
 
-
-PRAGMA_DISABLE_OPTIMIZATION;
 void FCaptureAudioWorker::ReadAudioLoopback()
 {
+#if PLATFORM_64BITS
 	// create a periodic waitable timer
 	HANDLE hWakeUp = CreateWaitableTimer(NULL, FALSE, NULL);
 	// set the waitable timer
@@ -606,8 +605,8 @@ void FCaptureAudioWorker::ReadAudioLoopback()
 	}
 
 	KISS_FFT_FREE(cfg);
+#endif
 }
-PRAGMA_ENABLE_OPTIMIZATION;
 
 void FCorsairRGB::CaptureAudio()
 {
