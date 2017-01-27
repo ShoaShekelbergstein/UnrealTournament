@@ -1020,13 +1020,19 @@ public:
 	}
 
 
-	static const FString& GetRankedPlayFilename()
+	static const FString& GetOnlineSettingsFilename()
 	{
-		const static FString RankedPlayFilename = "UnrealTournamentRankedPlay.json";
-		return RankedPlayFilename;
+		const static FString OnlineSettingsFilename = "UnrealTournamentOnlineSettings.json";
+		return OnlineSettingsFilename;
 	}
 	bool IsRankedMatchmakingEnabled(int32 PlaylistId);
 	TArray<int32> ActiveRankedPlaylists;
+	int32 RankedEloRange;
+	int32 RankedMinEloRangeBeforeHosting;
+	int32 RankedMinEloSearchStep;
+	int32 QMEloRange;
+	int32 QMMinEloRangeBeforeHosting;
+	int32 QMMinEloSearchStep;
 	FOnRankedPlaylistsChangedDelegate OnRankedPlaylistsChanged;
 
 	/** Get the MCP account ID for this player */

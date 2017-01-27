@@ -1540,14 +1540,33 @@ struct FMCPPulledData
 };
 
 USTRUCT()
-struct FActiveRankedPlaylists
+struct FUTOnlineSettings
 {
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY()
 	TArray<int32> ActiveRankedPlaylists;
+	
+	UPROPERTY()
+	int32 RankedEloRange;
 
-	FActiveRankedPlaylists()
+	UPROPERTY()
+	int32 RankedMinEloRangeBeforeHosting;
+
+	UPROPERTY()
+	int32 RankedMinEloSearchStep;
+
+	UPROPERTY()
+	int32 QMEloRange;
+
+	UPROPERTY()
+	int32 QMMinEloRangeBeforeHosting;
+
+	UPROPERTY()
+	int32 QMMinEloSearchStep;
+
+	FUTOnlineSettings()
+		: RankedEloRange(20), RankedMinEloRangeBeforeHosting(100), RankedMinEloSearchStep(20), QMEloRange(20), QMMinEloRangeBeforeHosting(100), QMMinEloSearchStep(20)
 	{}
 };
 

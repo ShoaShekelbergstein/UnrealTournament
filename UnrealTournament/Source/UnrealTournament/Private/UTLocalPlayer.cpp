@@ -124,6 +124,13 @@ UUTLocalPlayer::UUTLocalPlayer(const class FObjectInitializer& ObjectInitializer
 
 	bQuickmatchOnLevelChange = false;
 
+	RankedEloRange = 20;
+	RankedMinEloRangeBeforeHosting = 100;
+	RankedMinEloSearchStep = 20;
+
+	QMEloRange = 100;
+	QMMinEloRangeBeforeHosting = 300;
+	QMMinEloSearchStep = 100;
 }
 
 UUTLocalPlayer::~UUTLocalPlayer()
@@ -4946,7 +4953,7 @@ void UUTLocalPlayer::OnEnumerateTitleFilesComplete(bool bWasSuccessful)
 		if (OnlineTitleFileInterface.IsValid())
 		{
 			OnlineTitleFileInterface->ReadFile(GetMCPStorageFilename());
-			OnlineTitleFileInterface->ReadFile(GetRankedPlayFilename());
+			OnlineTitleFileInterface->ReadFile(GetOnlineSettingsFilename());
 		}
 	}
 }
@@ -5023,7 +5030,7 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 			}
 		}
 	}
-	else if (Filename == GetRankedPlayFilename())
+	else if (Filename == GetOnlineSettingsFilename())
 	{
 		ActiveRankedPlaylists.Empty();
 
@@ -5031,16 +5038,23 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 		if (bWasSuccessful)
 		{
 			TArray<uint8> FileContents;
-			OnlineTitleFileInterface->GetFileContents(GetRankedPlayFilename(), FileContents);
+			OnlineTitleFileInterface->GetFileContents(GetOnlineSettingsFilename(), FileContents);
 			FileContents.Add(0);
 			JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
 
 			if (JsonString != TEXT(""))
 			{
-				FActiveRankedPlaylists ActivePlaylists;
-				if (FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &ActivePlaylists, 0, 0))
+				FUTOnlineSettings UTOnlineSettings;
+				if (FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &UTOnlineSettings, 0, 0))
 				{
-					ActiveRankedPlaylists = ActivePlaylists.ActiveRankedPlaylists;
+					ActiveRankedPlaylists = UTOnlineSettings.ActiveRankedPlaylists;
+
+					RankedEloRange = UTOnlineSettings.RankedEloRange;
+					RankedMinEloRangeBeforeHosting = UTOnlineSettings.RankedMinEloRangeBeforeHosting;
+					RankedMinEloSearchStep = UTOnlineSettings.RankedMinEloSearchStep;
+					QMEloRange = UTOnlineSettings.QMEloRange;
+					QMMinEloRangeBeforeHosting = UTOnlineSettings.QMMinEloRangeBeforeHosting;
+					QMMinEloSearchStep = UTOnlineSettings.QMMinEloSearchStep;
 				}
 			}
 		}
@@ -5539,12 +5553,17 @@ void UUTLocalPlayer::StartMatchmaking(int32 PlaylistId)
 			}
 		}
 
-		MatchmakingParams.MinimumEloRangeBeforeHosting = 100;
-		if (!MatchmakingParams.bRanked)
+		if (MatchmakingParams.bRanked)
 		{
-			MatchmakingParams.EloRange = 100;
-			MatchmakingParams.MinimumEloRangeBeforeHosting = 300;
-			MatchmakingParams.EloSearchStep = 100;
+			MatchmakingParams.EloRange = RankedEloRange;
+			MatchmakingParams.MinimumEloRangeBeforeHosting = RankedMinEloRangeBeforeHosting;
+			MatchmakingParams.EloSearchStep = RankedMinEloSearchStep;
+		}
+		else
+		{
+			MatchmakingParams.EloRange = QMEloRange;
+			MatchmakingParams.MinimumEloRangeBeforeHosting = QMMinEloRangeBeforeHosting;
+			MatchmakingParams.EloSearchStep = QMMinEloSearchStep;
 		}
 
 		bool bSuccessfullyStarted = Matchmaking->FindGatheringSession(MatchmakingParams);
