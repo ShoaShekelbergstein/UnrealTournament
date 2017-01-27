@@ -98,12 +98,11 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	bPauseable = false;
 	RespawnWaitTime = 2.f;
 	ForceRespawnTime = 5.f;
-	MaxReadyWaitTime = 300;
+	StartDelay = 15;
+
 	bHasRespawnChoices = false;
 	MinPlayersToStart = 2;
-	QuickPlayersToStart = 4;
 	MaxWaitForPlayers = 480;
-	MaxWaitForQuickMatch = 480;
 	EndScoreboardDelay = 4.f;
 	MainScoreboardDisplayTime = 5.f;
 	ScoringPlaysDisplayTime = 0.f; 
@@ -292,7 +291,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("HubKey"));
 	if (!InOpt.IsEmpty()) HubKey = InOpt;
 
-	bRequireReady = UGameplayStatics::HasOption(Options, TEXT("RequireReady"));
+	bRequireReady = (UGameplayStatics::GetIntOption(Options, TEXT("RequireReady"), bRequireReady) == 0) ? false : true;
 
 	// alias for testing convenience
 	if (UGameplayStatics::HasOption(Options, TEXT("Bots")))
@@ -303,6 +302,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	{
 		BotFillCount = UGameplayStatics::GetIntOption(Options, TEXT("BotFill"), BotFillCount);
 	}
+	bForceNoBots = (UGameplayStatics::GetIntOption(Options, TEXT("ForceNoBots"), bForceNoBots) == 0) ? false : true;
 
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("CasterControl"));
 	bCasterControl = EvalBoolOptions(InOpt, bCasterControl);
@@ -377,7 +377,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 
 	if (GameSession->MaxPlayers <= 0)
 	{
-		GameSession->MaxPlayers = 16;
+		GameSession->MaxPlayers = 10;
 	}
 
 	PostInitGame(Options);
@@ -3205,62 +3205,48 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 		{
 			if (ExpectedPlayerCount != 0 && ExpectedPlayerCount == NumPlayers)
 			{
-				MaxReadyWaitTime = FMath::Min(10, MaxReadyWaitTime);
 				LockSession();
 			}
-
-			bool bMaxWaitComplete = (MaxReadyWaitTime > 0) && (GetNetMode() != NM_Standalone) && (ElapsedWaitTime > MaxReadyWaitTime);
-			if (bMaxWaitComplete)
+			else if (ElapsedWaitTime > MaxWaitForPlayers)
 			{
-				if (ExpectedPlayerCount == 0 || ExpectedPlayerCount == NumPlayers)
+				UE_LOG(UT, Log, TEXT("Not enough players showed up, abandoning game"));
+
+				// Not enough players showed up for the match, just send them back to the lobby
+				GetWorldTimerManager().ClearTimer(ServerRestartTimerHandle);
+
+				SendEveryoneBackToLobbyGameAbandoned();
+
+				SetMatchState(MatchState::MatchRankedAbandon);
+				AUTGameSessionRanked* RankedGameSession = Cast<AUTGameSessionRanked>(GameSession);
+				if (RankedGameSession)
 				{
-					GetWorldTimerManager().ClearTimer(ServerRestartTimerHandle);
-
-					LockSession();
-
-					return true;
-				}
-				else
-				{
-					UE_LOG(UT, Log, TEXT("Not enough players showed up, abandoning game"));
-
-					// Not enough players showed up for the match, just send them back to the lobby
-					GetWorldTimerManager().ClearTimer(ServerRestartTimerHandle);
-
-					SendEveryoneBackToLobbyGameAbandoned();
-
-					SetMatchState(MatchState::MatchRankedAbandon);
-					AUTGameSessionRanked* RankedGameSession = Cast<AUTGameSessionRanked>(GameSession);
-					if (RankedGameSession)
-					{
-						RankedGameSession->Restart();
-					}
+					RankedGameSession->Restart();
 				}
 			}
 		}
-		else
+
+		UTGameState->PlayersNeeded = GameSession->MaxPlayers;
+		if (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers)
 		{
-			UTGameState->PlayersNeeded = (GetWorld()->GetTimeSeconds() - StartPlayTime > (bIsQuickMatch ? MaxWaitForQuickMatch : 60.f)) ? FMath::Max(0, MinPlayersToStart - NumPlayers - NumBots) : FMath::Max(0, FMath::Min(GameSession->MaxPlayers, (bIsQuickMatch ? QuickPlayersToStart : MinPlayersToStart)) - NumPlayers - NumBots);
-			//UE_LOG(UT, Warning, TEXT("Elapsed %f wait %f playersneeded %d minplayers %d numplayers %d numbots %d"), (GetWorld()->GetTimeSeconds() - StartPlayTime), (bIsQuickMatch ? MaxWaitForQuickMatch : 60.f), UTGameState->PlayersNeeded, MinPlayersToStart, NumPlayers, NumBots);
-			if (((GetNetMode() == NM_Standalone) || bDevServer || (UTGameState->PlayersNeeded == 0)) && (NumPlayers + NumSpectators > 0))
+			UTGameState->PlayersNeeded = FMath::Max(0, MinPlayersToStart - NumPlayers - NumBots);
+		}
+		if (((GetNetMode() == NM_Standalone) || bDevServer || (UTGameState->PlayersNeeded == 0)) && (NumPlayers + NumSpectators > 0))
+		{
+			bool bReadyFulfilled = true;
+			if (bRequireReady)
 			{
 				// Count how many ready players we have
 				bool bCasterReady = false;
-				int32 ReadyCount = 0;
-				int32 AllCount = 0;
 				int32 WarmupCount = 0;
+				int32 AllCount = 0;
 				for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 				{
 					AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-					if (PS != NULL && !PS->bOnlySpectator)
+					if (PS != NULL && !PS->bOnlySpectator && !PS->bIsInactive)
 					{
-						if (PS->bReadyToPlay)
+						if (PS->bIsWarmingUp)
 						{
-							ReadyCount++;
-							if (PS->bIsWarmingUp)
-							{
-								WarmupCount++;
-							}
+							WarmupCount++;
 						}
 						AllCount++;
 					}
@@ -3271,48 +3257,25 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 						bCasterReady = true;
 					}
 				}
-
-				if (WarmupCount > 0)
-				{
-					// don't start if people are warming up unless game is full
-					UTGameState->PlayersNeeded = FMath::Min(GameSession->MaxPlayers, QuickPlayersToStart) - NumPlayers - NumBots;
-					if (!bCasterControl && (UTGameState->PlayersNeeded > 0))
-					{
-						ReadyCount -= 1;
-					}
-				}
-
-				// start if everyone is ready, or have waited long enough and 60% ready.
-				// ranked sessions will quit if expected player count not met
-				bool bMaxWaitComplete = (MaxReadyWaitTime > 0) && !bRequireReady && (GetNetMode() != NM_Standalone) && (ElapsedWaitTime > MaxReadyWaitTime);
-				
-				if ((ReadyCount == AllCount) || (bMaxWaitComplete && (float(ReadyCount) >= 0.6f*float(AllCount))))
-				{
-					return bCasterControl ? bCasterReady : (ReadyCount > 0);
-				}
+				bReadyFulfilled = bCasterControl ? bCasterReady : (WarmupCount == AllCount);
 			}
-		}
-		// if not competitive match, fill with bots if have waited long enough
-		if (!bRequireReady && (GetNetMode() != NM_Standalone))
-		{
-			if ((MaxWaitForPlayers > 0) && (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers))
+			if (bReadyFulfilled)
 			{
-				BotFillCount = FMath::Max(BotFillCount, MinPlayersToStart);
+				StartDelay--;
+				UTGameState->SetRemainingTime(FMath::Max(0, StartDelay));
+				if (!bRankedSession && (StartDelay < 3) && !bForceNoBots)
+				{
+					// if not competitive match, fill with bots if have waited long enough
+					BotFillCount = FMath::Max(BotFillCount, FMath::Min(GameSession->MaxPlayers, 10));
+				}
 			}
+			return (StartDelay <= 0);
 		}
-
-		bool bUpdateWaitCountdown = (!bRequireReady && (MaxReadyWaitTime > 0) && UTGameState && (ElapsedWaitTime > 0));
-		if (bRankedSession)
-		{
-			bUpdateWaitCountdown = true;
-		}
-
-		if (bUpdateWaitCountdown)
-		{
-			int32 WaitCountDown = (NumPlayers >= MinPlayersToStart) ? MaxReadyWaitTime  : FMath::Max(MaxReadyWaitTime, MaxWaitForPlayers);
-			WaitCountDown -= ElapsedWaitTime;
-			UTGameState->SetRemainingTime(FMath::Max(0, WaitCountDown));
-		}
+		StartDelay = 15;
+		bool bUpdateWaitCountdown = UTGameState && (ElapsedWaitTime > 0);
+		int32 WaitCountDown = MaxWaitForPlayers;
+		WaitCountDown -= ElapsedWaitTime;
+		UTGameState->SetRemainingTime(FMath::Max(0, WaitCountDown));
 	}
 	return false;
 }
@@ -3924,7 +3887,6 @@ TSharedPtr<TAttributePropertyBase> AUTGameMode::FindGameURLOption(TArray<TShared
 
 	return nullptr;
 }
-
 
 #if !UE_SERVER
 void AUTGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, bool bCreateReadOnly, TArray< TSharedPtr<TAttributePropertyBase> >& ConfigProps, int32 MinimumPlayers)

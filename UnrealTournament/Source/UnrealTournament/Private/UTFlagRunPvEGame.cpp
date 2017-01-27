@@ -15,7 +15,6 @@ AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 {
 	bBalanceTeams = false;
 	BotFillCount = 5;
-	QuickPlayersToStart = 5;
 	NumRounds = 1;
 	GoalScore = 1;
 	UnlimitedRespawnWaitTime = 10.0f;

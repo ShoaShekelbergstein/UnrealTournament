@@ -164,7 +164,7 @@ public:
 	/** Return how long to wait after end of match before travelling to next map. */
 	virtual float GetTravelDelay();
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = Game)
 	uint32 bAllowOvertime:1;
 
 	/**If enabled, the server grants special control for casters*/
@@ -197,16 +197,20 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 		bool bPastELOLimit;
 
-	/** If true, require full set of players to be ready to start. */
-	UPROPERTY()
+	/** If true, require full set of players to be ready to start  (ready implied by warming up). */
+	UPROPERTY(EditDefaultsOnly, Category = Game)
 		bool bRequireReady;
 
-	/** maximum amount of time (in seconds) to wait for players to be ready before giving up and starting the game anyway; <= 0 means wait forever until everyone readies up */
-	UPROPERTY()
-	int32 MaxReadyWaitTime;
+	/** If true, bots will not fill undermanned match. */
+	UPROPERTY(EditDefaultsOnly, Category = Game)
+		bool bForceNoBots;
+
+	/** Delay to start match after start conditions are met. */
+	UPROPERTY(EditDefaultsOnly, Category = Game)
+		int32 StartDelay;
 
 	/** Score needed to win the match.  Can be overridden with GOALSCORE=x on the url */
-	UPROPERTY(config)
+	UPROPERTY(EditDefaultsOnly, Category = Game)
 	int32 GoalScore;    
 
 	/** How long should the match be.  Can be overridden with TIMELIMIT=x on the url */
@@ -236,17 +240,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BLueprintReadWrite, Category="MatchStart")
 	int32 MinPlayersToStart;
 
-	/** Minimum number of players that must have joined quickmatch before it will start. */
-	UPROPERTY(EditDefaultsOnly, BLueprintReadWrite, Category = "MatchStart")
-		int32 QuickPlayersToStart;
-
 	/** After this wait, add bots to min players level */
 	UPROPERTY(EditDefaultsOnly, BLueprintReadWrite, Category = "MatchStart")
 		int32 MaxWaitForPlayers;
-
-	/** Wait at least this long in quick match to fill to QuickPlayersToStart */
-	UPROPERTY(EditDefaultsOnly, BLueprintReadWrite, Category = "MatchStart")
-		int32 MaxWaitForQuickMatch;
 
 	/** World time when match was first ready to start. */
 	UPROPERTY()

@@ -40,7 +40,6 @@ AUTCTFRoundGame::AUTCTFRoundGame(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
 	TimeLimit = 5;
-	QuickPlayersToStart = 10;
 	IntermissionDuration = 28.f;
 	RoundLives = 5;
 	bPerPlayerLives = true;
@@ -104,7 +103,7 @@ void AUTCTFRoundGame::InitGame(const FString& MapName, const FString& Options, F
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
 
-	if (!UGameplayStatics::HasOption(Options, TEXT("TimeLimit")))
+	if (!UGameplayStatics::HasOption(Options, TEXT("TimeLimit")) || (TimeLimit <= 0))
 	{
 		AUTWorldSettings* WorldSettings = bUseLevelTiming ? Cast<AUTWorldSettings>(GetWorldSettings()) : nullptr;
 		TimeLimit = WorldSettings ? WorldSettings->DefaultRoundLength : TimeLimit;
