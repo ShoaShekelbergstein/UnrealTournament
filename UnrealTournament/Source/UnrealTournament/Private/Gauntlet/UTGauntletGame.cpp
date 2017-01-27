@@ -568,20 +568,6 @@ void AUTGauntletGame::ForceEndOfRound()
 	GauntletGameState->bIsAtIntermission = true;
 	GauntletGameState->OnIntermissionChanged();
 
-	if (bCasterControl)
-	{
-		//Reset all casters to "not ready"
-		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
-		{
-			AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-			if (PS != nullptr && PS->bCaster)
-			{
-				PS->bReadyToPlay = false;
-			}
-		}
-		GauntletGameState->bStopGameClock = true;
-	}
-
 	// inform actors of intermission start
 	for (FActorIterator It(GetWorld()); It; ++It)
 	{

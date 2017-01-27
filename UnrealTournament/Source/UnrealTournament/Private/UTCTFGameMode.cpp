@@ -255,22 +255,6 @@ void AUTCTFGameMode::HandleMatchIntermission()
 
 	CTFGameState->bPlayingAdvantage = false;
 	CTFGameState->AdvantageTeamIndex = 255;
-
-	if (bCasterControl)
-	{
-		//Reset all casters to "not ready"
-		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
-		{
-			AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-			if (PS != nullptr && PS->bCaster)
-			{
-				PS->bReadyToPlay = false;
-			}
-		}
-		CTFGameState->bStopGameClock = true;
-		CTFGameState->SetTimeLimit(10);
-	}
-
 	BroadcastLocalized(this, UUTCTFMajorMessage::StaticClass(), 11, NULL, NULL, NULL);
 }
 
@@ -278,27 +262,7 @@ void AUTCTFGameMode::DefaultTimer()
 {
 	Super::DefaultTimer();
 
-	//If caster control is enabled. check to see if one caster is ready then start the timer
-	if (GetMatchState() == MatchState::MatchIntermission && bCasterControl)
-	{
-		bool bReady = false;
-		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
-		{
-			AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-			if (PS != nullptr && PS->bCaster && PS->bReadyToPlay)
-			{
-				bReady = true;
-				break;
-			}
-		}
-
-		if (bReady && CTFGameState->bStopGameClock)
-		{
-			CTFGameState->bStopGameClock = false;
-			CTFGameState->SetTimeLimit(11);
-		}
-	}
-	else if (CTFGameState->IsMatchInOvertime())
+	if (CTFGameState->IsMatchInOvertime())
 	{
 		float OvertimeElapsed = CTFGameState->ElapsedTime - CTFGameState->OvertimeStartTime;
 		if (OvertimeElapsed > TimeLimit)

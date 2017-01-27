@@ -148,7 +148,6 @@ void AUTBot::InitializeCharacter(UUTBotCharacter* NewCharacterData)
 	AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
 	if (PS != NULL)
 	{
-		PS->bReadyToPlay = true;
 		PS->SetCharacterVoice(CharacterData->CharacterVoice.ToString());
 		PS->SetCharacter(CharacterData->Character.ToString());
 		if (!CharacterData->HatType.ToString().IsEmpty())

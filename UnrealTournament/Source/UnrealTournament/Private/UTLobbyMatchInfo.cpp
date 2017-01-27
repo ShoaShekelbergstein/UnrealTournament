@@ -196,9 +196,6 @@ void AUTLobbyMatchInfo::AddPlayer(AUTLobbyPlayerState* PlayerToAdd, bool bIsOwne
 	Players.Add(PlayerToAdd);
 	PlayerToAdd->AddedToMatch(this);
 	PlayerToAdd->ChatDestination = ChatDestinations::Match;
-
-	// Players default to ready
-	PlayerToAdd->bReadyToPlay = true;
 }
 
 bool AUTLobbyMatchInfo::RemovePlayer(AUTLobbyPlayerState* PlayerToRemove)
@@ -398,11 +395,6 @@ void AUTLobbyMatchInfo::ServerStartMatch_Implementation()
 
 void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 {
-	for (int32 i=0;i<Players.Num();i++)
-	{
-		Players[i]->bReadyToPlay = true;
-	}
-
 	if (CheckLobbyGameState() && CurrentRuleset.IsValid() && InitialMapInfo.IsValid())
 	{
 		if (bQuickPlay) 
@@ -455,18 +447,6 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 
 		LobbyGameState->LaunchGameInstance(this, GameURL, DebugCode);
 	}
-}
-
-bool AUTLobbyMatchInfo::ServerAbortMatch_Validate() { return true; }
-void AUTLobbyMatchInfo::ServerAbortMatch_Implementation()
-{
-	if (CheckLobbyGameState())
-	{
-		LobbyGameState->TerminateGameInstance(this, true);
-	}
-
-	TWeakObjectPtr<AUTLobbyPlayerState> OwnerPS = GetOwnerPlayerState();
-	if (OwnerPS.IsValid()) OwnerPS->bReadyToPlay = false;
 }
 
 void AUTLobbyMatchInfo::GameInstanceReady(FGuid inGameInstanceGUID)

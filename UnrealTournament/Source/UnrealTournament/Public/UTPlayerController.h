@@ -334,9 +334,12 @@ public:
 	UFUNCTION(client, unreliable)
 	virtual void ClientPlayBadSelectionSound();
 
-	/**	We overload ServerRestartPlayer so that we can set the bReadyToPlay flag if the game hasn't begun	 **/
 	virtual void ServerRestartPlayer_Implementation();
 	
+	/** Caster sends this to server to start the match (if bCasterControl). */
+	UFUNCTION(server, reliable, withvalidation)
+	virtual void ServerCasterReady();
+
 	/**  Added a check to see if the player's RespawnTimer is > 0	 **/
 	virtual bool CanRestartPlayer();
 

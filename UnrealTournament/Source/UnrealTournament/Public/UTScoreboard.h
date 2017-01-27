@@ -183,12 +183,6 @@ public:
 		FText WarmupText;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
-		FText WarmupWarningText;
-
-	UPROPERTY()
-		bool bHaveWarmup;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		bool bDrawMinimapInScoreboard;
 
 protected:

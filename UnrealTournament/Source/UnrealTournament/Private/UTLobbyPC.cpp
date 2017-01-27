@@ -129,12 +129,6 @@ void AUTLobbyPC::ServerDebugTest_Implementation(const FString& TestCommand)
 {
 }
 
-bool AUTLobbyPC::ServerSetReady_Validate(uint32 bNewReadyToPlay) { return true; }
-void AUTLobbyPC::ServerSetReady_Implementation(uint32 bNewReadyToPlay)
-{
-	UTLobbyPlayerState->bReadyToPlay = bNewReadyToPlay;
-}
-
 void AUTLobbyPC::SetLobbyDebugLevel(int32 NewLevel)
 {
 	AUTLobbyHUD* H = Cast<AUTLobbyHUD>(MyHUD);

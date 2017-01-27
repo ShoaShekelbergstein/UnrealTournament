@@ -170,9 +170,6 @@ public:
 	virtual void LaunchMatch(bool bQuickPlay, int32 DebugCode);
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerAbortMatch();
-
-	UFUNCTION(Server, Reliable, WithValidation)
 	virtual void ServerSetLobbyMatchState(FName NewMatchState);
 
 	virtual void SetLobbyMatchState(FName NewMatchState);

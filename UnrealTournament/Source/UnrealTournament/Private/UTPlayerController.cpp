@@ -821,9 +821,9 @@ bool AUTPlayerController::InputKey(FKey Key, EInputEvent EventType, float Amount
 	if (Key.GetFName() == NAME_Enter && (EventType == IE_Pressed) && UTPlayerState != nullptr)
 	{
 		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-		if (UTPlayerState->bCaster && !UTPlayerState->bReadyToPlay)
+		if (UTPlayerState->bCaster)
 		{
-			ServerRestartPlayer();
+			ServerCasterReady();
 			return true;
 		}
 		else if (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && !UTPlayerState->bOnlySpectator)
@@ -1045,10 +1045,6 @@ void AUTPlayerController::ThrowWeapon()
 			ServerThrowWeapon();
 		}
 	}
-	else if ((UTCharacter == nullptr) && UTPlayerState && (UTPlayerState->ReadyMode > 1))
-	{
-		ServerThrowWeapon();
-	}
 }
 
 bool AUTPlayerController::ServerThrowWeapon_Validate()
@@ -1065,10 +1061,6 @@ void AUTPlayerController::ServerThrowWeapon_Implementation()
 		{
 			UTCharacter->TossInventory(UTCharacter->GetWeapon(), FVector(400.0f, 0, 200.f));
 		}
-	}
-	else if ((UTCharacter == nullptr) && UTPlayerState && (UTPlayerState->ReadyMode > 1))
-	{
-		UTPlayerState->ReadyMode = 4;
 	}
 }
 
@@ -2604,9 +2596,8 @@ void AUTPlayerController::ServerToggleWarmup_Implementation()
 	{
 		return;
 	}
-	UTPlayerState->SetReadyToPlay(!UTPlayerState->bReadyToPlay);
 	UTPlayerState->bPendingTeamSwitch = false;
-	UTPlayerState->bIsWarmingUp = UTPlayerState->bReadyToPlay;
+	UTPlayerState->bIsWarmingUp = !UTPlayerState->bIsWarmingUp;
 	UTPlayerState->ForceNetUpdate();
 	ClientUpdateWarmup(UTPlayerState->bIsWarmingUp);
 	if (UTPlayerState->bIsWarmingUp)
@@ -2633,6 +2624,20 @@ void AUTPlayerController::ServerToggleWarmup_Implementation()
 	}
 }
 
+bool AUTPlayerController::ServerCasterReady_Validate()
+{
+	return true;
+}
+
+void AUTPlayerController::ServerCasterReady_Implementation()
+{
+	AUTGameMode* UTGM = GetWorld()->GetAuthGameMode<AUTGameMode>();
+	if (UTGM)
+	{
+		UTGM->bCasterReady = true;
+	}
+}
+
 void AUTPlayerController::ServerRestartPlayer_Implementation()
 {
 	bUseAltSpawnPoint = false;
@@ -2648,25 +2653,10 @@ void AUTPlayerController::ServerRestartPlayer_Implementation()
 		// this is a newly disconnected client
 		return;
 	}
-	// Ready up if match hasn't started and not a ranked match
-	if (!UTGM->HasMatchStarted() && !UTGM->bRankedSession)
+	// Ready up if match hasn't started and standalone
+	if (!UTGM->HasMatchStarted() && (GetNetMode() == NM_Standalone))
 	{
-		if (UTPlayerState->bCaster)
-		{
-			//For casters, all players need to be ready before the caster can be ready. This avoids the game starting if the caster has been mashing buttons while players are getting ready
-			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-			if (UTPlayerState->bCaster && GS != nullptr && GS->AreAllPlayersReady())
-			{
-				UTPlayerState->SetReadyToPlay(true);
-				UTPlayerState->ForceNetUpdate();
-			}
-		}
-	}
-	//Half-time ready up for caster control
-	else if (UTGM->bCasterControl && UTGM->GetMatchState() == MatchState::MatchIntermission && UTPlayerState != nullptr && UTPlayerState->bCaster)
-	{
-		UTPlayerState->SetReadyToPlay(true);
-		UTPlayerState->ForceNetUpdate();
+		UTPlayerState->bIsWarmingUp = true;
 	}
 	else if (IsFrozen())
 	{
@@ -3696,10 +3686,6 @@ void AUTPlayerController::ServerSuicide_Implementation()
 			}
 		}
 	}
-	else if ((UTCharacter == nullptr) && UTPlayerState && (UTPlayerState->ReadyMode == 4))
-	{
-		UTPlayerState->ReadyMode = 3;
-	}
 }
 
 bool AUTPlayerController::ServerSuicide_Validate()
@@ -3760,11 +3746,7 @@ bool AUTPlayerController::ServerEmote_Validate(int32 EmoteIndex)
 
 void AUTPlayerController::ServerEmote_Implementation(int32 EmoteIndex)
 {
-	if ((UTCharacter == nullptr) && UTPlayerState && (UTPlayerState->ReadyMode == 3))
-	{
-		UTPlayerState->ReadyMode = 5;
-	}
-	else if (UTPlayerState != nullptr)
+	if (UTPlayerState != nullptr)
 	{
 		UTPlayerState->PlayTauntByIndex(EmoteIndex);
 	}

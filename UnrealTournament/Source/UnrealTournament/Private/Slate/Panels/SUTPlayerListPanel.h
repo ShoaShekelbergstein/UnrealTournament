@@ -145,16 +145,9 @@ public:
 			return NSLOCTEXT("Generic","Admin","ADMIN");
 		}
 
-		if (bIsInMatch && PlayerState.IsValid())
+		if (bIsInMatch && PlayerState.IsValid() && bIsHost)
 		{
-			if (bIsHost) 
-			{
-				return NSLOCTEXT("Generic","Host","HOST");
-			}
-
-			bool bReadyToPlay = (PlayerState->bReadyToPlay || PlayerState->GetWorld()->GetGameState<AUTGameState>()->HasMatchStarted());
-
-			return bReadyToPlay ? NSLOCTEXT("Generic","Ready","READY") : NSLOCTEXT("Generic","NotReady","NOT READY");
+			return NSLOCTEXT("Generic","Host","HOST");
 		}
 
 		return FText::GetEmpty();

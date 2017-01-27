@@ -39,9 +39,6 @@ public:
 
 	virtual void ServerDebugTest_Implementation(const FString& TestCommand);
 
-	UFUNCTION(reliable, Server , WithValidation)
-	virtual void ServerSetReady(uint32 bNewReadyToPlay);
-
 	virtual void PlayerTick( float DeltaTime );
 
 	UFUNCTION(exec)

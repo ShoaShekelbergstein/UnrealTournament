@@ -60,7 +60,6 @@ UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) 
 	ReadyText = NSLOCTEXT("UTScoreboard", "READY", "READY");
 	NotReadyText = NSLOCTEXT("UTScoreboard", "NOTREADY", "");
 	WarmupText = NSLOCTEXT("UTScoreboard", "WARMUP", "WARMUP");
-	WarmupWarningText = NSLOCTEXT("UTScoreboard", "WarmupWarningText", "If players are warming up, will wait for match to fill before starting.");
 	
 	ReadyColor = FLinearColor::White;
 	ReadyScale = 1.f;
@@ -103,7 +102,6 @@ void UUTScoreboard::Draw_Implementation(float RenderDelta)
 {
 	Super::Draw_Implementation(RenderDelta);
 
-	bHaveWarmup = false;
 	float YOffset = 48.f*RenderScale;
 	DrawGamePanel(RenderDelta, YOffset);
 	DrawTeamPanel(RenderDelta, YOffset);
@@ -118,10 +116,6 @@ void UUTScoreboard::Draw_Implementation(float RenderDelta)
 	}
 
 	DrawMinimap(RenderDelta);
-	if (bHaveWarmup)
-	{
-		DrawText(WarmupWarningText, 16.f * RenderScale, 16.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
-	}
 }
 
 void UUTScoreboard::DrawMinimap(float RenderDelta)
@@ -507,13 +501,7 @@ void UUTScoreboard::DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float R
 
 void UUTScoreboard::DrawReadyText(AUTPlayerState* PlayerState, float XOffset, float YOffset, float Width)
 {
-	FText PlayerReady = NotReadyText;
-	if (PlayerState->bReadyToPlay)
-	{
-		PlayerReady = PlayerState->bIsWarmingUp ? WarmupText : ReadyText;
-		bHaveWarmup = bHaveWarmup || PlayerState->bIsWarmingUp;
-	}
-		
+	FText PlayerReady = PlayerState->bIsWarmingUp ? WarmupText : NotReadyText;
 	float ReadyX = XOffset + ScaledCellWidth * ColumnHeaderScoreX;
 	if (PlayerState && PlayerState->bPendingTeamSwitch)
 	{
@@ -521,56 +509,6 @@ void UUTScoreboard::DrawReadyText(AUTPlayerState* PlayerState, float XOffset, fl
 	}
 	ReadyColor = FLinearColor::White;
 	ReadyScale = 1.f;
-	if (PlayerState && (PlayerState->ReadyMode > 0) && PlayerState->bReadyToPlay)
-	{
-		int32 ReadyColorState = 2.f * GetWorld()->GetTimeSeconds() + PlayerState->PlayerId;
-		if ((ReadyColorState & 14) == 0)
-		{
-			ReadyColorState += 2;
-		}
-		ReadyColor.R = (ReadyColorState & 2) ? 1.f : 0.f;
-		ReadyColor.G = (ReadyColorState & 4) ? 1.f : 0.f;
-		ReadyColor.B = (ReadyColorState & 8) ? 1.f : 0.f;
-		float Speed = (PlayerState->ReadyMode == 4) ? 1.f : 2.f;
-		float ScaleTime = Speed*GetWorld()->GetTimeSeconds() - int32(Speed*GetWorld()->GetTimeSeconds());
-		float Scaling = (ScaleTime < 0.5f)
-			? ScaleTime
-			: 1.f - ScaleTime;
-		if (PlayerState->ReadyMode == 4)
-		{
-			if (PlayerState->PlayerId % 2 == 0)
-			{
-				Scaling = 0.5f - Scaling;
-			}
-			ReadyScale = 1.15f;
-			float Dist = -0.35f * ScaledCellWidth;
-			ReadyX = ReadyX + Dist * Scaling + 0.1f*ScaledCellWidth;
-			if (ScaleTime < 0.5f)
-			{
-				ReadyColor.B = 0.5f;
-				ReadyColor.G = 0.5f;
-			}
-		}
-		else
-		{
-			if (PlayerState->PlayerId % 2 == 0)
-			{
-				Scaling = 1.f - Scaling;
-			}
-			if ((PlayerState->ReadyMode == 2) || (PlayerState->ReadyMode == 3) || (PlayerState->ReadyMode == 5))
-			{
-				ReadyScale = Scaling * 1.2f + 0.7f;
-			}
-			if (PlayerState->ReadyMode == 3)
-			{
-				PlayerReady = NSLOCTEXT("UTScoreboard", "Plead", "COME ON!");
-			}
-			else if (PlayerState->ReadyMode == 5)
-			{
-				PlayerReady = NSLOCTEXT("UTScoreboard", "PleadRekt", "GET REKT!");
-			}
-		}
-	}
 	DrawText(PlayerReady, ReadyX, YOffset + ColumnY, UTHUDOwner->SmallFont, ReadyScale * RenderScale, 1.0f, ReadyColor, ETextHorzPos::Center, ETextVertPos::Center);
 }
 

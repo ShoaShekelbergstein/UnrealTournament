@@ -158,17 +158,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = NotifyTeamChanged, Category = PlayerState)
 	class AUTTeamInfo* Team;
 
-	/** Whether this player has confirmed ready to play */
-	UPROPERTY(BlueprintReadWrite, replicated, Category = PlayerState)
-	uint32 bReadyToPlay:1;
-
+	/** Whether this player his currently warming up. */
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
 		uint32 bIsWarmingUp : 1;
-
-	virtual void SetReadyToPlay(bool bNewReadyState);
-
-	UPROPERTY(BlueprintReadWrite, replicated, Category = PlayerState)
-		uint8 ReadyMode;
 
 	/** Whether this spectator is a caster */
 	UPROPERTY(replicated)
@@ -185,15 +177,6 @@ public:
 	/** Persistent so deathmessage can know about it. */
 	UPROPERTY()
 		uint32 bAnnounceWeaponReward : 1;
-
-	/** Last displayed ready state. */
-	uint8 LastReadyState;
-
-	/** Last Ready state change time. */
-	float LastReadySwitchTime;
-
-	/** Count of fast ready state changes. */
-	int32 ReadySwitchCount;
 
 	/** Voice used by this player/bot for speech (taunts, etc.). */
 	UPROPERTY(BlueprintReadOnly, Category = Sounds)

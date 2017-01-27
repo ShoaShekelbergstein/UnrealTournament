@@ -256,11 +256,6 @@ void SUTLobbyInfoPanel::RulesetChanged()
 
 void SUTLobbyInfoPanel::PlayerClicked(FUniqueNetIdRepl PlayerId)
 {
-	AUTLobbyPC* LobbyPC = Cast<AUTLobbyPC>(PlayerOwner->PlayerController);
-	if (LobbyPC && LobbyPC->UTLobbyPlayerState && LobbyPC->UTLobbyPlayerState->CurrentMatch && LobbyPC->UTLobbyPlayerState->UniqueId == PlayerId)
-	{
-		LobbyPC->ServerSetReady(!LobbyPC->UTLobbyPlayerState->bReadyToPlay);
-	}
 }
 
 void SUTLobbyInfoPanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)

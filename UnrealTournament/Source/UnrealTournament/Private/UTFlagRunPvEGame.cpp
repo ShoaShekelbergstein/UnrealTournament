@@ -247,7 +247,6 @@ void AUTFlagRunPvEGame::SpawnMonster(TSubclassOf<AUTMonster> MonsterClass)
 	AUTPlayerState* PS = Cast<AUTPlayerState>(NewAI->PlayerState);
 	if (PS != NULL)
 	{
-		PS->bReadyToPlay = true;
 		PS->bDrawNameOnDeathIndicator = MonsterClass.GetDefaultObject()->Cost > 0;
 		PS->HUDIcon = MonsterClass.GetDefaultObject()->HUDIcon;
 		PS->RemainingLives = MonsterClass.GetDefaultObject()->NumRespawns;

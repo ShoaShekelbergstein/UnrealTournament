@@ -39,7 +39,6 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	SpawnProtectionTime = 2.f;
 	bWeaponStay = true;
 	bAllowTeamSwitches = true;
-	bCasterControl = false;
 	bForcedBalance = false;
 	KickThreshold=51.0f;
 	TauntSelectionIndex = 0;
@@ -336,7 +335,6 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME(AUTGameState, MapVoteListCount);
 	DOREPLIFETIME(AUTGameState, VoteTimer);
 
-	DOREPLIFETIME_CONDITION(AUTGameState, bCasterControl, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, bPlayPlayerIntro, COND_InitialOnly);
 	DOREPLIFETIME(AUTGameState, bForcedBalance);
 
@@ -1847,7 +1845,7 @@ bool AUTGameState::AreAllPlayersReady()
 		for (int32 i = 0; i < PlayerArray.Num(); i++)
 		{
 			AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerArray[i]);
-			if (PS != NULL && !PS->bOnlySpectator && !PS->bReadyToPlay)
+			if (PS != NULL && !PS->bOnlySpectator && !PS->bIsWarmingUp && !PS->bIsInactive && !PS->bIsABot)
 			{
 				return false;
 			}
@@ -2288,7 +2286,6 @@ void AUTGameState::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject)
 	JsonObject->SetBoolField(TEXT("bTeamGame"), bTeamGame);
 	JsonObject->SetBoolField(TEXT("bAllowTeamSwitches"), bAllowTeamSwitches);
 	JsonObject->SetBoolField(TEXT("bStopGameClock"), bStopGameClock);
-	JsonObject->SetBoolField(TEXT("bCasterControl"), bCasterControl);
 	JsonObject->SetBoolField(TEXT("bForcedBalance"), bForcedBalance);
 	JsonObject->SetBoolField(TEXT("bPlayPlayerIntro"), bPlayPlayerIntro);
 

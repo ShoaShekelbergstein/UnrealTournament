@@ -145,6 +145,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	TimeMarginSlack = 0.1f;
 
 	bCasterControl = false;
+	bCasterReady = false;
 	bPlayPlayerIntro = true;
 	bShowMatchSummary = true;
 	bOfflineChallenge = false;
@@ -549,7 +550,6 @@ void AUTGameMode::InitGameState()
 		UTGameState->bRankedSession = bRankedSession;
 		UTGameState->bIsQuickMatch = bIsQuickMatch;
 		UTGameState->bWeaponStay = bWeaponStayActive;
-		UTGameState->bCasterControl = bCasterControl;
 		UTGameState->bPlayPlayerIntro = bPlayPlayerIntro;
 		UTGameState->bIsInstanceServer = IsGameInstanceServer();
 		if (bOfflineChallenge || bUseMatchmakingSession || bBasicTrainingGame)
@@ -884,11 +884,6 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 			NewBot->PlayerState->SetPlayerName(FString(TEXT("TestBot")) + ((NameCount > 0) ? FString::Printf(TEXT("_%i"), NameCount) : TEXT("")));
 			NewBot->InitializeSkill(GameDifficulty);
 			NameCount++;
-			AUTPlayerState* PS = Cast<AUTPlayerState>(NewBot->PlayerState);
-			if (PS != NULL)
-			{
-				PS->bReadyToPlay = true;
-			}
 		}
 
 		NumBots++;
@@ -3225,7 +3220,7 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 			}
 		}
 
-		UTGameState->PlayersNeeded = GameSession->MaxPlayers;
+		UTGameState->PlayersNeeded = FMath::Max(0, GameSession->MaxPlayers - NumPlayers - NumBots);
 		if (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers)
 		{
 			UTGameState->PlayersNeeded = FMath::Max(0, MinPlayersToStart - NumPlayers - NumBots);
@@ -3233,10 +3228,9 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 		if (((GetNetMode() == NM_Standalone) || bDevServer || (UTGameState->PlayersNeeded == 0)) && (NumPlayers + NumSpectators > 0))
 		{
 			bool bReadyFulfilled = true;
-			if (bRequireReady)
+			if (bRequireReady || (GetNetMode() == NM_Standalone) || bDevServer)
 			{
 				// Count how many ready players we have
-				bool bCasterReady = false;
 				int32 WarmupCount = 0;
 				int32 AllCount = 0;
 				for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
@@ -3244,17 +3238,11 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 					AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
 					if (PS != NULL && !PS->bOnlySpectator && !PS->bIsInactive)
 					{
-						if (PS->bIsWarmingUp)
+						if (PS->bIsWarmingUp || PS->bIsABot)
 						{
 							WarmupCount++;
 						}
 						AllCount++;
-					}
-
-					//Only need one caster to be ready
-					if (bCasterControl && PS->bCaster && PS->bReadyToPlay)
-					{
-						bCasterReady = true;
 					}
 				}
 				bReadyFulfilled = bCasterControl ? bCasterReady : (WarmupCount == AllCount);
@@ -3263,7 +3251,7 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 			{
 				StartDelay--;
 				UTGameState->SetRemainingTime(FMath::Max(0, StartDelay));
-				if (!bRankedSession && (StartDelay < 3) && !bForceNoBots)
+				if (!bRankedSession && (StartDelay < 3) && !bForceNoBots && !bDevServer)
 				{
 					// if not competitive match, fill with bots if have waited long enough
 					BotFillCount = FMath::Max(BotFillCount, FMath::Min(GameSession->MaxPlayers, 10));

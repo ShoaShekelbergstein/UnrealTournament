@@ -594,11 +594,6 @@ void UUTCheatManager::TestPaths(bool bHighJumps, bool bWallDodges, bool bLifts, 
 			static int32 NameCount = 0;
 			NewBot->PlayerState->SetPlayerName(FString(TEXT("PathTestBot")) + ((NameCount > 0) ? FString::Printf(TEXT("_%i"), NameCount) : TEXT("")));
 			NameCount++;
-			AUTPlayerState* PS = Cast<AUTPlayerState>(NewBot->PlayerState);
-			if (PS != NULL)
-			{
-				PS->bReadyToPlay = true;
-			}
 			Game->NumBots++;
 			Game->BotFillCount = Game->NumPlayers + Game->NumBots;
 			Game->ChangeTeam(NewBot, 0);

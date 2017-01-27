@@ -171,6 +171,10 @@ public:
 	UPROPERTY()
 	uint32 bCasterControl:1;
 
+	/**True when caster is ready to start match*/
+	UPROPERTY()
+		uint32 bCasterReady : 1;
+
 	/** True if this match was started as a quickmatch. */
 	UPROPERTY()
 		uint32 bIsQuickMatch : 1;

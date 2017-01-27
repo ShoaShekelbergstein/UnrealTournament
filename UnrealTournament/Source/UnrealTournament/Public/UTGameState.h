@@ -83,10 +83,6 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = GameState)
 		uint32 bTeamCollision : 1;
 
-	/**If enabled, the server grants special control for casters*/
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
-	uint32 bCasterControl : 1;
-
 	/**If true, had to force balance teams. */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
 	uint32 bForcedBalance : 1;

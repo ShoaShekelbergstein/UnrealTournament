@@ -608,18 +608,7 @@ FReply SUTLobbyMatchSetupPanel::LeaveMatchClicked()
 
 FReply SUTLobbyMatchSetupPanel::StartMatchClicked()
 {
-	if (bIsHost)
-	{
-		if (MatchInfo->CurrentState == ELobbyMatchState::WaitingForPlayers)
-		{
-			MatchInfo->ServerStartMatch();
-		}
-		else
-		{
-			MatchInfo->ServerAbortMatch();
-		}
-	}
-
+	MatchInfo->ServerStartMatch();
 	return FReply::Handled();
 }
 

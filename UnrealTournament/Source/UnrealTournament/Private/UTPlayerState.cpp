@@ -47,7 +47,6 @@ static inline ELoadFlags GetCosmeticLoadFlags()
 AUTPlayerState::AUTPlayerState(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	bReadyToPlay = false;
 	bIsWarmingUp = false;
 	bPendingTeamSwitch = false;
 	bCaster = false;
@@ -82,7 +81,6 @@ AUTPlayerState::AUTPlayerState(const class FObjectInitializer& ObjectInitializer
 	EmoteSpeed = 1.0f;
 	bAnnounceWeaponSpree = false;
 	bAnnounceWeaponReward = false;
-	ReadyMode = 0;
 	CurrentLoadoutPackTag = NAME_None;
 	RespawnWaitTime = 0.f;
 
@@ -98,7 +96,6 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AUTPlayerState, CarriedObject);
-	DOREPLIFETIME(AUTPlayerState, bReadyToPlay);
 	DOREPLIFETIME(AUTPlayerState, bIsWarmingUp);
 	DOREPLIFETIME(AUTPlayerState, bPendingTeamSwitch);
 	DOREPLIFETIME(AUTPlayerState, RespawnWaitTime);
@@ -182,7 +179,6 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME(AUTPlayerState, EmoteReplicationInfo);
 	DOREPLIFETIME(AUTPlayerState, EmoteSpeed);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, WeaponSkins, COND_OwnerOnly);
-	DOREPLIFETIME(AUTPlayerState, ReadyMode);
 
 	DOREPLIFETIME_CONDITION(AUTPlayerState, bDrawNameOnDeathIndicator, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, HUDIcon, COND_InitialOnly);
@@ -3258,37 +3254,6 @@ void AUTPlayerState::ClientShowLoadoutMenu_Implementation()
 	{
 		Cast<UUTLocalPlayer>(PC->Player)->OpenLoadout();
 	}
-}
-
-void AUTPlayerState::SetReadyToPlay(bool bNewReadyState)
-{
-	bReadyToPlay = bNewReadyState;
-
-// FIXMESTEVE remove
-	uint8 NewReadyState = bReadyToPlay + (bPendingTeamSwitch >> 2);
-	if ((ReadySwitchCount > 2) && bReadyToPlay)
-	{
-		if (GetWorld()->GetTimeSeconds() - LastReadySwitchTime > 0.2f)
-		{
-			ReadySwitchCount++;
-			LastReadySwitchTime = GetWorld()->GetTimeSeconds();
-			ReadyMode = 1;
-		}
-		if (ReadySwitchCount > 10)
-		{
-			ReadyMode = 2;
-		}
-	}
-	else if (!bReadyToPlay && (GetWorld()->GetTimeSeconds() - LastReadySwitchTime > 0.5f))
-	{
-		ReadyMode = 0;
-	}
-	else if (NewReadyState != LastReadyState)
-	{
-		ReadySwitchCount = (GetWorld()->GetTimeSeconds() - LastReadySwitchTime < 0.5f) ? ReadySwitchCount + 1 : 0;
-		LastReadySwitchTime = GetWorld()->GetTimeSeconds();
-	}
-	LastReadyState = NewReadyState;
 }
 
 void AUTPlayerState::LogBanRequest(AUTPlayerState* Voter)

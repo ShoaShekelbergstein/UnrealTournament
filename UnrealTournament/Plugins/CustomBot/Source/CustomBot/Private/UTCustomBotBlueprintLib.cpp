@@ -25,14 +25,7 @@ AUTCustomBot* UUTCustomBotBlueprintLib::AddCustomBot(UObject* WorldContextObject
 		}
 		NewBot->PlayerState->SetPlayerName(BotName);
 
-		AUTPlayerState* PS = Cast<AUTPlayerState>(NewBot->PlayerState);
-		if (PS != nullptr)
-		{
-			PS->bReadyToPlay = true;
-		}
-
 		AUTGameMode* GameMode = World->GetAuthGameMode<AUTGameMode>();
-
 		if (GameMode)
 		{
 			GameMode->BotFillCount++;
