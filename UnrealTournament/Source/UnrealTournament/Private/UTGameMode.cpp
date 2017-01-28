@@ -155,7 +155,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	AntiCheatEngine = nullptr;
 	EndOfMatchMessageDelay = 1.f;
 	bAllowAllArmorPickups = true;
-	bTrackKillAssists = false;
+	bTrackKillAssists = true;
 	WarmupKills = 0;
 
 	bPlayersStartWithArmor = true;
