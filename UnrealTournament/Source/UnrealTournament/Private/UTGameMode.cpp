@@ -98,7 +98,8 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	bPauseable = false;
 	RespawnWaitTime = 2.f;
 	ForceRespawnTime = 5.f;
-	StartDelay = 15;
+	StartDelay = 15.f;
+	LastMatchNotReady = 0.f;
 
 	bHasRespawnChoices = false;
 	MinPlayersToStart = 2;
@@ -3249,18 +3250,18 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 			}
 			if (bReadyFulfilled)
 			{
-				StartDelay--;
-				UTGameState->SetRemainingTime(FMath::Max(0, StartDelay));
-				if (!bRankedSession && (StartDelay < 2) && !bForceNoBots && !bDevServer)
+				float RemainingStartDelay = StartDelay - (GetWorld()->GetTimeSeconds() - LastMatchNotReady);
+				UTGameState->SetRemainingTime(FMath::Max(0, RemainingStartDelay));
+				if (!bRankedSession && (RemainingStartDelay < 2) && !bForceNoBots && !bDevServer)
 				{
 					// if not competitive match, fill with bots if have waited long enough
 					BotFillCount = FMath::Max(BotFillCount, FMath::Min(GameSession->MaxPlayers, 10));
 					CheckBotCount();
 				}
 			}
-			return (StartDelay <= 0);
+			return (RemainingStartDelay <= 0.f);
 		}
-		StartDelay = 15;
+		LastMatchNotReady = GetWorld()->GetTimeSeconds();
 		bool bUpdateWaitCountdown = UTGameState && (ElapsedWaitTime > 0);
 		int32 WaitCountDown = MaxWaitForPlayers;
 		WaitCountDown -= ElapsedWaitTime;

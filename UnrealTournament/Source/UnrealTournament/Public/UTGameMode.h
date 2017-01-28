@@ -211,7 +211,11 @@ public:
 
 	/** Delay to start match after start conditions are met. */
 	UPROPERTY(EditDefaultsOnly, Category = Game)
-		int32 StartDelay;
+		float StartDelay;
+
+	/** Last time match was not ready to start. */
+	UPROPERTY(EditDefaultsOnly, Category = Game)
+		float LastMatchNotReady;
 
 	/** Score needed to win the match.  Can be overridden with GOALSCORE=x on the url */
 	UPROPERTY(EditDefaultsOnly, Category = Game)
