@@ -50,7 +50,7 @@ AUTRallyPoint::AUTRallyPoint(const FObjectInitializer& ObjectInitializer)
 
 	RallyReadyDelay = 3.f;
 	MinimumRallyTime = 10.f;
-	MinPersistentRemaining = 0.5f;
+	MinPersistentRemaining = 1.f;
 	UpdateRallyReadyCountdown(RallyReadyDelay);
 	bIsEnabled = true;
 	RallyOffset = 0;
