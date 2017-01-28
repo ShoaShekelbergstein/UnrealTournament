@@ -1134,7 +1134,7 @@ void AUTHUD::DrawDamageNumbers()
 
 	for (int32 i = 0; i < DamageNumbers.Num(); i++)
 	{
-		DamageNumbers[i].Scale = DamageNumbers[i].Scale + 2.3f * GetWorld()->DeltaTimeSeconds;
+		DamageNumbers[i].Scale = DamageNumbers[i].Scale + 2.f * GetWorld()->DeltaTimeSeconds;
 		float MaxScale = FMath::Clamp(0.055f * float(DamageNumbers[i].DamageAmount), 1.7f, 2.4f);
 		if (DamageNumbers[i].Scale > MaxScale)
 		{
@@ -1143,21 +1143,22 @@ void AUTHUD::DrawDamageNumbers()
 		}
 		else
 		{
-			float Alpha = 1.f - FMath::Max(0.f, (DamageNumbers[i].Scale-1.f)/(MaxScale - 1.f));
+			float Alpha = 1.f - FMath::Clamp((DamageNumbers[i].Scale-1.f)/(MaxScale - 1.f), 0.f, 1.f);
 			FVector ScreenPosition = Canvas->Project(DamageNumbers[i].WorldPosition);
 			float XL, YL;
 			FString DamageString = FString::Printf(TEXT("%d"), DamageNumbers[i].DamageAmount);
-			float NumberScale = RenderScale * FMath::Min(2.2f, DamageNumbers[i].Scale);
+			float NumberScale = RenderScale * FMath::Min(2.0f, DamageNumbers[i].Scale);
 			Canvas->TextSize(MediumFont, DamageString, XL, YL, 1.f, 1.f);
 			FLinearColor BlackColor = FLinearColor::Black;
 			BlackColor.A = Alpha;
 			Canvas->SetLinearDrawColor(BlackColor);
 			float OutlineScale = 1.075f*NumberScale;
-			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*OutlineScale, ScreenPosition.Y - OutlineScale * (0.5f*YL + (DamageNumbers[i].Scale - 0.75f)*0.5f*YL), OutlineScale, OutlineScale, TextRenderInfo);
+			float Rise = RenderScale * (10.f + (DamageNumbers[i].Scale - 1.f) * 65.f);
+			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*OutlineScale, ScreenPosition.Y - OutlineScale * 0.5f*YL - Rise, OutlineScale, OutlineScale, TextRenderInfo);
 			FLinearColor NumberColor = REDHUDCOLOR;
 			NumberColor.A = Alpha;
 			Canvas->SetLinearDrawColor(NumberColor);
-			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*NumberScale, ScreenPosition.Y - NumberScale * (0.5f*YL + (DamageNumbers[i].Scale - 0.75f)*0.5f*YL), NumberScale, NumberScale, TextRenderInfo);
+			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*NumberScale, ScreenPosition.Y - NumberScale * 0.5f*YL - Rise, NumberScale, NumberScale, TextRenderInfo);
 		}
 	}
 }
