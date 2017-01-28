@@ -3248,10 +3248,11 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 				}
 				bReadyFulfilled = bCasterControl ? bCasterReady : (WarmupCount == AllCount);
 			}
+			float RemainingStartDelay = StartDelay;
 			if (bReadyFulfilled)
 			{
-				float RemainingStartDelay = StartDelay - (GetWorld()->GetTimeSeconds() - LastMatchNotReady);
-				UTGameState->SetRemainingTime(FMath::Max(0, RemainingStartDelay));
+				RemainingStartDelay -= (GetWorld()->GetTimeSeconds() - LastMatchNotReady);
+				UTGameState->SetRemainingTime(FMath::Max(0.f, RemainingStartDelay));
 				if (!bRankedSession && (RemainingStartDelay < 2) && !bForceNoBots && !bDevServer)
 				{
 					// if not competitive match, fill with bots if have waited long enough
