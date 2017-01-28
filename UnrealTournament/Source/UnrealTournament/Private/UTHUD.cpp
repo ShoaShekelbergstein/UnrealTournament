@@ -1130,26 +1130,33 @@ void AUTHUD::CausedDamage(APawn* HitPawn, int32 Damage)
 void AUTHUD::DrawDamageNumbers()
 {
 	FFontRenderInfo TextRenderInfo;
-	TextRenderInfo.bEnableShadow = true;
-	Canvas->DrawColor = FColor::Red;
 	const float RenderScale = float(Canvas->SizeY) / 1080.0f;
 
 	for (int32 i = 0; i < DamageNumbers.Num(); i++)
 	{
 		DamageNumbers[i].Scale = DamageNumbers[i].Scale + 2.3f * GetWorld()->DeltaTimeSeconds;
-		if (DamageNumbers[i].Scale > 1.7f)
+		float MaxScale = FMath::Clamp(0.055f * float(DamageNumbers[i].DamageAmount), 1.7f, 2.5f);
+		if (DamageNumbers[i].Scale > MaxScale)
 		{
 			DamageNumbers.RemoveAt(i, 1);
 			i--;
 		}
 		else
 		{
-			Canvas->DrawColor.A = 255.f * (1.f - 0.45f * DamageNumbers[i].Scale);
+			float Alpha = 1.f - FMath::Max(0.f, (DamageNumbers[i].Scale-1.f)/(MaxScale - 1.f));
 			FVector ScreenPosition = Canvas->Project(DamageNumbers[i].WorldPosition);
 			float XL, YL;
 			FString DamageString = FString::Printf(TEXT("%d"), DamageNumbers[i].DamageAmount);
 			float NumberScale = RenderScale * DamageNumbers[i].Scale;
 			Canvas->TextSize(MediumFont, DamageString, XL, YL, 1.f, 1.f);
+			FLinearColor BlackColor = FLinearColor::Black;
+			BlackColor.A = Alpha;
+			Canvas->SetLinearDrawColor(BlackColor);
+			float OutlineScale = 1.075f*NumberScale;
+			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*OutlineScale, ScreenPosition.Y - OutlineScale * (0.5f*YL + (DamageNumbers[i].Scale - 0.75f)*0.5f*YL), OutlineScale, OutlineScale, TextRenderInfo);
+			FLinearColor NumberColor = REDHUDCOLOR;
+			NumberColor.A = Alpha;
+			Canvas->SetLinearDrawColor(NumberColor);
 			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*NumberScale, ScreenPosition.Y - NumberScale * (0.5f*YL + (DamageNumbers[i].Scale - 0.75f)*0.5f*YL), NumberScale, NumberScale, TextRenderInfo);
 		}
 	}
