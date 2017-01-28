@@ -98,7 +98,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	bPauseable = false;
 	RespawnWaitTime = 2.f;
 	ForceRespawnTime = 5.f;
-	StartDelay = 15.f;
+	StartDelay = 10.f;
 	LastMatchNotReady = 0.f;
 
 	bHasRespawnChoices = false;
@@ -3252,6 +3252,10 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 			if (bReadyFulfilled)
 			{
 				RemainingStartDelay -= (GetWorld()->GetTimeSeconds() - LastMatchNotReady);
+				if (GetNetMode() == NM_Standalone)
+				{
+					RemainingStartDelay = 0.f;
+				}
 				UTGameState->SetRemainingTime(FMath::Max(0.f, RemainingStartDelay));
 				if (!bRankedSession && (RemainingStartDelay < 2) && !bForceNoBots && !bDevServer)
 				{
