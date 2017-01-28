@@ -533,6 +533,15 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 		}
 		if (bNeedReplay && GS->ScoringPlayerState)
 		{
+			// take care of any effects that got frozen
+			for (FObjectIterator It(UParticleSystemComponent::StaticClass()); It; ++It)
+			{
+				UParticleSystemComponent* PSC = (UParticleSystemComponent*)*It;
+				if (PSC && PSC->GetOwner() && (PSC->CustomTimeDilation == 0.001f) && (PSC->GetOwner()->GetWorld() == GetWorld()))
+				{
+					PSC->CustomTimeDilation = 1.f;
+				}
+			}
 			bNeedReplay = false;
 			if (GetWorld()->DemoNetDriver && (GetWorld()->GetTimeSeconds() - UTPlayerOwner->CreationTime > 15.0f + ScoreInfoDuration))
 			{

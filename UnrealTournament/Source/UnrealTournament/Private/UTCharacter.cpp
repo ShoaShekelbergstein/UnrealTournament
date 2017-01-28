@@ -6567,7 +6567,7 @@ void AUTCharacter::TurnOff()
 {
 	DisallowWeaponFiring(true);
 
-	if (GetMesh() && GetController() && (!IsLocallyControlled() || !Cast<APlayerController>(GetController())))
+	if (GetMesh() && (!IsLocallyControlled() || !Cast<APlayerController>(GetController())))
 	{
 		GetMesh()->TickAnimation(1.0f, false);
 		GetMesh()->RefreshBoneTransforms();

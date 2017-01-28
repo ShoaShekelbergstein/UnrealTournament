@@ -2401,16 +2401,15 @@ void AUTGameState::PrepareForIntermission()
 			IUTIntermissionBeginInterface::Execute_IntermissionBegin(*It);
 		}
 	}
-	/*
+	
 	for (FObjectIterator It(UParticleSystemComponent::StaticClass()); It; ++It)
 	{
 		UParticleSystemComponent* PSC = (UParticleSystemComponent*)*It;
-		if (PSC && !Cast<AUTWeapon>(PSC->GetOwner()))
+		if (PSC && PSC->GetOwner() && (PSC->GetOwner()->GetWorld() == GetWorld()) && !Cast<AUTWeapon>(PSC->GetOwner()))
 		{
-			PSC->CustomTimeDilation = 0.01f;
+			PSC->CustomTimeDilation = 0.001f;
 		}
 	}
-	*/
 }
 
 bool AUTGameState::HasMatchEnded() const
