@@ -2597,12 +2597,17 @@ void AUTPlayerController::ServerToggleWarmup_Implementation()
 		return;
 	}
 	UTPlayerState->bPendingTeamSwitch = false;
+	if (GetNetMode() == NM_Standalone)
+	{
+		UTPlayerState->bIsWarmingUp = true;
+		return;
+	}
 	UTPlayerState->bIsWarmingUp = !UTPlayerState->bIsWarmingUp;
 	UTPlayerState->ForceNetUpdate();
 	ClientUpdateWarmup(UTPlayerState->bIsWarmingUp);
 	if (UTPlayerState->bIsWarmingUp)
 	{
-		if (!IsFrozen() && (GetNetMode() != NM_Standalone))
+		if (!IsFrozen())
 		{
 			Super::ServerRestartPlayer_Implementation();
 		}
@@ -2657,6 +2662,7 @@ void AUTPlayerController::ServerRestartPlayer_Implementation()
 	if (!UTGM->HasMatchStarted() && (GetNetMode() == NM_Standalone))
 	{
 		UTPlayerState->bIsWarmingUp = true;
+		return;
 	}
 	else if (IsFrozen())
 	{
