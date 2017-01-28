@@ -1135,7 +1135,7 @@ void AUTHUD::DrawDamageNumbers()
 	for (int32 i = 0; i < DamageNumbers.Num(); i++)
 	{
 		DamageNumbers[i].Scale = DamageNumbers[i].Scale + 2.3f * GetWorld()->DeltaTimeSeconds;
-		float MaxScale = FMath::Clamp(0.055f * float(DamageNumbers[i].DamageAmount), 1.7f, 2.5f);
+		float MaxScale = FMath::Clamp(0.055f * float(DamageNumbers[i].DamageAmount), 1.7f, 2.4f);
 		if (DamageNumbers[i].Scale > MaxScale)
 		{
 			DamageNumbers.RemoveAt(i, 1);
@@ -1147,7 +1147,7 @@ void AUTHUD::DrawDamageNumbers()
 			FVector ScreenPosition = Canvas->Project(DamageNumbers[i].WorldPosition);
 			float XL, YL;
 			FString DamageString = FString::Printf(TEXT("%d"), DamageNumbers[i].DamageAmount);
-			float NumberScale = RenderScale * DamageNumbers[i].Scale;
+			float NumberScale = RenderScale * FMath::Min(2.2f, DamageNumbers[i].Scale);
 			Canvas->TextSize(MediumFont, DamageString, XL, YL, 1.f, 1.f);
 			FLinearColor BlackColor = FLinearColor::Black;
 			BlackColor.A = Alpha;
