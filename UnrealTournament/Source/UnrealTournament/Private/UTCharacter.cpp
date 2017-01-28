@@ -791,6 +791,7 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 		const UUTDamageType* const UTDamageTypeCDO = Cast<UUTDamageType>(DamageTypeCDO); // warning: may be NULL
 
 		int32 ResultDamage = FMath::TruncToInt(Damage);
+		int32 NotifiedDamage = ResultDamage;
 		FVector ResultMomentum = UTGetDamageMomentum(DamageEvent, this, EventInstigator);
 		bool bRadialDamage = false;
 		if (DamageEvent.IsOfType(FRadialDamageEvent::ClassID))
@@ -936,6 +937,10 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 					UpdateArmorOverlay();
 				}
 			}
+			else
+			{
+				NotifiedDamage = 0;
+			}
 			UE_LOG(LogUTCharacter, Verbose, TEXT("%s took %d damage, %d health remaining"), *GetName(), ResultDamage, Health);
 			if (Game && Game->HasMatchStarted())
 			{
@@ -1030,7 +1035,7 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 			{
 				GetCharacterMovement()->AddImpulse(ResultMomentum, false);
 			}
-			NotifyTakeHit(EventInstigator, AppliedDamage, ResultDamage, ResultMomentum, HitArmor, DamageEvent);
+			NotifyTakeHit(EventInstigator, NotifiedDamage, ResultDamage, ResultMomentum, HitArmor, DamageEvent);
 			SetLastTakeHitInfo(Damage, ResultDamage, ResultMomentum, HitArmor, DamageEvent);
 			if (Health <= 0)
 			{
