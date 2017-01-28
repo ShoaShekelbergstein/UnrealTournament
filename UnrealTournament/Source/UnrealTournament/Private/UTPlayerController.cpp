@@ -2723,23 +2723,11 @@ void AUTPlayerController::ServerRestartPlayerAltFire_Implementation()
 		UTPlayerState->ForceNetUpdate();
 	}
 
-	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (GS && !GS->HasMatchStarted() && UTPlayerState && !UTPlayerState->bIsWarmingUp)
+	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+	if (GameMode && !GameMode->PlayerCanAltRestart(this))
 	{
-		if (GS->GetMatchState() != MatchState::CountdownToBegin && GS->GetMatchState() != MatchState::PlayerIntro)
-		{
-			ServerSwitchTeam();
-		}
+		return;
 	}
-	else 
-	{
-		AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-		if (GameMode && !GameMode->PlayerCanAltRestart(this))
-		{
-			return;
-		}
-	}
-
 	Super::ServerRestartPlayer_Implementation();
 }
 
