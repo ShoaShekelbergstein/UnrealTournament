@@ -2602,7 +2602,7 @@ void AUTPlayerController::ServerToggleWarmup_Implementation()
 	ClientUpdateWarmup(UTPlayerState->bIsWarmingUp);
 	if (UTPlayerState->bIsWarmingUp)
 	{
-		if (!IsFrozen())
+		if (!IsFrozen() && (GetNetMode() != NM_Standalone))
 		{
 			Super::ServerRestartPlayer_Implementation();
 		}
