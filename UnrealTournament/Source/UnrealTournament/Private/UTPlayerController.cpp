@@ -2699,12 +2699,12 @@ void AUTPlayerController::ServerSwitchTeam_Implementation()
 		}
 		else if (!GetWorld()->GetAuthGameMode()->HasMatchStarted())
 		{
+			ChangeTeam(NewTeam);
 			if (UTPlayerState->bIsWarmingUp)
 			{
-				// no team swaps while warming up
-				return;
+				ServerToggleWarmup();
+				ServerToggleWarmup();
 			}
-			ChangeTeam(NewTeam);
 		}
 		else
 		{
