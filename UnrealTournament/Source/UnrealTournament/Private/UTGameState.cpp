@@ -197,11 +197,11 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	HighlightMap.Add(HighlightNames::DamageAward, NSLOCTEXT("AUTGameMode", "DamageAward", "{0} Damage Done"));
 	HighlightMap.Add(HighlightNames::ParticipationAward, NSLOCTEXT("AUTGameMode", "ParticipationAward", "Was there, more or less"));
 
-	HighlightMap.Add(NAME_AmazingCombos, NSLOCTEXT("AUTGameMode", "AmazingCombosHL", "Amazing Combos ({0})"));
-	HighlightMap.Add(NAME_SniperHeadshotKills, NSLOCTEXT("AUTGameMode", "SniperHeadshotKillsHL", "Headshot Kills ({0})"));
-	HighlightMap.Add(NAME_AirRox, NSLOCTEXT("AUTGameMode", "AirRoxHL", "Air Rocket Kills ({0})"));
-	HighlightMap.Add(NAME_FlakShreds, NSLOCTEXT("AUTGameMode", "FlakShredsHL", "Flak Shred Kills ({0})"));
-	HighlightMap.Add(NAME_AirSnot, NSLOCTEXT("AUTGameMode", "AirSnotHL", "Air Snot Kills ({0})"));
+	HighlightMap.Add(NAME_AmazingCombos, NSLOCTEXT("AUTGameMode", "AmazingCombosHL", "{0} Amazing Combos"));
+	HighlightMap.Add(NAME_SniperHeadshotKills, NSLOCTEXT("AUTGameMode", "SniperHeadshotKillsHL", "{0} Headshot Kills"));
+	HighlightMap.Add(NAME_AirRox, NSLOCTEXT("AUTGameMode", "AirRoxHL", "{0} Air Rocket Kills"));
+	HighlightMap.Add(NAME_FlakShreds, NSLOCTEXT("AUTGameMode", "FlakShredsHL", "{0} Flak Shred Kills"));
+	HighlightMap.Add(NAME_AirSnot, NSLOCTEXT("AUTGameMode", "AirSnotHL", "{0} Air Snot Kills"));
 	HighlightMap.Add(NAME_MultiKillLevel0, NSLOCTEXT("AUTGameMode", "MultiKillLevel0", "Double Kill ({0})"));
 	HighlightMap.Add(NAME_MultiKillLevel1, NSLOCTEXT("AUTGameMode", "MultiKillLevel1", "Multi Kill ({0})"));
 	HighlightMap.Add(NAME_MultiKillLevel2, NSLOCTEXT("AUTGameMode", "MultiKillLevel2", "Ultra Kill ({0})"));
