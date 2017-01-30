@@ -230,7 +230,7 @@ APlayerController* AUTBaseGameMode::Login(class UPlayer* NewPlayer, ENetRole InR
 	// Init player's ClanTag
 	if (PC && Cast<AUTPlayerState>(PC->PlayerState))
 	{
-		FString InName = UGameplayStatics::ParseOption(Options, TEXT("Clan")).Left(15);
+		FString InName = UGameplayStatics::ParseOption(Options, TEXT("Clan")).Left(8);
 		if (!InName.IsEmpty())
 		{
 			((AUTPlayerState*)(PC->PlayerState))->ClanName = InName;
