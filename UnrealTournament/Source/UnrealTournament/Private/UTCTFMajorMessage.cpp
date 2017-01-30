@@ -21,6 +21,7 @@ UUTCTFMajorMessage::UUTCTFMajorMessage(const FObjectInitializer& ObjectInitializ
 	EnemyRallyPostfix = NSLOCTEXT("CTFGameMessage", "EnemyRallyPostfix", "");
 	TeamRallyMessage = NSLOCTEXT("CTFGameMessage", "TeamRallyMessage", "");
 	RallyCompleteMessage = NSLOCTEXT("CTFGameMessage", "RallyCompleteMessage", "Rally Ended!");
+	RallyClearMessage = NSLOCTEXT("CTFGameMessage", "RallyClearMessage", "   ");
 	PressToRallyPrefix = NSLOCTEXT("CTFGameMessage", "PressToRallyPrefix", "Press ");
 	PressToRallyPostfix = NSLOCTEXT("CTFGameMessage", "PressToRallyPostfix", " to Rally Now!");
 	bIsStatusAnnouncement = true;
@@ -174,6 +175,7 @@ FText UUTCTFMajorMessage::GetText(int32 Switch, bool bTargetsPlayerState1, APlay
 	case 23: return RallyReadyMessage; break;
 	case 24: return BuildEmphasisText(Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject); break;
 	case 25: return RallyCompleteMessage; break;
+	case 26: return RallyClearMessage; break;
 	case 27: return TeamRallyMessage; break;
 	case 28: return EnemyRallyMessage; break;
 	case 30: return BuildEmphasisText(Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject); break;
@@ -194,7 +196,11 @@ bool UUTCTFMajorMessage::InterruptAnnouncement(const FAnnouncementInfo Announcem
 	}
 	if (AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass)
 	{
-		return (AnnouncementInfo.Switch == 25) && (OtherAnnouncementInfo.Switch == 30);
+		if (OtherAnnouncementInfo.Switch == 26)
+		{
+			return true;
+		}
+		return ((AnnouncementInfo.Switch == 25) || (AnnouncementInfo.Switch == 26)) && (OtherAnnouncementInfo.Switch == 30);
 	}
 	if (GetAnnouncementPriority(AnnouncementInfo) > OtherAnnouncementInfo.MessageClass->GetDefaultObject<UUTLocalMessage>()->GetAnnouncementPriority(OtherAnnouncementInfo))
 	{

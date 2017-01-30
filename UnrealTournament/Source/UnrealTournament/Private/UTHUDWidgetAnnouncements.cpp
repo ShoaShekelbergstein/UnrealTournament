@@ -72,9 +72,10 @@ void UUTHUDWidgetAnnouncements::AddMessage(int32 InQueueIndex, TSubclassOf<class
 	for (int32 i = 0; i < MessageQueue.Num(); i++)
 	{
 		if ((i != InQueueIndex) && (MessageQueue[i].MessageClass != nullptr) && (MessageQueue[i].RequestedSlot == MessageQueue[InQueueIndex].RequestedSlot) 
-			&& MessageQueue[InQueueIndex].MessageClass.GetDefaultObject()->InterruptAnnouncement(NewAnnouncement, MessageQueue[i].AnnouncementInfo))
+			&& MessageClass.GetDefaultObject()->InterruptAnnouncement(NewAnnouncement, MessageQueue[i].AnnouncementInfo))
 		{
 			ClearMessage(MessageQueue[i]);
+			i--;
 		}
 	}
 }

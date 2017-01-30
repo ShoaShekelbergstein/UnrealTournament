@@ -312,8 +312,9 @@ void AUTRallyPoint::RallyPoweredComplete()
 	SetRallyPointState(NextState);
 	OnRallyChargingChanged();
 
-	if ( (Role == ROLE_Authority) && (NextState == RallyPointStates::Off))
+	if (Role == ROLE_Authority)
 	{
+		int32 MessageIndex = (NextState == RallyPointStates::Off) ? 25 : 26;
 		AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 		if (UTGS != nullptr)
 		{
@@ -322,7 +323,7 @@ void AUTRallyPoint::RallyPoweredComplete()
 				AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
 				if (PC && PC->UTPlayerState && PC->UTPlayerState->Team && (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0)))
 				{
-					PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 25, nullptr);
+					PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), MessageIndex, nullptr);
 				}
 			}
 		}
