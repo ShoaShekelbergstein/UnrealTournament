@@ -433,7 +433,7 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 			{
 				if (BotSkillLevel >= 0)
 				{
-					GameURL += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), FMath::Min(CurrentRuleset->MaxPlayers, 10), FMath::Clamp<int32>(BotSkillLevel,0,7));
+					GameURL += FString::Printf(TEXT("?Difficulty=%i"), FMath::Clamp<int32>(BotSkillLevel,0,7));
 				}
 				else
 				{
