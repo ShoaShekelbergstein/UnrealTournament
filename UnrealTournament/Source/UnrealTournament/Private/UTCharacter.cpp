@@ -1465,7 +1465,7 @@ void AUTCharacter::NotifyTakeHit(AController* InstigatedBy, int32 AppliedDamage,
 		// (at small bandwidth cost)
 		if (((GetController() == InstigatedBy) || !GS || !GS->OnSameTeam(this, InstigatedBy)) && (GetWorld()->TimeSeconds - LastPainSoundTime >= MinPainSoundInterval))
 		{
-			const UDamageType* const DamageTypeCDO = DamageEvent.DamageTypeClass ? DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType>() : GetDefault<UDamageType>();
+			const UDamageType* const DamageTypeCDO = (DamageEvent.DamageTypeClass != nullptr) ? DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType>() : GetDefault<UDamageType>();
 			const UUTDamageType* const UTDamageTypeCDO = Cast<UUTDamageType>(DamageTypeCDO); // warning: may be NULL
 			if (HitArmor != nullptr && ((UTDamageTypeCDO == NULL) || UTDamageTypeCDO->bBlockedByArmor))
 			{
@@ -1475,7 +1475,7 @@ void AUTCharacter::NotifyTakeHit(AController* InstigatedBy, int32 AppliedDamage,
 					UUTGameplayStatics::UTPlaySound(GetWorld(), ArmorSound, this, SRT_All, false, FVector::ZeroVector, InstigatedByPC, NULL, false, SAT_PainSound);
 				}
 			}
-			else if ((UTDamageTypeCDO == NULL) || UTDamageTypeCDO->bCausesPainSound)
+			else if (((UTDamageTypeCDO == NULL) || UTDamageTypeCDO->bCausesPainSound) && (CharacterData != nullptr))
 			{
 				UUTGameplayStatics::UTPlaySound(GetWorld(), CharacterData.GetDefaultObject()->PainSound, this, SRT_All, false, FVector::ZeroVector, InstigatedByPC, NULL, false, SAT_PainSound);
 			}
