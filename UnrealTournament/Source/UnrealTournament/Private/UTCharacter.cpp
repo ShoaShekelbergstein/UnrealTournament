@@ -1443,7 +1443,7 @@ void AUTCharacter::NotifyTakeHit(AController* InstigatedBy, int32 AppliedDamage,
 		AUTPlayerController* InstigatedByPC = Cast<AUTPlayerController>(InstigatedBy);
 		APawn* InstigatorPawn = InstigatedBy ? InstigatedBy->GetPawn() : nullptr;
 		uint8 CompressedDamage = FMath::Clamp(AppliedDamage, 0, 255);
-		bool bArmorDamage = (Health + AppliedDamage > HealthMax) && (int32((Health + AppliedDamage)/AppliedDamage) != int32(100/AppliedDamage));
+		bool bArmorDamage = (AppliedDamage > 0) && (Health + AppliedDamage > HealthMax) && (int32((Health + AppliedDamage)/AppliedDamage) != int32(100/AppliedDamage));
 		if (InstigatedByPC != NULL)
 		{
 			InstigatedByPC->ClientNotifyCausedHit(this, CompressedDamage, bArmorDamage);
