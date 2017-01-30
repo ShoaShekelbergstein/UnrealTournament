@@ -233,7 +233,7 @@ void UUTLocalPlayer::CleanUpOnlineSubSystyem()
 bool UUTLocalPlayer::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
 {
 	// disallow certain commands in shipping builds
-#if (UE_BUILD_SHIPPING || UE_BUILD_TEST)
+#if UE_BUILD_SHIPPING
 	if (FParse::Command(&Cmd, TEXT("SHOW")))
 	{
 		return true;
