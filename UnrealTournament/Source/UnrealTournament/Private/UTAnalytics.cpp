@@ -61,7 +61,7 @@ static const FString SecureAnalyticsEndpoint = TEXT("https://datarouter.ol.epicg
 
 void FUTAnalytics::Initialize()
 {
-	if (IsRunningCommandlet() || GIsEditor)
+	if (IsRunningCommandlet() || GIsEditor || GIsPlayInEditorWorld)
 	{
 		return;
 	}
