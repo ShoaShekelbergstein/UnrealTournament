@@ -1134,7 +1134,7 @@ void AUTHUD::DrawDamageNumbers()
 
 	for (int32 i = 0; i < DamageNumbers.Num(); i++)
 	{
-		DamageNumbers[i].Scale = DamageNumbers[i].Scale + 2.f * GetWorld()->DeltaTimeSeconds;
+		DamageNumbers[i].Scale = DamageNumbers[i].Scale + 1.6f * GetWorld()->DeltaTimeSeconds;
 		float MaxScale = FMath::Clamp(0.055f * float(DamageNumbers[i].DamageAmount), 1.7f, 2.4f);
 		if (DamageNumbers[i].Scale > MaxScale)
 		{
@@ -1153,7 +1153,7 @@ void AUTHUD::DrawDamageNumbers()
 			BlackColor.A = Alpha;
 			Canvas->SetLinearDrawColor(BlackColor);
 			float OutlineScale = 1.075f*NumberScale;
-			float Rise = RenderScale * (10.f + (DamageNumbers[i].Scale - 1.f) * 65.f);
+			float Rise = RenderScale * (10.f + (DamageNumbers[i].Scale - 1.f) * 75.f);
 			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*OutlineScale, ScreenPosition.Y - OutlineScale * 0.5f*YL - Rise, OutlineScale, OutlineScale, TextRenderInfo);
 			FLinearColor NumberColor = DamageNumbers[i].bArmorDamage ? GOLDCOLOR : REDHUDCOLOR;
 			NumberColor.A = Alpha;
