@@ -638,13 +638,13 @@ void AUTHUD::NotifyMatchStateChange()
 				}
 			}
 
+			if (UTPlayerOwner->UTPlayerState && UTPlayerOwner->UTPlayerState->bIsWarmingUp)
+			{
+				UTPlayerOwner->ClientReceiveLocalizedMessage(UUTGameMessage::StaticClass(), 16, nullptr, nullptr, nullptr);
+			}
 			//if we can't line up, use old method
 			if (!bShouldUseLineUp)
 			{
-				if (UTPlayerOwner->UTPlayerState && UTPlayerOwner->UTPlayerState->bIsWarmingUp)
-				{
-					UTPlayerOwner->ClientReceiveLocalizedMessage(UUTGameMessage::StaticClass(), 16, nullptr, nullptr, nullptr);
-				}
 				GetWorldTimerManager().SetTimer(MatchSummaryHandle, this, &AUTHUD::OpenMatchSummary, 1.7f, false);
 			}
 		}
@@ -1099,7 +1099,7 @@ void AUTHUD::DrawDamageIndicators()
 	}
 }
 
-void AUTHUD::CausedDamage(APawn* HitPawn, int32 Damage)
+void AUTHUD::CausedDamage(APawn* HitPawn, int32 Damage, bool bArmorDamage)
 {
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if ((HitPawn != UTPlayerOwner->GetViewTarget()) && (GS == NULL || !GS->OnSameTeam(HitPawn, PlayerOwner)))
@@ -1122,7 +1122,7 @@ void AUTHUD::CausedDamage(APawn* HitPawn, int32 Damage)
 			}
 			// save amount, scale , 2D location
 			float HalfHeight = Cast<ACharacter>(HitPawn) ? 1.15f * ((ACharacter *)(HitPawn))->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 0.f;
-			DamageNumbers.Add(FEnemyDamageNumber(HitPawn, GetWorld()->GetTimeSeconds(), FMath::Min(Damage, 255), HitPawn->GetActorLocation() + FVector(0.f, 0.f, HalfHeight), 0.75f));
+			DamageNumbers.Add(FEnemyDamageNumber(HitPawn, GetWorld()->GetTimeSeconds(), FMath::Min(Damage, 255), HitPawn->GetActorLocation() + FVector(0.f, 0.f, HalfHeight), 0.75f, bArmorDamage));
 		}
 	}
 }
@@ -1155,7 +1155,7 @@ void AUTHUD::DrawDamageNumbers()
 			float OutlineScale = 1.075f*NumberScale;
 			float Rise = RenderScale * (10.f + (DamageNumbers[i].Scale - 1.f) * 65.f);
 			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*OutlineScale, ScreenPosition.Y - OutlineScale * 0.5f*YL - Rise, OutlineScale, OutlineScale, TextRenderInfo);
-			FLinearColor NumberColor = REDHUDCOLOR;
+			FLinearColor NumberColor = DamageNumbers[i].bArmorDamage ? GOLDCOLOR : REDHUDCOLOR;
 			NumberColor.A = Alpha;
 			Canvas->SetLinearDrawColor(NumberColor);
 			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*NumberScale, ScreenPosition.Y - NumberScale * 0.5f*YL - Rise, NumberScale, NumberScale, TextRenderInfo);

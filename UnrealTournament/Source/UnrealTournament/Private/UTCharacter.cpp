@@ -791,7 +791,6 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 		const UUTDamageType* const UTDamageTypeCDO = Cast<UUTDamageType>(DamageTypeCDO); // warning: may be NULL
 
 		int32 ResultDamage = FMath::TruncToInt(Damage);
-		int32 NotifiedDamage = ResultDamage;
 		FVector ResultMomentum = UTGetDamageMomentum(DamageEvent, this, EventInstigator);
 		bool bRadialDamage = false;
 		if (DamageEvent.IsOfType(FRadialDamageEvent::ClassID))
@@ -835,6 +834,7 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 			{
 				Game->ModifyDamage(ResultDamage, ResultMomentum, this, EventInstigator, HitInfo, DamageCauser, DamageEvent.DamageTypeClass);
 			}
+			int32 NotifiedDamage = ResultDamage;
 			if (bRadialDamage && GetController() && (EventInstigator != GetController()))
 			{
 				AUTProjectile* Proj = Cast<AUTProjectile>(DamageCauser);
@@ -1245,46 +1245,46 @@ void AUTCharacter::PlayTakeHitEffects_Implementation()
 		// check blood effects
 		if (!bPlayedArmorEffect && LastTakeHitInfo.Damage > 0 && (UTDmg == NULL || UTDmg.GetDefaultObject()->bCausesBlood)) 
 		{
-bool bRecentlyRendered = GetWorld()->TimeSeconds - GetLastRenderTime() < 1.0f;
-// TODO: gore setting check
-if (bRecentlyRendered && BloodEffects.Num() > 0)
-{
-	UParticleSystem* Blood = BloodEffects[FMath::RandHelper(BloodEffects.Num())];
-	if (Blood != NULL)
-	{
-		// we want the PSC 'attached' to ourselves for 1P/3P visibility yet using an absolute transform, so the GameplayStatics functions don't get the job done
-		UParticleSystemComponent* PSC = NewObject<UParticleSystemComponent>(this, UParticleSystemComponent::StaticClass());
-		PSC->bAutoDestroy = true;
-		PSC->SecondsBeforeInactive = 0.0f;
-		PSC->bAutoActivate = false;
-		PSC->SetTemplate(Blood);
-		PSC->bOverrideLODMethod = false;
-		PSC->RegisterComponentWithWorld(GetWorld());
-		PSC->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform);
-		PSC->SetAbsolute(true, true, true);
-		PSC->SetWorldLocationAndRotation(LastTakeHitInfo.RelHitLocation + GetActorLocation(), LastTakeHitInfo.RelHitLocation.Rotation());
-		PSC->SetRelativeScale3D(bPlayedArmorEffect ? FVector(0.7f) : FVector(1.f));
-		PSC->ActivateSystem(true);
-	}
-}
-// spawn decal
-bool bSpawnDecal = bRecentlyRendered;
-if (!bSpawnDecal)
-{
-	// spawn blood decals for player locally viewed even in first person mode
-	for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
-	{
-		if (It->PlayerController != NULL && It->PlayerController->GetViewTarget() == this)
-		{
-			bSpawnDecal = true;
-			break;
-		}
-	}
-}
-if (bSpawnDecal)
-{
-	SpawnBloodDecal(LastTakeHitInfo.RelHitLocation + GetActorLocation(), FRotator(FRotator::DecompressAxisFromByte(LastTakeHitInfo.ShotDirPitch), FRotator::DecompressAxisFromByte(LastTakeHitInfo.ShotDirYaw), 0.0f).Vector());
-}
+			bool bRecentlyRendered = GetWorld()->TimeSeconds - GetLastRenderTime() < 1.0f;
+			// TODO: gore setting check
+			if (bRecentlyRendered && BloodEffects.Num() > 0)
+			{
+				UParticleSystem* Blood = BloodEffects[FMath::RandHelper(BloodEffects.Num())];
+				if (Blood != NULL)
+				{
+					// we want the PSC 'attached' to ourselves for 1P/3P visibility yet using an absolute transform, so the GameplayStatics functions don't get the job done
+					UParticleSystemComponent* PSC = NewObject<UParticleSystemComponent>(this, UParticleSystemComponent::StaticClass());
+					PSC->bAutoDestroy = true;
+					PSC->SecondsBeforeInactive = 0.0f;
+					PSC->bAutoActivate = false;
+					PSC->SetTemplate(Blood);
+					PSC->bOverrideLODMethod = false;
+					PSC->RegisterComponentWithWorld(GetWorld());
+					PSC->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform);
+					PSC->SetAbsolute(true, true, true);
+					PSC->SetWorldLocationAndRotation(LastTakeHitInfo.RelHitLocation + GetActorLocation(), LastTakeHitInfo.RelHitLocation.Rotation());
+					PSC->SetRelativeScale3D(bPlayedArmorEffect ? FVector(0.7f) : FVector(1.f));
+					PSC->ActivateSystem(true);
+				}
+			}
+			// spawn decal
+			bool bSpawnDecal = bRecentlyRendered;
+			if (!bSpawnDecal)
+			{
+				// spawn blood decals for player locally viewed even in first person mode
+				for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+				{
+					if (It->PlayerController != NULL && It->PlayerController->GetViewTarget() == this)
+					{
+						bSpawnDecal = true;
+						break;
+					}
+				}
+			}
+			if (bSpawnDecal)
+			{
+				SpawnBloodDecal(LastTakeHitInfo.RelHitLocation + GetActorLocation(), FRotator(FRotator::DecompressAxisFromByte(LastTakeHitInfo.ShotDirPitch), FRotator::DecompressAxisFromByte(LastTakeHitInfo.ShotDirYaw), 0.0f).Vector());
+			}
 		}
 	}
 }
@@ -1443,9 +1443,10 @@ void AUTCharacter::NotifyTakeHit(AController* InstigatedBy, int32 AppliedDamage,
 		AUTPlayerController* InstigatedByPC = Cast<AUTPlayerController>(InstigatedBy);
 		APawn* InstigatorPawn = InstigatedBy ? InstigatedBy->GetPawn() : nullptr;
 		uint8 CompressedDamage = FMath::Clamp(AppliedDamage, 0, 255);
+		bool bArmorDamage = (Health + AppliedDamage > HealthMax) && (int32((Health + AppliedDamage)/AppliedDamage) != int32(100/AppliedDamage));
 		if (InstigatedByPC != NULL)
 		{
-			InstigatedByPC->ClientNotifyCausedHit(this, CompressedDamage);
+			InstigatedByPC->ClientNotifyCausedHit(this, CompressedDamage, bArmorDamage);
 		}
 		else
 		{
@@ -1489,11 +1490,11 @@ void AUTCharacter::NotifyTakeHit(AController* InstigatedBy, int32 AppliedDamage,
 				AUTPlayerController* PC = Cast<AUTPlayerController>(*It);
 				if (PC != NULL && (PC != InstigatedByPC) && PC->GetViewTarget() == InstigatorPawn && PC->GetPawn() != this)
 				{
-					PC->ClientNotifyCausedHit(this, CompressedDamage);
+					PC->ClientNotifyCausedHit(this, CompressedDamage, bArmorDamage);
 				}
 				else if (Cast<AUTDemoRecSpectator>(PC))
 				{
-					((AUTDemoRecSpectator*)(PC))->DemoNotifyCausedHit(InstigatorPawn, this, CompressedDamage, Momentum, DamageEvent);
+					((AUTDemoRecSpectator*)(PC))->DemoNotifyCausedHit(InstigatorPawn, this, CompressedDamage, Momentum, DamageEvent, bArmorDamage);
 				}
 			}
 		}
