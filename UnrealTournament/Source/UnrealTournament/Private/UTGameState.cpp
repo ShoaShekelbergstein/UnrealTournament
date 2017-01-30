@@ -1509,7 +1509,7 @@ void AUTGameState::VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter)
 	if (Game && Game->NumPlayers > 0)
 	{
 		// Quick out.
-		if (bDisableVoteKick || (bOnlyTeamCanVoteKick && OnSameTeam(BadGuy, Voter)))
+		if (bDisableVoteKick || (bOnlyTeamCanVoteKick && !OnSameTeam(BadGuy, Voter)))
 		{
 			return;
 		}
