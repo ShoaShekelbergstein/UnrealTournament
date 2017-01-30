@@ -271,7 +271,7 @@ public:
 			NewRuleset->Title = TEXT("Capture the Flag");
 			NewRuleset->Tooltip = TEXT("Capture the Flag.");
 			NewRuleset->Description = TEXT("Capture the Flag, with guns.\n\n<UT.Hub.RulesText_Small>TimeLimit : %timelimit% minutes with halftime</>\n<UT.Hub.RulesText_Small>Mercy Rule : On</>\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
-			NewRuleset->MinPlayersToStart = 6;
+			NewRuleset->MinPlayersToStart = 4;
 			NewRuleset->MaxPlayers = 12;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
@@ -301,7 +301,7 @@ public:
 			NewRuleset->Title = TEXT("Big CTF");
 			NewRuleset->Tooltip = TEXT("Capture the Flag with large teams.");
 			NewRuleset->Description = TEXT("Capture the Flag with large teams.\n\n<UT.Hub.RulesText_Small>TimeLimit : %timelimit% minutes with halftime</>\n<UT.Hub.RulesText_Small>Mercy Rule : On</>\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
-			NewRuleset->MinPlayersToStart = 6;
+			NewRuleset->MinPlayersToStart = 4;
 			NewRuleset->MaxPlayers = 20;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_LargeCTF.GB_LargeCTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
@@ -428,7 +428,7 @@ public:
 			NewRuleset->Title = TEXT("Instagib CTF");
 			NewRuleset->Tooltip = TEXT("Instagib CTF");
 			NewRuleset->Description = TEXT("Capture the Flag with Instagib rifles.\n\n<UT.Hub.RulesText_Small>Mutators : Instagib</>\n<UT.Hub.RulesText_Small>TimeLimit : %timelimit% minutes with halftime</>\n<UT.Hub.RulesText_Small>Mercy Rule : On</>\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
-			NewRuleset->MinPlayersToStart = 6;
+			NewRuleset->MinPlayersToStart = 4;
 			NewRuleset->MaxPlayers = 20;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_InstagibCTF.GB_InstagibCTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
@@ -457,7 +457,7 @@ public:
 			NewRuleset->Title = TEXT("Translocator iCTF");
 			NewRuleset->Tooltip = TEXT("Translocator iCTF");
 			NewRuleset->Description = TEXT("Capture the Flag with Instagib rifles and Translocators.\n\n<UT.Hub.RulesText_Small>Mutators : Instagib</>\n<UT.Hub.RulesText_Small>TimeLimit : %timelimit% with halftime</>\n<UT.Hub.RulesText_Small>Mercy Rule : On</>\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
-			NewRuleset->MinPlayersToStart = 6;
+			NewRuleset->MinPlayersToStart = 4;
 			NewRuleset->MaxPlayers = 20;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_InstagibCTF.GB_InstagibCTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
@@ -487,7 +487,7 @@ public:
 			NewRuleset->Title = TEXT("Flag Run");
 			NewRuleset->Tooltip = TEXT("Attackers must deliver their flag to the enemy base.");
 			NewRuleset->Description = TEXT("Flag Run.\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
-			NewRuleset->MinPlayersToStart = 6;
+			NewRuleset->MinPlayersToStart = 4;
 			NewRuleset->MaxPlayers = 10;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTFlagRunGame");
