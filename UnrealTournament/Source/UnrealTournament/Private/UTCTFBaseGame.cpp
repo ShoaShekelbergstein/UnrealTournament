@@ -283,7 +283,7 @@ void AUTCTFBaseGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AU
 			{
 				// tell bots about the cap
 				AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-				if (GS != NULL)
+				if (GS != NULL && HolderPawn != nullptr && GameObject != nullptr)
 				{
 					for (AUTTeamInfo* TeamIter : GS->Teams)
 					{
