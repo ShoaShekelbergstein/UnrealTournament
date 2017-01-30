@@ -5753,7 +5753,7 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 						LevelTextItem.bCentreY = false;
 						Canvas->DrawItem(LevelTextItem);
 
-						FUTCanvasTextItem XPTextItem(FVector2D(ScreenPosition.X, ScreenPosition.Y - 0.2f*LevelYL*BadgeScale), FText::AsNumber(LevelNum), UTHUD->MediumFont, BeaconTextColor, NULL);
+						FUTCanvasTextItem XPTextItem(FVector2D(ScreenPosition.X, ScreenPosition.Y - 0.15f*LevelYL*BadgeScale), FText::AsNumber(LevelNum), UTHUD->MediumFont, BeaconTextColor, NULL);
 						XPTextItem.Scale = FVector2D(BadgeScale, BadgeScale);
 						XPTextItem.BlendMode = SE_BLEND_Translucent;
 						XPTextItem.bOutlined = true;
