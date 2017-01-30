@@ -84,6 +84,9 @@ class UNREALTOURNAMENT_API AUTTeamGameMode : public AUTGameMode
 	virtual void CheckBotCount() override;
 	virtual void DefaultTimer() override;
 
+	/** Balance teams bots are on if necessary and desired. */
+	virtual void CheckBotTeams();
+
 	/** whether we should force teams to be balanced right now
 	 * @param bInitialTeam - if true, request comes from a player requesting its initial team (not a team switch)
 	 */
