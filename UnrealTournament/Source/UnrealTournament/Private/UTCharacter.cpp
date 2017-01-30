@@ -857,6 +857,21 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 			bool bApplyDamageToCharacter = ((Game && Game->bDamageHurtsHealth && bDamageHurtsHealth) || (Cast<APlayerController>(TrueController) == nullptr && Cast<AUTBot>(TrueController) == nullptr));
 			if (bApplyDamageToCharacter)
 			{
+				// check for caused modifiers on instigator
+				AUTCharacter* InstigatorChar = NULL;
+				if (DamageCauser != NULL)
+				{
+					InstigatorChar = Cast<AUTCharacter>(DamageCauser->Instigator);
+				}
+				if (InstigatorChar == NULL && EventInstigator != NULL)
+				{
+					InstigatorChar = Cast<AUTCharacter>(EventInstigator->GetPawn());
+				}
+				if (InstigatorChar != NULL && !InstigatorChar->IsDead())
+				{
+					InstigatorChar->ModifyDamageCaused(AppliedDamage, ResultDamage, ResultMomentum, HitInfo, this, EventInstigator, DamageCauser, DamageEvent.DamageTypeClass);
+				}
+				NotifiedDamage = ResultDamage;
 				ModifyDamageTaken(AppliedDamage, ResultDamage, ResultMomentum, HitArmor, HitInfo, EventInstigator, DamageCauser, DamageEvent.DamageTypeClass);
 			}
 			if (ResultDamage > 0 || !ResultMomentum.IsZero())
@@ -1091,20 +1106,6 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 
 bool AUTCharacter::ModifyDamageTaken_Implementation(int32& AppliedDamage, int32& Damage, FVector& Momentum, AUTInventory*& HitArmor, const FHitResult& HitInfo, AController* EventInstigator, AActor* DamageCauser, TSubclassOf<UDamageType> DamageType)
 {
-	// check for caused modifiers on instigator
-	AUTCharacter* InstigatorChar = NULL;
-	if (DamageCauser != NULL)
-	{
-		InstigatorChar = Cast<AUTCharacter>(DamageCauser->Instigator);
-	}
-	if (InstigatorChar == NULL && EventInstigator != NULL)
-	{
-		InstigatorChar = Cast<AUTCharacter>(EventInstigator->GetPawn());
-	}
-	if (InstigatorChar != NULL && !InstigatorChar->IsDead())
-	{
-		InstigatorChar->ModifyDamageCaused(AppliedDamage, Damage, Momentum, HitInfo, this, EventInstigator, DamageCauser, DamageType);
-	}
 	// check inventory
 	for (TInventoryIterator<> It(this); It; ++It)
 	{
