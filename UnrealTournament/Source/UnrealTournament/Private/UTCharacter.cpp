@@ -5692,7 +5692,6 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 		else
 		{
 			// Vary height of names to avoid overlaps
-
 			ScreenPosition.Y += TextYL - 1.75f*BarHeight;
 			AUTHUD* UTHUD = Cast<AUTHUD>(PC->MyHUD);
 			if (UTHUD && (UTHUD->ELOBadges.Num() > 0))
@@ -5712,16 +5711,17 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 					case 2: BadgeColor = SILVERCOLOR; break;
 					case 3: BadgeColor = GOLDCOLOR; break;
 					}
-					ScreenPosition.X -= 24.f;
+					float BadgeScale = 0.5f*Scale;
+					ScreenPosition.X -= 24.f*BadgeScale;
 					Canvas->SetLinearDrawColor(FLinearColor::Black);
-					Canvas->DrawTile(UTHUD->ELOBadges[Badge], ScreenPosition.X - 28.f*Scale, ScreenPosition.Y- 2.f*Scale, 52.f*Scale, 52.f*Scale, 0.f, 0.f, 48.f, 48.f);
+					Canvas->DrawTile(UTHUD->ELOBadges[Badge], ScreenPosition.X - 28.f*BadgeScale, ScreenPosition.Y- 2.f*BadgeScale, 52.f*BadgeScale, 52.f*BadgeScale, 0.f, 0.f, 48.f, 48.f);
 					Canvas->SetLinearDrawColor(BadgeColor);
-					Canvas->DrawTile(UTHUD->ELOBadges[Badge], ScreenPosition.X - 24.f*Scale, ScreenPosition.Y, 48.f*Scale, 48.f*Scale, 0.f, 0.f, 48.f, 48.f);
+					Canvas->DrawTile(UTHUD->ELOBadges[Badge], ScreenPosition.X - 24.f*BadgeScale, ScreenPosition.Y, 48.f*BadgeScale, 48.f*BadgeScale, 0.f, 0.f, 48.f, 48.f);
 
 					float LevelXL, LevelYL;
 					Canvas->TextSize(UTHUD->MediumFont, FText::AsNumber(Level).ToString(), LevelXL, LevelYL, 1.0f, 1.0f);
-					FUTCanvasTextItem BadgeTextItem(FVector2D(ScreenPosition.X, ScreenPosition.Y - 0.25f*TextYL*Scale), FText::AsNumber(Level+1), UTHUD->MediumFont, BeaconTextColor, NULL);
-					BadgeTextItem.Scale = FVector2D(Scale, Scale);
+					FUTCanvasTextItem BadgeTextItem(FVector2D(ScreenPosition.X, ScreenPosition.Y - 0.15f*LevelYL*BadgeScale), FText::AsNumber(Level+1), UTHUD->MediumFont, BeaconTextColor, NULL);
+					BadgeTextItem.Scale = FVector2D(BadgeScale, BadgeScale);
 					BadgeTextItem.BlendMode = SE_BLEND_Translucent;
 					BadgeTextItem.bOutlined = true;
 					BadgeTextItem.OutlineColor = FLinearColor::Black;
@@ -5732,19 +5732,19 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 
 					if (!UTPS->bIsABot)
 					{
-						ScreenPosition.X += 48.f;
+						ScreenPosition.X += 48.f*BadgeScale;
 
 						int32 Star = 1;
-						int32 XPTotal = UTPS->GetXP().Total();
-						UUTLocalPlayer::GetStarsFromXP(GetLevelForXP(XPTotal), Star);
+						int32 LevelNum = GetLevelForXP(UTPS->GetPrevXP());
+						UUTLocalPlayer::GetStarsFromXP(LevelNum, Star);
 						Star = FMath::Clamp(Star, 1, UTHUD->XPStars.Num());
 						Canvas->SetLinearDrawColor(FLinearColor::Black);
-						Canvas->DrawTile(UTHUD->XPStars[Star-1], ScreenPosition.X - 42.f*Scale, ScreenPosition.Y - 2.f*Scale, 52.f*Scale, 52.f*Scale, 0.f, 0.f, 48.f, 48.f);
+						Canvas->DrawTile(UTHUD->XPStars[Star-1], ScreenPosition.X - 28.f*BadgeScale, ScreenPosition.Y - 10.f*BadgeScale, 52.f*BadgeScale, 52.f*BadgeScale, 0.f, 0.f, 48.f, 48.f);
 						Canvas->SetLinearDrawColor(GOLDCOLOR);
-						Canvas->DrawTile(UTHUD->XPStars[Star - 1], ScreenPosition.X - 40.f*Scale, ScreenPosition.Y, 48.f*Scale, 48.f*Scale, 0.f, 0.f, 48.f, 48.f);
+						Canvas->DrawTile(UTHUD->XPStars[Star - 1], ScreenPosition.X - 24.f*BadgeScale, ScreenPosition.Y - 8.f*BadgeScale, 48.f*BadgeScale, 48.f*BadgeScale, 0.f, 0.f, 48.f, 48.f);
 
-						FUTCanvasTextItem LevelTextItem(FVector2D(ScreenPosition.X, ScreenPosition.Y + 0.9f*TextYL*Scale), FText::FromString(TEXT("LEVEL")), UTHUD->TinyFont, BeaconTextColor, NULL);
-						LevelTextItem.Scale = FVector2D(Scale, Scale);
+						FUTCanvasTextItem LevelTextItem(FVector2D(ScreenPosition.X, ScreenPosition.Y + 0.55f*LevelYL*BadgeScale), FText::FromString(TEXT("LEVEL")), UTHUD->TinyFont, BeaconTextColor, NULL);
+						LevelTextItem.Scale = FVector2D(BadgeScale, BadgeScale);
 						LevelTextItem.BlendMode = SE_BLEND_Translucent;
 						LevelTextItem.bOutlined = true;
 						LevelTextItem.OutlineColor = FLinearColor::Black;
@@ -5753,8 +5753,8 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 						LevelTextItem.bCentreY = false;
 						Canvas->DrawItem(LevelTextItem);
 
-						FUTCanvasTextItem XPTextItem(FVector2D(ScreenPosition.X, ScreenPosition.Y - 0.25f*TextYL*Scale), FText::AsNumber(XPTotal), UTHUD->MediumFont, BeaconTextColor, NULL);
-						XPTextItem.Scale = FVector2D(Scale, Scale);
+						FUTCanvasTextItem XPTextItem(FVector2D(ScreenPosition.X, ScreenPosition.Y - 0.2f*LevelYL*BadgeScale), FText::AsNumber(LevelNum), UTHUD->MediumFont, BeaconTextColor, NULL);
+						XPTextItem.Scale = FVector2D(BadgeScale, BadgeScale);
 						XPTextItem.BlendMode = SE_BLEND_Translucent;
 						XPTextItem.bOutlined = true;
 						XPTextItem.OutlineColor = FLinearColor::Black;
