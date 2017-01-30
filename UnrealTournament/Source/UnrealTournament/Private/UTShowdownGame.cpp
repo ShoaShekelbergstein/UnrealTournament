@@ -295,12 +295,13 @@ void AUTShowdownGame::ScoreKill_Implementation(AController* Killer, AController*
 					KillerPlayerState->AdjustScore(+100);
 					KillerPlayerState->IncrementKills(DamageType, true, OtherPlayerState);
 					CheckScore(KillerPlayerState);
-				}
 
-				if (!bFirstBloodOccurred)
-				{
-					BroadcastLocalized(this, UUTFirstBloodMessage::StaticClass(), 0, KillerPlayerState, NULL, NULL);
-					bFirstBloodOccurred = true;
+					if (!bFirstBloodOccurred)
+					{
+						BroadcastLocalized(this, UUTFirstBloodMessage::StaticClass(), 0, KillerPlayerState, NULL, NULL);
+						bFirstBloodOccurred = true;
+					}
+					TrackKillAssists(Killer, Other, KilledPawn, DamageType, KillerPlayerState, OtherPlayerState);
 				}
 			}
 		}
