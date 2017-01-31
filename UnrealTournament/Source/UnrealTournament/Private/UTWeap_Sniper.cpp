@@ -46,8 +46,12 @@ AUTWeap_Sniper::AUTWeap_Sniper(const FObjectInitializer& ObjectInitializer)
 	HighlightText = NSLOCTEXT("Weapon", "SniperHighlightText", "One Man One Bullet");
 }
 
-float AUTWeap_Sniper::GetHeadshotScale() const
+float AUTWeap_Sniper::GetHeadshotScale(AUTCharacter* HeadshotTarget) const
 {
+	if (HeadshotTarget && HeadshotTarget->UTCharacterMovement && HeadshotTarget->UTCharacterMovement->bIsFloorSliding)
+	{
+		return RunningHeadshotScale;
+	}
 	if ( (GetUTOwner()->GetVelocity().Size() <= GetUTOwner()->GetCharacterMovement()->MaxWalkSpeedCrouched + 1.0f) &&
 		(GetUTOwner()->bIsCrouched || GetUTOwner()->GetCharacterMovement() == NULL || GetUTOwner()->GetCharacterMovement()->GetCurrentAcceleration().Size() < GetUTOwner()->GetCharacterMovement()->MaxWalkSpeedCrouched + 1.0f) )
 	{
@@ -68,7 +72,7 @@ AUTProjectile* AUTWeap_Sniper::FireProjectile()
 	AUTProj_Sniper* SniperProj = Cast<AUTProj_Sniper>(Super::FireProjectile());
 	if (SniperProj != NULL)
 	{
-		SniperProj->HeadScaling *= GetHeadshotScale();
+		SniperProj->HeadScaling *= GetHeadshotScale(nullptr);
 	}
 	return SniperProj;
 }
@@ -93,7 +97,7 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 		// in some cases the head sphere is partially outside the capsule
 		// so do a second search just for that
 		AUTCharacter* AltTarget = Cast<AUTCharacter>(UUTGameplayStatics::ChooseBestAimTarget(GetUTOwner()->Controller, SpawnLocation, FireDir, 0.7f, (Hit.Location - SpawnLocation).Size(), 150.0f, AUTCharacter::StaticClass()));
-		if (AltTarget != NULL && AltTarget->IsHeadShot(SpawnLocation, FireDir, GetHeadshotScale(), UTOwner, PredictionTime))
+		if (AltTarget != NULL && AltTarget->IsHeadShot(SpawnLocation, FireDir, GetHeadshotScale(AltTarget), UTOwner, PredictionTime))
 		{
 			Hit = FHitResult(AltTarget, AltTarget->GetCapsuleComponent(), SpawnLocation + FireDir * ((AltTarget->GetHeadLocation() - SpawnLocation).Size() - AltTarget->GetCapsuleComponent()->GetUnscaledCapsuleRadius()), -FireDir);
 		}
@@ -157,10 +161,10 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 
 		bool bIsHeadShot = false;
 		AUTCharacter* C = Cast<AUTCharacter>(Hit.Actor.Get());
-		if (C != NULL && (!C->UTCharacterMovement || !C->UTCharacterMovement->bIsFloorSliding) && C->IsHeadShot(Hit.Location, FireDir, GetHeadshotScale(), UTOwner, PredictionTime))
+		if (C != NULL && C->IsHeadShot(Hit.Location, FireDir, GetHeadshotScale(C), UTOwner, PredictionTime))
 		{
 			bIsHeadShot = true;
-			if (C->BlockedHeadShot(Hit.Location, FireDir, GetHeadshotScale(), true, UTOwner))
+			if (C->BlockedHeadShot(Hit.Location, FireDir, GetHeadshotScale(C), true, UTOwner))
 			{
 				Damage = BlockedHeadshotDamage;
 			}

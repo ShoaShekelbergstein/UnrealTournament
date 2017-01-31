@@ -834,7 +834,7 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	/** returns scaling of head for headshot effects
 	 * NOTE: not used by base weapon implementation; stub is here for subclasses and firemodes that use it to avoid needing to cast to a specific weapon type
 	 */
-	virtual float GetHeadshotScale() const
+	virtual float GetHeadshotScale(AUTCharacter* HeadshotTarget) const
 	{
 		return 0.0f;
 	}

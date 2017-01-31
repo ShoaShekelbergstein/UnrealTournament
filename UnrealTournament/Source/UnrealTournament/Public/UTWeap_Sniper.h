@@ -37,7 +37,7 @@ class UNREALTOURNAMENT_API AUTWeap_Sniper : public AUTWeapon
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = InstantHitDamage)
 	TSubclassOf<UDamageType> HeadshotDamageType;
 
-	virtual float GetHeadshotScale() const override;
+	virtual float GetHeadshotScale(AUTCharacter* HeadshotTarget) const override;
 
 	virtual AUTProjectile* FireProjectile();
 	virtual void FireInstantHit(bool bDealDamage = true, FHitResult* OutHit = NULL);
