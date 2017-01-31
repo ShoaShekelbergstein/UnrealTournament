@@ -1211,20 +1211,16 @@ void AUTFlagRunGame::FindAndMarkHighScorer()
 
 void AUTFlagRunGame::HandleRollingAttackerRespawn(AUTPlayerState* OtherPS)
 {
-	Super::HandleRollingAttackerRespawn(OtherPS);
+	OtherPS->RespawnWaitTime = RollingAttackerRespawnDelay;
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	int32 RoundTime = (TimeLimit == 0) ? 300 : TimeLimit;
-	if (GS && !GS->bAttackersCanRally && (GetWorld()->GetTimeSeconds() > OtherPS->NextRallyTime) && GS->bHaveEstablishedFlagRunner && !GS->CurrentRallyPoint && (GS->GetRemainingTime() < RoundTime - 30))
+	if (GS && !GS->bAttackersCanRally && (GetWorld()->GetTimeSeconds() > OtherPS->NextRallyTime) && GS->bHaveEstablishedFlagRunner && !GS->CurrentRallyPoint && (GS->GetRemainingTime() < RoundTime - 45))
 	{
 		OtherPS->AnnounceStatus(StatusMessage::NeedRally);
 	}
-	else if (GS && GS->CurrentRallyPoint && GS->bAttackersCanRally && (GS->CurrentRallyPoint->RallyTimeRemaining > FMath::Max(float(OtherPS->RemainingRallyDelay), 2.5f)))
+	else if (GS && GS->CurrentRallyPoint && GS->bAttackersCanRally && (GS->CurrentRallyPoint->RallyTimeRemaining > FMath::Max(float(OtherPS->RemainingRallyDelay)+2.f, 3.5f)))
 	{
-		float DesiredRespawnDelay = GS->CurrentRallyPoint->RallyTimeRemaining - 2.f;
-		if (OtherPS->RespawnWaitTime > DesiredRespawnDelay)
-		{
-			OtherPS->RespawnWaitTime = FMath::Max(1.f, DesiredRespawnDelay);
-		}
+		OtherPS->RespawnWaitTime = FMath::Min(OtherPS->RespawnWaitTime, GS->CurrentRallyPoint->RallyTimeRemaining - 2.f);
 	}
 }
 
