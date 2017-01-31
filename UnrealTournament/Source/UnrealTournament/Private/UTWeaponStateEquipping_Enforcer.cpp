@@ -50,14 +50,8 @@ void UUTWeaponStateEquipping_Enforcer::StartEquip(float OverflowTime)
 	{
 		GetOuterAUTWeapon()->GetWorldTimerManager().SetTimer(BringUpFinishedHandle, this, &UUTWeaponStateEquipping_Enforcer::BringUpFinished, EquipTime);
 		AUTWeap_Enforcer* OuterWeapon = Cast<AUTWeap_Enforcer>(GetOuterAUTWeapon());
-		if (OuterWeapon->BringUpAnim != NULL)
-		{
-			UAnimInstance* AnimInstance = OuterWeapon->Mesh->GetAnimInstance();
-			if (AnimInstance != NULL)
-			{
-				AnimInstance->Montage_Play(OuterWeapon->BringUpAnim, OuterWeapon->BringUpAnim->SequenceLength / EquipTime);
-			}
-		}
+		
+		GetOuterAUTWeapon()->PlayWeaponAnim(GetOuterAUTWeapon()->BringUpAnim, GetOuterAUTWeapon()->BringUpAnimHands, GetAnimLengthForScaling(GetOuterAUTWeapon()->BringUpAnim, GetOuterAUTWeapon()->BringUpAnimHands) / EquipTime);
 
 		if (OuterWeapon->LeftBringUpAnim != NULL && OuterWeapon->bDualEnforcerMode)
 		{

@@ -67,4 +67,20 @@ class UNREALTOURNAMENT_API UUTWeaponState : public UObject
 	{}
 	virtual void Tick(float DeltaTime)
 	{}
+
+	static float GetAnimLengthForScaling(UAnimMontage* WeaponAnim, UAnimMontage* HandsAnim)
+	{
+		if (HandsAnim != NULL)
+		{
+			return HandsAnim->SequenceLength / HandsAnim->RateScale;
+		}
+		else if (WeaponAnim != NULL)
+		{
+			return WeaponAnim->SequenceLength / WeaponAnim->RateScale;
+		}
+		else
+		{
+			return 0.0f;
+		}
+	}
 };

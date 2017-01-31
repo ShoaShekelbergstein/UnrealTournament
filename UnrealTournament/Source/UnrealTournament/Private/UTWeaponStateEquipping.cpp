@@ -7,22 +7,6 @@
 #include "ComponentRecreateRenderStateContext.h"
 #include "Animation/AnimMontage.h"
 
-static float GetAnimLengthForScaling(UAnimMontage* WeaponAnim, UAnimMontage* HandsAnim)
-{
-	if (HandsAnim != NULL)
-	{
-		return HandsAnim->SequenceLength / HandsAnim->RateScale;
-	}
-	else if (WeaponAnim != NULL)
-	{
-		return WeaponAnim->SequenceLength / WeaponAnim->RateScale;
-	}
-	else
-	{
-		return 0.0f;
-	}
-}
-
 void UUTWeaponStateUnequipping::BeginState(const UUTWeaponState* PrevState)
 {
 	const UUTWeaponStateEquipping* PrevEquip = Cast<UUTWeaponStateEquipping>(PrevState);
