@@ -173,16 +173,8 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 	}
 
 	// Draw the Background
-	FText StatusText = UTGameState != nullptr ? UTGameState->GetGameStatusText(true) : FText::GetEmpty();
-	float StatusX, StatusY;
-	Canvas->StrLen(UTHUDOwner->SmallFont, StatusText.ToString(), StatusX, StatusY);
-
-	float DisplayedTime = UTGameState ? UTGameState->GetClockTime() : 0.f;
-	FText Timer = UTHUDOwner->ConvertTime(FText::GetEmpty(), FText::GetEmpty(), DisplayedTime, false, true, true);
-	float TimerX, TimerY;
-	Canvas->StrLen(UTHUDOwner->NumberFont, Timer.ToString(), TimerX, TimerY);
-
-	float Width = FMath::Clamp(MessageX + (StatusX + TimerX + 32.f)*RenderScale, 520.f*RenderScale, Canvas->ClipX);
+	float TimerX = DrawGameOptions(RenderDelta, YOffset, 0.f, true);
+	float Width = FMath::Clamp(MessageX + (TimerX + 32.f)*RenderScale, 520.f*RenderScale, Canvas->ClipX);
 	float LeftEdge = 0.5f*(Canvas->ClipX - Width);
 	DrawTexture(UTHUDOwner->ScoreboardAtlas,LeftEdge - 16.f*RenderScale,YOffset, Width + 32.f*RenderScale, 42.f*RenderScale, 4.f, 2.f, 124.f, 128.f, 1.f);
 
@@ -199,27 +191,51 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 	YOffset += 42.f*RenderScale;	// The size of this zone.
 }
 
-void UUTScoreboard::DrawGameOptions(float RenderDelta, float& YOffset, float RightEdge)
+float UUTScoreboard::DrawGameOptions(float RenderDelta, float& YOffset, float RightEdge, bool bGetLengthOnly)
 {
+	float Length = 0.f;
 	if (UTGameState)
 	{
 		float DisplayedTime = UTGameState ? UTGameState->GetClockTime() : 0.f;
 		FText Timer = UTHUDOwner->ConvertTime(FText::GetEmpty(), FText::GetEmpty(), DisplayedTime, false, true, true);
-		FVector2D TimeSize = DrawText(Timer, RightEdge, YOffset + 21.f*RenderScale, UTHUDOwner->NumberFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Right, ETextVertPos::Center);
-		RightEdge = RightEdge - (TimeSize.X + 8.f)*RenderScale;
-
 		FText StatusText = UTGameState->GetGameStatusText(true);
-		if (!StatusText.IsEmpty())
+		if (bGetLengthOnly)
 		{
-			DrawText(StatusText, RightEdge, YOffset + 17.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Right, ETextVertPos::Center);
+			float XL, YL;
+			Canvas->StrLen(UTHUDOwner->NumberFont, Timer.ToString(), XL, YL);
+			Length = XL;
+			if (!StatusText.IsEmpty())
+			{
+				Canvas->StrLen(UTHUDOwner->SmallFont, StatusText.ToString(), XL, YL);
+				Length += XL;
+			}
+			else if (UTGameState->GoalScore > 0)
+			{
+				// Draw Game Text
+				FText Score = FText::Format(UTGameState->GoalScoreText, FText::AsNumber(UTGameState->GoalScore));
+				Canvas->StrLen(UTHUDOwner->SmallFont, Score.ToString(), XL, YL);
+				Length += XL;
+			}
 		}
-		else if (UTGameState->GoalScore > 0)
+		else
 		{
-			// Draw Game Text
-			FText Score = FText::Format(UTGameState->GoalScoreText, FText::AsNumber(UTGameState->GoalScore));
-			DrawText(Score, RightEdge, YOffset + 21.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Right, ETextVertPos::Center);
+			FVector2D TimeSize = DrawText(Timer, RightEdge, YOffset + 21.f*RenderScale, UTHUDOwner->NumberFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Right, ETextVertPos::Center);
+			FVector2D StatusSize(0.f, 0.f);
+			RightEdge = RightEdge - (TimeSize.X + 8.f)*RenderScale;
+			if (!StatusText.IsEmpty())
+			{
+				StatusSize = DrawText(StatusText, RightEdge, YOffset + 17.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Right, ETextVertPos::Center);
+			}
+			else if (UTGameState->GoalScore > 0)
+			{
+				// Draw Game Text
+				FText Score = FText::Format(UTGameState->GoalScoreText, FText::AsNumber(UTGameState->GoalScore));
+				StatusSize = DrawText(Score, RightEdge, YOffset + 21.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Right, ETextVertPos::Center);
+			}
+			Length = TimeSize.X + StatusSize.X;
 		}
 	}
+	return Length;
 }
 
 void UUTScoreboard::DrawTeamPanel(float RenderDelta, float& YOffset)

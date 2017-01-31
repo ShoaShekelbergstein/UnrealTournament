@@ -15,7 +15,7 @@ AUTCTFGameState::AUTCTFGameState(const FObjectInitializer& ObjectInitializer)
 	bSecondHalf = false;
 	bIsAtIntermission = false;
 	HalftimeScoreDelay = 3.5f;
-	GoalScoreText = NSLOCTEXT("UTScoreboard", "CTFGoalScoreFormat", "First to {0} Caps");
+	GoalScoreText = NSLOCTEXT("UTScoreboard", "CTFGoalScoreFormat", "{0} Caps");
 	
 	GameScoreStats.Add(NAME_RegularKillPoints);
 	GameScoreStats.Add(NAME_FCKills);

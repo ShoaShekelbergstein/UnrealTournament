@@ -52,7 +52,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	ServerName = TEXT("My First Server");
 	ServerMOTD = TEXT("Welcome!");
 	SecondaryAttackerStat = NAME_None;
-	GoalScoreText = NSLOCTEXT("UTScoreboard", "GoalScoreFormat", "First to {0} Frags");
+	GoalScoreText = NSLOCTEXT("UTScoreboard", "GoalScoreFormat", "{0} Frags");
 
 	GameScoreStats.Add(NAME_AttackerScore);
 	GameScoreStats.Add(NAME_DefenderScore);
