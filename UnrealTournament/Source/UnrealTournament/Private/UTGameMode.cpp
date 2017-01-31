@@ -300,9 +300,13 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	{
 		BotFillCount = UGameplayStatics::GetIntOption(Options, TEXT("Bots"), BotFillCount) + 1;
 	}
-	else
+	else if (UGameplayStatics::HasOption(Options, TEXT("BotFill")))
 	{
 		BotFillCount = UGameplayStatics::GetIntOption(Options, TEXT("BotFill"), BotFillCount);
+		if (BotFillCount > 0)
+		{
+			GameSession->MaxPlayers = BotFillCount;
+		}
 	}
 	bForceNoBots = (UGameplayStatics::GetIntOption(Options, TEXT("ForceNoBots"), bForceNoBots) == 0) ? false : true;
 

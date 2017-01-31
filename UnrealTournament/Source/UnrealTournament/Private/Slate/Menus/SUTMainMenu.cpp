@@ -749,10 +749,7 @@ void SUTMainMenu::StartGame(bool bLanGame)
 		GameOptions += CurrentRule->GameOptions;
 		if ( DefaultGameMode && CreateGameDialog->BotSkillLevel >= 0 )
 		{
-			// This match wants bots.  
-			int32 OptimalPlayerCount = DefaultGameMode->bTeamGame ? CreateGameDialog->MapPlayList[0].MapInfo->OptimalTeamPlayerCount : CreateGameDialog->MapPlayList[0].MapInfo->OptimalPlayerCount;
-			OptimalPlayerCount = FMath::Min(OptimalPlayerCount, CurrentRule->MaxPlayers);
-			GameOptions += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), OptimalPlayerCount, FMath::Clamp<int32>(CreateGameDialog->BotSkillLevel,0,7));				
+			GameOptions += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), CurrentRule->MaxPlayers, FMath::Clamp<int32>(CreateGameDialog->BotSkillLevel,0,7));				
 		}
 		else
 		{
@@ -783,6 +780,7 @@ void SUTMainMenu::StartGame(bool bLanGame)
 
 	if (bLanGame)
 	{
+		GameOptions += TEXT("?MaxPlayerWait=180");
 		FString ExecPath = TEXT("..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Shipping.exe");
 		FString Options = FString::Printf(TEXT("unrealtournament %s -log -server -LAN -AUTH_PASSWORD="), *URL);
 
