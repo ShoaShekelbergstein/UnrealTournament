@@ -178,6 +178,15 @@ void AUTFlagRunHUD::DrawPlayerIcon(AUTPlayerState* PlayerState, float LiveScalin
 
 		float PipHeight = PipSize * (320.0f / 224.0f);
 
+		const float TimeSinceJoin = GetWorld()->TimeSeconds - PlayerState->CreationTime;
+		if (TimeSinceJoin < 1.0f)
+		{
+			const float SizeScale = 3.0f - (2.0f * TimeSinceJoin);
+			PipSize *= SizeScale;
+			PipHeight *= SizeScale;
+			YOffset += FMath::InterpEaseIn(PipHeight, 0.0f, GetWorld()->TimeSeconds - PlayerState->CreationTime, 3.0f);
+		}
+
 		// Draw the background.
 		const FCanvasIcon* BGIcon = PlayerState->GetTeamNum() == 1 ? &BlueTeamIcon : &RedTeamIcon;
 		Canvas->DrawTile(BGIcon->Texture, XOffset, YOffset, PipSize, PipHeight, BGIcon->U, BGIcon->V, BGIcon->UL, BGIcon->VL);
