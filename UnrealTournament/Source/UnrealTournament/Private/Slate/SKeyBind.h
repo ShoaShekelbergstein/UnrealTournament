@@ -23,7 +23,7 @@ public:
 		, _ContentScale(FVector2D(1, 1))
 		, _ButtonColorAndOpacity(FLinearColor::White)
 		, _ForegroundColor(FCoreStyle::Get().GetSlateColor("InvertedForeground"))
-		, _Key(nullptr)
+		, _DefaultKey(nullptr)
 	{}
 		SLATE_STYLE_ARGUMENT(FButtonStyle, ButtonStyle)
 		SLATE_STYLE_ARGUMENT(FTextBlockStyle, TextStyle)
@@ -34,8 +34,7 @@ public:
 		SLATE_ATTRIBUTE(FVector2D, ContentScale)
 		SLATE_ATTRIBUTE(FSlateColor, ButtonColorAndOpacity)
 		SLATE_ATTRIBUTE(FSlateColor, ForegroundColor)
-		SLATE_ARGUMENT(TSharedPtr<FKey>, Key)
-		SLATE_ARGUMENT(FKey, DefaultKey)
+		SLATE_ARGUMENT(TSharedPtr<FKey>, DefaultKey)
 		SLATE_EVENT(FOnKeyBindingChanged, OnKeyBindingChanged)
 	SLATE_END_ARGS()
 
@@ -55,6 +54,8 @@ public:
 
 		DefaultKey = InArgs._DefaultKey;
 		OnKeyBindingChanged = InArgs._OnKeyBindingChanged;
+
+		Key = FKey(DefaultKey->GetFName());
 
 		NonDefaultKeyColor = FLinearColor(0.0f, 0.0f, 0.24f, 1.0f);
 #if !UE_SERVER
@@ -89,60 +90,51 @@ public:
 
 			];
 #endif
-		if (InArgs._Key.IsValid())
-		{
-			Key = InArgs._Key;
-			KeyText->SetText(*Key == FKey() ? FString() : Key->ToString());
-		}
+		KeyText->SetText(Key != FKey() ? Key.GetDisplayName() : FText::GetEmpty());
 		bWaitingForKey = false;
 	}
 
 	virtual FKey GetKey()
 	{
-		return *Key;
+		return Key;
 	}
 
 	virtual void SetKey(FKey NewKey, bool bCanReset = true, bool bNotify = true)
 	{
-		if (Key.IsValid() )
+		bWaitingForKey = false;
+		FSlateApplication::Get().ClearKeyboardFocus(EKeyboardFocusCause::SetDirectly);
+		FSlateApplication::Get().GetPlatformApplication().Get()->Cursor->Lock(nullptr);
+
+		AbortButton->SetVisibility(EVisibility::Collapsed);
+
+		if (NewKey == Key && bCanReset)
 		{
-			bWaitingForKey = false;
-			//FSlateApplication::Get().GetPlatformApplication().Get()->Cursor->Show(true);
-			FSlateApplication::Get().ClearKeyboardFocus(EKeyboardFocusCause::SetDirectly);
-			FSlateApplication::Get().GetPlatformApplication().Get()->Cursor->Lock(nullptr);
 
-			AbortButton->SetVisibility(EVisibility::Collapsed);
+			KeyText->SetText(Key == FKey() ? FText::GetEmpty() : Key.GetDisplayName());
+			KeyText->SetColorAndOpacity(Key.GetFName() == DefaultKey->GetFName() ? FLinearColor::Black : NonDefaultKeyColor);
 
-			if (NewKey == *Key && bCanReset)
-			{
-				KeyText->SetText(*Key == FKey() ? FString() : Key->ToString());
-				KeyText->SetColorAndOpacity(*Key == DefaultKey ? FLinearColor::Black : NonDefaultKeyColor);
+			ClearButton->SetVisibility(EVisibility::Visible);
+			return;
+		}
 
-				ClearButton->SetVisibility(EVisibility::Visible);
-				return;
-			}
+		FKey PreviousKey = Key;
+		Key = NewKey;
 
-			FKey PreviousKey = *Key;
-			*Key = NewKey;
-
-			KeyText->SetText(NewKey == FKey() ? FString() : NewKey.ToString());
-			KeyText->SetColorAndOpacity( NewKey == DefaultKey ? FLinearColor::Black : NonDefaultKeyColor);
+		KeyText->SetText(Key == FKey() ? FString() : Key.ToString());
+		KeyText->SetColorAndOpacity( Key.GetFName() == DefaultKey->GetFName() ? FLinearColor::Black : NonDefaultKeyColor);
 			
-			if( bNotify )
-			{
-				OnKeyBindingChanged.ExecuteIfBound( PreviousKey, *Key);
-			}
+		if( bNotify )
+		{
+			OnKeyBindingChanged.ExecuteIfBound( PreviousKey, Key);
 		}
 	}
 protected:
 
 	FReply ClearClicked()
 	{
-		FKey CurrentKey = *Key;
-		*Key = FKey();
+		Key = FKey();
 		KeyText->SetText(FString());
 		bWaitingForKey = false;
-		//FSlateApplication::Get().GetPlatformApplication().Get()->Cursor->Show(true);
 		FSlateApplication::Get().GetPlatformApplication().Get()->Cursor->Lock(nullptr);
 		FSlateApplication::Get().ClearKeyboardFocus(EKeyboardFocusCause::SetDirectly);
 		ClearButton->SetVisibility(EVisibility::Collapsed);
@@ -156,10 +148,10 @@ protected:
 		FSlateApplication::Get().ClearKeyboardFocus(EKeyboardFocusCause::SetDirectly);
 		FSlateApplication::Get().GetPlatformApplication().Get()->Cursor->Lock(nullptr);
 
-		KeyText->SetText(*Key == FKey() ? FString() : Key->ToString());
-		KeyText->SetColorAndOpacity(*Key== DefaultKey ? FLinearColor::Black : NonDefaultKeyColor);
+		KeyText->SetText(Key == FKey() ? FString() : Key.ToString());
+		KeyText->SetColorAndOpacity(Key.GetFName() == DefaultKey->GetFName() ? FLinearColor::Black : NonDefaultKeyColor);
 
-		ClearButton->SetVisibility(*Key != FKey() ? EVisibility::Visible : EVisibility::Collapsed);
+		ClearButton->SetVisibility(Key != FKey() ? EVisibility::Visible : EVisibility::Collapsed);
 		AbortButton->SetVisibility(EVisibility::Collapsed);
 		return FReply::Handled();
 	}
@@ -188,7 +180,7 @@ protected:
 
 	virtual void OnMouseEnter(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override
 	{
-		if (ClearButton.IsValid() && *Key != FKey() && !bWaitingForKey)
+		if (ClearButton.IsValid() && Key != FKey() && !bWaitingForKey)
 		{
 			ClearButton->SetVisibility(EVisibility::Visible);
 		}
@@ -231,8 +223,8 @@ protected:
 
 private:
 	FOnKeyBindingChanged OnKeyBindingChanged;
-	TSharedPtr<FKey> Key;
-	FKey DefaultKey;
+	FKey Key;
+	TSharedPtr<FKey> DefaultKey;
 	TSharedPtr<STextBlock> KeyText;
 	TSharedPtr<SButton> ClearButton;
 	TSharedPtr<SButton> AbortButton;

@@ -249,7 +249,9 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 					];
 				}
 
-				if (!SelectedPlayer->bIsABot)
+				AUTGameState* UTGameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
+
+				if (!SelectedPlayer->bIsABot && (UTGameState == nullptr || UTGameState->GetMatchState() != MatchState::InProgress || OwnerPlayerState == nullptr || !UTGameState->bTeamGame || OwnerPlayerState->GetTeamNum() == SelectedPlayer->GetTeamNum()))
 				{
 					// Mute Player
 					MenuBox->AddSlot()
@@ -290,7 +292,6 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 					];
 				}
 
-				AUTGameState* UTGameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
 				if (OwnerPlayerState && 
 						!UTGameState->bDisableVoteKick && 
 						!OwnerPlayerState->bOnlySpectator && 
