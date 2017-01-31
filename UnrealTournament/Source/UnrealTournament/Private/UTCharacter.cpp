@@ -1444,7 +1444,14 @@ void AUTCharacter::NotifyTakeHit(AController* InstigatedBy, int32 AppliedDamage,
 		AUTPlayerController* InstigatedByPC = Cast<AUTPlayerController>(InstigatedBy);
 		APawn* InstigatorPawn = InstigatedBy ? InstigatedBy->GetPawn() : nullptr;
 		uint8 CompressedDamage = FMath::Clamp(AppliedDamage, 0, 255);
-		bool bArmorDamage = (AppliedDamage > 0) && (Health + AppliedDamage > HealthMax) && (int32((Health + AppliedDamage)/AppliedDamage) != int32(100/AppliedDamage));
+		bool bArmorDamage = (AppliedDamage > 0) && (Health + AppliedDamage > HealthMax) && (int32((Health + AppliedDamage)/AppliedDamage) != int32(HealthMax /AppliedDamage));
+		const UDamageType* const DamageTypeCDO = (DamageEvent.DamageTypeClass != nullptr) ? DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType>() : GetDefault<UDamageType>();
+		const UUTDamageType* const UTDamageTypeCDO = Cast<UUTDamageType>(DamageTypeCDO); // warning: may be NULL
+		if (UTDamageTypeCDO && !UTDamageTypeCDO->bBlockedByArmor)
+		{
+			bArmorDamage = false;
+		}
+			
 		if (InstigatedByPC != NULL)
 		{
 			InstigatedByPC->ClientNotifyCausedHit(this, CompressedDamage, bArmorDamage);
@@ -1466,8 +1473,6 @@ void AUTCharacter::NotifyTakeHit(AController* InstigatedBy, int32 AppliedDamage,
 		// (at small bandwidth cost)
 		if (((GetController() == InstigatedBy) || !GS || !GS->OnSameTeam(this, InstigatedBy)) && (GetWorld()->TimeSeconds - LastPainSoundTime >= MinPainSoundInterval))
 		{
-			const UDamageType* const DamageTypeCDO = (DamageEvent.DamageTypeClass != nullptr) ? DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType>() : GetDefault<UDamageType>();
-			const UUTDamageType* const UTDamageTypeCDO = Cast<UUTDamageType>(DamageTypeCDO); // warning: may be NULL
 			if (HitArmor != nullptr && ((UTDamageTypeCDO == NULL) || UTDamageTypeCDO->bBlockedByArmor))
 			{
 				USoundBase* ArmorSound = (GetArmorAmount()+Damage/2 > 100) && HitArmor->ShieldDamageSound ? HitArmor->ShieldDamageSound : HitArmor->ReceivedDamageSound;
