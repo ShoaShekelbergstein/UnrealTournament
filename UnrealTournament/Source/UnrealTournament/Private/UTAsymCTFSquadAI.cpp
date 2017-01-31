@@ -264,6 +264,15 @@ bool AUTAsymCTFSquadAI::HuntEnemyFlag(AUTBot* B)
 		{
 			if ((B->GetPawn()->GetActorLocation() - Flag->HoldingPawn->GetActorLocation()).Size() < TotalFlagRunDistance * (0.33f - 0.1f * B->Personality.Aggressiveness))
 			{
+				for (AController* C : Team->GetTeamMembers())
+				{
+					if (C != B && C->GetPawn() != nullptr && (C->GetPawn()->GetActorLocation() - B->GetPawn()->GetActorLocation()).Size() < 1000.0f && C->GetPawn()->GetVelocity().IsNearlyZero())
+					{
+						// teammate is here, go somewhere else
+						return FollowAlternateRoute(B, Flag->HoldingPawn, SquadRoutes, true, true, TEXT("Continue prior route to flag carrier"));
+					}
+				}
+
 				B->GoalString = TEXT("Wait here for enemy assault to begin");
 				B->DoCamp();
 				return true;
