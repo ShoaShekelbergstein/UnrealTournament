@@ -519,6 +519,16 @@ void UUTFlagRunScoreboard::DrawScorePanel(float RenderDelta, float& YOffset)
 	}
 }
 
+FText UUTFlagRunScoreboard::GetRoundTitle(bool bIsOnDefense) const
+{
+	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+	FText Title = bIsOnDefense ? DefendTitle : AttackTitle;
+	FFormatNamedArguments Args;
+	Args.Add("RoundNum", FText::AsNumber(1));
+	Args.Add("NumRounds", FText::AsNumber(GS->NumRounds));
+	return FText::Format(Title, Args);
+}
+
 void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 {
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
@@ -591,12 +601,8 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 				float Width = 0.38f * Canvas->ClipX;
 				DrawFramedBackground(0.5f * (Canvas->ClipX - Width), LeftCorner.Y, Width, Height);
 
-				FText Title = bIsOnDefense ? DefendTitle : AttackTitle;
 				float TextYPos = LeftCorner.Y + 16.f*RenderScale;
-				FFormatNamedArguments Args;
-				Args.Add("RoundNum", FText::AsNumber(1));
-				Args.Add("NumRounds", FText::AsNumber(GS->NumRounds));
-				FText FormattedTitle = FText::Format(Title, Args);
+				FText FormattedTitle = GetRoundTitle(bIsOnDefense);
 				DrawText(FormattedTitle, MinimapCenter.X*Canvas->ClipX, TextYPos, UTHUDOwner->MediumFont, FVector2D(1.f, 1.f), FLinearColor::Black,RenderScale, 1.0f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
 				float TextXPos = 0.5f*Canvas->ClipX - 0.47f*Width;
 				TextYPos += 44.f*RenderScale;

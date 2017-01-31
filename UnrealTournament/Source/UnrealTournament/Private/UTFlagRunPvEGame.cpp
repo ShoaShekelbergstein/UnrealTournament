@@ -120,10 +120,11 @@ void AUTFlagRunPvEGame::InitGameState()
 {
 	Super::InitGameState();
 
+	AUTFlagRunPvEGameState* GS = Cast<AUTFlagRunPvEGameState>(GameState);
+	GS->GameDifficulty = FMath::TruncToInt(GameDifficulty);
 	if (BoostPowerupTypes.Num() > 0)
 	{
 		InitBoostTypes();
-		AUTFlagRunPvEGameState* GS = Cast<AUTFlagRunPvEGameState>(GameState);
 		bAllowBoosts = true;
 		GS->bAllowBoosts = true;
 		GS->BoostRechargeTime = 180.0f;

@@ -10,6 +10,9 @@ class AUTFlagRunPvEGameState : public AUTFlagRunGameState
 {
 	GENERATED_BODY()
 public:
+	UPROPERTY(Replicated)
+	int32 GameDifficulty;
+
 	/** time next star will be awarded (relative to RemainingTime, not TimeSeconds) */
 	UPROPERTY(Replicated)
 	int32 NextStarTime;

@@ -153,3 +153,6 @@ extern UNREALTOURNAMENT_API int32 GetLevelForXP(int32 XPValue);
 
 /** get the xp needed for this level */
 extern UNREALTOURNAMENT_API int32 GetXPForLevel(int32 Level);
+
+/** @return localized name for a bot skil level */
+extern UNREALTOURNAMENT_API FText GetBotSkillName(int32 Difficulty);

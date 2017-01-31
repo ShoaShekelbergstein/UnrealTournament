@@ -938,3 +938,20 @@ int32 GetXPForLevel(int32 Level)
 	}
 	return 0;
 }
+
+FText GetBotSkillName(int32 Difficulty)
+{
+	switch (Difficulty)
+	{
+		case 0: return NSLOCTEXT("BotSkillLevels", "Novice", "Novice");
+		case 1: return NSLOCTEXT("BotSkillLevels", "Average", "Average");
+		case 2: return NSLOCTEXT("BotSkillLevels", "Experienced", "Experienced");
+		case 3: return NSLOCTEXT("BotSkillLevels", "Skilled", "Skilled");
+		case 4: return NSLOCTEXT("BotSkillLevels", "Adept", "Adept");
+		case 5: return NSLOCTEXT("BotSkillLevels", "Masterful", "Masterful");
+		case 6: return NSLOCTEXT("BotSkillLevels", "Inhuman", "Inhuman");
+		case 7: return NSLOCTEXT("BotSkillLevels", "Godlike", "Godlike");
+		default:
+			return (Difficulty > 7) ? NSLOCTEXT("BotSkillLevels", "Godlike", "Godlike") : NSLOCTEXT("BotSkillLevels", "Broken", "Broken");
+	}
+}

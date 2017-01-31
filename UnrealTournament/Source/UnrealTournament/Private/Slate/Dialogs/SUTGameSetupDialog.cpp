@@ -916,20 +916,7 @@ void SUTGameSetupDialog::OnBotSkillChanged(float NewValue)
 FText SUTGameSetupDialog::GetBotSkillText() const
 {
 	int32 Skill = int32(8.0f * sBotSkill->GetValue());
-	switch (Skill)
-	{
-		case 0: return NSLOCTEXT("BotSkillLevels","NoBots","No Bots"); break;
-		case 1: return NSLOCTEXT("BotSkillLevels","Novice","Novice"); break;
-		case 2: return NSLOCTEXT("BotSkillLevels","Average","Average"); break;
-		case 3: return NSLOCTEXT("BotSkillLevels","Experienced","Experienced"); break;
-		case 4: return NSLOCTEXT("BotSkillLevels","Skilled","Skilled"); break;
-		case 5: return NSLOCTEXT("BotSkillLevels","Adept","Adept"); break;
-		case 6: return NSLOCTEXT("BotSkillLevels","Masterful","Masterful"); break;
-		case 7: return NSLOCTEXT("BotSkillLevels","Inhuman","Inhuman"); break;
-		case 8: return NSLOCTEXT("BotSkillLevels","Godlike","Godlike"); break;
-	}
-
-	return NSLOCTEXT("BotSkillLevels","Broken","Broken");
+	return (Skill == 0) ? NSLOCTEXT("BotSkillLevels", "NoBots", "No Bots") : GetBotSkillName(Skill - 1);
 }
 
 void SUTGameSetupDialog::AddButtonsToLeftOfButtonBar(uint32& ButtonCount)
