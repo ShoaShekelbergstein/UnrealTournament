@@ -3395,7 +3395,7 @@ void AUTPlayerController::PlayerTick( float DeltaTime )
 		LastPingCalcTime = GetWorld()->GetTimeSeconds();
 		ServerBouncePing(GetWorld()->GetTimeSeconds());
 	}
-	APawn* ViewTargetPawn = PlayerCameraManager->GetViewTargetPawn();
+	APawn* ViewTargetPawn = (PlayerCameraManager != nullptr) ? PlayerCameraManager->GetViewTargetPawn() : nullptr;
 	AUTCharacter* ViewTargetCharacter = Cast<AUTCharacter>(ViewTargetPawn);
 	if (IsInState(NAME_Spectating) && UTPlayerState  && bAutoCam && (UTPlayerState->bOnlySpectator || (UTPlayerState->bOutOfLives && !Cast<AUTGameObjective>(GetViewTarget()))) && (!ViewTargetCharacter || !ViewTargetCharacter->IsRecentlyDead()))
 	{
@@ -3406,7 +3406,7 @@ void AUTPlayerController::PlayerTick( float DeltaTime )
 	// Follow the last spectated player again when they respawn
 	if ((StateName == NAME_Spectating) && LastSpectatedPlayerId >= 0 && IsLocalController() && (!Cast<AUTProjectile>(GetViewTarget()) || GetViewTarget()->IsPendingKillPending()))
 	{
-		ViewTargetPawn = PlayerCameraManager->GetViewTargetPawn();
+		ViewTargetPawn = (PlayerCameraManager != nullptr) ? PlayerCameraManager->GetViewTargetPawn() : nullptr;;
 		ViewTargetCharacter = Cast<AUTCharacter>(ViewTargetPawn);
 		if (!ViewTargetPawn || ViewTargetPawn->IsPendingKillPending() || (ViewTargetCharacter && ViewTargetCharacter->IsDead() && !ViewTargetCharacter->IsRecentlyDead()))
 		{
