@@ -1132,6 +1132,7 @@ void AUTFlagRunGame::ScoreAlternateWin(int32 WinningTeamIndex, uint8 Reason /* =
 	// Find last killer on winning team - must do before super call
 	if (UTGameState && (Teams.Num() > WinningTeamIndex) && Teams[WinningTeamIndex])
 	{
+		LastTeamToScore = Teams[WinningTeamIndex];
 		float BestScore = 0.f;
 		float LastKill = -1000.f;
 		UTGameState->ScoringPlayerState = nullptr;
