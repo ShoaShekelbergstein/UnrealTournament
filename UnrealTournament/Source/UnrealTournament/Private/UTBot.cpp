@@ -3376,7 +3376,7 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 									{
 										// add anticipated intercept point
 										HuntEndpoints.Reset();
-										HuntEndpoints.Add(EnemyRouteCache[i]);
+										HuntEndpoints.Add((i > 0 && EnemyRouteCache[i].Node != nullptr && EnemyRouteCache[i].Node->bDestinationOnly) ? EnemyRouteCache[i - 1] : EnemyRouteCache[i]);
 									}
 								}
 							}
