@@ -29,6 +29,9 @@ public:
 	/** how many times the monster can respawn before it is removed from the game (<= 0 is infinite, for the peon train) */
 	UPROPERTY(EditDefaultsOnly)
 	int32 NumRespawns;
+	/** AI personality settings to modulate behavior */
+	UPROPERTY(EditDefaultsOnly, Meta = (DisplayName = "AI Personality"))
+	FBotPersonality AIPersonality;
 	/** optional item drop beyond any droppable inventory (note: must have a valid DroppedPickupClass) */
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AUTInventory> ExtraDropType;

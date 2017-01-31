@@ -262,6 +262,7 @@ void AUTFlagRunPvEGame::SpawnMonster(TSubclassOf<AUTMonster> MonsterClass)
 	AUTMonsterAI* NewAI = GetWorld()->SpawnActor<AUTMonsterAI>(AIType);
 	NewAI->PawnClass = MonsterClass;
 	NewAI->PlayerState->SetPlayerName(MonsterClass.GetDefaultObject()->DisplayName.ToString());
+	NewAI->Personality = MonsterClass.GetDefaultObject()->AIPersonality;
 	NewAI->InitializeSkill(GameDifficulty);
 	AUTPlayerState* PS = Cast<AUTPlayerState>(NewAI->PlayerState);
 	if (PS != NULL)
