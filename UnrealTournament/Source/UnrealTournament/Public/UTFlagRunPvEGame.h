@@ -24,6 +24,8 @@ public:
 	// temp vial replacement for energy pickups
 	UPROPERTY()
 	FStringClassReference VialReplacement;
+	UPROPERTY(BlueprintReadWrite)
+	bool bLevelHasEnergyPickups;
 
 	/** number of kills to gain an extra life (multiplied by number of lives gained so far) */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)

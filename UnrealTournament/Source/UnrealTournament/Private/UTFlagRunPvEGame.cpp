@@ -7,6 +7,7 @@
 #include "UTFlagRunPvESquadAI.h"
 #include "UTPvEGameMessage.h"
 #include "UTFlagRunPvEGameState.h"
+#include "UTPickupEnergy.h"
 #include "SNumericEntryBox.h"
 #include "Slate/SUWindowsStyle.h"
 
@@ -78,27 +79,40 @@ void AUTFlagRunPvEGame::InitGame(const FString& MapName, const FString& Options,
 
 	Super::InitGame(MapName, Options, ErrorMessage);
 	GameSession->MaxPlayers = 5;
+
+	for (TActorIterator<AUTPickupEnergy> It(GetWorld()); It; ++It)
+	{
+		bLevelHasEnergyPickups = true;
+		break;
+	}
 }
 
 bool AUTFlagRunPvEGame::CheckRelevance_Implementation(AActor* Other)
 {
-	AUTPickupHealth* Health = Cast<AUTPickupHealth>(Other);
-	if (Health != nullptr && Health->bSuperHeal && Health->HealAmount <= 5)
+	if (bLevelHasEnergyPickups)
 	{
-		TSubclassOf<AUTPickup> NewItemType = VialReplacement.TryLoadClass<AUTPickup>();
-		if (NewItemType != nullptr)
+		return Super::CheckRelevance_Implementation(Other);
+	}
+	else
+	{
+		AUTPickupHealth* Health = Cast<AUTPickupHealth>(Other);
+		if (Health != nullptr && Health->bSuperHeal && Health->HealAmount <= 5)
 		{
-			GetWorld()->SpawnActor<AUTPickup>(NewItemType, Health->GetActorTransform());
-			return false;
+			TSubclassOf<AUTPickup> NewItemType = VialReplacement.TryLoadClass<AUTPickup>();
+			if (NewItemType != nullptr)
+			{
+				GetWorld()->SpawnActor<AUTPickup>(NewItemType, Health->GetActorTransform());
+				return false;
+			}
+			else
+			{
+				return Super::CheckRelevance_Implementation(Other);
+			}
 		}
 		else
 		{
 			return Super::CheckRelevance_Implementation(Other);
 		}
-	}
-	else
-	{
-		return Super::CheckRelevance_Implementation(Other);
 	}
 }
 
@@ -106,8 +120,16 @@ void AUTFlagRunPvEGame::InitGameState()
 {
 	Super::InitGameState();
 
-	// needed here also for warmup
-	InitBoostTypes();
+	if (BoostPowerupTypes.Num() > 0)
+	{
+		InitBoostTypes();
+		AUTFlagRunPvEGameState* GS = Cast<AUTFlagRunPvEGameState>(GameState);
+		bAllowBoosts = true;
+		GS->bAllowBoosts = true;
+		GS->BoostRechargeTime = 180.0f;
+		GS->OffenseKillsNeededForPowerup = 1000000; // i.e. never
+		GS->DefenseKillsNeededForPowerup = 1000000;
+	}
 }
 
 void AUTFlagRunPvEGame::InitBoostTypes()
@@ -132,11 +154,7 @@ void AUTFlagRunPvEGame::StartMatch()
 	AUTFlagRunPvEGameState* GS = Cast<AUTFlagRunPvEGameState>(GameState);
 	if (BoostPowerupTypes.Num() > 0)
 	{
-		bAllowBoosts = true;
-		GS->bAllowBoosts = true;
-		GS->BoostRechargeTime = 180.0f;
-		GS->OffenseKillsNeededForPowerup = 1000000; // i.e. never
-		GS->DefenseKillsNeededForPowerup = 1000000;
+		// make sure selectable powerup options don't get clobbered by round start
 		InitBoostTypes();
 	}
 	GS->KillsUntilExtraLife = BaseKillsForExtraLife;
