@@ -9,6 +9,7 @@
 #include "UTPlayerController.h"
 #include "UTMenuGameMode.h"
 #include "UTLobbyGameState.h"
+#include "UTDemoRecSpectator.h"
 
 UUTHeartbeatManager::UUTHeartbeatManager(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -74,7 +75,9 @@ void UUTHeartbeatManager::DoMinuteEventsLocal()
 
 void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 {
-	if (UTPC != NULL && UTPC->GetWorld())
+	AUTDemoRecSpectator* UTDemoRecSpec = Cast<AUTDemoRecSpectator>(UTPC);
+
+	if (UTPC != NULL && UTPC->GetWorld() && (UTDemoRecSpec == nullptr || !UTDemoRecSpec->IsKillcamSpectator()))
 	{
 		AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTPC->PlayerState);
 		if (UTPS)
@@ -110,7 +113,7 @@ void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 						PlayerConxtextLocation = TEXT("Lobby");
 					}
 
-					if (UTPC->GetWorld()->DemoNetDriver && UTPC->IsLocalController())
+					if ( UTPC->GetWorld()->DemoNetDriver && UTPC->IsLocalController())
 					{
 						PlayerConxtextLocation = TEXT("Replay");
 					}
