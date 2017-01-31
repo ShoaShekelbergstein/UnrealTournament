@@ -286,7 +286,7 @@
 
 			<Tag Files="#TrimmedTargets" Except="UE4-*-Shipping.dll;UE4-*-Shipping.pdb" With="#SecondTrim"/>
 			
-			<Tag Files="#SecondTrim" Except=".../NotForLicensees/...;.../Intermediate/...;.../Linux/...;.../Mac/...;.../PS4/...;.../IOS/...;.../Android/...;.../HTML5/...;.../Binaries/Win32/...;.../Binaries/Mac/...;.../Binaries/Linux/...;" With="#FinalTrim"/>
+			<Tag Files="#SecondTrim" Except=".../NotForLicensees/...;.../Intermediate/...;.../Linux/...;.../Mac/...;.../PS4/...;.../XboxOne/...;.../IOS/...;.../Android/...;.../HTML5/...;.../Binaries/Win32/...;.../Binaries/Mac/...;.../Binaries/Linux/...;" With="#FinalTrim"/>
 
 			<!-- We need the onlinesubsystemmcp and social dlls out of notforlicensees-->
 			<Tag Files="$(RootDir)/UnrealTournament/Plugins/Online/NotForLicensees/OnlineSubsystemMcp/..." Filter="*.dll;*.uplugin" With="#FinalTrim"/>
@@ -306,8 +306,6 @@
 			<Copy Files="UE4Editor-DDCUtils.dll" From="$(RootDir)/Engine/Binaries/Win64/NotForLicensees" To="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64/NotForLicensees"/>
 			<Copy Files="EpicInternal.txt" From="$(RootDir)/Engine/Build/NotForLicensees" To="$(LocalStagingDir)/UT-Build/Win64/Engine/Build/NotForLicensees"/>
 			<Commandlet Name="DerivedDataCache" Project="$(LocalStagingDir)/UT-Build/Win64/UnrealTournament/UnrealTournament.uproject" EditorExe="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64/UE4Editor.exe" Arguments="-TargetPlatform=Windows -fill -DDC=CreateInstalledEnginePak -Map=Example_Map"/>
-			<Delete Files="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64/NotForLicensees/UE4Editor-DDCUtils.dll" DeleteEmptyDirectories="true"/>
-			<Delete Files="$(LocalStagingDir)/UT-Build/Win64/Engine/Build/NotForLicensees/EpicInternal.txt" DeleteEmptyDirectories="true"/>
 		</Node>
 		<Node Name="Chunk Editor Win64" Requires="EditorDDC Win64" Token="$(BuildDir)/WindowsEditor/WindowsEditor.token">
 			<Property Name="Launch" Value="Engine\Binaries\Win64\UE4Editor.exe"/>
@@ -320,6 +318,8 @@
 			<LabelBuild AppName="$(EditorAppName)" BuildVersion="$(BuildVersion)" Platform="Windows" Label="$(LabelName)" McpConfig="$(McpConfig)"/>
 		</Node>
 		<Node Name="Publish Editor Win64" Requires="EditorDDC Win64">
+			<Delete Files="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64/NotForLicensees/UE4Editor-DDCUtils.dll" DeleteEmptyDirectories="true"/>
+			<Delete Files="$(LocalStagingDir)/UT-Build/Win64/Engine/Build/NotForLicensees/EpicInternal.txt" DeleteEmptyDirectories="true"/>
 			<Copy Files="..." From="$(LocalStagingDir)/UT-Build/Win64" To="$(BuildDir)/WindowsEditor"/>
 		</Node>
 	</Agent>
@@ -528,34 +528,33 @@
 		<Node Name="Audit Chunks Editor Mac" Requires="Sync PortalPublishingTool" After="Post Editor Mac">
 			<Spawn Exe="$(RootDir)\LocalBuilds\PortalPublishingTool\Engine\Binaries\DotNET\PortalPublishingTool.exe" Arguments="-mode=BuildDiffTelemetry -BuildVersion=&quot;$(BuildVersion)&quot; -Project=&quot;UnrealTournamentEditor&quot; -CloudDir=&quot;$(CloudDir)&quot; -Platform=&quot;Mac&quot;  -LocalRoot=&quot;$(RootDir)\LocalBuilds&quot;"/>
 		</Node>
-	</Agent>
+	</Agent>	
+	
+	<Property Name="Minimal Build Targets" Value=""/>
+	<Property Name="Minimal Build Targets" Value="$(Minimal Build Targets)Publish WindowsNoEditor;" If="$(WithWindowsClients)"/>
+	<Property Name="Minimal Build Targets" Value="$(Minimal Build Targets)Chunk WindowsNoEditor;Post WindowsNoEditor;Audit Chunks Game Windows;" If="$(WithWindowsClients) And $(EnableMCP)"/>
+	<Property Name="Minimal Build Targets" Value="$(Minimal Build Targets)Publish WindowsServer Win64;" If="$(WithWin64Server)"/>
+	<Property Name="Minimal Build Targets" Value="$(Minimal Build Targets)Publish LinuxNoEditor;" If="$(WithLinuxClient)"/>
+	<Property Name="Minimal Build Targets" Value="$(Minimal Build Targets)Publish LinuxServer;" If="$(WithLinuxServer)"/>
+	<Property Name="Minimal Build Targets" Value="$(Minimal Build Targets)Publish Mac;" If="$(WithMacClient)"/>
+	<Property Name="Minimal Build Targets" Value="$(Minimal Build Targets)Post Mac;Chunk Mac;Audit Chunks Game Mac;" If="$(WithMacClient) And $(EnableMCP)"/>
 
+	<!-- Win64 Full Build Targets -->
+	<Property Name="Full Build Targets" Value="$(Minimal Build Targets)"/>
+	<Property Name="Full Build Targets" Value="$(Full Build Targets)Publish Editor Win64;" If="$(WithWin64Editor)"/>
+	<Property Name="Full Build Targets" Value="$(Full Build Targets)Chunk Editor Win64;Post Editor Win64;Audit Chunks Editor Win64;" If="$(WithWin64Editor) And $(EnableMCP)"/>
+	<Property Name="Full Build Targets" Value="$(Full Build Targets)Compile UT Test Windows;" If="$(IncludeTestExes) And ($(WithWindowsClients) Or $(WithWin64Server))"/>
+	
+	<!-- Mac Full Build Targets -->
+	<Property Name="Full Build Targets" Value="$(Full Build Targets)Publish Editor Mac;" If="$(WithMacEditor)"/>
+	<Property Name="Full Build Targets" Value="$(Full Build Targets)Chunk Editor Mac;Post Editor Mac;Audit Chunks Editor Mac;" If="$(WithMacEditor) And $(EnableMCP)"/>
+	<Property Name="Full Build Targets" Value="$(Full Build Targets)Compile UT Test Mac;" If="$(IncludeTestExes) And $(WithMacClient)"/>
+	
+	<!-- Linux Full Build Targets -->
+	<Property Name="Full Build Targets" Value="Compile UT Test Linux;" If="$(IncludeTestExes) And ($(WithLinuxClient) Or $(WithLinuxServer))"/>
 
-	<Property Name="Windows Build Targets" Value=""/>
-	<Property Name="Windows Build Targets" Value="$(Windows Build Targets)Publish WindowsNoEditor;" If="$(WithWindowsClients)"/>
-	<Property Name="Windows Build Targets" Value="$(Windows Build Targets)Chunk WindowsNoEditor;Post WindowsNoEditor;Audit Chunks Game Windows;" If="$(WithWindowsClients) And $(EnableMCP)"/>
-	<Property Name="Windows Build Targets" Value="$(Windows Build Targets)Publish WindowsServer Win64;" If="$(WithWin64Server)"/>
-	<Property Name="Windows Build Targets" Value="$(Windows Build Targets)Publish Editor Win64;" If="$(WithWin64Editor)"/>
-	<Property Name="Windows Build Targets" Value="$(Windows Build Targets)Chunk Editor Win64;Post Editor Win64;Audit Chunks Editor Win64;" If="$(WithWin64Editor) And $(EnableMCP)"/>
-	<Property Name="Windows Build Targets" Value="$(Windows Build Targets)Compile UT Test Windows;" If="$(IncludeTestExes) And ($(WithWindowsClients) Or $(WithWin64Server))"/>
-	<Aggregate Name="Make Windows Game" Requires="$(Windows Build Targets)"/>
-
-	<Property Name="Mac Build Targets" Value=""/>
-	<Property Name="Mac Build Targets" Value="$(Mac Build Targets)Publish Mac;" If="$(WithMacClient)"/>
-	<Property Name="Mac Build Targets" Value="$(Mac Build Targets)Post Mac;Chunk Mac;Audit Chunks Game Mac;" If="$(WithMacClient) And $(EnableMCP)"/>
-	<Property Name="Mac Build Targets" Value="$(Mac Build Targets)Publish Editor Mac;" If="$(WithMacEditor)"/>
-	<Property Name="Mac Build Targets" Value="$(Mac Build Targets)Chunk Editor Mac;Post Editor Mac;Audit Chunks Editor Mac;" If="$(WithMacEditor) And $(EnableMCP)"/>
-	<Property Name="Mac Build Targets" Value="$(Mac Build Targets)Compile UT Test Mac;" If="$(IncludeTestExes) And $(WithMacClient)"/>
-	<Aggregate Name="Make Mac Game" Requires="$(Mac Build Targets)"/>
-
-	<Property Name="Linux Build Targets" Value=""/>
-	<Property Name="Linux Build Targets" Value="$(Linux Build Targets)Publish LinuxNoEditor;" If="$(WithLinuxClient)"/>
-	<Property Name="Linux Build Targets" Value="$(Linux Build Targets)Publish LinuxServer;" If="$(WithLinuxServer)"/>
-	<Property Name="Linux Build Targets" Value="$(Linux Build Targets)Compile UT Test Linux;" If="$(IncludeTestExes) And ($(WithLinuxClient) Or $(WithLinuxServer))"/>
-	<Aggregate Name="Make Linux Game" Requires="$(Linux Build Targets)"/>
-
-	<Property Name="Standard Build Targets" Value="Make Windows Game;Make Mac Game;Make Linux Game;"/>
-	<Aggregate Name="Standard Build" Requires="$(Standard Build Targets)"/>
+	<Aggregate Name="Minimal Build" Requires="$(Minimal Build Targets)"/>
+	<Aggregate Name="Standard Build" Requires="$(Full Build Targets)"/>
 
 	<!-- Other tasks -->
 	<Agent Name="Nightly Cleanup" Type="Win64">
