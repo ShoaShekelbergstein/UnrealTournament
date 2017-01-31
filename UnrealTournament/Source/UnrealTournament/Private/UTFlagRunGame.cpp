@@ -721,7 +721,6 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 			return;
 		}
 		UTCharacter->GetCapsuleComponent()->SetCollisionObjectType(SavedObjectType);
-		float RallyDelay = 15.f;
 
 		// teleport
 		UPrimitiveComponent* SavedPlayerBase = UTCharacter->GetMovementBase();
@@ -732,8 +731,8 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 			{
 				RequestingPC->UTClientSetRotation(WarpRotation);
 			}
-			UTPlayerState->NextRallyTime = GetWorld()->GetTimeSeconds() + RallyDelay;
-
+			UTPlayerState->bRallyActivated = false;
+			UTPlayerState->ForceNetUpdate();
 			if (TranslocatorClass)
 			{
 				if (TranslocatorClass->GetDefaultObject<AUTWeap_Translocator>()->DestinationEffect != nullptr)
@@ -1214,11 +1213,11 @@ void AUTFlagRunGame::HandleRollingAttackerRespawn(AUTPlayerState* OtherPS)
 	OtherPS->RespawnWaitTime = RollingAttackerRespawnDelay;
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	int32 RoundTime = (TimeLimit == 0) ? 300 : TimeLimit;
-	if (GS && !GS->bAttackersCanRally && (GetWorld()->GetTimeSeconds() > OtherPS->NextRallyTime) && GS->bHaveEstablishedFlagRunner && !GS->CurrentRallyPoint && (GS->GetRemainingTime() < RoundTime - 45))
+	if (GS && !GS->bAttackersCanRally && GS->bHaveEstablishedFlagRunner && !GS->CurrentRallyPoint && (GS->GetRemainingTime() < RoundTime - 45))
 	{
 		OtherPS->AnnounceStatus(StatusMessage::NeedRally);
 	}
-	else if (GS && GS->CurrentRallyPoint && GS->bAttackersCanRally && (GS->CurrentRallyPoint->RallyTimeRemaining > FMath::Max(float(OtherPS->RemainingRallyDelay)+2.f, 3.5f)))
+	else if (GS && GS->CurrentRallyPoint && GS->bAttackersCanRally && (GS->CurrentRallyPoint->RallyTimeRemaining > 3.5f))
 	{
 		OtherPS->RespawnWaitTime = FMath::Min(OtherPS->RespawnWaitTime, GS->CurrentRallyPoint->RallyTimeRemaining - 2.f);
 	}

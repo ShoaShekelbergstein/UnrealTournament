@@ -312,11 +312,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
 	bool bCanRally;
 
-	UPROPERTY(BlueprintReadOnly, Category = PlayerState)
-	float NextRallyTime;
-
+	/** Set when rallypoint is powered up, so that all attackers can then rally once to that point per power up. */
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
-	uint8 RemainingRallyDelay;
+	bool bRallyActivated;
 
 	UPROPERTY()
 	FVector RallyLocation;

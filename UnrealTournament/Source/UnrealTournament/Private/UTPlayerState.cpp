@@ -62,8 +62,7 @@ AUTPlayerState::AUTPlayerState(const class FObjectInitializer& ObjectInitializer
 	Deaths = 0;
 	bShouldAutoTaunt = false;
 	bSentLogoutAnalytics = false;
-	NextRallyTime = 0.f;
-	RemainingRallyDelay = 0;
+	bRallyActivated = false;
 	SelectionOrder = 255;
 
 	// We want to be ticked.
@@ -167,7 +166,7 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME_CONDITION(AUTPlayerState, RespawnChoiceB, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, bChosePrimaryRespawnChoice, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, WeaponSpreeDamage, COND_OwnerOnly);
-	DOREPLIFETIME_CONDITION(AUTPlayerState, RemainingRallyDelay, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AUTPlayerState, bRallyActivated, COND_OwnerOnly);
 
 	DOREPLIFETIME(AUTPlayerState, SpectatingID);
 	DOREPLIFETIME(AUTPlayerState, SpectatingIDTeam);
@@ -798,8 +797,7 @@ void AUTPlayerState::Tick(float DeltaTime)
 	{
 		AUTCharacter* UTChar = GetUTCharacter();
 		bool bOldCanRally = bCanRally;
-		bCanRally = (GetWorld()->GetTimeSeconds() > NextRallyTime) && UTChar && (UTChar->bCanRally || UTChar->GetCarriedObject());
-		RemainingRallyDelay = (NextRallyTime > GetWorld()->GetTimeSeconds()) ? FMath::Clamp(int32(NextRallyTime - GetWorld()->GetTimeSeconds()), 0, 255) : 0;
+		bCanRally = bRallyActivated && UTChar && (UTChar->bCanRally || UTChar->GetCarriedObject());
 		if (!bOldCanRally && bCanRally && !UTChar->GetCarriedObject())
 		{
 			// notify of transition if rally is available
