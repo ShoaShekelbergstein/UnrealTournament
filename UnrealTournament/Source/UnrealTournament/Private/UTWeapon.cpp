@@ -703,6 +703,16 @@ bool AUTWeapon::BeginFiringSequence(uint8 FireModeNum, bool bClientFired)
 {
 	if (UTOwner)
 	{
+		// Flag this player as not being idle
+		if (Role == ROLE_Authority)
+		{
+			AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTOwner->PlayerState);
+			if (UTPlayerState != nullptr)
+			{
+				UTPlayerState->NotIdle();
+			}
+		}
+
 		UTOwner->SetPendingFire(FireModeNum, true);
 		if (FiringState.IsValidIndex(FireModeNum) && CurrentState != EquippingState && CurrentState != UnequippingState)
 		{

@@ -1207,6 +1207,30 @@ void AUTGameMode::DefaultTimer()
 					LobbyBeacon->Empty();
 				}
 			}
+
+			// Check to see if everyone is idle.
+			if (MatchState == MatchState::InProgress && UTGameState != nullptr)
+			{
+				bool bAllPlayersAreIdle = true;
+				for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+				{
+					AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+					if (UTPlayerState != nullptr && !UTPlayerState->bIsABot && !UTPlayerState->IsPlayerIdle())
+					{
+						bAllPlayersAreIdle = false;
+						break;
+					}
+				}
+
+				if (bAllPlayersAreIdle)
+				{
+					// Catch all...
+					SendEveryoneBackToLobby();
+					LobbyBeacon->Empty();			
+				}
+			}
+
+
 		}
 	}
 	else
@@ -2494,8 +2518,6 @@ void AUTGameMode::TravelToNextMap_Implementation()
 				}
 			}
 		}	
-
-
 	}
 
 
@@ -2519,6 +2541,27 @@ void AUTGameMode::TravelToNextMap_Implementation()
 		}
 	}
 	UE_LOG(UT,Log,TEXT("TravelToNextMap: %i %i"),bDedicatedInstance,IsGameInstanceServer());
+
+	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+	{
+		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+		if (UTPlayerState != nullptr && !UTPlayerState->IsPlayerIdle())
+		{
+			AUTPlayerController* Controller = Cast<AUTPlayerController>(UTPlayerState->GetOwner());
+			if (Controller)
+			{
+				if ( IsGameInstanceServer() )
+				{
+					Controller->ClientReturnToLobby();
+				}
+				else if (GameSession != nullptr)
+				{
+					GameSession->KickPlayer(Controller, FText::FromString( TEXT("You were kicked for being idle.")));
+				}
+			}
+		}
+	}
+
 
 	if (!bRankedSession && (!IsGameInstanceServer() || bDedicatedInstance) && !bDisableMapVote && GetWorld()->GetNetMode() != NM_Standalone)
 	{
@@ -3298,6 +3341,19 @@ bool AUTGameMode::HasMatchEnded() const
 /**	I needed to rework the ordering of SetMatchState until it can be corrected in the engine. **/
 void AUTGameMode::SetMatchState(FName NewState)
 {
+	// Reset the idle state on all players
+	if (NewState == MatchState::InProgress)
+	{
+		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+		{
+			AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+			if (UTPlayerState != nullptr && !UTPlayerState->bIsABot)
+			{
+				UTPlayerState->NotIdle();
+			}
+		}
+	}
+
 	if (MatchState == NewState)
 	{
 		return;

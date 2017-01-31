@@ -593,6 +593,10 @@ void UUTCharacterMovement::TickComponent(float DeltaTime, enum ELevelTick TickTy
 
 			if ((CharacterOwner->Role == ROLE_Authority) && !bOwnerIsRagdoll)
 			{
+				// Flag this player as not being idle.
+				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(CharacterOwner->PlayerState);
+				if (UTPlayerState) UTPlayerState->NotIdle();
+
 				PerformMovement(DeltaTime);
 			}
 			else if (bIsClient)

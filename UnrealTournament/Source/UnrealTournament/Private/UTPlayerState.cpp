@@ -196,6 +196,8 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	DOREPLIFETIME_CONDITION(AUTPlayerState, CurrentCoolFactor, COND_OwnerOnly);
 #endif
+
+	DOREPLIFETIME(AUTPlayerState, bPlayerIsIdle);
 }
 
 void AUTPlayerState::Destroyed()
@@ -812,6 +814,13 @@ void AUTPlayerState::Tick(float DeltaTime)
 					FC->AnnounceStatus(StatusMessage::RallyNow);
 				}
 			}
+		}
+
+		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
+		// Only update the idle state if the match is in progress.
+		if (UTGameState && UTGameState->GetMatchState() == MatchState::InProgress)
+		{
+			bPlayerIsIdle = GetWorld()->GetTimeSeconds() - LastActiveTime > 60.0f;
 		}
 	}
 	// If we are waiting to respawn then count down
@@ -4038,4 +4047,15 @@ void AUTPlayerState::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVect
 			}
 		}
 	}
+}
+
+void AUTPlayerState::NotIdle()
+{
+	bPlayerIsIdle = false;
+	LastActiveTime = GetWorld()->GetTimeSeconds();
+}
+
+bool AUTPlayerState::IsPlayerIdle()
+{
+	return (!bIsABot && bPlayerIsIdle);
 }

@@ -1246,6 +1246,24 @@ public:
 	UPROPERTY()
 	float LastSpawnTime;
 
+	/** Call this function to flag this player as not being idle */
+	UFUNCTION()
+	void NotIdle();
+
+	// returns true if the player is idle
+	UFUNCTION()
+	bool IsPlayerIdle();
+
+
+protected:
+	// The time at which the player that owns this PlayerState was active in real time seconds.  This should be set by calling NotActive()
+	float LastActiveTime;
+
+	// Will be true if this player is considered idle
+	UPROPERTY(replicated)
+	bool bPlayerIsIdle;
+
+
 };
 
 USTRUCT()
@@ -1336,7 +1354,6 @@ struct FRemotePlayerInfo
 		FJsonObjectConverter::UStructToJsonObject(FRemotePlayerInfo::StaticStruct(), this,JsonObject.ToSharedRef(), 0, 0);
 		JsonObject->SetStringField("PlayerId", PlayerID.ToString());
 	}
-
 };
 
 
