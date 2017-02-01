@@ -593,10 +593,6 @@ void UUTCharacterMovement::TickComponent(float DeltaTime, enum ELevelTick TickTy
 
 			if ((CharacterOwner->Role == ROLE_Authority) && !bOwnerIsRagdoll)
 			{
-				// Flag this player as not being idle.
-				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(CharacterOwner->PlayerState);
-				if (UTPlayerState) UTPlayerState->NotIdle();
-
 				PerformMovement(DeltaTime);
 			}
 			else if (bIsClient)
@@ -1066,6 +1062,7 @@ void UUTCharacterMovement::PerformMovement(float DeltaSeconds)
 	{
 		return;
 	}
+
 	AUTCharacter* UTOwner = Cast<AUTCharacter>(CharacterOwner);
 	bSlidingAlongWall = false;
 	if (!UTOwner || !UTOwner->IsRagdoll())
@@ -1110,6 +1107,13 @@ void UUTCharacterMovement::PerformMovement(float DeltaSeconds)
 		
 		if (Velocity.Size() > 0.f)
 		{
+			// Flag this player as not being idle.
+			AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(CharacterOwner->PlayerState);
+			if (UTPlayerState) 
+			{
+				UTPlayerState->NotIdle();
+			}
+
 //			UE_LOG(UT, Warning, TEXT("Delta %f Velocity %s Speed %f AccelRate %f"), DeltaSeconds, *Velocity.ToString(), Velocity.Size(), (Velocity - OldVelocity).Size() / DeltaSeconds);
 		}
 	}
