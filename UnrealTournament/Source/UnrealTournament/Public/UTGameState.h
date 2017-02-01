@@ -180,8 +180,11 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	int32 RemainingTime;
 
 	// Used to sync the time on clients to the server. Updated at a lower frequency to reduce bandwidth cost -- See DefaultTimer()
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing=OnRepRemainingTime)
 		int32 ReplicatedRemainingTime;
+
+	UFUNCTION()
+		virtual void OnRepRemainingTime();
 
 	public:
 	int32 GetRemainingTime() { return RemainingTime; };

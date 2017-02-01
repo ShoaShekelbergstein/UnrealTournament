@@ -648,6 +648,11 @@ void AUTGameState::SetRemainingTime(int32 NewRemainingTime)
 	ForceNetUpdate();
 }
 
+void AUTGameState::OnRepRemainingTime()
+{
+	RemainingTime = ReplicatedRemainingTime;
+}
+
 void AUTGameState::DefaultTimer()
 {
 	Super::DefaultTimer();
@@ -670,12 +675,6 @@ void AUTGameState::DefaultTimer()
 
 	if (GetWorld()->GetNetMode() == NM_Client)
 	{
-		if (ReplicatedRemainingTime > 0)
-		{
-			RemainingTime = ReplicatedRemainingTime;
-			ReplicatedRemainingTime = 0;
-		}
-
 		// might have been deferred while waiting for teams to replicate
 		if (TeamSwapSidesOffset != PrevTeamSwapSidesOffset)
 		{

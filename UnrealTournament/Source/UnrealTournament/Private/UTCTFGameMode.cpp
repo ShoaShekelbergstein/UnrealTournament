@@ -423,25 +423,6 @@ void AUTCTFGameMode::BuildServerResponseRules(FString& OutRules)
 	}
 }
 
-void AUTCTFGameMode::SetRemainingTime(int32 RemainingSeconds)
-{
-	if (bOfflineChallenge || bBasicTrainingGame)
-	{
-		return;
-	}
-	if (RemainingSeconds > TimeLimit)
-	{
-		// still in first half;
-		UTGameState->SetRemainingTime(RemainingSeconds - TimeLimit);
-	}
-	else
-	{
-		UTGameState->SetRemainingTime(1);
-		TimeLimit = RemainingSeconds;
-		IntermissionDuration = 5;
-	}
-}
-
 void AUTCTFGameMode::GetGood()
 {
 #if !(UE_BUILD_SHIPPING)

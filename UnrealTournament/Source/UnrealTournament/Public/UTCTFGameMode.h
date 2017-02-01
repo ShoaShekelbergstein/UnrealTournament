@@ -15,9 +15,6 @@ class UNREALTOURNAMENT_API AUTCTFGameMode : public AUTCTFBaseGame
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CTF)
 	int32 AdvantageDuration;
 
-	UFUNCTION(exec)
-		void SetRemainingTime(int32 RemainingSeconds);
-
 	virtual void InitGame( const FString& MapName, const FString& Options, FString& ErrorMessage ) override;
 	virtual void ScoreObject_Implementation(AUTCarriedObject* GameObject, AUTCharacter* HolderPawn, AUTPlayerState* Holder, FName Reason) override;
 	virtual bool CheckScore_Implementation(AUTPlayerState* Scorer);
