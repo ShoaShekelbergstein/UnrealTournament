@@ -1062,6 +1062,29 @@ void AUTCTFRoundGame::ScoreKill_Implementation(AController* Killer, AController*
 				}
 			}
 		}
+		else if (UTGameState && IsMatchInProgress() && (GetMatchState() != MatchState::MatchIntermission))
+		{
+			bool bFoundLiveTeammate = false;
+			int32 TeamCount = 0;
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				AUTPlayerState* TeamPS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				if (TeamPS && (OtherPS->Team == TeamPS->Team) && !TeamPS->bOutOfLives && !TeamPS->bIsInactive)
+				{
+					TeamCount++;
+					if (TeamPS->GetUTCharacter() && !TeamPS->GetUTCharacter()->IsDead())
+					{
+						bFoundLiveTeammate = true;
+						break;
+					}
+				}
+			}
+			if (!bFoundLiveTeammate && (TeamCount == 5) && (GetWorld()->GetTimeSeconds() - LastAceTime > 20.f))
+			{
+				LastAceTime = GetWorld()->GetTimeSeconds();
+				BroadcastLocalized(NULL, UUTCTFRewardMessage::StaticClass(), 8);
+			}
+		}
 
 		int32 RemainingDefenders = 0;
 		int32 RemainingLives = 0;
