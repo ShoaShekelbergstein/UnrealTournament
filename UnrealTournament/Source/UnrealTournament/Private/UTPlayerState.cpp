@@ -3624,6 +3624,15 @@ void AUTPlayerState::PlayTauntByIndex(int32 TauntIndex)
 		ServerSetEmoteSpeed(EmoteSpeed);
 	}
 
+	AUTCharacter* UTChar = GetUTCharacter();
+	if (UTChar == nullptr)
+	{
+		UE_LOG(UT,Warning,TEXT("Attempting to Taunt without a character"));
+		FTimerHandle TempHandle;
+		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTPlayerState::OnRepTaunt, 0.05f, false);
+		return;
+	}
+
 	if (TauntIndex == 0 && TauntClass != nullptr)
 	{
 		EmoteReplicationInfo.EmoteIndex = TauntIndex;

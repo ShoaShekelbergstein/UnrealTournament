@@ -335,7 +335,7 @@ public:
 	UPROPERTY(config)
 		FString YoutubeRefreshToken;
 
-protected:
+public:
 
 #if !UE_SERVER
 	TSharedPtr<class SUTMenuBase> DesktopSlateWidget;
