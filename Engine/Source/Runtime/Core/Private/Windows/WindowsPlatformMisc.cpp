@@ -1536,7 +1536,7 @@ EAppReturnType::Type FWindowsPlatformMisc::MessageBoxExt( EAppMsgType::Type MsgT
 static bool HandleGameExplorerIntegration()
 {
 	// skip this if running on WindowsServer (we get rare crashes that seem to stem from Windows Server builds, where GameExplorer isn't particularly useful)
-	if (FPlatformProperties::SupportsWindowedMode() && !IsWindowsServer())
+	if (FPlatformProperties::SupportsWindowedMode() && !IsRunningDedicatedServer())
 	{
 		TCHAR AppPath[MAX_PATH];
 		GetModuleFileName(NULL, AppPath, MAX_PATH - 1);
