@@ -725,7 +725,7 @@ void SUTMainMenu::StartGame(bool bLanGame)
 		}
 		else
 		{
-			GameOptions += FString::Printf(TEXT("?BotFill=0?MaxPlayers=%i"), DesiredPlayerCount);
+			GameOptions += FString::Printf(TEXT("?ForceNoBots=1?MaxPlayers=%i"), DesiredPlayerCount);
 		}
 
 		if (FUTAnalytics::IsAvailable())
@@ -753,7 +753,7 @@ void SUTMainMenu::StartGame(bool bLanGame)
 		}
 		else
 		{
-			GameOptions += TEXT("?BotFill=0");
+			GameOptions += TEXT("?ForceNoBots=1");
 		}
 
 		if (PlayerOwner.IsValid() && FUTAnalytics::IsAvailable() && CurrentRule)
