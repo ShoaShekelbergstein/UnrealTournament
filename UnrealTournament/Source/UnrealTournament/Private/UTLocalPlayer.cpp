@@ -2703,7 +2703,7 @@ void UUTLocalPlayer::SetCharacterPath(const FString& NewCharacterPath)
 
 		FUTAnalytics::GetProvider().RecordEvent( TEXT("CharacterChanged"), ParamArray );
 	}
-
+	SetDefaultURLOption(TEXT("Character"), NewCharacterPath);
 	if (CurrentProfileSettings != NULL)
 	{
 		CurrentProfileSettings->CharacterPath = NewCharacterPath;
