@@ -22,6 +22,9 @@ void SUTWebBrowserPanel::Construct(const FArguments& InArgs, TWeakObjectPtr<UUTL
 	OnBeforeBrowse = InArgs._OnBeforeBrowse;
 	OnBeforePopup = InArgs._OnBeforePopup;
 
+	OnLoadCompletedDelegate = InArgs._OnLoadCompleted;
+	OnLoadErrorDelegate = InArgs._OnLoadError;
+
 	SUTPanelBase::Construct(SUTPanelBase::FArguments(), InPlayerOwner);
 }
 
@@ -77,6 +80,8 @@ void SUTWebBrowserPanel::ConstructPanel(FVector2D ViewportSize)
 						.ViewportSize(DesiredViewportSize)
 						.OnBeforeNavigation(SWebBrowser::FOnBeforeBrowse::CreateSP(this, &SUTWebBrowserPanel::BeforeBrowse))
 						.OnBeforePopup(FOnBeforePopupDelegate::CreateSP(this, &SUTWebBrowserPanel::BeforePopup))
+						.OnLoadCompleted(FSimpleDelegate::CreateSP(this, &SUTWebBrowserPanel::OnLoadCompleted))
+						.OnLoadError(FSimpleDelegate::CreateSP(this, &SUTWebBrowserPanel::OnLoadError))
 					]
 				]
 			]
@@ -180,6 +185,24 @@ void SUTWebBrowserPanel::WarningResult(TSharedPtr<SCompoundWidget> Widget, uint1
 		FPlatformProcess::LaunchURL(*DesiredURL, NULL, NULL);
 	}
 }
+
+void SUTWebBrowserPanel::OnLoadCompleted()
+{
+	if (OnLoadCompletedDelegate.IsBound())
+	{
+		OnLoadCompletedDelegate.Execute();
+	}
+
+}
+
+void SUTWebBrowserPanel::OnLoadError()
+{
+	if (OnLoadErrorDelegate.IsBound())
+	{
+		OnLoadErrorDelegate.Execute();	
+	}
+}
+
 
 
 #endif

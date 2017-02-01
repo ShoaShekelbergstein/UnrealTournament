@@ -37,6 +37,14 @@
 #include "Engine/DemoNetDriver.h"
 #include "UTDeathMessage.h"
 #include "UTLineUpHelper.h"
+#include "Panels/SUTWebBrowserPanel.h"
+
+#if !UE_SERVER
+#include "SlateBasics.h"
+#include "SlateExtras.h"
+#endif
+
+const float IDLE_TIMEOUT_TIME=120.0f;
 
 /** disables load warnings for dedicated server where invalid client input can cause unpreventable logspam, but enables on clients so developers can make sure their stuff is working */
 static inline ELoadFlags GetCosmeticLoadFlags()
@@ -818,7 +826,7 @@ void AUTPlayerState::Tick(float DeltaTime)
 		// Only update the idle state if the match is in progress.
 		if (UTGameState && UTGameState->GetMatchState() == MatchState::InProgress)
 		{
-			bPlayerIsIdle = GetWorld()->GetTimeSeconds() - LastActiveTime > 60.0f;
+			bPlayerIsIdle = GetWorld()->GetTimeSeconds() - LastActiveTime > IDLE_TIMEOUT_TIME;
 		}
 	}
 	// If we are waiting to respawn then count down
@@ -2887,132 +2895,175 @@ void AUTPlayerState::BuildPlayerInfo(TSharedPtr<SUTTabWidget> TabWidget, TArray<
 		}
 	}
 
-	FText EpicAccountNameText = FText::GetEmpty();
-	if (!StatsID.IsEmpty())
+	if (bIsABot || UniqueId.ToString().Equals(TEXT("INVALID"),ESearchCase::IgnoreCase) ||FParse::Param(FCommandLine::Get(), TEXT("oldplayercard")))
 	{
-		TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*StatsID));
-		if (UserId->IsValid())
-		{	
-			if (GetWorld())
-			{
-				AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
-				if (UTGS != nullptr)
+
+		FText EpicAccountNameText = FText::GetEmpty();
+		if (!StatsID.IsEmpty())
+		{
+			TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*StatsID));
+			if (UserId->IsValid())
+			{	
+				if (GetWorld())
 				{
-					EpicAccountNameText = UTGS->GetEpicAccountNameForAccount(UserId);
+					AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
+					if (UTGS != nullptr)
+					{
+						EpicAccountNameText = UTGS->GetEpicAccountNameForAccount(UserId);
+					}
 				}
 			}
 		}
-	}
 
-	UUTFlagInfo* Flag = Cast<UUTGameEngine>(GEngine) ? Cast<UUTGameEngine>(GEngine)->GetFlag(CountryFlag) : nullptr;
-	if ((Avatar == NAME_None) && PC)
-	{
-		if (LP)
+		UUTFlagInfo* Flag = Cast<UUTGameEngine>(GEngine) ? Cast<UUTGameEngine>(GEngine)->GetFlag(CountryFlag) : nullptr;
+		if ((Avatar == NAME_None) && PC)
 		{
-			Avatar = LP->GetAvatar();
+			if (LP)
+			{
+				Avatar = LP->GetAvatar();
+			}
 		}
-	}
-	TabWidget->AddTab(NSLOCTEXT("AUTPlayerState", "PlayerInfo", "Player Info"),
-	SNew(SVerticalBox)
-	+ SVerticalBox::Slot()
-	.Padding(10.0f, 20.0f, 10.0f, 5.0f)
-	.AutoHeight()
-	[
-		SNew(SHorizontalBox)
-		+ SHorizontalBox::Slot()
-		.HAlign(HAlign_Left)
-		.VAlign(VAlign_Center)
-		.AutoWidth()
+
+
+
+		TabWidget->AddTab(NSLOCTEXT("AUTPlayerState", "PlayerInfo", "Player Info"),
+		SNew(SVerticalBox)
+		+ SVerticalBox::Slot()
+		.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+		.AutoHeight()
 		[
-			SNew(SBox)
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				SNew(SBox)
+				[
+					SNew(STextBlock)
+					.Text(EpicAccountNameText)
+					.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+				]
+			]
+			+SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				//blank space between name and player icon
+				SNew(SBox)
+				.WidthOverride(64.0f)
+				.HeightOverride(64.0f)
+				.MaxDesiredWidth(64.0f)
+				.MaxDesiredHeight(64.0f)
+				[
+					SNew(SImage)
+					.Image(SUTStyle::Get().GetBrush("UT.NoStyle"))
+				]
+			]
+			+ SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				SNew(SBox)
+				.WidthOverride(64.0f)
+				.HeightOverride(64.0f)
+				.MaxDesiredWidth(64.0f)
+				.MaxDesiredHeight(64.0f)
+				[
+					SNew(SImage)
+					.Image((Avatar != NAME_None) ? SUTStyle::Get().GetBrush(Avatar) : SUTStyle::Get().GetBrush("UT.NoStyle"))
+				]
+			]
+		]
+		+ SVerticalBox::Slot()
+		.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+		.AutoHeight()
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				SNew(SBox)
+				.WidthOverride(36.0f)
+				.HeightOverride(26.0f)
+				.MaxDesiredWidth(36.0f)
+				.MaxDesiredHeight(26.0f)
+				[
+					SNew(SImage)
+					.Image(SUWindowsStyle::Get().GetBrush(Flag ? Flag->GetSlatePropertyName() : NAME_None))
+				]
+			]
+			+ SHorizontalBox::Slot()
+			.Padding(10.0f, 0.0f, 0.0f, 0.0f)
+			.VAlign(VAlign_Center)
+			.HAlign(HAlign_Left)
+			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(EpicAccountNameText)
+				.Text(FText::FromString(Flag ? Flag->GetFriendlyName() : TEXT("")))
 				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
 			]
 		]
-		+SHorizontalBox::Slot()
-		.HAlign(HAlign_Left)
-		.VAlign(VAlign_Center)
-		.AutoWidth()
+		+ SVerticalBox::Slot()
+		.FillHeight(1.0)
 		[
-			//blank space between name and player icon
-			SNew(SBox)
-			.WidthOverride(64.0f)
-			.HeightOverride(64.0f)
-			.MaxDesiredWidth(64.0f)
-			.MaxDesiredHeight(64.0f)
-			[
-				SNew(SImage)
-				.Image(SUTStyle::Get().GetBrush("UT.NoStyle"))
-			]
+			BuildRankInfo()
 		]
-		+ SHorizontalBox::Slot()
-		.HAlign(HAlign_Left)
-		.VAlign(VAlign_Center)
-		.AutoWidth()
+		+SVerticalBox::Slot()
+		.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+		.AutoHeight()
 		[
-			SNew(SBox)
-			.WidthOverride(64.0f)
-			.HeightOverride(64.0f)
-			.MaxDesiredWidth(64.0f)
-			.MaxDesiredHeight(64.0f)
-			[
-				SNew(SImage)
-				.Image((Avatar != NAME_None) ? SUTStyle::Get().GetBrush(Avatar) : SUTStyle::Get().GetBrush("UT.NoStyle"))
-			]
+			BuildStatsInfo()
 		]
-	]
-	+ SVerticalBox::Slot()
-	.Padding(10.0f, 20.0f, 10.0f, 5.0f)
-	.AutoHeight()
-	[
-		SNew(SHorizontalBox)
-		+ SHorizontalBox::Slot()
-		.HAlign(HAlign_Left)
-		.VAlign(VAlign_Center)
-		.AutoWidth()
-		[
-			SNew(SBox)
-			.WidthOverride(36.0f)
-			.HeightOverride(26.0f)
-			.MaxDesiredWidth(36.0f)
-			.MaxDesiredHeight(26.0f)
-			[
-				SNew(SImage)
-				.Image(SUWindowsStyle::Get().GetBrush(Flag ? Flag->GetSlatePropertyName() : NAME_None))
-			]
-		]
-		+ SHorizontalBox::Slot()
-		.Padding(10.0f, 0.0f, 0.0f, 0.0f)
-		.VAlign(VAlign_Center)
-		.HAlign(HAlign_Left)
-		.AutoWidth()
-		[
-			SNew(STextBlock)
-			.Text(FText::FromString(Flag ? Flag->GetFriendlyName() : TEXT("")))
-			.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
-		]
-	]
-	+ SVerticalBox::Slot()
-	.FillHeight(1.0)
-	[
-		BuildRankInfo()
-	]
-	+SVerticalBox::Slot()
-	.Padding(10.0f, 20.0f, 10.0f, 5.0f)
-	.AutoHeight()
-	[
-		BuildStatsInfo()
-	]
 	
-	+ SVerticalBox::Slot()
-	.Padding(10.0f, 20.0f, 10.0f, 5.0f)
-	.AutoHeight()
-	[
-		BuildSeasonInfo()
-	]
-	);
+		+ SVerticalBox::Slot()
+		.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+		.AutoHeight()
+		[
+			BuildSeasonInfo()
+		]
+		);
+	
+	}
+	else
+	{
+		// Add code here to grab a different URL based on the epicapp id.  
+		FString PlayerInfoURL = TEXT("https://epicgames-gamedev.ol.epicgames.net/unrealtournament/playerCard?playerId=");
+		
+		PlayerInfoURL += UniqueId.ToString();
+												   		
+		TabWidget->AddTab(NSLOCTEXT("AUTPlayerState", "PlayerInfo", "Player Info"),
+			SAssignNew(PlayerCardBox,SVerticalBox)
+			+SVerticalBox::Slot()
+			.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+			.AutoHeight().HAlign(HAlign_Fill)
+			[
+				SNew(STextBlock)
+				.Text(FText(NSLOCTEXT("AUTPlayerState", "LoadingPlayerCardMsg", "Requesting player card...")))
+				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+			]
+			+SVerticalBox::Slot()
+			.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+			.AutoHeight().HAlign(HAlign_Fill)
+			[
+				SNew(SThrobber)
+			]
+		);
+
+		UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController());
+		if (UTLocalPlayer != nullptr)
+		{
+			SAssignNew(PlayerCardWebBrowser, SUTWebBrowserPanel, UTLocalPlayer)
+			.InitialURL(PlayerInfoURL)
+			.ShowControls(false)
+			.OnLoadCompleted(FSimpleDelegate::CreateUObject(this, &AUTPlayerState::OnPlayerCardLoadCompleted))
+			.OnLoadError(FSimpleDelegate::CreateUObject(this, &AUTPlayerState::OnPlayerCardLoadError));
+		}
+	}
 
 	// Would be great if this worked on remote players
 	if (LP)
@@ -3027,6 +3078,47 @@ void AUTPlayerState::BuildPlayerInfo(TSharedPtr<SUTTabWidget> TabWidget, TArray<
 		]);
 	}
 }
+
+void AUTPlayerState::OnPlayerCardLoadCompleted()
+{
+	if (PlayerCardBox.IsValid() && PlayerCardWebBrowser.IsValid())
+	{
+		PlayerCardBox->ClearChildren();
+		if (!bPlayerCardLoadError)
+		{
+			PlayerCardBox->AddSlot()
+			.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+			.AutoHeight().HAlign(HAlign_Fill)
+			[
+				SNew(SBox).HeightOverride(890)
+				[
+					PlayerCardWebBrowser.ToSharedRef()
+				]
+			];
+		}
+		else
+		{
+			PlayerCardBox->AddSlot()
+			.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+			.AutoHeight().HAlign(HAlign_Fill)
+			[
+				SNew(STextBlock)
+				.Text(FText(NSLOCTEXT("AUTPlayerState", "LoadingPlayerCardLoadError", "Could not load player information from the NEG player database.  Please try again later.")))
+				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+			];
+		}
+	}
+
+	bPlayerCardLoadError = false;
+
+}
+
+void AUTPlayerState::OnPlayerCardLoadError()
+{
+	// Crappy, but CeF make the error delegate and then the completed delegate calls.  So we flag it here.
+	bPlayerCardLoadError = true;
+}
+
 
 TSharedRef<SWidget> AUTPlayerState::BuildSeasonInfo()
 {

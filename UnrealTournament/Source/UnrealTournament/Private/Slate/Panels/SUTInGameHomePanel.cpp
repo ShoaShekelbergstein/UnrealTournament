@@ -219,16 +219,33 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 			}
 		}
 
-		// Add the show player card
-		MenuBox->AddSlot()
-		.AutoHeight()
-		[
-			SNew(SUTButton)
-			.OnClicked(this, &SUTInGameHomePanel::ContextCommand, ECONTEXT_COMMAND_ShowPlayerCard, SelectedPlayer)
-			.ButtonStyle(SUTStyle::Get(),"UT.ContextMenu.Item")
-			.Text(NSLOCTEXT("SUTInGameHomePanel","ShowPlayerCard","Show Player Card"))
-			.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small")
-		];
+		if (!SelectedPlayer->bIsABot)
+		{
+			// Add the show player card
+			MenuBox->AddSlot()
+			.AutoHeight()
+			[
+				SNew(SUTButton)
+				.OnClicked(this, &SUTInGameHomePanel::ContextCommand, ECONTEXT_COMMAND_ShowPlayerCard, SelectedPlayer)
+				.ButtonStyle(SUTStyle::Get(),"UT.ContextMenu.Item")
+				.Text(NSLOCTEXT("SUTInGameHomePanel","ShowPlayerCard","Show Player Card"))
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small")
+			];
+		}
+		else
+		{
+			// Add the show player card
+			MenuBox->AddSlot()
+			.AutoHeight()
+			[
+				SNew(SUTButton)
+				.OnClicked(this, &SUTInGameHomePanel::ContextCommand, 9000, SelectedPlayer)
+				.ButtonStyle(SUTStyle::Get(),"UT.ContextMenu.Item")
+				.Text(NSLOCTEXT("SUTInGameHomePanel","ShowPlayerCardBot","AI Player Cards Offline"))
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small")
+			];
+		
+		}
 
 		// If we are in a netgame, show online options.
 		if ( PlayerOwner->GetWorld()->GetNetMode() == ENetMode::NM_Client)

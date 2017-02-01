@@ -96,6 +96,7 @@ struct FCoolFactorHistoricalEvent
 
 class AUTReplicatedMapInfo;
 class AUTRconAdminInfo;
+class SUTWebBrowserPanel;
 
 UCLASS()
 class UNREALTOURNAMENT_API AUTPlayerState : public APlayerState, public IUTTeamInterface
@@ -1261,6 +1262,19 @@ protected:
 	UPROPERTY(replicated)
 	bool bPlayerIsIdle;
 
+
+#if !UE_SERVER
+	TSharedPtr<SUTWebBrowserPanel> PlayerCardWebBrowser;
+	TSharedPtr<SVerticalBox> PlayerCardBox;
+#endif
+	
+	UFUNCTION()
+	void OnPlayerCardLoadCompleted();
+
+	UFUNCTION()
+	void OnPlayerCardLoadError();
+
+	bool bPlayerCardLoadError;
 
 };
 

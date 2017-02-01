@@ -740,14 +740,21 @@ TSharedRef<SWidget> SUTMenuBase::BuildOnlinePresence()
 			.AutoWidth()
 			.Padding(10.0f, 0.0f, 20.0f, 0.0f)
 			[
-				SAssignNew(PlayerButton,SUTButton)
-				.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
-				.ContentPadding(FMargin(25.0,0.0,5.0,5.0))
-				.ToolTipText(NSLOCTEXT("ToolTips","TPMyPlayerCard","Show this player's player card."))
-				.OnClicked(this, &SUTMenuBase::OnShowPlayerCard)
-				.IsEnabled(this, &SUTMenuBase::IsPlayerCardDataLoaded)
+
+				SNew(SBox)
+				.HeightOverride(56)
 				[
-					BuildPlayerInfo()
+					SAssignNew(PlayerButton, SUTComboButton)
+					.HasDownArrow(false)
+					.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
+					.ToolTipText(NSLOCTEXT("ToolTips","TPMyPlayerCard","Show this player's player card."))
+					.ContentPadding(FMargin(35.0,0.0,35.0,0.0))
+					.ContentHAlign(HAlign_Left)
+					.IsEnabled(this, &SUTMenuBase::IsPlayerCardDataLoaded)
+					.ButtonContent()
+					[
+						BuildPlayerInfo()
+					]
 				]
 			]
 
@@ -792,6 +799,12 @@ TSharedRef<SWidget> SUTMenuBase::BuildOnlinePresence()
 					]
 				]
 			];
+
+		if (PlayerButton.IsValid())
+		{
+			PlayerButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_ShowPlayerCard", "Show Player Card"), FOnClicked::CreateSP(this, &SUTMenuBase::OnShowPlayerCard));
+			PlayerButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_Logout", "Log Out"), FOnClicked::CreateSP(this, &SUTMenuBase::OnLogout),true);
+		}
 
 		return Box.ToSharedRef();
 	
@@ -933,6 +946,22 @@ FReply SUTMenuBase::OpenHUDSettings()
 	PlayerOwner->ShowHUDSettings();
 	return FReply::Handled();
 }
+
+FReply SUTMenuBase::OnLogout()
+{
+	PlayerOwner->ShowMessage(NSLOCTEXT("SUTPlayerInfoDialog", "SignOuttConfirmationTitle", "Sign Out?"), NSLOCTEXT("SUTPlayerInfoDialog", "SignOuttConfirmationMessage", "You are about to sign out of this account.  Doing so will return you to the main menu.  Are you sure?"), UTDIALOG_BUTTON_YES + UTDIALOG_BUTTON_NO, FDialogResultDelegate::CreateSP(this, &SUTMenuBase::SignOutConfirmationResult));
+	return FReply::Handled();
+}
+
+void SUTMenuBase::SignOutConfirmationResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID)
+{
+	if (ButtonID == UTDIALOG_BUTTON_YES)
+	{
+		PlayerOwner->Logout();
+	}
+}
+
+
 
 FReply SUTMenuBase::OnShowPlayerCard()
 {

@@ -141,6 +141,12 @@ public:
 
 	virtual void SetIsOpen( bool InIsOpen, const bool bFocusMenu = true, const int32 FocusUserIndex = 0 ) override;
 
+	FSlateColor GetLabelColor() const
+	{
+		return MyButton.IsValid() ? MyButton->GetLabelColor() : FSlateColor::UseForeground();
+	}
+
+
 protected:
 
 	EHorizontalAlignment ContentHAlign;
