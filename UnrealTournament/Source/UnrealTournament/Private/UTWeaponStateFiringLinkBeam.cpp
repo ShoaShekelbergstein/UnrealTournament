@@ -74,11 +74,23 @@ void UUTWeaponStateFiringLinkBeam::EndFiringSequence(uint8 FireModeNum)
 		else
 		{
 			bPendingEndFire = true;
+			bPendingStartFire = false;
 		}
 	}
 }
 
-
+void UUTWeaponStateFiringLinkBeam::PendingFireStarted()
+{
+	AUTWeap_LinkGun* LinkGun = Cast<AUTWeap_LinkGun>(GetOuterAUTWeapon());
+	if (LinkGun && LinkGun->IsLinkPulsing())
+	{
+		bPendingStartFire = true;
+	}
+	else
+	{
+		bPendingEndFire = false;
+	}
+}
 void UUTWeaponStateFiringLinkBeam::RefireCheckTimer()
 {
 	AUTWeap_LinkGun* LinkGun = Cast<AUTWeap_LinkGun>(GetOuterAUTWeapon());
@@ -90,6 +102,7 @@ void UUTWeaponStateFiringLinkBeam::RefireCheckTimer()
 
 void UUTWeaponStateFiringLinkBeam::EndState()
 {
+	bPendingStartFire = false;
 	bPendingEndFire = false;
     Super::EndState();
 }
@@ -113,9 +126,17 @@ void UUTWeaponStateFiringLinkBeam::Tick(float DeltaTime)
 			LinkGun->StartLinkPull();
 			return;
 		}
-		EndFiringSequence(1);
-		return;
+		if (bPendingStartFire)
+		{
+			bPendingEndFire = false;
+		}
+		else
+		{
+			EndFiringSequence(1);
+			return;
+		}
 	}
+	bPendingStartFire = false;
 	HandleDelayedShot();
 	
     if (LinkGun && !LinkGun->FireShotOverride() && LinkGun->InstantHitInfo.IsValidIndex(LinkGun->GetCurrentFireMode()))

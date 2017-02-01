@@ -8,6 +8,7 @@
 #include "UTSquadAI.h"
 #include "UTWeaponStateFiring.h"
 #include "Animation/AnimInstance.h"
+#include "UTRewardMessage.h"
 
 AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 : Super(OI)
@@ -34,11 +35,11 @@ AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 
 	HUDIcon = MakeCanvasIcon(HUDIcon.Texture, 453.0f, 467.0, 147.0f, 41.0f);
 
-	BeamPulseInterval = 0.4f;
+	BeamPulseInterval = 0.3f;
 	BeamPulseMomentum = -220000.0f;
 	BeamPulseAmmoCost = 4;
 	PullWarmupTime = 0.15f;
-	LinkPullDamage = 0;
+	LinkPullDamage = 25;
 	ReadyToPullColor = FLinearColor::White;
 
 	bRecommendSuppressiveFire = true;
@@ -338,6 +339,15 @@ void AUTWeap_LinkGun::ServerSetPulseTarget_Implementation(AActor* InTarget)
 		UTOwner->SetFlashExtra(UTOwner->FlashExtra + 1, CurrentFireMode);
 		if (Role == ROLE_Authority)
 		{
+			AUTCharacter* PulledChar = Cast<AUTCharacter>(PulseTarget);
+			if (PulledChar && !PulledChar->IsDead() && BeamPulseDamageType && Cast<AUTPlayerController>(UTOwner->GetController()))
+			{
+				TSubclassOf<UUTDamageType> UTDamage(*BeamPulseDamageType);
+				if (UTDamage && UTDamage.GetDefaultObject()->RewardAnnouncementClass)
+				{
+					((AUTPlayerController*)(UTOwner->GetController()))->SendPersonalMessage(UTDamage.GetDefaultObject()->RewardAnnouncementClass, 0, ((AUTPlayerController*)(UTOwner->GetController()))->UTPlayerState, nullptr);
+				}
+			}
 			AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
 			if (!GameMode || GameMode->bAmmoIsLimited || (Ammo > 11))
 			{
