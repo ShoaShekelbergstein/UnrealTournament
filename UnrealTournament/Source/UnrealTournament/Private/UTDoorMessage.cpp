@@ -44,8 +44,8 @@ FName UUTDoorMessage::GetAnnouncementName_Implementation(int32 Switch, const UOb
 {
 	switch (Switch)
 	{
-	case 0: return TEXT("DoorClosing"); break;
-	case 1: return TEXT("DoorBreached"); break;
+	case 0: return TEXT("RZE_DoorClosing"); break;
+	case 1: return TEXT("RZE_DoorOpening"); break;
 	}
 	return NAME_None;
 }
