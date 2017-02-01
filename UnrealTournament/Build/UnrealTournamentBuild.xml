@@ -551,7 +551,7 @@
 	<Property Name="Full Build Targets" Value="$(Full Build Targets)Compile UT Test Mac;" If="$(IncludeTestExes) And $(WithMacClient)"/>
 	
 	<!-- Linux Full Build Targets -->
-	<Property Name="Full Build Targets" Value="Compile UT Test Linux;" If="$(IncludeTestExes) And ($(WithLinuxClient) Or $(WithLinuxServer))"/>
+	<Property Name="Full Build Targets" Value="$(Full Build Targets)Compile UT Test Linux;" If="$(IncludeTestExes) And ($(WithLinuxClient) Or $(WithLinuxServer))"/>
 
 	<Aggregate Name="Minimal Build" Requires="$(Minimal Build Targets)"/>
 	<Aggregate Name="Standard Build" Requires="$(Full Build Targets)"/>
