@@ -35,7 +35,7 @@ UUTCTFRewardMessage::UUTCTFRewardMessage(const class FObjectInitializer& ObjectI
 
 bool UUTCTFRewardMessage::InterruptAnnouncement(const FAnnouncementInfo AnnouncementInfo, const FAnnouncementInfo OtherAnnouncementInfo) const
 {
-	if (AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass)
+	if ((AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass) && (OtherAnnouncementInfo.Switch < 9))
 	{
 		return ((AnnouncementInfo.Switch == 3) || (AnnouncementInfo.Switch == 4) || (AnnouncementInfo.Switch >= 100));
 	}
