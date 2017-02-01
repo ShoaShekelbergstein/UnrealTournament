@@ -766,6 +766,11 @@ void AUTCarriedObject::RemoveInvalidPastPositions()
 			PastPositions.RemoveAt(PastPositions.Num() - 1);
 			bRemovingPositions = true;
 		}
+		else if (PastPositions[PastPositions.Num() - 1].Location.IsZero())
+		{
+			PastPositions.RemoveAt(PastPositions.Num() - 1);
+			bRemovingPositions = true;
+		}
 	}
 }
 
