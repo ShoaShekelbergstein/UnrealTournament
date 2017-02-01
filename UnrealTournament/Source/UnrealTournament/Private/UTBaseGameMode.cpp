@@ -133,6 +133,12 @@ void AUTBaseGameMode::InitGameState()
 		GS->ServerInstanceGUID = ServerInstanceGUID;
 		GS->ServerName = ServerNameOverride;
 	}
+
+	// If someone decides to set the server name black in the ini, stop them
+	if ( GS->ServerName.IsEmpty() )
+	{
+		GS->ServerName = TEXT("UT Server");
+	}
 }
 
 FName AUTBaseGameMode::GetNextChatDestination(AUTPlayerState* PlayerState, FName CurrentChatDestination)
