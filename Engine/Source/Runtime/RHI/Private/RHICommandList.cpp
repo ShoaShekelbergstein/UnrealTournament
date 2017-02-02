@@ -1860,8 +1860,8 @@ void* FDynamicRHI::LockVertexBuffer_RenderThread(class FRHICommandListImmediate&
 	if (!bBuffer || LockMode != RLM_WriteOnly || RHICmdList.Bypass() || !GRHIThread)
 	{
 		QUICK_SCOPE_CYCLE_COUNTER(STAT_RHIMETHOD_LockVertexBuffer_Flush);
-		// One use buffers don't need to flush
-		if (!(VertexBuffer->GetUsage() & BUF_Volatile))
+		// One use buffers don't need to flush when there's no GHRIThread
+		if (GRHIThread || !(VertexBuffer->GetUsage() & BUF_Volatile))
 		{
 			RHICmdList.ImmediateFlush(EImmediateFlushType::FlushRHIThread);
 		}
@@ -1886,8 +1886,8 @@ void FDynamicRHI::UnlockVertexBuffer_RenderThread(class FRHICommandListImmediate
 	if (!bBuffer || Params.LockMode != RLM_WriteOnly || RHICmdList.Bypass() || !GRHIThread)
 	{
 		QUICK_SCOPE_CYCLE_COUNTER(STAT_RHIMETHOD_UnlockVertexBuffer_Flush);
-		// One use buffers don't need to flush
-		if (!(VertexBuffer->GetUsage() & BUF_Volatile))
+		// One use buffers don't need to flush when there's no GHRIThread
+		if (GRHIThread || !(VertexBuffer->GetUsage() & BUF_Volatile))
 		{
 			RHICmdList.ImmediateFlush(EImmediateFlushType::FlushRHIThread);
 		}
