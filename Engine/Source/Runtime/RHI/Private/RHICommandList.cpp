@@ -1859,10 +1859,10 @@ void* FDynamicRHI::LockVertexBuffer_RenderThread(class FRHICommandListImmediate&
 	void* Result;
 	if (!bBuffer || LockMode != RLM_WriteOnly || RHICmdList.Bypass() || !GRHIThread)
 	{
-		QUICK_SCOPE_CYCLE_COUNTER(STAT_RHIMETHOD_LockVertexBuffer_Flush);
 		// One use buffers don't need to flush when there's no GHRIThread
 		if (GRHIThread || !(VertexBuffer->GetUsage() & BUF_Volatile))
 		{
+			QUICK_SCOPE_CYCLE_COUNTER(STAT_RHIMETHOD_LockVertexBuffer_Flush);
 			RHICmdList.ImmediateFlush(EImmediateFlushType::FlushRHIThread);
 		}
 		Result = GDynamicRHI->RHILockVertexBuffer(VertexBuffer, Offset, SizeRHI, LockMode);
@@ -1885,10 +1885,10 @@ void FDynamicRHI::UnlockVertexBuffer_RenderThread(class FRHICommandListImmediate
 	FLockTracker::FLockParams Params = GLockTracker.Unlock(VertexBuffer);
 	if (!bBuffer || Params.LockMode != RLM_WriteOnly || RHICmdList.Bypass() || !GRHIThread)
 	{
-		QUICK_SCOPE_CYCLE_COUNTER(STAT_RHIMETHOD_UnlockVertexBuffer_Flush);
 		// One use buffers don't need to flush when there's no GHRIThread
 		if (GRHIThread || !(VertexBuffer->GetUsage() & BUF_Volatile))
 		{
+			QUICK_SCOPE_CYCLE_COUNTER(STAT_RHIMETHOD_UnlockVertexBuffer_Flush);
 			RHICmdList.ImmediateFlush(EImmediateFlushType::FlushRHIThread);
 		}
 		GDynamicRHI->RHIUnlockVertexBuffer(VertexBuffer);
@@ -1916,8 +1916,11 @@ void* FDynamicRHI::LockIndexBuffer_RenderThread(class FRHICommandListImmediate& 
 	void* Result;
 	if (!bBuffer || LockMode != RLM_WriteOnly || RHICmdList.Bypass() || !GRHIThread)
 	{
-		QUICK_SCOPE_CYCLE_COUNTER(STAT_RHIMETHOD_LockIndexBuffer_Flush);
-		RHICmdList.ImmediateFlush(EImmediateFlushType::FlushRHIThread); 
+		if (GRHIThread || !(IndexBuffer->GetUsage() & BUF_Volatile))
+		{
+			QUICK_SCOPE_CYCLE_COUNTER(STAT_RHIMETHOD_LockIndexBuffer_Flush);
+			RHICmdList.ImmediateFlush(EImmediateFlushType::FlushRHIThread);
+		}
 		Result = GDynamicRHI->RHILockIndexBuffer(IndexBuffer, Offset, SizeRHI, LockMode);
 	}
 	else
@@ -1938,8 +1941,11 @@ void FDynamicRHI::UnlockIndexBuffer_RenderThread(class FRHICommandListImmediate&
 	FLockTracker::FLockParams Params = GLockTracker.Unlock(IndexBuffer);
 	if (!bBuffer || Params.LockMode != RLM_WriteOnly || RHICmdList.Bypass() || !GRHIThread)
 	{
-		QUICK_SCOPE_CYCLE_COUNTER(STAT_RHIMETHOD_UnlockIndexBuffer_Flush);
-		RHICmdList.ImmediateFlush(EImmediateFlushType::FlushRHIThread); 
+		if (GRHIThread || !(IndexBuffer->GetUsage() & BUF_Volatile))
+		{
+			QUICK_SCOPE_CYCLE_COUNTER(STAT_RHIMETHOD_UnlockIndexBuffer_Flush);
+			RHICmdList.ImmediateFlush(EImmediateFlushType::FlushRHIThread);
+		}
 		GDynamicRHI->RHIUnlockIndexBuffer(IndexBuffer);
 		GLockTracker.TotalMemoryOutstanding = 0;
 	}	
