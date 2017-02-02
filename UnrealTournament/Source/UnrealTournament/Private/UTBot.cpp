@@ -2075,11 +2075,50 @@ void AUTBot::NotifyJumpApex()
 		else if (Enemy != NULL && IsEnemyVisible(Enemy) && ((Skill >= 3.0f && Personality.MovementAbility >= 0.0f && FMath::FRand() > 0.04f * Skill) || FMath::FRand() < Personality.Jumpiness))
 		{
 			// make sure won't bump head on ceiling
+			const FVector MyLoc = UTChar->GetActorLocation();
 			float MultiJumpZ = UTChar->UTCharacterMovement->bIsDodging ? UTChar->UTCharacterMovement->DodgeJumpImpulse : UTChar->UTCharacterMovement->MultiJumpImpulse;
-			if (!GetWorld()->LineTraceTestByChannel(UTChar->GetActorLocation(), UTChar->GetActorLocation() + FVector(0.0f, 0.0f, MultiJumpZ * 0.5f), ECC_Pawn, FCollisionQueryParams(FName(TEXT("Jump")), false, UTChar)))
+			const FVector JumpTraceEnd = MyLoc + FVector(0.0f, 0.0f, MultiJumpZ * 0.5f);
+			if (!GetWorld()->LineTraceTestByChannel(MyLoc, JumpTraceEnd, ECC_Pawn, FCollisionQueryParams(FName(TEXT("Jump")), false, UTChar)))
 			{
 				UTChar->GetCharacterMovement()->DoJump(false);
-				// TODO: pick more appropriate landing spot for air control
+				// pick more appropriate landing spot for air control
+				FVector NewLandingSpot = FVector::ZeroVector;
+				float BestDistSq = FLT_MAX;
+				if (MoveTarget.IsValid() && !MoveTarget.Actor.IsValid())
+				{
+					TArray<FVector> TestSpots;
+					TestSpots.SetNumUninitialized(RouteCache.Num() + MoveTargetPoints.Num());
+					for (const FRouteCacheItem& TestItem : RouteCache)
+					{
+						TestSpots.Add(TestItem.GetLocation(UTChar));
+					}
+					for (const FComponentBasedPosition& TestPoint : MoveTargetPoints)
+					{
+						if (TestPoint.Base == nullptr)
+						{
+							TestSpots.Add(TestPoint.Get());
+						}
+					}
+					for (FVector GoalLoc : TestSpots)
+					{
+						float DistSq = (GoalLoc - MyLoc).SizeSquared();
+						if (DistSq < BestDistSq)
+						{
+							FVector JumpVel;
+							if ( FindBestJumpVelocityXY(JumpVel, MyLoc, GoalLoc, UTChar->GetCharacterMovement()->Velocity.Z, UTChar->GetCharacterMovement()->GetGravityZ(), UTChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()) &&
+								!GetWorld()->LineTraceTestByChannel(JumpTraceEnd, GoalLoc, ECC_Pawn, FCollisionQueryParams(FName(TEXT("Jump")), false, UTChar)) )
+							{
+								NewLandingSpot = GoalLoc;
+								BestDistSq = DistSq;
+							}
+						}
+					}
+					if (!NewLandingSpot.IsZero())
+					{
+						SetMoveTargetDirect(FRouteCacheItem(NewLandingSpot));
+						MoveTimer = -1.0f;
+					}
+				}
 			}
 		}
 	}
