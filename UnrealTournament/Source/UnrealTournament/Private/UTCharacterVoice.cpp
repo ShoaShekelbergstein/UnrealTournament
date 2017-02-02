@@ -307,13 +307,19 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 				}
 				return BaseUnderAttackMessages[FMath::RandRange(0, BaseUnderAttackMessages.Num() - 1)];
 			}
-			else if (Switch == GetStatusIndex(StatusMessage::Incoming))
+			else if (Switch /100 == GetStatusIndex(StatusMessage::Incoming) / 100)
 			{
 				if (IncomingMessages.Num() == 0)
 				{
 					return EmptySpeech;
 				}
-				return IncomingMessages[FMath::RandRange(0, IncomingMessages.Num() - 1)];
+				// incoming messages use switch to specify offset in array of possibilities ordered (center, high, low, left, right)
+				int32 ResolvedSwitch = Switch - GetStatusIndex(StatusMessage::Incoming);
+				if (ResolvedSwitch >= IncomingMessages.Num())
+				{
+					return IncomingMessages[0];
+				}
+				return IncomingMessages[ResolvedSwitch];
 			}
 			else if (Switch / 100 == GetStatusIndex(GameVolumeSpeechType::GV_Bridge) / 100)
 			{

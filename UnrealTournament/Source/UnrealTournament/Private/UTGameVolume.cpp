@@ -152,7 +152,7 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 				{
 					if ((GetWorld()->GetTimeSeconds() - GS->LastEnteringEnemyBaseTime > 2.f) && Cast<AUTPlayerState>(P->PlayerState))
 					{
-						((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(StatusMessage::ImGoingIn);
+						((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(StatusMessage::ImGoingIn);  
 						if (VoiceLinesSet != NAME_None)
 						{
 							((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(VoiceLinesSet, 1);
@@ -178,7 +178,38 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 						}
 						if (PS)
 						{
-							PS->AnnounceStatus(StatusMessage::Incoming);
+							// determine entry direction
+							int32 DirectionSwitch = 5;
+							AUTGameObjective* Objective = GS->GetFlagBase(GS->bRedToCap ? 1 : 0);
+							if (Objective)
+							{
+								// make these properties editable FIXMESTEVE
+								FVector Dir = P->GetActorLocation() - Objective->GetActorLocation();
+								FVector Dir2D = Dir;
+								Dir2D.Z = 0.f;
+								Dir2D = Dir2D.GetSafeNormal();
+								FVector Facing = Objective->GetActorRotation().Vector();
+								if (FMath::Abs(Facing | Dir2D) > 0.95f)
+								{
+									DirectionSwitch = 0;
+									// center, high, or low
+									if (Dir.Z > 300.f)
+									{
+										DirectionSwitch = 1;
+									}
+									else if (Dir.Z < -300.f)
+									{
+										DirectionSwitch = 2;
+									}
+								}
+								else
+								{
+									// left or right
+									FVector Left = Facing ^ FVector(0.f, 0.f, 1.f);
+									DirectionSwitch = ((Left | Dir) > 0.f) ? 3 : 4;
+								}
+							}
+							PS->AnnounceStatus(StatusMessage::Incoming, DirectionSwitch);
 							if (VoiceLinesSet != NAME_None)
 							{
 								PS->AnnounceStatus(VoiceLinesSet, 0);
