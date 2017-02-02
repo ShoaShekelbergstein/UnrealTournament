@@ -549,7 +549,7 @@ void AUTRallyPoint::Tick(float DeltaTime)
 									{
 										PC->UTPlayerState->bRallyActivated = true;
 										PC->UTPlayerState->ForceNetUpdate();
-										if (PC->UTPlayerState->bCanRally)
+										if (!PC->GetUTCharacter() || PC->GetUTCharacter()->bCanRally || PC->GetUTCharacter()->GetCarriedObject())
 										{
 											PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), PC->UTPlayerState->CarriedObject ? 22 : 30, NearbyFC->PlayerState);
 										}
