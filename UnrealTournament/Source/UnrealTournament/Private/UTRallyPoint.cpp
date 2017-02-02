@@ -191,7 +191,7 @@ void AUTRallyPoint::WarnNoFlag(AUTCharacter* TouchingCharacter)
 {
 	if (TouchingCharacter && !TouchingCharacter->IsPendingKillPending() && Cast<AUTPlayerController>(TouchingCharacter->GetController()))
 	{
-		Cast<AUTPlayerController>(TouchingCharacter->GetController())->ClientReceiveLocalizedMessage(UUTFlagRunGameMessage::StaticClass(), 30);
+		Cast<AUTPlayerController>(TouchingCharacter->GetController())->ClientReceiveLocalizedMessage(UUTFlagRunGameMessage::StaticClass(), 30, TouchingCharacter->PlayerState);
 	}
 }
 

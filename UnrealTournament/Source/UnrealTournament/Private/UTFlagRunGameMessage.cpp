@@ -2,12 +2,15 @@
 #include "UnrealTournament.h"
 #include "UTCTFGameMessage.h"
 #include "UTFlagRunGameMessage.h"
+#include "UTFlagRunGameState.h"
+#include "UTTeamInfo.h"
 
 UUTFlagRunGameMessage::UUTFlagRunGameMessage(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	KilledMessagePostfix = NSLOCTEXT("CTFGameMessage", "KilledMessage", " killed the flag carrier!");
 	NoPowerRallyMessage = NSLOCTEXT("FlagRunGameMessage", "NoPowerRally", "You need the flag to power a rally point.");
+	NoDefenderRallyMessage = NSLOCTEXT("FlagRunGameMessage", "NoDefenderRally", "Only attackers can power a rally point.");
 }
 
 FName UUTFlagRunGameMessage::GetTeamAnnouncement(int32 Switch, uint8 TeamNum, const UObject* OptionalObject, const class APlayerState* RelatedPlayerState_1, const class APlayerState* RelatedPlayerState_2) const
@@ -41,7 +44,9 @@ FText UUTFlagRunGameMessage::GetText(int32 Switch, bool bTargetsPlayerState1, AP
 	}
 	if (Switch == 30)
 	{
-		return NoPowerRallyMessage;
+		AUTFlagRunGameState* GS = RelatedPlayerState_1 ? RelatedPlayerState_1->GetWorld()->GetGameState<AUTFlagRunGameState>() : nullptr;
+		AUTTeamInfo* Team = Cast<AUTPlayerState>(RelatedPlayerState_1) ? Cast<AUTPlayerState>(RelatedPlayerState_1)->Team : nullptr;
+		return (GS && Team &&  GS->IsTeamOnDefense(Team->TeamIndex)) ? NoDefenderRallyMessage : NoPowerRallyMessage;
 	}
 	return Super::GetText(Switch, bTargetsPlayerState1, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
 }
