@@ -3079,47 +3079,6 @@ void AUTPlayerState::BuildPlayerInfo(TSharedPtr<SUTTabWidget> TabWidget, TArray<
 	}
 }
 
-void AUTPlayerState::OnPlayerCardLoadCompleted()
-{
-	if (PlayerCardBox.IsValid() && PlayerCardWebBrowser.IsValid())
-	{
-		PlayerCardBox->ClearChildren();
-		if (!bPlayerCardLoadError)
-		{
-			PlayerCardBox->AddSlot()
-			.Padding(10.0f, 20.0f, 10.0f, 5.0f)
-			.AutoHeight().HAlign(HAlign_Fill)
-			[
-				SNew(SBox).HeightOverride(890)
-				[
-					PlayerCardWebBrowser.ToSharedRef()
-				]
-			];
-		}
-		else
-		{
-			PlayerCardBox->AddSlot()
-			.Padding(10.0f, 20.0f, 10.0f, 5.0f)
-			.AutoHeight().HAlign(HAlign_Fill)
-			[
-				SNew(STextBlock)
-				.Text(FText(NSLOCTEXT("AUTPlayerState", "LoadingPlayerCardLoadError", "Could not load player information from the NEG player database.  Please try again later.")))
-				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
-			];
-		}
-	}
-
-	bPlayerCardLoadError = false;
-
-}
-
-void AUTPlayerState::OnPlayerCardLoadError()
-{
-	// Crappy, but CeF make the error delegate and then the completed delegate calls.  So we flag it here.
-	bPlayerCardLoadError = true;
-}
-
-
 TSharedRef<SWidget> AUTPlayerState::BuildSeasonInfo()
 {
 	TSharedRef<SVerticalBox> VBox = SNew(SVerticalBox);
@@ -3228,6 +3187,48 @@ void AUTPlayerState::EpicIDClicked()
 	FPlatformMisc::ClipboardCopy(*StatsID);
 }
 #endif
+
+
+void AUTPlayerState::OnPlayerCardLoadCompleted()
+{
+#if !UE_SERVER
+	if (PlayerCardBox.IsValid() && PlayerCardWebBrowser.IsValid())
+	{
+		PlayerCardBox->ClearChildren();
+		if (!bPlayerCardLoadError)
+		{
+			PlayerCardBox->AddSlot()
+				.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+				.AutoHeight().HAlign(HAlign_Fill)
+				[
+					SNew(SBox).HeightOverride(890)
+					[
+						PlayerCardWebBrowser.ToSharedRef()
+					]
+				];
+		}
+		else
+		{
+			PlayerCardBox->AddSlot()
+				.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+				.AutoHeight().HAlign(HAlign_Fill)
+				[
+					SNew(STextBlock)
+					.Text(FText(NSLOCTEXT("AUTPlayerState", "LoadingPlayerCardLoadError", "Could not load player information from the NEG player database.  Please try again later.")))
+				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+				];
+		}
+	}
+
+	bPlayerCardLoadError = false;
+#endif
+}
+
+void AUTPlayerState::OnPlayerCardLoadError()
+{
+	// Crappy, but CeF make the error delegate and then the completed delegate calls.  So we flag it here.
+	bPlayerCardLoadError = true;
+}
 
 void AUTPlayerState::UpdateOldName()
 {
