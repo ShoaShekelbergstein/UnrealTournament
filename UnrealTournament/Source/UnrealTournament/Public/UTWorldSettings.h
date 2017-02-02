@@ -163,6 +163,28 @@ public:
 	virtual void PostInitProperties() override;
 	virtual void PreSave(const class ITargetPlatform* TargetPlatform) override;
 
+	struct FDestroyedActorInfo
+	{
+		TWeakObjectPtr<ULevel> Level;
+		FName ActorName;
+		FDestroyedActorInfo(ULevel* InLevel, FName InName)
+			: Level(InLevel), ActorName(InName)
+		{}
+	};
+protected:
+	/** level placed Actors that were destroyed
+	 * this is used for client-side replays to mirror the destruction of these Actors
+	 */
+	TArray<FDestroyedActorInfo> DestroyedLevelActors;
+
+	UFUNCTION()
+	void LevelActorDestroyed(AActor* TheActor, EEndPlayReason::Type EndPlayReason);
+public:
+	inline const TArray<FDestroyedActorInfo>& GetDestroyedLevelActors() const
+	{
+		return DestroyedLevelActors;
+	}
+
 	/** overridden to set bBeginPlay to true BEFORE calling BeginPlay() events, which maintains the historical behavior when an Actor spawns another from within BeginPlay(),
 	  * specifically that said second Actor's BeginPlay() is called immediately as part of SpawnActor()
 	  */

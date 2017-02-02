@@ -13,6 +13,8 @@
 #include "UnrealTournamentFullScreenMovie.h"
 #include "OnlineSubsystemUtils.h"
 #include "UTLevelSummary.h"
+#include "UTWorldSettings.h"
+#include "Classes/Engine/ActorChannel.h"
 
 #if !UE_SERVER
 #include "SUTStyle.h"
@@ -321,6 +323,36 @@ void UUTGameInstance::StartRecordingReplay(const FString& Name, const FString& F
 	else
 	{
 		//UE_LOG(UT, VeryVerbose, TEXT("Num Network Actors: %i"), CurrentWorld->DemoNetDriver->GetNetworkObjectList().GetObjects().Num());
+		
+		// on client, propagate level actors destroyed prior to replay being initialized as this isn't normally tracked clientside
+		if (CurrentWorld->IsClient() && CurrentWorld->DemoNetDriver->ClientConnections.Num() > 0 && CurrentWorld->DemoNetDriver->ClientConnections[0] != nullptr)
+		{
+			AUTWorldSettings* WS = Cast<AUTWorldSettings>(CurrentWorld->GetWorldSettings());
+			if (WS != nullptr)
+			{
+				for (const AUTWorldSettings::FDestroyedActorInfo& Obj : WS->GetDestroyedLevelActors())
+				{
+					if (Obj.Level.IsValid())
+					{
+						FActorDestructionInfo Info;
+
+						FNetGuidCacheObject CacheItem;
+						CacheItem.PathName = Obj.ActorName;
+						CacheItem.OuterGUID = CurrentWorld->DemoNetDriver->GuidCache->GetOrAssignNetGUID(Obj.Level.Get());
+						// warning: copied from AssignNewNetGUID_Server()
+						Info.NetGUID = FNetworkGUID((++CurrentWorld->DemoNetDriver->GuidCache->UniqueNetIDs[1] << 1) | 1);
+						CurrentWorld->DemoNetDriver->GuidCache->RegisterNetGUID_Internal(Info.NetGUID, CacheItem);
+						Info.PathName = Obj.ActorName.ToString();
+						Info.ObjOuter = Obj.Level.Get();
+						UActorChannel* Channel = (UActorChannel*)CurrentWorld->DemoNetDriver->ClientConnections[0]->CreateChannel(CHTYPE_Actor, 1);
+						if (Channel != nullptr)
+						{
+							Channel->SetChannelActorForDestroy(&Info);
+						}
+					}
+				}
+			}
+		}
 	}
 }
 void UUTGameInstance::PlayReplay(const FString& Name, UWorld* WorldOverride, const TArray<FString>& AdditionalOptions)

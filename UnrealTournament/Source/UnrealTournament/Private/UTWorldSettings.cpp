@@ -79,6 +79,11 @@ void AUTWorldSettings::CreateLevelSummary()
 	}
 }
 
+void AUTWorldSettings::LevelActorDestroyed(AActor* TheActor, EEndPlayReason::Type EndPlayReason)
+{
+	new(DestroyedLevelActors) FDestroyedActorInfo(TheActor->GetLevel(), TheActor->GetFName());
+}
+
 void AUTWorldSettings::NotifyBeginPlay()
 {
 	UWorld* World = GetWorld();
@@ -104,6 +109,11 @@ void AUTWorldSettings::NotifyBeginPlay()
 		FullActorList.Append(LevelActorList);
 		for (AActor* Actor : FullActorList)
 		{
+			// there's no 
+			if (Actor->bNetStartup)
+			{
+				Actor->OnEndPlay.AddDynamic(this, &AUTWorldSettings::LevelActorDestroyed);
+			}
 			Actor->BeginPlay();
 		}
 	}
