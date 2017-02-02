@@ -695,6 +695,7 @@ void AUTHUD::OpenMatchSummary()
 
 void AUTHUD::PostRender()
 {
+#if !UE_SERVER
 	// @TODO FIXMESTEVE - need engine to also give pawn a chance to postrender so don't need this hack
 	AUTRemoteRedeemer* Missile = UTPlayerOwner ? Cast<AUTRemoteRedeemer>(UTPlayerOwner->GetViewTarget()) : NULL;
 	if (Missile && !UTPlayerOwner->IsBehindView())
@@ -765,9 +766,7 @@ void AUTHUD::PostRender()
 		}
 
 	}
-
-
-
+#endif
 }
 
 void AUTHUD::CacheFonts()
