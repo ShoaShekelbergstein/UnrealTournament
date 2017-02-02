@@ -156,6 +156,7 @@ namespace GameVolumeSpeechType
 	const FName GV_SniperTower = FName(TEXT("GV_SniperTower"));
 	const FName GV_Flak = FName(TEXT("GV_Flak"));
 	const FName GV_Waterfall = FName(TEXT("GV_Waterfall"));
+	const FName GV_Shrine = FName(TEXT("GV_Shrine"));
 }
 
 namespace PickupSpeechType
@@ -220,6 +221,7 @@ namespace StatusMessage
 	const FName RedeemerKills = FName(TEXT("RedeemerKills"));
 	const FName RedeemerSpotted = FName(TEXT("RedeemerSpotted"));
 	const FName GetTheFlag = FName(TEXT("GetTheFlag"));
+	const FName DoorRally = FName(TEXT("DoorRally"));
 }
 
 namespace HighlightNames

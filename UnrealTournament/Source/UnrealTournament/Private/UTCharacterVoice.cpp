@@ -68,6 +68,7 @@ UUTCharacterVoice::UUTCharacterVoice(const FObjectInitializer& ObjectInitializer
 	StatusOffsets.Add(GameVolumeSpeechType::GV_SniperTower, KEY_CALLOUTS + 3400);
 	StatusOffsets.Add(GameVolumeSpeechType::GV_Flak, KEY_CALLOUTS + 3500);
 	StatusOffsets.Add(GameVolumeSpeechType::GV_Waterfall, KEY_CALLOUTS + 3600);
+	StatusOffsets.Add(GameVolumeSpeechType::GV_Shrine, KEY_CALLOUTS + 3700);
 	// only game volume speech before LASTGAMEVOLUMESPEECH = KEY_CALLOUTS + 5000 
 
 	StatusOffsets.Add(StatusMessage::EnemyRally, KEY_CALLOUTS + 5000);
@@ -81,6 +82,7 @@ UUTCharacterVoice::UUTCharacterVoice(const FObjectInitializer& ObjectInitializer
 	StatusOffsets.Add(StatusMessage::RedeemerSpotted, KEY_CALLOUTS + 5009);
 	StatusOffsets.Add(StatusMessage::GetTheFlag, KEY_CALLOUTS + 5010);
 	StatusOffsets.Add(StatusMessage::RallyNow, KEY_CALLOUTS + 5011);
+	StatusOffsets.Add(StatusMessage::DoorRally, KEY_CALLOUTS + 5012);
 
 	//FIRSTPICKUPSPEECH = KEY_CALLOUTS + 5099;
 	StatusOffsets.Add(PickupSpeechType::RedeemerPickup, KEY_CALLOUTS + 5100);
@@ -437,6 +439,10 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 			{
 				return GetGVLine(SniperTowerLines, Switch - GetStatusIndex(GameVolumeSpeechType::GV_SniperTower));
 			}
+			else if (Switch / 100 == GetStatusIndex(GameVolumeSpeechType::GV_Shrine) / 100)
+			{
+				return GetGVLine(ShrineLines, Switch - GetStatusIndex(GameVolumeSpeechType::GV_Shrine));
+			}
 			else if (Switch / 100 == GetStatusIndex(GameVolumeSpeechType::GV_Flak) / 100)
 			{
 				return GetGVLine(FlakLines, Switch - GetStatusIndex(GameVolumeSpeechType::GV_Flak));
@@ -473,6 +479,10 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 			else if (Switch == GetStatusIndex(StatusMessage::RallyNow))
 			{
 				return (RallyNowMessages.Num() == 0) ? EmptySpeech : RallyNowMessages[FMath::RandRange(0, RallyNowMessages.Num() - 1)];
+			}
+			else if (Switch == GetStatusIndex(StatusMessage::DoorRally))
+			{
+				return (DoorRallyMessages.Num() == 0) ? EmptySpeech : DoorRallyMessages[FMath::RandRange(0, DoorRallyMessages.Num() - 1)];
 			}
 			else if (Switch == GetStatusIndex(StatusMessage::FindFC))
 			{

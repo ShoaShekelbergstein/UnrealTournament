@@ -132,6 +132,10 @@ class UNREALTOURNAMENT_API AUTRallyPoint : public AUTGameObjective, public IUTRe
 	UPROPERTY()
 		float LastEnemyRallyWarning;
 
+	/** Status message to use as warning when this rally point is being powered up. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RallyPoint)
+		FName EnemyRallyWarning;
+
 	/** What to display on the Rally Beacon for flag carriers */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RallyPoint)
 		FText RallyBeaconText;

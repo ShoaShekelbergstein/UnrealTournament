@@ -59,6 +59,7 @@ AUTRallyPoint::AUTRallyPoint(const FObjectInitializer& ObjectInitializer)
 	bReplicateMovement = false;
 	RallyBeaconText = NSLOCTEXT("UTRallyPoint", "RallyHere", " RALLY HERE! ");
 	LocationText = FText::GetEmpty();
+	EnemyRallyWarning = StatusMessage::EnemyRally;
 }
 
 #if WITH_EDITORONLY_DATA
@@ -258,9 +259,9 @@ void AUTRallyPoint::StartRallyCharging()
 	UpdateRallyReadyCountdown(FMath::Max(RallyReadyCountdown, MinPersistentRemaining));
 	SetRallyPointState(RallyPointStates::Charging);
 	OnRallyChargingChanged();
-	if ((Role == ROLE_Authority) && TouchingFC && TouchingFC->GetCarriedObject() && TouchingFC->GetCarriedObject()->bCurrentlyPinged && !GetWorldTimerManager().IsTimerActive(EnemyRallyWarningHandle) && (GetWorld()->GetTimeSeconds() - LastEnemyRallyWarning > 10.f))
+	if ((Role == ROLE_Authority) && TouchingFC && TouchingFC->GetCarriedObject() && TouchingFC->GetCarriedObject()->bCurrentlyPinged && !GetWorldTimerManager().IsTimerActive(EnemyRallyWarningHandle) && (GetWorld()->GetTimeSeconds() - LastEnemyRallyWarning > 9.f))
 	{
-		GetWorldTimerManager().SetTimer(EnemyRallyWarningHandle, this, &AUTRallyPoint::WarnEnemyRally, 0.5f, false);
+		GetWorldTimerManager().SetTimer(EnemyRallyWarningHandle, this, &AUTRallyPoint::WarnEnemyRally, 0.2f, false);
 	}
 }
 
@@ -277,7 +278,7 @@ void AUTRallyPoint::WarnEnemyRally()
 		AUTPlayerState* UTPS = Cast<AUTPlayerState>((*Iterator)->PlayerState);
 		if (UTPS && UTPS->Team && ((UTPS->Team->TeamIndex == 0) != GS->bRedToCap))
 		{
-			UTPS->AnnounceStatus(StatusMessage::EnemyRally);
+			UTPS->AnnounceStatus(EnemyRallyWarning);
 			break;
 		}
 	}
