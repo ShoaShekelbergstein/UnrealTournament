@@ -13,17 +13,17 @@ class UNREALTOURNAMENT_API AUTGameObjective : public AActor, public IUTPathBuild
 {
 	GENERATED_UCLASS_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObject)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObjective)
 	float InitialSpawnDelay;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObject)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObjective)
 	TSubclassOf<AUTCarriedObject> CarriedObjectClass;
 
 	/** Best angle to view this objective (for spectator cams). */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObject)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObjective)
 	float BestViewYaw;
 
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = Team)
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadOnly, Category = GameObjective)
 	uint8 TeamNum;
 
 	/** defense points for the AI to consider when defending this objective */
@@ -65,8 +65,16 @@ class UNREALTOURNAMENT_API AUTGameObjective : public AActor, public IUTPathBuild
 	virtual AUTPlayerState* GetCarriedObjectHolder();
 
 	/** Within this distance is considered last second save. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObject)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObjective)
 	float LastSecondSaveDistance;
+
+	/** How far off center is considered forward for incoming messages.  (1.0 is straight forward, cos of angle) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObjective)
+		float ForwardDot;
+
+	/** How far off center is considered forward for incoming messages.  (1.0 is straight forward, cos of angle) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObjective)
+		float IncomingHeightOffset;
 
 	/** Return true if Other is within LastSecondSaveDistance. */
 	virtual bool ActorIsNearMe(AActor *Other) const;

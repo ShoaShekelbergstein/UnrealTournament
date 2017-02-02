@@ -81,6 +81,47 @@ void AUTGameVolume::HealthTimer()
 	}
 }
 
+int32 AUTGameVolume::DetermineEntryDirection(AUTCharacter* EnteringCharacter, AUTFlagRunGameState* GS)
+{
+	// determine entry direction
+	int32 DirectionSwitch = 5;
+	AUTGameObjective* Objective = GS->GetFlagBase(GS->bRedToCap ? 1 : 0);
+	if (Objective)
+	{
+		FVector Dir = EnteringCharacter->GetActorLocation() - Objective->GetActorLocation();
+		FVector Dir2D = Dir;
+		Dir2D.Z = 0.f;
+		Dir2D = Dir2D.GetSafeNormal();
+		FVector Facing = Objective->GetActorRotation().Vector();
+		if (bTestBaseEntry)
+		{
+			DrawDebugLine(GetWorld(), Objective->GetActorLocation(), Objective->GetActorLocation() + 1000.f*Facing, FColor::Green, true);
+			UE_LOG(UT, Warning, TEXT("Angle is %f"), FMath::Abs(Facing | Dir2D));
+			// FIXMESTEVE show angle
+		}
+		if (FMath::Abs(Facing | Dir2D) > Objective->ForwardDot)
+		{
+			DirectionSwitch = 0;
+			// center, high, or low
+			if (Dir.Z > Objective->IncomingHeightOffset)
+			{
+				DirectionSwitch = 1;
+			}
+			else if (Dir.Z < -1.f * Objective->IncomingHeightOffset)
+			{
+				DirectionSwitch = 2;
+			}
+		}
+		else
+		{
+			// left or right
+			FVector Left = Facing ^ FVector(0.f, 0.f, 1.f);
+			DirectionSwitch = ((Left | Dir) > 0.f) ? 3 : 4;
+		}
+	}
+	return DirectionSwitch;
+}
+
 void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 {
 	if ((Role == ROLE_Authority) && Cast<AUTCharacter>(Other))
@@ -152,7 +193,15 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 				{
 					if ((GetWorld()->GetTimeSeconds() - GS->LastEnteringEnemyBaseTime > 2.f) && Cast<AUTPlayerState>(P->PlayerState))
 					{
-						((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(StatusMessage::ImGoingIn);  
+						if (bTestBaseEntry)
+						{
+							int32 DirectionSwitch = DetermineEntryDirection(P, GS);
+							((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(StatusMessage::Incoming, DirectionSwitch);
+						}
+						else
+						{
+							((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(StatusMessage::ImGoingIn);
+						}
 						if (VoiceLinesSet != NAME_None)
 						{
 							((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(VoiceLinesSet, 1);
@@ -178,37 +227,7 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 						}
 						if (PS)
 						{
-							// determine entry direction
-							int32 DirectionSwitch = 5;
-							AUTGameObjective* Objective = GS->GetFlagBase(GS->bRedToCap ? 1 : 0);
-							if (Objective)
-							{
-								// make these properties editable FIXMESTEVE
-								FVector Dir = P->GetActorLocation() - Objective->GetActorLocation();
-								FVector Dir2D = Dir;
-								Dir2D.Z = 0.f;
-								Dir2D = Dir2D.GetSafeNormal();
-								FVector Facing = Objective->GetActorRotation().Vector();
-								if (FMath::Abs(Facing | Dir2D) > 0.95f)
-								{
-									DirectionSwitch = 0;
-									// center, high, or low
-									if (Dir.Z > 300.f)
-									{
-										DirectionSwitch = 1;
-									}
-									else if (Dir.Z < -300.f)
-									{
-										DirectionSwitch = 2;
-									}
-								}
-								else
-								{
-									// left or right
-									FVector Left = Facing ^ FVector(0.f, 0.f, 1.f);
-									DirectionSwitch = ((Left | Dir) > 0.f) ? 3 : 4;
-								}
-							}
+							int32 DirectionSwitch = DetermineEntryDirection(P, GS);
 							PS->AnnounceStatus(StatusMessage::Incoming, DirectionSwitch);
 							if (VoiceLinesSet != NAME_None)
 							{

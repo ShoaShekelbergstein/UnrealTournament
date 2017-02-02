@@ -73,7 +73,6 @@ class UNREALTOURNAMENT_API AUTGameVolume : public APhysicsVolume, public IUTTeam
 	UPROPERTY(BlueprintReadWrite, Category = "Gameplay")
 		bool bHasFCEntry;
 
-
 	/** minimum interval between non-FC enemy in base warnings */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
 		float MinEnemyInBaseInterval;
@@ -98,6 +97,13 @@ class UNREALTOURNAMENT_API AUTGameVolume : public APhysicsVolume, public IUTTeam
 	FTimerHandle HealthTimerHandle;
 
 	virtual void HealthTimer();
+
+	/* Play incoming direction message for attackers, plus display debug for easier testing of entry direction orientation*/
+	UPROPERTY(BlueprintReadWrite, Category = "Debug")
+		bool bTestBaseEntry;
+
+	// Determine which direction volume is being entered relative to defensive base
+	virtual int32 DetermineEntryDirection(class AUTCharacter* EnteringCharacter, class AUTFlagRunGameState* GS);
 };
 
 
