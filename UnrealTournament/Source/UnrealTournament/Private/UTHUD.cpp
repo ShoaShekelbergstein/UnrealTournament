@@ -754,11 +754,14 @@ void AUTHUD::PostRender()
 				YPos += 48 * HScale;
 			}
 
-			DrawString( FText::Format( NSLOCTEXT("a","h","Emote: {0}"),  FText::AsNumber(UTPlayerOwner->UTPlayerState->EmoteReplicationInfo.EmoteIndex)), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-			YPos += 48 * HScale;
+			if (UTPlayerOwner->PlayerState)
+			{
+				DrawString(FText::Format(NSLOCTEXT("a", "h", "Emote: {0}"), FText::AsNumber(UTPlayerOwner->UTPlayerState->EmoteReplicationInfo.EmoteIndex)), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
+				YPos += 48 * HScale;
 
-			DrawString( FText::Format( NSLOCTEXT("a","i","Emote: {0}"),  FText::FromString(UTPlayerOwner->UTPlayerState->ActiveGroupTaunt != nullptr ? UTPlayerOwner->UTPlayerState->ActiveGroupTaunt->GetFullName() : TEXT("none"))), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-			YPos += 48 * HScale;
+				DrawString(FText::Format(NSLOCTEXT("a", "i", "Emote: {0}"), FText::FromString(UTPlayerOwner->UTPlayerState->ActiveGroupTaunt != nullptr ? UTPlayerOwner->UTPlayerState->ActiveGroupTaunt->GetFullName() : TEXT("none"))), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
+				YPos += 48 * HScale;
+			}
 		}
 
 	}
