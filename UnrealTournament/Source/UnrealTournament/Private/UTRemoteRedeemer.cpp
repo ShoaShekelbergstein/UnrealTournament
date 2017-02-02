@@ -819,7 +819,7 @@ void AUTRemoteRedeemer::RedeemerDenied(AController* InstigatedBy)
 
 float AUTRemoteRedeemer::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!ShouldTakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser))
+	if (!ShouldTakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser) || bExploded)
 	{
 		return 0.f;
 	}
