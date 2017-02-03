@@ -645,6 +645,8 @@ void UUTGameEngine::AddAssetRegistry(const FString& PakFilename)
 
 void UUTGameEngine::IndexExpansionContent()
 {
+	double IndexExpansionContentStartTime = FPlatformTime::Seconds();
+
 	// Plugin manager should handle this instead of us, but we're not using plugin-based dlc just yet
 	if (FPlatformProperties::RequiresCookedData())
 	{
@@ -794,6 +796,9 @@ void UUTGameEngine::IndexExpansionContent()
 			}
 		}
 	}
+	
+	double IndexExpansionContentDuration = FPlatformTime::Seconds() - IndexExpansionContentStartTime;
+	UE_LOG(LogInit, Display, TEXT("IndexExpansionContent took %f seconds"), IndexExpansionContentDuration);
 }
 
 void UUTGameEngine::SetupLoadingScreen()
