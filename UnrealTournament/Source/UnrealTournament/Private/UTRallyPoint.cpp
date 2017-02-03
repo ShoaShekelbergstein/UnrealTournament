@@ -242,11 +242,13 @@ void AUTRallyPoint::UpdateRallyReadyCountdown(float NewValue)
 {
 	RallyReadyCountdown = FMath::Clamp(NewValue, 0.f, RallyReadyDelay);
 	ReplicatedCountdown = FMath::Max(0, int32(10.f*RallyReadyCountdown));
+	OldClientCountdown = ClientCountdown;
 	ClientCountdown = RallyReadyCountdown;
 }
 
 void AUTRallyPoint::OnReplicatedCountdown()
 {
+	OldClientCountdown = ClientCountdown;
 	ClientCountdown = 0.1f * ReplicatedCountdown;
 }
 
@@ -852,7 +854,7 @@ void AUTRallyPoint::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVecto
 		{
 			return;
 		}
-		if (RallyPointState == RallyPointStates::Charging)
+		if ((RallyPointState == RallyPointStates::Charging) || ((ClientCountdown > 0.f) && (ClientCountdown >= OldClientCountdown)))
 		{
 			DrawChargingThermometer(PC, Canvas, CameraPosition, true);
 			return;
@@ -860,7 +862,7 @@ void AUTRallyPoint::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVecto
 	}
 	else if (RallyPointState != RallyPointStates::Powered)
 	{
-		if (ClientCountdown > 0.f)
+		if ((ClientCountdown > 0.f) && (ClientCountdown >= OldClientCountdown))
 		{
 			AUTCharacter* FC = (UTGS && UTGS->GetOffenseFlag()) ? UTGS->GetOffenseFlag()->HoldingPawn : nullptr;
 			if (FC && (GetWorld()->GetTimeSeconds() - FC->GetLastRenderTime() < 0.1f) && PC->LineOfSightTo(FC))
