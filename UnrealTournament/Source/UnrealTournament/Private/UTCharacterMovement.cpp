@@ -1200,7 +1200,7 @@ float UUTCharacterMovement::GetMaxAcceleration() const
 
 bool UUTCharacterMovement::CanSprint() const
 {
-	if (CharacterOwner && IsMovingOnGround() && !IsCrouching() && (GetCurrentMovementTime() > SprintStartTime)) 
+/*	if (CharacterOwner && IsMovingOnGround() && !IsCrouching() && (GetCurrentMovementTime() > SprintStartTime)) 
 	{
 		AUTPlayerState* UTPlayerState = CharacterOwner ? Cast<AUTPlayerState>(CharacterOwner->PlayerState) : nullptr;
 		if (UTPlayerState && UTPlayerState->CarriedObject && UTPlayerState->CarriedObject->bSlowsMovement)
@@ -1211,7 +1211,7 @@ bool UUTCharacterMovement::CanSprint() const
 		FRotator TurnRot(0.f, CharacterOwner->GetActorRotation().Yaw, 0.f);
 		FVector X = FRotationMatrix(TurnRot).GetScaledAxis(EAxis::X);
 		return (((X | Velocity.GetSafeNormal()) > 0.8f) && ((X | Acceleration.GetSafeNormal()) > 0.9f));
-	}
+	}*/
 	return false;
 }
 
