@@ -6226,7 +6226,7 @@ void AUTCharacter::SpawnRallyDestinationEffectAt(FVector EffectLocation)
 	FActorSpawnParameters Params;
 	Params.Owner = this;
 	Params.Instigator = this;
-	GetWorld()->SpawnActor<AUTReplicatedEmitter>(PickedEffect, EffectLocation - FVector(0.f, 0.f, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()), GetActorRotation(), Params);
+	GetWorld()->SpawnActor<AUTReplicatedEmitter>(PickedEffect, EffectLocation, GetActorRotation(), Params);
 }
 
 float AUTCharacter::GetRemoteViewPitch()

@@ -394,7 +394,7 @@ void AUTRallyPoint::OnRallyChargingChanged()
 			ChangeAmbientSoundPitch(PoweringUpSound, 1.5f);
 			if (!RallyPoweredEffectPSC && (bRedColor ? RallyPoweredEffectRed : RallyPoweredEffectBlue))
 			{
-				RallyPoweredEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyPoweredEffectRed : RallyPoweredEffectBlue, GetActorLocation() - FVector(0.f, 0.f, 0.f), GetActorRotation());
+				RallyPoweredEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyPoweredEffectRed : RallyPoweredEffectBlue, GetActorLocation(), GetActorRotation());
 			}
 		}
 	}
@@ -408,7 +408,7 @@ void AUTRallyPoint::OnRallyChargingChanged()
 			RallyPoweredEffectPSC = nullptr;
 
 			// spawn rallyfinished
-			UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyFinishedEffectRed : RallyFinishedEffectBlue, GetActorLocation() - FVector(0.f, 0.f, 0.f), GetActorRotation());
+			UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyFinishedEffectRed : RallyFinishedEffectBlue, GetActorLocation(), GetActorRotation());
 		}
 		if (RallyPointState == RallyPointStates::Charging)
 		{
@@ -417,7 +417,7 @@ void AUTRallyPoint::OnRallyChargingChanged()
 				SetAmbientSound(PoweringUpSound, false);
 				ChangeAmbientSoundPitch(PoweringUpSound, 0.5f);
 				UUTGameplayStatics::UTPlaySound(GetWorld(), FCTouchedSound, this, SRT_All);
-				RallyChargingEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyChargingEffectRed : RallyChargingEffectBlue, GetActorLocation() - FVector(0.f, 0.f, 0.f), GetActorRotation());
+				RallyChargingEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyChargingEffectRed : RallyChargingEffectBlue, GetActorLocation(), GetActorRotation());
 			}
 			bHaveGameState = (UTGS != nullptr);
 			if ((Role == ROLE_Authority) && (UTGS != nullptr))
@@ -446,7 +446,7 @@ void AUTRallyPoint::OnRallyChargingChanged()
 					RallyChargingEffectPSC = nullptr;
 
 					// spawn charge stopped
-					LosingChargeEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? LosingChargeEffectRed : LosingChargeEffectBlue, GetActorLocation() - FVector(0.f, 0.f, 0.f), GetActorRotation());
+					LosingChargeEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? LosingChargeEffectRed : LosingChargeEffectBlue, GetActorLocation(), GetActorRotation());
 				}
 				SetAmbientSound(nullptr, false);
 				UUTGameplayStatics::UTPlaySound(GetWorld(), RallyBrokenSound, this, SRT_All);
