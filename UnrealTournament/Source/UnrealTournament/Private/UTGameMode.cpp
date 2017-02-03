@@ -383,7 +383,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 
 	if (GameSession->MaxPlayers <= 0)
 	{
-		GameSession->MaxPlayers = 10;
+		GameSession->MaxPlayers = bTeamGame ? 10 : 8;
 	}
 
 	PostInitGame(Options);
