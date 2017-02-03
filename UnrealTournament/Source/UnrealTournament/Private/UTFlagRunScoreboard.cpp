@@ -37,10 +37,10 @@ UUTFlagRunScoreboard::UUTFlagRunScoreboard(const FObjectInitializer& ObjectIniti
 	DefendLines.Add(FText::GetEmpty());
 	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine2", "* You have 5 lives.  The attackers do not have a life limit."));
 	DefendLines.Add(FText::GetEmpty());
-	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine3", "* Attackers can earn 1 to 3 stars depending on how quickly they score."));
-	DefendLines.Add(FText::GetEmpty());
-	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine4", "* Defenders earn 1 star for preventing the attackers from scoring."));
-	DefendLines.Add(FText::GetEmpty());
+//	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine3", "* Attackers can earn 1 to 3 stars depending on how quickly they score."));
+//	DefendLines.Add(FText::GetEmpty());
+//	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine4", "* Defenders earn 1 star for preventing the attackers from scoring."));
+//	DefendLines.Add(FText::GetEmpty());
 	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine5", "* When the flag carrier powers up a Rally Point, teammates can"));
 	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine5b", "  teleport to it by pressing the rally button."));
 
@@ -49,10 +49,10 @@ UUTFlagRunScoreboard::UUTFlagRunScoreboard(const FObjectInitializer& ObjectIniti
 	AttackLines.Add(FText::GetEmpty());
 	AttackLines.Add(NSLOCTEXT("UTScoreboard", "AttackLine2", "* Defenders have 5 lives.  You do not have a life limit."));
 	AttackLines.Add(FText::GetEmpty());
-	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine3", "* Attackers can earn 1 to 3 stars depending on how quickly they score."));
-	AttackLines.Add(FText::GetEmpty());
-	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine4", "* Defenders earn 1 star for preventing the attackers from scoring."));
-	AttackLines.Add(FText::GetEmpty());
+//	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine3", "* Attackers can earn 1 to 3 stars depending on how quickly they score."));
+//	AttackLines.Add(FText::GetEmpty());
+//	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine4", "* Defenders earn 1 star for preventing the attackers from scoring."));
+//	AttackLines.Add(FText::GetEmpty());
 	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine5", "* When the flag carrier powers up a Rally Point, teammates can"));
 	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine5b", "  teleport to it by pressing the rally button."));
 
