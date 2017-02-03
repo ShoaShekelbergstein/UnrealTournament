@@ -381,7 +381,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 		}
 	}
 
-	if (GameSession->MaxPlayers <= 0)
+	if (!UGameplayStatics::HasOption(Options, TEXT("MaxPlayers")))
 	{
 		GameSession->MaxPlayers = bTeamGame ? 10 : 8;
 	}
