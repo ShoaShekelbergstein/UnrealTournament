@@ -713,8 +713,8 @@ void UUTCharacterMovement::AddDampedImpulse(FVector Impulse, bool bSelfInflicted
 		float DampingThreshold = bSelfInflicted ? MaxUndampedImpulse : MaxAdditiveDodgeJumpSpeed;
 		if ((FinalImpulse.Z > 0.f) && (FinalImpulse.Z + PendingVelocity.Z > DampingThreshold))
 		{
-			float PctBelowBoost = FMath::Clamp((DampingThreshold - PendingVelocity.Z) / FinalImpulse.Z, 0.f, 1.f);
-			FinalImpulse.Z *= (PctBelowBoost + (1.f - PctBelowBoost)*FMath::Max(0.5f, PctBelowBoost));
+			float PctBelowBoost = FMath::Clamp((DampingThreshold - PendingVelocity.Z) / DampingThreshold, 0.f, 1.f);
+			FinalImpulse.Z *= (PctBelowBoost + (1.f - PctBelowBoost)*FMath::Max(0.25f, PctBelowBoost));
 		}
 
 		PendingImpulseToApply += FinalImpulse;
