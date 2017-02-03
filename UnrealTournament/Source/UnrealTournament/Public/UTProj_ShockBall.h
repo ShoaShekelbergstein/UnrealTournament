@@ -34,6 +34,9 @@ class UNREALTOURNAMENT_API AUTProj_ShockBall : public AUTProjectile
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
 	TSubclassOf<AUTShockComboEffect> ComboVortexType;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
+		UParticleSystem* OwnBallEffect;
+
 protected:
 	/** when set and InstigatorController is a bot, ask it when we should combo */
 	bool bMonitorBotCombo;
@@ -63,7 +66,7 @@ public:
 	virtual void ClearBotCombo();
 
 	virtual void Tick(float DeltaTime) override;
-
+	virtual void OnRep_Instigator() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	/** Reward announcement for impressive combo kill. */

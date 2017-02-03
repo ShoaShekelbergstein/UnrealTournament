@@ -20,6 +20,18 @@ AUTProj_ShockBall::AUTProj_ShockBall(const class FObjectInitializer& ObjectIniti
 	bMoveFakeToReplicatedPos = false;
 }
 
+void AUTProj_ShockBall::OnRep_Instigator()
+{
+	Super::OnRep_Instigator();
+	UE_LOG(UT, Warning, TEXT("pre init with instigator %d"), (InstigatorController ? 1 : 0));
+
+	if (InstigatorController && OwnBallEffect && (GetCachedScalabilityCVars().DetailMode > 1) && Cast<AUTPlayerController>(InstigatorController) && InstigatorController->IsLocalController())
+	{
+		UE_LOG(UT, Warning, TEXT("spawn ring"));
+		UGameplayStatics::SpawnEmitterAttached(OwnBallEffect, RootComponent);
+	}
+}
+
 void AUTProj_ShockBall::InitFakeProjectile(AUTPlayerController* OwningPlayer)
 {
 	Super::InitFakeProjectile(OwningPlayer);
