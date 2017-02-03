@@ -455,11 +455,10 @@ void AUTRallyPoint::OnRallyChargingChanged()
 			}
 			if ((Role == ROLE_Authority) && ((RallyReadyCountdown  < 2.f) || !TouchingFC || TouchingFC->IsDead()))
 			{
-				bool bNotifyAllPlayers = !TouchingFC || TouchingFC->IsDead() || (TouchingFC->GetCarriedObject() && TouchingFC->GetCarriedObject()->bCurrentlyPinged);
 				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 				{
 					AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-					if (PC && PC->UTPlayerState && PC->UTPlayerState->Team && (bNotifyAllPlayers || (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0))))
+					if (PC && PC->UTPlayerState && PC->UTPlayerState->Team && (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0)))
 					{
 						PC->UTClientPlaySound(RallyBrokenSound);
 					}
