@@ -4487,7 +4487,7 @@ void AUTCharacter::Tick(float DeltaTime)
 
 		// If have currently pinged flag carrier target, see if need visual check to extend pinged time.
 		AUTCarriedObject* TargetedFlag = LastTarget ? LastTarget->GetCarriedObject() : nullptr;
-		if (bHaveTargetVisual && GetController() && TargetedFlag && TargetedFlag->bShouldPingFlag && TargetedFlag->bCurrentlyPinged && (GetWorld()->GetTimeSeconds() - LastTargetingTime < TargetedFlag->PingedDuration) && (GetWorld()->GetTimeSeconds() - LastTarget->LastTargetSeenTime > TargetedFlag->TargetPingedDuration - 0.2f))
+		if (bHaveTargetVisual && GetController() && TargetedFlag && TargetedFlag->bShouldPingFlag && TargetedFlag->bCurrentlyPinged && (GetWorld()->GetTimeSeconds() - LastTargetingTime < 4.f) && (GetWorld()->GetTimeSeconds() - LastTarget->LastTargetSeenTime > TargetedFlag->TargetPingedDuration - 0.2f))
 		{
 			bHaveTargetVisual = false;
 			FVector Viewpoint = GetActorLocation();
@@ -4495,7 +4495,7 @@ void AUTCharacter::Tick(float DeltaTime)
 			FVector TargetDir = (LastTarget->GetActorLocation() - Viewpoint).GetSafeNormal();
 			FVector TargetHeadLoc = LastTarget->GetActorLocation() + FVector(0.0f, 0.0f, LastTarget->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight());
 			FVector ViewDir = GetController()->GetControlRotation().Vector();
-			if (((ViewDir | TargetDir) > 0.9f) || ((ViewDir | (TargetHeadLoc - Viewpoint).GetSafeNormal()) > 0.9f))
+			if (((ViewDir | TargetDir) > 0.8f) || ((ViewDir | (TargetHeadLoc - Viewpoint).GetSafeNormal()) > 0.8f))
 			{
 				FCollisionQueryParams TraceParams(FName(TEXT("ChooseBestAimTarget")), false);
 				bool bHit = GetWorld()->LineTraceTestByChannel(Viewpoint, TargetHeadLoc, COLLISION_TRACE_WEAPONNOCHARACTER, TraceParams);
