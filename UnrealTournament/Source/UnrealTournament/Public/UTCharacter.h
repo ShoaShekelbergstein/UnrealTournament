@@ -467,10 +467,17 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 		bool bWasInWarningZone;
 
 	protected:
-		UPROPERTY(BlueprintReadWrite, Category = Pawn, ReplicatedUsing=UpdateArmorOverlay)
+		UPROPERTY(BlueprintReadWrite, Category = Pawn, ReplicatedUsing=OnArmorUpdated)
 			int32 ArmorAmount;
+
+		UPROPERTY()
+			int32 OldArmorAmount;
+
 	public:
-	/** Limit to armor stacking */
+		UFUNCTION()
+			virtual void OnArmorUpdated();
+
+		/** Limit to armor stacking */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Pawn")
 	int32 MaxStackedArmor;
 
@@ -1007,6 +1014,18 @@ public:
 	UParticleSystem* HeadArmorHitEffect;
 
 	virtual void NotifyBlockedHeadShot(AUTCharacter* ShotInstigator);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
+		UParticleSystem* FirstPersonHealthEffect;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
+		UParticleSystem* ThirdPersonHealthEffect;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
+		UParticleSystem* FirstPersonArmorEffect;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
+		UParticleSystem* ThirdPersonArmorEffect;
 
 	UFUNCTION(exec)
 		void OV(FName InName, float value);

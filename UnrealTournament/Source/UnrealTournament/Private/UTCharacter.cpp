@@ -2647,6 +2647,7 @@ void AUTCharacter::FiringInfoUpdated()
 		}
 	}
 }
+
 void AUTCharacter::FiringExtraUpdated()
 {
 	if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsFastForwarding())
@@ -5248,13 +5249,31 @@ void AUTCharacter::GiveArmor(AUTArmor* ArmorClass)
 	ArmorType = ArmorClass;
 	ArmorAmount = FMath::Max(FMath::Max(ArmorAmount, ArmorClass->ArmorAmount), FMath::Min(100, ArmorAmount + ArmorClass->ArmorAmount));
 	ArmorRemovalAssists.Empty();
-	UpdateArmorOverlay();
+	OnArmorUpdated();
 }
 
 void AUTCharacter::RemoveArmor(int32 Amount)
 {
 	ArmorAmount = FMath::Max(0, ArmorAmount - Amount);
+	OnArmorUpdated();
+}
+
+void AUTCharacter::OnArmorUpdated()
+{
 	UpdateArmorOverlay();
+	if ((ArmorAmount > OldArmorAmount) && (GetNetMode() != NM_DedicatedServer))
+	{
+		// play first or third person armor effects
+		if (Cast<AUTPlayerController>(GetController()))
+		{
+			UGameplayStatics::SpawnEmitterAttached(FirstPersonArmorEffect, CharacterCameraComponent, NAME_None, FVector(0.f,0.f,0.f), GetController() ? GetControlRotation() : GetActorRotation(), EAttachLocation::SnapToTarget);
+		}
+		else
+		{
+			UGameplayStatics::SpawnEmitterAttached(ThirdPersonArmorEffect, GetCapsuleComponent(), NAME_None, GetActorLocation(), GetController() ? GetControlRotation() : GetActorRotation(), EAttachLocation::KeepWorldPosition);
+		}
+	}
+	OldArmorAmount = ArmorAmount;
 }
 
 void AUTCharacter::UpdateArmorOverlay()
