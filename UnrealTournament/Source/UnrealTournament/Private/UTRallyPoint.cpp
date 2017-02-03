@@ -384,11 +384,11 @@ void AUTRallyPoint::FlagNearbyChanged(bool bIsNearby)
 
 void AUTRallyPoint::OnRallyChargingChanged()
 {
-	if (GetNetMode() != NM_DedicatedServer)
+	AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+	bool bRedColor = UTGS && UTGS->bRedToCap;
+	if (RallyPointState == RallyPointStates::Powered)
 	{
-		AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-		bool bRedColor = UTGS && UTGS->bRedToCap;
-		if (RallyPointState == RallyPointStates::Powered)
+		if (GetNetMode() != NM_DedicatedServer)
 		{
 			SetAmbientSound(FullyPoweredSound, false);
 			ChangeAmbientSoundPitch(PoweringUpSound, 1.5f);
@@ -397,40 +397,46 @@ void AUTRallyPoint::OnRallyChargingChanged()
 				RallyPoweredEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyPoweredEffectRed : RallyPoweredEffectBlue, GetActorLocation() - FVector(0.f, 0.f, 0.f), GetActorRotation());
 			}
 		}
-		else
+	}
+	else
+	{
+		if ((GetNetMode() != NM_DedicatedServer) && (RallyPoweredEffectPSC != nullptr))
 		{
-			if (RallyPoweredEffectPSC != nullptr)
-			{
-				// clear it
-				RallyPoweredEffectPSC->ActivateSystem(false);
-				RallyPoweredEffectPSC->UnregisterComponent();
-				RallyPoweredEffectPSC = nullptr;
+			// clear it
+			RallyPoweredEffectPSC->ActivateSystem(false);
+			RallyPoweredEffectPSC->UnregisterComponent();
+			RallyPoweredEffectPSC = nullptr;
 
-				// spawn rallyfinished
-				UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyFinishedEffectRed : RallyFinishedEffectBlue, GetActorLocation() - FVector(0.f, 0.f, 0.f), GetActorRotation());
-			}
-			if (RallyPointState == RallyPointStates::Charging)
+			// spawn rallyfinished
+			UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyFinishedEffectRed : RallyFinishedEffectBlue, GetActorLocation() - FVector(0.f, 0.f, 0.f), GetActorRotation());
+		}
+		if (RallyPointState == RallyPointStates::Charging)
+		{
+			if (GetNetMode() != NM_DedicatedServer)
 			{
 				SetAmbientSound(PoweringUpSound, false);
 				ChangeAmbientSoundPitch(PoweringUpSound, 0.5f);
 				UUTGameplayStatics::UTPlaySound(GetWorld(), FCTouchedSound, this, SRT_All);
 				RallyChargingEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyChargingEffectRed : RallyChargingEffectBlue, GetActorLocation() - FVector(0.f, 0.f, 0.f), GetActorRotation());
-				bHaveGameState = (UTGS != nullptr);
-				if ((Role == ROLE_Authority) && (UTGS != nullptr))
+			}
+			bHaveGameState = (UTGS != nullptr);
+			if ((Role == ROLE_Authority) && (UTGS != nullptr))
+			{
+				AUTFlagRunGame* FlagRunGame = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
+				AUTCharacter* NearbyFC = FlagRunGame && FlagRunGame->ActiveFlag ? FlagRunGame->ActiveFlag->HoldingPawn : nullptr;
+				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 				{
-					AUTFlagRunGame* FlagRunGame = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
-					AUTCharacter* NearbyFC = FlagRunGame && FlagRunGame->ActiveFlag ? FlagRunGame->ActiveFlag->HoldingPawn : nullptr;
-					for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+					AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+					if (PC && PC->UTPlayerState && (PC->GetPawn() != NearbyFC) && PC->UTPlayerState->Team && (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0)))
 					{
-						AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-						if (PC && PC->UTPlayerState && (PC->GetPawn() != NearbyFC) && PC->UTPlayerState->Team && (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0)))
-						{
-							PC->UTClientPlaySound(FCTouchedSound);
-						}
+						PC->UTClientPlaySound(FCTouchedSound);
 					}
 				}
 			}
-			else
+		}
+		else
+		{
+			if (GetNetMode() != NM_DedicatedServer)
 			{
 				if (RallyChargingEffectPSC != nullptr)
 				{
@@ -444,28 +450,28 @@ void AUTRallyPoint::OnRallyChargingChanged()
 				}
 				SetAmbientSound(nullptr, false);
 				UUTGameplayStatics::UTPlaySound(GetWorld(), RallyBrokenSound, this, SRT_All);
-				if ((Role == ROLE_Authority) && ((RallyReadyCountdown  < 2.f) || !TouchingFC || TouchingFC->IsDead()))
+			}
+			if ((Role == ROLE_Authority) && ((RallyReadyCountdown  < 2.f) || !TouchingFC || TouchingFC->IsDead()))
+			{
+				bool bNotifyAllPlayers = !TouchingFC || TouchingFC->IsDead() || (TouchingFC->GetCarriedObject() && TouchingFC->GetCarriedObject()->bCurrentlyPinged);
+				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 				{
-					bool bNotifyAllPlayers = !TouchingFC || TouchingFC->IsDead() || (TouchingFC->GetCarriedObject() && TouchingFC->GetCarriedObject()->bCurrentlyPinged);
-					for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+					AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+					if (PC && PC->UTPlayerState && PC->UTPlayerState->Team && (bNotifyAllPlayers || (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0))))
 					{
-						AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-						if (PC && PC->UTPlayerState && PC->UTPlayerState->Team && (bNotifyAllPlayers || (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0))))
-						{
-							PC->UTClientPlaySound(RallyBrokenSound);
-						}
+						PC->UTClientPlaySound(RallyBrokenSound);
 					}
 				}
 			}
 		}
-		OnAvailableEffectChanged();
 	}
+	OnAvailableEffectChanged();
 	OnRallyStateChanged();
 }
 
 void AUTRallyPoint::OnAvailableEffectChanged()
 {
-	if (bIsEnabled)
+	if (bIsEnabled && (GetNetMode() != NM_DedicatedServer))
 	{
 		if (AvailableEffectPSC == nullptr)
 		{
