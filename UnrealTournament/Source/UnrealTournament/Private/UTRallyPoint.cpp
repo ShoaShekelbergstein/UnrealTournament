@@ -386,40 +386,36 @@ void AUTRallyPoint::OnRallyChargingChanged()
 {
 	if (GetNetMode() != NM_DedicatedServer)
 	{
+		AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+		bool bRedColor = UTGS && UTGS->bRedToCap;
 		if (RallyPointState == RallyPointStates::Powered)
 		{
 			SetAmbientSound(FullyPoweredSound, false);
 			ChangeAmbientSoundPitch(PoweringUpSound, 1.5f);
-			if (RallyEffectPSC == nullptr)
+			if (!RallyPoweredEffectPSC && (bRedColor ? RallyPoweredEffectRed : RallyPoweredEffectBlue))
 			{
-				RallyEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, RallyChargingEffect, GetActorLocation() - FVector(0.f, 0.f, Capsule->GetUnscaledCapsuleHalfHeight()), GetActorRotation());
+				RallyPoweredEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyPoweredEffectRed : RallyPoweredEffectBlue, GetActorLocation() - FVector(0.f, 0.f, 0.f), GetActorRotation());
 			}
-			static FName NAME_MoteColor(TEXT("MoteColor"));
-			RallyEffectPSC->SetVectorParameter(NAME_MoteColor, FVector(1.f, 1.f, 0.f));
-			static FName NAME_ParticleVelocity(TEXT("ParticleVelocity"));
-			RallyEffectPSC->SetVectorParameter(NAME_ParticleVelocity, FVector(0.f, 0.f, 1000.f));
-			static FName NAME_SmallParticleVelocity(TEXT("SmallParticleVelocity"));
-			RallyEffectPSC->SetVectorParameter(NAME_SmallParticleVelocity, FVector(0.f, 0.f, 1000.f));
 		}
 		else
 		{
-			if (RallyEffectPSC != nullptr)
+			if (RallyPoweredEffectPSC != nullptr)
 			{
 				// clear it
-				RallyEffectPSC->ActivateSystem(false);
-				RallyEffectPSC->UnregisterComponent();
-				RallyEffectPSC = nullptr;
+				RallyPoweredEffectPSC->ActivateSystem(false);
+				RallyPoweredEffectPSC->UnregisterComponent();
+				RallyPoweredEffectPSC = nullptr;
+
+				// spawn rallyfinished
+				UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyFinishedEffectRed : RallyFinishedEffectBlue, GetActorLocation() - FVector(0.f, 0.f, 0.f), GetActorRotation());
 			}
 			if (RallyPointState == RallyPointStates::Charging)
 			{
 				SetAmbientSound(PoweringUpSound, false);
 				ChangeAmbientSoundPitch(PoweringUpSound, 0.5f);
 				UUTGameplayStatics::UTPlaySound(GetWorld(), FCTouchedSound, this, SRT_All);
-				RallyEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, RallyChargingEffect, GetActorLocation() - FVector(0.f, 0.f, Capsule->GetUnscaledCapsuleHalfHeight()), GetActorRotation());
-				AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+				RallyChargingEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyChargingEffectRed : RallyChargingEffectBlue, GetActorLocation() - FVector(0.f, 0.f, 0.f), GetActorRotation());
 				bHaveGameState = (UTGS != nullptr);
-				static FName NAME_MoteColor(TEXT("MoteColor"));
-				RallyEffectPSC->SetVectorParameter(NAME_MoteColor, UTGS && UTGS->bRedToCap ? FVector(1.f, 0.f, 0.f) : FVector(0.f, 0.f, 1.f));
 				if ((Role == ROLE_Authority) && (UTGS != nullptr))
 				{
 					AUTFlagRunGame* FlagRunGame = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
@@ -436,11 +432,20 @@ void AUTRallyPoint::OnRallyChargingChanged()
 			}
 			else
 			{
+				if (RallyChargingEffectPSC != nullptr)
+				{
+					// clear it
+					RallyChargingEffectPSC->ActivateSystem(false);
+					RallyChargingEffectPSC->UnregisterComponent();
+					RallyChargingEffectPSC = nullptr;
+
+					// spawn charge stopped
+					LosingChargeEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? LosingChargeEffectRed : LosingChargeEffectBlue, GetActorLocation() - FVector(0.f, 0.f, 0.f), GetActorRotation());
+				}
 				SetAmbientSound(nullptr, false);
 				UUTGameplayStatics::UTPlaySound(GetWorld(), RallyBrokenSound, this, SRT_All);
 				if ((Role == ROLE_Authority) && ((RallyReadyCountdown  < 2.f) || !TouchingFC || TouchingFC->IsDead()))
 				{
-					AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 					bool bNotifyAllPlayers = !TouchingFC || TouchingFC->IsDead() || (TouchingFC->GetCarriedObject() && TouchingFC->GetCarriedObject()->bCurrentlyPinged);
 					for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 					{

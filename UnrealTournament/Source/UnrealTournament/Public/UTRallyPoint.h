@@ -82,13 +82,37 @@ class UNREALTOURNAMENT_API AUTRallyPoint : public AUTGameObjective, public IUTRe
 		UParticleSystemComponent* AvailableEffectPSC;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = RallyPoint)
-		UParticleSystem* RallyChargingEffect;
+		UParticleSystem* RallyChargingEffectRed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = RallyPoint)
-		UParticleSystem* RallyBrokenEffect;
+		UParticleSystem* RallyPoweredEffectRed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = RallyPoint)
+		UParticleSystem* RallyFinishedEffectRed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = RallyPoint)
+		UParticleSystem* LosingChargeEffectRed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = RallyPoint)
+		UParticleSystem* RallyChargingEffectBlue;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = RallyPoint)
+		UParticleSystem* RallyPoweredEffectBlue;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = RallyPoint)
+		UParticleSystem* RallyFinishedEffectBlue;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = RallyPoint)
+		UParticleSystem* LosingChargeEffectBlue;
 
 	UPROPERTY()
-		UParticleSystemComponent* RallyEffectPSC;
+		UParticleSystemComponent* RallyChargingEffectPSC;
+
+	UPROPERTY()
+		UParticleSystemComponent* RallyPoweredEffectPSC;
+
+	UPROPERTY()
+		UParticleSystemComponent* LosingChargeEffectPSC;
 
 	UPROPERTY()
 		UDecalComponent* AvailableDecal;
