@@ -2649,6 +2649,11 @@ void AUTGameMode::TravelToNextMap_Implementation()
 			RankedGameSession->Restart();
 		}
 	}
+	else if (NumPlayers == 0)
+	{
+		// Everyone left, just restart game per JIRA UT-7376
+		RestartGame();
+	}
 	else if (GetWorld()->GetNetMode() != ENetMode::NM_Standalone && (IsGameInstanceServer() || (!bDisableMapVote && UTGameState->MapVoteList.Num() > 0)))
 	{
 		if (UTGameState->MapVoteList.Num() > 0)
