@@ -82,6 +82,7 @@
 #include "QosInterface.h"
 #include "SUTReportUserDialog.h"
 #include "UTUMGWidget_Toast.h"
+#include "UTWorldSettings.h"
 
 #if WITH_SOCIAL
 #include "Social.h"
@@ -6734,4 +6735,26 @@ void UUTLocalPlayer::RemoveCosmeticsFromDefaultURL()
 		ClearDefaultURLOption(TEXT("HatVar"));
 		ClearDefaultURLOption(TEXT("EyewearVar"));
 	}
+}
+
+FSceneView* UUTLocalPlayer::CalcSceneView(class FSceneViewFamily* ViewFamily, FVector& OutViewLocation, FRotator& OutViewRotation, FViewport* Viewport, class FViewElementDrawer* ViewDrawer, EStereoscopicPass StereoPass)
+{
+	if (PlayerController != nullptr)
+	{
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(PlayerController);
+		if (UTPC == nullptr)
+		{
+			AActor* ActorPlayerController = Cast<AActor>(PlayerController);
+			if (ActorPlayerController->GetActorLocation().IsNearlyZero())
+			{
+				AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
+				if (WS)
+				{
+					ActorPlayerController->SetActorLocationAndRotation(WS->LoadingCameraLocation, WS->LoadingCameraRotation);
+				}
+			}
+		}
+	}
+
+	return Super::CalcSceneView(ViewFamily, OutViewLocation, OutViewRotation, Viewport, ViewDrawer, StereoPass);
 }

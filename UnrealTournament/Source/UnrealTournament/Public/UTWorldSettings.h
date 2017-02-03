@@ -140,6 +140,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameSettings)
 	bool bAllowSideSwitching;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = LevelSettings)
+	FVector LoadingCameraLocation;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = LevelSettings)
+	FRotator LoadingCameraRotation;
+
 	/** level music */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = LevelSettings)
 	USoundBase* Music;

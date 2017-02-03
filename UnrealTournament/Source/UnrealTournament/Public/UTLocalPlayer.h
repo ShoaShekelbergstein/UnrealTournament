@@ -1303,6 +1303,8 @@ public:
 	void ReportAbuse(TWeakObjectPtr<class AUTPlayerState> Troll);
 	void CloseAbuseDialog();
 
+	virtual FSceneView* CalcSceneView(class FSceneViewFamily* ViewFamily, FVector& OutViewLocation,	FRotator& OutViewRotation, FViewport* Viewport,	class FViewElementDrawer* ViewDrawer = NULL, EStereoscopicPass StereoPass = eSSP_FULL) override;
+	
 protected:
 	UPROPERTY()
 	UUTUMGWidget* SavingWidget;
