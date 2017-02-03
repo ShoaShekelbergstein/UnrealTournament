@@ -3397,7 +3397,7 @@ void AUTPlayerController::PlayerTick( float DeltaTime )
 	}
 	APawn* ViewTargetPawn = (PlayerCameraManager != nullptr) ? PlayerCameraManager->GetViewTargetPawn() : nullptr;
 	AUTCharacter* ViewTargetCharacter = Cast<AUTCharacter>(ViewTargetPawn);
-	if (IsInState(NAME_Spectating) && UTPlayerState  && bAutoCam && (UTPlayerState->bOnlySpectator || (UTPlayerState->bOutOfLives && !Cast<AUTGameObjective>(GetViewTarget()))) && (!ViewTargetCharacter || !ViewTargetCharacter->IsRecentlyDead()))
+	if (IsInState(NAME_Spectating) && UTPlayerState && (bAutoCam || UTPlayerState->bOutOfLives) && (UTPlayerState->bOnlySpectator || (UTPlayerState->bOutOfLives && !Cast<AUTGameObjective>(GetViewTarget()))) && (!ViewTargetCharacter || !ViewTargetCharacter->IsRecentlyDead()))
 	{
 		// possibly switch cameras
 		ChooseBestCamera();
