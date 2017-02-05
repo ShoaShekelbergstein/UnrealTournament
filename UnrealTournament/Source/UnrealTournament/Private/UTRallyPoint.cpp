@@ -582,6 +582,7 @@ void AUTRallyPoint::Tick(float DeltaTime)
 						if (NearbyFC->Health < NearbyFC->HealthMax)
 						{
 							NearbyFC->Health += FMath::Min(50, NearbyFC->HealthMax - NearbyFC->Health);
+							NearbyFC->OnHealthUpdated();
 							AUTPlayerController* FCPC = Cast<AUTPlayerController>(NearbyFC->GetController());
 							if (FCPC)
 							{
@@ -853,21 +854,18 @@ void AUTRallyPoint::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVecto
 		{
 			return;
 		}
-		if ((RallyPointState == RallyPointStates::Charging) || ((ClientCountdown > 0.f) && (ClientCountdown >= OldClientCountdown)))
+		if (RallyPointState == RallyPointStates::Charging)
 		{
 			DrawChargingThermometer(PC, Canvas, CameraPosition, true);
 			return;
 		}
 	}
-	else if (RallyPointState != RallyPointStates::Powered)
+	else if (RallyPointState == RallyPointStates::Charging)
 	{
-		if ((ClientCountdown > 0.f) && (ClientCountdown >= OldClientCountdown))
+		AUTCharacter* FC = (UTGS && UTGS->GetOffenseFlag()) ? UTGS->GetOffenseFlag()->HoldingPawn : nullptr;
+		if (FC && (GetWorld()->GetTimeSeconds() - FC->GetLastRenderTime() < 0.1f) && PC->LineOfSightTo(FC))
 		{
-			AUTCharacter* FC = (UTGS && UTGS->GetOffenseFlag()) ? UTGS->GetOffenseFlag()->HoldingPawn : nullptr;
-			if (FC && (GetWorld()->GetTimeSeconds() - FC->GetLastRenderTime() < 0.1f) && PC->LineOfSightTo(FC))
-			{
-				DrawChargingThermometer(PC, Canvas, CameraPosition, false);
-			}
+			DrawChargingThermometer(PC, Canvas, CameraPosition, false);
 		}
 		return;
 	}
