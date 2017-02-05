@@ -3309,7 +3309,7 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 					RemainingStartDelay = 0.f;
 				}
 				UTGameState->SetRemainingTime(FMath::Max(0.f, RemainingStartDelay));
-				if (!bRankedSession && (RemainingStartDelay < 2) && !bForceNoBots && !bDevServer)
+				if (!bRankedSession && (RemainingStartDelay < 2) && !bForceNoBots && !bDevServer && (GetWorld()->WorldType != EWorldType::PIE))
 				{
 					// if not competitive match, fill with bots if have waited long enough
 					BotFillCount = FMath::Max(BotFillCount, FMath::Min(GameSession->MaxPlayers, 10));
