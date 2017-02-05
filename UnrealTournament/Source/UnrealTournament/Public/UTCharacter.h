@@ -729,8 +729,14 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	UFUNCTION()
 	virtual void FiringInfoReplicated();
 
-	UPROPERTY(BlueprintReadWrite, Category = Pawn, Replicated)
+	UPROPERTY(BlueprintReadWrite, Category = Pawn, ReplicatedUsing=OnHealthUpdated)
 	int32 Health;
+
+	UPROPERTY()
+		int32 OldHealth;
+
+	UFUNCTION()
+		virtual void OnHealthUpdated();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
 	int32 HealthMax;

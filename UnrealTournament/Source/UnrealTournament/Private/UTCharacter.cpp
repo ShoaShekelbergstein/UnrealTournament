@@ -97,6 +97,7 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 	UTCharacterMovement = Cast<UUTCharacterMovement>(GetCharacterMovement());
 	HealthMax = 100;
 	SuperHealthMax = 199;
+	OldHealth = HealthMax;
 	DamageScaling = 1.0f;
 	bDamageHurtsHealth = true;
 	FireRateMultiplier = 1.0f;
@@ -256,6 +257,7 @@ void AUTCharacter::BeginPlay()
 	if (Health == 0 && Role == ROLE_Authority)
 	{
 		Health = HealthMax;
+		OnHealthUpdated();
 	}
 	CharacterCameraComponent->SetRelativeLocation(FVector(0.f, 0.f, DefaultBaseEyeHeight), false);
 	if (CharacterCameraComponent->RelativeLocation.SizeSquared2D() > 0.0f)
@@ -926,6 +928,7 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 			if (bApplyDamageToCharacter)
 			{
 				Health -= ResultDamage;
+				OnHealthUpdated();
 				bWasFallingWhenDamaged = (GetCharacterMovement() != NULL && (GetCharacterMovement()->MovementMode == MOVE_Falling));
 				if (Health < 0)
 				{
@@ -3457,6 +3460,7 @@ void AUTCharacter::AddDefaultInventory(const TArray<TSubclassOf<AUTInventory>>& 
 					}
 
 					Health += UTGameMode->AvailableLoadoutPacks[PackIndex].SpawnHealthModifier;
+					OnHealthUpdated();
 					return;
 				}
 			}
@@ -3502,6 +3506,7 @@ void AUTCharacter::SetInitialHealth_Implementation()
 			if (PackIndex != INDEX_NONE && PackIndex < UTGameMode->AvailableLoadoutPacks.Num())
 			{
 				Health += UTGameMode->AvailableLoadoutPacks[PackIndex].SpawnHealthModifier;
+				OnHealthUpdated();
 			}
 		}
 	}
@@ -5230,6 +5235,26 @@ AUTCarriedObject* AUTCharacter::GetCarriedObject()
 	return NULL;
 }
 
+void AUTCharacter::OnHealthUpdated()
+{
+	if ((Health > OldHealth) && (GetNetMode() != NM_DedicatedServer))
+	{
+		// play first or third person armor effects
+	if (GetWorld()->TimeSeconds - GetMesh()->LastRenderTime < 0.1f)
+	{
+		if (GetCachedScalabilityCVars().DetailMode > 0)
+		{
+			UGameplayStatics::SpawnEmitterAttached(ThirdPersonHealthEffect, GetCapsuleComponent(), NAME_None, GetActorLocation() - FVector(0.f, 0.f, 80.f), GetController() ? GetControlRotation() : GetActorRotation(), EAttachLocation::KeepWorldPosition);
+		}
+	}
+	else if (IsLocallyViewed())
+		{
+			UGameplayStatics::SpawnEmitterAttached(FirstPersonHealthEffect, CharacterCameraComponent, NAME_None, FVector(0.f, 0.f, 0.f), FRotator(0.f), EAttachLocation::SnapToTarget);
+		}
+	}
+	OldHealth = Health;
+}
+
 int32 AUTCharacter::GetArmorAmount() const
 {
 	return ArmorAmount;
@@ -5264,13 +5289,16 @@ void AUTCharacter::OnArmorUpdated()
 	if ((ArmorAmount > OldArmorAmount) && (GetNetMode() != NM_DedicatedServer))
 	{
 		// play first or third person armor effects
-		if (Cast<AUTPlayerController>(GetController()))
+		if (GetWorld()->TimeSeconds - GetMesh()->LastRenderTime < 0.1f)
 		{
-			UGameplayStatics::SpawnEmitterAttached(FirstPersonArmorEffect, CharacterCameraComponent, NAME_None, FVector(0.f,0.f,0.f), GetController() ? GetControlRotation() : GetActorRotation(), EAttachLocation::SnapToTarget);
+			if (GetCachedScalabilityCVars().DetailMode > 0)
+			{
+				UGameplayStatics::SpawnEmitterAttached(ThirdPersonArmorEffect, GetCapsuleComponent(), NAME_None, GetActorLocation() - FVector(0.f, 0.f, 80.f), GetController() ? GetControlRotation() : GetActorRotation(), EAttachLocation::KeepWorldPosition);
+			}
 		}
-		else
+		else if (IsLocallyViewed())
 		{
-			UGameplayStatics::SpawnEmitterAttached(ThirdPersonArmorEffect, GetCapsuleComponent(), NAME_None, GetActorLocation(), GetController() ? GetControlRotation() : GetActorRotation(), EAttachLocation::KeepWorldPosition);
+			UGameplayStatics::SpawnEmitterAttached(FirstPersonArmorEffect, CharacterCameraComponent, NAME_None, FVector(0.f, 0.f, 0.f), FRotator(0.f), EAttachLocation::SnapToTarget);
 		}
 	}
 	OldArmorAmount = ArmorAmount;

@@ -54,33 +54,6 @@ void AUTGameVolume::PostInitializeComponents()
 	}
 }
 
-void AUTGameVolume::HealthTimer()
-{
-	TArray<AActor*> TouchingActors;
-	GetOverlappingActors(TouchingActors, AUTCharacter::StaticClass());
-
-	for (int32 iTouching = 0; iTouching < TouchingActors.Num(); ++iTouching)
-	{
-		AUTCharacter* const P = Cast<AUTCharacter>(TouchingActors[iTouching]);
-		if (P && (GetWorld()->GetTimeSeconds() - P->EnteredSafeVolumeTime) > 1.f)
-		{
-			if (P->Health < P->HealthMax)
-			{
-				P->Health = FMath::Max<int32>(P->Health, FMath::Min<int32>(P->Health + 20, P->HealthMax));
-				AUTPlayerController* PC = Cast<AUTPlayerController>(P->GetController());
-				if (PC)
-				{
-					PC->ClientPlaySound(HealthSound);
-				}
-			}
-			if ((TeamLockers.Num() > 0) && TeamLockers[0] && P->bHasLeftSafeVolume)
-			{
-				TeamLockers[0]->ProcessTouch(P);
-			}
-		}
-	}
-}
-
 int32 AUTGameVolume::DetermineEntryDirection(AUTCharacter* EnteringCharacter, AUTFlagRunGameState* GS)
 {
 	// determine entry direction

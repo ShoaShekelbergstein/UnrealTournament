@@ -94,10 +94,6 @@ class UNREALTOURNAMENT_API AUTGameVolume : public APhysicsVolume, public IUTTeam
 	virtual void Reset_Implementation() override;
 	virtual void PostInitializeComponents() override;
 
-	FTimerHandle HealthTimerHandle;
-
-	virtual void HealthTimer();
-
 	/* Play incoming direction message for attackers, plus display debug for easier testing of entry direction orientation*/
 	UPROPERTY(BlueprintReadWrite, Category = "Debug")
 		bool bTestBaseEntry;

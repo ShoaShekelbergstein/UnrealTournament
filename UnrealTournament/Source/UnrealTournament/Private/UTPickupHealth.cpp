@@ -90,6 +90,7 @@ void AUTPickupHealth::GiveTo_Implementation(APawn* Target)
 	{
 		AUTPickup::GiveTo_Implementation(Target);
 		P->Health = FMath::Max<int32>(P->Health, FMath::Min<int32>(P->Health + HealAmount, GetHealMax(P)));
+		P->OnHealthUpdated();
 		if (P->Health >= 100)
 		{
 			P->HealthRemovalAssists.Empty();
