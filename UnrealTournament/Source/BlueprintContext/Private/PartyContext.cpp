@@ -132,6 +132,8 @@ void UPartyContext::HandlePartyLeft(UPartyGameState* PartyState, EMemberExitedRe
 			{
 				LocalPlayer->ShowToast(NSLOCTEXT("UPartyContext", "PartyLeft", "You have left the party"));
 			}
+
+			LocalPlayer->HideMatchmakingDialog();
 		}
 	}
 }
