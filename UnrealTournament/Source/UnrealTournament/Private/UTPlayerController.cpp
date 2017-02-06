@@ -1378,14 +1378,17 @@ void AUTPlayerController::ViewPlayerNum(int32 Index, uint8 TeamNum)
 		}
 		if (PlayerToView != NULL)
 		{
-			if (PlayerState && !PlayerState->bOnlySpectator && !GS->OnSameTeam(this, *PlayerToView))
+			if (!PlayerState || !PlayerState->bOnlySpectator)
 			{
-				// can't view opposing players if not spectator
-				return;
-			}
-			if (Cast<AUTPlayerState>(*PlayerToView) && Cast<AUTPlayerState>(*PlayerToView)->bOutOfLives)
-			{
-				return;
+				if (!GS->OnSameTeam(this, *PlayerToView))
+				{
+					// can't view opposing players if not spectator
+					return;
+				}
+				if (Cast<AUTPlayerState>(*PlayerToView) && Cast<AUTPlayerState>(*PlayerToView)->bOutOfLives)
+				{
+					return;
+				}
 			}
 			bAutoCam = false;
 			BehindView(bSpectateBehindView);
@@ -3397,7 +3400,7 @@ void AUTPlayerController::PlayerTick( float DeltaTime )
 	}
 	APawn* ViewTargetPawn = (PlayerCameraManager != nullptr) ? PlayerCameraManager->GetViewTargetPawn() : nullptr;
 	AUTCharacter* ViewTargetCharacter = Cast<AUTCharacter>(ViewTargetPawn);
-	if (IsInState(NAME_Spectating) && UTPlayerState && (bAutoCam || UTPlayerState->bOutOfLives) && (UTPlayerState->bOnlySpectator || (UTPlayerState->bOutOfLives && !Cast<AUTGameObjective>(GetViewTarget()))) && (!ViewTargetCharacter || !ViewTargetCharacter->IsRecentlyDead()))
+	if (IsInState(NAME_Spectating) && UTPlayerState && (bAutoCam || !UTPlayerState->bOnlySpectator) && (UTPlayerState->bOnlySpectator || (UTPlayerState->bOutOfLives && !Cast<AUTGameObjective>(GetViewTarget()))) && (!ViewTargetCharacter || !ViewTargetCharacter->IsRecentlyDead()))
 	{
 		// possibly switch cameras
 		ChooseBestCamera();
