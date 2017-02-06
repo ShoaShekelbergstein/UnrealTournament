@@ -2196,6 +2196,17 @@ void AUTHUD::ClearAllUMGWidgets()
 
 void AUTHUD::ShowUTMenu()
 {
+	// If we are a tutorial game mode
+	if ( GetWorld()->GetNetMode() == NM_Standalone )
+	{
+		AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+		if (GameMode && GameMode->TutorialMask > 0 && GameMode->TutorialMask <= TUTORIAL_SkillMoves)
+		{
+			return;
+		}
+	}
+
+
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;
 	if (GS && UTLP && GS->GetMatchState() == MatchState::WaitingToStart)
