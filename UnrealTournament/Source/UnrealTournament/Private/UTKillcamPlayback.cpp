@@ -14,6 +14,7 @@
 #include "UTRemoteRedeemer.h"
 #include "UTCharacter.h"
 #include "UTRallyPoint.h"
+#include "UTHUDWidgetAnnouncements.h"
 
 TAutoConsoleVariable<int32> CVarUTEnableInstantReplay(
 	TEXT("UT.EnableInstantReplay"),
@@ -515,6 +516,11 @@ void UUTKillcamPlayback::HideKillcamFromUser()
 
 	for (TActorIterator<AUTPlayerController> It(KillcamWorld); It; ++It)
 	{
+		if (It->MyUTHUD && It->MyUTHUD->AnnouncementWidget)
+		{
+			It->MyUTHUD->AnnouncementWidget->AgeMessages(1000.f);
+		}
+
 		if (It->Announcer)
 		{
 			It->Announcer->ClearAnnouncements();
