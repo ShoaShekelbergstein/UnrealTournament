@@ -148,7 +148,7 @@ void UUTProgressionStorage::TokensCommit()
 			UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(GEngine->GetFirstGamePlayer(GWorld));	
 			if (LP)
 			{
-				LP->ShowToast(NSLOCTEXT("UT", "ItemRewardVise", "You earned Visse - The Armor of Sacrifce!"));
+				LP->ShowToast(NSLOCTEXT("UT", "ItemRewardVise", "You earned Visse - The Armor of Sacrifice!"));
 			}
 		}
 	}

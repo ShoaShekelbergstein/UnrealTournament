@@ -1004,9 +1004,7 @@ FReply SUTChallengePanel::ChallengeClicked(FName ChallengeTag)
 			*LevelScreenshot = FSlateDynamicImageBrush(Cast<UUTGameEngine>(GEngine)->DefaultLevelScreenshot, LevelScreenshot->ImageSize, LevelScreenshot->GetResourceName());
 		}
 
-		ChallengeDescription->SetText(FText::FromString(Description));
-
-
+		ChallengeDescription->SetText(NSLOCTEXT("SUTChallengePanel", "NoChallenges", " Unlock upgraded teammates for every 5 gold stars earned.\n\n Unlock special rewards at 5, 15, 25, 35, and 45 gold stars earned.\n\n You will also earn XP for each match, allowing you to unlock other rewards as you level up."));
 	}
 
 	return FReply::Handled();
