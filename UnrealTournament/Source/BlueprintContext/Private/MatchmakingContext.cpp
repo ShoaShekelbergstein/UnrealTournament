@@ -113,8 +113,8 @@ void UMatchmakingContext::StartMatchmaking(int32 InPlaylistId)
 	{
 		if (!LocalPlayer->IsPartyLeader())
 		{
-			// Show error dialog
-			LocalPlayer->MessageBox(LOCTEXT("NotPartyLeaderTitle", "Must Be The Party Leader"), LOCTEXT("NotPartyLeader", "You must be the party leader to initiate matchmaking."));
+			// Show error toast
+			LocalPlayer->ShowToast(LOCTEXT("NotPartyLeader", "Only the party leader may start Ranked Matchmaking"));
 			return;
 		}
 
@@ -167,7 +167,7 @@ void UMatchmakingContext::AttemptReconnect(const FString& OldSessionId)
 		if (!LocalPlayer->IsPartyLeader())
 		{
 			// Show error dialog
-			LocalPlayer->MessageBox(LOCTEXT("ReconnectNotPartyLeaderTitle", "Must Be The Party Leader"), LOCTEXT("ReconnectNotPartyLeader", "You must be the party leader to initiate matchmaking."));
+			LocalPlayer->ShowToast(LOCTEXT("ReconnectNotPartyLeader", "Only the party leader may attempt to reconnect"));
 			return;
 		}
 
