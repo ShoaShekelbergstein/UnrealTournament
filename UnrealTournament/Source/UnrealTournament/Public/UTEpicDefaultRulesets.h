@@ -272,7 +272,7 @@ public:
 			NewRuleset->Tooltip = TEXT("Capture the Flag.");
 			NewRuleset->Description = TEXT("Capture the Flag, with guns.\n\n<UT.Hub.RulesText_Small>TimeLimit : %timelimit% minutes with halftime</>\n<UT.Hub.RulesText_Small>Mercy Rule : On</>\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
 			NewRuleset->MinPlayersToStart = 4;
-			NewRuleset->MaxPlayers = 12;
+			NewRuleset->MaxPlayers = 10;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0"));
