@@ -132,11 +132,6 @@ int32 AUTFlagRunGame::GetFlagCapScore()
 
 void AUTFlagRunGame::AnnounceWin(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 Reason)
 {
-	if (WinningTeam && !IsTeamOnOffense(WinningTeam->TeamIndex))
-	{
-		int32 MessageIndex = (CTFGameState && (CTFGameState->CTFRound == 6) && (Reason == 1)) ? 10 : 9;
-		BroadcastLocalized(NULL, UUTCTFRewardMessage::StaticClass(), MessageIndex);
-	}
 	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 	{
 		AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);

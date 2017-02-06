@@ -232,6 +232,11 @@ void UUTFlagRunScoreboard::AnnounceRoundScore(AUTTeamInfo* InScoringTeam, APlaye
 		}
 		else if (ScoringTeam)
 		{
+			if (!GS->IsTeamOnOffense(ScoringTeam->TeamIndex))
+			{
+				int32 MessageIndex = (GS && (GS->CTFRound == 6) && (Reason == 1)) ? 10 : 9;
+				UTPlayerOwner->ClientReceiveLocalizedMessage(UUTCTFRewardMessage::StaticClass(), MessageIndex);
+			}
 			UTPlayerOwner->ClientReceiveLocalizedMessage(UUTShowdownGameMessage::StaticClass(), 3 + ScoringTeam->TeamIndex);
 		}
 	}
