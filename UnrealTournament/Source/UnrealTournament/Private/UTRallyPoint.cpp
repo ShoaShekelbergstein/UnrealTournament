@@ -860,12 +860,15 @@ void AUTRallyPoint::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVecto
 			return;
 		}
 	}
-	else if (RallyPointState == RallyPointStates::Charging)
+	else if (RallyPointState != RallyPointStates::Powered)
 	{
-		AUTCharacter* FC = (UTGS && UTGS->GetOffenseFlag()) ? UTGS->GetOffenseFlag()->HoldingPawn : nullptr;
-		if (FC && (GetWorld()->GetTimeSeconds() - FC->GetLastRenderTime() < 0.1f) && PC->LineOfSightTo(FC))
+		if (RallyPointState == RallyPointStates::Charging)
 		{
-			DrawChargingThermometer(PC, Canvas, CameraPosition, false);
+			AUTCharacter* FC = (UTGS && UTGS->GetOffenseFlag()) ? UTGS->GetOffenseFlag()->HoldingPawn : nullptr;
+			if (FC && (GetWorld()->GetTimeSeconds() - FC->GetLastRenderTime() < 0.1f) && PC->LineOfSightTo(FC))
+			{
+				DrawChargingThermometer(PC, Canvas, CameraPosition, false);
+			}
 		}
 		return;
 	}
