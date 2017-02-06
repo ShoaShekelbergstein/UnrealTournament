@@ -420,7 +420,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	}
 
 	bool bHasAnalyticsLoggedGameStart = EvalBoolOptions(UGameplayStatics::ParseOption(Options, FUTAnalytics::AnalyticsLoggedGameOption), false);
-	if (!bHasAnalyticsLoggedGameStart && FUTAnalytics::IsAvailable() && GetWorld())
+	if (!bHasAnalyticsLoggedGameStart && FUTAnalytics::IsAvailable() && GetWorld() && (GetNetMode() != ENetMode::NM_DedicatedServer))
 	{
 		FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), FString::Printf(TEXT("Console - %s"), *DisplayName.ToString()));
 	}
