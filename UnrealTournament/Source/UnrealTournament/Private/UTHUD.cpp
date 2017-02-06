@@ -719,7 +719,28 @@ void AUTHUD::PostRender()
 		DrawString(FText::Format( NSLOCTEXT("a","b","InputMode: {0}"),  FText::AsNumber(Cast<AUTBasePlayerController>(PlayerOwner)->InputMode)), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
 		YPos += 48 * HScale;
 
-		DrawString(FText::Format( NSLOCTEXT("a","c","Flags: {0} {1} {2}"),  FText::AsNumber(bShowScores), FText::AsNumber(ScoreboardIsUp()), FText::AsNumber(UTPlayerOwner->AreMenusOpen())), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
+
+		bool debugA = (!UTPlayerOwner || !UTPlayerOwner->UTPlayerState || !UTPlayerOwner->UTPlayerState->bIsWarmingUp);
+
+		DrawString(FText::Format( NSLOCTEXT("a","c","Flags 1: {0} {1} {2} {3}"),  
+					FText::AsNumber(bShowScores), 
+					FText::AsNumber(ScoreboardIsUp()), 
+					FText::AsNumber(UTPlayerOwner->AreMenusOpen()), 
+					FText::AsNumber(GS->HasMatchStarted()) ),
+					0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
+
+		YPos += 48 * HScale;
+
+		DrawString(FText::Format( NSLOCTEXT("a","c2","Flags 2: {0} {1} {2} {3}"),  
+					FText::AsNumber(GS->IsMatchIntermission()),
+					FText::AsNumber(debugA),  
+					FText::AsNumber(bShowScoresWhileDead), 
+					FText::AsNumber(bForceScores) 
+				   ), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
+
+		YPos += 48 * HScale;
+
+		DrawString(FText::Format( NSLOCTEXT("a","j","States: {0} {1}"),  FText::FromString(PlayerOwner->GetStateName().ToString()), FText::FromString(GS->GetMatchState().ToString())), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
 		YPos += 48 * HScale;
 
 		UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(UTPlayerOwner->Player);
