@@ -567,7 +567,6 @@ private:
 	FDelegateHandle OnLogoutCompleteDelegate;
 
 	FDelegateHandle OnEnumerateUserFilesCompleteDelegate;
-	FDelegateHandle OnReadUserFileCompleteDelegate;
 	FDelegateHandle OnWriteUserFileCompleteDelegate;
 	FDelegateHandle OnDeleteUserFileCompleteDelegate;
 
@@ -578,6 +577,10 @@ private:
 
 	FDelegateHandle OnReadTitleFileCompleteDelegate;
 	FDelegateHandle OnEnumerateTitleFilesCompleteDelegate;
+
+	FDelegateHandle OnReadProfileCompleteDelegate;
+	FDelegateHandle OnReadProgressionCompleteDelegate;
+
 
 public:
 	virtual void LoadProfileSettings();
@@ -599,19 +602,20 @@ public:
 
 	bool IsPendingMCPLoad() const;
 
+	virtual FString GetProfileFilename();
+	UUTProfileSettings* CreateProfileSettingsObject(const TArray<uint8>& Buffer);
+
 protected:
 
 	// Holds the current profile settings.  
 	UPROPERTY()
-		UUTProfileSettings* CurrentProfileSettings;
+	UUTProfileSettings* CurrentProfileSettings;
 
 	UPROPERTY()
-		UUTProgressionStorage* CurrentProgression;
+	UUTProgressionStorage* CurrentProgression;
 
-	virtual FString GetProfileFilename();
 	virtual FString GetProgressionFilename();
 	virtual void ClearProfileWarnResults(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
-	virtual void OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
 	virtual void OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
 	virtual void OnDeleteUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
 	virtual void OnEnumerateUserFilesComplete(bool bWasSuccessful, const FUniqueNetId& InUserId);
@@ -619,6 +623,11 @@ protected:
 	void EnumerateTitleFiles();
 	virtual void OnReadTitleFileComplete(bool bWasSuccessful, const FString& Filename);
 	virtual void OnEnumerateTitleFilesComplete(bool bWasSuccessful);
+
+
+	virtual void OnReadProfileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
+	virtual void OnReadProgressionComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
+
 
 #if !UE_SERVER
 	TSharedPtr<class SUTDialogBase> HUDSettings;
@@ -832,7 +841,7 @@ public:
 	UPROPERTY(config)
 	int32 ServerPingBlockSize;
 
-	virtual void ShowPlayerInfo(TWeakObjectPtr<AUTPlayerState> Target, bool bAllowLogout=false);
+	virtual void ShowPlayerInfo(const FString& TargetId, const FString PlayerName);
 	virtual void OnTauntPlayed(AUTPlayerState* PS, TSubclassOf<AUTTaunt> TauntToPlay, float EmoteSpeed);
 	virtual void OnEmoteSpeedChanged(AUTPlayerState* PS, float EmoteSpeed);
 

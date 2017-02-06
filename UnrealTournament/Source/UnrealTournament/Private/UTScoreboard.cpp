@@ -679,7 +679,7 @@ void UUTScoreboard::SelectionClick()
 		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(UTHUDOwner->UTPlayerOwner->Player);
 		if (LP)
 		{
-			LP->ShowPlayerInfo(SelectedPlayer);
+			LP->ShowPlayerInfo(SelectedPlayer->UniqueId.ToString(), SelectedPlayer->PlayerName);
 			ClearSelection();
 		}
 	}

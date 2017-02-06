@@ -970,7 +970,7 @@ FReply SUTMenuBase::OnShowPlayerCard()
 		AUTPlayerState* PlayerState = Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState);
 		if (PlayerState)
 		{
-			PlayerOwner->ShowPlayerInfo(PlayerState, true);
+			PlayerOwner->ShowPlayerInfo(PlayerState->UniqueId.ToString(), PlayerState->PlayerName);
 		}
 	}
 	return FReply::Handled();

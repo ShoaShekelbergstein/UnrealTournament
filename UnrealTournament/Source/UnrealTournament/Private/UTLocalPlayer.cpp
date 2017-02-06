@@ -167,7 +167,6 @@ void UUTLocalPlayer::InitializeOnlineSubsystem()
 
 	if (OnlineUserCloudInterface.IsValid())
 	{
-		OnReadUserFileCompleteDelegate = OnlineUserCloudInterface->AddOnReadUserFileCompleteDelegate_Handle(FOnReadUserFileCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnReadUserFileComplete));
 		OnWriteUserFileCompleteDelegate = OnlineUserCloudInterface->AddOnWriteUserFileCompleteDelegate_Handle(FOnWriteUserFileCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnWriteUserFileComplete));
 		OnDeleteUserFileCompleteDelegate = OnlineUserCloudInterface->AddOnDeleteUserFileCompleteDelegate_Handle(FOnDeleteUserFileCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnDeleteUserFileComplete));
 		OnEnumerateUserFilesCompleteDelegate = OnlineUserCloudInterface->AddOnEnumerateUserFilesCompleteDelegate_Handle(FOnEnumerateUserFilesCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnEnumerateUserFilesComplete));
@@ -205,7 +204,6 @@ void UUTLocalPlayer::CleanUpOnlineSubSystyem()
 		}
 		if (OnlineUserCloudInterface.IsValid())
 		{
-			OnlineUserCloudInterface->ClearOnReadUserFileCompleteDelegate_Handle(OnReadUserFileCompleteDelegate);
 			OnlineUserCloudInterface->ClearOnWriteUserFileCompleteDelegate_Handle(OnWriteUserFileCompleteDelegate);
 			OnlineUserCloudInterface->ClearOnDeleteUserFileCompleteDelegate_Handle(OnDeleteUserFileCompleteDelegate);
 			OnlineUserCloudInterface->ClearOnEnumerateUserFilesCompleteDelegate_Handle(OnEnumerateUserFilesCompleteDelegate);
@@ -1489,6 +1487,8 @@ void UUTLocalPlayer::LoadProfileSettings()
 			if (OnlineUserCloudInterface.IsValid())
 			{
 				bIsPendingProfileLoadFromMCP = true;
+
+				OnReadProfileCompleteDelegate = OnlineUserCloudInterface->AddOnReadUserFileCompleteDelegate_Handle(FOnReadUserFileCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnReadProfileComplete));
 				OnlineUserCloudInterface->ReadUserFile(*UserID, GetProfileFilename());
 			}
 		}
@@ -1533,6 +1533,7 @@ void UUTLocalPlayer::LoadProgression()
 			if (OnlineUserCloudInterface.IsValid())
 			{
 				bIsPendingProgressionLoadFromMCP = true;
+				OnReadProgressionCompleteDelegate = OnlineUserCloudInterface->AddOnReadUserFileCompleteDelegate_Handle(FOnReadUserFileCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnReadProgressionComplete));
 				OnlineUserCloudInterface->ReadUserFile(*UserID, GetProgressionFilename());
 			}
 		}
@@ -1570,6 +1571,36 @@ void UUTLocalPlayer::OnDeleteUserFileComplete(bool bWasSuccessful, const FUnique
 #endif
 }
 
+UUTProfileSettings* UUTLocalPlayer::CreateProfileSettingsObject(const TArray<uint8>& Buffer)
+{
+	UUTProfileSettings* ProfileSettings = NewObject<UUTProfileSettings>(GetTransientPackage(),UUTProfileSettings::StaticClass());
+
+	// Serialize the object
+	FMemoryReader MemoryReader(Buffer, true);
+	FObjectAndNameAsStringProxyArchive Ar(MemoryReader, true);
+			
+	// FObjectAndNameAsStringProxyArchive does not have versioning, but we need it
+	// In 4.12, Serialization has been modified and we need the FArchive to use the right serialization path
+	uint32 PossibleMagicNumber;
+	Ar << PossibleMagicNumber;
+	if (CloudProfileMagicNumberVersion1 == PossibleMagicNumber)
+	{
+		int32 CloudProfileUE4Ver;
+		Ar << CloudProfileUE4Ver;
+		Ar.SetUE4Ver(CloudProfileUE4Ver);
+	}
+	else
+	{
+		// Very likely this is from an unversioned cloud profile, set it to the last released serialization version
+		Ar.SetUE4Ver(CloudProfileUE4VerForUnversionedProfile);
+		// Rewind to the beginning as the magic number was not in the archive
+		Ar.Seek(0);
+	}
+
+	ProfileSettings->Serialize(Ar);
+	return ProfileSettings;
+}
+
 
 //Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
 /*
@@ -1586,8 +1617,10 @@ void UUTLocalPlayer::OnDeleteUserFileComplete(bool bWasSuccessful, const FUnique
 *
 * @Comments
 */
-void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName)
+void UUTLocalPlayer::OnReadProfileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName)
 {
+	OnlineUserCloudInterface->ClearOnReadUserFileCompleteDelegate_Handle(OnReadProfileCompleteDelegate);
+
 	if (FileName == GetProfileFilename())
 	{
 		bIsPendingProfileLoadFromMCP = false;
@@ -1599,39 +1632,11 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 			// Next Step is to read the MMR
 			ReadMMRFromBackend();
 
-			// Create a new Profile object.  We always create a new one and discard the old one.
-			CurrentProfileSettings = NewObject<UUTProfileSettings>(GetTransientPackage(),UUTProfileSettings::StaticClass());
-
 			TArray<uint8> FileContents;
 			OnlineUserCloudInterface->GetFileContents(InUserId, FileName, FileContents);
-			
-			// Serialize the object
-			FMemoryReader MemoryReader(FileContents, true);
-			FObjectAndNameAsStringProxyArchive Ar(MemoryReader, true);
-			
-			// FObjectAndNameAsStringProxyArchive does not have versioning, but we need it
-			// In 4.12, Serialization has been modified and we need the FArchive to use the right serialization path
-			uint32 PossibleMagicNumber;
-			Ar << PossibleMagicNumber;
-			if (CloudProfileMagicNumberVersion1 == PossibleMagicNumber)
-			{
-				int32 CloudProfileUE4Ver;
-				Ar << CloudProfileUE4Ver;
-				Ar.SetUE4Ver(CloudProfileUE4Ver);
-			}
-			else
-			{
-				// Very likely this is from an unversioned cloud profile, set it to the last released serialization version
-				Ar.SetUE4Ver(CloudProfileUE4VerForUnversionedProfile);
-				// Rewind to the beginning as the magic number was not in the archive
-				Ar.Seek(0);
-			}
 
-			bool bNeedToSaveProfile = false;
-
-
-			CurrentProfileSettings->Serialize(Ar);
-			bNeedToSaveProfile = CurrentProfileSettings->VersionFixup();
+			CurrentProfileSettings = CreateProfileSettingsObject(FileContents);
+			bool bNeedToSaveProfile = CurrentProfileSettings->VersionFixup();
 
 			if (FUTAnalytics::IsAvailable())
 			{
@@ -1694,7 +1699,13 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 		SaveConfig();
 		SaveProfileSettings();
 	}
-	else if (FileName == GetProgressionFilename())
+}
+
+void UUTLocalPlayer::OnReadProgressionComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName)
+{
+	OnlineUserCloudInterface->ClearOnReadUserFileCompleteDelegate_Handle(OnReadProfileCompleteDelegate);
+
+	if (FileName == GetProgressionFilename())
 	{
 		bIsPendingProgressionLoadFromMCP = false;
 
@@ -1786,6 +1797,8 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 
 	}
 }
+
+
 
 // Only send ELO and stars to the server once all the server responses are complete
 void UUTLocalPlayer::ReportStarsToServer()
@@ -3643,13 +3656,13 @@ TSharedPtr<SUTMatchSummaryPanel> UUTLocalPlayer::GetSummaryPanel()
 }
 #endif
 
-void UUTLocalPlayer::ShowPlayerInfo(TWeakObjectPtr<AUTPlayerState> Target, bool bAllowLogout)
+void UUTLocalPlayer::ShowPlayerInfo(const FString& TargetId, const FString PlayerName)
 {
 #if !UE_SERVER
 	TSharedPtr<SUTMatchSummaryPanel> MatchSummary = GetSummaryPanel();
-	if (MatchSummary.IsValid() && Target.IsValid())
+	if ( MatchSummary.IsValid() )
 	{
-		MatchSummary->SelectPlayerState(Target.Get());
+		//MatchSummary->SelectPlayerState(Target.Get());
 	}
 	else
 	{
@@ -3657,7 +3670,12 @@ void UUTLocalPlayer::ShowPlayerInfo(TWeakObjectPtr<AUTPlayerState> Target, bool 
 		{
 			HideMenu();
 		}
-		OpenDialog(SNew(SUTPlayerInfoDialog).PlayerOwner(this).TargetPlayerState(Target).bAllowLogout(bAllowLogout));
+		OpenDialog(
+				SNew(SUTPlayerInfoDialog)
+					.PlayerOwner(this)
+					.TargetUniqueId(TargetId)
+					.TargetName(PlayerName)
+		);
 	}
 #endif
 }

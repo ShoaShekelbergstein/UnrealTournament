@@ -394,7 +394,7 @@ FReply SUTInGameHomePanel::ContextCommand(int32 CommandId, TWeakObjectPtr<AUTPla
 
 			switch (CommandId)
 			{
-				case ECONTEXT_COMMAND_ShowPlayerCard:	PlayerOwner->ShowPlayerInfo(TargetPlayerState); break;
+				case ECONTEXT_COMMAND_ShowPlayerCard:	PlayerOwner->ShowPlayerInfo(TargetPlayerState->UniqueId.ToString(), TargetPlayerState->PlayerName); break;
 				case ECONTEXT_COMMAND_FriendRequest:	PlayerOwner->RequestFriendship(TargetPlayerState->UniqueId.GetUniqueNetId()); break;
 				case ECONTEXT_COMMAND_KickVote: 
 						if (TargetPlayerState != MyPlayerState)

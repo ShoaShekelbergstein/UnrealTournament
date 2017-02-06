@@ -1675,7 +1675,7 @@ void AUTPlayerController::TogglePlayerInfo()
 		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
 		if (PS != nullptr && LP != nullptr && PS != PlayerState)
 		{
-			LP->ShowPlayerInfo(PS);
+			LP->ShowPlayerInfo(PS->UniqueId.ToString(), PS->PlayerName);
 		}
 	}
 }
