@@ -5362,3 +5362,15 @@ void AUTGameMode::PreLogin(const FString& Options, const FString& Address, const
 
 	Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
 }
+
+void AUTGameMode::PreloadClientAssets(TArray<UObject*>& ObjList) const
+{
+	for (const FStringClassReference& Item : AssetsToPreloadOnClients)
+	{
+		TSubclassOf<UObject> NewType = Item.TryLoadClass<UObject>();
+		if (NewType != nullptr)
+		{
+			ObjList.Add(NewType);
+		}
+	}
+}

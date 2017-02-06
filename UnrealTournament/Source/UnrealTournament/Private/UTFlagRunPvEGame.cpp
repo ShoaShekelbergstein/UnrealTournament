@@ -57,6 +57,8 @@ void AUTFlagRunPvEGame::PreloadClientAssets(TArray<UObject*>& ObjList) const
 			ObjList.Add(NewType);
 		}
 	}
+
+	Super::PreloadClientAssets(ObjList);
 }
 
 void AUTFlagRunPvEGame::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)

@@ -48,6 +48,12 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY()
 	TArray<UObject*> PreloadedAssets;
 
+	UPROPERTY()
+	TArray<UObject*> AsyncLoadedAssets;
+
+	/** Allow game states to react to asset packages being loaded asynchronously */
+	virtual void AsyncPackageLoaded(UObject* Package) override;
+
 	virtual void OnRep_GameModeClass() override;
 
 	/** teams, if the game type has them */

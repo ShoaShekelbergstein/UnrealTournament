@@ -373,6 +373,11 @@ void AUTGameState::OnRep_GameModeClass()
 	}
 }
 
+void AUTGameState::AsyncPackageLoaded(UObject* Package)
+{
+	AsyncLoadedAssets.Add(Package);
+}
+
 void AUTGameState::AddOverlayMaterial(UMaterialInterface* NewOverlay, UMaterialInterface* NewOverlay1P)
 {
 	AddOverlayEffect(FOverlayEffect(NewOverlay), FOverlayEffect(NewOverlay1P));

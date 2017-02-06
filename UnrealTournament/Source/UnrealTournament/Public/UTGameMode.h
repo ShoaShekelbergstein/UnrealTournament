@@ -1001,7 +1001,9 @@ public:
 	 * example: pawn classes for class-based modes
 	 * prevents client hitches when the objects are replicated the first time
 	 */
-	virtual void PreloadClientAssets(TArray<UObject*>& ObjList) const
-	{}
+	virtual void PreloadClientAssets(TArray<UObject*>& ObjList) const;
+
+	UPROPERTY(EditDefaultsOnly, Meta = (MetaClass = "UObject"))
+	TArray<FStringClassReference> AssetsToPreloadOnClients;
 };
 
