@@ -267,6 +267,9 @@ class UNREALTOURNAMENT_API UUTCharacterVoice : public UUTLocalMessage
 		FGameVolumeSpeech ShrineLines;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
+		FGameVolumeSpeech StingerLines;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
 		FGameVolumeSpeech FlakLines;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)

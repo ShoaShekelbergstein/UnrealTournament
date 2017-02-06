@@ -69,6 +69,7 @@ UUTCharacterVoice::UUTCharacterVoice(const FObjectInitializer& ObjectInitializer
 	StatusOffsets.Add(GameVolumeSpeechType::GV_Flak, KEY_CALLOUTS + 3500);
 	StatusOffsets.Add(GameVolumeSpeechType::GV_Waterfall, KEY_CALLOUTS + 3600);
 	StatusOffsets.Add(GameVolumeSpeechType::GV_Shrine, KEY_CALLOUTS + 3700);
+	StatusOffsets.Add(GameVolumeSpeechType::GV_Stinger, KEY_CALLOUTS + 3800);
 	// only game volume speech before LASTGAMEVOLUMESPEECH = KEY_CALLOUTS + 5000 
 
 	StatusOffsets.Add(StatusMessage::EnemyRally, KEY_CALLOUTS + 5000);
@@ -448,6 +449,10 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 			else if (Switch / 100 == GetStatusIndex(GameVolumeSpeechType::GV_Shrine) / 100)
 			{
 				return GetGVLine(ShrineLines, Switch - GetStatusIndex(GameVolumeSpeechType::GV_Shrine));
+			}
+			else if (Switch / 100 == GetStatusIndex(GameVolumeSpeechType::GV_Stinger) / 100)
+			{
+				return GetGVLine(StingerLines, Switch - GetStatusIndex(GameVolumeSpeechType::GV_Stinger));
 			}
 			else if (Switch / 100 == GetStatusIndex(GameVolumeSpeechType::GV_Flak) / 100)
 			{

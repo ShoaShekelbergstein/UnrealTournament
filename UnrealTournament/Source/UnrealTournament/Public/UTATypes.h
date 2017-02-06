@@ -157,6 +157,7 @@ namespace GameVolumeSpeechType
 	const FName GV_Flak = FName(TEXT("GV_Flak"));
 	const FName GV_Waterfall = FName(TEXT("GV_Waterfall"));
 	const FName GV_Shrine = FName(TEXT("GV_Shrine"));
+	const FName GV_Stinger = FName(TEXT("GV_Stinger"));
 }
 
 namespace PickupSpeechType
