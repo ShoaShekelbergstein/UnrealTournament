@@ -2245,6 +2245,17 @@ public:
 		, LoadingMovie(TEXT(""))
 	{
 	}
+
+	FTutorialData(const FName& inTag, uint16 inMask,const FString& inMap, const FString& inLaunchArgs, const FString& inLoadingMovie, const FString& inLoadingText)	
+		: Tag(inTag)
+		, Mask(inMask)
+		, Map(inMap)
+		, LaunchArgs(inLaunchArgs)
+		, LoadingMovie(inLoadingMovie)
+		, LoadingText(inLoadingText)
+	{
+	}
+
 };
 
 USTRUCT()
