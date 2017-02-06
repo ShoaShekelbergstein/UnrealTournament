@@ -219,21 +219,53 @@ void AUTRallyPoint::SetRallyPointState(FName NewState)
 	if (Role == ROLE_Authority)
 	{
 		AUTFlagRunGameState* GameState = GetWorld()->GetGameState<AUTFlagRunGameState>();
-		if (GameState && (GameState->CurrentRallyPoint == this))
+		if (GameState)
 		{
-			if ((RallyPointState != RallyPointStates::Powered) && (RallyPointState != RallyPointStates::Charging))
+			if (GameState->CurrentRallyPoint == this)
 			{
-				GameState->CurrentRallyPoint = nullptr;
-				GameState->bEnemyRallyPointIdentified = false;
+				if ((RallyPointState != RallyPointStates::Powered) && (RallyPointState != RallyPointStates::Charging))
+				{
+					GameState->CurrentRallyPoint = nullptr;
+					GameState->bEnemyRallyPointIdentified = false;
+					if (GameState->PendingRallyPoint && ((GameState->PendingRallyPoint->RallyPointState == RallyPointStates::Powered) || (GameState->PendingRallyPoint->RallyPointState == RallyPointStates::Charging)))
+					{
+						GameState->CurrentRallyPoint = GameState->PendingRallyPoint;
+						GameState->PendingRallyPoint = nullptr;
+					}
+				}
 			}
-		}
-		else if (GameState && ((RallyPointState == RallyPointStates::Powered) || (RallyPointState == RallyPointStates::Charging)))
-		{
-			if (GameState->CurrentRallyPoint)
+			else if (RallyPointState == RallyPointStates::Powered)
 			{
-				GameState->CurrentRallyPoint->RallyPoweredTurnOff();
+				if (GameState->CurrentRallyPoint)
+				{
+					GameState->CurrentRallyPoint->RallyPoweredTurnOff();
+				}
+				GameState->CurrentRallyPoint = this;
+				if (GameState->PendingRallyPoint == this)
+				{
+					GameState->PendingRallyPoint = nullptr;
+				}
 			}
-			GameState->CurrentRallyPoint = this;
+			else if (RallyPointState == RallyPointStates::Charging)
+			{
+				if (GameState->CurrentRallyPoint)
+				{
+					if (GameState->PendingRallyPoint)
+					{
+						GameState->PendingRallyPoint->RallyPoweredTurnOff();
+					}
+					GameState->PendingRallyPoint = this;
+				}
+				else
+				{
+					GameState->CurrentRallyPoint = this;
+					if (GameState->PendingRallyPoint)
+					{
+						GameState->PendingRallyPoint->RallyPoweredTurnOff();
+						GameState->PendingRallyPoint = nullptr;
+					}
+				}
+			}
 		}
 	}
 }

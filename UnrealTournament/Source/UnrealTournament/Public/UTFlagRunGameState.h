@@ -77,6 +77,9 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 	UPROPERTY(BlueprintReadOnly, Replicated)
 		class AUTRallyPoint* CurrentRallyPoint;
 
+	UPROPERTY(BlueprintReadOnly)
+		class AUTRallyPoint* PendingRallyPoint;
+
 	UPROPERTY(BlueprintReadOnly, Replicated)
 		bool bEnemyRallyPointIdentified;
 

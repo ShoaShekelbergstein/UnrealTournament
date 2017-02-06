@@ -161,6 +161,7 @@ void AUTFlagRunGame::InitGameStateForRound()
 		FRGS->bIsDefenseAbleToGainPowerup = true;
 		FRGS->bRedToCap = !FRGS->bRedToCap;
 		FRGS->CurrentRallyPoint = nullptr;
+		FRGS->PendingRallyPoint = nullptr;
 		FRGS->bEnemyRallyPointIdentified = false;
 		FRGS->ScoringPlayerState = nullptr;
 	}
