@@ -29,8 +29,6 @@ void SUTPlayerInfoDialog::Construct(const FArguments& InArgs)
 	InArgs._PlayerOwner->ViewportClient->GetViewportSize(ViewportSize);
 	TargetUniqueId = InArgs._TargetUniqueId;
 
-	TargetUniqueId = TEXT("9989b23aaaed49c083e951135ac42d37");
-
 	FText NewDialogTitle = FText::Format(NSLOCTEXT("SUTMenuBase", "PlayerInfoTitleFormat", "Player Info - {0}"), FText::FromString(InArgs._TargetName));
 	SUTDialogBase::Construct(SUTDialogBase::FArguments()
 							.PlayerOwner(InArgs._PlayerOwner)
