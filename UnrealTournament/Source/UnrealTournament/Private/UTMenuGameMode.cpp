@@ -102,7 +102,7 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 
 		if (!PC->SkipTutorialCheck())
 		{
-			if (ProfileSettings != nullptr && !FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")) )
+			if (ProfileSettings != nullptr && !FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")) && !FParse::Param(FCommandLine::Get(), TEXT("playoffline")) )
 			{
 				if (ProfileSettings->TutorialMask == 0 )
 				{

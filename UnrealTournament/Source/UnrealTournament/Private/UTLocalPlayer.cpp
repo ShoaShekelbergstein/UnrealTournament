@@ -381,7 +381,13 @@ void UUTLocalPlayer::PlayerAdded(class UGameViewportClient* InViewportClient, in
 			// Initialize the Online Subsystem for this player
 			InitializeOnlineSubsystem();
 
-			if (OnlineIdentityInterface.IsValid())
+			if ( FParse::Param(FCommandLine::Get(), TEXT("playoffline")))
+			{
+				LoginPhase = ELoginPhase::Offline;
+				bPlayingOffline = true;
+				bInitialSignInAttempt = false;
+			}
+			else if (OnlineIdentityInterface.IsValid())
 			{
 				// Attempt to Auto-Login to MCP
 				if (OnlineIdentityInterface->AutoLogin(GetControllerId()))
