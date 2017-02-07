@@ -1995,7 +1995,7 @@ void UMaterialInstance::PostLoad()
 	if(Parent)
 	{
 #if !WITH_EDITORONLY_DATA
-		check(!GEventDrivenLoaderEnabled || !Parent->HasAnyFlags(RF_NeedLoad));
+		check(!Parent->HasAnyFlags(RF_NeedLoad));
 #endif
 		Parent->ConditionalPostLoad();
 	}
