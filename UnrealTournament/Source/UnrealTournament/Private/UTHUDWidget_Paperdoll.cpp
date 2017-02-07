@@ -118,6 +118,7 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 		}
 
 		HealthText.Text = FText::AsNumber(UTC->Health);
+		FLinearColor HealthColor = (UTC->Health > 35) ? DefObj->HealthText.RenderColor : HealthNegativeFlashColor;
 		if (UTC->Health != LastHealth)
 		{
 			HealthText.RenderColor = (UTC->Health > LastHealth) ? HealthPositiveFlashColor : HealthNegativeFlashColor;
@@ -131,13 +132,13 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 			HealthFlashTimer = HealthFlashTimer - DeltaTime;
 			if (HealthFlashTimer < 0.5f*HealthFlashTime)
 			{
-				HealthText.RenderColor = FMath::CInterpTo(HealthText.RenderColor, DefObj->HealthText.RenderColor, DeltaTime, (1.f / (HealthFlashTime > 0.f ? 2.f*HealthFlashTime : 1.f)));
+				HealthText.RenderColor = FMath::CInterpTo(HealthText.RenderColor, HealthColor, DeltaTime, (1.f / (HealthFlashTime > 0.f ? 2.f*HealthFlashTime : 1.f)));
 			}
 			HealthText.TextScale = 1.f + HealthFlashTimer / HealthFlashTime;
 		}
 		else
 		{
-			HealthText.RenderColor = DefObj->HealthText.RenderColor;
+			HealthText.RenderColor = HealthColor;
 			HealthText.TextScale = 1.f;
 		}
 
