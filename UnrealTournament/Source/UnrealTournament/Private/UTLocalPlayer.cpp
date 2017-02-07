@@ -6073,7 +6073,13 @@ void UUTLocalPlayer::LoginProcessComplete()
 			if (FParse::Value(FCommandLine::Get(), TEXT("invitesession="), SessionId) && !SessionId.IsEmpty() &&
 				FParse::Value(FCommandLine::Get(), TEXT("invitefrom="), FriendId) && !FriendId.IsEmpty())
 			{
-				JoinFriendSession(FUniqueNetIdString(FriendId), FUniqueNetIdString(SessionId));
+				UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
+				if (PartyContext)
+				{
+					TSharedPtr<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(FriendId));
+					PartyContext->JoinParty(*UserId);
+				}
+
 				return;
 			}
 		}
@@ -6427,6 +6433,13 @@ FText UUTLocalPlayer::GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type
 
 bool UUTLocalPlayer::IsTutorialMaskCompleted(int32 TutorialMask) const
 {
+#if !UE_BUILD_SHIPPING
+	if (FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")))
+	{
+		return true;
+	}
+#endif
+
 	return ( GetTutorialMask() & TutorialMask ) == TutorialMask;
 }
 

@@ -233,6 +233,27 @@ void UPartyContext::Finalize()
 	PartyInterface.Reset();
 }
 
+void UPartyContext::JoinParty(const FUniqueNetId& PartyMemberId)
+{
+	const ULocalPlayer* LocalPlayer = GetOwningPlayer();
+	TSharedPtr<const FUniqueNetId> LocalUserId = LocalPlayer->GetPreferredUniqueNetId();
+
+	if (LocalUserId.IsValid())
+	{
+		TSharedPtr<const IOnlinePartyJoinInfo> UpdatedPartyJoinInfo;
+		if (PartyInterface.IsValid())
+		{
+			UpdatedPartyJoinInfo = PartyInterface->GetAdvertisedParty(*LocalUserId, PartyMemberId, IOnlinePartySystem::GetPrimaryPartyTypeId());
+		}
+		
+		if (UpdatedPartyJoinInfo.IsValid())
+		{
+			const bool bIsFromInvite = false;
+			JoinPartyInternal(*LocalUserId, bIsFromInvite, UpdatedPartyJoinInfo.ToSharedRef());
+		}
+	}
+}
+
 void UPartyContext::OnFriendsListJoinParty(const FUniqueNetId& SenderId, const TSharedRef<class IOnlinePartyJoinInfo>& PartyJoinInfo, bool bIsFromInvite)
 {
 	const ULocalPlayer* LocalPlayer = GetOwningPlayer();
