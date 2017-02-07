@@ -108,7 +108,7 @@ void SUTPlayerInfoDialog::Construct(const FArguments& InArgs)
 							+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
 							[
 								SNew(STextBlock)
-								.Text(NSLOCTEXT("SUTPlayerInfoDialog", "Loading", "Requesting Player Inforamtion..."))
+								.Text(NSLOCTEXT("SUTPlayerInfoDialog", "Loading", "Requesting Player Information..."))
 								.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
 							]
 							+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
@@ -812,7 +812,7 @@ void SUTPlayerInfoDialog::CreatePlayerTab()
 					+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
 					[
 						SNew(STextBlock)
-						.Text(NSLOCTEXT("SUTPlayerInfoDialog", "Loading", "Requesting Player Inforamtion..."))
+						.Text(NSLOCTEXT("SUTPlayerInfoDialog", "Loading", "Requesting Player Information..."))
 						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
 					]
 					+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
