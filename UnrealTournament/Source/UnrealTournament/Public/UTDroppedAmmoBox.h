@@ -37,15 +37,65 @@ public:
 	TArray<FStoredAmmo> Ammo;
 
 	/** if set, restore an additional percentage of all owned weapons' ammo */
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float GlobalRestorePct;
+
+	/** if set draw beacon on HUD through walls */
+	UPROPERTY(EditDefaultsOnly)
+	bool bDrawBeacon;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FCanvasIcon BeaconIcon;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FCanvasIcon BeaconArrow;
 
 	virtual USoundBase* GetPickupSound_Implementation() const
 	{
 		return PickupSound;
 	}
 
-	void GiveTo_Implementation(APawn* Target) override
+	virtual void BeginPlay() override
+	{
+		Super::BeginPlay();
+
+		if (bDrawBeacon)
+		{
+			for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+			{
+				if (It->PlayerController != nullptr && It->PlayerController->MyHUD != nullptr)
+				{
+					It->PlayerController->MyHUD->AddPostRenderedActor(this);
+				}
+			}
+		}
+	}
+	virtual void EndPlay(EEndPlayReason::Type EndPlayReason) override
+	{
+		Super::EndPlay(EndPlayReason);
+
+		for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+		{
+			if (It->PlayerController != nullptr && It->PlayerController->MyHUD != nullptr)
+			{
+				It->PlayerController->MyHUD->RemovePostRenderedActor(this);
+			}
+		}
+	}
+
+	virtual void PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir) override
+	{
+		FVector Pos = Canvas->Project(GetActorLocation() + FVector(0.0f, 0.0f, Collision->GetScaledCapsuleHalfHeight()));
+		if (Pos.X > 0.0f && Pos.Y > 0.0f && Pos.X < Canvas->SizeX && Pos.Y < Canvas->SizeY && Pos.Z > 0.0f)
+		{
+			Canvas->DrawColor = FColor::White;
+			FVector2D Size(32.0f, 32.0f);
+			Size *= FMath::Clamp<float>(1.0f - (GetActorLocation() - CameraPosition).Size() / 5000.0f, 0.25f, 1.0f);
+			Canvas->DrawTile(BeaconArrow.Texture, Pos.X - Size.X * 0.5f, Pos.Y - Size.Y * 0.5f, Size.X, Size.Y, BeaconArrow.U, BeaconArrow.V, BeaconArrow.UL, BeaconArrow.VL);
+			Pos.Y -= Size.Y * 1.5f;
+			Canvas->DrawTile(BeaconIcon.Texture, Pos.X - Size.X * 0.5f, Pos.Y - Size.Y * 0.5f, Size.X, Size.Y, BeaconIcon.U, BeaconIcon.V, BeaconIcon.UL, BeaconIcon.VL);
+		}
+	}
+
+	virtual void GiveTo_Implementation(APawn* Target) override
 	{
 		AUTCharacter* UTC = Cast<AUTCharacter>(Target);
 		if (UTC != NULL)

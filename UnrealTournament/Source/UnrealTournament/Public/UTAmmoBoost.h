@@ -34,12 +34,17 @@ public:
 
 	virtual bool HandleGivenTo_Implementation(AUTCharacter* NewOwner) override
 	{
+		TSubclassOf<AUTDroppedAmmoBox> BoxType = *DroppedPickupClass;
+		if (BoxType == nullptr)
+		{
+			BoxType = AUTDroppedAmmoBox::StaticClass();
+		}
 		FActorSpawnParameters Params;
 		Params.Instigator = NewOwner;
 		for (int32 i = 0; i < NumBoxes; i++)
 		{
 			const FRotator XYDir(0.0f, 360.0f / NumBoxes * i, 0.0f);
-			AUTDroppedAmmoBox* Pickup = NewOwner->GetWorld()->SpawnActor<AUTDroppedAmmoBox>(AUTDroppedAmmoBox::StaticClass(), NewOwner->GetActorLocation(), XYDir, Params);
+			AUTDroppedAmmoBox* Pickup = NewOwner->GetWorld()->SpawnActor<AUTDroppedAmmoBox>(BoxType, NewOwner->GetActorLocation(), XYDir, Params);
 			if (Pickup != NULL)
 			{
 				Pickup->Movement->Velocity = XYDir.Vector() * TossSpeedXY + FVector(0.0f, 0.0f, TossSpeedZ);
