@@ -376,6 +376,24 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 		}
 	}
 
+	// if players from same party on a best team, move to it
+	if (PS->PartySize > 1)
+	{
+		for (AUTTeamInfo* TestTeam : BestTeams)
+		{
+			bool bHasParty = false;
+			TArray<AController*> Members = TestTeam->GetTeamMembers();
+			for (AController* C : Members)
+			{
+				AUTPlayerState* TeamPS = Cast<AUTPlayerState>(C->PlayerState);
+				if (TeamPS && (TeamPS->PartyLeader == PS->PartyLeader))
+				{
+					return TestTeam->TeamIndex;
+				}
+			}
+		}
+	}
+
 	// if in doubt choose team with bots on it as the bots will leave if necessary to balance
 	{
 		TArray< AUTTeamInfo*, TInlineAllocator<4> > TeamsWithBots;
