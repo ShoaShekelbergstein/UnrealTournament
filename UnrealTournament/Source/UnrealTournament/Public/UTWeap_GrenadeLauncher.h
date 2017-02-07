@@ -2,7 +2,6 @@
 #pragma once
 
 #include "UTWeapon.h"
-#include "UTWeap_RocketLauncher.h"
 #include "UTProj_Grenade_Sticky.h"
 #include "UTWeap_GrenadeLauncher.generated.h"
 
