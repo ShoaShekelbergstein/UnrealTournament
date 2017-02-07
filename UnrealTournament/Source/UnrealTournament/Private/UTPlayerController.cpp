@@ -112,7 +112,7 @@ AUTPlayerController::AUTPlayerController(const class FObjectInitializer& ObjectI
 	bNeedsRallyNotify = true;
 	bNeedsBoostNotify = true;
 
-	TimeToHoldPowerUpButtonToActivate = 0.75f;
+	TimeToHoldPowerUpButtonToActivate = 0.25f;
 	ScoreboardDelayOnDeath = 2.f;
 
 	static ConstructorHelpers::FObjectFinder<USoundBase> PressedSelect(TEXT("SoundCue'/Game/RestrictedAssets/UI/UT99UI_LittleSelect_Cue.UT99UI_LittleSelect_Cue'"));
