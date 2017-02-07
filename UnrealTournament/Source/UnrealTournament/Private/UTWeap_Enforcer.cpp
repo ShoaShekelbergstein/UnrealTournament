@@ -42,6 +42,7 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	FOVOffset = FVector(0.7f, 1.f, 1.f);
 	MaxTracerDist = 2500.f;
 	bNoDropInTeamSafe = true;
+	ReloadClipTime = 2.0f;
 
 	LeftMesh = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("LeftMesh"));
 	LeftMesh->SetOnlyOwnerSee(true);
@@ -268,7 +269,6 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 	}
 }
 
-
 void AUTWeap_Enforcer::PlayImpactEffects_Implementation(const FVector& TargetLoc, uint8 FireMode, const FVector& SpawnLocation, const FRotator& SpawnRotation)
 {
 	UUTWeaponStateFiringBurst* BurstFireMode = Cast<UUTWeaponStateFiringBurst>(FiringState[GetCurrentFireMode()]);
@@ -405,6 +405,43 @@ void AUTWeap_Enforcer::DualEquipFinished()
 		{
 			OnRep_AttachmentType();
 		}
+	}
+}
+
+bool AUTWeap_Enforcer::HasAnyAmmo()
+{
+	// can always reload
+	return true;
+}
+
+void AUTWeap_Enforcer::GotoState(UUTWeaponState* NewState)
+{
+	Super::GotoState(NewState);
+
+	if ((CurrentState == ActiveState) && (Role == ROLE_Authority) && !Super::HasAnyAmmo() && UTOwner)
+	{
+		// @TODO FIXMESTEVE - if keep this functionality and have animation, need full weapon state to support
+		if (Cast<AUTPlayerController>(UTOwner->GetController()))
+		{
+			GetWorldTimerManager().SetTimer(ReloadSoundHandle, this, &AUTWeap_Enforcer::PlayReloadSound, 0.5f, false);
+		}
+		GetWorldTimerManager().SetTimer(ReloadClipHandle, this, &AUTWeap_Enforcer::ReloadClip, ReloadClipTime, false);
+	}
+}
+
+void AUTWeap_Enforcer::PlayReloadSound()
+{
+	if (!Super::HasAnyAmmo() && (CurrentState == ActiveState) && (Role == ROLE_Authority))
+	{
+		Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(ReloadClipSound);
+	}
+}
+
+void AUTWeap_Enforcer::ReloadClip()
+{
+	if (!Super::HasAnyAmmo() && (CurrentState == ActiveState) && (Role == ROLE_Authority))
+	{
+		AddAmmo(20);
 	}
 }
 

@@ -28,6 +28,20 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Enforcer)
 	float SpreadIncrease;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		USoundBase* ReloadClipSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		float ReloadClipTime;
+
+	FTimerHandle ReloadClipHandle;
+	FTimerHandle ReloadSoundHandle;
+
+	virtual void GotoState(class UUTWeaponState* NewState) override;
+	virtual void ReloadClip();
+	virtual void PlayReloadSound();
+	virtual bool HasAnyAmmo() override;
+
 	/** How much spread increases for each shot */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Enforcer)
 	float SpreadResetInterval;
