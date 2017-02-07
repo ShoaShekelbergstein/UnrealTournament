@@ -2,6 +2,7 @@
 #pragma once
 
 #include "UTResetInterface.h"
+#include "UTTeamInterface.h"
 #include "UTProjectile.generated.h"
 
 /** Replicated movement data of our RootComponent.
@@ -69,7 +70,7 @@ struct FRepUTProjMovement
 };
 
 UCLASS(meta = (ChildCanTick))
-class UNREALTOURNAMENT_API AUTProjectile : public AActor, public IUTResetInterface
+class UNREALTOURNAMENT_API AUTProjectile : public AActor, public IUTResetInterface, public IUTTeamInterface
 {
 	GENERATED_UCLASS_BODY()
 
@@ -154,6 +155,9 @@ class UNREALTOURNAMENT_API AUTProjectile : public AActor, public IUTResetInterfa
 
 	UPROPERTY(BlueprintReadWrite, Category = Projectile)
 	AController* InstigatorController;
+	/** team ID used when Instigator is dead */
+	UPROPERTY(BlueprintReadWrite, Category = Projectile)
+	uint8 InstigatorTeamNum;
 	/** if not NULL, Controller that gets credit for damage to enemies on the same team as InstigatorController (including damaging itself)
 	 * this is used to grant two way kill credit for mechanics where the opposition is partially responsible for the damage(e.g.blowing up an enemy's projectile in flight)
 	 */
@@ -388,5 +392,13 @@ class UNREALTOURNAMENT_API AUTProjectile : public AActor, public IUTResetInterfa
 	 */
 	UFUNCTION(BlueprintNativeEvent)
 	float GetMaxDamageRadius() const;
+
+	virtual uint8 GetTeamNum() const override
+	{
+		IUTTeamInterface* InstigatorTeamInt = InterfaceCast<IUTTeamInterface>(Instigator);
+		return (InstigatorTeamInt != nullptr) ? InstigatorTeamInt->GetTeamNum() : InstigatorTeamNum;
+	}
+	virtual void SetTeamForSideSwap_Implementation(uint8 NewTeamNum) override
+	{}
 };
 

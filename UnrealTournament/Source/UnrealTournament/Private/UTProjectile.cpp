@@ -64,6 +64,7 @@ AUTProjectile::AUTProjectile(const class FObjectInitializer& ObjectInitializer)
 	Momentum = 50000.0f;
 	InstigatorVelocityPct = 0.f;
 	bDamageOnBounce = true;
+	InstigatorTeamNum = 255;
 
 	SetReplicates(true);
 	bNetTemporary = false;
@@ -181,6 +182,8 @@ void AUTProjectile::OnRep_Instigator()
 {
 	if (Instigator != NULL)
 	{
+		InstigatorTeamNum = GetTeamNum(); // this checks Instigator first
+
 		InstigatorController = Instigator->Controller;
 		if (Cast<AUTCharacter>(Instigator))
 		{
@@ -764,7 +767,7 @@ bool AUTProjectile::InteractsWithProj(AUTProjectile* OtherProj)
 	{
 		// interact if not same team
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		return  !Instigator || !OtherProj->Instigator || !GS || !GS->OnSameTeam(Instigator, OtherProj->Instigator);
+		return  GS == nullptr || !GS->OnSameTeam(this, OtherProj);
 	}
 	return false;
 }
@@ -787,10 +790,10 @@ bool AUTProjectile::ShouldIgnoreHit_Implementation(AActor* OtherActor, UPrimitiv
 	// ignore client-side actors if will bounce
 	// special case not blowing up on Repulsor bubble so that we can reflect / absorb projectiles
 	AUTTeamDeco* Deco = Cast<AUTTeamDeco>(OtherActor);
-	if (Deco && !Deco->bBlockTeamProjectiles && Instigator)
+	if (Deco && !Deco->bBlockTeamProjectiles)
 	{
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		return GS && GS->OnSameTeam(Instigator, Deco);
+		return GS != nullptr && GS->OnSameTeam(this, Deco);
 	}
 	return (((Cast<AUTTeleporter>(OtherActor) != NULL || Cast<AVolume>(OtherActor) != NULL) && !GetVelocity().IsZero())
 		|| (Cast<AUTRepulsorBubble>(OtherActor) != NULL)
@@ -817,7 +820,7 @@ void AUTProjectile::ProcessHit_Implementation(AActor* OtherActor, UPrimitiveComp
 		else
 		{
 			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-			if (!bCanHitTeammates && GS && !GS->bTeamProjHits && Cast<AUTCharacter>(OtherActor) && Instigator && (Instigator != OtherActor) && GS->OnSameTeam(OtherActor, Instigator))
+			if (!bCanHitTeammates && GS != nullptr && !GS->bTeamProjHits && Cast<AUTCharacter>(OtherActor) != nullptr && Instigator != OtherActor && GS->OnSameTeam(OtherActor, this))
 			{
 				// ignore team hits
 				return;
