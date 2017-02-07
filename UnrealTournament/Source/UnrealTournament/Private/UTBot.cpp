@@ -3340,7 +3340,8 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 				// calculate minimum amount of time enemy will have progressed from our starting point before we could possibly catch up
 				// note: this is an optimization, more correct would be to evaluate in the below pathfinding step
 				const float MoveSpeed = FMath::Max<float>(1.0f, GetPawn()->GetMovementComponent() ? GetPawn()->GetMovementComponent()->GetMaxSpeed() : 0);
-				float SkipTime = FMath::Max<float>(GetWorld()->TimeSeconds - EnemyInfo.LastFullUpdateTime, (GetPawn()->GetActorLocation() - EnemyInfo.LastKnownLoc).Size() / MoveSpeed);
+				const float DistFromEnemy = (GetPawn()->GetActorLocation() - EnemyInfo.LastKnownLoc).Size();
+				const float TimeSinceEnemyUpdate = GetWorld()->TimeSeconds - EnemyInfo.LastFullUpdateTime;
 
 				TArray<FRouteCacheItem> PathPredictionGoals;
 				for (const FPredictedGoal& TestSpot : CheckSpots)
@@ -3351,6 +3352,8 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 						FRouteCacheItem NewItem(NavData->GetNodeFromPoly(Poly), TestSpot.Location, Poly);
 						// for enemy path prediction include any point that we could prevent them from reaching (using straight line distance for simplicity and performance)
 						// or that are critical so we have to try even if it's probably hopeless
+						const float DistFromGoal = (TestSpot.Location - GetPawn()->GetActorLocation()).Size();
+						const float SkipTime = FMath::Max<float>(TimeSinceEnemyUpdate, FMath::Min<float>(DistFromEnemy, DistFromGoal) / MoveSpeed);
 						if (TestSpot.bCritical || (TestSpot.Location - EnemyInfo.LastKnownLoc).Size() > MoveSpeed * SkipTime)
 						{
 							PathPredictionGoals.Add(NewItem);
@@ -3362,6 +3365,12 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 						}
 					}
 				}
+				float DistFromEnemyOrGoal = DistFromEnemy;
+				for (const FRouteCacheItem& TestGoal : PathPredictionGoals)
+				{
+					DistFromEnemyOrGoal = FMath::Min<float>(DistFromEnemy, (TestGoal.GetLocation(GetPawn()) - GetPawn()->GetActorLocation()).Size());
+				}
+				float SkipTime = FMath::Max<float>(TimeSinceEnemyUpdate, DistFromEnemyOrGoal / MoveSpeed);
 				// pathfind as the target towards any of the predicted goals
 				// add the path found to the list of intercept endpoints
 				FMultiPathNodeEval NodeEval(PathPredictionGoals);
