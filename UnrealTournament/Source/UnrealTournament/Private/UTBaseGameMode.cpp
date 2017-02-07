@@ -16,6 +16,7 @@ AUTBaseGameMode::AUTBaseGameMode(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
 	ReplaySpectatorPlayerControllerClass = AUTDemoRecSpectator::StaticClass();
+	bIgnoreIdlePlayers = false;
 }
 
 void AUTBaseGameMode::PreInitializeComponents()
@@ -120,7 +121,7 @@ void AUTBaseGameMode::InitGame( const FString& MapName, const FString& Options, 
 		UE_LOG(UT,Log,TEXT("=== This is a Training Ground Server.  It will only be visibly to beginners ==="));
 	}
 
-
+	bIgnoreIdlePlayers = EvalBoolOptions(UGameplayStatics::ParseOption(Options, TEXT("IgnoreIdle")), bIgnoreIdlePlayers);
 	UE_LOG(UT,Log,TEXT("Password: %i %s"), bRequirePassword, ServerPassword.IsEmpty() ? TEXT("NONE") : *ServerPassword)
 }
 

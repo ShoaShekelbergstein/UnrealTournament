@@ -1213,7 +1213,7 @@ void AUTGameMode::DefaultTimer()
 			}
 
 			// Check to see if everyone is idle.
-			if (MatchState == MatchState::InProgress && UTGameState != nullptr)
+			if (!bIgnoreIdlePlayers && MatchState == MatchState::InProgress && UTGameState != nullptr)
 			{
 				bool bAllPlayersAreIdle = true;
 				for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
@@ -1233,8 +1233,6 @@ void AUTGameMode::DefaultTimer()
 					LobbyBeacon->Empty();			
 				}
 			}
-
-
 		}
 	}
 	else
@@ -2549,7 +2547,7 @@ void AUTGameMode::TravelToNextMap_Implementation()
 	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 	{
 		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-		if (UTPlayerState != nullptr && UTPlayerState->IsPlayerIdle())
+		if (!bIgnoreIdlePlayers && UTPlayerState != nullptr && UTPlayerState->IsPlayerIdle())
 		{
 			AUTPlayerController* Controller = Cast<AUTPlayerController>(UTPlayerState->GetOwner());
 			if (Controller)

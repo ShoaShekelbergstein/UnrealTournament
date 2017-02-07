@@ -256,4 +256,7 @@ private:
 protected:
 	FString ServerNameOverride;
 
+	UPROPERTY()
+	bool bIgnoreIdlePlayers;
+
 };
