@@ -3248,7 +3248,7 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 	if (NewHuntTarget == NULL || !FBotEnemyInfo::StaticIsValid(NewHuntTarget) || GetEnemyInfo(NewHuntTarget, false) == NULL)
 	{
 		AUTCharacter* UTC = Cast<AUTCharacter>(NewHuntTarget);
-		UE_LOG(UT, Warning, TEXT("Bot %s in DoHunt() with no or invalid enemy %s (flag %s)"), *PlayerState->PlayerName, (NewHuntTarget->PlayerState != NULL) ? *NewHuntTarget->PlayerState->PlayerName : *GetNameSafe(NewHuntTarget), *GetNameSafe((UTC != NULL) ? UTC->GetCarriedObject() : NULL));
+		UE_LOG(UT, Warning, TEXT("Bot %s in DoHunt() with no or invalid enemy %s (flag %s)"), *PlayerState->PlayerName, (NewHuntTarget != NULL && NewHuntTarget->PlayerState != NULL) ? *NewHuntTarget->PlayerState->PlayerName : *GetNameSafe(NewHuntTarget), *GetNameSafe((UTC != NULL) ? UTC->GetCarriedObject() : NULL));
 		GoalString = TEXT("BUG - HUNT WITH BAD TARGET - Force CampAction");
 		StartNewAction(CampAction);
 	}
