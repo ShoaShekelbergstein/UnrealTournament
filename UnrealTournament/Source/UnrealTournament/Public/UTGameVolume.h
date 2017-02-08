@@ -94,8 +94,8 @@ class UNREALTOURNAMENT_API AUTGameVolume : public APhysicsVolume, public IUTTeam
 	virtual void Reset_Implementation() override;
 	virtual void PostInitializeComponents() override;
 
-	/* Play incoming direction message for attackers, plus display debug for easier testing of entry direction orientation*/
-	UPROPERTY(BlueprintReadWrite, Category = "Debug")
+	/* Play incoming direction message for attackers, plus display debug for easier testing of entry direction orientation.  Use for testing, clear this flag before checking in. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 		bool bTestBaseEntry;
 
 	// Determine which direction volume is being entered relative to defensive base
