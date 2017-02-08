@@ -75,4 +75,6 @@ public:
 
 	virtual float RateComboMovement(AUTPlayerController *PC);
 	virtual void RateShockCombo(AUTPlayerController *PC, AUTPlayerState* PS, int32 OldComboKillCount, float ComboScore);
+
+	virtual bool ShouldIgnoreHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp) override;
 };

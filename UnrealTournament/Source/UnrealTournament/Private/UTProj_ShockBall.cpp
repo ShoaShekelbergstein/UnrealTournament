@@ -92,6 +92,15 @@ float AUTProj_ShockBall::TakeDamage(float Damage, const FDamageEvent& DamageEven
 	return Damage;
 }
 
+bool AUTProj_ShockBall::ShouldIgnoreHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp)
+{
+	if (Super::ShouldIgnoreHit_Implementation(OtherActor, OtherComp))
+	{
+		return (Cast<AUTProj_ShockBall>(OtherActor) == NULL);
+	}
+	return false;
+}
+
 void AUTProj_ShockBall::NotifyClientSideHit(AUTPlayerController* InstigatedBy, FVector HitLocation, AActor* DamageCauser, int32 Damage)
 {
 	TArray<USphereComponent*> Components;
