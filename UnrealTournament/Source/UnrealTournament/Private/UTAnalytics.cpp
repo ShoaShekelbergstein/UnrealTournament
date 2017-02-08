@@ -21,6 +21,7 @@
 #include "OnlineSubsystemUtils.h"
 #include "UTMcpUtils.h"
 
+#include "UTPickupToken.h"
 
 
 #if WITH_QOSREPORTER
@@ -190,6 +191,8 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(UTTutorialCompleted);
 	AddGenericParamName(UTCancelOnboarding);
 	AddGenericParamName(TutorialMap);
+	AddGenericParamName(TokensCollected);
+	AddGenericParamName(TokensAvailable);
 	AddGenericParamName(MovementTutorialCompleted);
 	AddGenericParamName(WeaponTutorialCompleted);
 	AddGenericParamName(PickupsTutorialCompleted);
@@ -1026,6 +1029,9 @@ void FUTAnalytics::FireEvent_UTTutorialStarted(AUTPlayerController* UTPC, FStrin
 * @Type Sent by the Client
 *
 * @EventParam TutorialMap FString Name of the tutorial map.
+* @EventParam TokensCollected int Number of Tokens collected on the map
+* @EventParam MaxTokensAvailable int Number of Tokens total on the map.
+* @EventParam GameTime float Time 
 *
 * @Comments
 */
@@ -1037,8 +1043,26 @@ void FUTAnalytics::FireEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FStr
 		TArray<FAnalyticsEventAttribute> ParamArray;
 
 		SetClientInitialParameters(UTPC, ParamArray, true);
-		
+
+		int TokensCollected = 0;
+		int TokensAvailable = 0;
+		if (UTPC && UTPC->GetWorld())
+		{
+			for (TActorIterator<AUTPickupToken> It(UTPC->GetWorld()); It; ++It)
+			{
+				if (It->bIsPickedUp)
+				{
+					++TokensCollected;
+				}
+
+				++TokensAvailable;
+			}
+		}
+
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TutorialMap), TutorialMap));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TokensCollected), TokensCollected));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TokensAvailable), TokensAvailable));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MatchTime), GetMatchTime(UTPC)));
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTTutorialCompleted), ParamArray);
 	}

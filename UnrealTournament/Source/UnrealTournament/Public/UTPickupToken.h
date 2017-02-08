@@ -30,4 +30,7 @@ class UNREALTOURNAMENT_API AUTPickupToken : public AActor
 
 	UFUNCTION(BlueprintCallable, Category = Pickup)
 	void Revoke();
+
+	UPROPERTY()
+	bool bIsPickedUp;
 };

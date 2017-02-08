@@ -11,6 +11,7 @@
 AUTPickupToken::AUTPickupToken(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	bNetLoadOnClient = true;
+	bIsPickedUp = false;
 }
 
 void AUTPickupToken::PostLoad()
@@ -79,6 +80,8 @@ bool AUTPickupToken::HasBeenPickedUpBefore()
 
 void AUTPickupToken::PickedUp()
 {
+	bIsPickedUp = true;
+
 	if (TokenUniqueID != NAME_None)
 	{
 		UUTGameplayStatics::TokenPickedUp(GetWorld(), TokenUniqueID);
