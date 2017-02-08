@@ -22,6 +22,9 @@ public:
 	float LifeTime;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Projectile)
+	float LifeTimeAfterArmed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Projectile)
 	float MinimumLifeTime;
 
 	UPROPERTY(BlueprintReadOnly, Category=Projectile)
