@@ -160,6 +160,7 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 		TSubclassOf<UDamageType> DamageType = InstantHitInfo[CurrentFireMode].DamageType;
 
 		bool bIsHeadShot = false;
+		bool bBlockedHeadshot = false;
 		AUTCharacter* C = Cast<AUTCharacter>(Hit.Actor.Get());
 		if (C != NULL && C->IsHeadShot(Hit.Location, FireDir, GetHeadshotScale(C), UTOwner, PredictionTime))
 		{
@@ -167,6 +168,7 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 			if (C->BlockedHeadShot(Hit.Location, FireDir, GetHeadshotScale(C), true, UTOwner))
 			{
 				Damage = BlockedHeadshotDamage;
+				bBlockedHeadshot = true;
 			}
 			else
 			{
@@ -184,7 +186,7 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 		OnHitScanDamage(Hit, FireDir);
 		Hit.Actor->TakeDamage(Damage, FUTPointDamageEvent(Damage, Hit, FireDir, DamageType, FireDir * InstantHitInfo[CurrentFireMode].Momentum), UTOwner->Controller, this);
 
-		if ((Role == ROLE_Authority) && bIsHeadShot && C && (C->Health > 0))
+		if ((Role == ROLE_Authority) && bIsHeadShot && C && (C->Health > 0) && (bBlockedHeadshot || (Damage >= 100)))
 		{
 			C->NotifyBlockedHeadShot(UTOwner);
 		}
