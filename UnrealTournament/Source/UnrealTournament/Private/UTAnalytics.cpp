@@ -181,6 +181,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 
 	AddGenericParamName(UTTutorialPickupToken);
 	AddGenericParamName(TokenID);
+	AddGenericParamName(TokenDescription);
 	AddGenericParamName(AnnouncementID);
 	AddGenericParamName(OptionalObjectName);
 	AddGenericParamName(UTTutorialPlayInstruction);
@@ -929,10 +930,11 @@ void FUTAnalytics::FireEvent_EnterMatch(AUTPlayerController* UTPC, FString Enter
 * @Type Sent by the Client
 *
 * @EventParam TokenID string Unique ID of the picked up token.
+* @EventParam TokenDescription string Token Description of the picked up token.
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_UTTutorialPickupToken(AUTPlayerController* UTPC, FString TokenID)
+void FUTAnalytics::FireEvent_UTTutorialPickupToken(AUTPlayerController* UTPC, FString TokenID, FString TokenDescription)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
 	if (AnalyticsProvider.IsValid())
@@ -942,6 +944,7 @@ void FUTAnalytics::FireEvent_UTTutorialPickupToken(AUTPlayerController* UTPC, FS
 		SetClientInitialParameters(UTPC, ParamArray, true);
 
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TokenID), TokenID));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TokenDescription), TokenDescription));
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTTutorialPickupToken), ParamArray);
 	}

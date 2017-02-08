@@ -19,6 +19,9 @@ class UNREALTOURNAMENT_API AUTPickupToken : public AActor
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = Pickup)
 	FName TokenUniqueID;
 
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = Pickup)
+	FString TokenDescription;
+
 	UFUNCTION(BlueprintCallable, Category = Pickup)
 	bool HasBeenPickedUpBefore();
 
