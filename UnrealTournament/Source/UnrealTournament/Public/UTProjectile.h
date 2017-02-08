@@ -395,7 +395,7 @@ class UNREALTOURNAMENT_API AUTProjectile : public AActor, public IUTResetInterfa
 
 	virtual uint8 GetTeamNum() const override
 	{
-		IUTTeamInterface* InstigatorTeamInt = InterfaceCast<IUTTeamInterface>(Instigator);
+		IUTTeamInterface* InstigatorTeamInt = Cast<IUTTeamInterface>(Instigator);
 		return (InstigatorTeamInt != nullptr) ? InstigatorTeamInt->GetTeamNum() : InstigatorTeamNum;
 	}
 	virtual void SetTeamForSideSwap_Implementation(uint8 NewTeamNum) override
