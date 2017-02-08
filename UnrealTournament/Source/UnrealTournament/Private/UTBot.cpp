@@ -309,6 +309,20 @@ float FHideLocEval::Eval(APawn* Asker, const FNavAgentProperties& AgentProps, AC
 	}
 }
 
+void AUTBot::AutoUpdateSkillFor(AUTGameMode* Game)
+{
+	if (Game)
+	{
+		bool bOnRedTeam = true;  //also use for FFA
+		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+		if (PS && PS->Team && (PS->Team->TeamIndex == 1))
+		{
+			bOnRedTeam = false;
+		}
+		InitializeSkill(bOnRedTeam ? Game->RedTeamSkill : Game->BlueTeamSkill);
+	}
+}
+
 void AUTBot::InitializeSkill(float NewBaseSkill)
 {
 	Skill = FMath::Clamp<float>(NewBaseSkill, 0.0f, 8.0f);

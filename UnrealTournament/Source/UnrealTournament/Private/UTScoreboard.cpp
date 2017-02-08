@@ -10,6 +10,7 @@
 #include "UTWeap_ImpactHammer.h"
 #include "UTWeap_Translocator.h"
 #include "UTDemoRecSpectator.h"
+#include "UTBot.h"
 
 UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -483,17 +484,16 @@ void UUTScoreboard::DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float R
 		DrawReadyText(PlayerState, XOffset, YOffset, ScaledCellWidth);
 	}
 
-	FText PingText;
-	if (GetWorld()->GetNetMode() == NM_Standalone)
+	AUTBot* Bot = Cast<AUTBot>(PlayerState->GetOwner());
+	if (Bot)
 	{
-		AUTBot* Bot = Cast<AUTBot>(PlayerState->GetOwner());
-		PingText = Bot ? FText::AsNumber(Bot->Skill) : FText::FromString(TEXT("-"));
+		DrawText(FText::AsNumber(Bot->Skill), XOffset + 0.995f*ScaledCellWidth, YOffset + ColumnY, UTHUDOwner->TinyFont, 0.75f*RenderScale, 1.f, DrawColor, ETextHorzPos::Right, ETextVertPos::Center);
 	}
-	else
+	else if (GetWorld()->GetNetMode() != NM_Standalone)
 	{
-		PingText = FText::Format(PingFormatText, FText::AsNumber(Ping));
+		FText PingText = FText::Format(PingFormatText, FText::AsNumber(Ping));
+		DrawText(PingText, XOffset + 0.995f*ScaledCellWidth, YOffset + ColumnY, UTHUDOwner->TinyFont, 0.75f*RenderScale, 1.f, DrawColor, ETextHorzPos::Right, ETextVertPos::Center);
 	}
-	DrawText(PingText, XOffset + 0.995f*ScaledCellWidth, YOffset + ColumnY, UTHUDOwner->TinyFont, 0.75f*RenderScale, 1.f, DrawColor, ETextHorzPos::Right, ETextVertPos::Center);
 
 	// Strike out players that are out of lives
 	if (PlayerState->bOutOfLives)

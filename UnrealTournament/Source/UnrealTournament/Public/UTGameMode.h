@@ -209,6 +209,27 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = Game)
 		bool bForceNoBots;
 
+	UPROPERTY(BlueprintReadWrite)
+		bool bAutoAdjustBotSkill;
+
+	UPROPERTY(BlueprintReadWrite)
+		float RedTeamSkill;
+
+	UPROPERTY(BlueprintReadWrite)
+		float BlueTeamSkill;
+
+	UPROPERTY(BlueprintReadWrite)
+		float BlueTeamKills;
+
+	UPROPERTY(BlueprintReadWrite)
+		float RedTeamKills;
+
+	UPROPERTY(BlueprintReadWrite)
+		float BlueTeamDeaths;
+
+	UPROPERTY(BlueprintReadWrite)
+		float RedTeamDeaths;
+
 	/** Delay to start match after start conditions are met. */
 	UPROPERTY(EditDefaultsOnly, Category = Game)
 		float StartDelay;

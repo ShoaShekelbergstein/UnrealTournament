@@ -256,7 +256,9 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	Super::InitGame(MapName, Options, ErrorMessage);
 
 	GameDifficulty = FMath::Max(0, UGameplayStatics::GetIntOption(Options, TEXT("Difficulty"), GameDifficulty));
-	
+	RedTeamSkill = GameDifficulty;
+	BlueTeamSkill = GameDifficulty;
+
 	HostLobbyListenPort = UGameplayStatics::GetIntOption(Options, TEXT("HostPort"), 14000);
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("ForceRespawn"));
 	bForceRespawn = EvalBoolOptions(InOpt, bForceRespawn);
@@ -2844,9 +2846,14 @@ void AUTGameMode::RestartPlayer(AController* aPlayer)
 		}
 	}
 
-	if (Cast<AUTBot>(aPlayer) != NULL)
+	AUTBot* Bot = Cast<AUTBot>(aPlayer);
+	if (Bot)
 	{
-		((AUTBot*)aPlayer)->LastRespawnTime = GetWorld()->TimeSeconds;
+		Bot->LastRespawnTime = GetWorld()->TimeSeconds;
+		if (bAutoAdjustBotSkill)
+		{
+			Bot->AutoUpdateSkillFor(this);
+		}
 	}
 
 	if (UTPC)

@@ -301,7 +301,7 @@ void AUTRallyPoint::StartRallyCharging()
 
 void AUTRallyPoint::WarnEnemyRally()
 {
-	if ((GetWorld()->GetTimeSeconds() - LastEnemyRallyWarning < 10.f) || (RallyPointState != RallyPointStates::Charging))
+	if ((GetWorld()->GetTimeSeconds() - LastEnemyRallyWarning < 8.f) || (RallyPointState != RallyPointStates::Charging))
 	{
 		return;
 	}
