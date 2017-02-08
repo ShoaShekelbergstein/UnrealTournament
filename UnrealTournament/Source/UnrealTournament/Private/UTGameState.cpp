@@ -45,6 +45,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	bPersistentKillIconMessages = false;
 	bTeamProjHits = false;
 	bTeamCollision = false;
+	NetUpdateFrequency = 60.0f;
 
 	// We want to be ticked.
 	PrimaryActorTick.bCanEverTick = true;

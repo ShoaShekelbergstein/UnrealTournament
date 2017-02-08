@@ -806,18 +806,22 @@ void AUTPlayerState::Tick(float DeltaTime)
 		AUTCharacter* UTChar = GetUTCharacter();
 		bool bOldCanRally = bCanRally;
 		bCanRally = bRallyActivated && UTChar && (UTChar->bCanRally || UTChar->GetCarriedObject());
-		if (!bOldCanRally && bCanRally && !UTChar->GetCarriedObject())
+		if (bCanRally != bOldCanRally)
 		{
-			// notify of transition if rally is available
-			AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-			AUTPlayerController* MyPC = Cast<AUTPlayerController>(GetOwner());
-			if (GS && GS->bAttackersCanRally && MyPC && Team && (GS->bRedToCap == (Team->TeamIndex == 0)))
+			ForceNetUpdate();
+			if (!bOldCanRally && bCanRally && !UTChar->GetCarriedObject())
 			{
-				MyPC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 30, this);
-				AUTPlayerState* FC = GS->GetFlagHolder(Team->TeamIndex);
-				if (FC)
+				// notify of transition if rally is available
+				AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+				AUTPlayerController* MyPC = Cast<AUTPlayerController>(GetOwner());
+				if (GS && GS->bAttackersCanRally && MyPC && Team && (GS->bRedToCap == (Team->TeamIndex == 0)))
 				{
-					FC->AnnounceStatus(StatusMessage::RallyNow);
+					MyPC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 30, this);
+					AUTPlayerState* FC = GS->GetFlagHolder(Team->TeamIndex);
+					if (FC)
+					{
+						FC->AnnounceStatus(StatusMessage::RallyNow);
+					}
 				}
 			}
 		}
