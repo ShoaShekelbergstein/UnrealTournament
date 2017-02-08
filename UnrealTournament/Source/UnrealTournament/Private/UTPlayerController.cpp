@@ -458,8 +458,6 @@ void AUTPlayerController::SetupInputComponent()
 	InputComponent->BindAction("TapForward", IE_Pressed, this, &AUTPlayerController::OnTapForward);
 	InputComponent->BindAction("TapBack", IE_Pressed, this, &AUTPlayerController::OnTapBack);
 	InputComponent->BindAction("SingleTapDodge", IE_Pressed, this, &AUTPlayerController::OnSingleTapDodge);
-	InputComponent->BindAction("HoldDodge", IE_Pressed, this, &AUTPlayerController::HoldDodge);
-	InputComponent->BindAction("HoldDodge", IE_Released, this, &AUTPlayerController::ReleaseDodge);
 
 	InputComponent->BindAction("TapLeft", IE_Released, this, &AUTPlayerController::OnTapLeftRelease);
 	InputComponent->BindAction("TapRight", IE_Released, this, &AUTPlayerController::OnTapRightRelease);
@@ -2149,7 +2147,7 @@ void AUTPlayerController::ClientWarnEnemyBehind_Implementation(AUTPlayerState* T
 void AUTPlayerController::CheckDodge(float LastTapTime, float MaxClickTime, bool bForward, bool bBack, bool bLeft, bool bRight)
 {
 	UUTCharacterMovement* MyCharMovement = UTCharacter ? UTCharacter->UTCharacterMovement : NULL;
-	if (MyCharMovement != NULL && !IsMoveInputIgnored() && (bIsHoldingDodge || (GetWorld()->GetRealTimeSeconds() - LastTapTime < MaxClickTime)))
+	if (MyCharMovement != NULL && !IsMoveInputIgnored() && (GetWorld()->GetRealTimeSeconds() - LastTapTime < MaxClickTime))
 	{
 		MyCharMovement->bPressedDodgeForward = bForward;
 		MyCharMovement->bPressedDodgeBack = bBack;
@@ -2233,16 +2231,6 @@ void AUTPlayerController::PerformSingleTapDodge()
 			}
 		}
 	}
-}
-
-void AUTPlayerController::HoldDodge()
-{
-	bIsHoldingDodge = true;
-}
-
-void AUTPlayerController::ReleaseDodge()
-{
-	bIsHoldingDodge = false;
 }
 
 void AUTPlayerController::OnTapForward()

@@ -887,10 +887,6 @@ protected:
 	UPROPERTY(BluePrintReadOnly, Category = Dodging)
 	bool bRequestedDodge;
 
-	/** If true, holding dodge modifier key down, single tap of movement key causes dodge. */
-	UPROPERTY(BluePrintReadOnly, Category = Dodging)
-	bool bIsHoldingDodge;
-
 	/** True if player is holding modifier to slide/roll */
 	UPROPERTY(Category = "FloorSlide", BlueprintReadOnly)
 	bool bIsHoldingFloorSlide;
@@ -991,8 +987,6 @@ protected:
 
 	void OnSingleTapDodge();
 	virtual void PerformSingleTapDodge();
-	void HoldDodge();
-	void ReleaseDodge();
 
 	virtual void OnShowScores();
 	virtual void OnHideScores();
