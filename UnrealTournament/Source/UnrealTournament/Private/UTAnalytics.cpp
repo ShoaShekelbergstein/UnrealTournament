@@ -122,6 +122,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(PlayerList);
 	AddGenericParamName(ServerInstanceGUID);
 	AddGenericParamName(ServerMatchGUID);
+	AddGenericParamName(ContextGUID);
 	AddGenericParamName(MatchTime);
 	AddGenericParamName(MapName);
 	AddGenericParamName(GameModeName);
@@ -274,6 +275,12 @@ void FUTAnalytics::SetClientInitialParameters(AUTPlayerController* UTPC, TArray<
 			{
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGS->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGS->ReplayID));
+			
+				AUTBaseGameMode* UTGM = Cast<AUTBaseGameMode>(UTPC->GetWorld()->GetAuthGameMode());
+				if (UTGM)
+				{
+					ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ContextGUID), UTGM->ContextGUID));
+				}
 			}
 		}
 

@@ -56,6 +56,9 @@ void AUTBaseGameMode::InitGame( const FString& MapName, const FString& Options, 
 	// Grab the InstanceID if it's there.
 	LobbyInstanceID = UGameplayStatics::GetIntOption(Options, TEXT("InstanceID"), 0);
 
+	//Make an instance GUID to report back in analytics. This is to track all actions that happened in a single context.
+	ContextGUID = FGuid::NewGuid();
+
 	// If we are a lobby instance, then we always want to generate a ServerInstanceID
 	if (LobbyInstanceID > 0)
 	{

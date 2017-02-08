@@ -6,6 +6,7 @@ namespace EGenericAnalyticParam
 		PlayerList,
 		ServerInstanceGUID,
 		ServerMatchGUID,
+		ContextGUID,
 		MatchTime,
 		MapName,
 		GameModeName,
