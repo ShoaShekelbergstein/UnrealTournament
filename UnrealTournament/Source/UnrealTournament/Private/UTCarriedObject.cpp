@@ -509,6 +509,7 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 			AUTRallyPoint* RallyPoint = Cast<AUTRallyPoint>(TouchingActor);
 			if (RallyPoint)
 			{
+				RallyPoint->TouchingFC = HoldingPawn;
 				RallyPoint->StartRallyCharging();
 				break;
 			}
