@@ -133,7 +133,7 @@ public:
 			int32 MatchRankCheck = MatchInfo.IsValid() ? MatchInfo->RankCheck : (MatchData.IsValid() ? MatchData->RankCheck: DEFAULT_RANK_CHECK);
 			int32 PlayerRankCheck = PlayerState->GetRankCheck(BaseGameMode);
 
-			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("Ranked");
+			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("Rank Locked");
 		}
 
 		if ((Flags & MATCH_FLAG_NoJoinInProgress) == MATCH_FLAG_NoJoinInProgress) Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("<img src=\"UT.Icon.Lock.Small\"/> No Join in Progress");
