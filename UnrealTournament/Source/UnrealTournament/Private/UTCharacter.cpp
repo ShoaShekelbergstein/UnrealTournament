@@ -44,6 +44,8 @@
 #include "UTRallyPoint.h"
 #include "PhysicsEngine/ConstraintInstance.h"
 #include "Engine/DemoNetDriver.h"
+#include "UTPowerupUseMessage.h"
+#include "UTPlaceablePowerup.h"
 
 static FName NAME_HatSocket(TEXT("HatSocket"));
 
@@ -7055,6 +7057,72 @@ AActor* AUTCharacter::GetCurrentAimContext()
 	}
 	
 	return BestPickup;
+}
+
+void AUTCharacter::TriggerBoostPower()
+{
+	if (!IsDead() && Controller != nullptr)
+	{
+		AUTGameMode* Game = GetWorld()->GetAuthGameMode<AUTGameMode>();
+		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+		if (PS != nullptr && PS->BoostClass != nullptr && Game != nullptr && Game->AttemptBoost(PS))
+		{
+			AUTInventory* Powerup = PS->BoostClass->GetDefaultObject<AUTInventory>();
+			if (Powerup->bNotifyTeamOnPowerupUse && Game->UTGameState != nullptr && PS->Team != nullptr)
+			{
+				TeamNotifyBoostPowerUse();
+			}
+
+			AUTPlaceablePowerup* FoundPlaceablePowerup = FindInventoryType<AUTPlaceablePowerup>(AUTPlaceablePowerup::StaticClass(), false);
+			if (FoundPlaceablePowerup != nullptr)
+			{
+				FoundPlaceablePowerup->SpawnPowerup();
+			}
+			else if (!PS->BoostClass.GetDefaultObject()->HandleGivenTo(this))
+			{
+				AUTInventory* TriggeredBoost = GetWorld()->SpawnActor<AUTInventory>(PS->BoostClass, FVector(0.0f), FRotator(0.f, 0.f, 0.f));
+				TriggeredBoost->InitAsTriggeredBoost(this);
+
+				AUTInventory* DuplicatePowerup = FindInventoryType<AUTInventory>(PS->BoostClass, true);
+				if (!DuplicatePowerup || !DuplicatePowerup->StackPickup(nullptr))
+				{
+					AddInventory(TriggeredBoost, true);
+				}
+
+				//if we gave you a weapon lets immediately switch on triggering the boost
+				AUTWeapon* BoostAsWeapon = Cast<AUTWeapon>(TriggeredBoost);
+				if (BoostAsWeapon != nullptr)
+				{
+					SwitchWeapon(BoostAsWeapon);
+				}
+			}
+		}
+	}
+}
+void AUTCharacter::TeamNotifyBoostPowerUse()
+{
+	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+	AUTPlayerState* MyPS = Cast<AUTPlayerState>(PlayerState);
+	if (GameMode != nullptr && GameMode->UTGameState != nullptr && MyPS != nullptr && MyPS->Team != nullptr && MyPS->BoostClass != nullptr)
+	{
+		AUTInventory* Powerup = MyPS->BoostClass->GetDefaultObject<AUTInventory>();
+		if (Powerup->bNotifyTeamOnPowerupUse)
+		{
+			for (int32 PlayerIndex = 0; PlayerIndex < GameMode->UTGameState->PlayerArray.Num(); ++PlayerIndex)
+			{
+				AUTPlayerState* PS = Cast<AUTPlayerState>(GameMode->UTGameState->PlayerArray[PlayerIndex]);
+				if (PS != nullptr && PS->Team != nullptr && PS->Team == MyPS->Team)
+				{
+					AUTPlayerController* PC = Cast<AUTPlayerController>(PS->GetOwner());
+					if (PC != nullptr)
+					{
+						//21 is Powerup Message
+						PC->ClientReceiveLocalizedMessage(UUTPowerupUseMessage::StaticClass(), 21, MyPS);
+					}
+				}
+			}
+		}
+	}
 }
 
 void AUTCharacter::ClientCheatWalk_Implementation()

@@ -1,4 +1,4 @@
-	// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
 
 #include "UTBasePlayerController.h"
@@ -322,11 +322,6 @@ public:
 	UFUNCTION(reliable, server, WithValidation)
 		void ServerToggleWarmup();
 
-	FTimerHandle TriggerBoostTimerHandle;
-
-	/** Trigger boost. */
-	virtual void TriggerBoost();
-	
 	/** Selected an unavailable spawn location. */
 	UPROPERTY()
 	USoundBase* BadSelectSound;

@@ -374,3 +374,8 @@ FName AUTInventory::GetTutorialAnnouncement(int32 Switch) const
 {
 	return (Switch < TutorialAnnouncements.Num()) ? TutorialAnnouncements[Switch] : NAME_None;
 }
+
+float AUTInventory::GetBoostPowerRating_Implementation(AUTBot* B) const
+{
+	return 0.0f;
+}

@@ -12,7 +12,6 @@
 #include "UTCheatManager.h"
 #include "UTCTFGameState.h"
 #include "UTCTFGameMessage.h"
-#include "UTPowerupUseMessage.h"
 #include "Engine/Console.h"
 #include "UTAnalytics.h"
 #include "Online.h"
@@ -40,7 +39,6 @@
 #include "UTVictimMessage.h"
 #include "SUTSpawnWindow.h"
 #include "IAnalyticsProvider.h"
-#include "UTPlaceablePowerup.h"
 #include "UTKillcamPlayback.h"
 #include "UTWeaponAttachment.h"
 #include "UTGameViewportClient.h"
@@ -893,96 +891,18 @@ bool AUTPlayerController::ServerActivatePowerUpPress_Validate()
 
 void AUTPlayerController::ServerActivatePowerUpPress_Implementation()
 {
-	if (UTCharacter != NULL && UTPlayerState != NULL && !GetWorldTimerManager().IsTimerActive(TriggerBoostTimerHandle))
+	if (UTCharacter != NULL && UTPlayerState != NULL && !GetWorldTimerManager().IsTimerActive(UTCharacter->TriggerBoostPowerTimerHandle))
 	{
 		AUTGameMode* UTGM = GetWorld()->GetAuthGameMode<AUTGameMode>();
-		if (UTGM && UTGM->TriggerBoost(this))
+		if (UTGM && UTGM->TriggerBoost(UTPlayerState))
 		{
 			UTClientPlaySound(BoostActivateSound);
-			GetWorldTimerManager().SetTimer(TriggerBoostTimerHandle, this, &AUTPlayerController::TriggerBoost, TimeToHoldPowerUpButtonToActivate, false);
+			GetWorldTimerManager().SetTimer(UTCharacter->TriggerBoostPowerTimerHandle, UTCharacter, &AUTCharacter::TriggerBoostPower, TimeToHoldPowerUpButtonToActivate, false);
 			// spawn effect
 			TSubclassOf<AUTInventory> ActivatedPowerupPlaceholderClass = UTGM ? UTGM->GetActivatedPowerupPlaceholderClass() : nullptr;
 			if (ActivatedPowerupPlaceholderClass)
 			{
 				UTCharacter->AddInventory(GetWorld()->SpawnActor<AUTInventory>(ActivatedPowerupPlaceholderClass, FVector(0.0f), FRotator(0.0f, 0.0f, 0.0f)), true);
-			}
-		}
-	}
-}
-
-void AUTPlayerController::TriggerBoost()
-{
-	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (GameMode && UTCharacter && UTPlayerState)
-	{
-		if (GameMode->AttemptBoost(this))
-		{
-			if (UTPlayerState->BoostClass)
-			{
-				AUTInventory* Powerup = UTPlayerState->BoostClass->GetDefaultObject<AUTInventory>();
-				if (Powerup && Powerup->bNotifyTeamOnPowerupUse && GameMode->UTGameState && UTPlayerState->Team)
-				{
-					TeamNotifyOfPowerupUse();
-				}
-
-				AUTPlaceablePowerup* FoundPlaceablePowerup = UTCharacter->FindInventoryType<AUTPlaceablePowerup>(AUTPlaceablePowerup::StaticClass(), false);
-				if (FoundPlaceablePowerup)
-				{
-					FoundPlaceablePowerup->SpawnPowerup();
-				}
-				else if (!UTPlayerState->BoostClass.GetDefaultObject()->HandleGivenTo(UTCharacter))
-				{
-					AUTInventory* TriggeredBoost = GetWorld()->SpawnActor<AUTInventory>(UTPlayerState->BoostClass, FVector(0.0f), FRotator(0.f, 0.f, 0.f));
-					TriggeredBoost->InitAsTriggeredBoost(UTCharacter);
-
-					AUTInventory* DuplicatePowerup = UTCharacter->FindInventoryType<AUTInventory>(UTPlayerState->BoostClass, true);
-					if (!DuplicatePowerup || !DuplicatePowerup->StackPickup(nullptr))
-					{
-						UTCharacter->AddInventory(TriggeredBoost, true);
-					}
-
-					//if we gave you a weapon lets immediately switch on triggering the boost
-					AUTWeapon* BoostAsWeapon = Cast<AUTWeapon>(TriggeredBoost);
-					if (BoostAsWeapon)
-					{
-						UTCharacter->SwitchWeapon(BoostAsWeapon);
-					}
-				}
-			}
-		}
-	}
-}
-
-
-void AUTPlayerController::TeamNotifyOfPowerupUse()
-{
-	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (GameMode && UTPlayerState)
-	{
-		if (UTPlayerState->BoostClass)
-		{
-			AUTInventory* Powerup = UTPlayerState->BoostClass->GetDefaultObject<AUTInventory>();
-			if (Powerup && GameMode->UTGameState && UTPlayerState->Team)
-			{
-				for (int32 PlayerIndex = 0; PlayerIndex < GameMode->UTGameState->PlayerArray.Num(); ++PlayerIndex)
-				{
-					AUTPlayerState* PS = Cast<AUTPlayerState>(GameMode->UTGameState->PlayerArray[PlayerIndex]);
-					if (PS && PS->Team)
-					{
-						if (PS->Team->TeamIndex == UTPlayerState->Team->TeamIndex)
-						{
-							AUTPlayerController* PC = Cast<AUTPlayerController>(PS->GetOwner());
-							if (PC)
-							{
-								if (Powerup->bNotifyTeamOnPowerupUse)
-								{
-									//21 is Powerup Message
-									PC->ClientReceiveLocalizedMessage(UUTPowerupUseMessage::StaticClass(), 21, UTPlayerState);
-								}
-							}
-						}
-					}
-				}
 			}
 		}
 	}

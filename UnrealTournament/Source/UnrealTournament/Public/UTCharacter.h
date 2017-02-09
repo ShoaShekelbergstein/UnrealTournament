@@ -2217,6 +2217,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Aim)
 	AActor* GetCurrentAimContext();
 
+	FTimerHandle TriggerBoostPowerTimerHandle;
+
+	/** Trigger boost. */
+	virtual void TriggerBoostPower();
+	virtual void TeamNotifyBoostPowerUse();
 
 private:
 	FTimerHandle SpeedBoostTimerHandle;

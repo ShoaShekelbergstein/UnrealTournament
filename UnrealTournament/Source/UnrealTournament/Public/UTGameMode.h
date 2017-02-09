@@ -988,13 +988,13 @@ public:
 #endif
 
 	// Returns true if a player can activate a boost
-	virtual bool CanBoost(AUTPlayerController* Who);
+	virtual bool CanBoost(AUTPlayerState* Who);
 
 	/** PlayerController wants to trigger boost, return true if he can handle it. Mutator hooks as well. */
-	virtual bool TriggerBoost(AUTPlayerController* Who);
+	virtual bool TriggerBoost(AUTPlayerState* Who);
 
 	// Look to see if we can attempt a boost.  It will use up the charge if we can and return true, otherwise it returns false.
-	virtual bool AttemptBoost(AUTPlayerController* Who);
+	virtual bool AttemptBoost(AUTPlayerState* Who);
 
 	/**
 	 *	Calculates the Com menu switch for a command command tag.

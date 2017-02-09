@@ -318,6 +318,14 @@ public:
 
 	UPROPERTY(EditAnyWhere, Category = "Tutorial")
 		TArray<FName> TutorialAnnouncements;
+
+	/** get AI value for using this item as a boost power
+	 * <= 0: do not use
+	 * 0 - 1 (exclusive): maybe use depending on game state
+	 * 1+: use right now GO GO GO
+	 */
+	UFUNCTION(BlueprintNativeEvent, Category = AI)
+	float GetBoostPowerRating(AUTBot* B) const;
 };
 
 // template to access a character's inventory

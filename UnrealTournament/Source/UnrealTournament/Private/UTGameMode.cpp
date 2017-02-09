@@ -5345,20 +5345,19 @@ void AUTGameMode::UnlockSession()
 	}
 }
 
-bool AUTGameMode::CanBoost(AUTPlayerController* Who)
+bool AUTGameMode::CanBoost(AUTPlayerState* Who)
 {
-	if (Who && Who->UTPlayerState && IsMatchInProgress() && (GetMatchState() != MatchState::MatchIntermission))
+	if (Who != nullptr && IsMatchInProgress() && (GetMatchState() != MatchState::MatchIntermission))
 	{
-		if (Who->UTPlayerState->GetRemainingBoosts())
-		{
-			return true;
-		}
+		return Who->GetRemainingBoosts() > 0;
 	}
-
-	return false;
+	else
+	{
+		return false;
+	}
 }
 
-bool AUTGameMode::TriggerBoost(AUTPlayerController* Who)
+bool AUTGameMode::TriggerBoost(AUTPlayerState* Who)
 {
 	if (BaseMutator != NULL)
 	{
@@ -5367,12 +5366,12 @@ bool AUTGameMode::TriggerBoost(AUTPlayerController* Who)
 	return CanBoost(Who);
 }
 
-bool AUTGameMode::AttemptBoost(AUTPlayerController* Who)
+bool AUTGameMode::AttemptBoost(AUTPlayerState* Who)
 {
 	bool bCanBoost = CanBoost(Who);
 	if (bCanBoost)
 	{
-		Who->UTPlayerState->SetRemainingBoosts(Who->UTPlayerState->GetRemainingBoosts() - 1);
+		Who->SetRemainingBoosts(Who->GetRemainingBoosts() - 1);
 	}
 	return bCanBoost;
 }

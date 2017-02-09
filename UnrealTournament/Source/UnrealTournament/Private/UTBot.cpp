@@ -2850,6 +2850,34 @@ void AUTBot::ExecuteWhatToDoNext()
 				}
 			}
 		}
+
+		// check for boost powers
+		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+		if (PS != nullptr && PS->GetRemainingBoosts() > 0 && UTChar != nullptr)
+		{
+			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+			if (GS != nullptr)
+			{
+				float BestRating = 0.0f;
+				int32 BestIndex = INDEX_NONE;
+				int32 i = 0;
+				for (TSubclassOf<AUTInventory> BoostType = GS->GetSelectableBoostByIndex(PS, i); BoostType != nullptr; i++, BoostType = GS->GetSelectableBoostByIndex(PS, i))
+				{
+					float NewRating = BoostType.GetDefaultObject()->GetBoostPowerRating(this);
+					if (NewRating > BestRating)
+					{
+						BestIndex = i;
+						BestRating = NewRating;
+					}
+				}
+				float BoostPowerRatingThreshold = (PS->RemainingLives == 1) ? 0.0f : 0.49f; // TODO: more complex decision on usage threshold
+				if (BestIndex != INDEX_NONE && BestRating > BoostPowerRatingThreshold)
+				{
+					PS->ServerSetBoostItem(BestIndex);
+					UTChar->TriggerBoostPower();
+				}
+			}
+		}
 	}
 }
 
