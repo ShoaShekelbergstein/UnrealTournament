@@ -448,6 +448,7 @@ protected:
 	bool bSuspendPopups;
 
 	EVisibility GetMatchButtonVis() const;
+	TSharedPtr<SButton> StartMatchButton;
 };
 
 #endif

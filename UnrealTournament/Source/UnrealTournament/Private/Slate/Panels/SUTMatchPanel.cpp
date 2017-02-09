@@ -114,7 +114,7 @@ void SUTMatchPanel::Construct(const FArguments& InArgs)
 							.VAlign(VAlign_Center)
 							.AutoHeight()
 							[
-								SNew(SButton)
+								SAssignNew(StartMatchButton, SButton)
 								.ButtonStyle(SUTStyle::Get(),"UT.SimpleButton")
 								.OnClicked(this, &SUTMatchPanel::StartNewMatch)
 								.ContentPadding(FMargin(32.0,5.0,32.0,5.0))
@@ -485,6 +485,12 @@ void SUTMatchPanel::Tick( const FGeometry& AllottedGeometry, const double InCurr
 	// If this 
 	if (ShouldUseLiveData())
 	{
+		if (StartMatchButton.IsValid())
+		{
+			AUTLobbyGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTLobbyGameState>();	
+			StartMatchButton->SetEnabled(GameState && GameState->IsClientFullyInformed());
+		}
+
 		// Flag all matches as pending kill.  
 		for (int32 i = 0; i < TrackedMatches.Num(); i++)
 		{
@@ -1172,9 +1178,8 @@ EVisibility SUTMatchPanel::GetMatchButtonVis() const
 	{
 		return EVisibility::Collapsed;
 	}
-	
-	AUTLobbyGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTLobbyGameState>();	
-	return (GameState && GameState->IsClientFullyInformed() ? EVisibility::Visible : EVisibility::Collapsed);
+
+	return EVisibility::Visible;
 }
 
 #endif
