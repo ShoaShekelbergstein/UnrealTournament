@@ -587,22 +587,27 @@ void AUTRallyPoint::Tick(float DeltaTime)
 						AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 						if (UTGS != nullptr)
 						{
-							for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+							for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 							{
-								AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-								if (PC && PC->UTPlayerState)
+								AUTPlayerState* PS = Cast<AUTPlayerState>(Iterator->IsValid() ? Iterator->Get()->PlayerState : nullptr);
+								if (PS != nullptr)
 								{
-									if (!UTGS->OnSameTeam(NearbyFC, PC))
+									PS->bRallyActivated = true;
+									PS->ForceNetUpdate();
+									AUTPlayerController* PC = Cast<AUTPlayerController>(Iterator->Get());
+									if (PC != nullptr)
 									{
-										PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 28, NearbyFC->PlayerState);
-									}
-									else
-									{
-										PC->UTPlayerState->bRallyActivated = true;
-										PC->UTPlayerState->ForceNetUpdate();
-										if (!PC->GetUTCharacter() || PC->GetUTCharacter()->bCanRally || PC->GetUTCharacter()->GetCarriedObject())
+										if (!UTGS->OnSameTeam(NearbyFC, PC))
 										{
-											PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), PC->UTPlayerState->CarriedObject ? 22 : 30, NearbyFC->PlayerState);
+											PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 28, NearbyFC->PlayerState);
+										}
+										else
+										{
+
+											if (!PC->GetUTCharacter() || PC->GetUTCharacter()->bCanRally || PC->GetUTCharacter()->GetCarriedObject())
+											{
+												PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), PC->UTPlayerState->CarriedObject ? 22 : 30, NearbyFC->PlayerState);
+											}
 										}
 									}
 								}
