@@ -147,7 +147,11 @@ float AUTPlayerCameraManager::RatePlayerCamera(AUTPlayerState* InPS, AUTCharacte
 {
 	// 100 is about max
 	float Score = 1.f;
-	if (InPS == CurrentCamPS)
+	if (InPS->bOutOfLives || InPS->bOnlySpectator)
+	{
+		return -100.f;
+	}
+	else if (InPS == CurrentCamPS)
 	{
 		Score += CurrentCamBonus;
 	}

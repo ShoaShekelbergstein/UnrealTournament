@@ -3554,7 +3554,7 @@ void AUTPlayerController::ChooseBestCamera()
 {
 	// for now, choose just between live players.  Eventually also use level cameras, etc.
 	float BestScore = 0.f;
-	APlayerState* BestPS = LastSpectatedPlayerState;
+	APlayerState* BestPS = nullptr;
 	AUTPlayerCameraManager* UTCam = Cast<AUTPlayerCameraManager>(PlayerCameraManager);
 	if (UTCam)
 	{
@@ -3565,7 +3565,7 @@ void AUTPlayerController::ChooseBestCamera()
 			if (NextPlayerState)
 			{
 				float NewScore = UTCam->RatePlayerCamera(NextPlayerState, CamPawn, LastSpectatedPlayerState);
-				if (NewScore > BestScore)
+				if (!BestPS || (NewScore > BestScore))
 				{
 					BestScore = NewScore;
 					BestPS = NextPlayerState;
