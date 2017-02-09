@@ -740,6 +740,13 @@ void SUTChallengePanel::AddChallengeButton(FName ChallengeTag, const FUTChalleng
 					]
 					+SOverlay::Slot()
 					[
+						SNew(SImage)
+						.Image(SUTStyle::Get().GetBrush("UT.Background.Shadow"))
+						.Visibility(TAttribute<EVisibility>::Create(TAttribute<EVisibility>::FGetter::CreateSP(this, &SUTChallengePanel::GetShadowVis, ChallengeTag)))
+					]
+
+					+SOverlay::Slot()
+					[
 						CreateCheck(ChallengeTag)
 					]
 					+SOverlay::Slot()
@@ -765,12 +772,6 @@ void SUTChallengePanel::AddChallengeButton(FName ChallengeTag, const FUTChalleng
 						[
 							CreateStars(ChallengeTag,StarColor, StarStyle, CompletedStarStyle)
 						]
-					]
-					+SOverlay::Slot()
-					[
-						SNew(SImage)
-						.Image(SUTStyle::Get().GetBrush("UT.Background.Shadow"))
-						.Visibility(TAttribute<EVisibility>::Create(TAttribute<EVisibility>::FGetter::CreateSP(this, &SUTChallengePanel::GetShadowVis, ChallengeTag)))
 					]
 				]
 			]
