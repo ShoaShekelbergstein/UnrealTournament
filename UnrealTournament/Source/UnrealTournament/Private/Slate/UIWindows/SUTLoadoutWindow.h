@@ -3,6 +3,7 @@
 
 #include "SlateBasics.h"
 #include "Slate/SlateGameResources.h"
+#include "../Widgets/SUTButton.h"
 #include "../FLoadoutData.h"
 #include "../Base/SUTMenuBase.h"
 
@@ -37,7 +38,7 @@ protected:
 	void RefreshAvailableItemsList();
 	void RefreshSelectedItemsList();
 
-	void AvailableUpdateItemInfo(int32 Index);
+	void AvailableUpdateItemInfo(TSharedPtr<SUTButton> Button);
 
 	FReply OnAvailableClick(int32 Index);
 	FReply OnSelectedClick(int32 Index);

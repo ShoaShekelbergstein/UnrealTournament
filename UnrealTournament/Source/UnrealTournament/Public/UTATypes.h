@@ -1429,6 +1429,13 @@ struct FUTChallengeInfo
 	UPROPERTY()
 	bool bExpiredChallenge;
 
+	UPROPERTY()
+	bool bHighlighted;
+
+	UPROPERTY()
+	bool ShadowOpacity;
+
+
 	FUTChallengeInfo()
 		: Title(TEXT(""))
 		, Map(TEXT(""))
@@ -1445,6 +1452,8 @@ struct FUTChallengeInfo
 		EnemyTeamName[2] = NAME_None;
 		bExpiredChallenge = false;
 		bDailyChallenge = false;
+		bHighlighted = false;
+		ShadowOpacity = 1.0f;
 	}
 
 	FUTChallengeInfo(FName inTag, const FUTChallengeInfo& inInfo)
@@ -1459,6 +1468,8 @@ struct FUTChallengeInfo
 		, RewardTag(inInfo.RewardTag)
 		, bDailyChallenge(inInfo.bDailyChallenge)
 		, bExpiredChallenge(inInfo.bExpiredChallenge)
+		, bHighlighted(inInfo.bHighlighted)
+		, ShadowOpacity(inInfo.ShadowOpacity)
 	{
 		EnemyTeamName[0] = inInfo.EnemyTeamName[0];
 		EnemyTeamName[1] = inInfo.EnemyTeamName[1];
@@ -1481,6 +1492,8 @@ struct FUTChallengeInfo
 		EnemyTeamName[2] = HardEnemyTeam;
 		bExpiredChallenge = false;
 		bDailyChallenge = false;
+		bHighlighted = false;
+		ShadowOpacity = 1.0f;
 	}
 };
 

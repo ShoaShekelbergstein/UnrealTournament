@@ -110,6 +110,7 @@ TSharedRef<FSlateStyleSet> SUTStyle::Create()
 	MessageSound = FSlateSound::FromName_DEPRECATED(FName("SoundCue'/Game/RestrictedAssets/Audio/UI/A_UI_Attention02_Cue.A_UI_Attention02_Cue'"));
 	PauseSound = FSlateSound::FromName_DEPRECATED(FName("SoundCue'/Game/RestrictedAssets/Audio/UI/A_UI_Pause01_Cue.A_UI_Pause01_Cue'"));
 
+
 	SetFonts(StyleRef);
 	SetIcons(StyleRef);
 	SetCommonStyle(StyleRef);
@@ -257,6 +258,9 @@ void SUTStyle::SetIcons(TSharedRef<FSlateStyleSet> StyleRef)
 void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 {
 	FSlateStyleSet& Style = StyleRef.Get();
+
+
+	Style.Set("UT.Background.Shadow", new FSlateColorBrush(FLinearColor(0, 0, 0, .5f)));
 
 	Style.Set("UT.SimpleButton", FButtonStyle()
 		.SetNormal( FSlateColorBrush(FColor(25,48,180,255)) )

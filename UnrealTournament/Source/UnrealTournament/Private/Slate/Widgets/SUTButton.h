@@ -6,8 +6,11 @@
 
 #if !UE_SERVER
 
+class SUTButton;
+
 DECLARE_DELEGATE_RetVal_OneParam( FReply, FUTButtonClick, int32 );
-DECLARE_DELEGATE_OneParam( FUTMouseOver, int32 );
+DECLARE_DELEGATE_OneParam( FUTMouseOver, TSharedPtr<SUTButton> );
+DECLARE_DELEGATE_OneParam( FUTMouseExit, TSharedPtr<SUTButton> );
 
 class UNREALTOURNAMENT_API SUTButton : public SButton
 {
@@ -35,6 +38,7 @@ class UNREALTOURNAMENT_API SUTButton : public SButton
 		, _WidgetTag(0)
 		, _CaptionHAlign( HAlign_Left )
 		, _bSpringButton( false )
+		, _WidgetNameTag(NAME_None)
 
 		{}
 
@@ -101,7 +105,11 @@ class UNREALTOURNAMENT_API SUTButton : public SButton
 
 		SLATE_ARGUMENT(int32, WidgetTag)
 
+		SLATE_ARGUMENT(FName, WidgetNameTag)
+
 		SLATE_EVENT( FUTMouseOver, UTOnMouseOver)
+
+		SLATE_EVENT( FUTMouseExit, UTOnMouseExit)
 
 		SLATE_EVENT( FOnClicked, OnClicked )
 
@@ -128,6 +136,7 @@ class UNREALTOURNAMENT_API SUTButton : public SButton
 	virtual void BePressed();
 
 	int32 WidgetTag;
+	FName WidgetNameTag;
 
 protected:
 
@@ -142,7 +151,8 @@ protected:
 	FUTButtonClick OnButtonClick;
 	bool bIsToggleButton;
 
-	FUTMouseOver OnMouseOver;
+	FUTMouseOver UTOnMouseOver;
+	FUTMouseExit UTOnMouseExit;
 
 	virtual FReply Pressed(int32 MouseButtonIndex);
 	virtual FReply Released(int32 MouseButtonIndex, bool bIsUnderCusor);

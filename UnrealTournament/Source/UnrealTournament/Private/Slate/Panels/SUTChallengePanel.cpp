@@ -728,39 +728,49 @@ void SUTChallengePanel::AddChallengeButton(FName ChallengeTag, const FUTChalleng
 				.ButtonStyle(SUTStyle::Get(), "UT.HomePanel.Button")
 				.IsToggleButton(true)
 				.OnClicked(this, &SUTChallengePanel::ChallengeClicked, ChallengeTag)
+				.UTOnMouseOver(this, &SUTChallengePanel::OnUTMouseEnter)
+				.UTOnMouseExit(this, &SUTChallengePanel::OnUTMouseExit)
+				.WidgetNameTag(ChallengeTag)
 				[
-					SNew(SBorder)
-					.BorderImage(SUTStyle::Get().GetBrush(Challenge.SlateUIImageName))
+					SNew(SOverlay)
+					+SOverlay::Slot()
 					[
-						SNew(SOverlay)
-						+SOverlay::Slot()
+						SNew(SImage)
+						.Image(SUTStyle::Get().GetBrush(Challenge.SlateUIImageName))
+					]
+					+SOverlay::Slot()
+					[
+						CreateCheck(ChallengeTag)
+					]
+					+SOverlay::Slot()
+					[
+						SNew(SHorizontalBox)
+						+SHorizontalBox::Slot()
+						.AutoWidth()
+						.Padding(70.0,0.0,0.0,0.0)
+						.VAlign(VAlign_Center)
 						[
-							CreateCheck(ChallengeTag)
+							SNew(STextBlock)
+							.Text(FText::FromString(Challenge.Title))
+							.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Medium.Bold")
+							.ShadowOffset(FVector2D(2.0f,2.0f))
+							.ShadowColorAndOpacity(FLinearColor(0.0f,0.0f,0.0f,0.5))
 						]
-						+SOverlay::Slot()
+					]
+					+SOverlay::Slot()
+					[
+						SNew(SVerticalBox)
+						+SVerticalBox::Slot()
+						.HAlign(HAlign_Right)
 						[
-							SNew(SHorizontalBox)
-							+SHorizontalBox::Slot()
-							.AutoWidth()
-							.Padding(70.0,0.0,0.0,0.0)
-							.VAlign(VAlign_Center)
-							[
-								SNew(STextBlock)
-								.Text(FText::FromString(Challenge.Title))
-								.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Medium.Bold")
-								.ShadowOffset(FVector2D(2.0f,2.0f))
-								.ShadowColorAndOpacity(FLinearColor(0.0f,0.0f,0.0f,0.5))
-							]
+							CreateStars(ChallengeTag,StarColor, StarStyle, CompletedStarStyle)
 						]
-						+SOverlay::Slot()
-						[
-							SNew(SVerticalBox)
-							+SVerticalBox::Slot()
-							.HAlign(HAlign_Right)
-							[
-								CreateStars(ChallengeTag,StarColor, StarStyle, CompletedStarStyle)
-							]
-						]
+					]
+					+SOverlay::Slot()
+					[
+						SNew(SImage)
+						.Image(SUTStyle::Get().GetBrush("UT.Background.Shadow"))
+						.Visibility(TAttribute<EVisibility>::Create(TAttribute<EVisibility>::FGetter::CreateSP(this, &SUTChallengePanel::GetShadowVis, ChallengeTag)))
 					]
 				]
 			]
@@ -1192,5 +1202,34 @@ void SUTChallengePanel::AnimEnd()
 	}
 }
 
+
+void SUTChallengePanel::OnUTMouseEnter(const TSharedPtr<SUTButton> Target)
+{
+	if (ChallengeManager->Challenges.Contains(Target->WidgetNameTag))
+	{
+		ChallengeManager->Challenges[Target->WidgetNameTag].bHighlighted = true;
+	}
+}
+
+void SUTChallengePanel::OnUTMouseExit(const TSharedPtr<SUTButton> Target)
+{
+	if (ChallengeManager->Challenges.Contains(Target->WidgetNameTag))
+	{
+		ChallengeManager->Challenges[Target->WidgetNameTag].bHighlighted = false;
+	}
+}
+
+EVisibility SUTChallengePanel::GetShadowVis(FName ChallengeTag)
+{
+	if (ChallengeTag == SelectedChallenge) return EVisibility::Collapsed;
+
+	if (ChallengeManager->Challenges.Contains(ChallengeTag))
+	{
+		return !ChallengeManager->Challenges[ChallengeTag].bHighlighted ? EVisibility::Visible : EVisibility::Collapsed;
+
+	}
+
+	return EVisibility::Visible;
+}
 
 #endif
