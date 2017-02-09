@@ -436,6 +436,7 @@ TSharedRef<SWidget> SUTMenuBase::BuildDefaultRightMenuBar()
 			SNew(SUTButton)
 			.OnClicked(this, &SUTMenuBase::ToggleFullscreenClicked)
 			.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
+			.ToolTipText(NSLOCTEXT("ToolTips","TPFullScreen","Toggles between fullscreen and widowed mode."))
 			[
 				SNew(SHorizontalBox)
 				+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
@@ -990,14 +991,21 @@ const FSlateBrush* SUTMenuBase::GetFullvsWindowButtonImage() const
 
 FReply SUTMenuBase::ToggleFullscreenClicked()
 {
-	if (PlayerOwner->ViewportClient->IsFullScreenViewport())
+	UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());	
+
+	if (UserSettings)
 	{
-		PlayerOwner->ConsoleCommand("fullscreen 0");
+		if (PlayerOwner->ViewportClient->IsFullScreenViewport())
+		{
+			UserSettings->SetFullscreenMode(EWindowMode::Windowed);
+		}
+		else
+		{
+			UserSettings->SetFullscreenMode(EWindowMode::Fullscreen);
+		}
+		UserSettings->ApplyResolutionSettings(false);
 	}
-	else
-	{
-		PlayerOwner->ConsoleCommand("fullscreen 1");
-	}
+
 	return FReply::Handled();
 }
 
