@@ -260,7 +260,7 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 	FSlateStyleSet& Style = StyleRef.Get();
 
 
-	Style.Set("UT.Background.Shadow", new FSlateColorBrush(FLinearColor(0, 0, 0, .5f)));
+	Style.Set("UT.Background.Shadow", new FSlateColorBrush(FLinearColor(0, 0, 0, .8f)));
 
 	Style.Set("UT.SimpleButton", FButtonStyle()
 		.SetNormal( FSlateColorBrush(FColor(25,48,180,255)) )
