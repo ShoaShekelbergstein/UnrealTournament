@@ -502,10 +502,7 @@ public:
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-BlackStone";
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-Heist";
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-HighRoad";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/Test/FR-Fort_Door";
 
-			NewRuleset->DefaultMap = "/Game/RestrictedAssets/Maps/Test/FR-Fort_Door";
-			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/Test/FR-Fort_Door"));
 			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Fort"));
 			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Meltdown"));
 			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Loh"));
