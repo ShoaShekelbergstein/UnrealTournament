@@ -6130,7 +6130,15 @@ void UUTLocalPlayer::SetTutorialFinished(FName TutorialTag)
 				{
 					if (TutorialMask == TUTORIAL_DM)
 					{
-						ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlocked","Achievement: Fragger\nDeathmatch Quickmatch Unlocked!"),6.0f);			
+						ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlockedDM","Achievement: Fragger\nDeathmatch Quickmatch Unlocked!"),6.0f);			
+					}
+					if (TutorialMask == TUTORIAL_FlagRun)
+					{
+						ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlockedFR","Achievement: Running Man\nFlagrun Quickmatch Unlocked!"),6.0f);			
+					}
+					if (TutorialMask == TUTORIAL_Showdown)
+					{
+						ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlockedSD","Achievement: Mano E' Mano\nShowdown Quickmatch Unlocked!"),6.0f);			
 					}
 					if (TutorialMask == TUTORIAL_CTF)
 					{
