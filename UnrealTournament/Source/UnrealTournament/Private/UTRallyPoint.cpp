@@ -266,6 +266,10 @@ void AUTRallyPoint::SetRallyPointState(FName NewState)
 					}
 				}
 			}
+			else if (GameState->PendingRallyPoint == this)
+			{
+				GameState->PendingRallyPoint = nullptr;
+			}
 		}
 	}
 }
@@ -481,18 +485,21 @@ void AUTRallyPoint::OnRallyChargingChanged()
 
 					// spawn charge stopped
 					LosingChargeEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? LosingChargeEffectRed : LosingChargeEffectBlue, GetActorLocation(), GetActorRotation());
+					UUTGameplayStatics::UTPlaySound(GetWorld(), RallyBrokenSound, this, SRT_All);
 				}
 				SetAmbientSound(nullptr, false);
-				UUTGameplayStatics::UTPlaySound(GetWorld(), RallyBrokenSound, this, SRT_All);
 			}
 			if ((Role == ROLE_Authority) && ((RallyReadyCountdown  < 2.f) || !TouchingFC || TouchingFC->IsDead()))
 			{
-				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+				if ((UTGS->CurrentRallyPoint == nullptr) || (UTGS->CurrentRallyPoint == this))
 				{
-					AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-					if (PC && PC->UTPlayerState && PC->UTPlayerState->Team && (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0)))
+					for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 					{
-						PC->UTClientPlaySound(RallyBrokenSound);
+						AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+						if (PC && PC->UTPlayerState && PC->UTPlayerState->Team && (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0)))
+						{
+							PC->UTClientPlaySound(RallyBrokenSound);
+						}
 					}
 				}
 			}
