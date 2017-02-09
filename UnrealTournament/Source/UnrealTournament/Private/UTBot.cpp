@@ -313,13 +313,13 @@ void AUTBot::AutoUpdateSkillFor(AUTGameMode* Game)
 {
 	if (Game)
 	{
-		bool bOnRedTeam = true;  //also use for FFA
+		float NewSkill = Game->RedTeamSkill;  //also use for FFA
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
 		if (PS && PS->Team && (PS->Team->TeamIndex == 1))
 		{
-			bOnRedTeam = false;
+			NewSkill = Game->BlueTeamSkill;
 		}
-		InitializeSkill(bOnRedTeam ? Game->RedTeamSkill : Game->BlueTeamSkill);
+		InitializeSkill(NewSkill);
 	}
 }
 

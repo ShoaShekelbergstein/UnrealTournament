@@ -219,16 +219,18 @@ public:
 		float BlueTeamSkill;
 
 	UPROPERTY(BlueprintReadWrite)
-		float BlueTeamKills;
+		int32 BlueTeamKills;
 
 	UPROPERTY(BlueprintReadWrite)
-		float RedTeamKills;
+		int32 RedTeamKills;
 
 	UPROPERTY(BlueprintReadWrite)
-		float BlueTeamDeaths;
+		int32 BlueTeamDeaths;
 
 	UPROPERTY(BlueprintReadWrite)
-		float RedTeamDeaths;
+		int32 RedTeamDeaths;
+
+	virtual void UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, const AUTPlayerState* KilledPlayerState);
 
 	/** Delay to start match after start conditions are met. */
 	UPROPERTY(EditDefaultsOnly, Category = Game)

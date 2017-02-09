@@ -399,23 +399,7 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 	{
 		if (bQuickPlay) 
 		{
-			BotSkillLevel = 1;
-			if (RankCheck < 6)
-			{
-				BotSkillLevel = 1;
-			}
-			else if (RankCheck < 8)
-			{
-				BotSkillLevel = 2;
-			}
-			else if (RankCheck < 10)
-			{
-				BotSkillLevel = 3;
-			}
-			else
-			{
-				BotSkillLevel = FMath::Clamp(1 + (RankCheck-10)/2, 1, 6);
-			}
+			BotSkillLevel = 3;
 		}
 
 		// build all of the data needed to launch the map.

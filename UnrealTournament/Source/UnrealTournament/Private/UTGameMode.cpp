@@ -297,6 +297,12 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 
 	bRequireReady = (UGameplayStatics::GetIntOption(Options, TEXT("RequireReady"), bRequireReady) == 0) ? false : true;
 
+
+	if (!UGameplayStatics::HasOption(Options, TEXT("MaxPlayers")))
+	{
+		GameSession->MaxPlayers = bTeamGame ? 10 : 8;
+	}
+
 	// alias for testing convenience
 	if (UGameplayStatics::HasOption(Options, TEXT("Bots")))
 	{
@@ -311,7 +317,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 		}
 	}
 	bForceNoBots = (UGameplayStatics::GetIntOption(Options, TEXT("ForceNoBots"), bForceNoBots) == 0) ? false : true;
-
+	bAutoAdjustBotSkill = bBasicTrainingGame || bIsQuickMatch;
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("CasterControl"));
 	bCasterControl = EvalBoolOptions(InOpt, bCasterControl);
 
@@ -381,11 +387,6 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 				GoalScore = 0;
 			}
 		}
-	}
-
-	if (!UGameplayStatics::HasOption(Options, TEXT("MaxPlayers")))
-	{
-		GameSession->MaxPlayers = bTeamGame ? 10 : 8;
 	}
 
 	PostInitGame(Options);
@@ -1310,6 +1311,72 @@ bool AUTGameMode::IsEnemy(AController * First, AController* Second)
 	return First && Second && !UTGameState->OnSameTeam(First, Second);
 }
 
+void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, const AUTPlayerState* KilledPlayerState)
+{
+	if (KillerPlayerState && (KillerPlayerState->bIsABot != KilledPlayerState->bIsABot))
+	{
+		// a bot vs player kill occurred, so adjust skill accordingly
+		bool bKillerOnBlue = KillerPlayerState->Team && (KillerPlayerState->Team->TeamIndex == 1);
+		if (bKillerOnBlue)
+		{
+			if (KillerPlayerState->bIsABot)
+			{
+				BlueTeamKills++;
+			}
+			else
+			{
+				BlueTeamDeaths++;
+			}
+		}
+		else
+		{
+			if (KillerPlayerState->bIsABot)
+			{
+				RedTeamKills++;
+			}
+			else
+			{
+				RedTeamDeaths++;
+			}
+		}
+		if (KillerPlayerState->bIsABot)
+		{
+			// decrease skill level for bot team, no lower than 1.5
+			if (bKillerOnBlue)
+			{
+				// if more deaths still, less reduction
+				float Adjust = (BlueTeamDeaths > BlueTeamKills) ? 0.5f : 1.f;
+				BlueTeamSkill = FMath::Max(1.f, BlueTeamSkill - Adjust / FMath::Min(5.f, float(BlueTeamKills + BlueTeamDeaths)));
+			}
+			else
+			{
+				float Adjust = (RedTeamDeaths > RedTeamKills) ? 0.5f : 1.f;
+				RedTeamSkill = FMath::Max(1.f, RedTeamSkill - Adjust / FMath::Min(5.f, float(RedTeamKills + RedTeamDeaths)));
+			}
+			AUTBot* Bot = Cast<AUTBot>(KillerPlayerState->GetOwner());
+			if (Bot)
+			{
+				Bot->AutoUpdateSkillFor(this);
+			}
+		}
+		else
+		{
+			// increase skill level for bot team no higher than 6
+			if (bKillerOnBlue || !bTeamGame)
+			{
+				float Adjust = (RedTeamKills > RedTeamDeaths) ? 0.5f : 1.f;
+				RedTeamSkill = FMath::Min(6.f, RedTeamSkill + Adjust / FMath::Min(5.f, 0.7f*float(RedTeamKills + RedTeamDeaths)));
+			}
+			else
+			{
+				// if more deaths still, less reduction
+				float Adjust = (BlueTeamKills > BlueTeamDeaths) ? 0.5f : 1.f;
+				BlueTeamSkill = FMath::Min(6.f, BlueTeamSkill + Adjust / FMath::Min(5.f, 0.7f*float(BlueTeamKills + BlueTeamDeaths)));
+			}
+		}
+	}
+}
+
 void AUTGameMode::Killed(AController* Killer, AController* KilledPlayer, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType)
 {
 	// Ignore all killing when entering overtime as we kill off players and don't want it affecting their score.
@@ -1319,7 +1386,6 @@ void AUTGameMode::Killed(AController* Killer, AController* KilledPlayer, APawn* 
 		AUTPlayerState* const KilledPlayerState = KilledPlayer ? Cast<AUTPlayerState>(KilledPlayer->PlayerState) : NULL;
 
 		//UE_LOG(UT, Log, TEXT("Player Killed: %s killed %s"), (KillerPlayerState != NULL ? *KillerPlayerState->PlayerName : TEXT("NULL")), (KilledPlayerState != NULL ? *KilledPlayerState->PlayerName : TEXT("NULL")));
-
 		if (KilledPlayerState != NULL)
 		{
 			bool const bEnemyKill = IsEnemy(Killer, KilledPlayer);
@@ -1327,6 +1393,10 @@ void AUTGameMode::Killed(AController* Killer, AController* KilledPlayer, APawn* 
 
 			if (HasMatchStarted())
 			{
+				if (bAutoAdjustBotSkill && bEnemyKill)
+				{
+					UpdateSkillAdjust(KillerPlayerState, KilledPlayerState);
+				}
 				KilledPlayerState->IncrementDeaths(DamageType, KillerPlayerState);
 				TSubclassOf<UUTDamageType> UTDamage(*DamageType);
 				if (UTDamage && bEnemyKill)
