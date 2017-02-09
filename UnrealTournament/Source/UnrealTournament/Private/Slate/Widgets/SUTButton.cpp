@@ -160,10 +160,13 @@ FReply SUTButton::Released(int32 MouseButtonIndex, bool bIsUnderCusor)
 					return OnButtonClick.Execute(MouseButtonIndex).ReleaseMouseCapture();
 				}
 			}
+			else
+			{
+				UnPressed();			
+			}
 
 		}
-
-		if (!bIsToggleButton)
+		else if (!bIsToggleButton)
 		{
 			UnPressed();
 		}
