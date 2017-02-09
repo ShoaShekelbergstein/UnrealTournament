@@ -36,19 +36,23 @@ void SUTYoutubeConsentDialog::Construct(const FArguments& InArgs)
 	if (DialogContent.IsValid())
 	{		
 		DialogContent->AddSlot()
+		.VAlign(VAlign_Fill)
+		.HAlign(HAlign_Fill)
 		[
 			SNew(SVerticalBox)
 			+ SVerticalBox::Slot()
-			.Padding(0.0f, 5.0f, 0.0f, 5.0f)
+			.Padding(10.0f, 10.0f, 10.0f, 10.0f)
 			.AutoHeight()
-			.VAlign(VAlign_Top)
-			.HAlign(HAlign_Left)
+			.HAlign(HAlign_Fill)
 			[
-				SAssignNew(ConsentBrowser, SWebBrowser)
-				.InitialURL(ConsentURL)
-				.ShowControls(false)
-				.ViewportSize(WebBrowserSize)
-				.OnTitleChanged(FOnTextChanged::CreateSP(this, &SUTYoutubeConsentDialog::OnTitleChanged))
+				SNew(SBox).HeightOverride(720.0f)
+				[
+					SAssignNew(ConsentBrowser, SWebBrowser)
+					.InitialURL(ConsentURL)
+					.ShowControls(false)
+					.ViewportSize(WebBrowserSize)
+					.OnTitleChanged(FOnTextChanged::CreateSP(this, &SUTYoutubeConsentDialog::OnTitleChanged))
+				]
 			]
 		];
 	}
