@@ -71,9 +71,12 @@ void AUTLineUpZone::PostDuplicate(bool bDuplicateForPIE)
 		ACameraActor* SpawnedActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), Params);
 		if (SpawnedActor)
 		{
+#if WITH_EDITOR
 			FString CameraNameLabel = GetActorLabel();
 			CameraNameLabel.Append(TEXT("_Camera"));
-			SpawnedActor->SetActorLabel(CameraNameLabel);
+			Camera->SetActorLabel(CameraNameLabel);
+#endif
+
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
 			SpawnedActor->SetActorLocationAndRotation(Camera->GetActorLocation(), Camera->GetActorRotation());
@@ -425,7 +428,6 @@ void AUTLineUpZone::UpdateSpawnLocationsWithVisualizationMove()
 #endif
 }
 
-#if WITH_EDITORONLY_DATA
 void AUTLineUpZone::DefaultCreateForTeamIntro()
 {
 	TArray<FVector> RedStartLocations;
@@ -492,11 +494,12 @@ void AUTLineUpZone::DefaultCreateForTeamIntro()
 		if (SpawnedActor)
 		{
 			Camera = SpawnedActor;
-
+			
+#if WITH_EDITOR
 			FString CameraNameLabel = GetActorLabel();
 			CameraNameLabel.Append(TEXT("_Camera"));
 			Camera->SetActorLabel(CameraNameLabel);
-
+#endif
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 		}
@@ -567,9 +570,12 @@ void AUTLineUpZone::DefaultCreateForFFAIntro()
 		{
 			Camera = SpawnedActor;
 
+#if WITH_EDITOR	
 			FString CameraNameLabel = GetActorLabel();
 			CameraNameLabel.Append(TEXT("_Camera"));
 			Camera->SetActorLabel(CameraNameLabel);
+#endif
+
 
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
@@ -650,9 +656,12 @@ void AUTLineUpZone::DefaultCreateForTeamIntermission()
 		{
 			Camera = SpawnedActor;
 
+#if WITH_EDITOR
 			FString CameraNameLabel = GetActorLabel();
 			CameraNameLabel.Append(TEXT("_Camera"));
 			Camera->SetActorLabel(CameraNameLabel);
+#endif
+
 
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
@@ -733,9 +742,11 @@ void AUTLineUpZone::DefaultCreateForFFAIntermission()
 		{
 			Camera = SpawnedActor;
 
+#if WITH_EDITOR
 			FString CameraNameLabel = GetActorLabel();
 			CameraNameLabel.Append(TEXT("_Camera"));
 			Camera->SetActorLabel(CameraNameLabel);
+#endif
 
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
@@ -816,9 +827,11 @@ void AUTLineUpZone::DefaultCreateForTeamEndMatch()
 		{
 			Camera = SpawnedActor;
 
+#if WITH_EDITOR
 			FString CameraNameLabel = GetActorLabel();
 			CameraNameLabel.Append(TEXT("_Camera"));
 			Camera->SetActorLabel(CameraNameLabel);
+#endif
 
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
@@ -899,9 +912,11 @@ void AUTLineUpZone::DefaultCreateForFFAEndMatch()
 		{
 			Camera = SpawnedActor;
 
+#if WITH_EDITOR
 			FString CameraNameLabel = GetActorLabel();
 			CameraNameLabel.Append(TEXT("_Camera"));
 			Camera->SetActorLabel(CameraNameLabel);
+#endif
 
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
@@ -959,9 +974,11 @@ void AUTLineUpZone::DefaultCreateForOnly1Character()
 		{
 			Camera = SpawnedActor;
 
+#if WITH_EDITOR
 			FString CameraNameLabel = GetActorLabel();
 			CameraNameLabel.Append(TEXT("_Camera"));
 			Camera->SetActorLabel(CameraNameLabel);
+#endif
 
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
@@ -979,6 +996,3 @@ void AUTLineUpZone::DefaultCreateForOnly1Character()
 
 	Camera->SetActorRelativeTransform(DefaultCameraTransform);
 }
-
-
-#endif //WITH_EDITORONLY_DATA
