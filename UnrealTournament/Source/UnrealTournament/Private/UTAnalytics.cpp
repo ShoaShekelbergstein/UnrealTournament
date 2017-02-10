@@ -185,6 +185,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(TokenID);
 	AddGenericParamName(TokenDescription);
 	AddGenericParamName(HasTokenBeenPickedUpBefore);
+	AddGenericParamName(AnnouncementName);
 	AddGenericParamName(AnnouncementID);
 	AddGenericParamName(OptionalObjectName);
 	AddGenericParamName(UTTutorialPlayInstruction);
@@ -970,11 +971,12 @@ void FUTAnalytics::FireEvent_UTTutorialPickupToken(AUTPlayerController* UTPC, FN
 *
 * @Type Sent by the Client
 *
+* @EventParam AnnouncementName FString Name of the announcement that the announcement playing
 * @EventParam AnnouncementId int32 ID of the announcement that is played in the tutorial.
 * @EventParam OptionalObjectName FString Name of the object this tutorial is about. IE: If it is a weapon it will be the weapon name
 * @Comments
 */
-void FUTAnalytics::FireEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, int32 AnnoucementID, FString OptionalObjectName)
+void FUTAnalytics::FireEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, FString AnnouncementName, int32 AnnoucementID, FString OptionalObjectName)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
 	if (AnalyticsProvider.IsValid())
@@ -983,6 +985,7 @@ void FUTAnalytics::FireEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC
 
 		SetClientInitialParameters(UTPC, ParamArray, true);
 
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::AnnouncementName), AnnouncementName));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::AnnouncementID), AnnoucementID));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::OptionalObjectName), OptionalObjectName));
 

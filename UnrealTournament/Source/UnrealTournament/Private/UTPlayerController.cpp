@@ -5239,7 +5239,7 @@ void AUTPlayerController::PlayTutorialAnnouncement(int32 Index, UObject* Optiona
 
 		if (FUTAnalytics::IsAvailable())
 		{
-			FUTAnalytics::FireEvent_UTTutorialPlayInstruction(this, Index, OptionalObject ? OptionalObject->GetName() : FString());
+			FUTAnalytics::FireEvent_UTTutorialPlayInstruction(this, NewAnnName.ToString(), Index, OptionalObject ? OptionalObject->GetName() : FString());
 		}
 	}
 }

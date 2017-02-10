@@ -52,7 +52,7 @@ public:
 	static void FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& InParamArray);
 	static void FireEvent_EnterMatch(AUTPlayerController* UTPC, FString EnterMethod);
 	static void FireEvent_UTTutorialPickupToken(AUTPlayerController* UTPC, FName TokenID, FString TokenDescription);
-	static void FireEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, int32 InstructionID, FString OptionalObjectName = FString());
+	static void FireEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, FString TutorialName, int32 InstructionID, FString OptionalObjectName = FString());
 	static void FireEvent_UTTutorialStarted(AUTPlayerController* UTPC, FString TutorialMap);
 	static void FireEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap);
 	static void FireEvent_UTCancelOnboarding(AUTPlayerController* UTPC);

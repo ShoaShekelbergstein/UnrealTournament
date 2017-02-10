@@ -70,6 +70,7 @@ namespace EGenericAnalyticParam
 		TokenID,
 		TokenDescription,
 		HasTokenBeenPickedUpBefore,
+		AnnouncementName,
 		AnnouncementID,
 		OptionalObjectName,
 		UTTutorialPlayInstruction,
