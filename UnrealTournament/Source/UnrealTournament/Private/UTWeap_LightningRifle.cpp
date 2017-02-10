@@ -4,6 +4,7 @@
 #include "UnrealNetwork.h"
 #include "StatNames.h"
 #include "UTWeap_LightningRifle.h"
+#include "UTWeapon.h"
 
 AUTWeap_LightningRifle::AUTWeap_LightningRifle(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -14,7 +15,7 @@ void AUTWeap_LightningRifle::DrawWeaponCrosshair_Implementation(UUTHUDWidget* We
 {
 	Super::DrawWeaponCrosshair_Implementation(WeaponHudWidget, RenderDelta);
 
-	if ((ChargePct > 0.f) && WeaponHudWidget && WeaponHudWidget->UTHUDOwner)
+	if ((ChargePct > 0.f) && (ZoomState != EZoomState::EZS_NotZoomed) && WeaponHudWidget && WeaponHudWidget->UTHUDOwner)
 	{
 		float Width = 150.f;
 		float Height = 21.f;
