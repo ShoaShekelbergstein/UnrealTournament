@@ -397,7 +397,7 @@ bool AUTFlagRunGameState::IsTeamAbleToEarnPowerup(int32 TeamNumber) const
 AUTCTFFlag* AUTFlagRunGameState::GetOffenseFlag()
 {
 	int OffenseTeam = bRedToCap ? 0 : 1;
-	return ((FlagBases.Num() > OffenseTeam) ? FlagBases[OffenseTeam]->MyFlag : nullptr);
+	return ((FlagBases.Num() > OffenseTeam) && FlagBases[OffenseTeam]) ? FlagBases[OffenseTeam]->MyFlag : nullptr;
 }
 
 int AUTFlagRunGameState::GetKillsNeededForPowerup(int32 TeamNumber) const
