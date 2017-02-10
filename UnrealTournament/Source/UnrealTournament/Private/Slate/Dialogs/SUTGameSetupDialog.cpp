@@ -167,9 +167,8 @@ void SUTGameSetupDialog::BuildCategories()
 
 	TabButtonPanel->AddSlot()
 	.Padding(FMargin(25.0f,0.0f,0.0f,0.0f))
-	.FillWidth(1.0f)
-	.HAlign(HAlign_Right)
-	[
+		.AutoWidth()
+		[
 		SAssignNew(Button, SUTTabButton)
 		.ContentPadding(FMargin(15.0f, 10.0f, 15.0f, 0.0f))
 		.Text(NSLOCTEXT("SUTGameSetupDialog","CustomGameButtonText","Custom Game"))
