@@ -28,7 +28,7 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	bLockedOnTarget = false;
 	LockCheckTime = 0.1f;
 	LockRange = 16000.0f;
-	LockAcquireTime = 0.6f;
+	LockAcquireTime = 0.5f;
 	LockTolerance = 0.2f;
 	LockedTarget = NULL;
 	PendingLockedTarget = NULL;

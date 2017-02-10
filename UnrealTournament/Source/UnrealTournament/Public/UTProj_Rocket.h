@@ -29,12 +29,20 @@ class UNREALTOURNAMENT_API AUTProj_Rocket : public AUTProjectile
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketSeeking)
 		float MaxLeadDistance;
 
+	/** Min distance rocket will track. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketSeeking)
+		float MinSeekDistance;
+
 	UPROPERTY(BlueprintReadOnly, Category = RocketSeeking)
 		bool bRocketTeamSet;
 
 	/**The texture for locking on a target*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketSeeking)
 		UTexture2D* LockCrosshairTexture;
+
+	/** Max distance that target will see lock indicator. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketSeeking)
+		float MaxTargetLockIndicatorDistance;
 
 	/** Reward announcement when kill with air rocket. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Announcement)
