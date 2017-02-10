@@ -4074,9 +4074,9 @@ void AUTGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, 
 						.AllowSpin(true)
 						.Delta(1)
 						.MinValue(MinimumPlayers)
-						.MaxValue(32)
+						.MaxValue(24)
 						.MinSliderValue(MinimumPlayers)
-						.MaxSliderValue(32)
+						.MaxSliderValue(24)
 						.EditableTextBoxStyle(SUWindowsStyle::Get(), "UT.Common.NumEditbox.White")
 
 					)
