@@ -80,7 +80,7 @@ void AUTFlagRunPvEGame::InitGame(const FString& MapName, const FString& Options,
 	}
 
 	Super::InitGame(MapName, Options, ErrorMessage);
-	GameSession->MaxPlayers = 5;
+	GameSession->MaxPlayers = FMath::Min(GameSession->MaxPlayers, 5);
 
 	for (TActorIterator<AUTPickupEnergy> It(GetWorld()); It; ++It)
 	{
