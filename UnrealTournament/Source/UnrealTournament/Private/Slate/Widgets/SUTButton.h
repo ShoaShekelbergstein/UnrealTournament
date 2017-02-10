@@ -36,9 +36,9 @@ class UNREALTOURNAMENT_API SUTButton : public SButton
 		, _IsFocusable( true )
 		, _IsToggleButton(false)
 		, _WidgetTag(0)
-		, _CaptionHAlign( HAlign_Left )
-		, _bSpringButton( false )
 		, _WidgetNameTag(NAME_None)
+		, _CaptionHAlign( HAlign_Left )
+		, _bSpringButton(false)
 
 		{}
 
