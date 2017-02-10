@@ -296,6 +296,8 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	/** Return largest SpectatingIdTeam value in current PlayerArray. */
 	virtual int32 GetMaxTeamSpectatingId(int32 TeamNum);
 
+	virtual bool CanSpectate(APlayerController* Viewer, APlayerState* ViewTarget);
+
 	/** add an overlay to the OverlayMaterials list */
 	UFUNCTION(Meta = (DeprecatedFunction, DeprecationMessage = "Use AddOverlayEffect"), BlueprintCallable, BlueprintAuthorityOnly, Category = Effects)
 	virtual void AddOverlayMaterial(UMaterialInterface* NewOverlay, UMaterialInterface* NewOverlay1P = NULL);

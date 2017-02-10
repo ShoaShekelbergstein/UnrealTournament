@@ -26,6 +26,13 @@ void AUTShowdownGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(AUTShowdownGameState, bActivateXRayVision);
 }
 
+bool AUTShowdownGameState::CanSpectate(APlayerController* Viewer, APlayerState* ViewTarget)
+{
+	AUTPlayerState* PS = Cast<AUTPlayerState>(ViewTarget);
+	return Super::CanSpectate(Viewer, ViewTarget) && (PS == NULL || PS->GetUTCharacter() != NULL);
+}
+
+
 bool AUTShowdownGameState::IsAllowedSpawnPoint_Implementation(AUTPlayerState* Chooser, APlayerStart* DesiredStart) const
 {
 	if (DesiredStart == NULL || SpawnSelector != Chooser || Chooser == NULL || (Cast<AUTPlayerStart>(DesiredStart) != NULL && ((AUTPlayerStart*)DesiredStart)->bIgnoreInShowdown))

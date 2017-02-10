@@ -756,6 +756,11 @@ public:
 	/**Sends a pickup message to all spectators*/
 	virtual void BroadcastSpectatorPickup(AUTPlayerState* PS, FName StatsName, UClass* PickupClass);
 
+	virtual bool CanSpectate_Implementation(APlayerController* Viewer, APlayerState* ViewTarget) override
+	{
+		return UTGameState && UTGameState->CanSpectate(Viewer, ViewTarget);
+	}
+
 	/** called on the default object of the game class being played to precache announcer sounds
 	 * needed because announcers are dynamically loaded for convenience of user announcer packs, so we need to load up the audio we think we'll use at game time
 	 */

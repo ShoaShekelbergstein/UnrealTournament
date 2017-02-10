@@ -426,6 +426,17 @@ void AUTGameState::OnRep_OverlayEffects()
 	}
 }
 
+bool AUTGameState::CanSpectate(APlayerController* Viewer, APlayerState* ViewTarget)
+{
+	if (bTeamGame)
+	{
+		AUTPlayerController* PC = Cast<AUTPlayerController>(Viewer);
+		return (Viewer->PlayerState->bOnlySpectator || ViewTarget == NULL || ViewTarget->bOnlySpectator || (PC != NULL && PC->GetTeamNum() == 255) || GetWorld()->GetGameState<AUTGameState>()->OnSameTeam(Viewer, ViewTarget));
+	}
+	return true;
+}
+
+
 void AUTGameState::Tick(float DeltaTime)
 {
 	ManageMusicVolume(DeltaTime);

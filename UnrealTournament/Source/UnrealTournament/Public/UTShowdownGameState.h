@@ -47,6 +47,6 @@ class UNREALTOURNAMENT_API AUTShowdownGameState : public AUTGameState
 	virtual void OnRep_XRayVision();
 
 	virtual void OnRep_MatchState() override;
-
 	virtual void CheckTimerMessage() override;
+	virtual bool CanSpectate(APlayerController* Viewer, APlayerState* ViewTarget) override;
 };
