@@ -317,6 +317,10 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 		}
 	}
 	bForceNoBots = (UGameplayStatics::GetIntOption(Options, TEXT("ForceNoBots"), bForceNoBots) == 0) ? false : true;
+	if (bForceNoBots)
+	{
+		BotFillCount = 0;
+	}
 	bAutoAdjustBotSkill = bBasicTrainingGame || bIsQuickMatch;
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("CasterControl"));
 	bCasterControl = EvalBoolOptions(InOpt, bCasterControl);

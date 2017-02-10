@@ -45,6 +45,10 @@ void AUTTeamShowdownGame::InitGame(const FString& MapName, const FString& Option
 			BotFillCount = ChallengeManager->GetNumPlayers(this);
 		}
 	}
+	else if (bForceNoBots)
+	{
+		BotFillCount = 0;
+	}
 	else if (UGameplayStatics::HasOption(Options, TEXT("Bots")))
 	{
 		BotFillCount = UGameplayStatics::GetIntOption(Options, TEXT("Bots"), SavedBotFillCount) + 1;
