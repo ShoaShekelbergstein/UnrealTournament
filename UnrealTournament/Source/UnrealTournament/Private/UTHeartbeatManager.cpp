@@ -113,7 +113,7 @@ void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 						PlayerConxtextLocation = TEXT("Lobby");
 					}
 
-					if ( UTPC->GetWorld()->DemoNetDriver && UTPC->IsLocalController())
+					if ( UTPC->GetWorld()->DemoNetDriver && UTPC->IsLocalController() && UTDemoRecSpec && !UTDemoRecSpec->IsKillcamSpectator())
 					{
 						PlayerConxtextLocation = TEXT("Replay");
 					}
