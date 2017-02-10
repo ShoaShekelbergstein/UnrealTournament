@@ -61,7 +61,8 @@ UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) 
 	ReadyText = NSLOCTEXT("UTScoreboard", "READY", "READY");
 	NotReadyText = NSLOCTEXT("UTScoreboard", "NOTREADY", "");
 	WarmupText = NSLOCTEXT("UTScoreboard", "WARMUP", "WARMUP");
-	
+	InteractiveText = NSLOCTEXT("UTScoreboard", "InteractiveText", "Press [ESC] to switch to interactive scoreboard.");
+
 	ReadyColor = FLinearColor::White;
 	ReadyScale = 1.f;
 	bDrawMinimapInScoreboard = true;
@@ -172,6 +173,8 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 		float NameX;
 		Canvas->StrLen(UTHUDOwner->MediumFont, TEXT("TEST"), NameX, MessageY);
 	}
+
+	DrawText(InteractiveText, 0.5f*Canvas->ClipX, YOffset - 24.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
 
 	// Draw the Background
 	float TimerX = DrawGameOptions(RenderDelta, YOffset, 0.f, true);

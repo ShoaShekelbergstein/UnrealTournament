@@ -183,6 +183,9 @@ public:
 		FText WarmupText;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
+		FText InteractiveText;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		bool bDrawMinimapInScoreboard;
 
 protected:

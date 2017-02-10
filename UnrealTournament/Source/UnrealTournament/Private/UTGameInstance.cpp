@@ -830,7 +830,7 @@ FText UUTGameInstance::GetLevelLoadText() const
 		return FText::GetEmpty();
 	}
 
-	return NSLOCTEXT("UTGameInstance","PressFireToSkip","Press FIRE to Skip");
+	return NSLOCTEXT("UTGameInstance","PressFireToSkip","Press Any Key to Skip");
 }
 
 FText UUTGameInstance::GetVignetteText() const
