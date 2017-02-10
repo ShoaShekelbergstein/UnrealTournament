@@ -341,6 +341,7 @@ void AUTCTFGameState::SpawnLineUpZoneOnFlagBase(AUTCTFFlagBase* BaseToSpawnOn, L
 		NewZone->bSnapToFloor = false;
 
 		NewZone->AttachToActor(BaseToSpawnOn, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		NewZone->SetActorRelativeLocation(FVector(0.0f, 0.0f, NewZone->SnapFloorOffset));
 
 		if (TypeToSpawn == LineUpTypes::Intro)
 		{
@@ -359,7 +360,11 @@ void AUTCTFGameState::SpawnLineUpZoneOnFlagBase(AUTCTFFlagBase* BaseToSpawnOn, L
 		if (GetWorld() && NewZone->Camera)
 		{
 			FHitResult CameraCollision;
-			GetWorld()->SweepSingleByChannel(CameraCollision, BaseToSpawnOn->GetActorLocation(), NewZone->Camera->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
+			FCollisionQueryParams Params(NAME_FreeCam, false, this);
+			Params.AddIgnoredActor(NewZone);
+			Params.AddIgnoredActor(BaseToSpawnOn);
+			
+			GetWorld()->SweepSingleByChannel(CameraCollision, NewZone->GetActorLocation(), NewZone->Camera->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)),Params);
 
 			if (CameraCollision.bBlockingHit)
 			{

@@ -931,7 +931,7 @@ void AUTLineUpZone::DefaultCreateForOnly1Character()
 	FFAStartLocations[0] = FVector(0.0f, 0.f, 0.0f);
 	FFARotations[0].Pitch = 0.f;
 	FFARotations[0].Roll = 0.f;
-	FFARotations[0].Yaw = -179.99f;
+	FFARotations[0].Yaw = 0;
 
 	RedAndWinningTeamSpawnLocations.Empty();
 	BlueAndLosingTeamSpawnLocations.Empty();
@@ -949,7 +949,7 @@ void AUTLineUpZone::DefaultCreateForOnly1Character()
 	if (!Camera)
 	{
 		FTransform CameraTransform;
-		CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
+		CameraTransform.SetTranslation(FVector(200.f, 0.f, 30.f));
 
 		FActorSpawnParameters Params;
 		Params.Owner = this;
@@ -971,10 +971,10 @@ void AUTLineUpZone::DefaultCreateForOnly1Character()
 	FRotator DefaultCameraRotation;
 	DefaultCameraRotation.Roll = 0.f;
 	DefaultCameraRotation.Pitch = 0.f;
-	DefaultCameraRotation.Yaw = 0.f;
+	DefaultCameraRotation.Yaw = -179.f;
 
 	FTransform DefaultCameraTransform;
-	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
+	DefaultCameraTransform.SetTranslation(FVector(750.f, 0.f, 47.5f));
 	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
 
 	Camera->SetActorRelativeTransform(DefaultCameraTransform);

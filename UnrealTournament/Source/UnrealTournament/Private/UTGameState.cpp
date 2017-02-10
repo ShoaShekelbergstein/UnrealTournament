@@ -2377,7 +2377,7 @@ AUTLineUpZone* AUTGameState::CreateLineUpAtPlayerStart(LineUpTypes LineUpType, A
 			NewZone->bIsTeamSpawnList = (Teams.Num() > 0) ? true : false;
 			NewZone->bSnapToFloor = false;
 
-			NewZone->SetActorLocationAndRotation(PlayerSpawn->GetActorLocation(), PlayerSpawn->GetActorRotation());
+			NewZone->SetActorLocationAndRotation(PlayerSpawn->GetActorLocation() + FVector(0.0f, 0.0f, NewZone->SnapFloorOffset), PlayerSpawn->GetActorRotation());
 			NewZone->DefaultCreateForOnly1Character();
 
 			NewZone->AttachToActor(PlayerSpawn, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
@@ -2389,7 +2389,7 @@ AUTLineUpZone* AUTGameState::CreateLineUpAtPlayerStart(LineUpTypes LineUpType, A
 		if (GetWorld() && NewZone->Camera)
 		{
 			FHitResult CameraCollision;
-			GetWorld()->SweepSingleByChannel(CameraCollision, PlayerSpawn->GetActorLocation(), NewZone->Camera->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
+			GetWorld()->SweepSingleByChannel(CameraCollision, NewZone->GetActorLocation(), NewZone->Camera->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
 
 			if (CameraCollision.bBlockingHit)
 			{
