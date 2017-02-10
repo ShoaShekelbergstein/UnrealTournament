@@ -249,11 +249,22 @@ private:
 	UPROPERTY(Replicated)
 	TArray<FCTFScoringPlay> ScoringPlays;
 
+protected:
+	void SpawnLineUpZoneOnFlagBase(AUTCTFFlagBase* BaseToSpawnOn, LineUpTypes TypeToSpawn);
+
 public:
 	inline const TArray<const FCTFScoringPlay>& GetScoringPlays() const
 	{
 		return *(const TArray<const FCTFScoringPlay>*)&ScoringPlays;
 	}
+
+	virtual AUTLineUpZone* GetAppropriateSpawnList(LineUpTypes ZoneType);
+
+	/** Checks that all line up types have a valid line up zone for each line up type. If not, it creates a default to use for each type **/
+	virtual void SpawnDefaultLineUpZones();
+
+	AUTCTFFlagBase* GetLeadTeamFlagBase();
+
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = Scoring)
 	virtual void AddScoringPlay(const FCTFScoringPlay& NewScoringPlay);
 

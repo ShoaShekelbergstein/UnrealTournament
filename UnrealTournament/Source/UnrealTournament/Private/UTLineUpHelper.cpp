@@ -11,6 +11,7 @@
 #include "UTCTFRoundGame.h"
 #include "UTCTFGameMode.h"
 #include "UTFlagRunGameState.h"
+#include "UTPlayerState.h"
 
 AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -396,42 +397,43 @@ void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
 
 void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType)
 {
- 	AUTLineUpZone* SpawnList = GetAppropriateSpawnList(GetWorld(), LineUpType);
-	if (SpawnList)
+	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+	AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
+
+	if (UTGS && UTGM)
 	{
-		AUTTeamGameMode* TeamGM = Cast<AUTTeamGameMode>(GetWorld()->GetAuthGameMode());
-		AUTCTFRoundGame* CTFGM = Cast<AUTCTFRoundGame>(GetWorld()->GetAuthGameMode());
+		AUTTeamGameMode* TeamGM = Cast<AUTTeamGameMode>(UTGM);
+		AUTCTFRoundGame* CTFGM = Cast<AUTCTFRoundGame>(UTGM);
+		AUTCTFGameState* CTFGS = Cast<AUTCTFGameState>(UTGS);
 
-		AUTCTFGameState* CTFGS = Cast<AUTCTFGameState>(GetWorld()->GetGameState());
+		TArray<FTransform> RedOrWinnerSpawns;
+		TArray<FTransform> BlueOrLoserSpawns;
+		TArray<FTransform> FFASpawns;
 
-		const TArray<FTransform>& RedSpawns = SpawnList->RedAndWinningTeamSpawnLocations;
-		const TArray<FTransform>& BlueSpawns = SpawnList->BlueAndLosingTeamSpawnLocations;
-		const TArray<FTransform>& FFASpawns = SpawnList->FFATeamSpawnLocations;
-
-		int RedIndex = 0;
-		int BlueIndex = 0;
+		int RedOrWinIndex = 0;
+		int BlueOrLoseIndex = 0;
 		int FFAIndex = 0;
-		
-		int RedAndWinningTeamNumber = 0;
-		int BlueAndLosingTeamNumber = 1;
+
+		int RedOrWinningTeamNumber = 0;
+		int BlueOrLosingTeamNumber = 1;
 
 		//Spawn using Winning / Losing teams instead of team color based teams. This means the red list = winning team and blue list = losing team.
-		if (TeamGM && TeamGM->UTGameState && (SpawnList->RedAndWinningTeamSpawnLocations.Num() > 0) && (LineUpType == LineUpTypes::PostMatch || LineUpType == LineUpTypes::Intermission))
+		if (TeamGM && TeamGM->UTGameState && (LineUpType == LineUpTypes::PostMatch || LineUpType == LineUpTypes::Intermission))
 		{
 			if (TeamGM->UTGameState->WinningTeam)
-			{		
-				RedAndWinningTeamNumber = TeamGM->UTGameState->WinningTeam->GetTeamNum();
-				BlueAndLosingTeamNumber = 1 - RedAndWinningTeamNumber;
+			{
+				RedOrWinningTeamNumber = TeamGM->UTGameState->WinningTeam->GetTeamNum();
+				BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
 			}
 			else if (TeamGM->UTGameState->ScoringPlayerState)
 			{
-				RedAndWinningTeamNumber = TeamGM->UTGameState->ScoringPlayerState->GetTeamNum();
-				BlueAndLosingTeamNumber = 1 - RedAndWinningTeamNumber;
+				RedOrWinningTeamNumber = TeamGM->UTGameState->ScoringPlayerState->GetTeamNum();
+				BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
 			}
 			else if (CTFGM && CTFGM->FlagScorer)
 			{
-				RedAndWinningTeamNumber = CTFGM->FlagScorer->GetTeamNum();
-				BlueAndLosingTeamNumber = 1 - RedAndWinningTeamNumber;
+				RedOrWinningTeamNumber = CTFGM->FlagScorer->GetTeamNum();
+				BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
 			}
 			else if (CTFGS && CTFGS->GetScoringPlays().Num() > 0)
 			{
@@ -440,45 +442,59 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 
 				if (WinningPlay.Team)
 				{
-					RedAndWinningTeamNumber = WinningPlay.Team->GetTeamNum();
-					BlueAndLosingTeamNumber = 1 - RedAndWinningTeamNumber;
+					RedOrWinningTeamNumber = WinningPlay.Team->GetTeamNum();
+					BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
 				}
 			}
 		}
 
 		TArray<AUTCharacter*> PreviewsMarkedForDestroy;
-		for (AUTCharacter* PreviewChar : PlayerPreviewCharacters)
+		bool bSkipSpawnPlacement = false;
+
+		AUTLineUpZone* SpawnList = UTGS->GetAppropriateSpawnList(LineUpType);
+		if (SpawnList)
 		{
-			FTransform SpawnTransform = SpawnList->GetActorTransform();
-
-			if ((PreviewChar->GetTeamNum() == RedAndWinningTeamNumber) && (RedSpawns.Num() > RedIndex))
+			RedOrWinnerSpawns = SpawnList->RedAndWinningTeamSpawnLocations;
+			BlueOrLoserSpawns = SpawnList->BlueAndLosingTeamSpawnLocations;
+			FFASpawns = SpawnList->FFATeamSpawnLocations;
+		
+			for (AUTCharacter* PreviewChar : PlayerPreviewCharacters)
 			{
-				SpawnTransform = RedSpawns[RedIndex] * SpawnTransform;
-				++RedIndex;
-			}
-			else if ((PreviewChar->GetTeamNum() == BlueAndLosingTeamNumber) && (BlueSpawns.Num() > BlueIndex))
-			{
-				SpawnTransform = BlueSpawns[BlueIndex] * SpawnTransform;
-				++BlueIndex;
-			}
-			else if (FFASpawns.Num() > FFAIndex)
-			{
-				SpawnTransform = FFASpawns[FFAIndex] * SpawnTransform;
-				++FFAIndex;
-			}
-			//If they are not part of the line up display... remove them
-			else
-			{
-				PreviewsMarkedForDestroy.Add(PreviewChar);
-			}
+				FTransform SpawnTransform = SpawnList->GetActorTransform();
 
-			PreviewChar->bIsTranslocating = true; // Hack to get rid of teleport effect
+				if ((PreviewChar->GetTeamNum() == RedOrWinningTeamNumber) && (RedOrWinnerSpawns.Num() > RedOrWinIndex))
+				{
+					SpawnTransform = RedOrWinnerSpawns[RedOrWinIndex] * SpawnTransform;
+					++RedOrWinIndex;
+				}
+				else if ((PreviewChar->GetTeamNum() == BlueOrLosingTeamNumber) && (BlueOrLoserSpawns.Num() > BlueOrLoseIndex))
+				{
+					SpawnTransform = BlueOrLoserSpawns[BlueOrLoseIndex] * SpawnTransform;
+					++BlueOrLoseIndex;
+				}
+				else if (FFASpawns.Num() > FFAIndex)
+				{
+					SpawnTransform = FFASpawns[FFAIndex] * SpawnTransform;
+					++FFAIndex;
+				}
+				//If they are not part of the line up display... remove them
+				else
+				{
+					PreviewsMarkedForDestroy.Add(PreviewChar);
+				}
 
-			PreviewChar->TeleportTo(SpawnTransform.GetTranslation(), SpawnTransform.GetRotation().Rotator(), false, true);
-			PreviewChar->Controller->SetControlRotation(SpawnTransform.GetRotation().Rotator());
-			PreviewChar->Controller->ClientSetRotation(SpawnTransform.GetRotation().Rotator());
+				PreviewChar->bIsTranslocating = true; // Hack to get rid of teleport effect
 
-			PreviewChar->bIsTranslocating = false;
+				PreviewChar->TeleportTo(SpawnTransform.GetTranslation(), SpawnTransform.GetRotation().Rotator(), false, true);
+				PreviewChar->Controller->SetControlRotation(SpawnTransform.GetRotation().Rotator());
+				PreviewChar->Controller->ClientSetRotation(SpawnTransform.GetRotation().Rotator());
+
+				PreviewChar->bIsTranslocating = false;
+			}
+		}
+		else
+		{
+			//UTGM->HandleDefaultLineupSpawns(LineUpType, PlayerPreviewCharacters, PreviewsMarkedForDestroy);
 		}
 
 		for (AUTCharacter* DestroyCharacter : PreviewsMarkedForDestroy)
@@ -494,7 +510,7 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 			{
 				UTPC->UnPossess();
 			}
-			
+
 			PlayerPreviewCharacters.Remove(DestroyCharacter);
 			DestroyCharacter->Destroy();
 		}
@@ -518,77 +534,24 @@ LineUpTypes AUTLineUpHelper::GetLineUpTypeToPlay(UWorld* World)
 	AUTCTFRoundGame* CTFGM = Cast<AUTCTFRoundGame>(World->GetAuthGameMode());
 
 	//The first intermission of CTF Round Game is actually an intro
-	if ((UTGS->GetMatchState() == MatchState::PlayerIntro) || ((UTGS->GetMatchState() == MatchState::MatchIntermission) && UTCTFRoundGameGS && (UTCTFRoundGameGS->CTFRound == 1) && (!UTCTFRoundGameGS || UTCTFRoundGameGS->GetScoringPlays().Num() == 0)))
+	if ((UTGS->GetMatchState() == MatchState::CountdownToBegin) || (UTGS->GetMatchState() == MatchState::PlayerIntro) || ((UTGS->GetMatchState() == MatchState::MatchIntermission) && UTCTFRoundGameGS && (UTCTFRoundGameGS->CTFRound == 1) && (!UTCTFRoundGameGS || UTCTFRoundGameGS->GetScoringPlays().Num() == 0)))
 	{
-		if (UTGS->ShouldUseInGameSummary(LineUpTypes::Intro))
-		{
-			ReturnZoneType = LineUpTypes::Intro;
-		}
+		ReturnZoneType = LineUpTypes::Intro;
 	}
 
 	else if (UTGS->GetMatchState() == MatchState::MatchIntermission)
 	{
-		if (UTGS->ShouldUseInGameSummary(LineUpTypes::Intermission))
-		{
-			ReturnZoneType = LineUpTypes::Intermission;
-		}
+		ReturnZoneType = LineUpTypes::Intermission;
 	}
 
 	else if (UTGS->GetMatchState() == MatchState::WaitingPostMatch)
 	{
-		if (UTGS->ShouldUseInGameSummary(LineUpTypes::PostMatch))
-		{
-			ReturnZoneType = LineUpTypes::PostMatch;
-		}
+		ReturnZoneType = LineUpTypes::PostMatch;
 	}
 
 	return ReturnZoneType;
 }
 
-AUTLineUpZone* AUTLineUpHelper::GetAppropriateSpawnList(UWorld* World, LineUpTypes ZoneType)
-{
-	AUTLineUpZone* FoundPotentialMatch = nullptr;
-
-	if (World && ZoneType != LineUpTypes::Invalid)
-	{
-		AUTTeamGameMode* TeamGM = Cast<AUTTeamGameMode>(World->GetAuthGameMode());
-
-		for (TActorIterator<AUTLineUpZone> It(World); It; ++It)
-		{
-			if (It->ZoneType == ZoneType)
-			{
-				//Found a perfect match, so return it right away. Perfect match because this is a team spawn point in a team game
-				if (It->bIsTeamSpawnList && TeamGM &&  TeamGM->Teams.Num() > 2)
-				{
-					return *It;
-				}
-				//Found a perfect match, so return it right away. Perfect match because this is not a team spawn point in a non-team game
-				else if (!It->bIsTeamSpawnList && (TeamGM == nullptr))
-				{
-					return *It;
-				}
-
-				//Imperfect match, try and find a perfect match before returning it
-				FoundPotentialMatch = *It;
-			}
-		}
-	}
-
-	return FoundPotentialMatch;
-}
-
-AActor* AUTLineUpHelper::GetCameraActorForLineUp(UWorld* World, LineUpTypes ZoneType)
-{
-	AActor* FoundCamera = nullptr;
-
-	AUTLineUpZone* SpawnPointList = AUTLineUpHelper::GetAppropriateSpawnList(World, ZoneType);
-	if (SpawnPointList)
-	{
-		FoundCamera = SpawnPointList->Camera;
-	}
-
-	return FoundCamera;
-}
 
 static int32 WeaponIndex = 0;
 
@@ -639,4 +602,16 @@ void AUTLineUpHelper::OnPlayerChange()
 void AUTLineUpHelper::ClientUpdatePlayerClones()
 {
 
+}
+
+bool AUTLineUpHelper::CanInitiateGroupTaunt(AUTPlayerState* PlayerToCheck)
+{
+	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+	return (UTGS &&
+		    PlayerToCheck &&
+			bIsActive &&
+			(LastActiveType != LineUpTypes::Invalid) &&
+			(LastActiveType != LineUpTypes::None) &&
+			(LastActiveType != LineUpTypes::Intro) && //no group taunts during intro line ups
+			(PlayerToCheck == UTGS->LeadLineUpPlayer));
 }

@@ -46,7 +46,7 @@ class AUTLineUpZone : public AActor
 	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List", meta = (EditCondition="!bIsTeamSpawnList",MakeEditWidget=""))
 	TArray<FTransform> FFATeamSpawnLocations;
 
-	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List")
+	UPROPERTY(Instanced, EditAnywhere, Category = "Team Spawn Point List")
 	ACameraActor* Camera;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Team Spawn Point List")
@@ -59,7 +59,7 @@ class AUTLineUpZone : public AActor
 	TArray<UMeshComponent*> RenderedPlayerStates;
 
 #if WITH_EDITORONLY_DATA
-	UPROPERTY(Transient, VisibleAnywhere, meta = (MakeEditWidget = ""))
+	UPROPERTY(Instanced,Transient, VisibleAnywhere, meta = (MakeEditWidget = ""))
 	TArray<AUTLineUpZoneVisualizationCharacter*> MeshVisualizations;
 
 	UPROPERTY()
@@ -82,10 +82,13 @@ class AUTLineUpZone : public AActor
 	UFUNCTION()
 	void DeleteAllMeshVisualizations();
 
+	virtual void Destroyed() override;
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostEditMove(bool bFinished) override;
 	virtual void PostRegisterAllComponents() override;
+	virtual void PostDuplicate(bool bDuplicateForPIE) override;
 
 	void DefaultCreateForTeamIntro();
 	void DefaultCreateForTeamIntermission();
@@ -93,6 +96,7 @@ class AUTLineUpZone : public AActor
 	void DefaultCreateForFFAIntro();
 	void DefaultCreateForFFAIntermission();
 	void DefaultCreateForFFAEndMatch();
+	void DefaultCreateForOnly1Character();
 #endif // WITH_EDITOR
 
 };

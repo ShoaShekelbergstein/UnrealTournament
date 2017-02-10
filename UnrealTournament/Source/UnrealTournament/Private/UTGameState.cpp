@@ -29,6 +29,8 @@
 #include "UTLineUpHelper.h"
 #include "Runtime/Analytics/Analytics/Public/AnalyticsEventAttribute.h"
 #include "UTIntermissionBeginInterface.h"
+#include "UTPlayerStart.h"
+#include "UTTeamPlayerStart.h"
 
 AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -521,6 +523,7 @@ void AUTGameState::BeginPlay()
 
 		LineUpHelper->SetReplicates(true);
 	}
+	SpawnDefaultLineUpZones();
 }
 
 void AUTGameState::AddUserInfoQuery(TSharedRef<const FUniqueNetId> UserId)
@@ -2325,23 +2328,130 @@ bool AUTGameState::CanShowBoostMenu(AUTPlayerController* Target)
 	return IsMatchIntermission() || !HasMatchStarted();
 }
 
-bool AUTGameState::ShouldUseInGameSummary(LineUpTypes SummaryType)
+AUTLineUpZone* AUTGameState::GetAppropriateSpawnList(LineUpTypes ZoneType)
 {
-	if ((GetWorld() == nullptr) || (SummaryType == LineUpTypes::Invalid))
-	{
-		return false;
-	}
+	AUTLineUpZone* FoundPotentialMatch = nullptr;
 
-	//find matching ZoneType to SummaryType
-	for (TActorIterator<AUTLineUpZone> It(GetWorld()); It; ++It)
+	if (GetWorld() && ZoneType != LineUpTypes::Invalid)
 	{
-		if (It->ZoneType == SummaryType)
+		AUTTeamGameMode* TeamGM = Cast<AUTTeamGameMode>(GetWorld()->GetAuthGameMode());
+		
+		for (TActorIterator<AUTLineUpZone> It(GetWorld()); It; ++It)
 		{
-			return true;
+			if (It->ZoneType == ZoneType)
+			{
+				//Found a perfect match, so return it right away. Perfect match because this is a team spawn point in a team game
+				if (It->bIsTeamSpawnList && TeamGM &&  TeamGM->Teams.Num() > 2)
+				{
+					return *It;
+				}
+				//Found a perfect match, so return it right away. Perfect match because this is not a team spawn point in a non-team game
+				else if (!It->bIsTeamSpawnList && (TeamGM == nullptr))
+				{
+					return *It;
+				}
+
+				//Imperfect match, try and find a perfect match before returning it
+				FoundPotentialMatch = *It;
+			}
 		}
 	}
 
-	return false;
+	return FoundPotentialMatch;
+}
+
+AUTLineUpZone* AUTGameState::CreateLineUpAtPlayerStart(LineUpTypes LineUpType, APlayerStart* PlayerSpawn)
+{
+	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
+	AUTLineUpZone* NewZone = nullptr;
+
+	if (PlayerSpawn)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = PlayerSpawn;
+		NewZone = GetWorld()->SpawnActor<AUTLineUpZone>(AUTLineUpZone::StaticClass(), SpawnParams);
+
+		if (NewZone)
+		{
+			NewZone->ZoneType = LineUpType;
+			NewZone->bIsTeamSpawnList = (Teams.Num() > 0) ? true : false;
+			NewZone->bSnapToFloor = false;
+
+			NewZone->SetActorLocationAndRotation(PlayerSpawn->GetActorLocation(), PlayerSpawn->GetActorRotation());
+			NewZone->DefaultCreateForOnly1Character();
+
+			NewZone->AttachToActor(PlayerSpawn, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		}
+
+		SpawnedLineUps.Add(NewZone);
+
+		//See if the new zone's camera is stuck inside of a wall
+		if (GetWorld() && NewZone->Camera)
+		{
+			FHitResult CameraCollision;
+			GetWorld()->SweepSingleByChannel(CameraCollision, PlayerSpawn->GetActorLocation(), NewZone->Camera->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
+
+			if (CameraCollision.bBlockingHit)
+			{
+				NewZone->Camera->SetActorLocation(CameraCollision.ImpactPoint);
+			}
+		}
+	}
+	return NewZone;
+}
+
+void AUTGameState::SpawnDefaultLineUpZones()
+{
+	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
+	const bool bIsTeamGame = (Teams.Num() > 0) ? true : false;
+
+	APlayerStart* PlayerStartToSpawnOn = nullptr;
+	
+	for (TActorIterator<AUTTeamPlayerStart> It(GetWorld()); It; ++It)
+	{
+		PlayerStartToSpawnOn = *It;
+		break;
+	}
+	
+	if (!bIsTeamGame || (PlayerStartToSpawnOn == nullptr))
+	{
+		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		{
+			PlayerStartToSpawnOn = *It;
+			break;
+		}
+	}
+
+	if (PlayerStartToSpawnOn)
+	{
+		if (GetAppropriateSpawnList(LineUpTypes::Intro) == nullptr)
+		{
+			AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::Intro, PlayerStartToSpawnOn);
+		}
+
+		if (GetAppropriateSpawnList(LineUpTypes::Intermission) == nullptr)
+		{
+			AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::Intermission, PlayerStartToSpawnOn);
+		}
+
+		if (GetAppropriateSpawnList(LineUpTypes::PostMatch) == nullptr)
+		{
+			AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::PostMatch, PlayerStartToSpawnOn);
+		}
+	}
+}
+
+AActor* AUTGameState::GetCameraActorForLineUp(LineUpTypes ZoneType)
+{
+	AActor* FoundCamera = nullptr;
+
+	AUTLineUpZone* SpawnPointList = GetAppropriateSpawnList(ZoneType);
+	if (SpawnPointList)
+	{
+		FoundCamera = SpawnPointList->Camera;
+	}
+
+	return FoundCamera;
 }
 
 bool AUTGameState::IsMapVoteListReplicationCompleted()

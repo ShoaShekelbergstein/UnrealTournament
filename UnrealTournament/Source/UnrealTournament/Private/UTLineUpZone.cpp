@@ -13,7 +13,7 @@ AUTLineUpZone::AUTLineUpZone(const FObjectInitializer& ObjectInitializer)
 
 	SceneRoot = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, TEXT("SceneComponent"));
 	RootComponent = SceneRoot;
-	RootComponent->Mobility = EComponentMobility::Static;
+	RootComponent->Mobility = EComponentMobility::Movable;
 
 	ZoneType = LineUpTypes::Invalid;
 
@@ -24,7 +24,7 @@ AUTLineUpZone::AUTLineUpZone(const FObjectInitializer& ObjectInitializer)
 
 	if (SpriteComponent)
 	{
-		ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteObject(TEXT("/Engine/EditorResources/S_Note"));
+		ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteObject(TEXT("/Game/RestrictedAssets/EditorAssets/Icons/lineup_marker.lineup_marker"));
 		SpriteComponent->Sprite = SpriteObject.Get();
 			
 		SpriteComponent->SpriteInfo.Category = FName(TEXT("Notes"));
@@ -32,11 +32,20 @@ AUTLineUpZone::AUTLineUpZone(const FObjectInitializer& ObjectInitializer)
 	
 		SpriteComponent->AttachToComponent(RootComponent,FAttachmentTransformRules::KeepRelativeTransform);
 		SpriteComponent->RelativeScale3D = FVector(0.5f, 0.5f, 0.5f);
-		SpriteComponent->Mobility = EComponentMobility::Static;
+		SpriteComponent->Mobility = EComponentMobility::Movable;
 	}
 #endif //WITH_EDITORONLY_DATA
 }
 
+void AUTLineUpZone::Destroyed()
+{
+	DeleteAllMeshVisualizations();
+
+	if (Camera)
+	{
+		Camera->Destroy();
+	}
+}
 
 #if WITH_EDITOR
 
@@ -47,6 +56,29 @@ void AUTLineUpZone::PostRegisterAllComponents()
 	if (GetWorld() && GetWorld()->WorldType == EWorldType::Editor)
 	{
 		InitializeMeshVisualizations();
+	}
+}
+
+void AUTLineUpZone::PostDuplicate(bool bDuplicateForPIE)
+{
+	//Don't use the duplicate camera, let us create a new one
+	if (Camera)
+	{
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+		Params.Template = Camera;
+
+		ACameraActor* SpawnedActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), Params);
+		if (SpawnedActor)
+		{
+			FString CameraNameLabel = GetActorLabel();
+			CameraNameLabel.Append(TEXT("_Camera"));
+			SpawnedActor->SetActorLabel(CameraNameLabel);
+			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
+
+			SpawnedActor->SetActorLocationAndRotation(Camera->GetActorLocation(), Camera->GetActorRotation());
+			Camera = SpawnedActor;
+		}
 	}
 }
 
@@ -278,78 +310,81 @@ void AUTLineUpZone::SnapToFloor()
 {
 	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
 
-	//Move base LineUpZone actor to snapped floor position
+	if (bSnapToFloor)
 	{
-		FTransform TestLocation = ActorToWorld();
-
-		FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 500.f);
-		FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 10000.f);
-
-		FHitResult Hit;
-		GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
-		if (Hit.bBlockingHit)
+		//Move base LineUpZone actor to snapped floor position
 		{
-			FVector NewLocation = Hit.Location;
-			NewLocation.Z += SnapFloorOffset;
-			SetActorLocation(NewLocation);
+			FTransform TestLocation = ActorToWorld();
+
+			FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 500.f);
+			FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 10000.f);
+
+			FHitResult Hit;
+			GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
+			if (Hit.bBlockingHit)
+			{
+				FVector NewLocation = Hit.Location;
+				NewLocation.Z += SnapFloorOffset;
+				SetActorLocation(NewLocation);
+			}
 		}
-	}
 
-	//Move all Red/Winning team spawns
-	for (FTransform& Location : RedAndWinningTeamSpawnLocations)
-	{
-		FTransform TestLocation = Location * ActorToWorld();
-
-		FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 500.0f);
-		FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 10000.0f);
-
-		FHitResult Hit;
-		GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
-		if (Hit.bBlockingHit)
+		//Move all Red/Winning team spawns
+		for (FTransform& Location : RedAndWinningTeamSpawnLocations)
 		{
-			FVector NewLocation = Location.GetLocation();
-			NewLocation.Z = (Hit.Location - GetActorLocation()).Z + SnapFloorOffset;
-			Location.SetLocation(NewLocation);
+			FTransform TestLocation = Location * ActorToWorld();
+
+			FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 500.0f);
+			FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 10000.0f);
+
+			FHitResult Hit;
+			GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
+			if (Hit.bBlockingHit)
+			{
+				FVector NewLocation = Location.GetLocation();
+				NewLocation.Z = (Hit.Location - GetActorLocation()).Z + SnapFloorOffset;
+				Location.SetLocation(NewLocation);
+			}
 		}
-	}
 
-	//Move all Blue/Losing team spawns
-	for (FTransform& Location : BlueAndLosingTeamSpawnLocations)
-	{
-		FTransform TestLocation = Location * ActorToWorld();
-
-		FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 500.0f);
-		FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 10000.0f);
-
-		FHitResult Hit;
-		GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
-		if (Hit.bBlockingHit)
+		//Move all Blue/Losing team spawns
+		for (FTransform& Location : BlueAndLosingTeamSpawnLocations)
 		{
-			FVector NewLocation = Location.GetLocation();
-			NewLocation.Z = (Hit.Location - GetActorLocation()).Z + SnapFloorOffset;
-			Location.SetLocation(NewLocation);
+			FTransform TestLocation = Location * ActorToWorld();
+
+			FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 500.0f);
+			FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 10000.0f);
+
+			FHitResult Hit;
+			GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
+			if (Hit.bBlockingHit)
+			{
+				FVector NewLocation = Location.GetLocation();
+				NewLocation.Z = (Hit.Location - GetActorLocation()).Z + SnapFloorOffset;
+				Location.SetLocation(NewLocation);
+			}
 		}
-	}
 
-	//Move all FFA spawns
-	for (FTransform& Location : FFATeamSpawnLocations)
-	{
-		FTransform TestLocation = Location * ActorToWorld();
-
-		FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 500.0f);
-		FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 10000.0f);
-
-		FHitResult Hit;
-		GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
-		if (Hit.bBlockingHit)
+		//Move all FFA spawns
+		for (FTransform& Location : FFATeamSpawnLocations)
 		{
-			FVector NewLocation = Location.GetLocation();
-			NewLocation.Z = (Hit.Location - GetActorLocation()).Z + SnapFloorOffset;
-			Location.SetLocation(NewLocation);
-		}
-	}
+			FTransform TestLocation = Location * ActorToWorld();
 
-	UpdateMeshVisualizations();
+			FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 500.0f);
+			FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 10000.0f);
+
+			FHitResult Hit;
+			GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
+			if (Hit.bBlockingHit)
+			{
+				FVector NewLocation = Location.GetLocation();
+				NewLocation.Z = (Hit.Location - GetActorLocation()).Z + SnapFloorOffset;
+				Location.SetLocation(NewLocation);
+			}
+		}
+
+		UpdateMeshVisualizations();
+	}
 }
 
 void AUTLineUpZone::UpdateSpawnLocationsWithVisualizationMove()
@@ -457,6 +492,11 @@ void AUTLineUpZone::DefaultCreateForTeamIntro()
 		if (SpawnedActor)
 		{
 			Camera = SpawnedActor;
+
+			FString CameraNameLabel = GetActorLabel();
+			CameraNameLabel.Append(TEXT("_Camera"));
+			Camera->SetActorLabel(CameraNameLabel);
+
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 		}
@@ -526,6 +566,11 @@ void AUTLineUpZone::DefaultCreateForFFAIntro()
 		if (SpawnedActor)
 		{
 			Camera = SpawnedActor;
+
+			FString CameraNameLabel = GetActorLabel();
+			CameraNameLabel.Append(TEXT("_Camera"));
+			Camera->SetActorLabel(CameraNameLabel);
+
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 		}
@@ -604,6 +649,11 @@ void AUTLineUpZone::DefaultCreateForTeamIntermission()
 		if (SpawnedActor)
 		{
 			Camera = SpawnedActor;
+
+			FString CameraNameLabel = GetActorLabel();
+			CameraNameLabel.Append(TEXT("_Camera"));
+			Camera->SetActorLabel(CameraNameLabel);
+
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 		}
@@ -682,6 +732,11 @@ void AUTLineUpZone::DefaultCreateForFFAIntermission()
 		if (SpawnedActor)
 		{
 			Camera = SpawnedActor;
+
+			FString CameraNameLabel = GetActorLabel();
+			CameraNameLabel.Append(TEXT("_Camera"));
+			Camera->SetActorLabel(CameraNameLabel);
+
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 		}
@@ -760,6 +815,11 @@ void AUTLineUpZone::DefaultCreateForTeamEndMatch()
 		if (SpawnedActor)
 		{
 			Camera = SpawnedActor;
+
+			FString CameraNameLabel = GetActorLabel();
+			CameraNameLabel.Append(TEXT("_Camera"));
+			Camera->SetActorLabel(CameraNameLabel);
+
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 		}
@@ -838,6 +898,11 @@ void AUTLineUpZone::DefaultCreateForFFAEndMatch()
 		if (SpawnedActor)
 		{
 			Camera = SpawnedActor;
+
+			FString CameraNameLabel = GetActorLabel();
+			CameraNameLabel.Append(TEXT("_Camera"));
+			Camera->SetActorLabel(CameraNameLabel);
+
 			Camera->GetCameraComponent()->SetFieldOfView(60.f);
 			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 		}
@@ -854,4 +919,66 @@ void AUTLineUpZone::DefaultCreateForFFAEndMatch()
 
 	Camera->SetActorRelativeTransform(DefaultCameraTransform);
 }
+
+void AUTLineUpZone::DefaultCreateForOnly1Character()
+{
+	TArray<FVector> FFAStartLocations;
+	TArray<FRotator> FFARotations;
+
+	FFAStartLocations.SetNum(1);
+	FFARotations.SetNum(1);
+
+	FFAStartLocations[0] = FVector(0.0f, 0.f, 0.0f);
+	FFARotations[0].Pitch = 0.f;
+	FFARotations[0].Roll = 0.f;
+	FFARotations[0].Yaw = -179.99f;
+
+	RedAndWinningTeamSpawnLocations.Empty();
+	BlueAndLosingTeamSpawnLocations.Empty();
+	FFATeamSpawnLocations.Empty();
+
+	FFATeamSpawnLocations.SetNum(1);
+
+	FFATeamSpawnLocations[0].SetTranslation(FFAStartLocations[0]);
+	FFATeamSpawnLocations[0].SetRotation(FFARotations[0].Quaternion());
+
+	SnapToFloor();
+	DeleteAllMeshVisualizations();
+	InitializeMeshVisualizations();
+
+	if (!Camera)
+	{
+		FTransform CameraTransform;
+		CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
+
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+
+		ACameraActor* SpawnedActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), CameraTransform, Params);
+		if (SpawnedActor)
+		{
+			Camera = SpawnedActor;
+
+			FString CameraNameLabel = GetActorLabel();
+			CameraNameLabel.Append(TEXT("_Camera"));
+			Camera->SetActorLabel(CameraNameLabel);
+
+			Camera->GetCameraComponent()->SetFieldOfView(60.f);
+			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
+		}
+	}
+
+	FRotator DefaultCameraRotation;
+	DefaultCameraRotation.Roll = 0.f;
+	DefaultCameraRotation.Pitch = 0.f;
+	DefaultCameraRotation.Yaw = 0.f;
+
+	FTransform DefaultCameraTransform;
+	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
+	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
+
+	Camera->SetActorRelativeTransform(DefaultCameraTransform);
+}
+
+
 #endif //WITH_EDITORONLY_DATA

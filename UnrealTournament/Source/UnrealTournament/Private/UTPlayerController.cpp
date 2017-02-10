@@ -685,7 +685,7 @@ void AUTPlayerController::ClientRestart_Implementation(APawn* NewPawn)
 
 	//if a line-up is active, make sure we turn back on the ignore look input flag on client
 	AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
-	if (UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive)
+	if (UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive && UTGS->GetCameraActorForLineUp(UTGS->LineUpHelper->LastActiveType))
 	{
 		SetIgnoreLookInput(true);
 	}
@@ -3674,7 +3674,7 @@ void AUTPlayerController::PlayGroupTaunt()
 	if (GetWorld()->GetRealTimeSeconds() - LastEmoteTime > EmoteCooldownTime)
 	{
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS && (GS->LeadLineUpPlayer == UTPlayerState) && (GS->IsMatchIntermission() || GS->HasMatchEnded()))
+		if (GS && GS->LineUpHelper && GS->LineUpHelper->CanInitiateGroupTaunt(UTPlayerState))
 		{
 			ServerPlayGroupTaunt();
 			LastEmoteTime = GetWorld()->GetRealTimeSeconds();
@@ -5294,7 +5294,12 @@ void AUTPlayerController::ClientSetActiveLineUp_Implementation()
 
 			if (UTGS->LineUpHelper->bIsActive)
 			{
-				SetIgnoreLookInput(true);
+				//Only lock look input if we have a camera setup
+				if (UTGS->GetCameraActorForLineUp(UTGS->LineUpHelper->LastActiveType))
+				{
+					SetIgnoreLookInput(true);
+				}
+
 				ToggleScoreboard(false);
 
 				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)

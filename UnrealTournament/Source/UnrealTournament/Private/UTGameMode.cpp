@@ -5448,3 +5448,11 @@ void AUTGameMode::PreloadClientAssets(TArray<UObject*>& ObjList) const
 		}
 	}
 }
+
+void AUTGameMode::HandleDefaultLineupSpawns(LineUpTypes LineUpType, TArray<AUTCharacter*>& PlayersSpawned, TArray<AUTCharacter*>& PlayersNotSpawned)
+{
+	if (UTGameState && (UTGameState->GetAppropriateSpawnList(LineUpType) == nullptr))
+	{
+	
+	}
+}

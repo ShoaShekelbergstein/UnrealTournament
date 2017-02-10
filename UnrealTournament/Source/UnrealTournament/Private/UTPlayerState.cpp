@@ -3659,7 +3659,7 @@ void AUTPlayerState::OnRep_ActiveGroupTaunt()
 	}
 
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (GS && (GS->LeadLineUpPlayer == this) && ActiveGroupTaunt != nullptr)
+	if (GS && GS->LineUpHelper && GS->LineUpHelper->CanInitiateGroupTaunt(this) && ActiveGroupTaunt != nullptr)
 	{
 		for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
 		{

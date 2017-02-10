@@ -8,6 +8,7 @@
 #include "UTRemoteRedeemer.h"
 #include "UTDemoRecSpectator.h"
 #include "UTLineUpHelper.h"
+#include "UTPlayerState.h"
 
 AUTPlayerCameraManager::AUTPlayerCameraManager(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -205,22 +206,23 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		OutVT.POV.ProjectionMode = bIsOrthographic ? ECameraProjectionMode::Orthographic : ECameraProjectionMode::Perspective;
 		OutVT.POV.PostProcessBlendWeight = 1.0f;
 
-		AActor* LineUpCam = (GameState && GameState->LineUpHelper) ?  GameState->LineUpHelper->GetCameraActorForLineUp(GetWorld(), GameState->LineUpHelper->LastActiveType) : nullptr;
+		AActor* LineUpCam = (GameState && GameState->LineUpHelper) ?  GameState->GetCameraActorForLineUp(GameState->LineUpHelper->LastActiveType) : nullptr;
 		if (LineUpCam)
 		{
 			OutVT.Target = LineUpCam;
 			OutVT.POV.Location = LineUpCam->GetActorLocation();
 			OutVT.POV.Rotation = LineUpCam->GetActorRotation();
+
+			ApplyCameraModifiers(DeltaTime, OutVT.POV);
+
+			// Synchronize the actor with the view target results
+			SetActorLocationAndRotation(OutVT.POV.Location, OutVT.POV.Rotation, false);
 		}
 		else
 		{
-			OutVT.POV.Location = PCOwner->GetFocalLocation();
-			OutVT.POV.Rotation = PCOwner->GetControlRotation();
+			//if we don't have a camera setup, just use FreeCam
+			CameraStyle = NAME_FreeCam;
 		}
-		ApplyCameraModifiers(DeltaTime, OutVT.POV);
-
-		// Synchronize the actor with the view target results
-		SetActorLocationAndRotation(OutVT.POV.Location, OutVT.POV.Rotation, false);
 	}
 	
 	// smooth third person camera all the time

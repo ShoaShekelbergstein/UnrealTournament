@@ -619,3 +619,66 @@ int32 AUTCTFGameMode::GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPl
 
 	return Super::GetComSwitch(CommandTag, ContextActor, InInstigator, World);
 }
+
+void AUTCTFGameMode::HandleDefaultLineupSpawns(LineUpTypes LineUpType, TArray<AUTCharacter*>& PlayersSpawned, TArray<AUTCharacter*>& PlayersNotSpawned)
+{
+	if (CTFGameState && (CTFGameState->GetAppropriateSpawnList(LineUpType) == nullptr))
+	{
+		uint8 TeamToHighlight = 0;
+
+		AUTTeamInfo* UTTeamInfo = CTFGameState->FindLeadingTeam();
+		if (UTTeamInfo)
+		{
+			TeamToHighlight = UTTeamInfo->GetTeamNum();
+		}
+
+		if (Teams.Num() > TeamToHighlight)
+		{
+			PlayersSpawned.Empty();
+			PlayersNotSpawned.Empty();
+
+			if (LineUpType == LineUpTypes::Intermission)
+			{
+				PlacePlayersAroundFlagBase(255, TeamToHighlight);
+			}
+			else
+			{
+				PlacePlayersAroundFlagBase(TeamToHighlight, TeamToHighlight);
+			}
+
+			for (int TeamIndex = 0; TeamIndex < Teams.Num(); ++TeamIndex)
+			{
+				const TArray<AController*>& Members = Teams[TeamIndex]->GetTeamMembers();
+				
+				//Check at the team level if we need to add these players to the spawned list or not spawned list
+				TArray<AUTCharacter*>* ListToAddPlayerTo = &PlayersSpawned;
+				if (Teams[TeamIndex]->GetTeamNum() != TeamToHighlight)
+				{
+					ListToAddPlayerTo = &PlayersNotSpawned;
+				}
+
+				for (AController* C : Members)
+				{
+					IUTTeamInterface* TeamInterface = Cast<IUTTeamInterface>(C);
+					if (C && TeamInterface)
+					{
+						AUTCharacter* UTChar = Cast<AUTCharacter>(C->GetCharacter());
+						if (UTChar)
+						{
+							ListToAddPlayerTo->Add(UTChar);
+						}
+					}
+
+					AUTPlayerController* UTPC = Cast<AUTPlayerController>(C);
+					if (UTPC && (CTFGameState->FlagBases.Num() > TeamToHighlight))
+					{
+						UTPC->SetIgnoreLookInput(false);
+						UTPC->SetViewTarget(CTFGameState->FlagBases[TeamToHighlight]);
+					}
+				}
+			}
+		}
+	}
+
+	Super::HandleDefaultLineupSpawns(LineUpType, PlayersSpawned, PlayersNotSpawned);
+}

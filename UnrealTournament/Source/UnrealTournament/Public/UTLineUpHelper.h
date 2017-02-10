@@ -15,6 +15,9 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 	void OnPlayerChange();
 
 	UFUNCTION()
+	bool CanInitiateGroupTaunt(AUTPlayerState* PlayerToCheck);
+
+	UFUNCTION()
 	void CleanUp();
 
 	void ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar);
@@ -34,11 +37,7 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 	bool bIsPlacingPlayers;
 	
 	static LineUpTypes GetLineUpTypeToPlay(UWorld* World);
-
-	static AUTLineUpZone* GetAppropriateSpawnList(UWorld* World, LineUpTypes ZoneType);
-
-	static AActor* GetCameraActorForLineUp(UWorld* World, LineUpTypes ZoneType);
-
+	
 	/*Handles all the clean up for a particular player when a line-up is ending*/
 	static void CleanUpPlayerAfterLineUp(AUTPlayerController* UTPC);
 
