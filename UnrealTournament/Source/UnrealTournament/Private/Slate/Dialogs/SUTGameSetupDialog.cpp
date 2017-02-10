@@ -171,7 +171,7 @@ void SUTGameSetupDialog::BuildCategories()
 		[
 		SAssignNew(Button, SUTTabButton)
 		.ContentPadding(FMargin(15.0f, 10.0f, 15.0f, 0.0f))
-		.Text(NSLOCTEXT("SUTGameSetupDialog","CustomGameButtonText","Custom Game"))
+		.Text(NSLOCTEXT("SUTGameSetupDialog","CustomGameButtonText","Custom"))
 		.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
 		.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 		.IsToggleButton(true)

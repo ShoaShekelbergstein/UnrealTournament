@@ -14,7 +14,6 @@ AUTTeamDMGameMode::AUTTeamDMGameMode(const FObjectInitializer& ObjectInitializer
 	bScoreSuicides = true;
 	bScoreTeamKills = true;
 	bForceRespawn = true;
-	GoalScore = 50;
 	HUDClass = AUTHUD_TeamDM::StaticClass();
 	DisplayName = NSLOCTEXT("UTGameMode", "TDM", "Team Deathmatch");
 	XPMultiplier = 3.0f;
