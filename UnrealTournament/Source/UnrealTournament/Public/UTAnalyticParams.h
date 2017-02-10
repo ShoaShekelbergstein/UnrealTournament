@@ -69,6 +69,7 @@ namespace EGenericAnalyticParam
 		UTTutorialPickupToken,
 		TokenID,
 		TokenDescription,
+		HasTokenBeenPickedUpBefore,
 		AnnouncementID,
 		OptionalObjectName,
 		UTTutorialPlayInstruction,

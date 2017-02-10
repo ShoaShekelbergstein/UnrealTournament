@@ -84,11 +84,14 @@ void AUTPickupToken::PickedUp()
 
 	if (TokenUniqueID != NAME_None)
 	{
-		UUTGameplayStatics::TokenPickedUp(GetWorld(), TokenUniqueID);
+		if (!UUTGameplayStatics::HasTokenBeenPickedUpBefore(GetWorld(), TokenUniqueID))
+		{
+			UUTGameplayStatics::TokenPickedUp(GetWorld(), TokenUniqueID);
+		}
 
 		if (FUTAnalytics::IsAvailable() && GetWorld())
 		{
-			FUTAnalytics::FireEvent_UTTutorialPickupToken(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), TokenUniqueID.ToString(), TokenDescription);
+			FUTAnalytics::FireEvent_UTTutorialPickupToken(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), TokenUniqueID, TokenDescription);
 		}
 	}
 }

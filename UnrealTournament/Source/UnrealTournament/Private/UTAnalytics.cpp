@@ -184,6 +184,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(UTTutorialPickupToken);
 	AddGenericParamName(TokenID);
 	AddGenericParamName(TokenDescription);
+	AddGenericParamName(HasTokenBeenPickedUpBefore);
 	AddGenericParamName(AnnouncementID);
 	AddGenericParamName(OptionalObjectName);
 	AddGenericParamName(UTTutorialPlayInstruction);
@@ -941,20 +942,22 @@ void FUTAnalytics::FireEvent_EnterMatch(AUTPlayerController* UTPC, FString Enter
 *
 * @EventParam TokenID string Unique ID of the picked up token.
 * @EventParam TokenDescription string Token Description of the picked up token.
+* @EventParam HasTokenBeenPickedUpBefore bool If this token was collected on a previous run of the tutorial.
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_UTTutorialPickupToken(AUTPlayerController* UTPC, FString TokenID, FString TokenDescription)
+void FUTAnalytics::FireEvent_UTTutorialPickupToken(AUTPlayerController* UTPC, FName TokenID, FString TokenDescription)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
-	if (AnalyticsProvider.IsValid())
+	if (UTPC && AnalyticsProvider.IsValid())
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 
 		SetClientInitialParameters(UTPC, ParamArray, true);
 
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TokenID), TokenID));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TokenID), TokenID.ToString()));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TokenDescription), TokenDescription));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::HasTokenBeenPickedUpBefore), UUTGameplayStatics::HasTokenBeenPickedUpBefore(UTPC->GetWorld(), TokenID)));
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTTutorialPickupToken), ParamArray);
 	}
