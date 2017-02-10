@@ -89,7 +89,9 @@ class AUTLineUpZone : public AActor
 	virtual void PostEditMove(bool bFinished) override;
 	virtual void PostRegisterAllComponents() override;
 	virtual void PostDuplicate(bool bDuplicateForPIE) override;
+#endif // WITH_EDITOR
 
+public:
 	void DefaultCreateForTeamIntro();
 	void DefaultCreateForTeamIntermission();
 	void DefaultCreateForTeamEndMatch();
@@ -97,6 +99,4 @@ class AUTLineUpZone : public AActor
 	void DefaultCreateForFFAIntermission();
 	void DefaultCreateForFFAEndMatch();
 	void DefaultCreateForOnly1Character();
-#endif // WITH_EDITOR
-
 };
