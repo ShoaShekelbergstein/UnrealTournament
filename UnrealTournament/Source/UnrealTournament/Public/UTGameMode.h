@@ -268,12 +268,15 @@ public:
 	bool bFirstBloodOccurred;
 
 	/** Minimum number of players that must have joined match before it will start. */
-	UPROPERTY(EditDefaultsOnly, BLueprintReadWrite, Category="MatchStart")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="MatchStart")
 	int32 MinPlayersToStart;
 
 	/** After this wait, add bots to min players level */
-	UPROPERTY(EditDefaultsOnly, BLueprintReadWrite, Category = "MatchStart")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MatchStart")
 		int32 MaxWaitForPlayers;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MatchStart")
+		int32 DefaultMaxPlayers;
 
 	/** World time when match was first ready to start. */
 	UPROPERTY()

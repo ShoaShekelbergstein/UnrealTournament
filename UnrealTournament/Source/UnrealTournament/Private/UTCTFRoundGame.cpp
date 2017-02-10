@@ -95,6 +95,10 @@ void AUTCTFRoundGame::PostLogin(APlayerController* NewPlayer)
 void AUTCTFRoundGame::CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps)
 {
 	MenuProps.Empty();
+	if (BotFillCount == 0)
+	{
+		BotFillCount = DefaultMaxPlayers;
+	}
 	MenuProps.Add(MakeShareable(new TAttributeProperty<int32>(this, &BotFillCount, TEXT("BotFill"))));
 	MenuProps.Add(MakeShareable(new TAttributePropertyBool(this, &bBalanceTeams, TEXT("BalanceTeams"))));
 }

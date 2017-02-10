@@ -28,6 +28,7 @@ AUTTeamShowdownGame::AUTTeamShowdownGame(const FObjectInitializer& OI)
 	bAnnounceTeam = true;
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+	DefaultMaxPlayers = 6;
 }
 
 void AUTTeamShowdownGame::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -60,7 +61,7 @@ void AUTTeamShowdownGame::InitGame(const FString& MapName, const FString& Option
 	GameSession->MaxPlayers = UGameplayStatics::GetIntOption(Options, TEXT("MaxPlayers"), 8);
 	if (GameSession->MaxPlayers <= 0)
 	{
-		GameSession->MaxPlayers = 6;
+		GameSession->MaxPlayers = DefaultMaxPlayers;
 	}
 }
 
@@ -421,6 +422,10 @@ void AUTTeamShowdownGame::GetGameURLOptions(const TArray<TSharedPtr<TAttributePr
 void AUTTeamShowdownGame::CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps)
 {
 	Super::CreateGameURLOptions(MenuProps);
+	if (BotFillCount == 0)
+	{
+		BotFillCount = DefaultMaxPlayers;
+	}
 	MenuProps.Add(MakeShareable(new TAttributeProperty<int32>(this, &BotFillCount, TEXT("BotFill"))));
 }
 #if !UE_SERVER

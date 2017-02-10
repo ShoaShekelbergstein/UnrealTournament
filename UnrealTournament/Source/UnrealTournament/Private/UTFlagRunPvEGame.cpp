@@ -30,6 +30,7 @@ AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 	SquadType = AUTFlagRunPvESquadAI::StaticClass();
 	GameStateClass = AUTFlagRunPvEGameState::StaticClass();
 	DisplayName = NSLOCTEXT("UTGameMode", "FRPVE", "Flag Invasion");
+	DefaultMaxPlayers = 5;
 
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/BronzeTaye.BronzeTaye_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/BronzeTayeBio.BronzeTayeBio_C")));
@@ -80,7 +81,7 @@ void AUTFlagRunPvEGame::InitGame(const FString& MapName, const FString& Options,
 	}
 
 	Super::InitGame(MapName, Options, ErrorMessage);
-	GameSession->MaxPlayers = FMath::Min(GameSession->MaxPlayers, 5);
+	GameSession->MaxPlayers = FMath::Min(GameSession->MaxPlayers, DefaultMaxPlayers);
 
 	for (TActorIterator<AUTPickupEnergy> It(GetWorld()); It; ++It)
 	{

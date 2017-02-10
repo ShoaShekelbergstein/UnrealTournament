@@ -3476,13 +3476,14 @@ void AUTPlayerController::ChooseBestCamera()
 	float BestScore = 0.f;
 	APlayerState* BestPS = nullptr;
 	AUTPlayerCameraManager* UTCam = Cast<AUTPlayerCameraManager>(PlayerCameraManager);
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (UTCam)
 	{
 		for (FConstPawnIterator Iterator = GetWorld()->GetPawnIterator(); Iterator; ++Iterator)
 		{
 			AUTCharacter* CamPawn = Cast<AUTCharacter>(*Iterator);
 			AUTPlayerState* NextPlayerState = (CamPawn && (CamPawn->Health > 0)) ? Cast<AUTPlayerState>(CamPawn->PlayerState) : NULL;
-			if (NextPlayerState)
+			if (NextPlayerState && GS && GS->CanSpectate(this, NextPlayerState))
 			{
 				float NewScore = UTCam->RatePlayerCamera(NextPlayerState, CamPawn, LastSpectatedPlayerState);
 				if (!BestPS || (NewScore > BestScore))

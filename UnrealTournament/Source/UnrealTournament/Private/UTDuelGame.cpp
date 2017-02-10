@@ -29,6 +29,7 @@ AUTDuelGame::AUTDuelGame(const class FObjectInitializer& ObjectInitializer)
 	XPMultiplier = 7.0f;
 	SquadType = AUTDuelSquadAI::StaticClass();
 	bAllowAllArmorPickups = true;
+	DefaultMaxPlayers = 2;
 }
 
 void AUTDuelGame::InitGameState()
@@ -83,8 +84,8 @@ void AUTDuelGame::InitGame(const FString& MapName, const FString& Options, FStri
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
 
-	GameSession->MaxPlayers = 2;
-	BotFillCount = FMath::Min(BotFillCount, 2);
+	GameSession->MaxPlayers = DefaultMaxPlayers;
+	BotFillCount = FMath::Min(BotFillCount, DefaultMaxPlayers);
 	bForceRespawn = true;
 	bBalanceTeams = true;
 }

@@ -100,6 +100,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	ForceRespawnTime = 5.f;
 	StartDelay = 10.f;
 	LastMatchNotReady = 0.f;
+	DefaultMaxPlayers = 10;
 
 	bHasRespawnChoices = false;
 	MinPlayersToStart = 2;
@@ -300,7 +301,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 
 	if (!UGameplayStatics::HasOption(Options, TEXT("MaxPlayers")))
 	{
-		GameSession->MaxPlayers = bTeamGame ? 10 : 8;
+		GameSession->MaxPlayers = DefaultMaxPlayers;
 	}
 
 	// alias for testing convenience
@@ -3391,7 +3392,7 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 				if (!bRankedSession && (RemainingStartDelay < 2) && !bForceNoBots && !bDevServer && (GetWorld()->WorldType != EWorldType::PIE))
 				{
 					// if not competitive match, fill with bots if have waited long enough
-					BotFillCount = FMath::Max(BotFillCount, FMath::Min(GameSession->MaxPlayers, 10));
+					BotFillCount = FMath::Max(BotFillCount, FMath::Min(GameSession->MaxPlayers, DefaultMaxPlayers));
 					CheckBotCount();
 				}
 			}
@@ -4011,6 +4012,11 @@ void AUTGameMode::CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>
 	MenuProps.Empty();
 	MenuProps.Add(MakeShareable(new TAttributeProperty<int32>(this, &TimeLimit, TEXT("TimeLimit"))));
 	MenuProps.Add(MakeShareable(new TAttributeProperty<int32>(this, &GoalScore, TEXT("GoalScore"))));
+
+	if (BotFillCount == 0)
+	{
+		BotFillCount = DefaultMaxPlayers;
+	}
 	MenuProps.Add(MakeShareable(new TAttributeProperty<int32>(this, &BotFillCount, TEXT("BotFill"))));
 }
 

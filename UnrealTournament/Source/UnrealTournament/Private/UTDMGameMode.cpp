@@ -15,6 +15,7 @@ AUTDMGameMode::AUTDMGameMode(const class FObjectInitializer& ObjectInitializer)
 	XPMultiplier = 3.0f;
 	bGameHasImpactHammer = false;
 	bPlayersStartWithArmor = false;
+	DefaultMaxPlayers = 8;
 }
 
 
