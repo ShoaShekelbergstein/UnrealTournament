@@ -557,6 +557,11 @@ void AUTGameMode::InitGameState()
 	{
 		UTGameState->SetGoalScore(GoalScore);
 		UTGameState->SetTimeLimit(0);
+		if (bIsInstagib)
+		{
+			RespawnWaitTime = 1.f;
+			UTGameState->SpawnProtectionTime = 0.f;
+		}
 		UTGameState->SetRespawnWaitTime(RespawnWaitTime);
 		UTGameState->ForceRespawnTime = ForceRespawnTime;
 		UTGameState->bTeamGame = bTeamGame;
@@ -1443,7 +1448,7 @@ void AUTGameMode::Killed(AController* Killer, AController* KilledPlayer, APawn* 
 						KillerPC->SendPersonalMessage(UTDamage.GetDefaultObject()->RewardAnnouncementClass, 0, KillerPlayerState, KilledPlayerState);
 					}
 				}
-				KilledPlayerState->RespawnWaitTime = 2.f;
+				KilledPlayerState->RespawnWaitTime = bIsInstagib ? 1.f : 2.f;
 				KilledPlayerState->OnRespawnWaitReceived();
 			}
 			BroadcastDeathMessage(Killer, KilledPlayer, DamageType);
@@ -3236,6 +3241,10 @@ float AUTGameMode::AdjustNearbyPlayerStartScore(const AController* Player, const
 	{
 		static FName NAME_RatePlayerStart = FName(TEXT("RatePlayerStart"));
 		bool bIsLastKiller = (OtherCharacter->PlayerState == Cast<AUTPlayerState>(Player->PlayerState)->LastKillerPlayerState);
+		if (bIsInstagib && !bIsLastKiller)
+		{
+			return 0.f;
+		}
 		if (!GetWorld()->LineTraceTestByChannel(StartLoc, OtherCharacter->GetActorLocation() + FVector(0.f, 0.f, OtherCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()), ECC_Visibility, FCollisionQueryParams(NAME_RatePlayerStart, false)))
 		{
 			// Avoid the last person that killed me

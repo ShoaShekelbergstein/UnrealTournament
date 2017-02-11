@@ -354,6 +354,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
 	bool bBasicTrainingGame;
 
+	/** To make it easier to customize for instagib.  FIXMESTEVE should eventually all be mutator driven so other mutators can take advantage too. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
+		bool bIsInstagib;
+
 	/** Tag of the current challenge */
 	UPROPERTY(BlueprintReadOnly, Category = "Game")
 	FName ChallengeTag;
