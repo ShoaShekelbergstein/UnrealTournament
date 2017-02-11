@@ -557,11 +557,6 @@ void AUTGameMode::InitGameState()
 	{
 		UTGameState->SetGoalScore(GoalScore);
 		UTGameState->SetTimeLimit(0);
-		if (bIsInstagib)
-		{
-			RespawnWaitTime = 1.f;
-			UTGameState->SpawnProtectionTime = 0.f;
-		}
 		UTGameState->SetRespawnWaitTime(RespawnWaitTime);
 		UTGameState->ForceRespawnTime = ForceRespawnTime;
 		UTGameState->bTeamGame = bTeamGame;
