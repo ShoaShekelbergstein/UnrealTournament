@@ -34,21 +34,25 @@ void AUTLineUpHelper::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 void AUTLineUpHelper::HandleLineUp(LineUpTypes ZoneType)
 {
-	LastActiveType = ZoneType;
-
-	if (GetWorld())
+	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+	if (UTGS && (UTGS->GetAppropriateSpawnList(ZoneType) != nullptr))
 	{
-		if (ZoneType == LineUpTypes::Intro)
+		LastActiveType = ZoneType;
+
+		if (GetWorld())
 		{
-			HandleIntro(ZoneType);
-		}
-		else if (ZoneType == LineUpTypes::Intermission)
-		{
-			HandleIntermission(ZoneType);
-		}
-		else if (ZoneType == LineUpTypes::PostMatch)
-		{
-			HandleEndMatchSummary(ZoneType);
+			if (ZoneType == LineUpTypes::Intro)
+			{
+				HandleIntro(ZoneType);
+			}
+			else if (ZoneType == LineUpTypes::Intermission)
+			{
+				HandleIntermission(ZoneType);
+			}
+			else if (ZoneType == LineUpTypes::PostMatch)
+			{
+				HandleEndMatchSummary(ZoneType);
+			}
 		}
 	}
 }
