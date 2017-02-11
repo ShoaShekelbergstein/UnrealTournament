@@ -637,9 +637,24 @@ void AUTHUD::NotifyMatchStateChange()
 				UTLP->HideMenu();
 			}
 
+			bool bShouldUseLineUp = false;
+			if (GS->LineUpHelper)
+			{
+				AUTLineUpZone* IntroZoneFound = GS->GetAppropriateSpawnList(LineUpTypes::Intro);
+				if (IntroZoneFound)
+				{
+					bShouldUseLineUp = true;
+				}
+			}
+
 			if (UTPlayerOwner->UTPlayerState && UTPlayerOwner->UTPlayerState->bIsWarmingUp)
 			{
 				UTPlayerOwner->ClientReceiveLocalizedMessage(UUTGameMessage::StaticClass(), 16, nullptr, nullptr, nullptr);
+			}
+			//if we can't line up, use old method
+			if (!bShouldUseLineUp)
+			{
+				GetWorldTimerManager().SetTimer(MatchSummaryHandle, this, &AUTHUD::OpenMatchSummary, 1.7f, false);
 			}
 		}
 		else if (GS->GetMatchState() != MatchState::MapVoteHappening)

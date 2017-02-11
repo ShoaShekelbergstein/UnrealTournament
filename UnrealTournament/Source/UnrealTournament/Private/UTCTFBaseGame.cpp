@@ -359,6 +359,15 @@ void AUTCTFBaseGame::HandleMatchIntermission()
 	//UTGameState->UpdateMatchHighlights();
 	CTFGameState->ResetFlags();
 
+	if (!CTFGameState->LineUpHelper || !CTFGameState->LineUpHelper->bIsActive)
+	{
+		// Init targets
+		for (int32 i = 0; i < Teams.Num(); i++)
+		{
+			PlacePlayersAroundFlagBase(i, i);
+		}
+	}
+
 	UTGameState->PrepareForIntermission();
 
 	// Tell the controllers to look at own team flag
@@ -456,7 +465,8 @@ void AUTCTFBaseGame::SetEndGameFocus(AUTPlayerState* Winner)
 	int32 WinnerTeamNum = Winner ? Winner->GetTeamNum() : (LastTeamToScore ? LastTeamToScore->TeamIndex : 0);
 	AUTCTFFlagBase* WinningBase = NULL;
 	WinningBase = CTFGameState->FlagBases[WinnerTeamNum];
-	
+	PlacePlayersAroundFlagBase(WinnerTeamNum, WinnerTeamNum);
+
 	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 	{
 		AUTPlayerController* Controller = Cast<AUTPlayerController>(*Iterator);
@@ -519,29 +529,31 @@ void AUTCTFBaseGame::RestartPlayer(AController* aPlayer)
 
 void AUTCTFBaseGame::PlacePlayersAroundFlagBase(int32 TeamNum, int32 FlagTeamNum)
 {
-	if ((CTFGameState == NULL) || (FlagTeamNum >= CTFGameState->FlagBases.Num()) || (CTFGameState->FlagBases[FlagTeamNum] == NULL))
+	if ((CTFGameState == NULL) || (FlagTeamNum >= CTFGameState->FlagBases.Num()) || (CTFGameState->FlagBases[FlagTeamNum] == NULL) || (CTFGameState->LineUpHelper != NULL && CTFGameState->LineUpHelper->bIsActive))
 	{
 		return;
 	}
 
 	TArray<AController*> Members = Teams[TeamNum]->GetTeamMembers();
-	
-	//Spawn all players under team num of 255 (FFA team num)
-	if ((TeamNum == 255) && (Teams.Num() > 1))
-	{
-		Members.Append(Teams[1-TeamNum]->GetTeamMembers());
+	const int32 MaxPlayers = FMath::Min(8, Members.Num());
 
-		//Sort by team num so team mates are next to each other
-		Members.Sort([=](AController& A, AController& B) 
-		{
-			const IUTTeamInterface* TeamInterfaceA = Cast<IUTTeamInterface>(&A);
-			const IUTTeamInterface* TeamInterfaceB = Cast<IUTTeamInterface>(&B);
-		
-			return (TeamInterfaceA && TeamInterfaceB && TeamInterfaceA->GetTeamNum() > TeamInterfaceB->GetTeamNum()); 
-		});
-	}
+	//Commented out for now. Uncomment when we put back in line-ups in all game modes
+	////Spawn all players under team num of 255 (FFA team num)
+	//if ((TeamNum == 255) && (Teams.Num() > 1))
+	//{
+	//	Members.Append(Teams[1-TeamNum]->GetTeamMembers());
+
+	//	//Sort by team num so team mates are next to each other
+	//	Members.Sort([=](AController& A, AController& B) 
+	//	{
+	//		const IUTTeamInterface* TeamInterfaceA = Cast<IUTTeamInterface>(&A);
+	//		const IUTTeamInterface* TeamInterfaceB = Cast<IUTTeamInterface>(&B);
+	//	
+	//		return (TeamInterfaceA && TeamInterfaceB && TeamInterfaceA->GetTeamNum() > TeamInterfaceB->GetTeamNum()); 
+	//	});
+	//}
 	
-	const int32 MaxPlayers = FMath::Min(10, Members.Num());
+	//const int32 MaxPlayers = FMath::Min(10, Members.Num());
 
 	FVector FlagLoc = CTFGameState->FlagBases[FlagTeamNum]->GetActorLocation();
 	float AngleSlices = 360.0f / MaxPlayers;
@@ -566,6 +578,10 @@ void AUTCTFBaseGame::PlacePlayersAroundFlagBase(int32 TeamNum, int32 FlagTeamNum
 					C->GetPawn()->TurnOff();
 				}
 			}
+		}
+		if (PlacementCounter == 8)
+		{
+			break;
 		}
 	}
 	bPlacingPlayersAtIntermission = false;

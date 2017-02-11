@@ -534,7 +534,7 @@ void AUTGameState::BeginPlay()
 
 		LineUpHelper->SetReplicates(true);
 	}
-	SpawnDefaultLineUpZones();
+	//SpawnDefaultLineUpZones();
 }
 
 void AUTGameState::AddUserInfoQuery(TSharedRef<const FUniqueNetId> UserId)
