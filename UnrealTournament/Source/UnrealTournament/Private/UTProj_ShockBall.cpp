@@ -25,7 +25,7 @@ void AUTProj_ShockBall::OnRep_Instigator()
 	Super::OnRep_Instigator();
 	if (InstigatorController && OwnBallEffect && (GetCachedScalabilityCVars().DetailMode > 1) && Cast<AUTPlayerController>(InstigatorController) && InstigatorController->IsLocalController())
 	{
-		UGameplayStatics::SpawnEmitterAttached(OwnBallEffect, RootComponent);
+		OwnBallPSC = UGameplayStatics::SpawnEmitterAttached(OwnBallEffect, RootComponent);
 	}
 }
 
@@ -91,6 +91,29 @@ float AUTProj_ShockBall::TakeDamage(float Damage, const FDamageEvent& DamageEven
 
 	return Damage;
 }
+
+void AUTProj_ShockBall::Destroyed()
+{
+	if (OwnBallPSC)
+	{
+		OwnBallPSC->DeactivateSystem();
+		OwnBallPSC->bAutoDestroy = true;
+		OwnBallPSC = nullptr;
+	}
+	Super::Destroyed();
+}
+
+void AUTProj_ShockBall::ShutDown()
+{
+	if (OwnBallPSC)
+	{
+		OwnBallPSC->DeactivateSystem();
+		OwnBallPSC->bAutoDestroy = true;
+		OwnBallPSC = nullptr;
+	}
+	Super::ShutDown();
+}
+
 
 bool AUTProj_ShockBall::ShouldIgnoreHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp)
 {

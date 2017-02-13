@@ -37,6 +37,12 @@ class UNREALTOURNAMENT_API AUTProj_ShockBall : public AUTProjectile
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
 		UParticleSystem* OwnBallEffect;
 
+	UPROPERTY(BlueprintReadWrite, Category = Effects)
+		UParticleSystemComponent* OwnBallPSC;
+
+	virtual void ShutDown() override;
+	virtual void Destroyed() override;
+
 protected:
 	/** when set and InstigatorController is a bot, ask it when we should combo */
 	bool bMonitorBotCombo;
