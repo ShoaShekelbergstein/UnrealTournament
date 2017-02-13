@@ -1330,5 +1330,9 @@ protected:
 public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
 	void CloseSavingWidget();
+
+	UFUNCTION()
+	void UpdateCheck();
+
 };
 

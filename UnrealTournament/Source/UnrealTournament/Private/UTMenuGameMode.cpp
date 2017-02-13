@@ -130,10 +130,10 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 		}
 
 #if !UE_SERVER
+		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(PC->Player);
 		// start with tutorial menu if requested
 		if (bForceTutorialMenu || LastURL.HasOption(TEXT("tutorialmenu")))
 		{
-			UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(PC->Player);
 			// NOTE: If we are in a party, never return to the tutorial menu
 			if (LP != NULL && !LP->IsInAnActiveParty())
 			{
@@ -148,6 +148,7 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 			LastURL.RemoveOption(TEXT("tutorialmenu"));
 		}
 #endif
+		LP->UpdateCheck();
 	}
 
 }

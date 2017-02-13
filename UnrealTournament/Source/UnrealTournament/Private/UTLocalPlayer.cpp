@@ -5038,32 +5038,6 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 						SaveProfileSettings();
 					}
 				}
-
-				uint32 MyVersion = FNetworkVersion::GetNetworkCompatibleChangelist();
-				UE_LOG(UT,Warning,TEXT("Compatible Network Version: %i"), MyVersion)
-
-				if ((uint32)MCPPulledData.CurrentVersionNumber > MyVersion )
-				{
-#if !UE_SERVER
-					ShowWebMessage(NSLOCTEXT("UTLocalPlayer","NeedtoUpdateTitle","New Version Available"), TEXT("http://epic.gm/ood"));
-#endif
-				}
-				else if (IsMenuGame())
-				{
-					if (MCPPulledData.CurrentVersionNumber > LastLoadedVersionNumber)
-					{
-						// Delete the web cache to insure the new version is loaded.  CEFBrowser should give you a LoadURLIgnoringCache but it doesn't
-						FString WebCacheIndex = FPaths::GameSavedDir() + TEXT("/webcache/index");
-						FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*WebCacheIndex);
-
-						// Open a Web page with better info
-						ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), TEXT("http://epic.gm/updt"));
-					
-						LastLoadedVersionNumber = (uint32)MCPPulledData.CurrentVersionNumber;
-						SaveConfig();
-					}
-				}
-
 			}
 		}
 	}
@@ -6814,4 +6788,33 @@ FSceneView* UUTLocalPlayer::CalcSceneView(class FSceneViewFamily* ViewFamily, FV
 	}
 
 	return Super::CalcSceneView(ViewFamily, OutViewLocation, OutViewRotation, Viewport, ViewDrawer, StereoPass);
+}
+
+void UUTLocalPlayer::UpdateCheck()
+{
+#if !UE_SERVER
+
+	uint32 MyVersion = FNetworkVersion::GetNetworkCompatibleChangelist();
+	UE_LOG(UT,Warning,TEXT("Compatible Network Version: %i"), MyVersion)
+
+	if ((uint32)MCPPulledData.CurrentVersionNumber > MyVersion )
+	{
+		ShowWebMessage(NSLOCTEXT("UTLocalPlayer","NeedtoUpdateTitle","New Version Available"), TEXT("http://epic.gm/ood"));
+	}
+	else if (IsMenuGame())
+	{
+		if (true)//MCPPulledData.CurrentVersionNumber > LastLoadedVersionNumber)
+		{
+			// Delete the web cache to insure the new version is loaded.  CEFBrowser should give you a LoadURLIgnoringCache but it doesn't
+			FString WebCacheIndex = FPaths::GameSavedDir() + TEXT("/webcache/index");
+			FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*WebCacheIndex);
+
+			// Open a Web page with better info
+			ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), TEXT("http://epic.gm/updt"));
+					
+			LastLoadedVersionNumber = (uint32)MCPPulledData.CurrentVersionNumber;
+			SaveConfig();
+		}
+	}
+#endif
 }
