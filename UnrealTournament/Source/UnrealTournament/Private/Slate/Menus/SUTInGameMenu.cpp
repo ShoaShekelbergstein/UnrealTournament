@@ -203,6 +203,16 @@ FReply SUTInGameMenu::OnCloseMenu()
 
 FReply SUTInGameMenu::OnReturnToLobby()
 {
+	const bool bIsPartyLeader = PlayerOwner->IsPartyLeader();
+	if (!bIsPartyLeader)
+	{
+		UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(PlayerOwner->GetWorld(), UPartyContext::StaticClass()));
+		if (PartyContext)
+		{
+			PartyContext->LeaveParty();
+		}
+	}
+
 	AUTGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
 	if ( GameState && GameState->HubGuid.IsValid() )
 	{
