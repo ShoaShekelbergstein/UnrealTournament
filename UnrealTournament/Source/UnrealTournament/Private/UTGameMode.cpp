@@ -1221,7 +1221,7 @@ void AUTGameMode::DefaultTimer()
 			}
 
 			// Check to see if everyone is idle.
-			if (!bIgnoreIdlePlayers && MatchState == MatchState::InProgress && UTGameState != nullptr)
+			if (!bIgnoreIdlePlayers && UTGameState != nullptr && UTGameState->IsMatchInProgress())
 			{
 				bool bAllPlayersAreIdle = true;
 				for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
