@@ -68,6 +68,8 @@ namespace EGenericAnalyticParam
 		EnterMethod,
 		UTStartRankedMatch,
 		UTEndRankedMatch,
+		UTStartQuickplayMatch,
+		UTEndQuickplayMatch,
 		ELOPlayerInfo,
 
 		UTTutorialPickupToken,

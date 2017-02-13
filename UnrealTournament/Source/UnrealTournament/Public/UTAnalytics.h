@@ -47,6 +47,8 @@ public:
 	static void FireEvent_UTServerWeaponKills(AUTGameMode* UTGM, TMap<TSubclassOf<UDamageType>, int32>* KillsArray);
 	static void FireEvent_UTStartRankedMatch(AUTGameMode* UTGM);
 	static void FireEvent_UTEndRankedMatch(AUTGameMode* UTGM);
+	static void FireEvent_UTStartQuickplayMatch(AUTGameMode* UTGM);
+	static void FireEvent_UTEndQuickplayMatch(AUTGameMode* UTGM);
 	static void FireEvent_UTServerPlayerJoin(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	static void FireEvent_UTServerPlayerDisconnect(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 

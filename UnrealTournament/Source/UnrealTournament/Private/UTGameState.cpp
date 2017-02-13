@@ -951,6 +951,11 @@ void AUTGameState::HandleMatchHasStarted()
 		FUTAnalytics::FireEvent_UTStartRankedMatch(Cast<AUTGameMode>(GetWorld()->GetAuthGameMode()));
 	}
 
+	if (bIsQuickMatch)
+	{
+		FUTAnalytics::FireEvent_UTStartQuickplayMatch(Cast<AUTGameMode>(GetWorld()->GetAuthGameMode()));
+	}
+
 	Super::HandleMatchHasStarted();
 
 	AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
@@ -969,6 +974,11 @@ void AUTGameState::HandleMatchHasEnded()
 	if (bRankedSession)
 	{
 		FUTAnalytics::FireEvent_UTEndRankedMatch(Cast<AUTGameMode>(GetWorld()->GetAuthGameMode()));
+	}
+
+	if (bIsQuickMatch)
+	{
+		FUTAnalytics::FireEvent_UTEndQuickplayMatch(Cast<AUTGameMode>(GetWorld()->GetAuthGameMode()));
 	}
 
 	Super::HandleMatchHasEnded();

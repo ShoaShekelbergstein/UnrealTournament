@@ -1377,6 +1377,50 @@ void FUTAnalytics::FireEvent_UTEndRankedMatch(AUTGameMode* UTGM)
 }
 
 /*
+* @EventName UTStartQuickplayMatch
+*
+* @Trigger Fires when a server beings a quickplay match
+*
+* @Type Sent by the Server
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTStartQuickplayMatch(AUTGameMode* UTGM)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetMatchInitialParameters(UTGM, ParamArray, false, true);
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTStartQuickplayMatch), ParamArray);
+	}
+}
+
+/*
+* @EventName UTEndQuickplayMatch
+*
+* @Trigger Fires when a server ends a quickplay match
+*
+* @Type Sent by the Server
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTEndQuickplayMatch(AUTGameMode* UTGM)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetMatchInitialParameters(UTGM, ParamArray, false, true);
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTEndQuickplayMatch), ParamArray);
+	}
+}
+
+/*
 * @EventName UTServerPlayerJoin
 *
 * @Trigger Fires when the server has a player connect
