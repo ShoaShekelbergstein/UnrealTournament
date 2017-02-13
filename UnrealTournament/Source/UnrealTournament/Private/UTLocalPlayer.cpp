@@ -5705,6 +5705,16 @@ void UUTLocalPlayer::ShowMatchmakingDialog()
 		LeagueMatchResultsDialog.Reset();
 	}
 	
+	// Force close anything that's going to break world rendering
+	TArray< TSharedPtr<class SUTDialogBase> > OpenDialogsCopy = OpenDialogs;
+	for (int i = 0; i < OpenDialogsCopy.Num(); i++)
+	{
+		if (OpenDialogsCopy[i]->bSkipWorldRender)
+		{
+			CloseDialog(OpenDialogsCopy[i].ToSharedRef());
+		}
+	}
+
 	OpenDialog(
 		SAssignNew(MatchmakingDialog, SUTMatchmakingDialog)
 		.PlayerOwner(this)
