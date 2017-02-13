@@ -490,7 +490,11 @@ void UUTScoreboard::DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float R
 	AUTBot* Bot = Cast<AUTBot>(PlayerState->GetOwner());
 	if (Bot)
 	{
-		DrawText(FText::AsNumber(Bot->Skill), XOffset + 0.995f*ScaledCellWidth, YOffset + ColumnY, UTHUDOwner->TinyFont, 0.75f*RenderScale, 1.f, DrawColor, ETextHorzPos::Right, ETextVertPos::Center);
+		static const FNumberFormattingOptions SkillValueFormattingOptions = FNumberFormattingOptions()
+			.SetMinimumFractionalDigits(1)
+			.SetMaximumFractionalDigits(1);
+
+		DrawText(FText::AsNumber(Bot->Skill, &SkillValueFormattingOptions), XOffset + 0.995f*ScaledCellWidth, YOffset + ColumnY, UTHUDOwner->TinyFont, 0.75f*RenderScale, 1.f, DrawColor, ETextHorzPos::Right, ETextVertPos::Center);
 	}
 	else if (GetWorld()->GetNetMode() != NM_Standalone)
 	{

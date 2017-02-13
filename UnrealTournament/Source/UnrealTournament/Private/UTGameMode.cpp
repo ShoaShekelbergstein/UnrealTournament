@@ -1379,6 +1379,10 @@ void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, con
 				BlueTeamSkill = FMath::Min(6.f, BlueTeamSkill + Adjust / FMath::Min(5.f, 0.7f*float(BlueTeamKills + BlueTeamDeaths)));
 			}
 		}
+		if (bBasicTrainingGame)
+		{
+			BlueTeamSkill = RedTeamSkill;
+		}
 	}
 }
 
