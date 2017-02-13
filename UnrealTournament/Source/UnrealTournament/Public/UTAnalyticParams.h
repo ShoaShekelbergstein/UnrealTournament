@@ -91,6 +91,12 @@ namespace EGenericAnalyticParam
 		MovementTutorialCompleted,
 		WeaponTutorialCompleted,
 		PickupsTutorialCompleted,
+		DMTutorialCompleted,
+		TDMTutorialCompleted,
+		CTFTutorialCompleted,
+		DuelTutorialCompleted,
+		FlagRunTutorialCompleted,
+		ShowdownTutorialCompleted,
 		
 		RealServerFPS,
 

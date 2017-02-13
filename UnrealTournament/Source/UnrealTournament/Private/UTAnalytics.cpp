@@ -204,6 +204,12 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(MovementTutorialCompleted);
 	AddGenericParamName(WeaponTutorialCompleted);
 	AddGenericParamName(PickupsTutorialCompleted);
+	AddGenericParamName(DMTutorialCompleted);
+	AddGenericParamName(TDMTutorialCompleted);
+	AddGenericParamName(CTFTutorialCompleted);
+	AddGenericParamName(DuelTutorialCompleted);
+	AddGenericParamName(FlagRunTutorialCompleted);
+	AddGenericParamName(ShowdownTutorialCompleted);
 
 	AddGenericParamName(RealServerFPS);
 	
@@ -1144,6 +1150,12 @@ void FUTAnalytics::FireEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC
 * @EventParam MovementTutorialCompleted bool If the movement tutorial has been previously completed
 * @EventParam WeaponTutorialCompleted bool If the movement tutorial has been previously completed
 * @EventParam PickupsTutorialCompleted If the movement tutorial has been previously completed
+* @EventParam DMCompleted If the DM tutorial has been previously completed
+* @EventParam TDMTutorialCompleted If the TDM tutorial has been previously completed
+* @EventParam CTFTutorialCompleted If the CTF tutorial has been previously completed
+* @EventParam DuelTutorialCompleted If the Duel tutorial has been previously completed
+* @EventParam FlagRunTutorialCompleted If the Flag Run tutorial has been previously completed
+* @EventParam ShowdownTutorialCompleted If the Showdown tutorial has been previously completed
 *
 * @Comments
 */
@@ -1164,6 +1176,11 @@ void FUTAnalytics::FireEvent_UTTutorialStarted(AUTPlayerController* UTPC, FStrin
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MovementTutorialCompleted), ((ProfileSettings->TutorialMask & TUTORIAL_Movement) == TUTORIAL_Movement)));
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::WeaponTutorialCompleted), ((ProfileSettings->TutorialMask & TUTOIRAL_Weapon) == TUTOIRAL_Weapon)));
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PickupsTutorialCompleted), ((ProfileSettings->TutorialMask & TUTORIAL_Pickups) == TUTORIAL_Pickups)));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::DMTutorialCompleted), ((ProfileSettings->TutorialMask & TUTORIAL_DM) == TUTORIAL_DM)));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TDMTutorialCompleted), ((ProfileSettings->TutorialMask & TUTORIAL_TDM) == TUTORIAL_TDM)));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::CTFTutorialCompleted), ((ProfileSettings->TutorialMask & TUTORIAL_CTF) == TUTORIAL_CTF)));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::FlagRunTutorialCompleted), ((ProfileSettings->TutorialMask & TUTORIAL_FlagRun) == TUTORIAL_FlagRun)));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ShowdownTutorialCompleted), ((ProfileSettings->TutorialMask & TUTORIAL_Showdown) == TUTORIAL_Showdown)));
 			}
 		}
 	
