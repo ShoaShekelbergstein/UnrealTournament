@@ -1834,7 +1834,7 @@ void AUTGameMode::FindAndMarkHighScorer()
 
 //Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
 /*
-* @EventName CustomContent
+* @EventName MatchWithCustomContent
 *
 * @Trigger Sent when a player begins a match with custom content that is a standalone client
 *
