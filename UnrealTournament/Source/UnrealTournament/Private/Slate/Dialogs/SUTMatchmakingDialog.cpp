@@ -268,7 +268,8 @@ FText SUTMatchmakingDialog::GetMatchmakingEstimatedTimeText() const
 FReply SUTMatchmakingDialog::OnButtonClick(uint16 ButtonID)
 {
 	OnDialogResult.ExecuteIfBound(SharedThis(this), UTDIALOG_BUTTON_CANCEL);
-	GetPlayerOwner()->CloseDialog(SharedThis(this));
+	PlayerOwner->CloseDialog(SharedThis(this));
+	PlayerOwner->ReturnToMainMenu();
 
 	return FReply::Handled();
 }
