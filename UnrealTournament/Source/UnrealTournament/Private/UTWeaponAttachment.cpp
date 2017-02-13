@@ -202,10 +202,10 @@ void AUTWeaponAttachment::PlayFiringEffects()
 	}
 
 	AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
-	bool bEffectsRelevant = (WS == NULL || WS->EffectIsRelevant(UTOwner, UTOwner->GetActorLocation(), true, UTOwner->IsLocallyControlled(), 50000.0f, 2000.0f));
+	bool bEffectsRelevant = (WS == NULL || WS->EffectIsRelevant(UTOwner, UTOwner->GetActorLocation(), true, Cast<APlayerController>(UTOwner->GetController()) != nullptr, 50000.0f, 2000.0f));
 	if (!bEffectsRelevant && !UTOwner->FlashLocation.IsZero())
 	{
-		bEffectsRelevant = WS->EffectIsRelevant(UTOwner, UTOwner->FlashLocation, true, UTOwner->IsLocallyControlled(), 50000.0f, 2000.0f);
+		bEffectsRelevant = WS->EffectIsRelevant(UTOwner, UTOwner->FlashLocation, true, Cast<APlayerController>(UTOwner->GetController()) != nullptr, 50000.0f, 2000.0f);
 		if (!bEffectsRelevant)
 		{
 			// do frustum check versus fire line; can't use simple vis to location because the fire line may be visible while both endpoints are not

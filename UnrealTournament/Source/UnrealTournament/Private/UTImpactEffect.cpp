@@ -52,7 +52,7 @@ bool AUTImpactEffect::SpawnEffect_Implementation(UWorld* World, const FTransform
 			if (bCheckInView)
 			{
 				AUTWorldSettings* WS = Cast<AUTWorldSettings>(World->GetWorldSettings());
-				bSpawn = (WS == NULL || WS->EffectIsRelevant(SpawnedBy, InTransform.GetLocation(), SpawnedBy != NULL, bForceForLocalPlayer && InstigatedBy != NULL && InstigatedBy->IsLocalPlayerController(), CullDistance, AlwaysSpawnDistance, false));
+				bSpawn = (WS == NULL || WS->EffectIsRelevant(SpawnedBy, InTransform.GetLocation(), SpawnedBy != NULL, bForceForLocalPlayer && Cast<APlayerController>(InstigatedBy), CullDistance, AlwaysSpawnDistance, false));
 			}
 			if (bSpawn)
 			{

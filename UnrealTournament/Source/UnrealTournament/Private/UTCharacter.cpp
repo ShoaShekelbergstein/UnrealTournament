@@ -1251,7 +1251,7 @@ void AUTCharacter::PlayTakeHitEffects_Implementation()
 		// check blood effects
 		if (!bPlayedArmorEffect && LastTakeHitInfo.Damage > 0 && (UTDmg == NULL || UTDmg.GetDefaultObject()->bCausesBlood)) 
 		{
-			bool bRecentlyRendered = GetWorld()->TimeSeconds - GetLastRenderTime() < 1.0f;
+			bool bRecentlyRendered = GetWorld()->TimeSeconds - GetMesh()->LastRenderTime < 0.05f;
 			// TODO: gore setting check
 			if (bRecentlyRendered && BloodEffects.Num() > 0)
 			{
@@ -3719,7 +3719,7 @@ void AUTCharacter::PlayFootstep(uint8 FootNum, bool bFirstPerson)
 		&& (GetLocalViewer() || (GetCachedScalabilityCVars().DetailMode != 0)))
 	{
 		AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
-		if (WS->EffectIsRelevant(this, GetActorLocation(), true, true, MaxParticleDist, 0.f, false))
+		if (WS->EffectIsRelevant(this, GetActorLocation(), true, Cast<APlayerController>(GetController()) != nullptr, MaxParticleDist, 0.f, false))
 		{
 			FVector EffectLocation = GetActorLocation();
 			EffectLocation.Z = EffectLocation.Z + 4.f - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
@@ -3790,10 +3790,14 @@ void AUTCharacter::Falling()
 void AUTCharacter::OnWallDodge_Implementation(const FVector& DodgeLocation, const FVector &DodgeDir)
 {
 	OnDodge_Implementation(DodgeLocation, DodgeDir);
-	if ((DodgeEffect != NULL) && GetCharacterMovement() && !GetCharacterMovement()->IsSwimming())
+	if ((DodgeEffect != NULL) && (GetWorld()->GetTimeSeconds() - GetMesh()->LastRenderTime < 0.05f) && GetCharacterMovement() && !GetCharacterMovement()->IsSwimming())
 	{
-		FVector EffectLocation = DodgeLocation - DodgeDir * GetCapsuleComponent()->GetUnscaledCapsuleRadius();
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DodgeEffect, DodgeLocation, DodgeDir.Rotation(), true);
+		AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
+		if (WS->EffectIsRelevant(this, GetActorLocation(), true, Cast<APlayerController>(GetController()) != nullptr, 5000.f, 0.f, false))
+		{
+			FVector EffectLocation = DodgeLocation - DodgeDir * GetCapsuleComponent()->GetUnscaledCapsuleRadius();
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DodgeEffect, DodgeLocation, DodgeDir.Rotation(), true);
+		}
 	}
 }
 
@@ -3849,7 +3853,7 @@ void AUTCharacter::PlayLandedEffect_Implementation()
 	UUTGameplayStatics::UTPlaySound(GetWorld(), CharacterData.GetDefaultObject()->LandingSound, this, SRT_None);
 	UParticleSystem* EffectToPlay = ((GetNetMode() != NM_DedicatedServer) && (FMath::Abs(GetCharacterMovement()->Velocity.Z)) > LandEffectSpeed) ? LandEffect : NULL;
 	AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
-	if ((EffectToPlay != nullptr) && WS->EffectIsRelevant(this, GetActorLocation(), true, true, 10000.f, 0.f, false))
+	if ((EffectToPlay != nullptr) && (GetWorld()->GetTimeSeconds() - GetMesh()->LastRenderTime < 0.05f) && WS->EffectIsRelevant(this, GetActorLocation(), true, Cast<APlayerController>(GetController()) != nullptr, 5000.f, 0.f, false))
 	{
 		FRotator EffectRot = GetCharacterMovement()->CurrentFloor.HitResult.Normal.Rotation();
 		EffectRot.Pitch -= 90.f;
@@ -3950,7 +3954,7 @@ void AUTCharacter::PlayWaterEntryEffect(const FVector& InWaterLoc, const FVector
 		&& (GetCachedScalabilityCVars().DetailMode != 0) )
 	{
 		AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
-		if (WS->EffectIsRelevant(this, GetActorLocation(), true, true, 10000.f, 0.f, false))
+		if (WS->EffectIsRelevant(this, GetActorLocation(), true, Cast<APlayerController>(GetController()) != nullptr, 10000.f, 0.f, false))
 		{
 			FVector EffectLocation = UTCharacterMovement->FindWaterLine(InWaterLoc, OutofWaterLoc);
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WaterEntryEffect, EffectLocation, GetActorRotation(), true);
