@@ -368,6 +368,6 @@ private:
 	FOnSuppressContextMenu OnSuppressContextMenu;
 
 protected:
-	bool HandleSupporessContextMenu();
+	bool HandleSuppressContextMenu();
 
 };

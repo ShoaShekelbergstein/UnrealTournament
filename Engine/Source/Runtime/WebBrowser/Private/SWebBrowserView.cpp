@@ -174,7 +174,7 @@ void SWebBrowserView::Construct(const FArguments& InArgs, const TSharedPtr<IWebB
 		BrowserWindow->OnShowPopup().AddSP(this, &SWebBrowserView::HandleShowPopup);
 		BrowserWindow->OnDismissPopup().AddSP(this, &SWebBrowserView::HandleDismissPopup);
 
-		BrowserWindow->OnSuppressContextMenu().BindSP(this, &SWebBrowserView::HandleSupporessContextMenu);
+		BrowserWindow->OnSuppressContextMenu().BindSP(this, &SWebBrowserView::HandleSuppressContextMenu);
 		OnSuppressContextMenu = InArgs._OnSuppressContextMenu;
 
 		BrowserViewport = MakeShareable(new FWebBrowserViewport(BrowserWindow));
@@ -573,7 +573,7 @@ void SWebBrowserView::HandleDismissPopup()
 	}
 }
 
-bool SWebBrowserView::HandleSupporessContextMenu()
+bool SWebBrowserView::HandleSuppressContextMenu()
 {
 	if (OnSuppressContextMenu.IsBound())
 	{
