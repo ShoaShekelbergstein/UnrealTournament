@@ -6,7 +6,7 @@
 #include "../Widgets/SUTChatWidget.h"
 #include "../Widgets/SUTFriendsWidget.h"
 #include "../SUWindowsStyle.h"
-#include "../SUTSTyle.h"
+#include "../SUTStyle.h"
 
 #if !UE_SERVER
 
