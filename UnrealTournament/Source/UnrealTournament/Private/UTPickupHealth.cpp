@@ -11,6 +11,17 @@ AUTPickupHealth::AUTPickupHealth(const FObjectInitializer& ObjectInitializer)
 	HealAmount = 25;
 	BaseDesireability = 0.4f;
 	PickupMessageString = NSLOCTEXT("PickupMessage", "HealthPickedUp", "Health +50");
+
+	TimerEffect = ObjectInitializer.CreateOptionalDefaultSubobject<UParticleSystemComponent>(this, TEXT("TimerEffect"));
+	if (TimerEffect != NULL)
+	{
+		TimerEffect->SetHiddenInGame(true);
+		TimerEffect->SetupAttachment(RootComponent);
+		TimerEffect->LDMaxDrawDistance = 1024.0f;
+		TimerEffect->RelativeLocation.Z = 40.0f;
+		TimerEffect->Mobility = EComponentMobility::Static;
+		TimerEffect->SetCastShadow(false);
+	}
 }
 
 void AUTPickupHealth::BeginPlay()
