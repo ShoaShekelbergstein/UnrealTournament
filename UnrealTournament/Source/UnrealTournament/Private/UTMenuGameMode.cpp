@@ -147,8 +147,8 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 			// make sure this doesn't get kept around
 			LastURL.RemoveOption(TEXT("tutorialmenu"));
 		}
-#endif
 		LP->UpdateCheck();
+#endif
 	}
 
 }
