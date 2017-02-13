@@ -23,7 +23,7 @@ AUTProj_ShockBall::AUTProj_ShockBall(const class FObjectInitializer& ObjectIniti
 void AUTProj_ShockBall::OnRep_Instigator()
 {
 	Super::OnRep_Instigator();
-	if (InstigatorController && OwnBallEffect && (GetCachedScalabilityCVars().DetailMode > 1) && Cast<AUTPlayerController>(InstigatorController) && InstigatorController->IsLocalController())
+	if (InstigatorController && OwnBallEffect && (GetCachedScalabilityCVars().DetailMode > 0) && Cast<AUTPlayerController>(InstigatorController) && InstigatorController->IsLocalController())
 	{
 		OwnBallPSC = UGameplayStatics::SpawnEmitterAttached(OwnBallEffect, RootComponent);
 	}
