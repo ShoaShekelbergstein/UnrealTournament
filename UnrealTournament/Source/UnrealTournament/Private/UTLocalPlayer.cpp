@@ -6803,7 +6803,7 @@ void UUTLocalPlayer::UpdateCheck()
 	}
 	else if (IsMenuGame())
 	{
-		if (true)//MCPPulledData.CurrentVersionNumber > LastLoadedVersionNumber)
+		if (MCPPulledData.CurrentVersionNumber > LastLoadedVersionNumber)
 		{
 			// Delete the web cache to insure the new version is loaded.  CEFBrowser should give you a LoadURLIgnoringCache but it doesn't
 			FString WebCacheIndex = FPaths::GameSavedDir() + TEXT("/webcache/index");
