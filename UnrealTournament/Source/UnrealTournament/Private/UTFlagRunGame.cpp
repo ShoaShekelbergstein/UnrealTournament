@@ -815,6 +815,11 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 					}
 				}
 			}
+
+			if (FUTAnalytics::IsAvailable())
+			{
+				FUTAnalytics::FireEvent_PlayerUsedRally(this, UTPlayerState);
+			}
 		}
 	}
 }
