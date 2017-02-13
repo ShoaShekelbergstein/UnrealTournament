@@ -258,6 +258,16 @@ void SUTInGameMenu::WriteQuitMidGameAnalytics()
 			}
 		}
 	}
+	
+	if (FUTAnalytics::IsAvailable())
+	{
+		AUTGameMode* UTGameMode = Cast<AUTGameMode>(PlayerOwner->GetWorld()->GetAuthGameMode());
+		if (UTGameMode && (UTGameMode->TutorialMask != 0))
+		{
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+			FUTAnalytics::FireEvent_UTTutorialQuit(UTPC, PlayerOwner->GetWorld()->GetMapName());
+		}
+	}
 }
 
 FReply SUTInGameMenu::OnReturnToMainMenu()

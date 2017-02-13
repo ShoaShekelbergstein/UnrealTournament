@@ -15,6 +15,7 @@
 #include "UTPickupMessage.h"
 #include "UTHUDWidget_WeaponCrosshair.h"
 #include "UTATypes.h"
+#include "UTAnalytics.h"
 
 AUTRallyPoint::AUTRallyPoint(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -435,6 +436,13 @@ void AUTRallyPoint::OnRallyChargingChanged()
 				RallyPoweredEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyPoweredEffectRed : RallyPoweredEffectBlue, GetActorLocation(), GetActorRotation());
 			}
 		}
+
+		AUTFlagRunGame* FlagRunGame = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
+		AUTCharacter* NearbyFC = FlagRunGame && FlagRunGame->ActiveFlag ? FlagRunGame->ActiveFlag->HoldingPawn : nullptr;
+		if ((Role == ROLE_Authority) && FlagRunGame && NearbyFC && (FUTAnalytics::IsAvailable()))
+		{
+			FUTAnalytics::FireEvent_RallyPointCompleteActivate(FlagRunGame, Cast<AUTPlayerState>(NearbyFC->PlayerState));
+		}
 	}
 	else
 	{
@@ -469,6 +477,12 @@ void AUTRallyPoint::OnRallyChargingChanged()
 					{
 						PC->UTClientPlaySound(FCTouchedSound);
 					}
+				}
+
+				//if this is a fresh attempt, send an analytic
+				if (FUTAnalytics::IsAvailable() && NearbyFC && FlagRunGame && (RallyReadyCountdown == RallyReadyDelay))
+				{
+					FUTAnalytics::FireEvent_RallyPointBeginActivate(FlagRunGame, Cast<AUTPlayerState>(NearbyFC->PlayerState));
 				}
 			}
 		}

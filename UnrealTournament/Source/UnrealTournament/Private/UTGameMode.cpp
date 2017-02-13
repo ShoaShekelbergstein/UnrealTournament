@@ -3760,6 +3760,11 @@ void AUTGameMode::PostLogin( APlayerController* NewPlayer )
 	{
 		UTGameState->LineUpHelper->OnPlayerChange();
 	}
+
+	if (UTPC && FUTAnalytics::IsAvailable() && (GetNetMode() == NM_DedicatedServer))
+	{
+		FUTAnalytics::FireEvent_UTServerPlayerJoin(this, UTPC->UTPlayerState);
+	}
 }
 
 void AUTGameMode::SwitchToCastingGuide(AUTPlayerController* NewCaster)
@@ -5070,6 +5075,11 @@ void AUTGameMode::AddInactivePlayer(APlayerState* PlayerState, APlayerController
 			if (InactivePlayerArray.Num() > 16)
 			{
 				InactivePlayerArray.RemoveAt(0, InactivePlayerArray.Num() - 16);
+			}
+
+			if (FUTAnalytics::IsAvailable() && (GetNetMode() == NM_DedicatedServer))
+			{
+				FUTAnalytics::FireEvent_UTServerPlayerDisconnect(this, Cast<AUTPlayerState>(PlayerState));
 			}
 		}
 	}

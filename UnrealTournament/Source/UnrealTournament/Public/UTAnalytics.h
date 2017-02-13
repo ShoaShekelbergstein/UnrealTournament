@@ -47,6 +47,8 @@ public:
 	static void FireEvent_UTServerWeaponKills(AUTGameMode* UTGM, TMap<TSubclassOf<UDamageType>, int32>* KillsArray);
 	static void FireEvent_UTStartRankedMatch(AUTGameMode* UTGM);
 	static void FireEvent_UTEndRankedMatch(AUTGameMode* UTGM);
+	static void FireEvent_UTServerPlayerJoin(AUTGameMode* UTGM, AUTPlayerState* UTPS);
+	static void FireEvent_UTServerPlayerDisconnect(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 
 	/* Client metrics */
 	static void FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& InParamArray);
@@ -55,10 +57,15 @@ public:
 	static void FireEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, FString TutorialName, int32 InstructionID, FString OptionalObjectName = FString());
 	static void FireEvent_UTTutorialStarted(AUTPlayerController* UTPC, FString TutorialMap);
 	static void FireEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap);
+	static void FireEvent_UTTutorialQuit(AUTPlayerController* UTPC, FString TutorialMap);
 	static void FireEvent_UTCancelOnboarding(AUTPlayerController* UTPC);
 
 	/* GameMode Metrics*/
 	static void FireEvent_FlagRunRoundEnd(class AUTFlagRunGame* UTGame, bool bIsDefenseRoundWin, bool bIsFinalRound);
+	static void FireEvent_PlayerUsedRally(AUTGameMode* UTGM, AUTPlayerState* UTPS);
+	static void FireEvent_RallyPointBeginActivate(AUTGameMode* UTGM, AUTPlayerState* UTPS);
+	static void FireEvent_RallyPointCompleteActivate(AUTGameMode* UTGM, AUTPlayerState* UTPS);
+
 
 	//Param name generalizer
 	static FString GetGenericParamName(EGenericAnalyticParam::Type InGenericParam);
@@ -82,6 +89,7 @@ private:
 	static FString GetMapName(AUTGameMode* UTGM);
 	static FString GetGameModeName(AUTPlayerController* UTPC);
 	static FString GetEpicAccountName(AUTPlayerController* UTPC);
+	static FString GetEpicAccountName(AUTPlayerState* UTPS);
 	static FString GetBuildType();
 
 	enum class EAccountSource

@@ -120,6 +120,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 
 	AddGenericParamName(PlayerGUID);
 	AddGenericParamName(PlayerList);
+	AddGenericParamName(InactivePlayerList);
 	AddGenericParamName(ServerInstanceGUID);
 	AddGenericParamName(ServerMatchGUID);
 	AddGenericParamName(ContextGUID);
@@ -162,6 +163,9 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(MaxRequiredTextureSize);
 
 	AddGenericParamName(FlagRunRoundEnd);
+	AddGenericParamName(PlayerUsedRally);
+	AddGenericParamName(RallyPointBeginActivate);
+	AddGenericParamName(RallyPointCompleteActivate);
 	AddGenericParamName(OffenseKills);
 	AddGenericParamName(DefenseKills);
 	AddGenericParamName(DefenseLivesRemaining);
@@ -192,6 +196,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 
 	AddGenericParamName(UTTutorialStarted);
 	AddGenericParamName(UTTutorialCompleted);
+	AddGenericParamName(UTTutorialQuit);
 	AddGenericParamName(UTCancelOnboarding);
 	AddGenericParamName(TutorialMap);
 	AddGenericParamName(TokensCollected);
@@ -201,6 +206,9 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(PickupsTutorialCompleted);
 
 	AddGenericParamName(RealServerFPS);
+	
+	AddGenericParamName(UTServerPlayerJoin);
+	AddGenericParamName(UTServerPlayerDisconnect);
 }
 
 void FUTAnalytics::Shutdown()
@@ -370,6 +378,7 @@ void FUTAnalytics::AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalytic
 	if (UTGM && UTGM->GetWorld())
 	{
 		TMap<FString,int32> PlayerGUIDs;
+		TArray<FString> InactivePlayerGUIDS;
 
 		for (FConstControllerIterator It = UTGM->GetWorld()->GetControllerIterator(); It; ++It)
 		{
@@ -379,9 +388,17 @@ void FUTAnalytics::AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalytic
 				PlayerGUIDs.Add(GetEpicAccountName(UTPC),UTPC->GetTeamNum());
 			}
 		}
-
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerList), PlayerGUIDs));
-
+	
+		for (APlayerState* PS : UTGM->InactivePlayerArray)
+		{
+			AUTPlayerState* UTPS = Cast<AUTPlayerState>(PS);
+			if (UTPS)
+			{
+				InactivePlayerGUIDS.Add(GetEpicAccountName(UTPS));
+			}
+		}
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::InactivePlayerList), InactivePlayerGUIDS));
 	}
 }
 
@@ -494,6 +511,23 @@ FString FUTAnalytics::GetEpicAccountName(AUTPlayerController* UTPC)
 		if (UTGS)
 		{
 			TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*UTPC->UTPlayerState->StatsID));
+			FText EpicAccountName = UTGS->GetEpicAccountNameForAccount(UserId);
+
+			return EpicAccountName.ToString();
+		}
+	}
+
+	return FString();
+}
+
+FString FUTAnalytics::GetEpicAccountName(AUTPlayerState* UTPS)
+{
+	if (UTPS->GetWorld() && UTPS)
+	{
+		AUTGameState* UTGS = UTPS->GetWorld()->GetGameState<AUTGameState>();
+		if (UTGS)
+		{
+			TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*UTPS->StatsID));
 			FText EpicAccountName = UTGS->GetEpicAccountNameForAccount(UserId);
 
 			return EpicAccountName.ToString();
@@ -907,6 +941,92 @@ void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDef
 	}
 }
 
+/*
+* @EventName PlayerUsedRally
+*
+* @Trigger Fires whenever a player uses the rally to move to the rally point
+*
+* @Type Sent by the Server
+*
+* @EventParam PlayerGUID FString account name of the player that used the rally
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_PlayerUsedRally(AUTGameMode* UTGM, AUTPlayerState* UTPS)
+{
+	if (UTGM && UTPS)
+	{
+		const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+		if (AnalyticsProvider.IsValid())
+		{
+			TArray<FAnalyticsEventAttribute> ParamArray;
+
+			SetMatchInitialParameters(UTGM, ParamArray, true);
+
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(UTPS)));
+
+			AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::PlayerUsedRally), ParamArray);
+		}
+	}
+}
+
+/*
+* @EventName RallyPointBeginActivate
+*
+* @Trigger Fires whenever a player begins charging a rally point
+*
+* @Type Sent by the Server
+*
+* @EventParam PlayerGUID FString account name of the player that is charging the rally
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_RallyPointBeginActivate(AUTGameMode* UTGM, AUTPlayerState* UTPS)
+{
+	if (UTGM && UTPS)
+	{
+		const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+		if (AnalyticsProvider.IsValid())
+		{
+			TArray<FAnalyticsEventAttribute> ParamArray;
+
+			SetMatchInitialParameters(UTGM, ParamArray, true);
+
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(UTPS)));
+
+			AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::RallyPointBeginActivate), ParamArray);
+		}
+	}
+}
+
+/*
+* @EventName RallyPointCompleteActivate
+*
+* @Trigger Fires whenever a player finishes charging a rally and it becomes powered
+*
+* @Type Sent by the Server
+*
+* @EventParam PlayerGUID FString account name of the player that completed the rally
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_RallyPointCompleteActivate(AUTGameMode* UTGM, AUTPlayerState* UTPS)
+{
+	if (UTGM && UTPS)
+	{
+		const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+		if (AnalyticsProvider.IsValid())
+		{
+			TArray<FAnalyticsEventAttribute> ParamArray;
+
+			SetMatchInitialParameters(UTGM, ParamArray, true);
+
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(UTPS)));
+
+			AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::RallyPointCompleteActivate), ParamArray);
+		}
+	}
+}
 
 /*
 * @EventName UTEntermatch
@@ -1082,6 +1202,34 @@ void FUTAnalytics::FireEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FStr
 }
 
 /*
+* @EventName UTTutorialQuit
+*
+* @Trigger Fires when a client quits a tutorial
+*
+* @Type Sent by the Client
+*
+* @EventParam TutorialMap FString Name of the tutorial map.
+* @EventParam GameTime float Time
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTTutorialQuit(AUTPlayerController* UTPC, FString TutorialMap)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetClientInitialParameters(UTPC, ParamArray, true);
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TutorialMap), TutorialMap));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MatchTime), GetMatchTime(UTPC)));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTTutorialQuit), ParamArray);
+	}
+}
+
+/*
 * @EventName UTCancelOnboarding
 *
 * @Trigger Fires when a client is forced into onboarding, and cancels out of the onboarding process
@@ -1105,6 +1253,15 @@ void FUTAnalytics::FireEvent_UTCancelOnboarding(AUTPlayerController* UTPC)
 	}
 }
 
+/*
+* @EventName UTStartRankedMatch
+*
+* @Trigger Fires when a server beings a ranked match
+*
+* @Type Sent by the Server
+*
+* @Comments
+*/
 void FUTAnalytics::FireEvent_UTStartRankedMatch(AUTGameMode* UTGM)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
@@ -1118,6 +1275,15 @@ void FUTAnalytics::FireEvent_UTStartRankedMatch(AUTGameMode* UTGM)
 	}
 }
 
+/*
+* @EventName UTEndRankedMatch
+*
+* @Trigger Fires when a server ends a ranked match
+*
+* @Type Sent by the Server
+*
+* @Comments
+*/
 void FUTAnalytics::FireEvent_UTEndRankedMatch(AUTGameMode* UTGM)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
@@ -1128,5 +1294,57 @@ void FUTAnalytics::FireEvent_UTEndRankedMatch(AUTGameMode* UTGM)
 		SetMatchInitialParameters(UTGM, ParamArray, false, true);
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTEndRankedMatch), ParamArray);
+	}
+}
+
+/*
+* @EventName UTServerPlayerJoin
+*
+* @Trigger Fires when the server has a player connect
+*
+* @Type Sent by the Server
+*
+* @EventParam PlayerGUID string GUID to identify the player
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTServerPlayerJoin(AUTGameMode* UTGM, AUTPlayerState* UTPS)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld() && UTPS)
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetMatchInitialParameters(UTGM, ParamArray, false, true);
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(UTPS)));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTServerPlayerJoin), ParamArray);
+	}
+}
+
+/*
+* @EventName UTServerPlayerDisconnect
+*
+* @Trigger Fires when the server has a player disconnect
+*
+* @Type Sent by the Server
+*
+* @EventParam PlayerGUID string GUID to identify the player
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTServerPlayerDisconnect(AUTGameMode* UTGM, AUTPlayerState* UTPS)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld() && UTPS)
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetMatchInitialParameters(UTGM, ParamArray, false, true);
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(UTPS)));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTServerPlayerDisconnect), ParamArray);
 	}
 }

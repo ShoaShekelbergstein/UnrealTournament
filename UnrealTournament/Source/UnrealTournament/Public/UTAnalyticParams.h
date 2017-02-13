@@ -4,6 +4,7 @@ namespace EGenericAnalyticParam
 	{
 		PlayerGUID,
 		PlayerList,
+		InactivePlayerList,
 		ServerInstanceGUID,
 		ServerMatchGUID,
 		ContextGUID,
@@ -47,6 +48,9 @@ namespace EGenericAnalyticParam
 		QuickMatch,
 
 		FlagRunRoundEnd,
+		PlayerUsedRally,
+		RallyPointBeginActivate,
+		RallyPointCompleteActivate,
 		OffenseKills,
 		DefenseKills,
 		DefenseLivesRemaining,
@@ -77,6 +81,7 @@ namespace EGenericAnalyticParam
 
 		UTTutorialStarted,
 		UTTutorialCompleted,
+		UTTutorialQuit,
 		UTCancelOnboarding,
 		TutorialMap,
 		TokensCollected,
@@ -84,7 +89,11 @@ namespace EGenericAnalyticParam
 		MovementTutorialCompleted,
 		WeaponTutorialCompleted,
 		PickupsTutorialCompleted,
+		
 		RealServerFPS,
+
+		UTServerPlayerJoin,
+		UTServerPlayerDisconnect,
 
 		NUM_GENERIC_PARAMS
 	};
