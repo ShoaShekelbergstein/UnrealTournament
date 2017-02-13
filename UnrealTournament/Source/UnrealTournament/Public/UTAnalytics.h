@@ -59,6 +59,7 @@ public:
 	static void FireEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap);
 	static void FireEvent_UTTutorialQuit(AUTPlayerController* UTPC, FString TutorialMap);
 	static void FireEvent_UTCancelOnboarding(AUTPlayerController* UTPC);
+	static void FireEvent_UTGraphicsSettings(AUTPlayerController* UTPC);
 
 	/* GameMode Metrics*/
 	static void FireEvent_FlagRunRoundEnd(class AUTFlagRunGame* UTGame, bool bIsDefenseRoundWin, bool bIsFinalRound);

@@ -95,6 +95,25 @@ namespace EGenericAnalyticParam
 		UTServerPlayerJoin,
 		UTServerPlayerDisconnect,
 
+		UTGraphicsSettings,
+		AAMode,
+		ScreenPercentage,
+		IsHRTFEnabled,
+		IsKeyboardLightingEnabled,
+		ScreenResolution,
+		DesktopResolution,
+		FullscreenMode,
+		IsVSyncEnabled,
+		FrameRateLimit,
+		OverallScalabilityLevel,
+		ViewDistanceQuality,
+		ShadowQuality,
+		AntiAliasingQuality,
+		TextureQuality,
+		VisualEffectQuality,
+		PostProcessingQuality,
+		FoliageQuality,
+
 		NUM_GENERIC_PARAMS
 	};
 }

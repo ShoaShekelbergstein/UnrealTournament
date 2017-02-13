@@ -1665,6 +1665,8 @@ void UUTLocalPlayer::OnReadProfileComplete(bool bWasSuccessful, const FUniqueNet
 				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
 
 				FUTAnalytics::GetProvider().RecordEvent(TEXT("CloudProfileLoaded"), ParamArray);
+				
+				FUTAnalytics::FireEvent_UTGraphicsSettings(Cast<AUTPlayerController>(PlayerController));
 			}
 
 			FString CmdLineSwitch = TEXT("");
