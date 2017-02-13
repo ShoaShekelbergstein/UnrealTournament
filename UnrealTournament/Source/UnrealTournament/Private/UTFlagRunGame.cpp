@@ -105,7 +105,6 @@ void AUTFlagRunGame::InitGame(const FString& MapName, const FString& Options, FS
 		OffenseKillsNeededForPowerUp = 1000;
 		DefenseKillsNeededForPowerUp = 1000;
 	}
-	GameSession->MaxPlayers = DefaultMaxPlayers;
 
 	if (bDevServer)
 	{
