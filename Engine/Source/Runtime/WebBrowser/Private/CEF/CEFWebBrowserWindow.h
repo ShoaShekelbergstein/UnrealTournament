@@ -236,6 +236,11 @@ public:
 		return DismissAllDialogsDelegate;
 	}
 
+	virtual FOnSuppressContextMenu& OnSuppressContextMenu() override
+	{
+		return SuppressContextMenuDelgate;
+	}
+
 private:
 
 	/**
@@ -526,6 +531,10 @@ private:
 
 	/** Delegate for dismissing all dialogs. */
 	FOnDismissAllDialogs DismissAllDialogsDelegate;
+
+	/** Delegate for suppressing context menu */
+	FOnSuppressContextMenu SuppressContextMenuDelgate;
+
 
 	/** Tracks the current mouse cursor */
 	EMouseCursor::Type Cursor;

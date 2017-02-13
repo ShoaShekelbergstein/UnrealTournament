@@ -101,6 +101,10 @@ protected:
 	bool bShowWarning;
 
 	void WarningResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
+	bool DisableContextMenu()
+	{
+		return true;
+	}
 };
 
 #endif
