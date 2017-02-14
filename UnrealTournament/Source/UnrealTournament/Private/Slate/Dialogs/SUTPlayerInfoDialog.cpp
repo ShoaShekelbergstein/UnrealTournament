@@ -794,6 +794,17 @@ void SUTPlayerInfoDialog::CreatePlayerTab()
 {
 	// Add code here to grab a different URL based on the epicapp id.  
 	FString PlayerInfoURL = TEXT("https://epicgames-gamedev.ol.epicgames.net/unrealtournament/playerCard?playerId=");
+
+	const IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+
+	if (OnlineSub != nullptr)
+	{
+		EOnlineEnvironment::Type Env = OnlineSub->GetOnlineEnvironment();
+		if (Env == EOnlineEnvironment::Production)
+		{
+			PlayerInfoURL = TEXT("https://www.epicgames.com/unrealtournament/playerCard?playerId=");
+		}
+	}
 		
 	PlayerInfoURL += TargetUniqueId;
 												   		
