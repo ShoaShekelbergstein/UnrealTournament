@@ -677,7 +677,10 @@ FReply SUTGameSetupDialog::OnMapClick(int32 MapIndex)
 	if (MapPlayList.IsValidIndex(MapIndex) && MapPlayList[MapIndex].MapInfo.IsValid() && !MapPlayList[MapIndex].MapInfo->bHasRights)
 	{
 		DesiredMapIndex = MapIndex;
-		MapPlayList[MapIndex].Button->UnPressed();
+		if (MapPlayList[MapIndex].Button.IsValid())
+		{
+			MapPlayList[MapIndex].Button->UnPressed();
+		}
 
 		PlayerOwner->ShowMessage(
 			NSLOCTEXT("SUTGameSetupDialog", "RightsTitle", "Epic Store"), 
