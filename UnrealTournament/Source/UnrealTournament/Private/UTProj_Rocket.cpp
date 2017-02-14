@@ -35,14 +35,15 @@ void AUTProj_Rocket::Tick(float DeltaTime)
 
 	if (TargetActor != NULL)
 	{
-		FVector WantedDir = (TargetActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+		FVector WantedDir = TargetActor->GetActorLocation() - GetActorLocation();
 		float Dist = WantedDir.Size();
-		if (Dist < MinSeekDistance)
+		if (Dist < FMath::Max(1.f, MinSeekDistance))
 		{
 			TargetActor = nullptr;
 		}
 		else
 		{
+			WantedDir = WantedDir / Dist;
 			if (bLeadTarget && (Dist < MaxLeadDistance))
 			{
 				WantedDir += TargetActor->GetVelocity() * Dist / ProjectileMovement->MaxSpeed;
