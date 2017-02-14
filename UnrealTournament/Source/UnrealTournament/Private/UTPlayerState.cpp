@@ -820,7 +820,12 @@ void AUTPlayerState::Tick(float DeltaTime)
 					AUTPlayerState* FC = GS->GetFlagHolder(Team->TeamIndex);
 					if (FC)
 					{
-						FC->AnnounceStatus(StatusMessage::RallyNow);
+						FC->GetCharacterVoiceClass();
+						int32 Switch = FC->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyNow);
+						if (Switch >= 0)
+						{
+							MyPC->ClientReceiveLocalizedMessage(FC->CharacterVoice, Switch, FC, this, NULL);
+						}
 					}
 				}
 			}
