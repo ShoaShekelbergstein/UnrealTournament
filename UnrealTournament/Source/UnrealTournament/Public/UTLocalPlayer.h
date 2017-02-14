@@ -1241,7 +1241,7 @@ public:
 
 	virtual FText GetMenuCommandTooltipText(FName MenuCommand) const;
 
-	UPROPERTY(config)
+	UPROPERTY()
 	TArray<FTutorialData> TutorialData;
 
 	UFUNCTION(BlueprintCallable, Category=Tutorial)
