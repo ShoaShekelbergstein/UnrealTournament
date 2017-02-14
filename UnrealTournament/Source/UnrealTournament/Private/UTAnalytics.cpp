@@ -11,6 +11,7 @@
 
 #include "UTFlagRunGame.h"
 #include "UTFlagRunGameState.h"
+#include "UTLobbyMatchInfo.h"
 
 #if WITH_PROFILE
 #include "GameServiceMcp.h"
@@ -234,6 +235,17 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(VisualEffectQuality);
 	AddGenericParamName(PostProcessingQuality);
 	AddGenericParamName(FoliageQuality);
+
+	AddGenericParamName(ServerName);
+	AddGenericParamName(IsCustomRuleset);
+	AddGenericParamName(GameOptions);
+	AddGenericParamName(RequiredPackages);
+	AddGenericParamName(CurrentGameState);
+	AddGenericParamName(IsSpectator);
+	AddGenericParamName(UTHubBootUp);
+	AddGenericParamName(UTHubNewInstance);
+	AddGenericParamName(UTHubPlayerJoinLobby);
+	AddGenericParamName(UTHubPlayerEnterInstance);
 }
 
 void FUTAnalytics::Shutdown()
@@ -1483,5 +1495,160 @@ void FUTAnalytics::FireEvent_UTServerPlayerDisconnect(AUTGameMode* UTGM, AUTPlay
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(UTPS)));
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTServerPlayerDisconnect), ParamArray);
+	}
+}
+
+/*
+* @EventName UTHubBootUp
+*
+* @Trigger Fires when a hub server is started
+*
+* @Type Sent by the Server
+*
+* @EventParam ServerName string Name of the server
+* @EventParam ServerInstanceGUID string Unique GUID to identify this hub
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTHubBootUp(AUTBaseGameMode* UTGM)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && UTGM)
+	{
+		AUTLobbyGameState* UTGS = Cast<AUTLobbyGameState>(UTGM->GameState);
+		if (UTGS)
+		{
+			TArray<FAnalyticsEventAttribute> ParamArray;
+
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerName), UTGS->ServerName));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGS->HubGuid));
+
+			AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTHubBootUp), ParamArray);
+		}
+	}
+}
+
+/*
+* @EventName UTHubNewInstance
+*
+* @Trigger Fires when a hub server is started
+*
+* @Type Sent by the Server
+*
+* @EventParam ServerName string Name of the HUB (not the instance)
+* @EventParam ServerInstanceGUID string Unique GUID to identify this hub
+* @EventParam GameModeName string Name of the game mode for this instance
+* @EventParam MapName string Name of the map for this instance
+* @EventParam IsCustomRuleset bool Is this instance using a custom ruleset?
+* @EventParam GameOptions string Full Game Options string
+* @EventParam RequiredPackages string List of all required packages
+* @EventParam CurrentGameState string State of the game. IE: In Progress, Loading, Etc.
+* @EventParam PlayerGUID string Player GUID of the player that started this Instance in the HUB.
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTHubNewInstance(AUTLobbyMatchInfo* NewGameInfo, AUTPlayerState* Host)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && NewGameInfo && NewGameInfo->CurrentRuleset.IsValid() && Host)
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		AUTLobbyGameState* GameState = Host->GetWorld()->GetGameState<AUTLobbyGameState>();
+		if (GameState)
+		{
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerName), GameState->ServerName));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), GameState->HubGuid));
+		}
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), NewGameInfo->CurrentRuleset->Title));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MapName), NewGameInfo->InitialMap));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsCustomRuleset), (int32)(NewGameInfo->CurrentRuleset->bCustomRuleset)));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameOptions), NewGameInfo->CurrentRuleset->GameOptions));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RequiredPackages), NewGameInfo->CurrentRuleset->RequiredPackages));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::CurrentGameState), NewGameInfo->CurrentState.ToString()));
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(Host)));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTHubNewInstance), ParamArray);
+	}
+}
+
+/*
+* @EventName UTHubPlayerJoinLobby
+*
+* @Trigger Fires when a player joins the HUB
+*
+* @Type Sent by the Server
+*
+* @EventParam ServerName string Name of the server
+* @EventParam ServerInstanceGUID string Unique GUID to identify this hub
+* @EventParam PlayerGUID string Player GUID of the player that joined the HUB
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTHubPlayerJoinLobby(AUTBaseGameMode* UTGM, AUTPlayerState* UTPS)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && UTGM)
+	{
+		AUTLobbyGameState* UTGS = Cast<AUTLobbyGameState>(UTGM->GameState);
+		if (UTGS)
+		{
+			TArray<FAnalyticsEventAttribute> ParamArray;
+
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerName), UTGS->ServerName));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGS->HubGuid));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(UTPS)));
+
+			AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTHubPlayerJoinLobby), ParamArray);
+		}
+	}
+}
+
+/*
+* @EventName UTHubPlayerEnterInstance
+*
+* @Trigger Fires when a player enters a game instance through the HUB
+*
+* @Type Sent by the Server
+*
+* @EventParam ServerName string Name of the HUB (Not the instance)
+* @EventParam ServerInstanceGUID string Unique GUID to identify this hub
+* @EventParam GameModeName string Name of the game mode for this instance
+* @EventParam MapName string Name of the map for this instance
+* @EventParam IsCustomRuleset bool Is this instance using a custom ruleset?
+* @EventParam GameOptions string Full Game Options string
+* @EventParam RequiredPackages string List of all required packages
+* @EventParam CurrentGameState string State of the game. IE: In Progress, Loading, Etc.
+* @EventParam PlayerGUID string Player GUID of the player that started this Instance in the HUB.
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTHubPlayerEnterInstance(AUTLobbyMatchInfo* GameInfo, AUTPlayerState* UTPS, bool bAsSpectator)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && GameInfo && GameInfo->CurrentRuleset.IsValid() && UTPS)
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		AUTLobbyGameState* GameState = UTPS->GetWorld()->GetGameState<AUTLobbyGameState>();
+		if (GameState)
+		{
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerName), GameState->ServerName));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), GameState->HubGuid));
+		}
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), GameInfo->CurrentRuleset->Title));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MapName), GameInfo->InitialMap));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsCustomRuleset), (int32)(GameInfo->CurrentRuleset->bCustomRuleset)));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameOptions), GameInfo->CurrentRuleset->GameOptions));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RequiredPackages), GameInfo->CurrentRuleset->RequiredPackages));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::CurrentGameState), GameInfo->CurrentState.ToString()));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsSpectator), bAsSpectator));
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(UTPS)));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTHubPlayerEnterInstance), ParamArray);
 	}
 }

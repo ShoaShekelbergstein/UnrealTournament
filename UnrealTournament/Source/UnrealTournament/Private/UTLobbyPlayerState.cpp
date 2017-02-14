@@ -11,6 +11,7 @@
 #include "BlueprintContextLibrary.h"
 #include "PartyContext.h"
 #include "UTLobbyMatchInfo.h"
+#include "UTAnalytics.h"
 
 AUTLobbyPlayerState::AUTLobbyPlayerState(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -93,6 +94,12 @@ void AUTLobbyPlayerState::ServerJoinMatch_Implementation(AUTLobbyMatchInfo* Matc
 			{
 				GameState->RemoveFromAMatch(this);
 			}
+
+			if (FUTAnalytics::IsAvailable())
+			{
+				FUTAnalytics::FireEvent_UTHubPlayerEnterInstance(MatchToJoin, this, bAsSpectator);
+			}
+
 			GameState->JoinMatch(MatchToJoin, this, bAsSpectator);
 		}
 	}

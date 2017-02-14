@@ -10,6 +10,7 @@
 #include "UTReplicatedMapInfo.h"
 #include "UTReplicatedGameRuleset.h"
 #include "UTServerBeaconLobbyClient.h"
+#include "UTAnalytics.h"
 
 void AUTLobbyMatchInfo::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
@@ -690,6 +691,11 @@ void AUTLobbyMatchInfo::ServerSetRules_Implementation(const FString&RulesetTag, 
 			AUTBaseGameMode* DefaultGameMode = CurrentRuleset->GetDefaultGameModeObject();
 			if (DefaultGameMode == nullptr) DefaultGameMode = AUTBaseGameMode::StaticClass()->GetDefaultObject<AUTBaseGameMode>();
 			RankCheck = OwnerPlayerState->GetRankCheck(DefaultGameMode);
+
+			if (FUTAnalytics::IsAvailable())
+			{
+				FUTAnalytics::FireEvent_UTHubNewInstance(this, OwnerPlayerState.Get());
+			}
 		}
 	}
 }

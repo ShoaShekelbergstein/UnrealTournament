@@ -122,6 +122,17 @@ namespace EGenericAnalyticParam
 		PostProcessingQuality,
 		FoliageQuality,
 
+		ServerName,
+		IsCustomRuleset,
+		GameOptions,
+		RequiredPackages,
+		CurrentGameState,
+		IsSpectator,
+		UTHubBootUp,
+		UTHubNewInstance,
+		UTHubPlayerJoinLobby,
+		UTHubPlayerEnterInstance,
+
 		NUM_GENERIC_PARAMS
 	};
 }

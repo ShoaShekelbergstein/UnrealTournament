@@ -52,6 +52,11 @@ public:
 	static void FireEvent_UTServerPlayerJoin(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	static void FireEvent_UTServerPlayerDisconnect(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	
+	static void FireEvent_UTHubBootUp(AUTBaseGameMode* UTGM);
+	static void FireEvent_UTHubNewInstance(class AUTLobbyMatchInfo* NewGameInfo, AUTPlayerState* Host);
+	static void FireEvent_UTHubPlayerJoinLobby(AUTBaseGameMode* UTGM, AUTPlayerState* UTPS);
+	static void FireEvent_UTHubPlayerEnterInstance(class AUTLobbyMatchInfo* GameInfo, AUTPlayerState* UTPS, bool bAsSpectator);
+
 		/* Client metrics */
 	static void FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& InParamArray);
 	static void FireEvent_EnterMatch(AUTPlayerController* UTPC, FString EnterMethod);

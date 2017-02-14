@@ -303,3 +303,13 @@ bool AUTLobbyPC::ForwardDirectSay(AUTPlayerState* SenderPlayerState, FString& Me
 
 	return false;
 }
+
+void AUTLobbyPC::ServerReceiveStatsID_Implementation(const FString& NewStatsID)
+{
+	Super::ServerReceiveStatsID_Implementation(NewStatsID);
+
+	if (FUTAnalytics::IsAvailable() && GetWorld() && (GetNetMode() == NM_DedicatedServer))
+	{
+		FUTAnalytics::FireEvent_UTHubPlayerJoinLobby(GetWorld()->GetAuthGameMode<AUTBaseGameMode>(), UTPlayerState);
+	}
+}

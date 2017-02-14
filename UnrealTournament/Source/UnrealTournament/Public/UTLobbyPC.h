@@ -78,6 +78,10 @@ protected:
 	int32 RedirectCount;
 
 	virtual bool ForwardDirectSay(AUTPlayerState* SenderPlayerState, FString& Message);
+
+public:
+	virtual void ServerReceiveStatsID_Implementation(const FString& NewStatsID) override;
+
 public:
 	
 	bool bReceivedServerContentList;
