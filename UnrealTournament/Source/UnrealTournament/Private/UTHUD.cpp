@@ -712,7 +712,7 @@ void AUTHUD::PostRender()
 	Super::PostRender();
 
 	//if (JoeDebugTimer > 0)
-	if ( FParse::Param(FCommandLine::Get(), TEXT("joedebug")))
+	if ( UTPlayerOwner && UTPlayerOwner->PlayerState && FParse::Param(FCommandLine::Get(), TEXT("joedebug")))
 	{
 		float YPos = Canvas->ClipY * 0.5;
 		float HScale = Canvas->ClipY / 1080.0f;
