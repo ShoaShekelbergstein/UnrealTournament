@@ -2577,19 +2577,6 @@ FString UUTLocalPlayer::GetHatPath() const
 	return (CurrentProfileSettings != NULL) ? CurrentProfileSettings->HatPath : GetDefaultURLOption(TEXT("Hat"));
 }
 
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName HatChanged
-*
-* @Trigger Sent when a player changes their hat cosmetic
-*
-* @Type Sent by the Client
-*
-* @EventParam PlayerID Unique ID of the player
-* @EventParam HatPath string New hat used
-*
-* @Comments
-*/
 void UUTLocalPlayer::SetHatPath(const FString& NewHatPath)
 {
 	if (CurrentProfileSettings != NULL)
@@ -2602,15 +2589,6 @@ void UUTLocalPlayer::SetHatPath(const FString& NewHatPath)
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
 		if (PS != NULL)
 		{
-			if (FUTAnalytics::IsAvailable())
-			{
-				TArray<FAnalyticsEventAttribute> ParamArray;
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("HatPath"), NewHatPath));
-				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
-
-				FUTAnalytics::GetProvider().RecordEvent( TEXT("HatChanged"), ParamArray );
-			}
 			PS->ServerReceiveHatClass(NewHatPath);
 		}
 	}
@@ -2621,19 +2599,6 @@ FString UUTLocalPlayer::GetLeaderHatPath() const
 	return (CurrentProfileSettings != NULL) ? CurrentProfileSettings->LeaderHatPath : GetDefaultURLOption(TEXT("LeaderHat"));
 }
 
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName LeaderHatChanged
-*
-* @Trigger Sent when a player changes their leader hat
-*
-* @Type Sent by the Client
-*
-* @EventParam PlayerID Unique ID of the player
-* @EventParam LeaderHatPath string New Leader hat used
-*
-* @Comments
-*/
 void UUTLocalPlayer::SetLeaderHatPath(const FString& NewLeaderHatPath)
 {
 	if (CurrentProfileSettings != NULL)
@@ -2646,15 +2611,6 @@ void UUTLocalPlayer::SetLeaderHatPath(const FString& NewLeaderHatPath)
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
 		if (PS != NULL)
 		{
-			if (FUTAnalytics::IsAvailable())
-			{
-				TArray<FAnalyticsEventAttribute> ParamArray;
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("LeaderHatPath"), NewLeaderHatPath));
-				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
-
-				FUTAnalytics::GetProvider().RecordEvent( TEXT("LeaderHatChanged"), ParamArray );
-			}
 			PS->ServerReceiveLeaderHatClass(NewLeaderHatPath);
 		}
 	}
@@ -2666,19 +2622,6 @@ FString UUTLocalPlayer::GetEyewearPath() const
 }
 
 
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName EyewearChanged
-*
-* @Trigger Sent when a player changes their eyewear
-*
-* @Type Sent by the Client
-*
-* @EventParam PlayerID Unique ID of the player
-* @EventParam EyewearPath string New eye wear used
-*
-* @Comments
-*/
 void UUTLocalPlayer::SetEyewearPath(const FString& NewEyewearPath)
 {
 	if (CurrentProfileSettings != NULL)
@@ -2691,16 +2634,6 @@ void UUTLocalPlayer::SetEyewearPath(const FString& NewEyewearPath)
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
 		if (PS != NULL)
 		{
-			if (FUTAnalytics::IsAvailable())
-			{
-				TArray<FAnalyticsEventAttribute> ParamArray;
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("EyewearPath"), NewEyewearPath));
-				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
-
-				FUTAnalytics::GetProvider().RecordEvent( TEXT("EyewearChanged"), ParamArray );
-			}
-
 			PS->ServerReceiveEyewearClass(NewEyewearPath);
 		}
 	}
@@ -2711,32 +2644,9 @@ FString UUTLocalPlayer::GetCharacterPath() const
 	return (CurrentProfileSettings != NULL) ? CurrentProfileSettings->CharacterPath : GetDefaultURLOption(TEXT("Character"));
 }
 
-
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName CharacterChanged
-*
-* @Trigger Sent when a player changes their character
-*
-* @Type Sent by the Client
-*
-* @EventParam PlayerID Unique ID of the player
-* @EventParam CharacterPath string New Character Used
-*
-* @Comments
-*/
 void UUTLocalPlayer::SetCharacterPath(const FString& NewCharacterPath)
 {
 	AUTPlayerState* PS = Cast<AUTPlayerState>((PlayerController != NULL) ? PlayerController->PlayerState : NULL);
-	if (PS != NULL && FUTAnalytics::IsAvailable())
-	{
-		TArray<FAnalyticsEventAttribute> ParamArray;
-		ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
-		ParamArray.Add(FAnalyticsEventAttribute(TEXT("CharacterPath"), NewCharacterPath));
-		FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
-
-		FUTAnalytics::GetProvider().RecordEvent( TEXT("CharacterChanged"), ParamArray );
-	}
 	SetDefaultURLOption(TEXT("Character"), NewCharacterPath);
 	if (CurrentProfileSettings != NULL)
 	{

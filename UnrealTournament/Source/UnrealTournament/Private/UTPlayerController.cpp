@@ -3760,34 +3760,11 @@ bool AUTPlayerController::ServerReceiveCountryFlag_Validate(FName NewCountryFlag
 	return true;
 }
 
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName FlagChange
-*
-* @Trigger Sent when a user changes their country flag
-*
-* @Type Sent by the Client
-*
-* @EventParam CountryFlag string New Country
-* @EventParam UserId string UniqueId of the user that changed their flag
-*
-* @Comments
-*/
 void AUTPlayerController::ServerReceiveCountryFlag_Implementation(FName NewCountryFlag)
 {
 	if (UTPlayerState != NULL)
 	{
 		UTPlayerState->CountryFlag = NewCountryFlag;
-
-		if (FUTAnalytics::IsAvailable())
-		{
-			TArray<FAnalyticsEventAttribute> ParamArray;
-			ParamArray.Add(FAnalyticsEventAttribute(TEXT("CountryFlag"), UTPlayerState->CountryFlag.ToString()));
-			ParamArray.Add(FAnalyticsEventAttribute(TEXT("UserId"), UTPlayerState->UniqueId.ToString()));
-			FUTAnalytics::SetClientInitialParameters(this, ParamArray, false);
-
-			FUTAnalytics::GetProvider().RecordEvent(TEXT("FlagChange"), ParamArray);
-		}
 	}
 }
 
