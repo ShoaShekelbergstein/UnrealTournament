@@ -118,7 +118,21 @@ public:
 
 		AUTBaseGameMode* BaseGameMode = GetBaseGameMode();
 
-		if ((Flags & MATCH_FLAG_InProgress) == MATCH_FLAG_InProgress) Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("In Progress");
+		if ((Flags & MATCH_FLAG_InProgress) == MATCH_FLAG_InProgress)
+		{
+			FString StateString = TEXT("In Progress");
+			if (MatchInfo.IsValid())
+			{
+				StateString = MatchInfo->MatchUpdate.MatchState != NAME_None ? MatchInfo->MatchUpdate.MatchState.ToString() : TEXT("In Progress");
+			}
+			else if (MatchData.IsValid())
+			{
+				StateString = MatchData->MatchData.MatchState != NAME_None ? MatchData->MatchData.MatchState.ToString() : TEXT("In Progress");
+			}
+
+
+			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + StateString;
+		}
 		if ((Flags & MATCH_FLAG_Beginner) == MATCH_FLAG_Beginner)
 		{
 			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("Beginner");
