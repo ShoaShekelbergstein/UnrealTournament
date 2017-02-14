@@ -15,7 +15,7 @@
 #include "UTParty.h"
 #include "Net/OnlineEngineInterface.h"
 #include "UnrealTournamentFullScreenMovie.h"
-#include "UTHeartbeatManager.h"
+#include "UTHeartBeatManager.h"
 
 AUTBasePlayerController::AUTBasePlayerController(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
