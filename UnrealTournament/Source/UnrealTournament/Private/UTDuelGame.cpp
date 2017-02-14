@@ -303,4 +303,4 @@ void AUTDuelGame::DefaultTimer()
 	}
 
 	Super::DefaultTimer();
-}^
+}
