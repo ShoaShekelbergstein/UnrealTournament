@@ -68,6 +68,10 @@ public:
 	static void FireEvent_UTCancelOnboarding(AUTPlayerController* UTPC);
 	static void FireEvent_UTGraphicsSettings(AUTPlayerController* UTPC);
 
+	static void FireEvent_UTMatchMakingStart(AUTBasePlayerController* UTPC, struct FMatchmakingParams* MatchParams);
+	static void FireEvent_UTMatchMakingCancelled(AUTBasePlayerController* UTPC, float SeekTime);
+	static void FireEvent_UTMatchMakingJoinGame(AUTBasePlayerController* UTPC, FString& TeamELORating, float SeekTime);
+
 	/* GameMode Metrics*/
 	static void FireEvent_FlagRunRoundEnd(class AUTFlagRunGame* UTGame, bool bIsDefenseRoundWin, bool bIsFinalRound);
 	static void FireEvent_PlayerUsedRally(AUTGameMode* UTGM, AUTPlayerState* UTPS);

@@ -13,6 +13,7 @@
 #include "UTLocalPlayer.h"
 #include "QosInterface.h"
 #include "QosRegionManager.h"
+#include "UTAnalytics.h"
 
 #define LOCTEXT_NAMESPACE "UTMatchmaking"
 #define JOIN_ACK_FAILSAFE_TIMER 30.0f
@@ -839,6 +840,11 @@ void UUTMatchmaking::TravelPartyToServer()
 							UE_LOG(UT, Log, TEXT("Wait time reported to backend"));
 						}
 					});
+
+					if (FUTAnalytics::IsAvailable())
+					{
+						FUTAnalytics::FireEvent_UTMatchMakingJoinGame(Cast<AUTBasePlayerController>(GetOwningController()),MatchRatingType, (GetWorld()->RealTimeSeconds - TimeMatchmakingStarted));
+					}
 				}
 			}
 		}

@@ -30,6 +30,16 @@ namespace EGenericAnalyticParam
 		RegionId,
 		PlayerContextLocationPerMinute,
 
+		PlaylistId,
+		bRanked,
+		TeamElo,
+		EloRange,
+		SeekTime,
+
+		UTMatchMakingStart,
+		UTMatchMakingCancelled,
+		UTMatchMakingJoinGame,
+
 		HitchThresholdInMs,
 		NumHitchesAboveThreshold,
 		TotalUnplayableTimeInMs,

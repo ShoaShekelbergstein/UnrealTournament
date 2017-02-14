@@ -5481,6 +5481,11 @@ void UUTLocalPlayer::StartMatchmaking(int32 PlaylistId)
 		}
 
 		bool bSuccessfullyStarted = Matchmaking->FindGatheringSession(MatchmakingParams);
+
+		if (bSuccessfullyStarted && FUTAnalytics::IsAvailable())
+		{
+			FUTAnalytics::FireEvent_UTMatchMakingStart(Cast<AUTPlayerController>(PlayerController), &MatchmakingParams);
+		}
 	}
 }
 
@@ -5653,6 +5658,11 @@ void UUTLocalPlayer::MatchmakingResult(TSharedPtr<SCompoundWidget> Widget, uint1
 			{
 				Party->RestorePersistentPartyState();
 			}
+		}
+
+		if (Matchmaking && FUTAnalytics::IsAvailable())
+		{
+			FUTAnalytics::FireEvent_UTMatchMakingCancelled(Cast<AUTPlayerController>(PlayerController), GetWorld()->RealTimeSeconds - Matchmaking->TimeMatchmakingStarted);
 		}
 	}
 

@@ -12,6 +12,7 @@
 #include "UTFlagRunGame.h"
 #include "UTFlagRunGameState.h"
 #include "UTLobbyMatchInfo.h"
+#include "UTMatchmakingPolicy.h"
 
 #if WITH_PROFILE
 #include "GameServiceMcp.h"
@@ -146,6 +147,16 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(IsIdle);
 	AddGenericParamName(RegionId);
 	AddGenericParamName(PlayerContextLocationPerMinute);
+
+	AddGenericParamName(PlaylistId);
+	AddGenericParamName(bRanked);
+	AddGenericParamName(TeamElo);
+	AddGenericParamName(EloRange);
+	AddGenericParamName(SeekTime);
+
+	AddGenericParamName(UTMatchMakingStart);
+	AddGenericParamName(UTMatchMakingCancelled);
+	AddGenericParamName(UTMatchMakingJoinGame);
 
 	AddGenericParamName(HitchThresholdInMs);
 	AddGenericParamName(NumHitchesAboveThreshold);
@@ -889,6 +900,94 @@ void FUTAnalytics::FireEvent_PlayerContextLocationPerMinute(AUTBasePlayerControl
 		
 			//UE_LOG(UT, Log, TEXT("Sending PlayerContext Location Per Minute Event"));
 		}
+	}
+}
+
+/*
+* @EventName UTMatchMakingStart
+*
+* @Trigger Fires when a client begins matchmaking
+*
+* @Type Sent by the client
+*
+* @EventParam SocialPartyCount int32 Size of the party.
+* @EventParam PlaylistId int32 Integer representation of which playlist was queued.
+* @EventParam bRanked bool If this is a ranked matchmaking session
+* @EventParam TeamElo int32 Team's ELO rating
+* @EventParam EloRange FString ELO range we are starting our search with
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTMatchMakingStart(AUTBasePlayerController* UTPC, FMatchmakingParams* MatchParams)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (UTPC && MatchParams && AnalyticsProvider.IsValid())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetClientInitialParameters(UTPC, ParamArray, false);
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::SocialPartyCount), MatchParams->PartySize));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlaylistId), MatchParams->PlaylistId));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bRanked), MatchParams->bRanked));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TeamElo), MatchParams->TeamElo));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::EloRange), MatchParams->EloRange));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTMatchMakingStart), ParamArray);
+	}
+}
+
+/*
+* @EventName UTMatchMakingCancelled
+*
+* @Trigger Fires when a client cancels matchmaking
+*
+* @Type Sent by the client
+*
+* @EventParam SeekTime float Duration of time we were seeking for
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTMatchMakingCancelled(AUTBasePlayerController* UTPC, float SeekTime)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (UTPC && AnalyticsProvider.IsValid())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetClientInitialParameters(UTPC, ParamArray, false);
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::SeekTime), SeekTime));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTMatchMakingCancelled), ParamArray);
+	}
+}
+
+/*
+* @EventName UTMatchMakingJoinGame
+*
+* @Trigger Fires when a client joins a matchmaking game
+*
+* @Type Sent by the client
+*
+* @EventParam EloRange FString ELO range we are starting our search with
+* @EventParam SeekTime float Duration of time we were seeking for
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTMatchMakingJoinGame(AUTBasePlayerController* UTPC, FString& TeamELORating, float SeekTime)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (UTPC && AnalyticsProvider.IsValid())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetClientInitialParameters(UTPC, ParamArray, false);
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TeamElo), TeamELORating));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::SeekTime), SeekTime));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTMatchMakingJoinGame), ParamArray);
 	}
 }
 
