@@ -100,7 +100,7 @@ void UUTProgressionStorage::TokensCommit()
 			{
 				List.Add(FName(*FString::Printf(TEXT("movementtraining_token_%s"), *FText::AsNumber(i, &Options).ToString())));
 			}
-			for (int32 i = 0; i < 15; i++)
+			for (int32 i = 0; i < 19; i++)
 			{
 				List.Add(FName(*FString::Printf(TEXT("weapontraining_token_%s"), *FText::AsNumber(i, &Options).ToString())));
 			}

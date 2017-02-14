@@ -711,7 +711,8 @@ void AUTHUD::PostRender()
 	}
 	Super::PostRender();
 
-	if (JoeDebugTimer > 0)
+	//if (JoeDebugTimer > 0)
+	if ( FParse::Param(FCommandLine::Get(), TEXT("joedebug")))
 	{
 		float YPos = Canvas->ClipY * 0.5;
 		float HScale = Canvas->ClipY / 1080.0f;
@@ -720,14 +721,14 @@ void AUTHUD::PostRender()
 		YPos += 48 * HScale;
 
 
-		bool debugA = (!UTPlayerOwner || !UTPlayerOwner->UTPlayerState || !UTPlayerOwner->UTPlayerState->bIsWarmingUp);
+		bool debugA = (!UTPlayerOwner || !UTPlayerOwner->UTPlayerState);
 
 		DrawString(FText::Format( NSLOCTEXT("a","c","Flags 1: {0} {1} {2} {3}"),  
 					FText::AsNumber(bShowScores), 
 					FText::AsNumber(ScoreboardIsUp()), 
 					FText::AsNumber(UTPlayerOwner->AreMenusOpen()), 
-					FText::AsNumber(GS->HasMatchStarted()) ),
-					0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
+					FText::AsNumber(GS->HasMatchStarted())
+					), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
 
 		YPos += 48 * HScale;
 
@@ -735,8 +736,16 @@ void AUTHUD::PostRender()
 					FText::AsNumber(GS->IsMatchIntermission()),
 					FText::AsNumber(debugA),  
 					FText::AsNumber(bShowScoresWhileDead), 
-					FText::AsNumber(bForceScores) 
+					FText::AsNumber(bForceScores)
 				   ), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
+
+		YPos += 48 * HScale;
+
+		DrawString(FText::Format( NSLOCTEXT("a","c3","Flags 3: {0} {1}"),  
+					FText::AsNumber(UTPlayerOwner && UTPlayerOwner->UTPlayerState ? UTPlayerOwner->UTPlayerState->bOutOfLives : 0),
+					FText::AsNumber((MyUTScoreboard != nullptr ? MyUTScoreboard->IsInteractive() : false))
+				   ), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
+
 
 		YPos += 48 * HScale;
 
