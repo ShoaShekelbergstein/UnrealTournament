@@ -3334,32 +3334,24 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 
 	if (GetMatchState() == MatchState::WaitingToStart)
 	{
-		StartPlayTime = (NumPlayers > 0) ? FMath::Min(StartPlayTime, GetWorld()->GetTimeSeconds()) : 10000000.f;
-		float ElapsedWaitTime = FMath::Max(0.f, GetWorld()->GetTimeSeconds() - StartPlayTime);
-
 		if (bRankedSession)
 		{
 			if (ExpectedPlayerCount != 0 && ExpectedPlayerCount == NumPlayers)
 			{
+				// Clear this to avoid penalizing anyone that quit before game started
+				InactivePlayerArray.Empty();
+
 				LockSession();
 			}
-			else if (ElapsedWaitTime > MaxWaitForPlayers)
+			else
 			{
-				UE_LOG(UT, Log, TEXT("Not enough players showed up, abandoning game"));
-
-				// Not enough players showed up for the match, just send them back to the lobby
-				GetWorldTimerManager().ClearTimer(ServerRestartTimerHandle);
-
-				SendEveryoneBackToLobbyGameAbandoned();
-
-				SetMatchState(MatchState::MatchRankedAbandon);
-				AUTGameSessionRanked* RankedGameSession = Cast<AUTGameSessionRanked>(GameSession);
-				if (RankedGameSession)
-				{
-					RankedGameSession->Restart();
-				}
+				// Ranked doesn't need to run a countdown unless all the players are in
+				return false;
 			}
 		}
+
+		StartPlayTime = (NumPlayers > 0) ? FMath::Min(StartPlayTime, GetWorld()->GetTimeSeconds()) : 10000000.f;
+		float ElapsedWaitTime = FMath::Max(0.f, GetWorld()->GetTimeSeconds() - StartPlayTime);
 
 		UTGameState->PlayersNeeded = FMath::Max(0, GameSession->MaxPlayers - NumPlayers);
 		if (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers)
