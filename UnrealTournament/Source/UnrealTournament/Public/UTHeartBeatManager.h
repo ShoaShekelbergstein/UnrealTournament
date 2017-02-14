@@ -11,7 +11,7 @@ class UUTHeartbeatManager : public UObject
 
 public:
 
-	void StartManager(AUTPlayerController* UTPlayerController);
+	void StartManager(AUTBasePlayerController* UTPlayerController);
 
 	void StopManager();
 
@@ -34,5 +34,5 @@ private:
 	FTimerHandle DoMinuteEventsTimerHandle;
 	FTimerHandle DoFiveSecondEventsTimerHandle;
 
-	AUTPlayerController* UTPC;
+	AUTBasePlayerController* UTPC;
 };

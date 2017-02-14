@@ -15,6 +15,7 @@
 #include "UTParty.h"
 #include "Net/OnlineEngineInterface.h"
 #include "UnrealTournamentFullScreenMovie.h"
+#include "UTHeartbeatManager.h"
 
 AUTBasePlayerController::AUTBasePlayerController(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -957,6 +958,11 @@ void AUTBasePlayerController::ReceivedPlayer()
 
 	SendStatsIDToServer();
 	SendCosmeticsToServer();
+
+	if (GetNetMode() == NM_Client || GetNetMode() == NM_Standalone)
+	{
+		InitializeHeartbeatManager();
+	}
 }
 
 void AUTBasePlayerController::SendCosmeticsToServer()
@@ -1334,4 +1340,13 @@ FText AUTBasePlayerController::GetTutorialSectionText(TEnumAsByte<ETutorialSecti
 	}
 
 	return FText::GetEmpty();
+}
+
+void AUTBasePlayerController::InitializeHeartbeatManager()
+{
+	if (!HeartbeatManager)
+	{
+		HeartbeatManager = NewObject<UUTHeartbeatManager>(this);
+		HeartbeatManager->StartManager(this);
+	}
 }

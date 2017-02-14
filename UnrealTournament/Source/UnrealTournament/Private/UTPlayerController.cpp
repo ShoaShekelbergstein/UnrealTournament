@@ -3753,11 +3753,6 @@ void AUTPlayerController::ReceivedPlayer()
 			ServerReceiveCountryFlag(CountryFlag);
 		}
 	}
-
-	if (GetNetMode() == NM_Client || GetNetMode() == NM_Standalone)
-	{
-		InitializeHeartbeatManager();
-	}
 }
 
 bool AUTPlayerController::ServerReceiveCountryFlag_Validate(FName NewCountryFlag)
@@ -5192,15 +5187,6 @@ bool AUTPlayerController::CanPerformRally() const
 {
 	AUTFlagRunGameState* GameState = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	return (GameState && UTPlayerState && UTPlayerState->bCanRally && UTPlayerState->Team && GameState->bAttackersCanRally && ((UTPlayerState->Team->TeamIndex == 0) == GameState->bRedToCap));
-}
-
-void AUTPlayerController::InitializeHeartbeatManager()
-{
-	if (!HeartbeatManager)
-	{
-		HeartbeatManager = NewObject<UUTHeartbeatManager>(this);
-		HeartbeatManager->StartManager(this);
-	}
 }
 
 EWeaponHand AUTPlayerController::GetPreferredWeaponHand()

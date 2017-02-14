@@ -28,12 +28,14 @@ void AUTLobbyPC::InitPlayerState()
 	Super::InitPlayerState();
 	UTLobbyPlayerState = Cast<AUTLobbyPlayerState>(PlayerState);
 	UTLobbyPlayerState->ChatDestination = ChatDestinations::Global;
+	UTPlayerState = UTLobbyPlayerState;
 }
 
 void AUTLobbyPC::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 	UTLobbyPlayerState = Cast<AUTLobbyPlayerState>(PlayerState);
+	UTPlayerState = UTLobbyPlayerState;
 
 	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
 	if (LP)
@@ -123,6 +125,11 @@ void AUTLobbyPC::ReceivedPlayer()
 	}
 
 	SendStatsIDToServer();
+
+	if (GetNetMode() == NM_Client || GetNetMode() == NM_Standalone)
+	{
+		InitializeHeartbeatManager();
+	}
 }
 
 void AUTLobbyPC::ServerDebugTest_Implementation(const FString& TestCommand)

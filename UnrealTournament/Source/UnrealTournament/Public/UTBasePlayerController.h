@@ -338,4 +338,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual FText GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const;
+
+protected:
+	void InitializeHeartbeatManager();
+
+	UPROPERTY()
+	class UUTHeartbeatManager* HeartbeatManager;
 };

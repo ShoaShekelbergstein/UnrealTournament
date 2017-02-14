@@ -42,7 +42,7 @@ public:
 public:
 	/* Server metrics */
 	static void FireEvent_ServerUnplayableCondition(AUTGameMode* UTGM, double HitchThresholdInMs, int32 NumHitchesAboveThreshold, double TotalUnplayableTimeInMs);
-	static void FireEvent_PlayerContextLocationPerMinute(AUTPlayerController* UTPC, FString& PlayerContextLocation, const int32 NumSocialPartyMembers);
+	static void FireEvent_PlayerContextLocationPerMinute(AUTBasePlayerController* UTPC, FString& PlayerContextLocation, const int32 NumSocialPartyMembers);
 	static void FireEvent_UTServerFPSCharts(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& InParamArray);
 	static void FireEvent_UTServerWeaponKills(AUTGameMode* UTGM, TMap<TSubclassOf<UDamageType>, int32>* KillsArray);
 	static void FireEvent_UTStartRankedMatch(AUTGameMode* UTGM);
@@ -51,8 +51,8 @@ public:
 	static void FireEvent_UTEndQuickplayMatch(AUTGameMode* UTGM);
 	static void FireEvent_UTServerPlayerJoin(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	static void FireEvent_UTServerPlayerDisconnect(AUTGameMode* UTGM, AUTPlayerState* UTPS);
-
-	/* Client metrics */
+	
+		/* Client metrics */
 	static void FireEvent_UTFPSCharts(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& InParamArray);
 	static void FireEvent_EnterMatch(AUTPlayerController* UTPC, FString EnterMethod);
 	static void FireEvent_UTTutorialPickupToken(AUTPlayerController* UTPC, FName TokenID, FString TokenDescription);
@@ -76,7 +76,7 @@ public:
 	/*Parameter Array Helpers*/
 	static void SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime, bool bIsRankedMatch = false);
 	static void SetServerInitialParameters(TArray<FAnalyticsEventAttribute>& ParamArray);
-	static void SetClientInitialParameters(AUTPlayerController* UTPC, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime);
+	static void SetClientInitialParameters(AUTBasePlayerController* UTPC, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime);
 	static void AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray);
 
 private:
@@ -86,12 +86,12 @@ private:
 /** Analytics Helper Functions */
 private:
 	static FString GetPlatform();
-	static int32 GetMatchTime(AUTPlayerController* UTPC);
+	static int32 GetMatchTime(AUTBasePlayerController* UTPC);
 	static int32 GetMatchTime(AUTGameMode* UTGM);
-	static FString GetMapName(AUTPlayerController* UTPC);
+	static FString GetMapName(AUTBasePlayerController* UTPC);
 	static FString GetMapName(AUTGameMode* UTGM);
-	static FString GetGameModeName(AUTPlayerController* UTPC);
-	static FString GetEpicAccountName(AUTPlayerController* UTPC);
+	static FString GetGameModeName(AUTBasePlayerController* UTPC);
+	static FString GetEpicAccountName(AUTBasePlayerController* UTPC);
 	static FString GetEpicAccountName(AUTPlayerState* UTPS);
 	static FString GetBuildType();
 

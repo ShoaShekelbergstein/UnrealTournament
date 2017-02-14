@@ -2668,7 +2668,7 @@ FString UUTLocalPlayer::GetEyewearPath() const
 
 //Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
 /*
-* @EventName CharacterChanged
+* @EventName EyewearChanged
 *
 * @Trigger Sent when a player changes their eyewear
 *
@@ -2698,7 +2698,7 @@ void UUTLocalPlayer::SetEyewearPath(const FString& NewEyewearPath)
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("EyewearPath"), NewEyewearPath));
 				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
 
-				FUTAnalytics::GetProvider().RecordEvent( TEXT("CharacterChanged"), ParamArray );
+				FUTAnalytics::GetProvider().RecordEvent( TEXT("EyewearChanged"), ParamArray );
 			}
 
 			PS->ServerReceiveEyewearClass(NewEyewearPath);

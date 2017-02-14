@@ -1290,15 +1290,6 @@ public:
 	bool CanPerformRally() const;
 
 	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
-
-protected:
-	void InitializeHeartbeatManager();
-
-	UPROPERTY()
-	class UUTHeartbeatManager* HeartbeatManager;
-
-
-
 };
 
 
