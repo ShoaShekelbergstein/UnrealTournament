@@ -2221,12 +2221,11 @@ void AUTHUD::ShowUTMenu()
 	if ( GetWorld()->GetNetMode() == NM_Standalone )
 	{
 		AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-		if (GameMode && GameMode->TutorialMask > 0 && GameMode->TutorialMask <= TUTORIAL_SkillMoves)
+		if (GameMode && GameMode->bBasicTrainingGame && GameMode->TutorialMask <= TUTORIAL_Pickups)
 		{
 			return;
 		}
 	}
-
 
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;
