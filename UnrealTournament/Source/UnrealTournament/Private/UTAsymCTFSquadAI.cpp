@@ -54,7 +54,7 @@ bool AUTAsymCTFSquadAI::MustKeepEnemy(AUTBot* B, APawn* TheEnemy)
 void AUTAsymCTFSquadAI::ModifyAggression(AUTBot* B, float& Aggressiveness)
 {
 	// reduce aggression against enemies that are much farther away from objective, no need to pursue as they need to come to us
-	if ((B->GetEnemyLocation(B->GetEnemy(), true) - B->GetPawn()->GetActorLocation()).Size() > 4000.0f + (B->GetPawn()->GetActorLocation() - Objective->GetActorLocation()).Size())
+	if (Objective != nullptr && (B->GetEnemyLocation(B->GetEnemy(), true) - B->GetPawn()->GetActorLocation()).Size() > 4000.0f + (B->GetPawn()->GetActorLocation() - Objective->GetActorLocation()).Size())
 	{
 		Aggressiveness -= 0.5f;
 	}
