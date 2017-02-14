@@ -605,14 +605,34 @@ void AUTCTFRoundGame::InitFlags()
 			// check for flag carrier already here waiting
 			TArray<AActor*> Overlapping;
 			Base->MyFlag->GetOverlappingActors(Overlapping, AUTCharacter::StaticClass());
+			// try humans first, then bots
 			for (AActor* A : Overlapping)
 			{
 				AUTCharacter* Character = Cast<AUTCharacter>(A);
-				if (Character != NULL)
+				if (Character != nullptr && Cast<APlayerController>(Character->Controller) != nullptr)
 				{
 					if (!GetWorld()->LineTraceTestByChannel(Character->GetActorLocation(), Base->MyFlag->GetActorLocation(), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams))
 					{
 						Base->MyFlag->TryPickup(Character);
+						if (Base->MyFlag->ObjectState == CarriedObjectState::Held)
+						{
+							return;
+						}
+					}
+				}
+			}
+			for (AActor* A : Overlapping)
+			{
+				AUTCharacter* Character = Cast<AUTCharacter>(A);
+				if (Character != nullptr && Cast<APlayerController>(Character->Controller) == nullptr)
+				{
+					if (!GetWorld()->LineTraceTestByChannel(Character->GetActorLocation(), Base->MyFlag->GetActorLocation(), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams))
+					{
+						Base->MyFlag->TryPickup(Character);
+						if (Base->MyFlag->ObjectState == CarriedObjectState::Held)
+						{
+							return;
+						}
 					}
 				}
 			}
