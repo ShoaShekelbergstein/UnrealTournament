@@ -25,7 +25,7 @@ AUTProj_Rocket::AUTProj_Rocket(const class FObjectInitializer& ObjectInitializer
 	bLeadTarget = true;
 	bRocketTeamSet = false;
 	MaxLeadDistance = 2000.f;
-	MinSeekDistance = 500.f;
+	MinSeekDistance = 200.f;
 	MaxTargetLockIndicatorDistance = 5000.f;
 }
 
