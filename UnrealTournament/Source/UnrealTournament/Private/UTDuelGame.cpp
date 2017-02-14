@@ -281,3 +281,26 @@ void AUTDuelGame::SetEloFor(AUTPlayerState* PS, bool InbRankedSession, int32 New
 		}
 	}
 }
+
+void AUTDuelGame::CheckBotCount()
+{
+	if (bRankedSession)
+	{
+		return;
+	}
+
+	Super::CheckBotCount();
+}
+
+void AUTDuelGame::DefaultTimer()
+{
+	if (bRankedSession && HasMatchStarted() && !HasMatchEnded())
+	{
+		if (NumPlayers == 1)
+		{
+			EndGame(Cast<AUTPlayerState>(GameState->PlayerArray[0]), FName(TEXT("OpponentDrop")));			
+		}
+	}
+
+	Super::DefaultTimer();
+}^
