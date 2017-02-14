@@ -198,6 +198,19 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 {
 	if (bFirstRoundInitialized)
 	{
+		// kick idlers
+		if (UTGameState && GameSession)
+		{
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				if (UTPlayerState && !UTPlayerState->bIsABot && UTPlayerState->IsPlayerIdle() && !UTPlayerState->bOnlySpectator && !UTPlayerState->bIsInactive && Cast<APlayerController>(UTPlayerState->GetOwner()))
+				{
+					GameSession->KickPlayer(Cast<APlayerController>(UTPlayerState->GetOwner()), NSLOCTEXT("FlagRun", "Idling", "Idling"));
+				}
+			}
+		}
+
 		// view defender base, with last team to score around it
 		int32 TeamToWatch = IntermissionTeamToView(nullptr);
 
