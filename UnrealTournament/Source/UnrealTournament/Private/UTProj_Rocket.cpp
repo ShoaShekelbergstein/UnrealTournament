@@ -43,12 +43,11 @@ void AUTProj_Rocket::Tick(float DeltaTime)
 		}
 		else
 		{
-			WantedDir = WantedDir / Dist;
 			if (bLeadTarget && (Dist < MaxLeadDistance))
 			{
 				WantedDir += TargetActor->GetVelocity() * Dist / ProjectileMovement->MaxSpeed;
 			}
-
+			WantedDir = WantedDir.GetSafeNormal();
 			ProjectileMovement->Velocity += WantedDir * AdjustmentSpeed * DeltaTime;
 			ProjectileMovement->Velocity = ProjectileMovement->Velocity.GetSafeNormal() * ProjectileMovement->MaxSpeed;
 
