@@ -25,9 +25,12 @@ struct FInstantHitDamageInfo
 	/** size of trace (radius of sphere); if <= 0, line trace is used */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DamageInfo")
 	float TraceHalfSize;
+	/** if > 0.0, hit all targets in a cone with this dot angle (needs to also pass hitscan trace against world geo using TraceHalfSize) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DamageInfo")
+	float ConeDotAngle;
 
 	FInstantHitDamageInfo()
-		: Damage(10), Momentum(0.0f), TraceRange(25000.0f), TraceHalfSize(0.0f)
+		: Damage(10), Momentum(0.0f), TraceRange(25000.0f), TraceHalfSize(0.0f), ConeDotAngle(0.0f)
 	{}
 };
 
@@ -767,6 +770,9 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 
 	/** Spawn a projectile on both server and owning client, and forward predict it by 1/2 ping on server. */
 	virtual AUTProjectile* SpawnNetPredictedProjectile(TSubclassOf<AUTProjectile> ProjectileClass, FVector SpawnLocation, FRotator SpawnRotation);
+
+	UFUNCTION(BlueprintCallable, Category = Firing)
+	virtual void FireCone();
 
 	/** returns whether we can meet AmmoCost for the given fire mode */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
