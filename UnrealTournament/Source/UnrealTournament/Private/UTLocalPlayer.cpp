@@ -4629,24 +4629,21 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 	{
 		GEngine->GameViewport->RemoveAllViewportWidgets();
 	}
+
 #if !UE_SERVER
-	if (bExceptDialogs)
+
+	TArray<TSharedPtr<SUTDialogBase>> DialogsToClose;
+	for (TSharedPtr<SUTDialogBase> Dialog : OpenDialogs)
 	{
-		if (GetWorld() && GetWorld()->WorldType == EWorldType::Game)
+		if (!bExceptDialogs || (Dialog.IsValid() && !Dialog->bRemainOpenThroughTravel()) )
 		{
-			// restore dialogs to the viewport
-			for (TSharedPtr<SUTDialogBase> Dialog : OpenDialogs)
-			{
-				if ( Dialog.IsValid() && Dialog->bRemainOpenThroughTravel() && (!MapVoteMenu.IsValid() || Dialog.Get() != MapVoteMenu.Get()) && (!DownloadAllDialog.IsValid() || Dialog.Get() != DownloadAllDialog.Get()) )
-				{
-					GEngine->GameViewport->AddViewportWidgetContent(Dialog.ToSharedRef(), 255);
-				}
-			}
+			DialogsToClose.Add(Dialog);
 		}
 	}
-	else
+
+	for (TSharedPtr<SUTDialogBase> Dialog : DialogsToClose)
 	{
-		OpenDialogs.Empty();
+		CloseDialog(Dialog.ToSharedRef());
 	}
 	
 	if (DesktopSlateWidget.IsValid())
@@ -4654,29 +4651,23 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 		DesktopSlateWidget->OnMenuClosed();
 		DesktopSlateWidget.Reset();
 	}
+
 	// These should all be proper closes
 	ServerBrowserWidget.Reset();
 	ReplayBrowserWidget.Reset();
 	StatsViewerWidget.Reset();
 	CreditsPanelWidget.Reset();
-	QuickMatchDialog.Reset();
-	LoginDialog.Reset();
 	ContentLoadingMessage.Reset();
 	FriendsMenu.Reset();
 	LoadoutMenu.Reset();
 	ReplayWindow.Reset();
-	YoutubeDialog.Reset();
-	YoutubeConsentDialog.Reset();
 	
-	AdminDialogClosed();
-	CloseMapVote();
 	CloseMatchSummary();
 	CloseSpectatorWindow();
 	CloseQuickChat();
-	HideHUDSettings();
-	HideRedirectDownload();
 	CloseWebMessage();
 	CloseSavingWidget();
+
 	while (WindowStack.Num() > 0)
 	{
 		CloseWindow(WindowStack[0]);
@@ -5703,16 +5694,6 @@ void UUTLocalPlayer::ShowMatchmakingDialog()
 	{
 		CloseDialog(LeagueMatchResultsDialog.ToSharedRef());
 		LeagueMatchResultsDialog.Reset();
-	}
-	
-	// Force close anything that's going to break world rendering
-	TArray< TSharedPtr<class SUTDialogBase> > OpenDialogsCopy = OpenDialogs;
-	for (int i = 0; i < OpenDialogsCopy.Num(); i++)
-	{
-		if (OpenDialogsCopy[i]->bSkipWorldRender)
-		{
-			CloseDialog(OpenDialogsCopy[i].ToSharedRef());
-		}
 	}
 
 	OpenDialog(
