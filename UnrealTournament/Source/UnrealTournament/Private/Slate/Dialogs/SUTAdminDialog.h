@@ -278,7 +278,7 @@ private:
 
 
 
-class UNREALTOURNAMENT_API SUTAdminDialog : public SUTDialogBase
+class UNREALTOURNAMENT_API SUTAdminDialog : public SUTDialogBase , public FGCObject
 {
 	SLATE_BEGIN_ARGS(SUTAdminDialog)
 	: _DialogTitle(NSLOCTEXT("SUTAdminDialog", "Title", "ADMIN PANEL"))
@@ -301,6 +301,8 @@ class UNREALTOURNAMENT_API SUTAdminDialog : public SUTDialogBase
 	void Construct(const FArguments& InArgs);
 	void Tick( const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime );
 	virtual void OnDialogClosed() override;
+
+	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 protected:
 

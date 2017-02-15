@@ -343,6 +343,7 @@ TSharedRef<class SWidget> SUTWeaponConfigDialog::BuildCustomButtonBar()
 
 void SUTWeaponConfigDialog::AddReferencedObjects(FReferenceCollector& Collector)
 {
+	Collector.AddReferencedObject(PreviewEnvironment);
 	Collector.AddReferencedObject(PreviewTexture);
 	Collector.AddReferencedObject(PreviewMID);
 	Collector.AddReferencedObject(PreviewWorld);
@@ -362,8 +363,6 @@ void SUTWeaponConfigDialog::AddReferencedObjects(FReferenceCollector& Collector)
 	for (int32 i = 0 ; i < WeaponSkinGCList.Num(); i++) Collector.AddReferencedObject(WeaponSkinGCList[i]);
 	for (int32 i = 0 ; i < PickupPreviewActors.Num(); i++) Collector.AddReferencedObject(PickupPreviewActors[i]);
 	for (int32 i = 0; i < WeaponPreviewActors.Num(); i++) Collector.AddReferencedObject(WeaponPreviewActors[i]);
-
-
 }
 
 void SUTWeaponConfigDialog::GeneratePage()

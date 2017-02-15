@@ -84,6 +84,16 @@ void SUTAdminDialog::Construct(const FArguments& InArgs)
 	}
 }
 
+void SUTAdminDialog::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	//GCing AdminInfo since we will not be able to call AdminInfo->NoLongerNeeded
+	if (AdminInfo.IsValid())
+	{
+		AUTRconAdminInfo* AdminInfoPointer = AdminInfo.Get();
+		Collector.AddReferencedObject(AdminInfoPointer);
+	}
+}
+
 void SUTAdminDialog::AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 {
 	TSharedPtr<SUTButton> TabButton;

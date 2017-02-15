@@ -83,8 +83,8 @@ protected:
 
 	virtual void AddReferencedObjects(FReferenceCollector& Collector) override
 	{
-		Collector.AddReferencedObjects(AllGametypes);
-		Collector.AddReferencedObjects(MutatorListAvailable);
+		for (int i = 0; i < AllGametypes.Num(); ++i) { Collector.AddReferencedObject(AllGametypes[i]); }
+		for (int i = 0; i < MutatorListAvailable.Num(); ++i) { Collector.AddReferencedObject(MutatorListAvailable[i]); }
 		Collector.AddReferencedObject(LevelShot);
 	}
 

@@ -866,6 +866,8 @@ void SUTMatchSummaryPanel::UpdateChatText()
 
 void SUTMatchSummaryPanel::AddReferencedObjects(FReferenceCollector& Collector)
 {
+	Collector.AddReferencedObject(PreviewEnvironment);
+	Collector.AddReferencedObject(PlayerPreviewAnim);
 	Collector.AddReferencedObject(PlayerPreviewTexture);
 	Collector.AddReferencedObject(PlayerPreviewMID);
 	Collector.AddReferencedObject(PlayerPreviewWorld);
@@ -874,12 +876,16 @@ void SUTMatchSummaryPanel::AddReferencedObjects(FReferenceCollector& Collector)
 	{
 		Collector.AddReferencedObjects(TeamPreviewMeshs[i]);
 	}
+	
+	Collector.AddReferencedObjects(PlayerPreviewMeshs);
+	Collector.AddReferencedObjects(PreviewWeapons);
 	Collector.AddReferencedObjects(PreviewAnimations);
+	
 	FSceneViewStateInterface* Ref = ViewState.GetReference();
 	if (Ref != NULL)
 	{
 		Ref->AddReferencedObjects(Collector);
-	}
+	}	
 }
 
 void SUTMatchSummaryPanel::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)

@@ -988,6 +988,9 @@ SUTPlayerSettingsDialog::~SUTPlayerSettingsDialog()
 
 void SUTPlayerSettingsDialog::AddReferencedObjects(FReferenceCollector& Collector)
 {
+	Collector.AddReferencedObject(PlayerPreviewMesh);
+	Collector.AddReferencedObject(PreviewWeapon);
+	Collector.AddReferencedObject(PreviewEnvironment);
 	Collector.AddReferencedObject(PlayerPreviewTexture);
 	Collector.AddReferencedObject(PlayerPreviewMID);
 	Collector.AddReferencedObject(PlayerPreviewAnimBlueprint);
