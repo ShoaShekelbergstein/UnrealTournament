@@ -1275,13 +1275,14 @@ void SUTPlayerSettingsDialog::OnGroupTauntSelected(TSharedPtr<FString> NewSelect
 			if (TauntClass)
 			{
 				PlayerPreviewMesh->PlayGroupTaunt(TSubclassOf<AUTGroupTaunt>(TauntClass));
-				if (!bSkipPlayingGroupTauntBGMusic && TauntClass->GetDefaultObject<AUTGroupTaunt>()->BGMusic)
+				AUTGroupTaunt* GroupTaunt = TauntClass->GetDefaultObject<AUTGroupTaunt>();
+				if (GroupTaunt != nullptr && !bSkipPlayingGroupTauntBGMusic && GroupTaunt->BGMusic)
 				{
 					if (GroupTauntAudio)
 					{
 						GroupTauntAudio->Stop();
 					}
-					GroupTauntAudio = UGameplayStatics::SpawnSound2D(PlayerPreviewMesh->GetWorld(), TauntClass->GetDefaultObject<AUTGroupTaunt>()->BGMusic);
+					GroupTauntAudio = UGameplayStatics::SpawnSound2D(PlayerPreviewMesh->GetWorld(), GroupTaunt->BGMusic);
 				}
 			}
 		}
