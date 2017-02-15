@@ -93,6 +93,7 @@ UUTLocalPlayer::UUTLocalPlayer(const class FObjectInitializer& ObjectInitializer
 	: Super(ObjectInitializer)
 {
 	bInitialSignInAttempt = true;
+	bAttemptedLauncherJoin = false;
 	LastProfileCloudWriteTime = 0.0f;
 	LastProgressionCloudWriteTime = 0.0f;
 	ProfileCloudWriteCooldownTime = 12.0f;
@@ -1106,8 +1107,26 @@ void UUTLocalPlayer::DelayedCreatePersistentParty()
 				UUTParty* UTParty = UTGameInstance->GetParties();
 				if (UTParty)
 				{
-					UTParty->CreatePersistentParty(*UserId);
+					UTParty->CreatePersistentParty(*UserId, UPartyDelegates::FOnCreateUPartyComplete::CreateUObject(this, &ThisClass::PersistentPartyCreated));
 				}
+			}
+		}
+	}
+}
+
+void UUTLocalPlayer::PersistentPartyCreated(const FUniqueNetId& LocalUserId, const ECreatePartyCompletionResult Result)
+{
+	if (!bAttemptedLauncherJoin)
+	{
+		bAttemptedLauncherJoin = true;
+		FString FriendId;
+		if (FParse::Value(FCommandLine::Get(), TEXT("invitefrom="), FriendId) && !FriendId.IsEmpty())
+		{
+			UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
+			if (PartyContext)
+			{
+				TSharedPtr<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(FriendId));
+				PartyContext->JoinParty(*UserId);
 			}
 		}
 	}
@@ -5971,26 +5990,7 @@ void UUTLocalPlayer::LoginProcessComplete()
 	{
 		FText WelcomeToast = FText::Format(NSLOCTEXT("MCP","MCPWelcomeBack","Welcome back {0}"), FText::FromString(*GetOnlinePlayerNickname()));
 		ShowToast(WelcomeToast);
-
-		// on successful auto login, attempt to join an accepted friend game invite
-		if (bInitialSignInAttempt)
-		{
-			FString SessionId;
-			FString FriendId;
-			if (FParse::Value(FCommandLine::Get(), TEXT("invitesession="), SessionId) && !SessionId.IsEmpty() &&
-				FParse::Value(FCommandLine::Get(), TEXT("invitefrom="), FriendId) && !FriendId.IsEmpty())
-			{
-				UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
-				if (PartyContext)
-				{
-					TSharedPtr<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(FriendId));
-					PartyContext->JoinParty(*UserId);
-				}
-
-				return;
-			}
-		}
-
+		
 		// If we have a pending session, then join it.
 		JoinPendingSession();
 

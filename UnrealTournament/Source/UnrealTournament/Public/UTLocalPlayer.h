@@ -1108,8 +1108,10 @@ protected:
 	int32 FragCenterCounter;
 
 	/** Party related items */
+	bool bAttemptedLauncherJoin;
 	void CreatePersistentParty();
 	void DelayedCreatePersistentParty();
+	void PersistentPartyCreated(const FUniqueNetId& LocalUserId, const ECreatePartyCompletionResult Result);
 	FTimerHandle PersistentPartyCreationHandle;
 	
 	bool bCancelJoinSession;
