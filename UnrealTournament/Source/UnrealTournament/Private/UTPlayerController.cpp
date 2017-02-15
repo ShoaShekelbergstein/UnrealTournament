@@ -5291,13 +5291,6 @@ void AUTPlayerController::ClientSetActiveLineUp_Implementation()
 			else
 			{
 				AUTLineUpHelper::CleanUpPlayerAfterLineUp(this);
-
-				//Need to kill local pawn and then restart, so that we sync back up with the server
-				if (GetPawn())
-				{
-					GetPawn()->Destroy();
-				}
-				ClientRestart(nullptr);
 			}
 		}
 	}
