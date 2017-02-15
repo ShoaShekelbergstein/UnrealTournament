@@ -204,7 +204,7 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 			{
 				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-				if (UTPlayerState && !UTPlayerState->bIsABot && UTPlayerState->IsPlayerIdle() && !UTPlayerState->bOnlySpectator && !UTPlayerState->bIsInactive && Cast<APlayerController>(UTPlayerState->GetOwner()))
+				if (UTPlayerState && !UTPlayerState->bIsABot && !UTPlayerState->bOutOfLives && UTPlayerState->IsPlayerIdle() && !UTPlayerState->bOnlySpectator && !UTPlayerState->bIsInactive && Cast<APlayerController>(UTPlayerState->GetOwner()))
 				{
 					GameSession->KickPlayer(Cast<APlayerController>(UTPlayerState->GetOwner()), NSLOCTEXT("FlagRun", "Idling", "Idling"));
 				}
