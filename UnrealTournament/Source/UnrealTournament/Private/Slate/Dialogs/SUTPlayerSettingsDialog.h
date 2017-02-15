@@ -70,7 +70,7 @@ protected:
 
 	AActor* PreviewEnvironment;
 	
-	UAudioComponent* GroupTauntAudio;
+	TWeakObjectPtr<UAudioComponent> GroupTauntAudio;
 
 	TSharedPtr<SEditableTextBox> ClanName;
 	TSharedPtr<SSlider> WeaponBobScaling, ViewBobScaling;

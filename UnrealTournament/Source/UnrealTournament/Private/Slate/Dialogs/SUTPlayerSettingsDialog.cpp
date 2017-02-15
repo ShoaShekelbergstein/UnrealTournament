@@ -1278,7 +1278,7 @@ void SUTPlayerSettingsDialog::OnGroupTauntSelected(TSharedPtr<FString> NewSelect
 				AUTGroupTaunt* GroupTaunt = TauntClass->GetDefaultObject<AUTGroupTaunt>();
 				if (GroupTaunt != nullptr && !bSkipPlayingGroupTauntBGMusic && GroupTaunt->BGMusic)
 				{
-					if (GroupTauntAudio)
+					if (GroupTauntAudio.IsValid())
 					{
 						GroupTauntAudio->Stop();
 					}
