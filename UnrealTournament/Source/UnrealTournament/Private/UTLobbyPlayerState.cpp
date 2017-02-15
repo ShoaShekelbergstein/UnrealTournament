@@ -259,7 +259,7 @@ void AUTLobbyPlayerState::NotifyBeginnerAutoLock_Implementation()
 		{
 			UTLocalPlayer->bAutoRankLockWarningShown = true;
 #if !UE_SERVER
-			UTLocalPlayer->ShowMessage(NSLOCTEXT("UTLobbyPlayerState","AutoLockTitle","AUTO RANK LOCKED ENABLED"),NSLOCTEXT("UTLobbyPlayerState","AutoLockMessage","Because you are a beginner, the match you are starting will be locked so that only other beginners of similar skill can join.  If you want to allow players of other skill levels to play, uncheck the \"Limit Rank\" check box in your matches settings."),UTDIALOG_BUTTON_OK);
+			UTLocalPlayer->ShowMessage(NSLOCTEXT("UTLobbyPlayerState","AutoLockTitle","AUTO RANK LOCKED ENABLED"),NSLOCTEXT("UTLobbyPlayerState","AutoLockMessage","The match you are starting will be locked so that only other players of similar skill can join.  If you want to allow players of other skill levels to play, uncheck the \"Limit Rank\" check box in your matches settings."),UTDIALOG_BUTTON_OK);
 #endif
 		}
 	}

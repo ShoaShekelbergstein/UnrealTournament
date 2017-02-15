@@ -272,7 +272,7 @@ protected:
 	TSharedPtr<SUTSlider> sBotSkill;
 
 	bool bBeginnerMatch;
-	bool bUserTurnedOffRankCheck;
+	bool bUserHasBeenWarned;
 	void RankCheckChanged(ECheckBoxState NewState);
 
 	FText GetBotSkillText() const;

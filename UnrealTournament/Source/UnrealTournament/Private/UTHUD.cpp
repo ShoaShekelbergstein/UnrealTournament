@@ -160,9 +160,6 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 
 	static ConstructorHelpers::FObjectFinder<UTexture2D> FiveStar(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankStar_Five_48x48.UT_RankStar_Five_48x48'"));
 	XPStars.Add(FiveStar.Object);
-
-	JoeDebugTimer = 0.0f;
-
 }
 
 void AUTHUD::Destroyed()
@@ -599,11 +596,6 @@ void AUTHUD::NotifyMatchStateChange()
 		{
 			bShowScores = false;
 			bForceScores = false;
-
-			if ( FParse::Param(FCommandLine::Get(), TEXT("joedebug")))
-			{
-				JoeDebugTimer = 7.5f;
-			}
 		}
 		else if (GS->GetMatchState() == MatchState::WaitingToStart)
 		{
@@ -709,92 +701,6 @@ void AUTHUD::PostRender()
 		GS->SortPRIArray();
 	}
 	Super::PostRender();
-
-	if (UTPlayerOwner && GS && UTPlayerOwner->PlayerState && JoeDebugTimer > 0)
-	//if ( UTPlayerOwner && GS && UTPlayerOwner->PlayerState && FParse::Param(FCommandLine::Get(), TEXT("joedebug")))
-	{
-		float YPos = Canvas->ClipY * 0.5;
-		float HScale = Canvas->ClipY / 1080.0f;
-		JoeDebugTimer -= RenderDelta;	
-		DrawString(FText::Format( NSLOCTEXT("a","b","InputMode: {0}"),  FText::AsNumber(Cast<AUTBasePlayerController>(PlayerOwner)->InputMode)), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-		YPos += 48 * HScale;
-
-
-		bool debugA = (!UTPlayerOwner || !UTPlayerOwner->UTPlayerState);
-
-		DrawString(FText::Format( NSLOCTEXT("a","c","Flags 1: {0} {1} {2} {3}"),  
-					FText::AsNumber(bShowScores), 
-					FText::AsNumber(ScoreboardIsUp()), 
-					FText::AsNumber(UTPlayerOwner->AreMenusOpen()), 
-					FText::AsNumber(GS->HasMatchStarted())
-					), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-
-		YPos += 48 * HScale;
-
-		DrawString(FText::Format( NSLOCTEXT("a","c2","Flags 2: {0} {1} {2} {3}"),  
-					FText::AsNumber(GS->IsMatchIntermission()),
-					FText::AsNumber(debugA),  
-					FText::AsNumber(bShowScoresWhileDead), 
-					FText::AsNumber(bForceScores)
-				   ), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-
-		YPos += 48 * HScale;
-
-		DrawString(FText::Format( NSLOCTEXT("a","c3","Flags 3: {0} {1}"),  
-					FText::AsNumber(UTPlayerOwner && UTPlayerOwner->UTPlayerState ? UTPlayerOwner->UTPlayerState->bOutOfLives : 0),
-					FText::AsNumber((MyUTScoreboard != nullptr ? MyUTScoreboard->IsInteractive() : false))
-				   ), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-
-
-		YPos += 48 * HScale;
-
-		DrawString(FText::Format( NSLOCTEXT("a","j","States: {0} {1}"),  FText::FromString(PlayerOwner->GetStateName().ToString()), FText::FromString(GS->GetMatchState().ToString())), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-		YPos += 48 * HScale;
-
-		UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(UTPlayerOwner->Player);
-		if (UTLocalPlayer)
-		{
-			DrawString(FText::Format( NSLOCTEXT("a","d","Open Dialogs: {0}"),  FText::AsNumber(UTLocalPlayer->OpenDialogs.Num())), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-			YPos += 48 * HScale;
-
-			for (int32 i=0; i < UTLocalPlayer->OpenDialogs.Num(); i++)
-			{
-				if (UTLocalPlayer->OpenDialogs[i].IsValid())
-				DrawString(FText::Format( NSLOCTEXT("a","e","      {0}"),  FText::FromString(UTLocalPlayer->OpenDialogs[i]->ToString())), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-				YPos += 48 * HScale;
-			}
-
-			DrawString(FText::Format( NSLOCTEXT("a","f","Open UMG: {0}"),  FText::AsNumber(UTLocalPlayer->UMGWidgetStack.Num())), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-			YPos += 48 * HScale;
-
-			for (int32 i=0; i < UTLocalPlayer->UMGWidgetStack.Num(); i++)
-			{
-				if (UTLocalPlayer->UMGWidgetStack[i] != nullptr)
-				DrawString(FText::Format( NSLOCTEXT("a","e","      {0}"),  FText::FromString(UTLocalPlayer->UMGWidgetStack[i]->GetFullName())), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-				YPos += 48 * HScale;
-			}
-
-			DrawString(FText::Format( NSLOCTEXT("a","g","Open Windows: {0}"),  FText::AsNumber(UTLocalPlayer->WindowStack.Num())), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-			YPos += 48 * HScale;
-
-			for (int32 i=0; i < UTLocalPlayer->WindowStack.Num(); i++)
-			{
-				if (UTLocalPlayer->WindowStack[i].IsValid())
-				DrawString(FText::Format( NSLOCTEXT("a","e","      {0}"),  FText::FromString(UTLocalPlayer->WindowStack[i]->ToString())), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-				YPos += 48 * HScale;
-			}
-
-			if (UTPlayerOwner->PlayerState)
-			{
-				DrawString(FText::Format(NSLOCTEXT("a", "h", "Emote: {0}"), FText::AsNumber(UTPlayerOwner->UTPlayerState->EmoteReplicationInfo.EmoteIndex)), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-				YPos += 48 * HScale;
-
-				DrawString(FText::Format(NSLOCTEXT("a", "i", "Emote: {0}"), FText::FromString(UTPlayerOwner->UTPlayerState->ActiveGroupTaunt != nullptr ? UTPlayerOwner->UTPlayerState->ActiveGroupTaunt->GetFullName() : TEXT("none"))), 0, YPos, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-				YPos += 48 * HScale;
-			}
-		}
-
-	}
 #endif
 }
 

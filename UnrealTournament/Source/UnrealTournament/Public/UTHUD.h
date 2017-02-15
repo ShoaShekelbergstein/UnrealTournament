@@ -721,9 +721,5 @@ protected:
 
 	UFUNCTION()
 	virtual void ShowUTMenu();
-
-	// this is some debug code for UT-7424 and UYT-7377.  It will be removed soon.
-	float JoeDebugTimer;
-
 };
 

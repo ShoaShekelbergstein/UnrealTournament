@@ -20,7 +20,7 @@ void SUTGameSetupDialog::Construct(const FArguments& InArgs)
 {
 	CurrentTabIndex = -1;
 	bBeginnerMatch = false;
-	bUserTurnedOffRankCheck = false;
+	bUserHasBeenWarned = false;
 	bHubMenu = InArgs._PlayerOwner->GetWorld()->GetGameState<AUTLobbyGameState>() != NULL;
 	SUTDialogBase::Construct(SUTDialogBase::FArguments()
 							.PlayerOwner(InArgs._PlayerOwner)
@@ -366,24 +366,6 @@ FReply SUTGameSetupDialog::OnRuleClick(int32 RuleIndex)
 		if (SelectedRuleset != RuleSubset[RuleIndex].Ruleset)
 		{
 			SelectedRuleset = RuleSubset[RuleIndex].Ruleset;
-
-			TWeakObjectPtr<AUTLobbyPlayerState> MatchOwner = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
-			if (MatchOwner.IsValid() && MatchOwner->IsABeginner(SelectedRuleset.IsValid() ? SelectedRuleset->GetDefaultGameModeObject() : NULL))
-			{
-				bBeginnerMatch = true;
-
-				// We are a beginner....
-				if (!bUserTurnedOffRankCheck)
-				{
-					cbRankLocked->SetIsChecked(ECheckBoxState::Checked);
-					MatchOwner->NotifyBeginnerAutoLock();
-				}
-			}
-			else
-			{
-				bBeginnerMatch = false;
-			}
-
 			BuildMapList();
 		}
 	}
@@ -979,6 +961,8 @@ void SUTGameSetupDialog::ConfigureMatchInfo(TWeakObjectPtr<AUTLobbyMatchInfo> Ma
 	bool bRankLocked = cbRankLocked.IsValid() ? cbRankLocked->IsChecked() : true;
 	bool bSpectatable = cbSpectatable.IsValid() ? cbSpectatable->IsChecked() : true;
 	bool bPrivateMatch = cbPrivateMatch.IsValid() ? cbPrivateMatch->IsChecked() : false;
+	TWeakObjectPtr<AUTLobbyPlayerState> MatchOwner = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
+	bBeginnerMatch = (MatchOwner.IsValid() && MatchOwner->IsABeginner(SelectedRuleset.IsValid() ? SelectedRuleset->GetDefaultGameModeObject() : NULL));
 
 	if ( IsCustomSettings() )
 	{
@@ -1012,7 +996,15 @@ void SUTGameSetupDialog::ConfigureMatchInfo(TWeakObjectPtr<AUTLobbyMatchInfo> Ma
 
 void SUTGameSetupDialog::RankCheckChanged(ECheckBoxState NewState)
 {
-	if (NewState == ECheckBoxState::Unchecked) bUserTurnedOffRankCheck = true;
+	if (NewState == ECheckBoxState::Checked && !bUserHasBeenWarned)
+	{
+		TWeakObjectPtr<AUTLobbyPlayerState> MatchOwner = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
+		if (MatchOwner.IsValid())
+		{
+			bUserHasBeenWarned = true;
+			MatchOwner->NotifyBeginnerAutoLock();
+		}
+	}
 }
 
 #endif

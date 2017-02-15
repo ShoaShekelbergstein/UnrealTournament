@@ -80,7 +80,10 @@ UUTHUDWidget_SpectatorSlideOut::UUTHUDWidget_SpectatorSlideOut(const class FObje
 bool UUTHUDWidget_SpectatorSlideOut::ShouldDraw_Implementation(bool bShowScores)
 {
 	bool bShouldDraw = true;
+
 	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(UTHUDOwner->UTPlayerOwner->Player);
+#if !UE_SERVER
+
 	if (!bShowScores && UTHUDOwner->UTPlayerOwner && UTHUDOwner->UTPlayerOwner->UTPlayerState && UTGameState && (UTHUDOwner->UTPlayerOwner->UTPlayerState->bOnlySpectator || UTHUDOwner->UTPlayerOwner->UTPlayerState->bOutOfLives))
 	{
 		if ( UTGameState->HasMatchEnded() || !UTGameState->HasMatchStarted() || UTGameState->IsMatchIntermission() || (LP && LP->bRecordingReplay) )
@@ -96,7 +99,7 @@ bool UUTHUDWidget_SpectatorSlideOut::ShouldDraw_Implementation(bool bShowScores)
 	{
 		bShouldDraw = false;
 	}
-
+#endif
 	if (LP)
 	{
 		// It's fine to call Open/CloseSpectatorWindow each frame because 
