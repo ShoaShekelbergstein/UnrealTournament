@@ -805,7 +805,7 @@ void AUTPlayerState::Tick(float DeltaTime)
 	{
 		AUTCharacter* UTChar = GetUTCharacter();
 		bool bOldCanRally = bCanRally;
-		bCanRally = bRallyActivated && UTChar && (UTChar->bCanRally || UTChar->GetCarriedObject());
+		bCanRally = bRallyActivated && UTChar && !UTChar->IsDead() && (UTChar->bCanRally || UTChar->GetCarriedObject());
 		if (bCanRally != bOldCanRally)
 		{
 			ForceNetUpdate();
