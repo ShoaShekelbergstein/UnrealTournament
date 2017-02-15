@@ -74,7 +74,7 @@ void UUTWeaponStateEquipping::StartEquip(float OverflowTime)
 			UUTGameplayStatics::UTPlaySound(GetWorld(), GetOuterAUTWeapon()->BringUpSound, GetOuterAUTWeapon()->UTOwner, SRT_None);
 		}
 
-		if (GetOuterAUTWeapon()->GetNetMode() != NM_DedicatedServer && GetOuterAUTWeapon()->ShouldPlay1PVisuals())
+		if (GetOuterAUTWeapon()->GetNetMode() != NM_DedicatedServer && GetOuterAUTWeapon()->ShouldPlay1PVisuals() && GetOuterAUTWeapon()->GetUTOwner() && !GetOuterAUTWeapon()->GetUTOwner()->IsPendingKillPending())
 		{
 			// now that the anim is playing, force update first person meshes
 			// this is necessary to avoid one frame artifacts since the meshes may have been set to not update while the weapon was down

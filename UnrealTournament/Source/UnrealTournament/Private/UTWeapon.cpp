@@ -918,7 +918,7 @@ void AUTWeapon::AttachToOwner_Implementation()
 
 void AUTWeapon::UpdateWeaponHand()
 {
-	if (Mesh != NULL && UTOwner != NULL)
+	if (Mesh != NULL && UTOwner != NULL && !UTOwner->IsPendingKillPending())
 	{
 		FirstPMeshOffset = FVector::ZeroVector;
 		FirstPMeshRotation = FRotator::ZeroRotator;
@@ -1097,7 +1097,7 @@ void AUTWeapon::PlayWeaponAnim(UAnimMontage* WeaponAnim, UAnimMontage* HandsAnim
 	{
 		RateOverride = UTOwner ? UTOwner->GetFireRateMultiplier() : 1.f;
 	}
-	if (UTOwner != NULL)
+	if (UTOwner != NULL && !UTOwner->IsPendingKillPending())
 	{
 		if (WeaponAnim != NULL)
 		{
