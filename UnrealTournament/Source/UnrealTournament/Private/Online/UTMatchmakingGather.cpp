@@ -7,6 +7,7 @@
 #include "UTGameInstance.h"
 
 #define LOCTEXT_NAMESPACE "UTMatchmaking"
+const float AUTO_HOST_TIME_THRESHOLD=180.0f;
 
 UUTMatchmakingGather::UUTMatchmakingGather(const FObjectInitializer& ObjectInitializer) :
 	Super(ObjectInitializer)
@@ -15,6 +16,8 @@ UUTMatchmakingGather::UUTMatchmakingGather(const FObjectInitializer& ObjectIniti
 
 void UUTMatchmakingGather::StartMatchmaking()
 {
+	StartTime = GetWorld()->GetRealTimeSeconds();
+
 	Super::StartMatchmaking();
 	if (CurrentParams.StartWith == EMatchmakingStartLocation::CreateNew)
 	{
@@ -235,8 +238,9 @@ void UUTMatchmakingGather::OnMatchmakingSuccess()
 float UUTMatchmakingGather::GetChanceToHost() const
 {
 	const float DefaultHostChance = 40.f;
-
-	float ChanceToHost = DefaultHostChance;
+	
+	float TotalTime = GetWorld()->GetRealTimeSeconds() - StartTime;
+	float ChanceToHost = TotalTime < AUTO_HOST_TIME_THRESHOLD ? DefaultHostChance : 100.0f;
 
 	if (CurrentParams.StartWith == EMatchmakingStartLocation::CreateNew)
 	{

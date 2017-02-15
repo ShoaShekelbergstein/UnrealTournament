@@ -94,5 +94,9 @@ private:
 	 */
 	FTimerHandle StartGatherTimerHandle;
 	FTimerHandle FindGatherTimerHandle;
+
+	// When was matchmaking started.  
+	float StartTime;
+
 };
 
