@@ -16,6 +16,7 @@ AUTDMGameMode::AUTDMGameMode(const class FObjectInitializer& ObjectInitializer)
 	bGameHasImpactHammer = false;
 	bPlayersStartWithArmor = false;
 	DefaultMaxPlayers = 8;
+	bTrackKillAssists = false;
 }
 
 
