@@ -80,6 +80,7 @@
 #include "UTDemoNetDriver.h"
 #include "UTAnalytics.h"
 #include "QosInterface.h"
+#include "QosModule.h"
 #include "SUTReportUserDialog.h"
 #include "UTUMGWidget_Toast.h"
 #include "UTWorldSettings.h"
@@ -1678,7 +1679,7 @@ void UUTLocalPlayer::OnReadProfileComplete(bool bWasSuccessful, const FUniqueNet
 			{
 				CurrentProfileSettings->ApplyAllSettings(this);
 				SaveLocalProfileSettings();
-				// It's possible for the MCP data to get here before the profile, so we havbe to check for daily challenges 
+				// It's possible for the MCP data to get here before the profile, so we have to check for daily challenges 
 				// in two places.
 				UUTGameEngine* GameEngine = Cast<UUTGameEngine>(GEngine);
 				if (GameEngine && GameEngine->GetChallengeManager().IsValid())
@@ -1693,6 +1694,12 @@ void UUTLocalPlayer::OnReadProfileComplete(bool bWasSuccessful, const FUniqueNet
 				if (bNeedToSaveProfile)
 				{
 					SaveProfileSettings();
+				}
+
+				// If there's no matchmaking region, run a QoS eval
+				if (CurrentProfileSettings->MatchmakingRegion.IsEmpty())
+				{
+					FQosModule::Get().GetQosInterface()->BeginQosEvaluation(GetWorld(), FUTAnalytics::GetProviderPtr(), FSimpleDelegate::CreateUObject(this, &ThisClass::QoSComplete));
 				}
 
 				return;
@@ -1718,6 +1725,12 @@ void UUTLocalPlayer::OnReadProfileComplete(bool bWasSuccessful, const FUniqueNet
 		PlayerNickname = GetAccountDisplayName().ToString();
 		SaveConfig();
 		SaveProfileSettings();
+
+		// If there's no matchmaking region, run a QoS eval
+		if (CurrentProfileSettings->MatchmakingRegion.IsEmpty())
+		{
+			FQosModule::Get().GetQosInterface()->BeginQosEvaluation(GetWorld(), FUTAnalytics::GetProviderPtr(), FSimpleDelegate::CreateUObject(this, &ThisClass::QoSComplete));
+		}
 	}
 }
 
@@ -5976,6 +5989,28 @@ void UUTLocalPlayer::LoginProcessComplete()
 
 		TSharedPtr<const FUniqueNetId> UserId = OnlineIdentityInterface->GetUniquePlayerId(GetControllerId());
 		ShowRankedReconnectDialog(UserId->ToString());
+	}
+}
+
+void UUTLocalPlayer::QoSComplete()
+{
+	FString MatchmakingRegion = FQosModule::Get().GetQosInterface()->GetRegionId();
+	UE_LOG(UT, Log, TEXT("QoS complete, recommended region %s"), *MatchmakingRegion);
+	if (CurrentProfileSettings)
+	{
+		if (MatchmakingRegion == TEXT("EU") || MatchmakingRegion == TEXT("NA"))
+		{
+			CurrentProfileSettings->MatchmakingRegion = MatchmakingRegion;
+			SaveProfileSettings();
+		}
+		else
+		{
+			UE_LOG(UT, Warning, TEXT("QoS complete, but invalid region %s"), *MatchmakingRegion);
+		}
+	}
+	else
+	{
+		UE_LOG(UT, Warning, TEXT("Matchmaking region chosen, but no profile settings to apply"));
 	}
 }
 

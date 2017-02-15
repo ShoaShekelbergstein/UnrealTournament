@@ -984,6 +984,8 @@ public:
 	virtual void AttemptJoinInstance(TSharedPtr<FServerData> ServerData, FString InstanceId, bool bSpectate);
 	virtual void CloseJoinInstanceDialog();
 
+	void QoSComplete();
+
 protected:
 #if !UE_SERVER
 	TSharedPtr<SUTJoinInstanceWindow> JoinInstanceDialog;
