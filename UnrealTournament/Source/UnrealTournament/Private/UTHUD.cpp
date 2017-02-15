@@ -688,10 +688,6 @@ void AUTHUD::OpenMatchSummary()
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (UTLP && GS && !GS->IsPendingKillPending())
 	{
-		if (PlayerOwner && PlayerOwner->PlayerState && !PlayerOwner->PlayerState->bOnlySpectator)
-		{
-			UTLP->CloseSpectatorWindow();
-		}
 		UTLP->ShowMenu(TEXT("forcesummary"));
 	}
 }
@@ -714,8 +710,8 @@ void AUTHUD::PostRender()
 	}
 	Super::PostRender();
 
-	//if (JoeDebugTimer > 0)
-	if ( UTPlayerOwner && GS && UTPlayerOwner->PlayerState && FParse::Param(FCommandLine::Get(), TEXT("joedebug")))
+	if (UTPlayerOwner && GS && UTPlayerOwner->PlayerState && JoeDebugTimer > 0)
+	//if ( UTPlayerOwner && GS && UTPlayerOwner->PlayerState && FParse::Param(FCommandLine::Get(), TEXT("joedebug")))
 	{
 		float YPos = Canvas->ClipY * 0.5;
 		float HScale = Canvas->ClipY / 1080.0f;
@@ -860,14 +856,6 @@ void AUTHUD::DrawHUD()
 		if (!bFontsCached)
 		{
 			CacheFonts();
-		}
-		if (PlayerOwner && PlayerOwner->PlayerState && PlayerOwner->PlayerState->bOnlySpectator)
-		{
-			UUTLocalPlayer* UTLP = Cast<UUTLocalPlayer>(PlayerOwner->Player);
-			if (UTLP)
-			{
-				UTLP->OpenSpectatorWindow();
-			}
 		}
 
 		if (DamageScreenMID != nullptr)

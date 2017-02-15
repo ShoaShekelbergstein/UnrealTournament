@@ -731,15 +731,10 @@ void AUTPlayerState::OnOutOfLives()
 	{
 		if (bOutOfLives)
 		{
-			UTLP->OpenSpectatorWindow();
 			if (MyPC && MyPC->MyUTHUD && MyPC->MyUTHUD->GetSpectatorSlideOut())
 			{
 				MyPC->MyUTHUD->GetSpectatorSlideOut()->SetMouseInteractive(true);
 			}
-		}
-		else
-		{
-			UTLP->CloseSpectatorWindow();
 		}
 	}
 }
