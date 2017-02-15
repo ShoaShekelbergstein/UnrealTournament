@@ -1290,6 +1290,7 @@ public:
 	bool CanPerformRally() const;
 
 	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
+	void ClientWasKicked_Implementation(const FText& KickReason) override;
 };
 
 

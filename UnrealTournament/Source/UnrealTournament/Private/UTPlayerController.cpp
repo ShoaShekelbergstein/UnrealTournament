@@ -5400,3 +5400,16 @@ void AUTPlayerController::BeginSpectatingState()
 
 	FlushPressedKeys();
 }
+
+void AUTPlayerController::ClientWasKicked_Implementation(const FText& KickReason)
+{
+	ULocalPlayer* UTLocalPlayer = Cast<ULocalPlayer>(Player);
+	if (UTLocalPlayer != nullptr)
+	{
+		UUTGameViewportClient* ViewportClient = Cast<UUTGameViewportClient>(UTLocalPlayer->ViewportClient);
+		if (ViewportClient != nullptr)
+		{
+			ViewportClient->KickReason = KickReason;
+		}
+	}
+}

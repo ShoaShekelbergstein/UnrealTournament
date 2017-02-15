@@ -2639,7 +2639,7 @@ void AUTGameMode::TravelToNextMap_Implementation()
 				}
 				else if (GameSession != nullptr)
 				{
-					GameSession->KickPlayer(Controller, FText::FromString( TEXT("You were kicked for being idle.")));
+					GameSession->KickPlayer(Controller, NSLOCTEXT("General", "IdleKick", "You were kicked for being idle."));
 				}
 			}
 		}

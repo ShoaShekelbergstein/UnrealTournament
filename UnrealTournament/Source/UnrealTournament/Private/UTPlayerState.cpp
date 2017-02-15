@@ -828,7 +828,7 @@ void AUTPlayerState::Tick(float DeltaTime)
 
 		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
 		// Only update the idle state if the match is in progress.
-		if (UTGameState && UTGameState->IsMatchInProgress())
+		if (UTGameState && UTGameState->IsMatchInProgress() && !bOutOfLives)
 		{
 			bPlayerIsIdle = GetWorld()->GetTimeSeconds() - LastActiveTime > IDLE_TIMEOUT_TIME;
 		}
@@ -4161,5 +4161,5 @@ void AUTPlayerState::NotIdle()
 
 bool AUTPlayerState::IsPlayerIdle()
 {
-	return (!bIsABot && bPlayerIsIdle);
+	return (!bIsABot && !bOnlySpectator && bPlayerIsIdle);
 }

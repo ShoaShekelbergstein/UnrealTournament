@@ -714,6 +714,7 @@ TSharedPtr<class SUTDialogBase> UUTLocalPlayer::ShowSupressableConfirmation(FTex
 void UUTLocalPlayer::OpenDialog(TSharedRef<SUTDialogBase> Dialog, int32 ZOrder)
 {
 	GEngine->GameViewport->AddViewportWidgetContent(Dialog, ZOrder);
+	Dialog->ZOrder = ZOrder;
 	Dialog->OnDialogOpened();
 	OpenDialogs.Add(Dialog);
 }
@@ -4561,6 +4562,12 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 		if (!bExceptDialogs || (Dialog.IsValid() && !Dialog->bRemainOpenThroughTravel()) )
 		{
 			DialogsToClose.Add(Dialog);
+		}
+		else
+		{
+			// ReAdd this dialog to the viewport.  This is a hacky solution until we have time to
+			// go through and make sure noone is opening dialogs/windows/etc that aren't in the stacks
+			GEngine->GameViewport->AddViewportWidgetContent(Dialog.ToSharedRef(), Dialog->ZOrder);
 		}
 	}
 

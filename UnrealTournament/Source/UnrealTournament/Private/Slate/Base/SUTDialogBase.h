@@ -147,6 +147,8 @@ public:
 		return false;
 	}
 
+	int32 ZOrder;
+
 };
 
 
