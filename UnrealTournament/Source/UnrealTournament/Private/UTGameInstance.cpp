@@ -867,10 +867,13 @@ void UUTGameInstance::OnMoviePlaybackFinished()
 		}
 	}
 
-	AUTBaseGameMode* GM = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
-	if (GM)
+	if (GetWorld())
 	{
-		GM->OnLoadingMovieEnd();
+		AUTBaseGameMode* GM = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
+		if (GM)
+		{
+			GM->OnLoadingMovieEnd();
+		}
 	}
 }
 #endif
