@@ -782,24 +782,16 @@ void AUTLobbyMatchInfo::ServerCreateCustomRule_Implementation(const FString& Gam
 			}
 		}
 
-		int32 OptimalPlayerCount = 4;
-
 		InitialMap = StartingMap;
 		GetMapInformation();
-
-		if (InitialMapInfo.IsValid())
-		{
-			OptimalPlayerCount = ( CustomGameModeDefaultObject && CustomGameModeDefaultObject->bTeamGame) ? InitialMapInfo->OptimalTeamPlayerCount : InitialMapInfo->OptimalPlayerCount;
-		}
-
-		NewReplicatedRuleset->MaxPlayers = DesiredPlayerCount > 0 ? DesiredPlayerCount : OptimalPlayerCount;
+		NewReplicatedRuleset->MaxPlayers = DesiredPlayerCount;
 		if (DesiredSkillLevel >= 0)
 		{
-			FinalGameOptions += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), NewReplicatedRuleset->MaxPlayers, FMath::Clamp<int32>(DesiredSkillLevel,0,7));				
+			FinalGameOptions += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i?MaxPlayers=%i"), NewReplicatedRuleset->MaxPlayers, FMath::Clamp<int32>(DesiredSkillLevel,0,7), DesiredPlayerCount);				
 		}
 		else
 		{
-			FinalGameOptions += TEXT("?BotFill=0");
+			FinalGameOptions += FString::Printf(TEXT("?BotFill=0?MaxPlayers=%i"), DesiredPlayerCount);
 		}
 		NewReplicatedRuleset->GameOptions = FinalGameOptions;
 		NewReplicatedRuleset->MinPlayersToStart = 2;
