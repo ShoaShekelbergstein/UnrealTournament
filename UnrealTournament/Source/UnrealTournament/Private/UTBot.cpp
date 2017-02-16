@@ -2736,7 +2736,7 @@ void AUTBot::ExecuteWhatToDoNext()
 
 		// if we're being spawn camped but are in a protected spawn area, try to shoot enemy from here
 		bool bHideInSpawnArea = false;
-		if (UTChar != nullptr && Enemy != nullptr && UTChar->LastGameVolume != nullptr && UTChar->LastGameVolume->bIsTeamSafeVolume && IsEnemyVisible(Enemy) && CanAttack(Enemy, Enemy->GetActorLocation(), true))
+		if (UTChar != nullptr && !UTChar->bDamageHurtsHealth && Enemy != nullptr && UTChar->LastGameVolume != nullptr && UTChar->LastGameVolume->bIsTeamSafeVolume && IsEnemyVisible(Enemy) && CanAttack(Enemy, Enemy->GetActorLocation(), true))
 		{
 			GoalString = TEXT("Stay in spawn protected volume and shoot spawn campers");
 			DoRangedAttackOn(Enemy);
