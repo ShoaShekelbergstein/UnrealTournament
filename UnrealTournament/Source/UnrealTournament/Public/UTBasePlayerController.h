@@ -212,6 +212,12 @@ public:
 	virtual void ServerRconNormal();
 
 	UFUNCTION(Exec)
+	virtual void RconDBExec(FString Command);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerRconDBExec(const FString& Command);
+
+	UFUNCTION(Exec)
 	virtual void RconExec(FString Command);
 
 	UFUNCTION(Server, Reliable, WithValidation)

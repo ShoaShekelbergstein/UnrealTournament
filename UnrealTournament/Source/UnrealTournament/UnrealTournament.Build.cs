@@ -23,11 +23,17 @@ public class UnrealTournament : ModuleRules
 			"UnrealTournament/Private/Slate/Panels",	
 			"UnrealTournament/Private/Slate/Toasts",	
 			"UnrealTournament/Private/Slate/Widgets",	
-			"UnrealTournament/Private/Slate/UIWindows",	
-		});
+			"UnrealTournament/Private/Slate/UIWindows",
+            "UnrealTournament/ThirdParty/sqlite",
+        });
 
+        if (Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            PublicLibraryPaths.Add("UnrealTournament/ThirdParty/sqlite/Windows");
+            PublicAdditionalLibraries.Add("sqlite3.lib");
+        }
 
-		DynamicallyLoadedModuleNames.AddRange(
+        DynamicallyLoadedModuleNames.AddRange(
 			new string[] {
 				"UTReplayStreamer",
 			}

@@ -742,6 +742,59 @@ UUTLocalPlayer* AUTBasePlayerController::GetUTLocalPlayer()
 	return Cast<UUTLocalPlayer>(Player);
 }
 
+void AUTBasePlayerController::RconDBExec(FString Command)
+{
+	ServerRconDBExec(Command);
+}
+
+bool AUTBasePlayerController::ServerRconDBExec_Validate(const FString& Command)
+{
+	return true;
+}
+
+void AUTBasePlayerController::ServerRconDBExec_Implementation(const FString& Command)
+{
+	if (UTPlayerState == nullptr || !UTPlayerState->bIsRconAdmin)
+	{
+		ClientSay(UTPlayerState, TEXT("Rcon not authenticated"), ChatDestinations::System);
+		return;
+	}
+	
+	UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
+	if (GI)
+	{
+		TArray<FDatabaseRow> DBRows;
+		bool DBReturn = GI->ExecDatabaseCommand(Command, DBRows);
+
+		if (DBRows.Num() > 0)
+		{
+			// Failsafe to not blow out on clientsay
+			const int MAXROWS = 10;
+			for (int i = 0; i < DBRows.Num() && i < MAXROWS; i++)
+			{
+				FString Message;
+				for (int j = 0; j < DBRows[i].Text.Num(); j++)
+				{
+					Message += DBRows[i].Text[j] + TEXT(" ");
+				}
+
+				ClientSay(UTPlayerState, Message, ChatDestinations::System);
+			}
+		}
+		else
+		{
+			if (DBReturn)
+			{
+				ClientSay(UTPlayerState, TEXT("DB command accepted"), ChatDestinations::System);
+			}
+			else
+			{
+				ClientSay(UTPlayerState, TEXT("DB command rejected"), ChatDestinations::System);
+			}
+		}
+	}
+}
+
 void AUTBasePlayerController::RconExec(FString Command)
 {
 	ServerRconExec(Command);

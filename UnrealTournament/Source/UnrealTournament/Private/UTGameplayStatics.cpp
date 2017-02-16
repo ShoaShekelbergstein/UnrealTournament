@@ -974,3 +974,16 @@ void UUTGameplayStatics::RecordEvent_UTTutorialPlayInstruction(AUTPlayerControll
 		FUTAnalytics::FireEvent_UTTutorialPlayInstruction(UTPC, AnnouncementName, InstructionID);
 	}
 }
+
+void UUTGameplayStatics::ExecuteDatabaseQuery(UObject* WorldContextObject, const FString& DatabaseQuery, TArray<FDatabaseRow>& OutDatabaseRows)
+{
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, false);
+	if (World)
+	{
+		UUTGameInstance* GI = Cast<UUTGameInstance>(World->GetGameInstance());
+		if (GI)
+		{
+			GI->ExecDatabaseCommand(DatabaseQuery, OutDatabaseRows);
+		}
+	}
+}

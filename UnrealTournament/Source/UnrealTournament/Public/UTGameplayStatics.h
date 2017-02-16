@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Kismet/KismetSystemLibrary.h"
+#include "UTGameInstance.h"
 
 #include "UTGameplayStatics.generated.h"
 
@@ -246,4 +247,7 @@ class UNREALTOURNAMENT_API UUTGameplayStatics : public UBlueprintFunctionLibrary
 		AGameStateBase* GS = (World != nullptr) ? World->GetGameState() : nullptr;
 		return (GS != nullptr) ? GS->GameModeClass : nullptr;
 	}
+
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "UT", meta = (WorldContext = "WorldContextObject"))
+	static void ExecuteDatabaseQuery(UObject* WorldContextObject, const FString& DatabaseQuery, TArray<FDatabaseRow>& OutDatabaseRows);
 };
