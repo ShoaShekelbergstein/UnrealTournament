@@ -4568,7 +4568,9 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 
 	ChatArchive.Empty();
 
+#if !UE_SERVER
 	CloseAuth();
+#endif
 
 	if (GetWorld() && GetWorld()->WorldType == EWorldType::Game)
 	{
