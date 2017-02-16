@@ -160,14 +160,17 @@ AUTTeamInfo* AUTCTFGameState::FindLeadingTeam()
 		bTied = false;
 		for (int32 i=1;i<Teams.Num();i++)
 		{
-			if (Teams[i]->Score == LeadingTeam->Score)
+			if (Teams[i] != nullptr)
 			{
-				bTied = true;
-			}
-			else if (Teams[i]->Score > LeadingTeam->Score)
-			{
-				LeadingTeam = Teams[i];
-				bTied = false;
+				if (Teams[i]->Score == LeadingTeam->Score)
+				{
+					bTied = true;
+				}
+				else if (Teams[i]->Score > LeadingTeam->Score)
+				{
+					LeadingTeam = Teams[i];
+					bTied = false;
+				}
 			}
 		}
 
