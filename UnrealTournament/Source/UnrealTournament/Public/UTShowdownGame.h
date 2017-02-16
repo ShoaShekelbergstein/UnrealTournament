@@ -91,6 +91,7 @@ public:
 
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	virtual void InitGameState() override;
+	virtual void StartMatch() override;
 	virtual bool CheckRelevance_Implementation(AActor* Other) override;
 	virtual void SetPlayerDefaults(APawn* PlayerPawn) override;
 	virtual void ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType) override;

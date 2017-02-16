@@ -101,6 +101,25 @@ void AUTShowdownGame::ScoreDamage_Implementation(int32 DamageAmount, AUTPlayerSt
 	}
 }
 
+void AUTShowdownGame::StartMatch()
+{
+	if (HasMatchStarted())
+	{
+		// Already started
+		return;
+	}
+	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+	{
+		AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+		if (PS && !PS->bIsInactive && !PS->bOnlySpectator)
+		{
+			PS->SetOutOfLives(false);
+		}
+	}
+
+	Super::StartMatch();
+}
+
 void AUTShowdownGame::StartNewRound()
 {
 	RoundElapsedTime = 0;
