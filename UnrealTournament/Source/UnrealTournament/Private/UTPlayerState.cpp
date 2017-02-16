@@ -832,6 +832,10 @@ void AUTPlayerState::Tick(float DeltaTime)
 		{
 			bPlayerIsIdle = GetWorld()->GetTimeSeconds() - LastActiveTime > IDLE_TIMEOUT_TIME;
 		}
+		else if (UTGameState == nullptr || !UTGameState->HasMatchEnded())
+		{
+			bPlayerIsIdle = false;
+		}
 	}
 	// If we are waiting to respawn then count down
 	RespawnTime -= DeltaTime;
