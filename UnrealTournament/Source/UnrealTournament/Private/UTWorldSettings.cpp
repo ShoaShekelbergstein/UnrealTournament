@@ -109,7 +109,7 @@ void AUTWorldSettings::NotifyBeginPlay()
 		FullActorList.Append(LevelActorList);
 		for (AActor* Actor : FullActorList)
 		{
-			// there's no 
+			// there's no convenient world delegate or game code virtual call so we have to hook into every actor individually
 			if (Actor->bNetStartup)
 			{
 				Actor->OnEndPlay.AddDynamic(this, &AUTWorldSettings::LevelActorDestroyed);

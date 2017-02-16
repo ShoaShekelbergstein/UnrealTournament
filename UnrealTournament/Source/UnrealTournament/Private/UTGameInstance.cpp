@@ -394,8 +394,10 @@ void UUTGameInstance::StartRecordingReplay(const FString& Name, const FString& F
 	{
 		//UE_LOG(UT, VeryVerbose, TEXT("Num Network Actors: %i"), CurrentWorld->DemoNetDriver->GetNetworkObjectList().GetObjects().Num());
 		
-		// on client, propagate level actors destroyed prior to replay being initialized as this isn't normally tracked clientside
-		if (CurrentWorld->IsClient() && CurrentWorld->DemoNetDriver->ClientConnections.Num() > 0 && CurrentWorld->DemoNetDriver->ClientConnections[0] != nullptr)
+		// propagate level actors destroyed prior to replay being initialized as this isn't normally tracked in all cases
+		// NOTE: in the server case we could copy from the game net driver, but there's a lot of interdependencies between the list and the net GUID cache
+		//		and anyway the code below has to be reliable for non-server cases so there's no clear value in having split codepaths
+		if (CurrentWorld->DemoNetDriver->ClientConnections.Num() > 0 && CurrentWorld->DemoNetDriver->ClientConnections[0] != nullptr)
 		{
 			AUTWorldSettings* WS = Cast<AUTWorldSettings>(CurrentWorld->GetWorldSettings());
 			if (WS != nullptr)
