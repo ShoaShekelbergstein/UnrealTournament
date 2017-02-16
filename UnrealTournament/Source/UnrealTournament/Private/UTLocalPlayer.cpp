@@ -6120,16 +6120,29 @@ void UUTLocalPlayer::InitializeSocial()
  	{
 		ISocialModule::Get().GetFriendsAndChatManager(TEXT(""), true)->GetNotificationService()->OnSendNotification().AddUObject(this, &UUTLocalPlayer::HandleFriendsActionNotification);
  	}
-				
+	
 #endif
+	
+	GetWorld()->GetTimerManager().SetTimer(SocialInitializationTimerHandle, this, &UUTLocalPlayer::SocialInitialized, 0.25f, true);
 
+}
+
+void UUTLocalPlayer::SocialInitialized()
+{
 #if !UE_SERVER
+
+	if (!ISocialModule::Get().GetFriendsAndChatManager(TEXT(""), true)->IsLoggedIn())
+	{
+		return;
+	}
+
+	GetWorld()->GetTimerManager().ClearTimer(SocialInitializationTimerHandle);
+
 	// Make sure popup is created so we dont lose any messages
 	GetFriendsPopup();
 #endif
 
 	LoginPhase = ELoginPhase::LoggedIn;
-
 }
 
 bool UUTLocalPlayer::SkipTutorialCheck()
