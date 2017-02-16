@@ -682,13 +682,6 @@ void AUTPlayerController::ClientRestart_Implementation(APawn* NewPawn)
 	{
 		MyUTHUD->ClientRestart();
 	}
-
-	//if a line-up is active, make sure we turn back on the ignore look input flag on client
-	AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
-	if (UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive && UTGS->GetCameraActorForLineUp(UTGS->LineUpHelper->LastActiveType))
-	{
-		SetIgnoreLookInput(true);
-	}
 }
 
 void AUTPlayerController::PawnPendingDestroy(APawn* InPawn)
@@ -5261,12 +5254,6 @@ void AUTPlayerController::ClientSetActiveLineUp_Implementation()
 
 			if (UTGS->LineUpHelper->bIsActive)
 			{
-				//Only lock look input if we have a camera setup
-				if (UTGS->GetCameraActorForLineUp(UTGS->LineUpHelper->LastActiveType))
-				{
-					SetIgnoreLookInput(true);
-				}
-
 				ToggleScoreboard(false);
 
 				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)

@@ -672,7 +672,6 @@ void AUTCTFGameMode::HandleDefaultLineupSpawns(LineUpTypes LineUpType, TArray<AU
 					AUTPlayerController* UTPC = Cast<AUTPlayerController>(C);
 					if (UTPC && (CTFGameState->FlagBases.Num() > TeamToHighlight))
 					{
-						UTPC->SetIgnoreLookInput(false);
 						UTPC->SetViewTarget(CTFGameState->FlagBases[TeamToHighlight]);
 					}
 				}
