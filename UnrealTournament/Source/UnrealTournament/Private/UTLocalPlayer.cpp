@@ -4568,6 +4568,8 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 
 	ChatArchive.Empty();
 
+	CloseAuth();
+
 	if (GetWorld() && GetWorld()->WorldType == EWorldType::Game)
 	{
 		GEngine->GameViewport->RemoveAllViewportWidgets();
