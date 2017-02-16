@@ -436,6 +436,9 @@ public:
 	virtual bool Exec( UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar ) override;
 
 public:
+	
+	UPROPERTY()
+	bool bIsLocalReplay;
 
 	/** @todo document */
 	bool UpdateDemoTime( float* DeltaTime, float TimeDilation );

@@ -3058,7 +3058,21 @@ void UDemoNetConnection::HandleClientPlayer( APlayerController* PC, UNetConnecti
 		return;
 	}
 
+	ULocalPlayer* LocalPlayer = NULL;
+	for (FLocalPlayerIterator It(GEngine, Driver->GetWorld()); It; ++It)
+	{
+		LocalPlayer = *It;
+		break;
+	}
+	int32 SavedNetSpeed = LocalPlayer->CurrentNetSpeed;
+
 	Super::HandleClientPlayer( PC, NetConnection );
+	
+	// Restore the netspeed if we're a local replay
+	if (GetDriver()->bIsLocalReplay)
+	{
+		LocalPlayer->CurrentNetSpeed = SavedNetSpeed;
+	}
 
 	// Assume this is our special spectator controller
 	GetDriver()->SpectatorController = PC;
