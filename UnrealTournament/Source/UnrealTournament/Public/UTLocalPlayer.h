@@ -1330,7 +1330,7 @@ protected:
 	uint8 SavingMask; 
 
 	void ChatWidgetConsoleKeyPressed();
-	void UUTLocalPlayer::SocialInitialized();
+	void SocialInitialized();
 
 public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
