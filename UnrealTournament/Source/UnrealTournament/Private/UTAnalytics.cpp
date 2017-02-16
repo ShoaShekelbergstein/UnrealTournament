@@ -1049,7 +1049,14 @@ void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDef
 				int BlueTeamBonusTime = 0;
 				if (UTGS->Teams.Num() > 1)
 				{
-					bEndedInTie = UTGS->Teams[0]->Score == UTGS->Teams[1]->Score;
+					//Has to be final round (or OverTime) for a tie breaker scenario. Otherwise one team shut out the other.
+					if (UTGS->CTFRound >= UTGS->NumRounds)
+					{
+						//Either the end scores were the same, or defense held out long enough to win by bonus time (scores will not be same due to defense extra point)
+						bEndedInTie = ( (UTGS->Teams[0]->Score == UTGS->Teams[1]->Score) ||
+									    ((UTGS->EarlyEndTime > 0) && bIsDefenseRoundWin) );
+					}
+
 					RedTeamBonusTime = UTGS->Teams[0]->RoundBonus;
 					BlueTeamBonusTime = UTGS->Teams[1]->RoundBonus;
 				}
