@@ -195,6 +195,8 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(EnterMethod);
 	AddGenericParamName(UTStartRankedMatch);
 	AddGenericParamName(UTEndRankedMatch);
+	AddGenericParamName(UTStartQuickplayMatch);
+	AddGenericParamName(UTEndQuickplayMatch);
 	AddGenericParamName(ELOPlayerInfo);
 
 	AddGenericParamName(UTTutorialPickupToken);
