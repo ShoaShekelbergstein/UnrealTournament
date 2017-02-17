@@ -152,24 +152,26 @@ void AUTCTFGameState::OnRep_MatchState()
 AUTTeamInfo* AUTCTFGameState::FindLeadingTeam()
 {
 	AUTTeamInfo* LeadingTeam = NULL;
-	bool bTied;
+	bool bTied = false;
 
 	if (Teams.Num() > 0)
 	{
 		LeadingTeam = Teams[0];
-		bTied = false;
-		for (int32 i=1;i<Teams.Num();i++)
+		if (LeadingTeam)
 		{
-			if (Teams[i] != nullptr)
+			for (int32 i = 1; i<Teams.Num(); i++)
 			{
-				if (Teams[i]->Score == LeadingTeam->Score)
+				if (Teams[i] != nullptr)
 				{
-					bTied = true;
-				}
-				else if (Teams[i]->Score > LeadingTeam->Score)
-				{
-					LeadingTeam = Teams[i];
-					bTied = false;
+					if (Teams[i]->Score == LeadingTeam->Score)
+					{
+						bTied = true;
+					}
+					else if (Teams[i]->Score > LeadingTeam->Score)
+					{
+						LeadingTeam = Teams[i];
+						bTied = false;
+					}
 				}
 			}
 		}
