@@ -206,7 +206,8 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
 				if (UTPlayerState && !UTPlayerState->bIsABot && !UTPlayerState->bOutOfLives && UTPlayerState->IsPlayerIdle() && !UTPlayerState->bOnlySpectator && !UTPlayerState->bIsInactive && Cast<APlayerController>(UTPlayerState->GetOwner()))
 				{
-					GameSession->KickPlayer(Cast<APlayerController>(UTPlayerState->GetOwner()), NSLOCTEXT("General", "IdleKick", "You were kicked for being idle."));
+					Cast<APlayerController>(UTPlayerState->GetOwner())->ClientWasKicked(NSLOCTEXT("General", "IdleKick", "You were kicked for being idle."));
+					UTPlayerState->GetOwner()->Destroy();
 				}
 			}
 		}
