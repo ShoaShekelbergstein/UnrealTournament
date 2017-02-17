@@ -10,7 +10,7 @@ FName NAME_Defend(TEXT("Defend"));
 
 bool FSuperPickupEval::AllowPickup(APawn* Asker, AController* RequestOwner, AActor* Pickup, float Desireability, float PickupDist)
 {
-	if (ClaimedPickups.Contains(Pickup))
+	if (!FBestInventoryEval::AllowPickup(Asker, RequestOwner, Pickup, Desireability, PickupDist))
 	{
 		return false;
 	}

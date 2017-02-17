@@ -160,13 +160,10 @@ void AUTPickup::ProcessTouch_Implementation(APawn* TouchedBy)
 				}
 				for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
 				{
-					if (It->IsValid())
+					AUTBot* B = Cast<AUTBot>(It->Get());
+					if (B != NULL)
 					{
-						AUTBot* B = Cast<AUTBot>(It->Get());
-						if (B != NULL)
-						{
-							B->NotifyPickup(TouchedBy, this, Radius);
-						}
+						B->NotifyPickup(TouchedBy, this, Radius, true);
 					}
 				}
 			}

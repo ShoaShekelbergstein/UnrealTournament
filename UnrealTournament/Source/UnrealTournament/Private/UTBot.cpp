@@ -19,6 +19,7 @@
 #include "UTAIAction_Camp.h"
 #include "UTLift.h"
 #include "UTFlagRunGame.h"
+#include "UTArmor.h"
 
 void FBotEnemyInfo::Update(EAIEnemyUpdateType UpdateType, const FVector& ViewerLoc)
 {
@@ -2426,6 +2427,56 @@ bool AUTBot::FindInventoryGoal(float MinWeight)
 		LastFindInventoryWeight = MinWeight;
 
 		FBestInventoryEval NodeEval(RespawnPredictionTime, (GetCharacter() != NULL) ? GetCharacter()->GetCharacterMovement()->MaxWalkSpeed : GetDefault<AUTCharacter>()->GetCharacterMovement()->MaxWalkSpeed, (MinWeight > 0.0f) ? FMath::TruncToInt(5.0f / MinWeight) : 0);
+		// check for teammates about to pick up things and reject them from evaluation
+		// unlike super pickups, we're just checking direct move goals or allies camping the pickup already;
+		// desire for minor pickups change rapidly and there's not a lot of value in trying to claim far ahead
+		// we're primarily just trying to avoid cases of teammates near each other (especially from a spawn room) competing for the same pickup
+		// when obviously only one of them is going to get it
+		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+		if (PS != nullptr && PS->Team != nullptr && GS != nullptr)
+		{
+			auto CheckPickup = [GS, &NodeEval](AActor* A)
+			{
+				if (A->IsA(AUTPickup::StaticClass()) || A->IsA(AUTDroppedPickup::StaticClass()))
+				{
+					if (!GS->bWeaponStay)
+					{
+						NodeEval.ClaimedPickups.Add(A);
+					}
+					else
+					{
+						AUTPickupInventory* ItemPickup = Cast<AUTPickupInventory>(A);
+						if (ItemPickup != nullptr)
+						{
+							TSubclassOf<AUTWeapon> WeaponClass(*ItemPickup->GetInventoryType());
+							if (WeaponClass != nullptr || !WeaponClass.GetDefaultObject()->bWeaponStay)
+							{
+								NodeEval.ClaimedPickups.Add(A);
+							}
+						}
+					}
+				}
+			};
+			for (AController* C : PS->Team->GetTeamMembers())
+			{
+				if (C != nullptr && C != this && C->GetPawn() != nullptr)
+				{
+					TSet<AActor*> Overlaps;
+					GetOverlappingActors(Overlaps, AActor::StaticClass());
+					for (AActor* A : Overlaps)
+					{
+						CheckPickup(A);
+					}
+					AUTBot* B = Cast<AUTBot>(C);
+					if (B != nullptr && B->GetMoveTarget().Actor.IsValid())
+					{
+						CheckPickup(B->GetMoveTarget().Actor.Get());
+					}
+				}
+			}
+		}
+
 		return NavData->FindBestPath(GetPawn(), GetPawn()->GetNavAgentPropertiesRef(), this, NodeEval, GetPawn()->GetNavAgentLocation(), MinWeight, false, RouteCache);
 	}
 }
@@ -4002,7 +4053,7 @@ void AUTBot::NotifyCausedHit(APawn* HitPawn, int32 Damage)
 	}
 }
 
-void AUTBot::NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius)
+void AUTBot::NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius, bool bWillBecomeInactive)
 {
 	if (GetPawn() != NULL && GetPawn() != PickedUpBy && !IsTeammate(PickedUpBy))
 	{
@@ -4027,7 +4078,7 @@ void AUTBot::NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius
 			// assume inventory items that manipulate damage change effective health
 			if (InventoryType != NULL)
 			{
-				bCanUpdateEnemyInfo = InventoryType.GetDefaultObject()->bCallDamageEvents;
+				bCanUpdateEnemyInfo = InventoryType.GetDefaultObject()->bCallDamageEvents || InventoryType->IsChildOf(AUTArmor::StaticClass());
 			}
 		}
 		if ((Pickup->GetActorLocation() - GetPawn()->GetActorLocation()).Size() < AudibleRadius * HearingRadiusMult * 0.5f || IsEnemyVisible(PickedUpBy) || LineOfSightTo(Pickup))
@@ -4047,6 +4098,10 @@ void AUTBot::NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius
 					Say(FText::Format(NSLOCTEXT("UTBot", "EnemyPickup", "Enemy {0} got {1}."), FText::FromString(PickedUpBy->PlayerState->PlayerName), Item->GetDisplayName()).ToString(), true);
 				}
 			}
+			if (bWillBecomeInactive && MoveTarget.Actor.Get() == Pickup && CurrentAction != nullptr)
+			{
+				CurrentAction->PickupTargetTaken();
+			}
 		}
 	}
 	else if (GetPawn() == PickedUpBy)
@@ -4058,11 +4113,16 @@ void AUTBot::NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius
 			Say(FText::Format(NSLOCTEXT("UTBot", "GotPickup", "I got the {0}!"), Item->GetDisplayName()).ToString(), true);
 		}
 	}
+	else if (IsTeammate(PickedUpBy) && bWillBecomeInactive && MoveTarget.Actor.Get() == Pickup && CurrentAction != nullptr)
+	{
+		CurrentAction->PickupTargetTaken();
+	}
 	// clear any claims on this pickup since it's likely no longer available
 	if (Squad != NULL && Squad->Team != NULL)
 	{
 		Squad->Team->ClearClaimedPickup(Pickup);
 	}
+	
 }
 
 void AUTBot::ReceiveProjWarning(AUTProjectile* Incoming)

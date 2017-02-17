@@ -157,7 +157,7 @@ void AUTDroppedPickup::ProcessTouch_Implementation(APawn* TouchedBy)
 					AUTBot* B = Cast<AUTBot>(It->Get());
 					if (B != NULL)
 					{
-						B->NotifyPickup(TouchedBy, this, Radius);
+						B->NotifyPickup(TouchedBy, this, Radius, true);
 					}
 				}
 			}

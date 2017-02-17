@@ -50,12 +50,14 @@ struct UNREALTOURNAMENT_API FBestInventoryEval : public FUTNodeEvaluator
 	const float RespawnPredictionTime;
 	const float MoveSpeed;
 	const int32 MaxDist;
+	/** list of pickups to ignore because a teammate has a claim on them */
+	TArray<AActor*> ClaimedPickups;
 
 	float BestWeight;
 	AActor* BestPickup;
 
 	/** goal from last pathing attempt
-	 * this is used to when using respawn prediction and the time-to-goal changes so the bot doesn't "lose" its existing valid goal
+	 * this is used when using respawn prediction and the time-to-goal changes so the bot doesn't "lose" its existing valid goal
 	 */
 	AActor* PrevGoal;
 
@@ -68,11 +70,11 @@ struct UNREALTOURNAMENT_API FBestInventoryEval : public FUTNodeEvaluator
 	/** return false to ignore this pickup even if it is desirable and available */
 	virtual bool AllowPickup(APawn* Asker, AController* RequestOwner, AActor* Pickup, float Desireability, float PickupDist)
 	{
-		return true;
+		return !ClaimedPickups.Contains(Pickup);
 	}
 
-	FBestInventoryEval(float InPredictionTime, float InMoveSpeed, int32 InMaxDist = 0)
-		: RespawnPredictionTime(InPredictionTime), MoveSpeed(FMath::Max<float>(InMoveSpeed, 1.0f)), MaxDist(InMaxDist), BestWeight(0.0f), BestPickup(NULL), PrevGoal(NULL)
+	FBestInventoryEval(float InPredictionTime, float InMoveSpeed, int32 InMaxDist = 0, const TArray<AActor*>& InClaimedPickups = TArray<AActor*>())
+		: RespawnPredictionTime(InPredictionTime), MoveSpeed(FMath::Max<float>(InMoveSpeed, 1.0f)), MaxDist(InMaxDist), ClaimedPickups(InClaimedPickups), BestWeight(0.0f), BestPickup(NULL), PrevGoal(NULL)
 	{}
 };
 struct UNREALTOURNAMENT_API FRandomDestEval : public FUTNodeEvaluator
@@ -771,7 +773,7 @@ public:
 	 * if close enough, bot updates some enemy info based on the pickup (e.g. if it's a health/armor pickup, update view of enemy effective health)
 	 * this is also used to send team messages about major powerups ("the enemy got the shield belt", "I got the UDamage", etc)
 	 */
-	virtual void NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius);
+	virtual void NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius, bool bWillBecomeInactive);
 
 	/** called by timer and also by weapons when ready to fire. Bot sets appropriate fire mode it wants to shoot (if any) */
 	virtual void CheckWeaponFiring(bool bFromWeapon = true);
