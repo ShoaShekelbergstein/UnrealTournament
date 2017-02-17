@@ -524,7 +524,7 @@ public:
 	virtual void ShowAuth();
 
 	UPROPERTY(config)
-	FString LastRankedMatchUniqueId;
+	FString LastRankedMatchPlayerId;
 
 	UPROPERTY(config)
 	FString LastRankedMatchSessionId;

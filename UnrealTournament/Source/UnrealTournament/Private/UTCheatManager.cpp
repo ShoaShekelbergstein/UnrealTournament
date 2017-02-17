@@ -630,7 +630,7 @@ void UUTCheatManager::CheatShowRankedReconnectDialog()
 	if (LP)
 	{
 		LP->LastRankedMatchTimeString = FDateTime::Now().ToString();
-		LP->ShowRankedReconnectDialog(LP->LastRankedMatchUniqueId);
+		LP->ShowRankedReconnectDialog(LP->LastRankedMatchSessionId);
 	}
 #endif
 }

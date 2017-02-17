@@ -1249,7 +1249,7 @@ void UUTLocalPlayer::OnLoginStatusChanged(int32 LocalUserNum, ELoginStatus::Type
 void UUTLocalPlayer::ShowRankedReconnectDialog(const FString& UniqueID)
 {
 #if !UE_SERVER
-	if (UniqueID == LastRankedMatchUniqueId && !LastRankedMatchSessionId.IsEmpty())
+	if (UniqueID == LastRankedMatchPlayerId && !LastRankedMatchSessionId.IsEmpty())
 	{
 		FDateTime LastRankedMatchTime;
 		FDateTime::Parse(LastRankedMatchTimeString, LastRankedMatchTime);
@@ -1277,7 +1277,7 @@ void UUTLocalPlayer::RankedReconnectResult(TSharedPtr<SCompoundWidget> Widget, u
 		}
 	}
 
-	LastRankedMatchUniqueId.Empty();
+	LastRankedMatchPlayerId.Empty();
 	LastRankedMatchSessionId.Empty();
 	LastRankedMatchTimeString.Empty();
 	SaveConfig();
@@ -5412,9 +5412,9 @@ void UUTLocalPlayer::Reconnect(bool bSpectator)
 		UMatchmakingContext* MatchmakingContext = Cast<UMatchmakingContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UMatchmakingContext::StaticClass()));
 		if (MatchmakingContext)
 		{
-			MatchmakingContext->AttemptReconnect(LastRankedMatchUniqueId);
+			MatchmakingContext->AttemptReconnect(LastRankedMatchSessionId);
 		}
-		LastRankedMatchUniqueId.Empty();
+		LastRankedMatchPlayerId.Empty();
 		LastRankedMatchSessionId.Empty();
 		LastRankedMatchTimeString.Empty();
 		SaveConfig();

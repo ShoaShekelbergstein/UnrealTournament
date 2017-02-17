@@ -377,7 +377,7 @@ void AUTBasePlayerController::ClientRankedGameAbandoned_Implementation()
 	if (LP)
 	{
 		LP->LastRankedMatchSessionId.Empty();
-		LP->LastRankedMatchUniqueId.Empty();
+		LP->LastRankedMatchPlayerId.Empty();
 		LP->LastRankedMatchTimeString.Empty();
 		LP->SaveConfig();
 
@@ -395,7 +395,7 @@ void AUTBasePlayerController::ClientMatchmakingGameComplete_Implementation()
 	if (LP)
 	{
 		LP->LastRankedMatchSessionId.Empty();
-		LP->LastRankedMatchUniqueId.Empty();
+		LP->LastRankedMatchPlayerId.Empty();
 		LP->LastRankedMatchTimeString.Empty();
 		LP->SaveConfig();
 	}
@@ -407,7 +407,7 @@ void AUTBasePlayerController::ClientReturnToLobby_Implementation()
 	if (LP)
 	{
 		LP->LastRankedMatchSessionId.Empty();
-		LP->LastRankedMatchUniqueId.Empty();
+		LP->LastRankedMatchPlayerId.Empty();
 		LP->LastRankedMatchTimeString.Empty();
 		LP->SaveConfig();
 	}
