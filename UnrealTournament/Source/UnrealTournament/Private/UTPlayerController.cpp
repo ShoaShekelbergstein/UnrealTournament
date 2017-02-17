@@ -56,6 +56,8 @@
 #include "UTFlagRunScoreboard.h"
 #include "UTFlagRunPvEHUD.h"
 #include "UTGauntletGameMessage.h"
+#include "BlueprintContextLibrary.h"
+#include "PartyContext.h"
 
 static TAutoConsoleVariable<float> CVarUTKillcamStartDelay(
 	TEXT("UT.KillcamStartDelay"),
@@ -5390,6 +5392,15 @@ void AUTPlayerController::ClientWasKicked_Implementation(const FText& KickReason
 		if (ViewportClient != nullptr)
 		{
 			ViewportClient->KickReason = KickReason;
+		}
+	}
+
+	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
+	if (PartyContext)
+	{
+		if (PartyContext->GetPartySize() > 1)
+		{
+			PartyContext->LeaveParty();
 		}
 	}
 }
