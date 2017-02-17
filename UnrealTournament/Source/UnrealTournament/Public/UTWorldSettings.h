@@ -184,7 +184,7 @@ protected:
 	TArray<FDestroyedActorInfo> DestroyedLevelActors;
 
 	UFUNCTION()
-	void LevelActorDestroyed(AActor* TheActor, EEndPlayReason::Type EndPlayReason);
+	void LevelActorDestroyed(AActor* TheActor);
 public:
 	inline const TArray<FDestroyedActorInfo>& GetDestroyedLevelActors() const
 	{
