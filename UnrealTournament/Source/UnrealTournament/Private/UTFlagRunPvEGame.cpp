@@ -125,6 +125,7 @@ void AUTFlagRunPvEGame::InitGameState()
 	Super::InitGameState();
 
 	AUTFlagRunPvEGameState* GS = Cast<AUTFlagRunPvEGameState>(GameState);
+	GS->bAllowTeamSwitches = false;
 	GS->GameDifficulty = FMath::TruncToInt(GameDifficulty);
 	if (BoostPowerupTypes.Num() > 0)
 	{
