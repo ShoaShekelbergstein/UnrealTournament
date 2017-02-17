@@ -363,7 +363,7 @@ public:
 	// Player Stats 
 
 	/** This is the unique ID for stats generation*/
-	UPROPERTY(replicated)
+	UPROPERTY(BlueprintReadOnly, replicated, Category = PlayerState)
 	FString StatsID;
 	
 	/** Add an entry to MatchHighlights only if an empty slot is found. */
