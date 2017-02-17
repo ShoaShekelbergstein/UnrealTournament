@@ -275,6 +275,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MatchStart")
 		int32 MaxWaitForPlayers;
 
+	/** MaxWaitForPlayers for QuickMatch */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MatchStart")
+		int32 QuickWaitForPlayers;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MatchStart")
 		int32 DefaultMaxPlayers;
 

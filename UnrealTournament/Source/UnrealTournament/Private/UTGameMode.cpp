@@ -105,6 +105,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	bHasRespawnChoices = false;
 	MinPlayersToStart = 2;
 	MaxWaitForPlayers = 480;
+	QuickWaitForPlayers = 300;
 	EndScoreboardDelay = 4.f;
 	MainScoreboardDisplayTime = 5.f;
 	ScoringPlaysDisplayTime = 0.f; 
@@ -253,7 +254,10 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	bUseMatchmakingSession = EvalBoolOptions(UGameplayStatics::ParseOption(Options, TEXT("MatchmakingSession")), false);
 
 	bIsQuickMatch = EvalBoolOptions(UGameplayStatics::ParseOption(Options, TEXT("QuickMatch")), false);
-
+	if (bIsQuickMatch)
+	{
+		MaxWaitForPlayers = QuickWaitForPlayers;
+	}
 	Super::InitGame(MapName, Options, ErrorMessage);
 
 	GameDifficulty = FMath::Max(0, UGameplayStatics::GetIntOption(Options, TEXT("Difficulty"), GameDifficulty));
