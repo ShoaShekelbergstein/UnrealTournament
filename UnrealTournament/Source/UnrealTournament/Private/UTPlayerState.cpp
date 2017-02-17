@@ -819,7 +819,6 @@ void AUTPlayerState::Tick(float DeltaTime)
 		}
 		if (bCanRally && bNeedRallyReminder)
 		{
-			AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 			if (GS && GS->CurrentRallyPoint && GS->bAttackersCanRally)
 			{
 				if (GS->CurrentRallyPoint->RallyTimeRemaining < 8.f)
