@@ -37,6 +37,7 @@
 #include "Engine/DemoNetDriver.h"
 #include "UTDeathMessage.h"
 #include "UTLineUpHelper.h"
+#include "UTRallyPoint.h"
 #include "Panels/SUTWebBrowserPanel.h"
 
 #if !UE_SERVER
@@ -800,29 +801,59 @@ void AUTPlayerState::Tick(float DeltaTime)
 	{
 		AUTCharacter* UTChar = GetUTCharacter();
 		bool bOldCanRally = bCanRally;
-		bCanRally = bRallyActivated && UTChar && !UTChar->IsDead() && (UTChar->bCanRally || UTChar->GetCarriedObject());
+		AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+		bCanRally = bRallyActivated && UTChar && !UTChar->IsDead() && (UTChar->bCanRally || UTChar->GetCarriedObject()) && GS && GS->bAttackersCanRally && Team && (GS->bRedToCap == (Team->TeamIndex == 0));
 		if (bCanRally != bOldCanRally)
 		{
 			ForceNetUpdate();
 			if (!bOldCanRally && bCanRally && !UTChar->GetCarriedObject())
 			{
 				// notify of transition if rally is available
-				AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 				AUTPlayerController* MyPC = Cast<AUTPlayerController>(GetOwner());
-				if (GS && GS->bAttackersCanRally && MyPC && Team && (GS->bRedToCap == (Team->TeamIndex == 0)))
+				if (MyPC)
 				{
 					MyPC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 30, this);
-					AUTPlayerState* FC = GS->GetFlagHolder(Team->TeamIndex);
-					if (FC)
+					bNeedRallyReminder = true;
+				}
+			}
+		}
+		if (bCanRally && bNeedRallyReminder)
+		{
+			AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+			if (GS && GS->CurrentRallyPoint && GS->bAttackersCanRally)
+			{
+				if (GS->CurrentRallyPoint->RallyTimeRemaining < 8.f)
+				{
+					bNeedRallyReminder = false;
+					AUTPlayerController* MyPC = Cast<AUTPlayerController>(GetOwner());
+					if (MyPC != nullptr)
 					{
-						FC->GetCharacterVoiceClass();
-						int32 Switch = FC->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyNow);
-						if (Switch >= 0)
+						AUTPlayerState* FC = GS->GetFlagHolder(Team->TeamIndex);
+						if (FC)
 						{
-							MyPC->ClientReceiveLocalizedMessage(FC->CharacterVoice, Switch, FC, this, NULL);
+							FC->GetCharacterVoiceClass();
+							int32 Switch = FC->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyNow);
+							if (Switch >= 0)
+							{
+								MyPC->ClientReceiveLocalizedMessage(FC->CharacterVoice, Switch, FC, this, NULL);
+							}
+						}
+						else
+						{
+							GetCharacterVoiceClass();
+							int32 Switch = CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyNow);
+							if (Switch >= 0)
+							{
+								MyPC->ClientReceiveLocalizedMessage(CharacterVoice, Switch, this, this, NULL);
+							}
+
 						}
 					}
 				}
+			}
+			else
+			{
+				bNeedRallyReminder = false;
 			}
 		}
 

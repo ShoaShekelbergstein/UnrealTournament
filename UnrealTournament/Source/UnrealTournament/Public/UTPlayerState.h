@@ -317,6 +317,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
 	bool bRallyActivated;
 
+	/** Set when need to play rally now reminder. */
+	UPROPERTY()
+		bool bNeedRallyReminder;
+
 	UPROPERTY()
 	FVector RallyLocation;
 
