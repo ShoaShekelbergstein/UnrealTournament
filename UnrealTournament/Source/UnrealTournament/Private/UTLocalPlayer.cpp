@@ -1122,11 +1122,16 @@ void UUTLocalPlayer::PersistentPartyCreated(const FUniqueNetId& LocalUserId, con
 		FString FriendId;
 		if (FParse::Value(FCommandLine::Get(), TEXT("invitefrom="), FriendId) && !FriendId.IsEmpty())
 		{
+			UE_LOG(LogParty, Display, TEXT("Attempting to join party of inviter %s"), *FriendId);
 			UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
 			if (PartyContext)
 			{
 				TSharedPtr<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(FriendId));
 				PartyContext->JoinParty(*UserId);
+			}
+			else
+			{
+				UE_LOG(LogParty, Warning, TEXT("Party context missing!"));
 			}
 		}
 	}
