@@ -784,14 +784,14 @@ void AUTLobbyMatchInfo::ServerCreateCustomRule_Implementation(const FString& Gam
 
 		InitialMap = StartingMap;
 		GetMapInformation();
-		NewReplicatedRuleset->MaxPlayers = DesiredPlayerCount;
+		NewReplicatedRuleset->MaxPlayers = (DesiredPlayerCount > 0) ? DesiredPlayerCount : CustomGameModeDefaultObject->DefaultMaxPlayers;
 		if (DesiredSkillLevel >= 0)
 		{
-			FinalGameOptions += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i?MaxPlayers=%i"), NewReplicatedRuleset->MaxPlayers, FMath::Clamp<int32>(DesiredSkillLevel,0,7), DesiredPlayerCount);				
+			FinalGameOptions += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), NewReplicatedRuleset->MaxPlayers, FMath::Clamp<int32>(DesiredSkillLevel,0,7));				
 		}
 		else
 		{
-			FinalGameOptions += FString::Printf(TEXT("?BotFill=0?MaxPlayers=%i"), DesiredPlayerCount);
+			FinalGameOptions +=TEXT("?BotFill=0?ForceNoBots=1");
 		}
 		NewReplicatedRuleset->GameOptions = FinalGameOptions;
 		NewReplicatedRuleset->MinPlayersToStart = 2;
