@@ -809,7 +809,7 @@ FReply SUTGameSetupDialog::OnButtonClick(uint16 ButtonID)
 	{
 		if (PlayerOwner->GetProfileSettings())
 		{
-			PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel = BotSkillLevel;
+			PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel = sBotSkill->GetSnapValue();
 			PlayerOwner->SaveProfileSettings();
 		}
 
@@ -859,7 +859,9 @@ FReply SUTGameSetupDialog::OnButtonClick(uint16 ButtonID)
 
 TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 {
-	int32 DefaultBotSkill = PlayerOwner->GetProfileSettings() ? PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel + 1 : 3;
+	int32 DefaultBotSkillLevel = PlayerOwner->GetProfileSettings() ? PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel : 3;
+	DefaultBotSkillLevel = FMath::Clamp<int32>(DefaultBotSkillLevel,0,9);
+	BotSkillLevel = DefaultBotSkillLevel - 1;
 
 	TSharedPtr<SHorizontalBox> Final;
 	SAssignNew(Final, SHorizontalBox)
@@ -876,7 +878,7 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 				SAssignNew(sBotSkill, SUTSlider)
 				.SnapCount(9)
 				.IndentHandle(false)
-				.InitialSnap(DefaultBotSkill)
+				.InitialSnap(DefaultBotSkillLevel)
 				.Style(SUTStyle::Get(), "UT.Slider")
 				.OnValueChanged(this, &SUTGameSetupDialog::OnBotSkillChanged)
 			]
