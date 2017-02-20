@@ -371,7 +371,6 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 			// TODO: Explain to the engine team why you can't localize server error strings :(
 			else if (ErrorString == TEXT("Server full."))
 			{
-
 				if (!FirstPlayer->QuickMatchCheckFull())
 				{
 					FirstPlayer->ShowMenu(TEXT(""));
@@ -412,7 +411,7 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 			break;
 	}
 
-	if (!ReconnectDialog.IsValid())
+	if (!FirstPlayer->QuickMatchCheckFull() && !ReconnectDialog.IsValid())
 	{
 		if (FirstPlayer->GetCurrentMenu().IsValid())
 		{
