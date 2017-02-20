@@ -2664,7 +2664,7 @@ FReply SUTServerBrowserPanel::OnIPClick()
 {
 	PlayerOwner->OpenDialog(
 		SNew(SUTInputBoxDialog)
-		.DefaultInput(PlayerOwner->LastConnectToIP)
+		.DefaultInput(PlayerOwner->StoredLastConnectToIP)
 		.DialogSize(FVector2D(700, 300))
 		.OnDialogResult(this, &SUTServerBrowserPanel::ConnectIPDialogResult)
 		.PlayerOwner(PlayerOwner)
@@ -2687,7 +2687,8 @@ void SUTServerBrowserPanel::ConnectIPDialogResult(TSharedPtr<SCompoundWidget> Wi
 			if (InputText.Len() > 0 && PlayerOwner.IsValid())
 			{
 				FString AdjustedText = InputText.Replace(TEXT("://"), TEXT(""));
-				PlayerOwner->LastConnectToIP = AdjustedText;
+				PlayerOwner->StoredLastConnectToIP = AdjustedText;
+				PlayerOwner->LastConnectToIP = PlayerOwner->StoredLastConnectToIP;
 				PlayerOwner->SaveConfig();
 				PlayerOwner->ViewportClient->ConsoleCommand(*FString::Printf(TEXT("open %s"), *AdjustedText));
 				PlayerOwner->ShowConnectingDialog();

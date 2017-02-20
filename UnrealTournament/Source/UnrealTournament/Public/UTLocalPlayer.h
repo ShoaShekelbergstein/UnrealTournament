@@ -380,7 +380,10 @@ public:
 
 	// Last text entered in Connect To IP
 	UPROPERTY(config)
-		FString LastConnectToIP;
+	FString StoredLastConnectToIP;
+
+	UPROPERTY()
+	FString LastConnectToIP;
 
 	UPROPERTY(config)
 		uint32 bNoMidGameMenu : 1;
