@@ -864,7 +864,7 @@ void AUTPlayerState::Tick(float DeltaTime)
 		}
 		else if (UTGameState == nullptr || !UTGameState->HasMatchEnded())
 		{
-			bPlayerIsIdle = false;
+			NotIdle();
 		}
 	}
 	// If we are waiting to respawn then count down

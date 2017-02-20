@@ -198,6 +198,7 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 {
 	if (bFirstRoundInitialized)
 	{
+/*
 		// kick idlers
 		if (UTGameState && GameSession)
 		{
@@ -211,7 +212,7 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 				}
 			}
 		}
-
+*/
 		// view defender base, with last team to score around it
 		int32 TeamToWatch = IntermissionTeamToView(nullptr);
 
