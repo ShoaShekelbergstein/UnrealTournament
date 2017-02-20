@@ -1207,11 +1207,7 @@ void UUTLocalPlayer::OnLoginStatusChanged(int32 LocalUserNum, ELoginStatus::Type
 			PendingLoginPassword = TEXT("");
 		}
 
-		// If we are connected to a server, then exit back to the main menu.
-		if (GetWorld()->GetNetMode() == NM_Client)
-		{
-			ReturnToMainMenu();		
-		}
+		ReturnToMainMenu();		
 	}
 	else if (LoginStatus == ELoginStatus::LoggedIn)
 	{
