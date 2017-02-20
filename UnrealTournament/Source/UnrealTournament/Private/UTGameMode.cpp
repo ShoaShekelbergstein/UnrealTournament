@@ -5371,7 +5371,7 @@ void AUTGameMode::UnlockSession()
 
 bool AUTGameMode::CanBoost(AUTPlayerState* Who)
 {
-	if (Who != nullptr && IsMatchInProgress() && (GetMatchState() != MatchState::MatchIntermission))
+	if (Who != nullptr && (IsMatchInProgress() || GetMatchState() == MatchState::WaitingToStart) && (GetMatchState() != MatchState::MatchIntermission))
 	{
 		return Who->GetRemainingBoosts() > 0;
 	}
