@@ -2817,7 +2817,11 @@ void AUTRecastNavMesh::BeginPlay()
 {
 	Super::BeginPlay();
 
-	LoadMapLearningData();
+	// the learning data isn't replicated so even if a client wanted to use it there's not going to be any consistency
+	if (GetNetMode() != NM_Client)
+	{
+		LoadMapLearningData();
+	}
 }
 
 static const int32 LearningDataSizeLimit = 20000000;
@@ -2827,7 +2831,12 @@ FString AUTRecastNavMesh::GetMapLearningDataFilename() const
 	// determine filename based on map GUID
 	// this causes the data to be invalidated on editor changes
 	// and not invalidated on map copy/move/rename
-	return FPaths::GameSavedDir() + GetOutermost()->GetGuid().ToString() + TEXT(".ai");
+	FName GameModeName = NAME_None;
+	if (GetWorld()->GetGameState() != nullptr && GetWorld()->GetGameState()->GameModeClass != nullptr)
+	{
+		GameModeName = GetWorld()->GetGameState()->GameModeClass->GetFName();
+	}
+	return FPaths::GameSavedDir() + GetOutermost()->GetGuid().ToString() + TEXT("-") + GameModeName.ToString() + TEXT(".ai");
 }
 
 void AUTRecastNavMesh::SaveMapLearningData()
