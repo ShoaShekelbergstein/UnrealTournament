@@ -9,6 +9,7 @@
 #include "UTMatchmakingPolicy.h"
 #include "OnlineSubsystemUtils.h"
 #include "UTPartyBeaconState.h"
+#include "UTLocalPlayer.h"
 
 #if WITH_PROFILE
 #include "OnlineIdentityMcp.h"
@@ -304,6 +305,15 @@ void UUTSearchPass::ChooseBestSession()
 		{
 			if (SearchFilter->SearchResults[SessionIndex].IsValid())
 			{
+				UUTLocalPlayer* UTLP = Cast<UUTLocalPlayer>(GEngine->GetFirstGamePlayer(GetWorld()));
+				if (UTLP)
+				{
+					if (UTLP->LastMatchmakingSessionId == SearchFilter->SearchResults[SessionIndex].GetSessionIdStr())
+					{
+						continue;
+					}
+				}
+				
 				// Found the match that we want
 				CurrentSearchPassState.BestSessionIdx = SessionIndex;
 				return;
@@ -373,6 +383,12 @@ void UUTSearchPass::JoinReservedSession()
 	{
 		if (SearchFilter.IsValid() && SearchFilter->SearchResults.IsValidIndex(CurrentSearchPassState.BestSessionIdx))
 		{
+			UUTLocalPlayer* UTLP = Cast<UUTLocalPlayer>(GEngine->GetFirstGamePlayer(GetWorld()));
+			if (UTLP)
+			{
+				UTLP->LastMatchmakingSessionId = SearchFilter->SearchResults[CurrentSearchPassState.BestSessionIdx].GetSessionIdStr();
+			}		
+
 			SessionHelper->JoinReservedSession(CompletionDelegate);
 		}
 		else

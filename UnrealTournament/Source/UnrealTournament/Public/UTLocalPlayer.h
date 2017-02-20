@@ -710,6 +710,8 @@ public:
 	// will be used to attempt the reconnection.
 	FOnlineSessionSearchResult LastSession;
 
+	FString LastMatchmakingSessionId;
+
 	// Will be true if the last session was a join as spectator
 	bool bLastSessionWasASpectator;
 
