@@ -2033,7 +2033,7 @@ void AUTPlayerState::OnRep_UniqueId()
 void AUTPlayerState::RegisterPlayerWithSession(bool bWasFromInvite)
 {
 	UDemoNetDriver* DemoDriver = GetWorld()->DemoNetDriver;
-	if (DemoDriver)
+	if (DemoDriver && DemoDriver->IsPlaying())
 	{
 		return;
 	}
@@ -2044,7 +2044,7 @@ void AUTPlayerState::RegisterPlayerWithSession(bool bWasFromInvite)
 void AUTPlayerState::UnregisterPlayerWithSession()
 {
 	UDemoNetDriver* DemoDriver = GetWorld()->DemoNetDriver;
-	if (DemoDriver)
+	if (DemoDriver && DemoDriver->IsPlaying())
 	{
 		return;
 	}
