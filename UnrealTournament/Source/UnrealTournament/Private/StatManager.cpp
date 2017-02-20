@@ -48,6 +48,9 @@ UStatManager::UStatManager(const FObjectInitializer& ObjectInitializer)
 	Stats.Add(NAME_RedeemerKills, new FStat());
 	Stats.Add(NAME_InstagibKills, new FStat());
 	Stats.Add(NAME_TelefragKills, new FStat());
+	Stats.Add(NAME_LightningRiflePrimaryKills, new FStat());
+	Stats.Add(NAME_LightningRifleSecondaryKills, new FStat());
+	Stats.Add(NAME_LightningRifleTertiaryKills, new FStat());
 
 	Stats.Add(NAME_ImpactHammerDeaths, new FStat());
 	Stats.Add(NAME_EnforcerDeaths, new FStat());
@@ -68,6 +71,9 @@ UStatManager::UStatManager(const FObjectInitializer& ObjectInitializer)
 	Stats.Add(NAME_RedeemerDeaths, new FStat());
 	Stats.Add(NAME_InstagibDeaths, new FStat());
 	Stats.Add(NAME_TelefragDeaths, new FStat());
+	Stats.Add(NAME_LightningRiflePrimaryDeaths, new FStat());
+	Stats.Add(NAME_LightningRifleSecondaryDeaths, new FStat());
+	Stats.Add(NAME_LightningRifleTertiaryDeaths, new FStat());
 
 	Stats.Add(NAME_EnforcerShots, new FStat());
 	Stats.Add(NAME_BioRifleShots, new FStat());
@@ -80,6 +86,7 @@ UStatManager::UStatManager(const FObjectInitializer& ObjectInitializer)
 	Stats.Add(NAME_SniperShots, new FStat());
 	Stats.Add(NAME_RedeemerShots, new FStat());
 	Stats.Add(NAME_InstagibShots, new FStat());
+	Stats.Add(NAME_LightningRifleShots, new FStat());
 
 	// Hits can be fractional, multiply by 100 to make sure that we don't lose much precision when going to integers
 	Stats.Add(NAME_EnforcerHits, new FStat(100.0f));
@@ -93,6 +100,7 @@ UStatManager::UStatManager(const FObjectInitializer& ObjectInitializer)
 	Stats.Add(NAME_SniperHits, new FStat(100.0f));
 	Stats.Add(NAME_RedeemerHits, new FStat(100.0f));
 	Stats.Add(NAME_InstagibHits, new FStat(100.0f));
+	Stats.Add(NAME_LightningRifleHits, new FStat(100.0f));
 
 	Stats.Add(NAME_UDamageTime, new FStat());
 	Stats.Add(NAME_BerserkTime, new FStat());
