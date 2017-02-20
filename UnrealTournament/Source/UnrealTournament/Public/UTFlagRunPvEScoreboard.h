@@ -4,6 +4,8 @@
 
 #include "UTFlagRunScoreboard.h"
 #include "UTFlagRunPvEGameState.h"
+#include "UTLineUpHelper.h"
+#include "StatNames.h"
 
 #include "UTFlagRunPvEScoreboard.generated.h"
 
@@ -15,6 +17,7 @@ public:
 	UUTFlagRunPvEScoreboard(const FObjectInitializer& OI)
 		: Super(OI)
 	{
+		GameMessageText = NSLOCTEXT("UTPvEScoreboard", "ScoreboardHeader", "{Difficulty} {GameName} in {MapName}");
 		DefendTitle = NSLOCTEXT("UTScoreboard", "Defending", "FLAG INVASION - {Difficulty}");
 		
 		DefendLines.Empty();
@@ -38,6 +41,16 @@ public:
 		return FText::Format(DefendTitle, Args);
 	}
 
+	virtual void GetTitleMessageArgs(FFormatNamedArguments& Args) const override
+	{
+		Super::GetTitleMessageArgs(Args);
+		AUTFlagRunPvEGameState* GS = GetWorld()->GetGameState<AUTFlagRunPvEGameState>();
+		if (GS != nullptr)
+		{
+			Args.Add("Difficulty", GetBotSkillName(GS->GameDifficulty));
+		}
+	}
+
 	virtual void GetScoringStars(int32& NumStars, FLinearColor& StarColor) const override
 	{
 		AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
@@ -58,6 +71,136 @@ public:
 					break;
 			}
 		}
+	}
+
+	virtual bool ShouldDrawScoringStats() override
+	{
+		// match rules for drawing the player score panel
+		return ShowScorePanel();
+	}
+	virtual void DrawStatsLeft(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float PageBottom) override
+	{
+		UUTTeamScoreboard::DrawStatsLeft(DeltaTime, YPos, XOffset, ScoreWidth, PageBottom);
+	}
+	virtual void DrawStatsRight(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float PageBottom) override
+	{
+		UUTTeamScoreboard::DrawStatsRight(DeltaTime, YPos, XOffset, ScoreWidth, PageBottom);
+	}
+
+	virtual void DrawTeamScoreBreakdown(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float PageBottom) override
+	{
+		Canvas->SetLinearDrawColor(FLinearColor::White);
+		FStatsFontInfo StatsFontInfo;
+		StatsFontInfo.TextRenderInfo.bEnableShadow = true;
+		StatsFontInfo.TextRenderInfo.bClipText = true;
+		StatsFontInfo.TextFont = UTHUDOwner->TinyFont;
+		bHighlightStatsLineTopValue = false;
+
+		float XL, SmallYL;
+		Canvas->TextSize(UTHUDOwner->TinyFont, "TEST", XL, SmallYL, RenderScale, RenderScale);
+		StatsFontInfo.TextHeight = SmallYL;
+		float MedYL;
+		Canvas->TextSize(UTHUDOwner->SmallFont, TeamScoringHeader.ToString(), XL, MedYL, RenderScale, RenderScale);
+		Canvas->DrawText(UTHUDOwner->SmallFont, TeamScoringHeader, XOffset + 0.5f*(ScoreWidth - XL), YPos, RenderScale, RenderScale, StatsFontInfo.TextRenderInfo);
+		YPos += 1.1f * MedYL;
+
+		DrawTeamStats(DeltaTime, YPos, XOffset, ScoreWidth, PageBottom, StatsFontInfo);
+	}
+
+	virtual void DrawClockTeamStatsLine(FText StatsName, FName StatsID, float DeltaTime, float XOffset, float& YPos, const FStatsFontInfo& StatsFontInfo, float ScoreWidth, bool bSkipEmpty) override
+	{
+		int32 HighlightIndex = 0;
+		int32 BlueTeamValue = UTGameState->Teams[1]->GetStatsValue(StatsID);
+		if (bSkipEmpty && BlueTeamValue == 0)
+		{
+			return;
+		}
+
+		FText ClockStringBlue = UTHUDOwner->ConvertTime(FText::GetEmpty(), FText::GetEmpty(), BlueTeamValue, false);
+		DrawTextStatsLine(StatsName, TEXT(""), ClockStringBlue.ToString(), DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth, 0);
+	}
+
+	virtual void DrawTeamStats(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float MaxHeight, const FStatsFontInfo& StatsFontInfo) override
+	{
+		DrawStatsLine(NSLOCTEXT("UTScoreboard", "TeamKills", "Kills"), -1, UTGameState->Teams[1]->GetStatsValue(NAME_TeamKills), DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth);
+
+		float SectionSpacing = 0.6f * StatsFontInfo.TextHeight;
+		YPos += SectionSpacing;
+
+		// find top scorer
+		//AUTPlayerState* TopScorerBlue = FindTopTeamScoreFor(1);
+
+		// find top kills && KD
+		AUTPlayerState* TopKillerBlue = FindTopTeamKillerFor(1);
+
+		//DrawPlayerStatsLine(NSLOCTEXT("UTScoreboard", "TopScorer", "Top Scorer"), nullptr, TopScorerBlue, DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth, 0);
+		DrawPlayerStatsLine(NSLOCTEXT("UTScoreboard", "TopDefender", "Top Defender"), nullptr, UTGameState->Teams[1]->TopDefender, DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth, 0);
+		DrawPlayerStatsLine(NSLOCTEXT("UTScoreboard", "TopSupport", "Top Support"), nullptr, UTGameState->Teams[1]->TopSupporter, DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth, 0);
+		DrawPlayerStatsLine(NSLOCTEXT("UTScoreboard", "TopKills", "Top Kills"), nullptr, TopKillerBlue, DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth, 0);
+		YPos += SectionSpacing;
+
+		DrawStatsLine(NSLOCTEXT("UTScoreboard", "BeltPickups", "Shield Belt Pickups"), -1, UTGameState->Teams[1]->GetStatsValue(NAME_ShieldBeltCount), DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth);
+		DrawStatsLine(NSLOCTEXT("UTScoreboard", "LargeArmorPickups", "Large Armor Pickups"), -1, UTGameState->Teams[1]->GetStatsValue(NAME_ArmorVestCount), DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth);
+		DrawStatsLine(NSLOCTEXT("UTScoreboard", "MediumArmorPickups", "Medium Armor Pickups"), -1, UTGameState->Teams[1]->GetStatsValue(NAME_ArmorPadsCount), DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth);
+
+		int32 TeamStat1 = UTGameState->Teams[1]->GetStatsValue(NAME_UDamageCount);
+		if (TeamStat1 > 0)
+		{
+			DrawStatsLine(NSLOCTEXT("UTScoreboard", "UDamagePickups", "UDamage Pickups"), -1, TeamStat1, DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth);
+			DrawClockTeamStatsLine(NSLOCTEXT("UTScoreboard", "UDamage", "UDamage Control"), NAME_UDamageTime, DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth, true);
+		}
+		TeamStat1 = UTGameState->Teams[1]->GetStatsValue(NAME_BerserkCount);
+		if (TeamStat1 > 0)
+		{
+			DrawStatsLine(NSLOCTEXT("UTScoreboard", "BerserkPickups", "Berserk Pickups"), -1, TeamStat1, DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth);
+			DrawClockTeamStatsLine(NSLOCTEXT("UTScoreboard", "Berserk", "Berserk Control"), NAME_BerserkTime, DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth, true);
+		}
+		TeamStat1 = UTGameState->Teams[1]->GetStatsValue(NAME_InvisibilityCount);
+		if (TeamStat1 > 0)
+		{
+			DrawStatsLine(NSLOCTEXT("UTScoreboard", "InvisibilityPickups", "Invisibility Pickups"), -1, TeamStat1, DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth);
+			DrawClockTeamStatsLine(NSLOCTEXT("UTScoreboard", "Invisibility", "Invisibility Control"), NAME_InvisibilityTime, DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth, true);
+		}
+		TeamStat1 = UTGameState->Teams[1]->GetStatsValue(NAME_KegCount);
+		if (TeamStat1 > 0)
+		{
+			DrawStatsLine(NSLOCTEXT("UTScoreboard", "KegPickups", "Keg Pickups"), -1, TeamStat1, DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth);
+		}
+		TeamStat1 = UTGameState->Teams[1]->GetStatsValue(NAME_HelmetCount);
+		if (TeamStat1 > 0)
+		{
+			DrawStatsLine(NSLOCTEXT("UTScoreboard", "SmallArmorPickups", "Small Armor Pickups"), -1, TeamStat1, DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth);
+		}
+	}
+
+	virtual void DrawTeamPanel(float RenderDelta, float& YOffset) override
+	{
+		YOffset += 119.f * RenderScale;
+	}
+
+	virtual void DrawScoreHeaders(float RenderDelta, float& YOffset) override
+	{
+		float Height = 23.f * RenderScale;
+		int32 ColumnCnt = ((UTGameState && UTGameState->bTeamGame) || ActualPlayerCount > 16) ? 2 : 1;
+		float ColumnHeaderAdjustY = ColumnHeaderY * RenderScale;
+		float XOffset = Canvas->ClipX - ScaledCellWidth - ScaledEdgeSize;
+		
+		// Draw the background Border
+		DrawTexture(UTHUDOwner->ScoreboardAtlas, XOffset, YOffset, ScaledCellWidth, Height, 149, 138, 32, 32, 1.0, FLinearColor(0.72f, 0.72f, 0.72f, 0.85f));
+		DrawText(CH_PlayerName, XOffset + (ScaledCellWidth * ColumnHeaderPlayerX), YOffset + ColumnHeaderAdjustY, UTHUDOwner->TinyFont, RenderScale, 1.0f, FLinearColor::Black, ETextHorzPos::Left, ETextVertPos::Center);
+
+		if (UTGameState && UTGameState->HasMatchStarted())
+		{
+			DrawText(CH_Score, XOffset + (ScaledCellWidth * ColumnHeaderScoreX), YOffset + ColumnHeaderAdjustY, UTHUDOwner->TinyFont, RenderScale, 1.0f, FLinearColor::Black, ETextHorzPos::Center, ETextVertPos::Center);
+			DrawText(CH_Deaths, XOffset + (ScaledCellWidth * ColumnHeaderDeathsX), YOffset + ColumnHeaderAdjustY, UTHUDOwner->TinyFont, RenderScale, 1.0f, FLinearColor::Black, ETextHorzPos::Center, ETextVertPos::Center);
+		}
+		else
+		{
+			DrawText(CH_Ready, XOffset + (ScaledCellWidth * ColumnHeaderScoreX), YOffset + ColumnHeaderAdjustY, UTHUDOwner->TinyFont, RenderScale, 1.0f, FLinearColor::Black, ETextHorzPos::Center, ETextVertPos::Center);
+		}
+		DrawText((GetWorld()->GetNetMode() == NM_Standalone) ? CH_Skill : CH_Ping, XOffset + (ScaledCellWidth * ColumnHeaderPingX), YOffset + ColumnHeaderAdjustY, UTHUDOwner->TinyFont, RenderScale, 1.0f, FLinearColor::Black, ETextHorzPos::Center, ETextVertPos::Center);
+
+		YOffset += Height + 4.f * RenderScale;
 	}
 
 	virtual void DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float RenderDelta, float XOffset, float YOffset) override

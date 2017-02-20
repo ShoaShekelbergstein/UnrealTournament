@@ -140,6 +140,22 @@ void UUTScoreboard::DrawMinimap(float RenderDelta)
 	}
 }
 
+void UUTScoreboard::GetTitleMessageArgs(FFormatNamedArguments& Args) const
+{
+	FText MapName = UTHUDOwner ? FText::FromString(UTHUDOwner->GetWorld()->GetMapName().ToUpper()) : FText::GetEmpty();
+	FText GameName = FText::GetEmpty();
+	if (UTGameState && UTGameState->GameModeClass)
+	{
+		AUTGameMode* DefaultGame = UTGameState->GameModeClass->GetDefaultObject<AUTGameMode>();
+		if (DefaultGame)
+		{
+			GameName = FText::FromString(DefaultGame->DisplayName.ToString().ToUpper());
+		}
+	}
+	Args.Add("GameName", FText::AsCultureInvariant(GameName));
+	Args.Add("MapName", FText::AsCultureInvariant(MapName));
+}
+
 void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 {
 	float MessageX = 0.f;
@@ -147,25 +163,11 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 	FText GameMessage = FText::GetEmpty();
 	if (UTHUDOwner->ScoreMessageText.IsEmpty())
 	{
-		FText MapName = UTHUDOwner ? FText::FromString(UTHUDOwner->GetWorld()->GetMapName().ToUpper()) : FText::GetEmpty();
-		FText GameName = FText::GetEmpty();
-		if (UTGameState && UTGameState->GameModeClass)
-		{
-			AUTGameMode* DefaultGame = UTGameState->GameModeClass->GetDefaultObject<AUTGameMode>();
-			if (DefaultGame)
-			{
-				GameName = FText::FromString(DefaultGame->DisplayName.ToString().ToUpper());
-			}
-		}
 		FFormatNamedArguments Args;
-		Args.Add("GameName", FText::AsCultureInvariant(GameName));
-		Args.Add("MapName", FText::AsCultureInvariant(MapName));
+		GetTitleMessageArgs(Args);
 		GameMessage = FText::Format(GameMessageText, Args);
-
-		float NameX, MapX;
-		Canvas->StrLen(UTHUDOwner->MediumFont, GameName.ToString(), NameX, MessageY);
-		Canvas->StrLen(UTHUDOwner->MediumFont, MapName.ToString(), MapX, MessageY);
-		MessageX = (NameX+MapX+64.f) * RenderScale;
+		Canvas->StrLen(UTHUDOwner->MediumFont, GameMessage.ToString(), MessageX, MessageY);
+		MessageX *= RenderScale;
 	}
 	else
 	{

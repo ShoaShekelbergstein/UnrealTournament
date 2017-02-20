@@ -200,6 +200,7 @@ protected:
 		return bShowScores;
 	}
 
+	virtual void GetTitleMessageArgs(FFormatNamedArguments& Args) const;
 	virtual void DrawGamePanel(float RenderDelta, float& YOffset);
 
 	/** Draw timer and game goal on scoreboard game panel.  If bGetLengthOnly, just return the max length of these strings. */

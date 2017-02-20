@@ -209,7 +209,6 @@ FLinearColor AUTFlagRunGameState::GetGameStatusColor()
 			case 3: return GOLDCOLOR; break;
 		}
 	}
-	UE_LOG(UT, Warning, TEXT("WHITE"));
 	return FLinearColor::White;
 }
 
