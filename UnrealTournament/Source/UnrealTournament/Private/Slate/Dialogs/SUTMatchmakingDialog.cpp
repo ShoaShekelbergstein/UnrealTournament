@@ -281,7 +281,7 @@ void SUTMatchmakingDialog::Tick(const FGeometry & AllottedGeometry, const double
 	// Failsafe in case we join a server
 	if (PlayerOwner.IsValid() && PlayerOwner->GetWorld()->GetNetMode() == NM_Client)
 	{
-		GetPlayerOwner()->CloseDialog(SharedThis(this));
+		PlayerOwner->HideMatchmakingDialog();
 	}
 
 	if (PlayerOwner.IsValid() && PlayerOwner->IsMenuGame() && PlayerOwner->IsPartyLeader())

@@ -82,11 +82,6 @@ void UMatchmakingContext::OnPartyStateChangeInternal(EUTPartyState NewPartyState
 	}
 	else if (NewPartyState == EUTPartyState::Menus || NewPartyState == EUTPartyState::TravelToServer)
 	{
-		UUTLocalPlayer* LocalPlayer = GetOwningPlayer<UUTLocalPlayer>();
-		if (LocalPlayer)
-		{
-			LocalPlayer->HideMatchmakingDialog();
-		}
 	}
 	else if (NewPartyState == EUTPartyState::CustomMatch)
 	{
