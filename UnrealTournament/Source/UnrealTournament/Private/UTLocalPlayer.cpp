@@ -6134,12 +6134,14 @@ void UUTLocalPlayer::SocialInitialized()
 {
 #if !UE_SERVER
 
+#if WITH_SOCIAL
 	if (!ISocialModule::Get().GetFriendsAndChatManager(TEXT(""), true)->IsLoggedIn())
 	{
 		return;
 	}
 
 	GetWorld()->GetTimerManager().ClearTimer(SocialInitializationTimerHandle);
+#endif
 
 	// Make sure popup is created so we dont lose any messages
 	GetFriendsPopup();
