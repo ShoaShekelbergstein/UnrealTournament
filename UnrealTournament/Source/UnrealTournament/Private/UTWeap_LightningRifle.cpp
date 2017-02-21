@@ -156,22 +156,25 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bIsCharging && UTOwner)
+	if (UTOwner)
 	{
-		// FIXMESTEVE get charge value through timeline
-		UTOwner->SetAmbientSound(ChargeSound, false);
-		ChargePct = FMath::Min(1.f, ChargePct + ChargeSpeed*DeltaTime);
-		UTOwner->ChangeAmbientSoundPitch(ChargeSound, ChargePct);
-		bool bWasFullyPowered = bIsFullyPowered;
-		bIsFullyPowered = (ChargePct >= 1.f);
-		if (bIsFullyPowered && !bWasFullyPowered)
+		if (bIsCharging)
 		{
-			UUTGameplayStatics::UTPlaySound(GetWorld(), FullyPoweredSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
+			// FIXMESTEVE get charge value through timeline
+			UTOwner->SetAmbientSound(ChargeSound, false);
+			ChargePct = FMath::Min(1.f, ChargePct + ChargeSpeed*DeltaTime);
+			UTOwner->ChangeAmbientSoundPitch(ChargeSound, ChargePct);
+			bool bWasFullyPowered = bIsFullyPowered;
+			bIsFullyPowered = (ChargePct >= 1.f);
+			if (bIsFullyPowered && !bWasFullyPowered)
+			{
+				UUTGameplayStatics::UTPlaySound(GetWorld(), FullyPoweredSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
+			}
 		}
-	}
-	else
-	{
-		UTOwner->SetAmbientSound(ChargeSound, true);
+		else
+		{
+			UTOwner->SetAmbientSound(ChargeSound, true);
+		}
 	}
 }
 
