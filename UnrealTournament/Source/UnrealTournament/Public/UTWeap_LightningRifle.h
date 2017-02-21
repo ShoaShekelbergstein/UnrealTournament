@@ -14,4 +14,41 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 
 	virtual void DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHudWidget, float RenderDelta) override;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
+		float FullPowerHeadshotDamage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
+		float FullPowerBonusDamage;
+
+	/** How fast charge increases to value of 1 (fully charged).  Scaling for time. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
+		float ChargeSpeed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
+		USoundBase* FullyPoweredHitEnemySound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
+		USoundBase* FullyPoweredNoHitEnemySound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
+		USoundBase* ChargeSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
+		USoundBase* FullyPoweredSound;
+
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRepCharging, Category = LightningRifle)
+		bool bIsCharging;
+
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = LightningRifle)
+		bool bIsFullyPowered;
+
+	UFUNCTION()
+		void OnRepCharging();
+
+	virtual bool CanHeadShot() override;
+	virtual int32 GetHitScanDamage() override;
+	virtual void SetFlashExtra(AActor* HitActor) override;
+	virtual void PlayFiringSound(uint8 EffectFiringMode) override;
+	virtual void Tick(float DeltaTime) override;
+	virtual void FireShot() override;
 };

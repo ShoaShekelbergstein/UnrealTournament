@@ -362,6 +362,7 @@ void AUTWeapon::DropFrom(const FVector& StartLocation, const FVector& TossVeloci
 		}
 		else
 		{
+			SetZoomState(EZoomState::EZS_NotZoomed);
 			Super::DropFrom(StartLocation, TossVelocity);
 			if (UTOwner == NULL && CurrentState != InactiveState)
 			{
@@ -1124,25 +1125,29 @@ UAnimMontage* AUTWeapon::GetFiringAnim(uint8 FireMode, bool bOnHands) const
 	return (AnimArray.IsValidIndex(CurrentFireMode) ? AnimArray[CurrentFireMode] : NULL);
 }
 
+void AUTWeapon::PlayFiringSound(uint8 EffectFiringMode)
+{
+	// try and play the sound if specified
+	if (FireSound.IsValidIndex(EffectFiringMode) && FireSound[EffectFiringMode] != NULL)
+	{
+		if (FPFireSound.IsValidIndex(CurrentFireMode) && FPFireSound[CurrentFireMode] != NULL && Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), FPFireSound[CurrentFireMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
+		}
+		else
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), FireSound[EffectFiringMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
+		}
+	}
+}
+
 void AUTWeapon::PlayFiringEffects()
 {
 	if (UTOwner != NULL)
 	{
 		//UE_LOG(UT, Warning, TEXT("PlayFiringEffects at %f"), GetWorld()->GetTimeSeconds());
 		uint8 EffectFiringMode = (Role == ROLE_Authority || UTOwner->Controller != NULL) ? CurrentFireMode : UTOwner->FireMode;
-
-		// try and play the sound if specified
-		if (FireSound.IsValidIndex(EffectFiringMode) && FireSound[EffectFiringMode] != NULL)
-		{
-			if (FPFireSound.IsValidIndex(CurrentFireMode) && FPFireSound[CurrentFireMode] != NULL && Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
-			{
-				UUTGameplayStatics::UTPlaySound(GetWorld(), FPFireSound[CurrentFireMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
-			}
-			else
-			{
-				UUTGameplayStatics::UTPlaySound(GetWorld(), FireSound[EffectFiringMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
-			}
-		}
+		PlayFiringSound(EffectFiringMode);
 
 		// reload sound on local shooter
 		if ((GetNetMode() != NM_DedicatedServer) && UTOwner && UTOwner->GetLocalViewer())

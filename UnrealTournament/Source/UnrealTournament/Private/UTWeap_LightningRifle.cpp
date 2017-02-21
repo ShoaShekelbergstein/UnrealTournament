@@ -9,6 +9,16 @@
 AUTWeap_LightningRifle::AUTWeap_LightningRifle(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	FullPowerBonusDamage = 40.f;
+	HeadshotDamage = 125.f;
+	ChargeSpeed = 1.25f;
+}
+
+void AUTWeap_LightningRifle::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AUTWeap_LightningRifle, bIsCharging);
+	DOREPLIFETIME(AUTWeap_LightningRifle, bIsFullyPowered);
 }
 
 void AUTWeap_LightningRifle::DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHudWidget, float RenderDelta)
@@ -31,3 +41,112 @@ void AUTWeap_LightningRifle::DrawWeaponCrosshair_Implementation(UUTHUDWidget* We
 		WeaponHudWidget->DrawTexture(WeaponHudWidget->UTHUDOwner->HUDAtlas, 0.f, 32.f, WidthScale*Width, HeightScale*Height, 127, 612, Width, Height, 1.f, FLinearColor::White, FVector2D(0.5f, 0.5f));
 	}
 }
+
+bool AUTWeap_LightningRifle::CanHeadShot()
+{
+	return bIsFullyPowered;
+}
+
+int32 AUTWeap_LightningRifle::GetHitScanDamage()
+{
+	return InstantHitInfo[CurrentFireMode].Damage + (bIsFullyPowered ? FullPowerBonusDamage : 0.f);
+}
+
+void AUTWeap_LightningRifle::SetFlashExtra(AActor* HitActor)
+{
+	if (UTOwner)
+	{
+		if (!bIsCharging)
+		{
+			UTOwner->SetFlashExtra(0, CurrentFireMode);
+		}
+		else if (bIsFullyPowered)
+		{
+			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+			if (Cast<AUTCharacter>(HitActor) && GS && !GS->OnSameTeam(UTOwner, HitActor))
+			{
+				UTOwner->SetFlashExtra(3, CurrentFireMode);
+				UUTGameplayStatics::UTPlaySound(GetWorld(), FullyPoweredHitEnemySound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
+			}
+			else
+			{
+				UTOwner->SetFlashExtra(2, CurrentFireMode);
+				UUTGameplayStatics::UTPlaySound(GetWorld(), FullyPoweredNoHitEnemySound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
+			}
+		}
+	}
+}
+
+void AUTWeap_LightningRifle::PlayFiringSound(uint8 EffectFiringMode)
+{
+	if (bIsFullyPowered)
+	{
+		// Hack - skip here since played in SetFlashExtra FIXMESTEVE
+	}
+	else
+	{
+		Super::PlayFiringSound(EffectFiringMode);
+	}
+}
+
+void AUTWeap_LightningRifle::OnRepCharging()
+{
+}
+
+void AUTWeap_LightningRifle::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (bIsCharging && UTOwner)
+	{
+		// FIXMESTEVE get charge value through timeline
+		UTOwner->SetAmbientSound(ChargeSound, false);
+		ChargePct = FMath::Min(1.f, ChargePct + ChargeSpeed*DeltaTime);
+		UTOwner->ChangeAmbientSoundPitch(ChargeSound, ChargePct);
+		bool bWasFullyPowered = bIsFullyPowered;
+		bIsFullyPowered = (ChargePct >= 1.f);
+		if (bIsFullyPowered && !bWasFullyPowered)
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), FullyPoweredSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
+		}
+	}
+	else
+	{
+		UTOwner->SetAmbientSound(ChargeSound, true);
+	}
+}
+
+void AUTWeap_LightningRifle::FireShot()
+{
+	UTOwner->DeactivateSpawnProtection();
+	ConsumeAmmo(bIsFullyPowered ? 2 : 1);
+	if (!FireShotOverride() && GetUTOwner() != NULL) // script event may kill user
+	{
+		if ((ZoomState == EZoomState::EZS_NotZoomed) && ProjClass.IsValidIndex(CurrentFireMode) && ProjClass[CurrentFireMode] != NULL)
+		{
+			FireProjectile();
+		}
+		else if (InstantHitInfo.IsValidIndex(CurrentFireMode) && InstantHitInfo[CurrentFireMode].DamageType != NULL)
+		{
+			if (InstantHitInfo[CurrentFireMode].ConeDotAngle > 0.0f)
+			{
+				FireCone();
+			}
+			else
+			{
+				FireInstantHit();
+			}
+		}
+		//UE_LOG(UT, Warning, TEXT("FireShot"));
+		PlayFiringEffects();
+	}
+	if (GetUTOwner() != NULL)
+	{
+		GetUTOwner()->InventoryEvent(InventoryEventName::FiredWeapon);
+	}
+	ChargePct = 0.f;
+	FireZOffsetTime = 0.f;
+}
+
+//set fire interval appropriately
+

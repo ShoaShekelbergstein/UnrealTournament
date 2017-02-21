@@ -700,6 +700,8 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY()
 		TEnumAsByte<ESoundAmplificationType> FireSoundAmp;
 
+	virtual void PlayFiringSound(uint8 EffectFiringMode);
+
 	/** play firing effects not associated with the shot's results (e.g. muzzle flash but generally NOT emitter to target) */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void PlayFiringEffects();

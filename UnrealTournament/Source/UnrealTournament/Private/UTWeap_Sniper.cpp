@@ -156,13 +156,13 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 	}
 	if (Hit.Actor != NULL && Hit.Actor->bCanBeDamaged && bDealDamage)
 	{
-		int32 Damage = InstantHitInfo[CurrentFireMode].Damage;
+		int32 Damage = GetHitScanDamage();
 		TSubclassOf<UDamageType> DamageType = InstantHitInfo[CurrentFireMode].DamageType;
 
 		bool bIsHeadShot = false;
 		bool bBlockedHeadshot = false;
 		AUTCharacter* C = Cast<AUTCharacter>(Hit.Actor.Get());
-		if (C != NULL && C->IsHeadShot(Hit.Location, FireDir, GetHeadshotScale(C), UTOwner, PredictionTime))
+		if (C != NULL && CanHeadShot() && C->IsHeadShot(Hit.Location, FireDir, GetHeadshotScale(C), UTOwner, PredictionTime))
 		{
 			bIsHeadShot = true;
 			if (C->BlockedHeadShot(Hit.Location, FireDir, GetHeadshotScale(C), true, UTOwner))
@@ -195,10 +195,21 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 			PS->ModifyStatsValue(HitsStatsName, 1);
 		}
 	}
+	SetFlashExtra(Hit.Actor.Get());
 	if (OutHit != NULL)
 	{
 		*OutHit = Hit;
 	}
+}
+
+int32 AUTWeap_Sniper::GetHitScanDamage()
+{
+	return InstantHitInfo[CurrentFireMode].Damage;;
+}
+
+bool AUTWeap_Sniper::CanHeadShot()
+{
+	return true;
 }
 
 float AUTWeap_Sniper::GetAISelectRating_Implementation()
