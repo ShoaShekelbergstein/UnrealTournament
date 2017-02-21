@@ -125,26 +125,20 @@ void AUTWeap_LightningRifle::SetFlashExtra(AActor* HitActor)
 			if (Cast<AUTCharacter>(HitActor) && GS && !GS->OnSameTeam(UTOwner, HitActor))
 			{
 				UTOwner->SetFlashExtra(3, CurrentFireMode);
-				UUTGameplayStatics::UTPlaySound(GetWorld(), FullyPoweredHitEnemySound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
+				if (Cast<AUTPlayerController>(UTOwner->GetController()))
+				{
+					Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredHitEnemySound);
+				}
 			}
 			else
 			{
 				UTOwner->SetFlashExtra(2, CurrentFireMode);
-				UUTGameplayStatics::UTPlaySound(GetWorld(), FullyPoweredNoHitEnemySound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
+				if (Cast<AUTPlayerController>(UTOwner->GetController()))
+				{
+					Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredNoHitEnemySound);
+				}
 			}
 		}
-	}
-}
-
-void AUTWeap_LightningRifle::PlayFiringSound(uint8 EffectFiringMode)
-{
-	if (bIsFullyPowered)
-	{
-		// Hack - skip here since played in SetFlashExtra FIXMESTEVE
-	}
-	else
-	{
-		Super::PlayFiringSound(EffectFiringMode);
 	}
 }
 
@@ -166,9 +160,9 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 			UTOwner->ChangeAmbientSoundPitch(ChargeSound, ChargePct);
 			bool bWasFullyPowered = bIsFullyPowered;
 			bIsFullyPowered = (ChargePct >= 1.f);
-			if (bIsFullyPowered && !bWasFullyPowered)
+			if (bIsFullyPowered && !bWasFullyPowered && Cast<AUTPlayerController>(UTOwner->GetController()))
 			{
-				UUTGameplayStatics::UTPlaySound(GetWorld(), FullyPoweredSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
+				Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredNoHitEnemySound);
 			}
 		}
 		else
