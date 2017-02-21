@@ -503,7 +503,7 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY()
 	FRotator FirstPMeshRotation;
 
-	/** Scaling for 1st person weapon bob */
+	/** Scaling for Procedural 1st person weapon bob.  Set to zero to disable. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponBob")
 	float WeaponBobScaling;
 
@@ -913,19 +913,27 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY()
 	float	OldMaxDiff[2];
 
-	/** How fast Weapon Rotation offsets */
+	/** Animated weapon lag scaling. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Rotation")
+		float	AnimLagMultiplier;
+
+	/** Animated weapon lag return speed. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Rotation")
+		float	AnimLagSpeedReturn;
+
+	/** How fast Procedural Weapon Rotation offsets */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Rotation")
 	float	RotChgSpeed; 
 
-	/** How fast Weapon Rotation returns */
+	/** How fast Procedural Weapon Rotation returns */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Rotation")
 	float	ReturnChgSpeed;
 
-	/** Max Weapon Rotation Yaw offset */
+	/** Max Procedural Weapon Rotation Yaw offset */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Rotation")
 	float	MaxYawLag;
 
-	/** Max Weapon Rotation Pitch offset */
+	/** Max Procedural Weapon Rotation Pitch offset */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Rotation")
 	float	MaxPitchLag;
 

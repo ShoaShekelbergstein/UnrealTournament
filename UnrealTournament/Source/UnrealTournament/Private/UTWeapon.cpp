@@ -95,6 +95,8 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	MaxPitchLag = 3.3f;
 	FOVOffset = FVector(1.f);
 	bProceduralLagRotation = true;
+	AnimLagMultiplier = -4.f;;
+	AnimLagSpeedReturn = 2.f;
 
 	// default icon texture
 	static ConstructorHelpers::FObjectFinder<UTexture> WeaponTexture(TEXT("Texture2D'/Game/RestrictedAssets/Proto/UI/HUD/Elements/UI_HUD_BaseB.UI_HUD_BaseB'"));
