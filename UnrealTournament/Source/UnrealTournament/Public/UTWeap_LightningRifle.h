@@ -42,6 +42,10 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = LightningRifle)
 		bool bIsFullyPowered;
 
+	/** True when zoom button is pressed. */
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = LightningRifle)
+		bool bZoomHeld;
+
 	UFUNCTION()
 		void OnRepCharging();
 
@@ -51,4 +55,9 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 	virtual void PlayFiringSound(uint8 EffectFiringMode) override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void FireShot() override;
+	virtual void OnStartedFiring_Implementation() override;
+	virtual void OnContinuedFiring_Implementation() override;
+	virtual void OnStoppedFiring_Implementation() override;
+	virtual void OnRep_ZoomState_Implementation() override;
+	virtual void Removed() override;
 };

@@ -21,6 +21,65 @@ void AUTWeap_LightningRifle::GetLifetimeReplicatedProps(TArray<class FLifetimePr
 	DOREPLIFETIME(AUTWeap_LightningRifle, bIsFullyPowered);
 }
 
+void AUTWeap_LightningRifle::OnStartedFiring_Implementation()
+{
+	Super::OnStartedFiring_Implementation();
+	bZoomHeld = false;
+	bIsCharging = false;
+	ChargePct = 0.f;
+}
+
+void AUTWeap_LightningRifle::OnContinuedFiring_Implementation()
+{
+	Super::OnContinuedFiring_Implementation();
+	bZoomHeld = false;
+	bIsFullyPowered = false;
+	bIsCharging = false;
+	ChargePct = 0.f;
+}
+
+void AUTWeap_LightningRifle::OnStoppedFiring_Implementation()
+{
+	Super::OnStoppedFiring_Implementation();
+	if (!bZoomHeld && (CurrentFireMode == 0) && (Role == ROLE_Authority))
+	{
+		bIsFullyPowered = false;
+		bZoomHeld = true;
+		if ((ZoomState == EZoomState::EZS_Zoomed) || (ZoomState == EZoomState::EZS_ZoomingIn))
+		{
+			bIsCharging = true;
+		}
+	}
+}
+
+void AUTWeap_LightningRifle::Removed()
+{
+	bZoomHeld = false;
+	bIsFullyPowered = false;
+	bIsCharging = false;
+	Super::Removed();
+}
+
+void AUTWeap_LightningRifle::OnRep_ZoomState_Implementation()
+{
+	Super::OnRep_ZoomState_Implementation();
+	if (ZoomState == EZoomState::EZS_NotZoomed)
+	{
+		bZoomHeld = false;
+		ChargePct = 0.f;
+		bIsFullyPowered = false;
+		bIsCharging = false;
+	}
+	else if (ZoomState == EZoomState::EZS_ZoomingIn)
+	{
+		bZoomHeld = true;
+		if (Role == ROLE_Authority)
+		{
+			bIsCharging = true;
+		}
+	}
+}
+
 void AUTWeap_LightningRifle::DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHudWidget, float RenderDelta)
 {
 	Super::DrawWeaponCrosshair_Implementation(WeaponHudWidget, RenderDelta);
