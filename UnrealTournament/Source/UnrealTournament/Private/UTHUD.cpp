@@ -2106,7 +2106,11 @@ float AUTHUD::DrawWinConditions(UFont* InFont, float XPos, float YPos, float Sco
 {
 	if (!bSkipDrawing)
 	{
-		DrawText(ScoreMessageText.ToString(), FLinearColor::White, XPos, YPos, InFont, RenderScale, 1.f);
+		FFontRenderInfo TextRenderInfo;
+		TextRenderInfo.bEnableShadow = true;
+		TextRenderInfo.bClipText = true;
+		Canvas->SetLinearDrawColor(FLinearColor::White);
+		Canvas->DrawText(InFont, ScoreMessageText, XPos, YPos, RenderScale, RenderScale, TextRenderInfo);
 	}
 	float XL, YL;
 	Canvas->StrLen(InFont, ScoreMessageText.ToString(), XL, YL);
