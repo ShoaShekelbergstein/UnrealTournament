@@ -37,10 +37,6 @@ UUTFlagRunScoreboard::UUTFlagRunScoreboard(const FObjectInitializer& ObjectIniti
 	DefendLines.Add(FText::GetEmpty());
 	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine2", "* You have 5 lives.  The attackers do not have a life limit."));
 	DefendLines.Add(FText::GetEmpty());
-//	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine3", "* Attackers can earn 1 to 3 stars depending on how quickly they score."));
-//	DefendLines.Add(FText::GetEmpty());
-//	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine4", "* Defenders earn 1 star for preventing the attackers from scoring."));
-//	DefendLines.Add(FText::GetEmpty());
 	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine5", "* When the flag carrier powers up a Rally Point, teammates can"));
 	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine5b", "  teleport to it by pressing the rally button."));
 
@@ -49,10 +45,6 @@ UUTFlagRunScoreboard::UUTFlagRunScoreboard(const FObjectInitializer& ObjectIniti
 	AttackLines.Add(FText::GetEmpty());
 	AttackLines.Add(NSLOCTEXT("UTScoreboard", "AttackLine2", "* Defenders have 5 lives.  You do not have a life limit."));
 	AttackLines.Add(FText::GetEmpty());
-//	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine3", "* Attackers can earn 1 to 3 stars depending on how quickly they score."));
-//	AttackLines.Add(FText::GetEmpty());
-//	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine4", "* Defenders earn 1 star for preventing the attackers from scoring."));
-//	AttackLines.Add(FText::GetEmpty());
 	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine5", "* When the flag carrier powers up a Rally Point, teammates can"));
 	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine5b", "  teleport to it by pressing the rally button."));
 
@@ -741,57 +733,58 @@ void UUTFlagRunScoreboard::DrawPlayerScore(AUTPlayerState* PlayerState, float XO
 		Args.Add("Kills", FText::AsNumber(PlayerState->RoundKills));
 		FText CurrentScoreText = FText::Format(NSLOCTEXT("UTFlagRun", "PlayerScoreText", "({Kills})"), Args);
 		DrawText(CurrentScoreText, XOffset + (Width * ColumnHeaderScoreX) + XL + 8.f*RenderScale, YOffset + ColumnY, UTHUDOwner->TinyFont, RenderScale, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
-	}
-	AUTFlagRunGameState* CTFState = Cast<AUTFlagRunGameState>(UTGameState);
-	if (CTFState)
-	{
-		AUTInventory* SelectedPowerup = PlayerState && PlayerState->BoostClass ? PlayerState->BoostClass->GetDefaultObject<AUTInventory>() : nullptr;
-		const float LivesXOffset = (Width * 0.5f*(ColumnHeaderPowerupX + ColumnHeaderPingX));
 
-		//Only display powerups from your team
-		if (SelectedPowerup && ShouldShowPowerupForPlayer(PlayerState))
+		AUTFlagRunGameState* CTFState = Cast<AUTFlagRunGameState>(UTGameState);
+		if (CTFState)
 		{
-			const float U = SelectedPowerup->HUDIcon.U;
-			const float V = SelectedPowerup->HUDIcon.V;
-			const float UL = SelectedPowerup->HUDIcon.UL;
-			const float VL = SelectedPowerup->HUDIcon.VL;
-				
-			const float AspectRatio = UL / VL;
-			const float TextureSize = (Width * (ColumnHeaderPowerupEndX - ColumnHeaderPowerupX));
+			AUTInventory* SelectedPowerup = PlayerState && PlayerState->BoostClass ? PlayerState->BoostClass->GetDefaultObject<AUTInventory>() : nullptr;
+			const float LivesXOffset = (Width * 0.5f*(ColumnHeaderPowerupX + ColumnHeaderPingX));
 
-			//Draw a Red Dash if they have used their powerup, or an icon if they have not yet used it
-			const bool bIsAbleToEarnMorePowerups = (CTFState->IsTeamOnOffense(PlayerState->GetTeamNum()) ? CTFState->bIsOffenseAbleToGainPowerup : CTFState->bIsDefenseAbleToGainPowerup);
-				
-			//Draw Dash
-			if (!bIsAbleToEarnMorePowerups && !CTFState->IsMatchIntermission() && (PlayerState->GetRemainingBoosts() <= 0))
+			//Only display powerups from your team
+			if (SelectedPowerup && ShouldShowPowerupForPlayer(PlayerState))
 			{
-				DrawText(NSLOCTEXT("UTScoreboard", "Dash", "-"), XOffset + (Width * ((ColumnHeaderPowerupEndX + ColumnHeaderPowerupX) / 2)), YOffset + ColumnY, UTHUDOwner->TinyFont, RenderScale, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
-			}
-			//Draw powerup symbol
-			else
-			{
-				UTexture* PowerupTexture = SelectedPowerup->HUDIcon.Texture;
-				if (PowerupTexture)
+				const float U = SelectedPowerup->HUDIcon.U;
+				const float V = SelectedPowerup->HUDIcon.V;
+				const float UL = SelectedPowerup->HUDIcon.UL;
+				const float VL = SelectedPowerup->HUDIcon.VL;
+
+				const float AspectRatio = UL / VL;
+				const float TextureSize = (Width * (ColumnHeaderPowerupEndX - ColumnHeaderPowerupX));
+
+				//Draw a Red Dash if they have used their powerup, or an icon if they have not yet used it
+				const bool bIsAbleToEarnMorePowerups = (CTFState->IsTeamOnOffense(PlayerState->GetTeamNum()) ? CTFState->bIsOffenseAbleToGainPowerup : CTFState->bIsDefenseAbleToGainPowerup);
+
+				//Draw Dash
+				if (!bIsAbleToEarnMorePowerups && !CTFState->IsMatchIntermission() && (PlayerState->GetRemainingBoosts() <= 0))
 				{
-					DrawTexture(PowerupTexture, XOffset + (Width * ColumnHeaderPowerupX), YOffset, TextureSize, TextureSize * AspectRatio, U, V, UL, VL);
+					DrawText(NSLOCTEXT("UTScoreboard", "Dash", "-"), XOffset + (Width * ((ColumnHeaderPowerupEndX + ColumnHeaderPowerupX) / 2)), YOffset + ColumnY, UTHUDOwner->TinyFont, RenderScale, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
+				}
+				//Draw powerup symbol
+				else
+				{
+					UTexture* PowerupTexture = SelectedPowerup->HUDIcon.Texture;
+					if (PowerupTexture)
+					{
+						DrawTexture(PowerupTexture, XOffset + (Width * ColumnHeaderPowerupX), YOffset, TextureSize, TextureSize * AspectRatio, U, V, UL, VL);
+					}
 				}
 			}
-		}
-		else
-		{
-			//DrawText(NSLOCTEXT("UTScoreboard", "Dash", "-"), XOffset + (Width * ColumnHeaderPowerupX), YOffset + ColumnY, UTHUDOwner->TinyFont, RenderScale, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
-		}
-
-		if (PlayerState->bHasLifeLimit && (!CTFState->IsMatchIntermission() || (CTFState->OffenseKills > 0) || (CTFState->DefenseKills > 0)))
-		{
-			if (PlayerState->RemainingLives > 0)
-			{
-				DrawText(FText::AsNumber(PlayerState->RemainingLives), XOffset + LivesXOffset, YOffset + ColumnY, UTHUDOwner->TinyFont, RenderScale, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
-			}
 			else
 			{
-				// draw skull here
-				DrawTexture(UTHUDOwner->HUDAtlas, XOffset + LivesXOffset - 0.5f*CellHeight*RenderScale, YOffset + ColumnY - 0.34f*CellHeight*RenderScale, 0.75f*CellHeight*RenderScale, 0.75f*CellHeight*RenderScale, 725, 0, 28, 36, 1.f, FLinearColor::White);
+				//DrawText(NSLOCTEXT("UTScoreboard", "Dash", "-"), XOffset + (Width * ColumnHeaderPowerupX), YOffset + ColumnY, UTHUDOwner->TinyFont, RenderScale, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
+			}
+
+			if (PlayerState->bHasLifeLimit && (!CTFState->IsMatchIntermission() || (CTFState->OffenseKills > 0) || (CTFState->DefenseKills > 0)))
+			{
+				if (PlayerState->RemainingLives > 0)
+				{
+					DrawText(FText::AsNumber(PlayerState->RemainingLives), XOffset + LivesXOffset, YOffset + ColumnY, UTHUDOwner->TinyFont, RenderScale, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
+				}
+				else
+				{
+					// draw skull here
+					DrawTexture(UTHUDOwner->HUDAtlas, XOffset + LivesXOffset - 0.5f*CellHeight*RenderScale, YOffset + ColumnY - 0.34f*CellHeight*RenderScale, 0.75f*CellHeight*RenderScale, 0.75f*CellHeight*RenderScale, 725, 0, 28, 36, 1.f, FLinearColor::White);
+				}
 			}
 		}
 	}
