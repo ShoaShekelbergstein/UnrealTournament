@@ -146,14 +146,7 @@ FText SUTMatchmakingDialog::GetMatchmakingText() const
 				switch (PartyState->GetPartyProgression())
 				{
 				case EUTPartyState::PostMatchmaking:
-					if (Matchmaking && Matchmaking->IsRankedMatchmaking())
-					{
-						return FText::Format(NSLOCTEXT("Generic", "WaitingOnOtherPlayers", "Server Found. Waiting For {0} Players To Join..."), FText::AsNumber(PartyState->GetMatchmakingPlayersNeeded()));
-					}
-					else
-					{
-						return NSLOCTEXT("Generic", "QMJoiningServer", "Server Found. Joining shortly...");
-					}
+					return NSLOCTEXT("Generic", "JoiningServer", "Server Found. Joining shortly...");
 				}
 			}
 		}
