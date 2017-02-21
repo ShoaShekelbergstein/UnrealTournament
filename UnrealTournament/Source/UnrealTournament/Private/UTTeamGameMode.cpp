@@ -345,6 +345,23 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 	TArray< AUTTeamInfo*, TInlineAllocator<4> > BestTeams;
 	int32 BestSize = -1;
 
+	// if requested team has bots, they will switch or leave
+	for (int32 i = 0; i < Teams.Num(); i++)
+	{
+		if (Teams[i] && (Teams[i]->TeamIndex == RequestedTeam))
+		{
+			TArray<AController*> Members = Teams[i]->GetTeamMembers();
+			for (AController* C : Members)
+			{
+				if (Cast<AUTBot>(C) != NULL)
+				{
+					return RequestedTeam;
+				}
+			}
+			break;
+		}
+	}
+
 	for (int32 i = 0; i < Teams.Num(); i++)
 	{
 		int32 TestSize = Teams[i]->GetSize();
