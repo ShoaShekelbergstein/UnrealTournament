@@ -4452,7 +4452,7 @@ FString AUTGameMode::GetHUBPregameFormatString()
 
 void AUTGameMode::UpdatePlayersPresence()
 {
-	bool bAllowJoin = (NumPlayers < GameSession->MaxPlayers);
+	bool bAllowJoin = GameSession ? (NumPlayers < GameSession->MaxPlayers) : false;
 
 	AUTGameSession* UTGameSession = Cast<AUTGameSession>(GameSession);
 	bool bNoJoinInProgress = UTGameSession ? UTGameSession->bNoJoinInProgress : false;
