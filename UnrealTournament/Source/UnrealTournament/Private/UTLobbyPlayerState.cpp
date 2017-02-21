@@ -30,29 +30,8 @@ void AUTLobbyPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	DOREPLIFETIME(AUTLobbyPlayerState, DesiredTeamNum);
 }
 
-void AUTLobbyPlayerState::MatchButtonPressed()
-{
-	if (CurrentMatch == NULL)
-	{
-		// TODO Check to make sure the rulesets are replicated
-
-		bool bIsInParty = false;
-		UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
-		if (PartyContext)
-		{
-			bIsInParty = PartyContext->GetPartySize() > 1;
-		}
-
-		ServerCreateMatch(bIsInParty);
-	}
-	else
-	{
-		ServerDestroyOrLeaveMatch();
-	}
-}
-
-bool AUTLobbyPlayerState::ServerCreateMatch_Validate(bool bIsInParty) { return true; }
-void AUTLobbyPlayerState::ServerCreateMatch_Implementation(bool bIsInParty)
+bool AUTLobbyPlayerState::ServerCreateMatch_Validate(bool bIsInParty, const FString& CustomGameName) { return true; }
+void AUTLobbyPlayerState::ServerCreateMatch_Implementation(bool bIsInParty, const FString& CustomGameName)
 {
 	if (CurrentMatch == NULL)
 	{
@@ -61,7 +40,7 @@ void AUTLobbyPlayerState::ServerCreateMatch_Implementation(bool bIsInParty)
 		{
 			if (GameState->AvailableGameRulesets.Num() >0)
 			{
-				GameState->AddNewMatch(this, nullptr, bIsInParty);
+				GameState->AddNewMatch(this, nullptr, bIsInParty, CustomGameName);
 			}
 			else
 			{

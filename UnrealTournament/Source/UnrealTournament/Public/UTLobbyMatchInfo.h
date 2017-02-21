@@ -117,7 +117,7 @@ public:
 	virtual FText GetActionText();
 
 	// The GameState needs to tell this MatchInfo what settings should be made available
-	virtual void SetSettings(AUTLobbyGameState* GameState, AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy = NULL, bool bIsInParty = false);
+	virtual void SetSettings(AUTLobbyGameState* GameState, AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy = NULL, bool bIsInParty = false, const FString& inCustomGameName = TEXT(""));
 
 	virtual void SetAllowJoinInProgress(bool bAllow)
 	{
@@ -368,6 +368,9 @@ public:
 	float LastInstanceCommunicationTime;
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
+
+	UPROPERTY(Replicated)
+	FString CustomGameName;
 
 };
 

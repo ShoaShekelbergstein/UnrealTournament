@@ -448,6 +448,16 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 		.SetBackgroundImageReadOnly( FSlateColorBrush(Medium))
 		);
 
+	Style.Set("UT.EditBox.Boxed.Medium", FEditableTextBoxStyle()
+		.SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Regular", FONT_SIZE_Medium))
+		.SetForegroundColor(FLinearColor(0.75f,0.75f,0.75f,1.0f))
+		.SetBackgroundImageNormal( FSlateColorBrush(Dark))
+		.SetBackgroundImageHovered( FSlateColorBrush(SuperDark))
+		.SetBackgroundImageFocused( FSlateColorBrush(SuperDarkListA))
+		.SetBackgroundImageReadOnly( FSlateColorBrush(SuperDarkListB))
+		);
+
+
 	Style.Set("UT.ChatEditBox", FEditableTextBoxStyle()
 		.SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Regular", FONT_SIZE_Small))
 		.SetForegroundColor(FLinearColor(0.75f,0.75f,0.75f,1.0f))

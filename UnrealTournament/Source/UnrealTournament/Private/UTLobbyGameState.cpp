@@ -281,7 +281,7 @@ TWeakObjectPtr<AUTReplicatedGameRuleset> AUTLobbyGameState::FindRuleset(FString 
 	return NULL;
 }
 
-AUTLobbyMatchInfo* AUTLobbyGameState::AddNewMatch(AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy, bool bIsInParty)
+AUTLobbyMatchInfo* AUTLobbyGameState::AddNewMatch(AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy, bool bIsInParty, const FString& CustomGameName)
 {
 	// Create a match and replicate all of the relevant information
 
@@ -289,19 +289,18 @@ AUTLobbyMatchInfo* AUTLobbyGameState::AddNewMatch(AUTLobbyPlayerState* MatchOwne
 	if (NewMatchInfo)
 	{	
 		AvailableMatches.Add(NewMatchInfo);
-		HostMatch(NewMatchInfo, MatchOwner, MatchToCopy, bIsInParty);
-
+		HostMatch(NewMatchInfo, MatchOwner, MatchToCopy, bIsInParty, CustomGameName);
 		return NewMatchInfo;
 	}
 		
 	return NULL;
 }
 
-void AUTLobbyGameState::HostMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy, bool bIsInParty)
+void AUTLobbyGameState::HostMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy, bool bIsInParty, const FString& CustomGameName)
 {
 	MatchInfo->SetOwner(MatchOwner->GetOwner());
 	MatchInfo->AddPlayer(MatchOwner, true);
-	MatchInfo->SetSettings(this, MatchOwner, MatchToCopy, bIsInParty);
+	MatchInfo->SetSettings(this, MatchOwner, MatchToCopy, bIsInParty, CustomGameName);
 }
 
 void AUTLobbyGameState::JoinMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerState* NewPlayer, bool bAsSpectator)

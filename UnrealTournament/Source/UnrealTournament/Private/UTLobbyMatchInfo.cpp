@@ -70,6 +70,8 @@ void AUTLobbyMatchInfo::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &
 	DOREPLIFETIME(AUTLobbyMatchInfo, bDedicatedTeamGame);
 	DOREPLIFETIME(AUTLobbyMatchInfo, bBeginnerMatch);
 
+	DOREPLIFETIME(AUTLobbyMatchInfo, CustomGameName);
+
 	DOREPLIFETIME_CONDITION(AUTLobbyMatchInfo, DedicatedServerName, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTLobbyMatchInfo, DedicatedServerDescription, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTLobbyMatchInfo, DedicatedServerGameMode, COND_InitialOnly);
@@ -298,13 +300,15 @@ FText AUTLobbyMatchInfo::GetActionText()
 	return FText::GetEmpty();
 }
 
-void AUTLobbyMatchInfo::SetSettings(AUTLobbyGameState* GameState,  AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy, bool bIsInParty)
+void AUTLobbyMatchInfo::SetSettings(AUTLobbyGameState* GameState,  AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy, bool bIsInParty, const FString& inCustomGameName)
 {
 	if (MatchToCopy)
 	{
 		SetRules(MatchToCopy->CurrentRuleset, MatchToCopy->InitialMap);
 		BotSkillLevel = MatchToCopy->BotSkillLevel;
 	}
+
+	CustomGameName = inCustomGameName;
 
 	SetLobbyMatchState(ELobbyMatchState::Setup);
 }

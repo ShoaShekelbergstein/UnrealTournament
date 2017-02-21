@@ -38,20 +38,6 @@ FText SUTLobbyMenu::GetDisconnectButtonText() const
 }
 
 
-
-FReply SUTLobbyMenu::MatchButtonClicked()
-{
-	if (PlayerOwner.IsValid() && PlayerOwner->PlayerController)
-	{
-		AUTLobbyPlayerState* PlayerState = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
-		if (PlayerState)
-		{
-			PlayerState->MatchButtonPressed();
-		}
-	}
-	return FReply::Handled();
-}
-
 FText SUTLobbyMenu::GetMatchButtonText() const
 {
 	if (PlayerOwner.IsValid() && PlayerOwner->PlayerController && PlayerOwner->PlayerController->PlayerState)

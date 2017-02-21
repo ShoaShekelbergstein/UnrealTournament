@@ -21,6 +21,7 @@ void SUTGameSetupDialog::Construct(const FArguments& InArgs)
 	CurrentTabIndex = -1;
 	bBeginnerMatch = false;
 	bUserHasBeenWarned = false;
+	bGameNameChanged = false;
 	bHubMenu = InArgs._PlayerOwner->GetWorld()->GetGameState<AUTLobbyGameState>() != NULL;
 	SUTDialogBase::Construct(SUTDialogBase::FArguments()
 							.PlayerOwner(InArgs._PlayerOwner)
@@ -83,7 +84,12 @@ void SUTGameSetupDialog::Construct(const FArguments& InArgs)
 					SAssignNew(CustomBox, SVerticalBox)
 				]
 			]
-			+ SVerticalBox::Slot().Padding(15.0f, 25.0f, 10.0f, 25.0f).AutoHeight()
+			+ SVerticalBox::Slot().Padding(15.0f, 10.0f, 10.0f, 0.0f).AutoHeight()
+			[
+				BuildSessionName()
+			]
+
+			+ SVerticalBox::Slot().Padding(15.0f, 10.0f, 10.0f, 0.0f).AutoHeight()
 			[
 				SNew(SBox).HeightOverride(46)
 				[
@@ -224,7 +230,7 @@ void SUTGameSetupDialog::BuildRuleList(FName Category)
 	{
 		CustomBox->AddSlot().AutoHeight()
 		[
-			SNew(SBox).HeightOverride(800)
+			SNew(SBox).HeightOverride(760)
 			[
 				SAssignNew(CustomPanel, SUTCreateGamePanel, GetPlayerOwner())
 			]
@@ -366,6 +372,13 @@ FReply SUTGameSetupDialog::OnRuleClick(int32 RuleIndex)
 		if (SelectedRuleset != RuleSubset[RuleIndex].Ruleset)
 		{
 			SelectedRuleset = RuleSubset[RuleIndex].Ruleset;
+
+			if (!bGameNameChanged)
+			{
+				GameName = FText::Format(NSLOCTEXT("SUTGameSetupDialog","GameNameFormat","{0}'s {1} Game"),PlayerOwner->GetAccountDisplayName(), FText::FromString(SelectedRuleset->Title));
+			
+			}
+
 			BuildMapList();
 		}
 	}
@@ -857,6 +870,44 @@ FReply SUTGameSetupDialog::OnButtonClick(uint16 ButtonID)
 
 }
 
+TSharedRef<SWidget> SUTGameSetupDialog::BuildSessionName()
+{
+	if (bHubMenu)
+	{
+		GameName = FText::GetEmpty();
+		TSharedPtr<SBox> Box;
+		SAssignNew(Box,SBox).HeightOverride(42)
+		[
+			SNew(SHorizontalBox)
+			+SHorizontalBox::Slot().AutoWidth().Padding(0.0f,0.0f,10.0f,0.0f).VAlign(VAlign_Center)
+			[
+				SNew(STextBlock)
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
+				.Text(NSLOCTEXT("SUTGameSetupDialog","GameName","Custom Game Name:"))
+			]
+			+SHorizontalBox::Slot().AutoWidth()
+			[
+				SNew(SBox).WidthOverride(600)
+				[
+					SAssignNew(GameNameText, SEditableTextBox)
+					.Style(SUTStyle::Get(),"UT.EditBox.Boxed.Medium")
+					.MinDesiredWidth(450)
+					.Text(this, &SUTGameSetupDialog::GetGameNameText)
+					.OnTextCommitted(this, &SUTGameSetupDialog::OnGameNameTextCommited)
+				]
+			]
+
+		];
+
+		return Box.ToSharedRef();
+
+	}
+	else
+	{
+		return SNullWidget::NullWidget;
+	}
+}
+
 TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 {
 	int32 DefaultBotSkillLevel = PlayerOwner->GetProfileSettings() ? PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel : 3;
@@ -1006,6 +1057,20 @@ void SUTGameSetupDialog::RankCheckChanged(ECheckBoxState NewState)
 			bUserHasBeenWarned = true;
 			MatchOwner->NotifyBeginnerAutoLock();
 		}
+	}
+}
+
+FText SUTGameSetupDialog::GetGameNameText() const
+{
+	return GameName;
+}
+
+void SUTGameSetupDialog::OnGameNameTextCommited(const FText &NewText,ETextCommit::Type CommitType)
+{
+	if (!GameName.EqualTo(NewText))
+	{
+		bGameNameChanged = true;
+		GameName = NewText;
 	}
 }
 

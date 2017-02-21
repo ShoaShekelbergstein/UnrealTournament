@@ -304,7 +304,7 @@ void SUTLobbyInfoPanel::OnGameChangeDialogResult(TSharedPtr<SCompoundWidget> Dia
 		AUTLobbyPlayerState* PlayerState = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
 		if (PlayerState)
 		{
-			PlayerState->ServerCreateMatch(bIsInParty);
+			PlayerState->ServerCreateMatch(bIsInParty, SetupDialog->GetGameNameText().ToString());
 		}
 
 		SAssignNew(StartMatchWindow, SUTStartMatchWindow, PlayerOwner)

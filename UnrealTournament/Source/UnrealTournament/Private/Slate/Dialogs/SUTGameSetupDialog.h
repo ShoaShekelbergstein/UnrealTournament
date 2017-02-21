@@ -280,10 +280,18 @@ protected:
 
 	int32 CurrentTabIndex;
 
+	void OnGameNameTextCommited(const FText &NewText,ETextCommit::Type CommitType);
+
+	FText GameName;
+
+	TSharedPtr<SEditableTextBox> GameNameText;
+	TSharedRef<SWidget> BuildSessionName();
+
 public:
 	FString GetSelectedMap();
-
+	bool bGameNameChanged;
 	void ConfigureMatchInfo(TWeakObjectPtr<AUTLobbyMatchInfo> MatchInfo);
+	FText GetGameNameText() const;
 
 };
 

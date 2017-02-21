@@ -71,12 +71,12 @@ class UNREALTOURNAMENT_API AUTLobbyGameState : public AUTGameState
 	/**
 	 *	Creates a new match and sets it's host.
 	 **/
-	virtual AUTLobbyMatchInfo* AddNewMatch(AUTLobbyPlayerState* HostOwner, AUTLobbyMatchInfo* MatchToCopy = NULL, bool bIsInParty = false);
+	virtual AUTLobbyMatchInfo* AddNewMatch(AUTLobbyPlayerState* HostOwner, AUTLobbyMatchInfo* MatchToCopy = NULL, bool bIsInParty = false, const FString& CustomGameName = TEXT(""));
 
 	/**
 	 *	Sets someone as the host of a match and replicates all of the relevant match information to them
 	 **/
-	virtual void HostMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy = NULL, bool bIsInParty = false);
+	virtual void HostMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy = NULL, bool bIsInParty = false, const FString& CustomGameName = TEXT(""));
 
 	/**
 	 *	Joins an existing match.

@@ -104,14 +104,14 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 {
 	SAssignNew(GamePanel,SVerticalBox)
 	+ SVerticalBox::Slot().FillHeight(1.0f)
-	.Padding(FMargin(60.0f, 60.0f, 60.0f, 20.0f))
+	.Padding(FMargin(60.0f, 20.0f, 60.0f, 20.0f))
 	[
 		SNew(SVerticalBox)
 
 		// Game type and map selection
 		+SVerticalBox::Slot()
 		.AutoHeight()
-		.Padding(FMargin(0, 0, 0, 50))
+		.Padding(FMargin(0, 0, 0, 15))
 		[
 			// Selection Controls
 			SNew(SHorizontalBox)
@@ -305,7 +305,7 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 
 		// Game Settings and mutators
 		+SVerticalBox::Slot()
-		.Padding(FMargin(0.0f,30.0f,0.0f,0.0f))
+		.Padding(FMargin(0.0f,15.0f,0.0f,0.0f))
 		.FillHeight(1.0f)
 		[
 			SNew(SHorizontalBox)

@@ -32,12 +32,9 @@ class UNREALTOURNAMENT_API AUTLobbyPlayerState : public AUTPlayerState
 	UPROPERTY()
 	AUTLobbyMatchInfo* JoiningLeaderMatch;
 
-	// Client-Side.  Will be called from the UI when the player presses the Create Match and Exit Match Button.
-	virtual void MatchButtonPressed();
-
 	// Server-Side.  Attempt to create a new match
 	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerCreateMatch(bool bIsInParty);
+	virtual void ServerCreateMatch(bool bIsInParty, const FString& CustomGameName);
 
 	// Server-Side.  Attempt to leave and or destory the existing match this player is in.
 	UFUNCTION(Server, Reliable, WithValidation)

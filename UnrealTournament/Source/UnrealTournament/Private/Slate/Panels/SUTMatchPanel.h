@@ -131,32 +131,32 @@ public:
 			}
 
 
-			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + StateString;
+			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT(" -- ")) + StateString;
 		}
 		if ((Flags & MATCH_FLAG_Beginner) == MATCH_FLAG_Beginner)
 		{
-			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("Beginner");
+			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT(" -- ")) + TEXT("Beginner");
 		}
 
 		if ((Flags & MATCH_FLAG_Private) == MATCH_FLAG_Private) 
 		{
-			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("Private");
+			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT(" -- ")) + TEXT("Private");
 		}
 		else if ((Flags & MATCH_FLAG_Ranked) == MATCH_FLAG_Ranked)
 		{
 			int32 MatchRankCheck = MatchInfo.IsValid() ? MatchInfo->RankCheck : (MatchData.IsValid() ? MatchData->RankCheck: DEFAULT_RANK_CHECK);
 			int32 PlayerRankCheck = PlayerState->GetRankCheck(BaseGameMode);
 
-			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("Rank Locked");
+			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT(" -- ")) + TEXT("Rank Locked");
 		}
 
-		if ((Flags & MATCH_FLAG_NoJoinInProgress) == MATCH_FLAG_NoJoinInProgress) Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("<img src=\"UT.Icon.Lock.Small\"/> No Join in Progress");
-		if (bInvited) Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("<UT.Font.NormalText.Tiny.Bold.Gold>!!Invited!!</>");
+		if ((Flags & MATCH_FLAG_NoJoinInProgress) == MATCH_FLAG_NoJoinInProgress) Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT(" -- ")) + TEXT("<img src=\"UT.Icon.Lock.Small\"/> No Join in Progress");
+		if (bInvited) Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT(" -- ")) + TEXT("<UT.Font.NormalText.Tiny.Bold.Gold>!!Invited!!</>");
 
 		if (NumFriends > 0)
 		{
 			FString Friends = FString::Printf(TEXT("<img src=\"UT.Icon.Friends.Small.Inline\"/> %i Friends Playing"), NumFriends);
-			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + Friends;
+			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT(" -- ")) + Friends;
 		}
 	
 		return FText::FromString(Final);
@@ -172,7 +172,11 @@ public:
 	{
 		if ( MatchInfo.IsValid())
 		{
-			if ( MatchInfo->CurrentRuleset.IsValid() )
+			if (!MatchInfo->CustomGameName.IsEmpty())
+			{
+				return FText::FromString(MatchInfo->CustomGameName);
+			}
+			else if ( MatchInfo->CurrentRuleset.IsValid() )
 			{
 				return FText::FromString(MatchInfo->CurrentRuleset->Title);
 			}
@@ -181,30 +185,46 @@ public:
 				return FText::FromString(MatchInfo->DedicatedServerName);
 			}
 		}
+		else if (MatchData.IsValid())
+		{
+			if (!MatchData->CustomGameName.IsEmpty()) 
+			{
+				return FText::FromString(MatchData->CustomGameName);
+			}
+			else
+			{
+				FText::FromString(MatchData->RulesTitle);
+			}
+		}
 
-		return FText::FromString(MatchData.IsValid() ? MatchData->RulesTitle : TEXT("") );
+		return FText::GetEmpty();
 	}
 
 	FText GetMap()
 	{
+		FString FinalMapName = TEXT("");
+		FString FinalGameName = TEXT("");
+
 		if ( MatchInfo.IsValid() )
 		{
 			if (MatchInfo->bDedicatedMatch)
 			{
-				return FText::FromString(FString::Printf(TEXT("%s (%s)"), *MatchInfo->InitialMap, *MatchInfo->DedicatedServerGameMode));
+				FinalMapName = MatchInfo->InitialMap;
+				FinalGameName = MatchInfo->DedicatedServerGameMode;
 			}
 			else
 			{
-				if (MatchInfo->InitialMapInfo.IsValid())
-				{
-					return FText::FromString(MatchInfo->InitialMapInfo->Title);
-				}
-				return FText::FromString(MatchInfo->InitialMap);
-
+				FinalMapName = MatchInfo->InitialMapInfo.IsValid() ? MatchInfo->InitialMapInfo->Title : MatchInfo->InitialMap;
+				FinalGameName = MatchInfo->CurrentRuleset->Title;
 			}
 		}
+		else
+		{
+			FinalMapName = MatchData->MapName;
+			FinalGameName = MatchData->RulesTitle;
+		}
 
-		return FText::FromString(MatchData.IsValid() ? MatchData->MapName : TEXT(""));
+		return FText::Format(NSLOCTEXT("SUTMatchPanel","GetMapFormat","{0} on {1}"), FText::FromString(FinalGameName), FText::FromString(FinalMapName));
 	}
 
 	FText GetMaxPlayers()
