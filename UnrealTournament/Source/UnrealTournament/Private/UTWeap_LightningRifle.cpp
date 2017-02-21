@@ -180,7 +180,11 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 
 void AUTWeap_LightningRifle::FireShot()
 {
-	UTOwner->DeactivateSpawnProtection();
+	if (UTOwner)
+	{
+		UTOwner->DeactivateSpawnProtection();
+	}
+
 	ConsumeAmmo(bIsFullyPowered ? 2 : 1);
 	if (!FireShotOverride() && GetUTOwner() != NULL) // script event may kill user
 	{
