@@ -16,6 +16,8 @@
 #include "Net/OnlineEngineInterface.h"
 #include "UnrealTournamentFullScreenMovie.h"
 #include "UTHeartBeatManager.h"
+#include "BlueprintContextLibrary.h"
+#include "PartyContext.h"
 
 AUTBasePlayerController::AUTBasePlayerController(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -1401,5 +1403,41 @@ void AUTBasePlayerController::InitializeHeartbeatManager()
 	{
 		HeartbeatManager = NewObject<UUTHeartbeatManager>(this);
 		HeartbeatManager->StartManager(this);
+	}
+}
+
+void AUTBasePlayerController::GuaranteedKick( const FText& KickReason)
+{
+	if (!AuthKickHandle.IsValid())
+	{
+		ClientWasKicked(KickReason);
+		GetWorldTimerManager().SetTimer(AuthKickHandle, this, &AUTBasePlayerController::TimedKick, 1.0f, false);
+	}
+}
+
+void AUTBasePlayerController::TimedKick()
+{
+	Destroy();
+}
+
+void AUTBasePlayerController::ClientWasKicked_Implementation(const FText& KickReason)
+{
+	ULocalPlayer* UTLocalPlayer = Cast<ULocalPlayer>(Player);
+	if (UTLocalPlayer != nullptr)
+	{
+		UUTGameViewportClient* ViewportClient = Cast<UUTGameViewportClient>(UTLocalPlayer->ViewportClient);
+		if (ViewportClient != nullptr)
+		{
+			ViewportClient->KickReason = KickReason;
+		}
+	}
+
+	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
+	if (PartyContext)
+	{
+		if (PartyContext->GetPartySize() > 1)
+		{
+			PartyContext->LeaveParty();
+		}
 	}
 }

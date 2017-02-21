@@ -325,36 +325,6 @@ void SUTPlayerListPanel::GetMenuContent(FString SearchTag, TArray<FMenuOptionDat
 	bool bTeamGame = false;
 	CheckFlags(bIsHost, bTeamGame);
 
-	if (bIsHost || (PlayerOwner.IsValid() && PlayerOwner->PlayerController && TrackedPlayers[Idx]->PlayerState.Get() == PlayerOwner->PlayerController->PlayerState))
-	{
-		if (TrackedPlayers[Idx]->bIsInMatch)
-		{
-			if (bIsHost && (TrackedPlayers[Idx]->PlayerState.Get() != PlayerOwner->PlayerController->PlayerState))
-			{
-				MenuOptions.Add(FMenuOptionData());
-				MenuOptions.Add(FMenuOptionData(NSLOCTEXT("PlayerListSubMenu","Kick","Kick"), EPlayerListContentCommand::Kick));
-				MenuOptions.Add(FMenuOptionData(NSLOCTEXT("PlayerListSubMenu","Ban","Ban"), EPlayerListContentCommand::Ban));
-			}
-		}
-		else
-		{
-			AUTLobbyPlayerState* OwnerLobbyPlayerState = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
-			AUTLobbyPlayerState* LobbyPlayerState = Cast<AUTLobbyPlayerState>(TrackedPlayers[Idx]->PlayerState.Get());
-			if (OwnerLobbyPlayerState && LobbyPlayerState && OwnerLobbyPlayerState->CurrentMatch)
-			{
-				if ( OwnerLobbyPlayerState->CurrentMatch->AllowedPlayerList.Find(LobbyPlayerState->UniqueId.ToString()) == INDEX_NONE)
-				{
-					MenuOptions.Add(FMenuOptionData(NSLOCTEXT("PlayerListSubMenu","Invite","Invite to Match"), EPlayerListContentCommand::Invite));
-				}
-				else
-				{
-					MenuOptions.Add(FMenuOptionData(NSLOCTEXT("PlayerListSubMenu","Uninvite","Uninvite from Match"), EPlayerListContentCommand::UnInvite));
-				}
-			}
-		
-		}
-	}
-
 	if (OwnerPlayerState && OwnerPlayerState->bIsRconAdmin)
 	{
 		if ( TrackedPlayers[Idx]->PlayerState.Get() != PlayerOwner->PlayerController->PlayerState)
@@ -751,42 +721,13 @@ void SUTPlayerListPanel::OnSubMenuSelect(FName InTag, TSharedPtr<FTrackedPlayer>
 				}
 			}
 		}
-		else if (InTag == EPlayerListContentCommand::Kick)
-		{
-			if (LobbyPlayerState && TargetPlayerState && LobbyPlayerState->CurrentMatch)
-			{
-				LobbyPlayerState->CurrentMatch->ServerManageUser(2,TargetPlayerState);
-			}
-		}
-		else if (InTag == EPlayerListContentCommand::Ban)
-		{
-			if (LobbyPlayerState && TargetPlayerState && LobbyPlayerState->CurrentMatch)
-			{
-				LobbyPlayerState->CurrentMatch->ServerManageUser(3,TargetPlayerState);
-			}
-		}
-		else if (InTag == EPlayerListContentCommand::Invite)
-		{
-			if (LobbyPlayerState && TargetPlayerState && LobbyPlayerState->CurrentMatch)
-			{
-				LobbyPlayerState->CurrentMatch->ServerInvitePlayer(TargetPlayerState, true);
-			}
-		
-		}
-		else if (InTag == EPlayerListContentCommand::UnInvite)
-		{
-			if (LobbyPlayerState && TargetPlayerState && LobbyPlayerState->CurrentMatch)
-			{
-				LobbyPlayerState->CurrentMatch->ServerInvitePlayer(TargetPlayerState, false);
-			}
-		
-		}
 		else if ((InTag == EPlayerListContentCommand::ServerKick || InTag == EPlayerListContentCommand::ServerBan) && TargetPlayerState != NULL)
 		{
 			AUTBasePlayerController* PC = Cast<AUTBasePlayerController>(PlayerOwner->PlayerController);
 			if (PC)
 			{
-				PC->RconKick(TargetPlayerState->UniqueId.ToString(), Tag == EPlayerListContentCommand::ServerBan);
+				bool bBan = InTag == EPlayerListContentCommand::ServerBan;
+				PC->RconKick(TargetPlayerState->UniqueId.ToString(), bBan, bBan ? TEXT("You have been banned by the admin.") : TEXT("You have been kicked by the admin."));
 			}
 		}
 		else if ((InTag == EPlayerListContentCommand::SendMessage))

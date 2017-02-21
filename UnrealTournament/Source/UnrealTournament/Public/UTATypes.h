@@ -1237,12 +1237,6 @@ namespace EEpicDefaultRuleTags
 namespace EPlayerListContentCommand
 {
 	const FName PlayerCard = FName(TEXT("PlayerCard"));
-	const FName ChangeTeam = FName(TEXT("ChangeTeam"));
-	const FName Spectate = FName(TEXT("Spectate"));
-	const FName Kick = FName(TEXT("Kick"));
-	const FName Ban = FName(TEXT("Ban"));
-	const FName Invite = FName(TEXT("Invite"));
-	const FName UnInvite = FName(TEXT("Uninvite"));
 	const FName ServerKick = FName(TEXT("ServerKick"));
 	const FName ServerBan = FName(TEXT("ServerBan"));
 	const FName SendMessage = FName(TEXT("SendMessage"));

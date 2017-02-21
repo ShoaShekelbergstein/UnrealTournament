@@ -157,9 +157,6 @@ public:
 	FOnMatchInfoUpdated OnMatchInfoUpdatedDelegate;
 	FOnRulesetUpdated OnRulesetUpdatedDelegate;
 
-	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerManageUser(int32 CommandID, AUTLobbyPlayerState* Target);
-
 	UPROPERTY()
 	TArray<FUniqueNetIdRepl> BannedIDs;
 

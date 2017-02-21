@@ -345,9 +345,20 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual FText GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const;
 
+	// Kicks the player, but allows enough time for the kick message to replicate.
+	UFUNCTION()
+	virtual void GuaranteedKick( const FText& KickReason);
+
+	void ClientWasKicked_Implementation(const FText& KickReason) override;
+
+
 protected:
+	FTimerHandle AuthKickHandle;
+
 	void InitializeHeartbeatManager();
+	void TimedKick();
 
 	UPROPERTY()
 	class UUTHeartbeatManager* HeartbeatManager;
+
 };

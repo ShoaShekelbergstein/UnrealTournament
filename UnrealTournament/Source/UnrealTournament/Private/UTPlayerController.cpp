@@ -5383,24 +5383,3 @@ void AUTPlayerController::BeginSpectatingState()
 	FlushPressedKeys();
 }
 
-void AUTPlayerController::ClientWasKicked_Implementation(const FText& KickReason)
-{
-	ULocalPlayer* UTLocalPlayer = Cast<ULocalPlayer>(Player);
-	if (UTLocalPlayer != nullptr)
-	{
-		UUTGameViewportClient* ViewportClient = Cast<UUTGameViewportClient>(UTLocalPlayer->ViewportClient);
-		if (ViewportClient != nullptr)
-		{
-			ViewportClient->KickReason = KickReason;
-		}
-	}
-
-	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
-	if (PartyContext)
-	{
-		if (PartyContext->GetPartySize() > 1)
-		{
-			PartyContext->LeaveParty();
-		}
-	}
-}

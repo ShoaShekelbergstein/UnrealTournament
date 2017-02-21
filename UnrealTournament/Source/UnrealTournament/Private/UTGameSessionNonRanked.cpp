@@ -454,8 +454,11 @@ bool AUTGameSessionNonRanked::KickPlayer(APlayerController* KickedPlayer, const 
 				}
 			}
 		}
-		KickedPlayer->ClientWasKicked(KickReason);
-		KickedPlayer->Destroy();
+		AUTBasePlayerController* KickedBasePlayer = Cast<AUTBasePlayerController>(KickedPlayer);
+		if (KickedBasePlayer != nullptr)
+		{
+			KickedBasePlayer->GuaranteedKick(KickReason);
+		}
 		return true;
 	}
 	else
