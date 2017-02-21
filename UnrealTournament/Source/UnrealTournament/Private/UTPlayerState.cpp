@@ -45,8 +45,6 @@
 #include "SlateExtras.h"
 #endif
 
-const float IDLE_TIMEOUT_TIME=120.0f;
-
 /** disables load warnings for dedicated server where invalid client input can cause unpreventable logspam, but enables on clients so developers can make sure their stuff is working */
 static inline ELoadFlags GetCosmeticLoadFlags()
 {
@@ -204,8 +202,6 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	DOREPLIFETIME_CONDITION(AUTPlayerState, CurrentCoolFactor, COND_OwnerOnly);
 #endif
-
-	DOREPLIFETIME(AUTPlayerState, bPlayerIsIdle);
 }
 
 void AUTPlayerState::Destroyed()
@@ -854,17 +850,6 @@ void AUTPlayerState::Tick(float DeltaTime)
 			{
 				bNeedRallyReminder = false;
 			}
-		}
-
-		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-		// Only update the idle state if the match is in progress.
-		if (UTGameState && UTGameState->IsMatchInProgress() && !bOutOfLives)
-		{
-			bPlayerIsIdle = GetWorld()->GetTimeSeconds() - LastActiveTime > IDLE_TIMEOUT_TIME;
-		}
-		else if (UTGameState == nullptr || !UTGameState->HasMatchEnded())
-		{
-			NotIdle();
 		}
 	}
 	// If we are waiting to respawn then count down
@@ -4189,11 +4174,6 @@ void AUTPlayerState::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVect
 
 void AUTPlayerState::NotIdle()
 {
-	bPlayerIsIdle = false;
 	LastActiveTime = GetWorld()->GetTimeSeconds();
 }
 
-bool AUTPlayerState::IsPlayerIdle()
-{
-	return (!bIsABot && !bOnlySpectator && bPlayerIsIdle);
-}

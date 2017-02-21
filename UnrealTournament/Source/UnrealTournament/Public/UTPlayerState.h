@@ -1253,18 +1253,11 @@ public:
 	UFUNCTION()
 	void NotIdle();
 
-	// returns true if the player is idle
-	UFUNCTION()
-	bool IsPlayerIdle();
-
+	// The time at which the player that owns this PlayerState was active in real time seconds.  This should be set by calling NotActive()
+	UPROPERTY(BlueprintReadWrite)
+		float LastActiveTime;
 
 protected:
-	// The time at which the player that owns this PlayerState was active in real time seconds.  This should be set by calling NotActive()
-	float LastActiveTime;
-
-	// Will be true if this player is considered idle
-	UPROPERTY(replicated)
-	bool bPlayerIsIdle;
 
 
 #if !UE_SERVER

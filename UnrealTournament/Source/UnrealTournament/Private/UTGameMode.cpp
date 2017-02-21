@@ -58,6 +58,8 @@
 
 DEFINE_LOG_CATEGORY(LogUTGame);
 
+const float IDLE_TIMEOUT_TIME = 120.0f;
+
 UUTResetInterface::UUTResetInterface(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {}
@@ -1231,7 +1233,7 @@ void AUTGameMode::DefaultTimer()
 				for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 				{
 					AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-					if (UTPlayerState != nullptr && !UTPlayerState->bIsABot && !UTPlayerState->IsPlayerIdle())
+					if (UTPlayerState && !IsPlayerIdle(UTPlayerState))
 					{
 						bAllPlayersAreIdle = false;
 						break;
@@ -2632,7 +2634,7 @@ void AUTGameMode::TravelToNextMap_Implementation()
 	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 	{
 		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-		if (!bIgnoreIdlePlayers && UTPlayerState != nullptr && UTPlayerState->IsPlayerIdle())
+		if (!bIgnoreIdlePlayers && UTPlayerState != nullptr && IsPlayerIdle(UTPlayerState))
 		{
 			AUTPlayerController* Controller = Cast<AUTPlayerController>(UTPlayerState->GetOwner());
 			if (Controller)
@@ -2648,7 +2650,6 @@ void AUTGameMode::TravelToNextMap_Implementation()
 			}
 		}
 	}
-
 
 	if (!bRankedSession && (!IsGameInstanceServer() || bDedicatedInstance) && !bDisableMapVote && GetWorld()->GetNetMode() != NM_Standalone)
 	{
@@ -3431,6 +3432,11 @@ bool AUTGameMode::HasMatchEnded() const
 	return UTGameState->HasMatchEnded();
 }
 
+bool AUTGameMode::IsPlayerIdle(AUTPlayerState* PS)
+{
+	return PS && !PS->bIsABot && !PS->bOnlySpectator && !PS->bOutOfLives && !PS->bIsInactive && (GetWorld()->GetTimeSeconds() - PS->LastActiveTime > IDLE_TIMEOUT_TIME) && HasMatchStarted();
+}
+
 /**	I needed to rework the ordering of SetMatchState until it can be corrected in the engine. **/
 void AUTGameMode::SetMatchState(FName NewState)
 {
@@ -3440,7 +3446,7 @@ void AUTGameMode::SetMatchState(FName NewState)
 		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 		{
 			AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-			if (UTPlayerState != nullptr && !UTPlayerState->bIsABot)
+			if (UTPlayerState)
 			{
 				UTPlayerState->NotIdle();
 			}

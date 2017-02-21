@@ -2581,10 +2581,6 @@ void AUTPlayerController::ServerRestartPlayer_Implementation()
 	{
 		return;
 	}
-
-	// Flag this player as not being idle
-	if (UTPlayerState) UTPlayerState->NotIdle();
-
 	Super::ServerRestartPlayer_Implementation();
 }
 
@@ -2638,9 +2634,6 @@ void AUTPlayerController::ServerRestartPlayerAltFire_Implementation()
 {
 	bUseAltSpawnPoint = true;
 
-	// Flag this player as not being idle
-	if (UTPlayerState) UTPlayerState->NotIdle();
-
 	if (UTPlayerState != nullptr)
 	{
 		UTPlayerState->bChosePrimaryRespawnChoice = false;
@@ -2661,9 +2654,6 @@ bool AUTPlayerController::ServerSelectSpawnPoint_Validate(APlayerStart* DesiredS
 }
 void AUTPlayerController::ServerSelectSpawnPoint_Implementation(APlayerStart* DesiredStart)
 {
-	// Flag this player as not being idle
-	if (UTPlayerState) UTPlayerState->NotIdle();
-
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (GS != NULL && UTPlayerState != NULL)
 	{

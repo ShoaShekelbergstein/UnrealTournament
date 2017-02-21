@@ -170,6 +170,15 @@ void AUTCTFRoundGame::BeginGame()
 		CTFGameState->NumRounds = NumRounds;
 		CTFGameState->HalftimeScoreDelay = 0.5f;
 	}
+	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+	{
+		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+		if (UTPlayerState)
+		{
+			UTPlayerState->NotIdle();
+		}
+	}
+
 	float RealIntermissionDuration = IntermissionDuration;
 	IntermissionDuration = 10.f;
 	SetMatchState(MatchState::MatchIntermission);
@@ -198,21 +207,20 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 {
 	if (bFirstRoundInitialized)
 	{
-/*
 		// kick idlers
 		if (UTGameState && GameSession)
 		{
 			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 			{
 				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-				if (UTPlayerState && !UTPlayerState->bIsABot && !UTPlayerState->bOutOfLives && UTPlayerState->IsPlayerIdle() && !UTPlayerState->bOnlySpectator && !UTPlayerState->bIsInactive && Cast<APlayerController>(UTPlayerState->GetOwner()))
+				if (UTPlayerState && IsPlayerIdle(UTPlayerState) && Cast<APlayerController>(UTPlayerState->GetOwner()))
 				{
 					Cast<APlayerController>(UTPlayerState->GetOwner())->ClientWasKicked(NSLOCTEXT("General", "IdleKick", "You were kicked for being idle."));
 					UTPlayerState->GetOwner()->Destroy();
 				}
 			}
 		}
-*/
+
 		// view defender base, with last team to score around it
 		int32 TeamToWatch = IntermissionTeamToView(nullptr);
 
@@ -853,11 +861,11 @@ void AUTCTFRoundGame::InitPlayerForRound(AUTPlayerState* PS)
 
 void AUTCTFRoundGame::HandleTeamChange(AUTPlayerState* PS, AUTTeamInfo* OldTeam)
 {
+	PS->bHasLifeLimit = IsPlayerOnLifeLimitedTeam(PS);
 	if ((GetWorld()->WorldType == EWorldType::PIE) || bDevServer || !PS || !UTGameState || (UTGameState->GetMatchState() != MatchState::InProgress))
 	{
 		return;
 	}
-	PS->bHasLifeLimit = IsPlayerOnLifeLimitedTeam(PS);
 	if (bSitOutDuringRound)
 	{
 		PS->RemainingLives = 0;

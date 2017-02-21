@@ -1073,6 +1073,15 @@ void UUTCharacterMovement::PerformMovement(float DeltaSeconds)
 		{
 			GroundFriction = BrakingFriction;
 		}
+		else
+		{
+			// Flag this player as not being idle.
+			AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(CharacterOwner->PlayerState);
+			if (UTPlayerState)
+			{
+				UTPlayerState->NotIdle();
+			}
+		}
 		if (bIsFloorSliding)
 		{
 			GroundFriction = 0.f;
@@ -1104,18 +1113,6 @@ void UUTCharacterMovement::PerformMovement(float DeltaSeconds)
 		bWantsToCrouch = bSavedWantsToCrouch;
 		GroundFriction = RealGroundFriction;
 		BrakingDecelerationWalking = DefaultBrakingDecelerationWalking;
-		
-		if (Velocity.Size() > 0.f)
-		{
-			// Flag this player as not being idle.
-			AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(CharacterOwner->PlayerState);
-			if (UTPlayerState) 
-			{
-				UTPlayerState->NotIdle();
-			}
-
-//			UE_LOG(UT, Warning, TEXT("Delta %f Velocity %s Speed %f AccelRate %f"), DeltaSeconds, *Velocity.ToString(), Velocity.Size(), (Velocity - OldVelocity).Size() / DeltaSeconds);
-		}
 	}
 
 	if (UTOwner != NULL)

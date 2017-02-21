@@ -447,6 +447,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = AI)
 	int32 MaxSquadSize;
 
+
+	// returns true if the player is idle
+	UFUNCTION()
+		bool IsPlayerIdle(AUTPlayerState* PS);
+
 	/** cached list of mutator assets from the asset registry and native classes, used to allow shorthand names for mutators instead of full paths all the time */
 	TArray<FAssetData> MutatorAssets;
 
