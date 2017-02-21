@@ -1375,10 +1375,15 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 		AUTCarriedObject* TargeterFlag = TargeterChar->GetCarriedObject();
 		if (TargeterFlag && TargeterFlag->bShouldPingFlag && GetController() && Cast<AUTPlayerState>(PlayerState))
 		{
-			// ping the flag carrier if victim is looking at him
-			FVector ViewDir = GetController()->GetControlRotation().Vector();
-			FVector EnemyDir = (Targeter->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-			if (((ViewDir | EnemyDir) > 0.7f) && GetController()->LineOfSightTo(TargeterChar))
+			// ping the flag carrier if victim is looking at him or victim was killed by FC
+			bool bShouldPing = (Health <= 0);
+			if (!bShouldPing)
+			{
+				FVector ViewDir = GetController()->GetControlRotation().Vector();
+				FVector EnemyDir = (Targeter->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+				bShouldPing = ((ViewDir | EnemyDir) > 0.7f) && GetController()->LineOfSightTo(TargeterChar);
+			}
+			if (bShouldPing)
 			{
 				TargeterChar->FlagPingedBy(Cast<AUTPlayerState>(PlayerState));
 				TargeterChar->LastTargeter = Cast<AUTPlayerState>(PlayerState);
