@@ -955,7 +955,7 @@ void UUTMatchmaking::OnClientSessionIdChanged(const FString& SessionId)
 	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController());
 	if (LP)
 	{
-		if (LP->LastSession.GetSessionIdStr() == SessionId && !LP->IsMenuGame())
+		if (LP->LastSession.GetSessionIdStr() == SessionId && !LP->IsMenuGame() && LP->PlayerController && !LP->PlayerController->PlayerState->bOnlySpectator)
 		{
 			return;
 		}
