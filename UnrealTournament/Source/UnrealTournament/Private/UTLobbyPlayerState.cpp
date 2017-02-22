@@ -112,8 +112,8 @@ void AUTLobbyPlayerState::ClientAddedToMatch_Implementation(bool bIsHost)
 				{
 					UTLocalPlayer->OpenWindow(StartMatchWindow);
 				}
-			}
 #endif
+			}
 		}
 	}
 
