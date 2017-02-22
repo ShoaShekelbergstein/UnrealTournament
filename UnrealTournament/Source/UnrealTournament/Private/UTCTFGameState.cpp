@@ -15,7 +15,7 @@ AUTCTFGameState::AUTCTFGameState(const FObjectInitializer& ObjectInitializer)
 	bSecondHalf = false;
 	bIsAtIntermission = false;
 	HalftimeScoreDelay = 3.5f;
-	GoalScoreText = NSLOCTEXT("UTScoreboard", "CTFGoalScoreFormat", "First to {0} Caps");
+	GoalScoreText = NSLOCTEXT("UTScoreboard", "CTFGoalScoreFormat", "{0} Caps");
 	
 	GameScoreStats.Add(NAME_RegularKillPoints);
 	GameScoreStats.Add(NAME_FCKills);
@@ -152,22 +152,27 @@ void AUTCTFGameState::OnRep_MatchState()
 AUTTeamInfo* AUTCTFGameState::FindLeadingTeam()
 {
 	AUTTeamInfo* LeadingTeam = NULL;
-	bool bTied;
+	bool bTied = false;
 
 	if (Teams.Num() > 0)
 	{
 		LeadingTeam = Teams[0];
-		bTied = false;
-		for (int32 i=1;i<Teams.Num();i++)
+		if (LeadingTeam)
 		{
-			if (Teams[i]->Score == LeadingTeam->Score)
+			for (int32 i = 1; i<Teams.Num(); i++)
 			{
-				bTied = true;
-			}
-			else if (Teams[i]->Score > LeadingTeam->Score)
-			{
-				LeadingTeam = Teams[i];
-				bTied = false;
+				if (Teams[i] != nullptr)
+				{
+					if (Teams[i]->Score == LeadingTeam->Score)
+					{
+						bTied = true;
+					}
+					else if (Teams[i]->Score > LeadingTeam->Score)
+					{
+						LeadingTeam = Teams[i];
+						bTied = false;
+					}
+				}
 			}
 		}
 
@@ -268,6 +273,140 @@ void AUTCTFGameState::ToggleScoreboards()
 			PC->ClientToggleScoreboard(bIsAtIntermission);
 		}
 	}
+}
+
+AUTLineUpZone* AUTCTFGameState::GetAppropriateSpawnList(LineUpTypes ZoneType)
+{
+	AUTLineUpZone* ZoneToUse = Super::GetAppropriateSpawnList(ZoneType);
+
+	//See if we have a child LineUpZone on the winning team flag to use for intermission / end game
+	if (ZoneType == LineUpTypes::Intermission || ZoneType == LineUpTypes::PostMatch)
+	{
+		AUTCTFFlagBase* ScoringBase = GetLeadTeamFlagBase();
+		if (ScoringBase)
+		{
+			for (AActor* ChildActor : ScoringBase->Children)
+			{
+				AUTLineUpZone* LineUp = Cast<AUTLineUpZone>(ChildActor);
+				if (LineUp)
+				{
+					if (LineUp->ZoneType == ZoneType)
+					{
+						ZoneToUse = LineUp;
+					}
+				}
+			}
+		}
+	}
+
+	return ZoneToUse;
+}
+
+void AUTCTFGameState::SpawnDefaultLineUpZones()
+{
+	if (GetAppropriateSpawnList(LineUpTypes::Intro) == nullptr)
+	{
+		if (FlagBases.Num() > 0)
+		{
+			SpawnLineUpZoneOnFlagBase(FlagBases[0], LineUpTypes::Intro);
+		}
+	}
+
+	if (GetAppropriateSpawnList(LineUpTypes::Intermission) == nullptr)
+	{
+		for (AUTCTFFlagBase* FlagBase : FlagBases)
+		{
+			SpawnLineUpZoneOnFlagBase(FlagBase, LineUpTypes::Intermission);
+		}
+	}
+
+	if (GetAppropriateSpawnList(LineUpTypes::PostMatch) == nullptr)
+	{
+		for (AUTCTFFlagBase* FlagBase : FlagBases)
+		{
+			SpawnLineUpZoneOnFlagBase(FlagBase, LineUpTypes::PostMatch);
+		}
+	}
+
+	Super::SpawnDefaultLineUpZones();
+}
+
+void AUTCTFGameState::SpawnLineUpZoneOnFlagBase(AUTCTFFlagBase* BaseToSpawnOn, LineUpTypes TypeToSpawn)
+{
+	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
+
+	if (BaseToSpawnOn)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = BaseToSpawnOn;
+
+		AUTLineUpZone* NewZone = GetWorld()->SpawnActor<AUTLineUpZone>(AUTLineUpZone::StaticClass(), SpawnParams);
+		NewZone->ZoneType = TypeToSpawn;
+		NewZone->bIsTeamSpawnList = true;
+		NewZone->bSnapToFloor = false;
+
+		NewZone->AttachToActor(BaseToSpawnOn, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		NewZone->SetActorRelativeLocation(FVector(0.0f, 0.0f, NewZone->SnapFloorOffset));
+
+		if (TypeToSpawn == LineUpTypes::Intro)
+		{
+			NewZone->DefaultCreateForTeamIntro();
+		}
+		else if (TypeToSpawn == LineUpTypes::Intermission)
+		{
+			NewZone->DefaultCreateForTeamIntermission();
+		}
+		else if (TypeToSpawn == LineUpTypes::PostMatch)
+		{
+			NewZone->DefaultCreateForTeamEndMatch();
+		}
+		
+		//See if the new zone's camera is stuck inside of a wall
+		if (GetWorld() && NewZone->Camera)
+		{
+			FHitResult CameraCollision;
+			FCollisionQueryParams Params(NAME_FreeCam, false, this);
+			Params.AddIgnoredActor(NewZone);
+			Params.AddIgnoredActor(BaseToSpawnOn);
+			
+			GetWorld()->SweepSingleByChannel(CameraCollision, NewZone->GetActorLocation(), NewZone->Camera->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)),Params);
+
+			if (CameraCollision.bBlockingHit)
+			{
+				NewZone->Camera->SetActorLocation(CameraCollision.ImpactPoint);
+			}
+		}
+
+		SpawnedLineUps.Add(NewZone);
+	}
+}
+
+AUTCTFFlagBase* AUTCTFGameState::GetLeadTeamFlagBase()
+{
+	AUTTeamInfo* LeadTeamInfo = FindLeadingTeam();
+	if (LeadTeamInfo && LeadTeamInfo->GetTeamNum() < FlagBases.Num())
+	{
+		return FlagBases[LeadTeamInfo->GetTeamNum()];
+	}
+	else if (WinningTeam && (FlagBases.Num() > WinningTeam->GetTeamNum()))
+	{
+		return FlagBases[WinningTeam->GetTeamNum()];
+	}
+	else if (ScoringPlayerState && (FlagBases.Num() > ScoringPlayerState->GetTeamNum()))
+	{
+		return FlagBases[ScoringPlayerState->GetTeamNum()];
+	}
+	else if (ScoringPlays.Num() > 0)
+	{
+		const FCTFScoringPlay& WinningPlay = ScoringPlays.Last();
+
+		if (WinningPlay.Team && (FlagBases.Num() > WinningPlay.Team->GetTeamNum()))
+		{
+			return FlagBases[WinningPlay.Team->GetTeamNum()];
+		}
+	}
+
+	return nullptr;
 }
 
 void AUTCTFGameState::AddScoringPlay(const FCTFScoringPlay& NewScoringPlay)

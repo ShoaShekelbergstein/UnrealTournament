@@ -25,7 +25,7 @@ UUTCTFScoreboard::UUTCTFScoreboard(const FObjectInitializer& ObjectInitializer)
 	ColumnHeaderReturnsX = 0.85;
 	ReadyX = 0.7f;
 
-	static ConstructorHelpers::FObjectFinder<USoundBase> OtherSpreeSoundFinder(TEXT("SoundWave'/Game/RestrictedAssets/Audio/UI/A_UI_EnemySpree01.A_UI_EnemySpree01'"));
+	static ConstructorHelpers::FObjectFinder<USoundBase> OtherSpreeSoundFinder(TEXT("SoundCue'/Game/RestrictedAssets/Audio/UI/ScoreUpdate_Cue.ScoreUpdate_Cue'")); 
 	ScoreUpdateSound = OtherSpreeSoundFinder.Object;
 
 	CH_Caps = NSLOCTEXT("UTCTFScoreboard", "ColumnHeader_PlayerCaps", "C");

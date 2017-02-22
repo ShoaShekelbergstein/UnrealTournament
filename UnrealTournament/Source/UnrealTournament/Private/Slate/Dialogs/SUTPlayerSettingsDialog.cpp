@@ -330,16 +330,16 @@ void SUTPlayerSettingsDialog::Construct(const FArguments& InArgs)
 						[
 							SNew(STextBlock)
 							.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
-							.Text(LOCTEXT("PlayerName", "Name"))
+							.Text(LOCTEXT("ClanName", "Clan Name"))
 						]
 
 						+ SHorizontalBox::Slot()
 						.FillWidth(1.0f)
 						.Padding(ValueColumnPadding)
 						[
-							SAssignNew(PlayerName, SEditableTextBox)
+							SAssignNew(ClanName, SEditableTextBox)
 							.OnTextChanged(this, &SUTPlayerSettingsDialog::OnNameTextChanged)
-							.Text(FText::FromString(GetPlayerOwner()->GetNickname()))
+							.Text(FText::FromString(GetPlayerOwner()->GetClanName()))
 							.Style(SUWindowsStyle::Get(), "UT.Common.Editbox.White")
 						]
 					]
@@ -1017,14 +1017,14 @@ void SUTPlayerSettingsDialog::OnNameTextChanged(const FText& NewText)
 		}
 	}
 
-	if (AdjustedText.Len() > 16)
+	if (AdjustedText.Len() > 8)
 	{
-		AdjustedText = AdjustedText.Left(16);
+		AdjustedText = AdjustedText.Left(8);
 	}
 
 	if (AdjustedText != NewText.ToString())
 	{
-		PlayerName->SetText(FText::FromString(AdjustedText));
+		ClanName->SetText(FText::FromString(AdjustedText));
 	}
 }
 
@@ -1038,8 +1038,7 @@ FReply SUTPlayerSettingsDialog::OKClick()
 {
 	UUTProfileSettings* ProfileSettings = GetPlayerOwner()->GetProfileSettings();
 
-	GetPlayerOwner()->SetNickname(PlayerName->GetText().ToString());
-	ProfileSettings->PlayerName = PlayerName->GetText().ToString();  
+	GetPlayerOwner()->SetClanName(ClanName->GetText().ToString());
 
 	GetPlayerOwner()->SetCountryFlagAndAvatar(SelectedFlag.IsValid() ? SelectedFlag->GetFName() : GetPlayerOwner()->GetCountryFlag(), SelectedAvatar);
 
@@ -1054,14 +1053,9 @@ FReply SUTPlayerSettingsDialog::OKClick()
 		ProfileSettings->PlayerFOV = NewFOV;
 	}
 
-	// If we have a valid PC then tell the PC to set it's name
 	AUTPlayerController* UTPlayerController = Cast<AUTPlayerController>(GetPlayerOwner()->PlayerController);
 	if (UTPlayerController != NULL)
 	{
-		if (!PlayerName->GetText().ToString().IsEmpty())
-		{
-			UTPlayerController->ServerChangeName(PlayerName->GetText().ToString());
-		}
 		UTPlayerController->WeaponBobGlobalScaling = WeaponBobScaling->GetValue() * BOB_SCALING_FACTOR;
 		UTPlayerController->EyeOffsetGlobalScaling = ViewBobScaling->GetValue() * BOB_SCALING_FACTOR;
 		UTPlayerController->FFAPlayerColor = SelectedPlayerColor;
@@ -1079,17 +1073,6 @@ FReply SUTPlayerSettingsDialog::OKClick()
 		AUTPlayerController::StaticClass()->GetDefaultObject<AUTPlayerController>()->ConfigDefaultFOV = NewFOV;
 		AUTPlayerController::StaticClass()->GetDefaultObject<AUTPlayerController>()->SaveConfig();
 	}
-
-	AUTBasePlayerController* BasePlayerController = Cast<AUTBasePlayerController>(GetPlayerOwner()->PlayerController);
-	if (BasePlayerController)
-	{
-		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(BasePlayerController->PlayerState);
-		if (UTPlayerState)
-		{
-			UTPlayerState->PlayerName = ProfileSettings->PlayerName;
-		}
-	}
-
 
 	int32 Index = HatList.Find(HatComboBox->GetSelectedItem());
 	GetPlayerOwner()->SetHatPath(HatPathList.IsValidIndex(Index) ? HatPathList[Index] : FString());
@@ -1292,11 +1275,15 @@ void SUTPlayerSettingsDialog::OnGroupTauntSelected(TSharedPtr<FString> NewSelect
 			if (TauntClass)
 			{
 				PlayerPreviewMesh->PlayGroupTaunt(TSubclassOf<AUTGroupTaunt>(TauntClass));
-				if (!bSkipPlayingGroupTauntBGMusic && TauntClass->GetDefaultObject<AUTGroupTaunt>()->BGMusic)
+				AUTGroupTaunt* GroupTaunt = TauntClass->GetDefaultObject<AUTGroupTaunt>();
+				if (GroupTaunt != nullptr && !bSkipPlayingGroupTauntBGMusic && GroupTaunt->BGMusic)
 				{
-					UGameplayStatics::PlaySound2D(PlayerPreviewMesh->GetWorld(), TauntClass->GetDefaultObject<AUTGroupTaunt>()->BGMusic);
+					if (GroupTauntAudio.IsValid())
+					{
+						GroupTauntAudio->Stop();
+					}
+					GroupTauntAudio = UGameplayStatics::SpawnSound2D(PlayerPreviewMesh->GetWorld(), GroupTaunt->BGMusic);
 				}
-				//PlayerPreviewMesh->GetMesh()->PlayAnimation(TauntClass->GetDefaultObject<AUTGroupTaunt>()->TauntMontage, true);
 			}
 		}
 	}

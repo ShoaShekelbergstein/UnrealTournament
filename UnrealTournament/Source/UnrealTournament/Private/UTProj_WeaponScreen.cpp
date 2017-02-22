@@ -53,8 +53,7 @@ void AUTProj_WeaponScreen::ProcessHit_Implementation(AActor* OtherActor, UPrimit
 	AUTProjectile* OtherProj = Cast<AUTProjectile>(OtherActor);
 	if (OtherProj != NULL)
 	{
-		// TODO: this doesn't work properly if the shooter has died
-		if (!bOnlyAffectEnemies || OtherProj->Instigator == nullptr || Instigator == nullptr || GS == nullptr || !GS->OnSameTeam(OtherProj->Instigator, Instigator))
+		if (!bOnlyAffectEnemies || GS == nullptr || !GS->OnSameTeam(OtherProj, this))
 		{
 			OtherProj->ImpactedActor = this;
 			if (bSlowProjectiles)
@@ -82,7 +81,7 @@ void AUTProj_WeaponScreen::ProcessHit_Implementation(AActor* OtherActor, UPrimit
 			}
 		}
 	}
-	else if (bCauseMomentumToPawns && Cast<APawn>(OtherActor) != NULL && OtherActor != Instigator && !HitPawns.Contains((APawn*)OtherActor) && (!bOnlyAffectEnemies || GS == nullptr || !GS->OnSameTeam(OtherActor, Instigator)))
+	else if (bCauseMomentumToPawns && Cast<APawn>(OtherActor) != NULL && OtherActor != Instigator && !HitPawns.Contains((APawn*)OtherActor) && (!bOnlyAffectEnemies || GS == nullptr || !GS->OnSameTeam(OtherActor, this)))
 	{
 		FCollisionQueryParams Params(FName(TEXT("WeaponScreenOverlap")), false, this);
 		Params.AddIgnoredActor(OtherActor);

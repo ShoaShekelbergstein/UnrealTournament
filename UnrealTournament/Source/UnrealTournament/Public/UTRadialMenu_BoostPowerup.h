@@ -17,10 +17,15 @@ public:
 		Super::BecomeInteractive();
 		CurrentSegment = INDEX_NONE;
 	}
+	virtual void TriggerPowerup();
+
+	int32 SelectedPowerup;
+	float RotationRemaining;
 
 protected:
-	virtual void Execute();
-	virtual void DrawMenu(FVector2D ScreenCenter, float RenderDelta);
+	virtual void Execute() override;
+	virtual void DrawMenu(FVector2D ScreenCenter, float RenderDelta) override;
+	virtual void Draw_Implementation(float DeltaTime) override;
 	
 	virtual bool ShouldDraw_Implementation(bool bShowScores) override;
 };

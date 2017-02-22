@@ -8,6 +8,7 @@
 #include "UTRemoteRedeemer.h"
 #include "UTDemoRecSpectator.h"
 #include "UTLineUpHelper.h"
+#include "UTPlayerState.h"
 
 AUTPlayerCameraManager::AUTPlayerCameraManager(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -72,11 +73,23 @@ FName AUTPlayerCameraManager::GetCameraStyleWithOverrides() const
 	static const FName NAME_FirstPerson = FName(TEXT("FirstPerson"));
 	static const FName NAME_Default = FName(TEXT("Default"));
 	static const FName NAME_LineUpCam = FName(TEXT("LineUpCam"));
+	static const FName NAME_RallyCam = FName(TEXT("RallyCam"));
 
 	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
-	if (GameState && GameState->LineUpHelper && GameState->LineUpHelper->bIsActive)
+	if (GameState)
 	{
-		return NAME_LineUpCam;
+		if (GameState->LineUpHelper && GameState->LineUpHelper->bIsActive)
+		{
+			return NAME_LineUpCam;
+		}
+		if (GameState->IsMatchIntermission())
+		{
+			return NAME_FreeCam;
+		}
+		if ((CameraStyle == NAME_RallyCam) && GameState->IsMatchInProgress())
+		{
+			return NAME_RallyCam;
+		}
 	}
 
 	AActor* CurrentViewTarget = GetViewTarget();
@@ -135,7 +148,11 @@ float AUTPlayerCameraManager::RatePlayerCamera(AUTPlayerState* InPS, AUTCharacte
 {
 	// 100 is about max
 	float Score = 1.f;
-	if (InPS == CurrentCamPS)
+	if (InPS->bOutOfLives || InPS->bOnlySpectator)
+	{
+		return -100.f;
+	}
+	else if (InPS == CurrentCamPS)
 	{
 		Score += CurrentCamBonus;
 	}
@@ -176,7 +193,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 	static const FName NAME_LineUpCam = FName(TEXT("LineUpCam"));
 
 	FName SavedCameraStyle = CameraStyle;
-	CameraStyle = (CameraStyle == NAME_RallyCam) ? NAME_RallyCam : GetCameraStyleWithOverrides();
+	CameraStyle = GetCameraStyleWithOverrides();
 
 	//if we have a line up active, change our ViewTarget to be the line-up target and setup camera settings
 	if (CameraStyle == NAME_LineUpCam)
@@ -189,22 +206,23 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		OutVT.POV.ProjectionMode = bIsOrthographic ? ECameraProjectionMode::Orthographic : ECameraProjectionMode::Perspective;
 		OutVT.POV.PostProcessBlendWeight = 1.0f;
 
-		AActor* LineUpCam = (GameState && GameState->LineUpHelper) ?  GameState->LineUpHelper->GetCameraActorForLineUp(GetWorld(), GameState->LineUpHelper->LastActiveType) : nullptr;
+		AActor* LineUpCam = (GameState && GameState->LineUpHelper) ?  GameState->GetCameraActorForLineUp(GameState->LineUpHelper->LastActiveType) : nullptr;
 		if (LineUpCam)
 		{
 			OutVT.Target = LineUpCam;
 			OutVT.POV.Location = LineUpCam->GetActorLocation();
 			OutVT.POV.Rotation = LineUpCam->GetActorRotation();
+
+			ApplyCameraModifiers(DeltaTime, OutVT.POV);
+
+			// Synchronize the actor with the view target results
+			SetActorLocationAndRotation(OutVT.POV.Location, OutVT.POV.Rotation, false);
 		}
 		else
 		{
-			OutVT.POV.Location = PCOwner->GetFocalLocation();
-			OutVT.POV.Rotation = PCOwner->GetControlRotation();
+			//if we don't have a camera setup, just use FreeCam
+			//CameraStyle = NAME_FreeCam;
 		}
-		ApplyCameraModifiers(DeltaTime, OutVT.POV);
-
-		// Synchronize the actor with the view target results
-		SetActorLocationAndRotation(OutVT.POV.Location, OutVT.POV.Rotation, false);
 	}
 	
 	// smooth third person camera all the time

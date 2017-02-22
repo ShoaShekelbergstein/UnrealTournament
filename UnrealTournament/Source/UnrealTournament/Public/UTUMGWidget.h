@@ -49,7 +49,7 @@ class UNREALTOURNAMENT_API UUTUMGWidget : public UUserWidget
 	 * @param LocationModifier - A vector that will be added to the final location in local space
 	 * @param DirectionModifier - A rotator that will be added to the final direction in local space
 	 **/
-	void ShowParticleSystem(UParticleSystem* ParticleSystem, FVector2D ScreenLocation, bool bRelativeCoords = false, FVector LocationModifier = FVector(0.f,0.f,0.f), FRotator DirectionModifier = FRotator(0.f,0.f,0.f));
+	void ShowParticleSystem(UParticleSystem* ParticleSystem, FVector2D ScreenLocation, bool bRelativeCoords = false, FVector LocationModifier = FVector(0.f,0.f,0.f), FRotator DirectionModifier = FRotator(0.f,0.f,0.f), bool bAttachToCamera = false);
 
 	// This event is called when the UMG widget is opened.  At this point, the PlayerOwner should be valid
 	UFUNCTION(BlueprintImplementableEvent)
@@ -72,8 +72,12 @@ class UNREALTOURNAMENT_API UUTUMGWidget : public UUserWidget
 	{
 	}
 
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime);
 
+protected:
+	UPROPERTY()
+	TArray<FHUDandUMGParticleSystemTracker> ParticleSystemList;
 
-
-
+	UFUNCTION()
+	void OnParticlesFinished(UParticleSystemComponent* PCS);
 };

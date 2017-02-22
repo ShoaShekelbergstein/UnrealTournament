@@ -1,4 +1,4 @@
-	// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
 
 #include "UTBasePlayerController.h"
@@ -191,6 +191,9 @@ public:
 	UFUNCTION(Reliable, client)
 		void ClientAnnounceRoundScore(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 RoundBonus, uint8 Reason);
 
+	UFUNCTION(Reliable, client)
+		void ClientUpdateWarmup(bool bNewWarmingUp);
+
 	UPROPERTY(GlobalConfig)
 	bool bHearsTaunts;
 
@@ -245,10 +248,6 @@ public:
 	UFUNCTION(Client, Reliable)
 	virtual void ClientGotWeaponStayPickup(AUTPickupWeapon* Pickup, APawn* TouchedBy);
 
-	/** Force real names (Epic account names) on scoreboard. */
-	UFUNCTION(exec)
-		virtual void RealNames();
-
 	UFUNCTION(exec)
 	virtual void NP();
 
@@ -297,7 +296,7 @@ public:
 	virtual void ClientPrepareForLineUp();
 
 	UFUNCTION(client, reliable)
-	virtual void ClientSetActiveLineUp(bool bNewIsActive, LineUpTypes LastType);
+	virtual void ClientSetActiveLineUp();
 
 	UFUNCTION(client, reliable)
 	virtual void ClientToggleScoreboard(bool bShow);
@@ -323,11 +322,6 @@ public:
 	UFUNCTION(reliable, server, WithValidation)
 		void ServerToggleWarmup();
 
-	FTimerHandle TriggerBoostTimerHandle;
-
-	/** Trigger boost. */
-	virtual void TriggerBoost();
-	
 	/** Selected an unavailable spawn location. */
 	UPROPERTY()
 	USoundBase* BadSelectSound;
@@ -335,9 +329,12 @@ public:
 	UFUNCTION(client, unreliable)
 	virtual void ClientPlayBadSelectionSound();
 
-	/**	We overload ServerRestartPlayer so that we can set the bReadyToPlay flag if the game hasn't begun	 **/
 	virtual void ServerRestartPlayer_Implementation();
 	
+	/** Caster sends this to server to start the match (if bCasterControl). */
+	UFUNCTION(server, reliable, withvalidation)
+	virtual void ServerCasterReady();
+
 	/**  Added a check to see if the player's RespawnTimer is > 0	 **/
 	virtual bool CanRestartPlayer();
 
@@ -489,7 +486,7 @@ public:
 	 * note that HitPawn may be NULL if it is not currently relevant to the client
 	 */
 	UFUNCTION(Client, Unreliable)
-	void ClientNotifyCausedHit(APawn* HitPawn, uint8 Damage);
+	void ClientNotifyCausedHit(APawn* HitPawn, uint8 Damage, bool bArmorDamage);
 
 	/** blueprint hook */
 	UFUNCTION(BlueprintCallable, Category = Message)
@@ -885,10 +882,6 @@ protected:
 	UPROPERTY(BluePrintReadOnly, Category = Dodging)
 	bool bRequestedDodge;
 
-	/** If true, holding dodge modifier key down, single tap of movement key causes dodge. */
-	UPROPERTY(BluePrintReadOnly, Category = Dodging)
-	bool bIsHoldingDodge;
-
 	/** True if player is holding modifier to slide/roll */
 	UPROPERTY(Category = "FloorSlide", BlueprintReadOnly)
 	bool bIsHoldingFloorSlide;
@@ -908,8 +901,6 @@ protected:
 
 	UFUNCTION()
 	void ActivateSpecial();
-	UFUNCTION()
-	void ReleaseSpecial();
 
 	void ToggleTranslocator();
 
@@ -991,8 +982,6 @@ protected:
 
 	void OnSingleTapDodge();
 	virtual void PerformSingleTapDodge();
-	void HoldDodge();
-	void ReleaseDodge();
 
 	virtual void OnShowScores();
 	virtual void OnHideScores();
@@ -1301,15 +1290,7 @@ public:
 	bool CanPerformRally() const;
 
 	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
-
-protected:
-	void InitializeHeartbeatManager();
-
-	UPROPERTY()
-	class UUTHeartbeatManager* HeartbeatManager;
-
-
-
+	void ClientWasKicked_Implementation(const FText& KickReason) override;
 };
 
 

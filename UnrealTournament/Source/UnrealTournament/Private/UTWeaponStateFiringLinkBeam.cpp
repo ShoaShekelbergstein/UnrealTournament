@@ -74,11 +74,23 @@ void UUTWeaponStateFiringLinkBeam::EndFiringSequence(uint8 FireModeNum)
 		else
 		{
 			bPendingEndFire = true;
+			bPendingStartFire = false;
 		}
 	}
 }
 
-
+void UUTWeaponStateFiringLinkBeam::PendingFireStarted()
+{
+	AUTWeap_LinkGun* LinkGun = Cast<AUTWeap_LinkGun>(GetOuterAUTWeapon());
+	if (LinkGun && LinkGun->IsLinkPulsing())
+	{
+		bPendingStartFire = true;
+	}
+	else
+	{
+		bPendingEndFire = false;
+	}
+}
 void UUTWeaponStateFiringLinkBeam::RefireCheckTimer()
 {
 	AUTWeap_LinkGun* LinkGun = Cast<AUTWeap_LinkGun>(GetOuterAUTWeapon());
@@ -90,6 +102,7 @@ void UUTWeaponStateFiringLinkBeam::RefireCheckTimer()
 
 void UUTWeaponStateFiringLinkBeam::EndState()
 {
+	bPendingStartFire = false;
 	bPendingEndFire = false;
     Super::EndState();
 }
@@ -113,9 +126,17 @@ void UUTWeaponStateFiringLinkBeam::Tick(float DeltaTime)
 			LinkGun->StartLinkPull();
 			return;
 		}
-		EndFiringSequence(1);
-		return;
+		if (bPendingStartFire)
+		{
+			bPendingEndFire = false;
+		}
+		else
+		{
+			EndFiringSequence(1);
+			return;
+		}
 	}
+	bPendingStartFire = false;
 	HandleDelayedShot();
 	
     if (LinkGun && !LinkGun->FireShotOverride() && LinkGun->InstantHitInfo.IsValidIndex(LinkGun->GetCurrentFireMode()))
@@ -136,9 +157,12 @@ void UUTWeaponStateFiringLinkBeam::Tick(float DeltaTime)
 		LinkGun->bLinkBeamImpacting = (Hit.Time < 1.f);
 		AActor* OldLinkedTarget = LinkGun->CurrentLinkedTarget;
 		LinkGun->CurrentLinkedTarget = nullptr;
-		if (Hit.Actor != NULL && Hit.Actor->bCanBeDamaged && Hit.Actor != LinkGun->GetUTOwner())
+		if (Hit.Actor.IsValid() && Hit.Actor.Get()->bCanBeDamaged)
         {   
-			LinkGun->CurrentLinkedTarget = Hit.Actor.Get();
+			if (LinkGun->IsValidLinkTarget(Hit.Actor.Get()))
+			{
+				LinkGun->CurrentLinkedTarget = Hit.Actor.Get();
+			}
 			if (LinkGun->Role == ROLE_Authority)
 			{
 				LinkGun->bLinkCausingDamage = true;

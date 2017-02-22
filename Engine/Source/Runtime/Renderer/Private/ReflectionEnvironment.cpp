@@ -30,8 +30,12 @@
 DECLARE_FLOAT_COUNTER_STAT(TEXT("Reflection Environment"), Stat_GPU_ReflectionEnvironment, STATGROUP_GPU);
 
 /** Tile size for the reflection environment compute shader, tweaked for PS4. */
-const int32 GReflectionEnvironmentTileSizeX = 8;
-const int32 GReflectionEnvironmentTileSizeY = 8;
+//const int32 GReflectionEnvironmentTileSizeX = 8;
+//const int32 GReflectionEnvironmentTileSizeY = 8;
+
+/** Tile size for the reflection environment compute shader, tweaked for 680 GTX. */
+const int32 GReflectionEnvironmentTileSizeX = 16;
+const int32 GReflectionEnvironmentTileSizeY = 16;
 
 extern TAutoConsoleVariable<int32> CVarLPVMixing;
 

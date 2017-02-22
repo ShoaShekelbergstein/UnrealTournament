@@ -186,9 +186,9 @@ struct FUTPathLink
 		return Start != NULL && End != NULL;
 	}
 
-	inline bool Supports(int32 TestRadius, int32 TestHeight, int32 MoveFlags) const
+	inline bool Supports(int32 TestRadius, int32 TestHeight, int32 TestInitialHeight, int32 MoveFlags) const
 	{
-		return (TestRadius <= CollisionRadius && TestHeight <= CollisionHeight && (MoveFlags & ReachFlags) == ReachFlags);
+		return (TestRadius <= CollisionRadius && TestHeight <= CollisionHeight && (MoveFlags & ReachFlags) == ReachFlags && (!(ReachFlags & R_JUMP) || TestInitialHeight <= CollisionHeight));
 	}
 
 	// NOTE: Asker and/or RequestOwner may be NULL

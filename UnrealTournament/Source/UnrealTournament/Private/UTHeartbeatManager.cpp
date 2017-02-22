@@ -1,3 +1,4 @@
+// Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
 #include "UnrealTournament.h"
 
 #include "UTAnalytics.h"
@@ -9,6 +10,7 @@
 #include "UTPlayerController.h"
 #include "UTMenuGameMode.h"
 #include "UTLobbyGameState.h"
+#include "UTDemoRecSpectator.h"
 
 UUTHeartbeatManager::UUTHeartbeatManager(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -16,7 +18,7 @@ UUTHeartbeatManager::UUTHeartbeatManager(const FObjectInitializer& ObjectInitial
 
 }
 
-void UUTHeartbeatManager::StartManager(AUTPlayerController* UTPlayerController)
+void UUTHeartbeatManager::StartManager(AUTBasePlayerController* UTPlayerController)
 {
 	if (!UTPlayerController)
 	{
@@ -74,7 +76,9 @@ void UUTHeartbeatManager::DoMinuteEventsLocal()
 
 void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 {
-	if (UTPC != NULL && UTPC->GetWorld())
+	AUTDemoRecSpectator* UTDemoRecSpec = Cast<AUTDemoRecSpectator>(UTPC);
+
+	if (UTPC != NULL && UTPC->GetWorld() && (UTDemoRecSpec == nullptr || !UTDemoRecSpec->IsKillcamSpectator()))
 	{
 		AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTPC->PlayerState);
 		if (UTPS)
@@ -98,6 +102,34 @@ void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 				{
 					PlayerConxtextLocation = TEXT("Match");
 
+					if (UTGS->bIsQuickMatch)
+					{
+						PlayerConxtextLocation.Append(TEXT(" - Quickmatch"));
+					}
+
+					if (UTGS->bRankedSession)
+					{
+						PlayerConxtextLocation.Append(TEXT(" - Ranked"));
+					}
+					
+					if (UTGS->HubGuid.IsValid())
+					{
+						PlayerConxtextLocation.Append(TEXT(" - HUB"));
+					}
+
+					if (GetWorld())
+					{
+						AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
+						if (UTGM && UTGM->bOfflineChallenge)
+						{
+							PlayerConxtextLocation.Append(TEXT(" - Offline Challenge"));
+						}
+						else if (GetWorld()->GetNetMode() != NM_Standalone)
+						{
+							PlayerConxtextLocation.Append(TEXT(" - Offline"));
+						}
+					}
+
 					AUTMenuGameMode* MenuGM = UTPS->GetWorld()->GetAuthGameMode<AUTMenuGameMode>();
 					if (MenuGM)
 					{
@@ -110,7 +142,7 @@ void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 						PlayerConxtextLocation = TEXT("Lobby");
 					}
 
-					if (UTPC->GetWorld()->DemoNetDriver && UTPC->IsLocalController())
+					if ( UTPC->GetWorld()->DemoNetDriver && UTPC->IsLocalController() && UTDemoRecSpec && !UTDemoRecSpec->IsKillcamSpectator())
 					{
 						PlayerConxtextLocation = TEXT("Replay");
 					}

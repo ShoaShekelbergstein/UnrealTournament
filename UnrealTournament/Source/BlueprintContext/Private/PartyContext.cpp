@@ -132,6 +132,8 @@ void UPartyContext::HandlePartyLeft(UPartyGameState* PartyState, EMemberExitedRe
 			{
 				LocalPlayer->ShowToast(NSLOCTEXT("UPartyContext", "PartyLeft", "You have left the party"));
 			}
+
+			LocalPlayer->HideMatchmakingDialog();
 		}
 	}
 }
@@ -231,6 +233,31 @@ void UPartyContext::Finalize()
 	PartyInterface.Reset();
 }
 
+void UPartyContext::JoinParty(const FUniqueNetId& PartyMemberId)
+{
+	const ULocalPlayer* LocalPlayer = GetOwningPlayer();
+	TSharedPtr<const FUniqueNetId> LocalUserId = LocalPlayer->GetPreferredUniqueNetId();
+
+	if (LocalUserId.IsValid())
+	{
+		TSharedPtr<const IOnlinePartyJoinInfo> UpdatedPartyJoinInfo;
+		if (PartyInterface.IsValid())
+		{
+			UpdatedPartyJoinInfo = PartyInterface->GetAdvertisedParty(*LocalUserId, PartyMemberId, IOnlinePartySystem::GetPrimaryPartyTypeId());
+		}
+		
+		if (UpdatedPartyJoinInfo.IsValid())
+		{
+			const bool bIsFromInvite = false;
+			JoinPartyInternal(*LocalUserId, bIsFromInvite, UpdatedPartyJoinInfo.ToSharedRef());
+		}
+		else
+		{
+			UE_LOG(LogParty, Warning, TEXT("Could not join party %s"), *PartyMemberId.ToString());
+		}
+	}
+}
+
 void UPartyContext::OnFriendsListJoinParty(const FUniqueNetId& SenderId, const TSharedRef<class IOnlinePartyJoinInfo>& PartyJoinInfo, bool bIsFromInvite)
 {
 	const ULocalPlayer* LocalPlayer = GetOwningPlayer();
@@ -259,17 +286,19 @@ void UPartyContext::OnFriendsListJoinParty(const FUniqueNetId& SenderId, const T
 
 void UPartyContext::JoinPartyInternal(const FUniqueNetId& LocalPlayerId, bool bIsFromInvite, const TSharedRef<const IOnlinePartyJoinInfo>& PartyJoinInfo)
 {
+	UE_LOG(LogParty, Display, TEXT("JoinPartyInternal"));
+
 	UUTGameInstance* UTGameInstance = GetGameInstance<UUTGameInstance>();
 	check(UTGameInstance);
 
 	UUTParty* UTParty = UTGameInstance->GetParties();
 	check(UTParty);
 
+	// Join from launcher social panel can have a valid user id, but the user info interface doesn't know about the user yet
 	PendingPartyPlayerInfo = UserInfoInterface->GetUserInfo(GetOwningPlayer()->GetControllerId(), *(PartyJoinInfo->GetSourceUserId()));
-	if (!ensure(PendingPartyPlayerInfo.IsValid()))
+	if (!PendingPartyPlayerInfo.IsValid())
 	{
-		UE_LOG(LogParty, Warning, TEXT("Invalid online user info!"));
-		return;
+		UE_LOG(LogParty, Warning, TEXT("Invalid online user info, party join may fail!"));
 	}
 
 	UTParty->AddPendingJoin(LocalPlayerId.AsShared(), MakeShareable(new FPartyDetails(PartyJoinInfo, true)), UPartyDelegates::FOnJoinUPartyComplete::CreateUObject(this, &ThisClass::OnJoinPartyCompleteInternal));
@@ -309,17 +338,21 @@ void UPartyContext::OnJoinPartyCompleteInternal(const FUniqueNetId& LocalUserId,
 		return;
 	}
 
-	if (!PendingPartyPlayerInfo.IsValid())
+	if (PendingPartyPlayerInfo.IsValid())
+	{
+		FFormatNamedArguments Args;
+		Args.Add(TEXT("Username"), FText::FromString(PendingPartyPlayerInfo->GetDisplayName()));
+		PendingPartyPlayerInfo.Reset();
+		const FText JoinedPartyMessage = FText::Format(LOCTEXT("JoinPartyToast", "You have joined {Username}'s party"), Args);
+		UE_LOG(LogParty, Display, TEXT("%s"), *JoinedPartyMessage.ToString());
+	}
+	else
 	{
 		UE_LOG(LogParty, Warning, TEXT("OnJoinPartyComplete: Invalid pending player info"));
-		return;
+		const FText JoinedPartyMessage = LOCTEXT("JoinPartyToastNoName", "You have joined a party");
+		UE_LOG(LogParty, Display, TEXT("%s"), *JoinedPartyMessage.ToString());
 	}
 
-	FFormatNamedArguments Args;
-	Args.Add(TEXT("Username"), FText::FromString(PendingPartyPlayerInfo->GetDisplayName()));
-	PendingPartyPlayerInfo.Reset();
-	const FText JoinedPartyMessage = FText::Format(LOCTEXT("JoinPartyToast", "You have joined {Username}'s party"), Args);
-	UE_LOG(LogParty, Display, TEXT("%s"), *JoinedPartyMessage.ToString());
 }
 
 void UPartyContext::HandleJoinPartyFailure(EJoinPartyCompletionResult Result, int32 DeniedResultCode)

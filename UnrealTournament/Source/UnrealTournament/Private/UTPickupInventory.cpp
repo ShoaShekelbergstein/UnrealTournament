@@ -16,6 +16,25 @@ AUTPickupInventory::AUTPickupInventory(const FObjectInitializer& ObjectInitializ
 	bHasEverSpawned = false;
 	bNotifySpawnForOffense = true;
 	bNotifySpawnForDefense = true;
+
+	TimerEffect = ObjectInitializer.CreateOptionalDefaultSubobject<UParticleSystemComponent>(this, TEXT("TimerEffect"));
+	if (TimerEffect != NULL)
+	{
+		TimerEffect->SetHiddenInGame(true);
+		TimerEffect->SetupAttachment(RootComponent);
+		TimerEffect->LDMaxDrawDistance = 1024.0f;
+		TimerEffect->RelativeLocation.Z = 40.0f;
+		TimerEffect->Mobility = EComponentMobility::Static;
+		TimerEffect->SetCastShadow(false);
+	}
+	BaseEffect = ObjectInitializer.CreateOptionalDefaultSubobject<UParticleSystemComponent>(this, TEXT("BaseEffect"));
+	if (BaseEffect != NULL)
+	{
+		BaseEffect->SetupAttachment(RootComponent);
+		BaseEffect->LDMaxDrawDistance = 2048.0f;
+		BaseEffect->RelativeLocation.Z = -58.0f;
+		BaseEffect->Mobility = EComponentMobility::Static;
+	}
 }
 
 void AUTPickupInventory::BeginPlay()

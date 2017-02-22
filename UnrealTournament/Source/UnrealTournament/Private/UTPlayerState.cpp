@@ -37,6 +37,15 @@
 #include "Engine/DemoNetDriver.h"
 #include "UTDeathMessage.h"
 #include "UTLineUpHelper.h"
+#include "UTRallyPoint.h"
+#include "Panels/SUTWebBrowserPanel.h"
+
+#if !UE_SERVER
+#include "SlateBasics.h"
+#include "SlateExtras.h"
+#endif
+
+const float IDLE_TIMEOUT_TIME=120.0f;
 
 /** disables load warnings for dedicated server where invalid client input can cause unpreventable logspam, but enables on clients so developers can make sure their stuff is working */
 static inline ELoadFlags GetCosmeticLoadFlags()
@@ -47,7 +56,6 @@ static inline ELoadFlags GetCosmeticLoadFlags()
 AUTPlayerState::AUTPlayerState(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	bReadyToPlay = false;
 	bIsWarmingUp = false;
 	bPendingTeamSwitch = false;
 	bCaster = false;
@@ -63,8 +71,7 @@ AUTPlayerState::AUTPlayerState(const class FObjectInitializer& ObjectInitializer
 	Deaths = 0;
 	bShouldAutoTaunt = false;
 	bSentLogoutAnalytics = false;
-	NextRallyTime = 0.f;
-	RemainingRallyDelay = 0;
+	bRallyActivated = false;
 	SelectionOrder = 255;
 
 	// We want to be ticked.
@@ -82,7 +89,6 @@ AUTPlayerState::AUTPlayerState(const class FObjectInitializer& ObjectInitializer
 	EmoteSpeed = 1.0f;
 	bAnnounceWeaponSpree = false;
 	bAnnounceWeaponReward = false;
-	ReadyMode = 0;
 	CurrentLoadoutPackTag = NAME_None;
 	RespawnWaitTime = 0.f;
 
@@ -98,7 +104,6 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AUTPlayerState, CarriedObject);
-	DOREPLIFETIME(AUTPlayerState, bReadyToPlay);
 	DOREPLIFETIME(AUTPlayerState, bIsWarmingUp);
 	DOREPLIFETIME(AUTPlayerState, bPendingTeamSwitch);
 	DOREPLIFETIME(AUTPlayerState, RespawnWaitTime);
@@ -122,6 +127,7 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME(AUTPlayerState, BoostRechargePct);
 	DOREPLIFETIME(AUTPlayerState, ShowdownRank);
 	DOREPLIFETIME(AUTPlayerState, RankedShowdownRank);
+	DOREPLIFETIME(AUTPlayerState, FlagRunRank);
 	DOREPLIFETIME(AUTPlayerState, DuelRank);
 	DOREPLIFETIME(AUTPlayerState, CTFRank);
 	DOREPLIFETIME(AUTPlayerState, TDMRank);
@@ -152,6 +158,7 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME(AUTPlayerState, FavoriteWeapon);
 	DOREPLIFETIME(AUTPlayerState, bIsRconAdmin);
 	DOREPLIFETIME(AUTPlayerState, SelectionOrder);
+	DOREPLIFETIME(AUTPlayerState, ClanName);
 
 	DOREPLIFETIME(AUTPlayerState, DuelMatchesPlayed);
 	DOREPLIFETIME(AUTPlayerState, CTFMatchesPlayed);
@@ -168,7 +175,7 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME_CONDITION(AUTPlayerState, RespawnChoiceB, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, bChosePrimaryRespawnChoice, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, WeaponSpreeDamage, COND_OwnerOnly);
-	DOREPLIFETIME_CONDITION(AUTPlayerState, RemainingRallyDelay, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AUTPlayerState, bRallyActivated, COND_OwnerOnly);
 
 	DOREPLIFETIME(AUTPlayerState, SpectatingID);
 	DOREPLIFETIME(AUTPlayerState, SpectatingIDTeam);
@@ -180,7 +187,6 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME(AUTPlayerState, EmoteReplicationInfo);
 	DOREPLIFETIME(AUTPlayerState, EmoteSpeed);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, WeaponSkins, COND_OwnerOnly);
-	DOREPLIFETIME(AUTPlayerState, ReadyMode);
 
 	DOREPLIFETIME_CONDITION(AUTPlayerState, bDrawNameOnDeathIndicator, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, HUDIcon, COND_InitialOnly);
@@ -198,6 +204,8 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	DOREPLIFETIME_CONDITION(AUTPlayerState, CurrentCoolFactor, COND_OwnerOnly);
 #endif
+
+	DOREPLIFETIME(AUTPlayerState, bPlayerIsIdle);
 }
 
 void AUTPlayerState::Destroyed()
@@ -230,6 +238,25 @@ void AUTPlayerState::SetPlayerName(const FString& S)
 	}
 	ForceNetUpdate();
 	bHasValidClampedName = false;
+}
+
+FString AUTPlayerState::ValidatePlayerName()
+{
+	if (EpicAccountName.IsEmpty())
+	{
+		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
+		if (UTGameState)
+		{
+			TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*StatsID));
+			EpicAccountName = UTGameState->GetEpicAccountNameForAccount(UserId).ToString();
+			if (!EpicAccountName.IsEmpty() && (EpicAccountName != TEXT("InvalidMCPUser")))
+			{
+				PlayerName = EpicAccountName;
+				bHasValidClampedName = false;
+			}
+		}
+	}
+	return PlayerName;
 }
 
 void AUTPlayerState::OnRep_HasHighScore()
@@ -612,10 +639,6 @@ void AUTPlayerState::IncrementKills(TSubclassOf<UDamageType> DamageType, bool bE
 		}
 		ModifyStatsValue(NAME_Kills, 1);
 	}
-	else
-	{
-		ModifyStatsValue(NAME_Suicides, 1);
-	}
 }
 
 void AUTPlayerState::AnnounceWeaponSpree(TSubclassOf<UUTDamageType> UTDamage)
@@ -709,15 +732,10 @@ void AUTPlayerState::OnOutOfLives()
 	{
 		if (bOutOfLives)
 		{
-			UTLP->OpenSpectatorWindow();
 			if (MyPC && MyPC->MyUTHUD && MyPC->MyUTHUD->GetSpectatorSlideOut())
 			{
 				MyPC->MyUTHUD->GetSpectatorSlideOut()->SetMouseInteractive(true);
 			}
-		}
-		else
-		{
-			UTLP->CloseSpectatorWindow();
 		}
 	}
 }
@@ -775,40 +793,78 @@ void AUTPlayerState::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		ValidatePlayerName();
+	}
 	if (Role == ROLE_Authority)
 	{
 		AUTCharacter* UTChar = GetUTCharacter();
 		bool bOldCanRally = bCanRally;
-		bCanRally = (GetWorld()->GetTimeSeconds() > NextRallyTime) && UTChar && (UTChar->bCanRally || UTChar->GetCarriedObject());
-		RemainingRallyDelay = (NextRallyTime > GetWorld()->GetTimeSeconds()) ? FMath::Clamp(int32(NextRallyTime - GetWorld()->GetTimeSeconds()), 0, 255) : 0;
-		if (!bOldCanRally && bCanRally && !UTChar->GetCarriedObject())
+		AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+		bCanRally = bRallyActivated && UTChar && !UTChar->IsDead() && (UTChar->bCanRally || UTChar->GetCarriedObject()) && GS && GS->bAttackersCanRally && Team && (GS->bRedToCap == (Team->TeamIndex == 0));
+		if (bCanRally != bOldCanRally)
 		{
-			// notify of transition if rally is available
-			AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-			AUTPlayerController* MyPC = Cast<AUTPlayerController>(GetOwner());
-			if (GS && GS->bAttackersCanRally && MyPC && Team && (GS->bRedToCap == (Team->TeamIndex == 0)))
+			ForceNetUpdate();
+			if (!bOldCanRally && bCanRally && !UTChar->GetCarriedObject())
 			{
-				MyPC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 30, this);
-				AUTPlayerState* FC = GS->GetFlagHolder(Team->TeamIndex);
-				if (FC)
+				// notify of transition if rally is available
+				AUTPlayerController* MyPC = Cast<AUTPlayerController>(GetOwner());
+				if (MyPC)
 				{
-					FC->AnnounceStatus(StatusMessage::RallyNow);
+					MyPC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 30, this);
+					bNeedRallyReminder = true;
 				}
 			}
 		}
-		if (!StatsID.IsEmpty() && !RequestedName.IsEmpty() && Cast<AController>(GetOwner()))
+		if (bCanRally && bNeedRallyReminder)
 		{
-			AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-			if (UTGameState)
+			if (GS && GS->CurrentRallyPoint && GS->bAttackersCanRally)
 			{
-				TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*StatsID));
-				FText EpicAccountName = UTGameState->GetEpicAccountNameForAccount(UserId);
-				if (!EpicAccountName.IsEmpty())
+				if (GS->CurrentRallyPoint->RallyTimeRemaining < 8.f)
 				{
-					GetWorld()->GetAuthGameMode()->ChangeName(Cast<AController>(GetOwner()), RequestedName, false);
-					RequestedName = TEXT("");
+					bNeedRallyReminder = false;
+					AUTPlayerController* MyPC = Cast<AUTPlayerController>(GetOwner());
+					if (MyPC != nullptr)
+					{
+						AUTPlayerState* FC = GS->GetFlagHolder(Team->TeamIndex);
+						if (FC)
+						{
+							FC->GetCharacterVoiceClass();
+							int32 Switch = FC->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyNow);
+							if (Switch >= 0)
+							{
+								MyPC->ClientReceiveLocalizedMessage(FC->CharacterVoice, Switch, FC, this, NULL);
+							}
+						}
+						else
+						{
+							GetCharacterVoiceClass();
+							int32 Switch = CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyNow);
+							if (Switch >= 0)
+							{
+								MyPC->ClientReceiveLocalizedMessage(CharacterVoice, Switch, this, this, NULL);
+							}
+
+						}
+					}
 				}
 			}
+			else
+			{
+				bNeedRallyReminder = false;
+			}
+		}
+
+		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
+		// Only update the idle state if the match is in progress.
+		if (UTGameState && UTGameState->IsMatchInProgress() && !bOutOfLives)
+		{
+			bPlayerIsIdle = GetWorld()->GetTimeSeconds() - LastActiveTime > IDLE_TIMEOUT_TIME;
+		}
+		else if (UTGameState == nullptr || !UTGameState->HasMatchEnded())
+		{
+			NotIdle();
 		}
 	}
 	// If we are waiting to respawn then count down
@@ -816,7 +872,7 @@ void AUTPlayerState::Tick(float DeltaTime)
 	ForceRespawnTime -= DeltaTime;
 
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (GS != NULL && GS->IsMatchInProgress() && !GS->IsMatchIntermission() && !GS->IsMatchInCountdown() && GS->BoostRechargeTime > 0.0f && RemainingBoosts < GS->BoostRechargeMaxCharges)
+	if (GS != NULL && (GS->IsMatchInProgress() || GS->IsMatchInCountdown()) && !GS->IsMatchIntermission() && !GS->IsMatchInCountdown() && GS->BoostRechargeTime > 0.0f && RemainingBoosts < GS->BoostRechargeMaxCharges)
 	{
 		BoostRechargePct += DeltaTime / GS->BoostRechargeTime;
 		if (BoostRechargePct >= 1.0f)
@@ -1235,6 +1291,28 @@ void AUTPlayerState::CopyProperties(APlayerState* PlayerState)
 		{
 			PS->StatManager->InitializeManager(PS);
 		}
+
+		PS->DuelRank = DuelRank;
+		PS->TDMRank = TDMRank;
+		PS->DMRank = DMRank;
+		PS->CTFRank = CTFRank;
+		PS->ShowdownRank = ShowdownRank;
+		PS->FlagRunRank = FlagRunRank;
+		PS->RankedDuelRank = RankedDuelRank;
+		PS->RankedCTFRank = RankedCTFRank;
+		PS->RankedShowdownRank = RankedShowdownRank;
+		PS->RankedFlagRunRank = RankedFlagRunRank;
+
+		PS->DuelMatchesPlayed = DuelMatchesPlayed;
+		PS->TDMMatchesPlayed = TDMMatchesPlayed;
+		PS->DMMatchesPlayed = DMMatchesPlayed;
+		PS->CTFMatchesPlayed = CTFMatchesPlayed;
+		PS->ShowdownMatchesPlayed = ShowdownMatchesPlayed;
+		PS->FlagRunMatchesPlayed = FlagRunMatchesPlayed;
+		PS->RankedDuelMatchesPlayed = RankedDuelMatchesPlayed;
+		PS->RankedCTFMatchesPlayed = RankedCTFMatchesPlayed;
+		PS->RankedShowdownMatchesPlayed = RankedShowdownMatchesPlayed;
+		PS->RankedFlagRunMatchesPlayed = RankedFlagRunMatchesPlayed;
 	}
 }
 void AUTPlayerState::OverrideWith(APlayerState* PlayerState)
@@ -1955,7 +2033,7 @@ void AUTPlayerState::OnRep_UniqueId()
 void AUTPlayerState::RegisterPlayerWithSession(bool bWasFromInvite)
 {
 	UDemoNetDriver* DemoDriver = GetWorld()->DemoNetDriver;
-	if (DemoDriver)
+	if (DemoDriver && DemoDriver->IsPlaying())
 	{
 		return;
 	}
@@ -1966,7 +2044,7 @@ void AUTPlayerState::RegisterPlayerWithSession(bool bWasFromInvite)
 void AUTPlayerState::UnregisterPlayerWithSession()
 {
 	UDemoNetDriver* DemoDriver = GetWorld()->DemoNetDriver;
-	if (DemoDriver)
+	if (DemoDriver && DemoDriver->IsPlaying())
 	{
 		return;
 	}
@@ -2855,132 +2933,175 @@ void AUTPlayerState::BuildPlayerInfo(TSharedPtr<SUTTabWidget> TabWidget, TArray<
 		}
 	}
 
-	FText EpicAccountName = FText::GetEmpty();
-	if (!StatsID.IsEmpty())
+	if (bIsABot || UniqueId.ToString().Equals(TEXT("INVALID"),ESearchCase::IgnoreCase) ||FParse::Param(FCommandLine::Get(), TEXT("oldplayercard")))
 	{
-		TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*StatsID));
-		if (UserId->IsValid())
-		{	
-			if (GetWorld())
-			{
-				AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
-				if (UTGS != nullptr)
+
+		FText EpicAccountNameText = FText::GetEmpty();
+		if (!StatsID.IsEmpty())
+		{
+			TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*StatsID));
+			if (UserId->IsValid())
+			{	
+				if (GetWorld())
 				{
-					EpicAccountName = UTGS->GetEpicAccountNameForAccount(UserId);
+					AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
+					if (UTGS != nullptr)
+					{
+						EpicAccountNameText = UTGS->GetEpicAccountNameForAccount(UserId);
+					}
 				}
 			}
 		}
-	}
 
-	UUTFlagInfo* Flag = Cast<UUTGameEngine>(GEngine) ? Cast<UUTGameEngine>(GEngine)->GetFlag(CountryFlag) : nullptr;
-	if ((Avatar == NAME_None) && PC)
-	{
-		if (LP)
+		UUTFlagInfo* Flag = Cast<UUTGameEngine>(GEngine) ? Cast<UUTGameEngine>(GEngine)->GetFlag(CountryFlag) : nullptr;
+		if ((Avatar == NAME_None) && PC)
 		{
-			Avatar = LP->GetAvatar();
+			if (LP)
+			{
+				Avatar = LP->GetAvatar();
+			}
 		}
-	}
-	TabWidget->AddTab(NSLOCTEXT("AUTPlayerState", "PlayerInfo", "Player Info"),
-	SNew(SVerticalBox)
-	+ SVerticalBox::Slot()
-	.Padding(10.0f, 20.0f, 10.0f, 5.0f)
-	.AutoHeight()
-	[
-		SNew(SHorizontalBox)
-		+ SHorizontalBox::Slot()
-		.HAlign(HAlign_Left)
-		.VAlign(VAlign_Center)
-		.AutoWidth()
+
+
+
+		TabWidget->AddTab(NSLOCTEXT("AUTPlayerState", "PlayerInfo", "Player Info"),
+		SNew(SVerticalBox)
+		+ SVerticalBox::Slot()
+		.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+		.AutoHeight()
 		[
-			SNew(SBox)
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				SNew(SBox)
+				[
+					SNew(STextBlock)
+					.Text(EpicAccountNameText)
+					.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+				]
+			]
+			+SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				//blank space between name and player icon
+				SNew(SBox)
+				.WidthOverride(64.0f)
+				.HeightOverride(64.0f)
+				.MaxDesiredWidth(64.0f)
+				.MaxDesiredHeight(64.0f)
+				[
+					SNew(SImage)
+					.Image(SUTStyle::Get().GetBrush("UT.NoStyle"))
+				]
+			]
+			+ SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				SNew(SBox)
+				.WidthOverride(64.0f)
+				.HeightOverride(64.0f)
+				.MaxDesiredWidth(64.0f)
+				.MaxDesiredHeight(64.0f)
+				[
+					SNew(SImage)
+					.Image((Avatar != NAME_None) ? SUTStyle::Get().GetBrush(Avatar) : SUTStyle::Get().GetBrush("UT.NoStyle"))
+				]
+			]
+		]
+		+ SVerticalBox::Slot()
+		.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+		.AutoHeight()
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				SNew(SBox)
+				.WidthOverride(36.0f)
+				.HeightOverride(26.0f)
+				.MaxDesiredWidth(36.0f)
+				.MaxDesiredHeight(26.0f)
+				[
+					SNew(SImage)
+					.Image(SUWindowsStyle::Get().GetBrush(Flag ? Flag->GetSlatePropertyName() : NAME_None))
+				]
+			]
+			+ SHorizontalBox::Slot()
+			.Padding(10.0f, 0.0f, 0.0f, 0.0f)
+			.VAlign(VAlign_Center)
+			.HAlign(HAlign_Left)
+			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(EpicAccountName)
+				.Text(FText::FromString(Flag ? Flag->GetFriendlyName() : TEXT("")))
 				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
 			]
 		]
-		+SHorizontalBox::Slot()
-		.HAlign(HAlign_Left)
-		.VAlign(VAlign_Center)
-		.AutoWidth()
+		+ SVerticalBox::Slot()
+		.FillHeight(1.0)
 		[
-			//blank space between name and player icon
-			SNew(SBox)
-			.WidthOverride(64.0f)
-			.HeightOverride(64.0f)
-			.MaxDesiredWidth(64.0f)
-			.MaxDesiredHeight(64.0f)
-			[
-				SNew(SImage)
-				.Image(SUTStyle::Get().GetBrush("UT.NoStyle"))
-			]
+			BuildRankInfo()
 		]
-		+ SHorizontalBox::Slot()
-		.HAlign(HAlign_Left)
-		.VAlign(VAlign_Center)
-		.AutoWidth()
+		+SVerticalBox::Slot()
+		.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+		.AutoHeight()
 		[
-			SNew(SBox)
-			.WidthOverride(64.0f)
-			.HeightOverride(64.0f)
-			.MaxDesiredWidth(64.0f)
-			.MaxDesiredHeight(64.0f)
-			[
-				SNew(SImage)
-				.Image((Avatar != NAME_None) ? SUTStyle::Get().GetBrush(Avatar) : SUTStyle::Get().GetBrush("UT.NoStyle"))
-			]
+			BuildStatsInfo()
 		]
-	]
-	+ SVerticalBox::Slot()
-	.Padding(10.0f, 20.0f, 10.0f, 5.0f)
-	.AutoHeight()
-	[
-		SNew(SHorizontalBox)
-		+ SHorizontalBox::Slot()
-		.HAlign(HAlign_Left)
-		.VAlign(VAlign_Center)
-		.AutoWidth()
-		[
-			SNew(SBox)
-			.WidthOverride(36.0f)
-			.HeightOverride(26.0f)
-			.MaxDesiredWidth(36.0f)
-			.MaxDesiredHeight(26.0f)
-			[
-				SNew(SImage)
-				.Image(SUWindowsStyle::Get().GetBrush(Flag ? Flag->GetSlatePropertyName() : NAME_None))
-			]
-		]
-		+ SHorizontalBox::Slot()
-		.Padding(10.0f, 0.0f, 0.0f, 0.0f)
-		.VAlign(VAlign_Center)
-		.HAlign(HAlign_Left)
-		.AutoWidth()
-		[
-			SNew(STextBlock)
-			.Text(FText::FromString(Flag ? Flag->GetFriendlyName() : TEXT("")))
-			.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
-		]
-	]
-	+ SVerticalBox::Slot()
-	.FillHeight(1.0)
-	[
-		BuildRankInfo()
-	]
-	+SVerticalBox::Slot()
-	.Padding(10.0f, 20.0f, 10.0f, 5.0f)
-	.AutoHeight()
-	[
-		BuildStatsInfo()
-	]
 	
-	+ SVerticalBox::Slot()
-	.Padding(10.0f, 20.0f, 10.0f, 5.0f)
-	.AutoHeight()
-	[
-		BuildSeasonInfo()
-	]
-	);
+		+ SVerticalBox::Slot()
+		.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+		.AutoHeight()
+		[
+			BuildSeasonInfo()
+		]
+		);
+	
+	}
+	else
+	{
+		// Add code here to grab a different URL based on the epicapp id.  
+		FString PlayerInfoURL = TEXT("https://epicgames-gamedev.ol.epicgames.net/unrealtournament/playerCard?playerId=");
+		
+		PlayerInfoURL += UniqueId.ToString();
+												   		
+		TabWidget->AddTab(NSLOCTEXT("AUTPlayerState", "PlayerInfo", "Player Info"),
+			SAssignNew(PlayerCardBox,SVerticalBox)
+			+SVerticalBox::Slot()
+			.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+			.AutoHeight().HAlign(HAlign_Fill)
+			[
+				SNew(STextBlock)
+				.Text(FText(NSLOCTEXT("AUTPlayerState", "LoadingPlayerCardMsg", "Requesting player card...")))
+				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+			]
+			+SVerticalBox::Slot()
+			.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+			.AutoHeight().HAlign(HAlign_Fill)
+			[
+				SNew(SThrobber)
+			]
+		);
+
+		UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController());
+		if (UTLocalPlayer != nullptr)
+		{
+			SAssignNew(PlayerCardWebBrowser, SUTWebBrowserPanel, UTLocalPlayer)
+			.InitialURL(PlayerInfoURL)
+			.ShowControls(false)
+			.OnLoadCompleted(FSimpleDelegate::CreateUObject(this, &AUTPlayerState::OnPlayerCardLoadCompleted))
+			.OnLoadError(FSimpleDelegate::CreateUObject(this, &AUTPlayerState::OnPlayerCardLoadError));
+		}
+	}
 
 	// Would be great if this worked on remote players
 	if (LP)
@@ -3000,7 +3121,7 @@ TSharedRef<SWidget> AUTPlayerState::BuildSeasonInfo()
 {
 	TSharedRef<SVerticalBox> VBox = SNew(SVerticalBox);
 
-	AUTPlayerController* PC = Cast<AUTPlayerController>(GetOwner());
+	AUTBasePlayerController* PC = Cast<AUTBasePlayerController>(GetOwner());
 	UUTLocalPlayer* LP = PC ? Cast<UUTLocalPlayer>(PC->Player) : NULL;
 
 	static FName FacePumpkins(TEXT("FacePumpkins"));
@@ -3104,6 +3225,48 @@ void AUTPlayerState::EpicIDClicked()
 	FPlatformMisc::ClipboardCopy(*StatsID);
 }
 #endif
+
+
+void AUTPlayerState::OnPlayerCardLoadCompleted()
+{
+#if !UE_SERVER
+	if (PlayerCardBox.IsValid() && PlayerCardWebBrowser.IsValid())
+	{
+		PlayerCardBox->ClearChildren();
+		if (!bPlayerCardLoadError)
+		{
+			PlayerCardBox->AddSlot()
+				.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+				.AutoHeight().HAlign(HAlign_Fill)
+				[
+					SNew(SBox).HeightOverride(890)
+					[
+						PlayerCardWebBrowser.ToSharedRef()
+					]
+				];
+		}
+		else
+		{
+			PlayerCardBox->AddSlot()
+				.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+				.AutoHeight().HAlign(HAlign_Fill)
+				[
+					SNew(STextBlock)
+					.Text(FText(NSLOCTEXT("AUTPlayerState", "LoadingPlayerCardLoadError", "Could not load player information from the NEG player database.  Please try again later.")))
+				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+				];
+		}
+	}
+
+	bPlayerCardLoadError = false;
+#endif
+}
+
+void AUTPlayerState::OnPlayerCardLoadError()
+{
+	// Crappy, but CeF make the error delegate and then the completed delegate calls.  So we flag it here.
+	bPlayerCardLoadError = true;
+}
 
 void AUTPlayerState::UpdateOldName()
 {
@@ -3229,36 +3392,6 @@ void AUTPlayerState::ClientShowLoadoutMenu_Implementation()
 	{
 		Cast<UUTLocalPlayer>(PC->Player)->OpenLoadout();
 	}
-}
-
-void AUTPlayerState::SetReadyToPlay(bool bNewReadyState)
-{
-	bReadyToPlay = bNewReadyState;
-
-	uint8 NewReadyState = bReadyToPlay + (bPendingTeamSwitch >> 2);
-	if ((ReadySwitchCount > 2) && bReadyToPlay)
-	{
-		if (GetWorld()->GetTimeSeconds() - LastReadySwitchTime > 0.2f)
-		{
-			ReadySwitchCount++;
-			LastReadySwitchTime = GetWorld()->GetTimeSeconds();
-			ReadyMode = 1;
-		}
-		if (ReadySwitchCount > 10)
-		{
-			ReadyMode = 2;
-		}
-	}
-	else if (!bReadyToPlay && (GetWorld()->GetTimeSeconds() - LastReadySwitchTime > 0.5f))
-	{
-		ReadyMode = 0;
-	}
-	else if (NewReadyState != LastReadyState)
-	{
-		ReadySwitchCount = (GetWorld()->GetTimeSeconds() - LastReadySwitchTime < 0.5f) ? ReadySwitchCount + 1 : 0;
-		LastReadySwitchTime = GetWorld()->GetTimeSeconds();
-	}
-	LastReadyState = NewReadyState;
 }
 
 void AUTPlayerState::LogBanRequest(AUTPlayerState* Voter)
@@ -3530,6 +3663,15 @@ void AUTPlayerState::PlayTauntByIndex(int32 TauntIndex)
 		ServerSetEmoteSpeed(EmoteSpeed);
 	}
 
+	AUTCharacter* UTChar = GetUTCharacter();
+	if (UTChar == nullptr)
+	{
+		UE_LOG(UT,Warning,TEXT("Attempting to Taunt without a character"));
+		FTimerHandle TempHandle;
+		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTPlayerState::OnRepTaunt, 0.05f, false);
+		return;
+	}
+
 	if (TauntIndex == 0 && TauntClass != nullptr)
 	{
 		EmoteReplicationInfo.EmoteIndex = TauntIndex;
@@ -3551,7 +3693,7 @@ void AUTPlayerState::OnRep_ActiveGroupTaunt()
 	}
 
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (GS && GS->ScoringPlayerState == this && ActiveGroupTaunt != nullptr)
+	if (GS && GS->LineUpHelper && GS->LineUpHelper->CanInitiateGroupTaunt(this) && ActiveGroupTaunt != nullptr)
 	{
 		for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
 		{
@@ -3582,7 +3724,10 @@ void AUTPlayerState::OnRep_ActiveGroupTaunt()
 void AUTPlayerState::PlayGroupTaunt()
 {
 	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-	if (UTGameState && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive)
+	if (UTGameState && 
+		UTGameState->LineUpHelper && 
+		UTGameState->LineUpHelper->bIsActive && 
+		ActiveGroupTaunt == NULL) //If this is set, we have already played a group taunt
 	{
 		// SetEmoteSpeed here to make sure that it gets unfrozen if freezing isn't allowed
 		if (Role == ROLE_Authority)
@@ -4040,4 +4185,15 @@ void AUTPlayerState::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVect
 			}
 		}
 	}
+}
+
+void AUTPlayerState::NotIdle()
+{
+	bPlayerIsIdle = false;
+	LastActiveTime = GetWorld()->GetTimeSeconds();
+}
+
+bool AUTPlayerState::IsPlayerIdle()
+{
+	return (!bIsABot && !bOnlySpectator && bPlayerIsIdle);
 }

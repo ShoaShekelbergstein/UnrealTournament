@@ -29,6 +29,10 @@ class UNREALTOURNAMENT_API AUTProj_Rocket : public AUTProjectile
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketSeeking)
 		float MaxLeadDistance;
 
+	/** Min distance rocket will track. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketSeeking)
+		float MinSeekDistance;
+
 	UPROPERTY(BlueprintReadOnly, Category = RocketSeeking)
 		bool bRocketTeamSet;
 
@@ -36,20 +40,19 @@ class UNREALTOURNAMENT_API AUTProj_Rocket : public AUTProjectile
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketSeeking)
 		UTexture2D* LockCrosshairTexture;
 
+	/** Max distance that target will see lock indicator. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketSeeking)
+		float MaxTargetLockIndicatorDistance;
+
 	/** Reward announcement when kill with air rocket. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Announcement)
 		TSubclassOf<class UUTRewardMessage> AirRocketRewardClass;
-
-	/** Following rockets in burst. */
-	UPROPERTY()
-		TArray<AUTProj_Rocket*> FollowerRockets;
 
 	UPROPERTY()
 		class UMaterialInstanceDynamic* MeshMI;
 
 	virtual void Destroyed() override;
 	virtual void Tick(float DeltaTime) override;
-	virtual void Explode_Implementation(const FVector& HitLocation, const FVector& HitNormal, UPrimitiveComponent* HitComp) override;
 	virtual void OnRep_Instigator() override;
 	virtual void PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir) override;
 

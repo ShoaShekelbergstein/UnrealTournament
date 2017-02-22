@@ -165,6 +165,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Swimming)
 	float MaxWaterSpeed;
 
+	/** if set force team collision for this character even if game mode turns it off in general */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Collision)
+	bool bForceTeamCollision;
+
 	/** Impulse when pushing off wall underwater */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Swimming)
 	float SwimmingWallPushImpulse;

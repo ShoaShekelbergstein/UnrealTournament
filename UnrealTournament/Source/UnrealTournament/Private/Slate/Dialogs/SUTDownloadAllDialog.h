@@ -35,6 +35,12 @@ class UNREALTOURNAMENT_API SUTDownloadAllDialog : public SUTDialogBase
 	void Construct(const FArguments& InArgs);
 	void Tick( const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime );
 
+	virtual bool bRemainOpenThroughTravel()
+	{
+		return true;
+	}
+
+
 protected:
 
 	TSharedPtr<SVerticalBox> MessageBox;

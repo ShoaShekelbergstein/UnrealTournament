@@ -4,6 +4,7 @@
 #include "UTLocalPlayer.h"
 #include "SUTStatsViewerPanel.h"
 #include "UTMcpUtils.h"
+#include "SUTWebBrowserPanel.h"
 
 #if !UE_SERVER
 
@@ -13,11 +14,6 @@ SUTStatsViewerPanel::~SUTStatsViewerPanel()
 	{
 		PlayerOwner->RemovePlayerOnlineStatusChangedDelegate(PlayerOnlineStatusChangedDelegate);
 		PlayerOnlineStatusChangedDelegate.Reset();
-
-		if (StatsWebBrowser.IsValid())
-		{
-			StatsWebBrowser->UnbindUObject(TEXT("StatsViewer"), PlayerOwner.Get());
-		}
 	}
 }
 
@@ -118,7 +114,7 @@ void SUTStatsViewerPanel::ConstructPanel(FVector2D ViewportSize)
 				+SHorizontalBox::Slot()
 				.HAlign(HAlign_Fill)
 				[
-					SAssignNew(StatsWebBrowser, SWebBrowser)
+					SAssignNew(StatsWebBrowser, SUTWebBrowserPanel, PlayerOwner)
 					.InitialURL(TEXT(""))
 					.ShowControls(false)
 				]
@@ -127,11 +123,6 @@ void SUTStatsViewerPanel::ConstructPanel(FVector2D ViewportSize)
 	];
 
 	LastStatsDownloadTime = -1;
-
-	if (StatsWebBrowser.IsValid())
-	{
-		StatsWebBrowser->BindUObject(TEXT("StatsViewer"), PlayerOwner.Get());
-	}
 }
 
 void SUTStatsViewerPanel::SetupFriendsList()
@@ -425,7 +416,7 @@ void SUTStatsViewerPanel::ReadCloudStatsComplete(FHttpRequestPtr HttpRequest, FH
 			FileOut->Serialize(TCHAR_TO_ANSI(*JSONString), JSONString.Len());
 			FileOut->Close();
 
-			StatsWebBrowser->LoadURL(TEXT("file://") + HTMLPath);
+			StatsWebBrowser->Browse(TEXT("file://") + HTMLPath);
 
 			bShowingStats = true;
 		}
@@ -444,7 +435,7 @@ void SUTStatsViewerPanel::ReadCloudStatsComplete(FHttpRequestPtr HttpRequest, FH
 			FileOut->Serialize(TCHAR_TO_ANSI(*JSONString), JSONString.Len());
 			FileOut->Close();
 
-			StatsWebBrowser->LoadURL(TEXT("file://") + HTMLPath);
+			StatsWebBrowser->Browse(TEXT("file://") + HTMLPath);
 
 			bShowingStats = true;
 		}
@@ -461,7 +452,7 @@ void SUTStatsViewerPanel::ShowErrorPage()
 	FString HTMLPath = FPaths::ConvertRelativePathToFull(FPaths::GameSavedDir() + TEXT("Stats/nostats.html"));
 	FPlatformFileManager::Get().GetPlatformFile().CopyDirectoryTree(*(FPaths::GameSavedDir() + TEXT("Stats/")), *(FPaths::GameContentDir() + TEXT("RestrictedAssets/UI/Stats/")), true);
 
-	StatsWebBrowser->LoadURL(TEXT("file://") + HTMLPath);
+	StatsWebBrowser->Browse(TEXT("file://") + HTMLPath);
 }
 
 FString SUTStatsViewerPanel::GetStatsFilename()
@@ -513,5 +504,6 @@ void SUTStatsViewerPanel::ChangeStatsID(const FString& NewStatsID)
 		DownloadStats();
 	}
 }
+
 
 #endif

@@ -8,6 +8,10 @@
 #if !UE_SERVER
 
 class UUTLocalPlayer;
+
+DECLARE_DELEGATE( FUTChatEditConsoleKeyDelegate );
+
+
 class UNREALTOURNAMENT_API SUTChatEditBox : public SUTEditableTextBox
 {
 	SLATE_BEGIN_ARGS(SUTChatEditBox)
@@ -47,6 +51,11 @@ class UNREALTOURNAMENT_API SUTChatEditBox : public SUTEditableTextBox
 		/** The size of the largest string */
 		SLATE_ARGUMENT(int32, MaxTextSize)
 
+		/** The size of the largest string */
+		SLATE_EVENT( FUTChatEditConsoleKeyDelegate, OnConsoleKeyPressed)
+
+		SLATE_ARGUMENT( FName, ConsoleKeyName);
+
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs, TWeakObjectPtr<UUTLocalPlayer> inPlayerOwner);
@@ -54,6 +63,8 @@ class UNREALTOURNAMENT_API SUTChatEditBox : public SUTEditableTextBox
 	void SetCommittedDelegate(FOnTextCommitted inOnTextCommitted);
 
 	virtual FReply OnFocusReceived( const FGeometry& MyGeometry, const FFocusEvent& InKeyboardFocusEvent ) override;
+
+	FName ConsoleKeyName;
 
 protected:
 	virtual FReply InternalOnKeyDown( const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent );
@@ -65,6 +76,8 @@ protected:
 
 	FOnTextChanged ExternalOnTextChanged;
 	FOnTextCommitted ExternalOnTextCommitted;
+
+	FUTChatEditConsoleKeyDelegate ConsoleKeyPressedDelegate;
 
 	void EditableTextChanged(const FText& NewText);
 	void EditableTextCommited(const FText& NewText, ETextCommit::Type CommitType);

@@ -72,4 +72,27 @@ public:
 			}
 		}
 	}
+
+	virtual float GetBoostPowerRating_Implementation(AUTBot* B) const override
+	{
+		if ( GetWorld()->SweepTestByChannel( B->GetPawn()->GetActorLocation(), B->GetPawn()->GetActorLocation() + FVector(0.0f, 0.0f, 1500.0f) + B->GetPawn()->GetActorRotation().Vector() * 500.0f,
+											FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, false, B->GetPawn()), WorldResponseParams ) )
+		{
+			// no room
+			return 0.0f;
+		}
+		else
+		{
+			TArray<APawn*> PotentialTargets = B->GetEnemiesNear(B->GetPawn()->GetActorLocation(), TargetingRange, false);
+			int32 Count = 0;
+			for (APawn* Target : PotentialTargets)
+			{
+				if (B->IsEnemyVisible(Target))
+				{
+					Count++;
+				}
+			}
+			return 0.25f * (Count - 2);
+		}
+	}
 };

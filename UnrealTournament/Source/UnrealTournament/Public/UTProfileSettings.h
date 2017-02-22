@@ -12,13 +12,14 @@
 #include "UTProfileSettings.generated.h"
 
 
-static const uint32 CURRENT_PROFILESETTINGS_VERSION = 40;
+static const uint32 CURRENT_PROFILESETTINGS_VERSION = 41;
 static const uint32 VALID_PROFILESETTINGS_VERSION = 32;
 static const uint32 WEAPONBAR_FIXUP_VERSION = 33;
 static const uint32 COMMENU_FIXUP_VERSION = 34;
 static const uint32 ENABLE_DOUBLETAP_DODGE_FIXUP_VERSION = 37;
 static const uint32 DEFAULT_GROUPTAUNT_FIXUP_VERSION = 38;
 static const uint32 FRAMECAP_FIXUP_VERSION = 40;
+static const uint32 CLANNAME_FIXUP_VERSION = 41;
 
 class UUTLocalPlayer;
 
@@ -99,9 +100,12 @@ public:
 
 	// ======================== Character Settings
 
-	// What is the Player name associated with this profile
+	// What is the Player name associated with this profile FIXMESTEVE DO WE NEED?
 	UPROPERTY(BlueprintReadOnly, Category = Character)
 	FString PlayerName;
+
+	UPROPERTY(BlueprintReadOnly, Category = Character)
+	FString ClanName;
 
 	UPROPERTY(BlueprintReadOnly, Category = Character)
 	FString HatPath;
@@ -129,12 +133,6 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = Character)
 	FString CharacterPath;
-
-	UPROPERTY(BlueprintReadOnly, Category = Character)
-	FName CountryFlag;
-
-	UPROPERTY(BlueprintReadOnly, Category = Character)
-	FName Avatar;
 
 	UPROPERTY(BlueprintReadOnly, Category = Character)
 	float WeaponBob;
@@ -237,9 +235,6 @@ public:
 	uint32 bHearsTaunts : 1;
 
 	// ======================== HUD Settings
-
-	UPROPERTY(BlueprintReadOnly, Category = HUD)
-	float QuickStatsAngle;
 
 	UPROPERTY(BlueprintReadOnly, Category = HUD)
 	float QuickStatsDistance;

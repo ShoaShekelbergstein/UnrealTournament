@@ -46,6 +46,9 @@ class UNREALTOURNAMENT_API AUTCTFRoundGame : public AUTCTFBaseGame
 	UPROPERTY(BlueprintReadOnly, Category = CTF)
 		int32 NumRounds;
 
+	UPROPERTY(BlueprintReadWrite, Category = CTF)
+		float LastAceTime;
+
 	UPROPERTY()
 		bool bNeedFiveKillsMessage;
 

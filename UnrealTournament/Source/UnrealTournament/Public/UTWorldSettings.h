@@ -140,6 +140,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameSettings)
 	bool bAllowSideSwitching;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = LevelSettings)
+	FVector LoadingCameraLocation;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = LevelSettings)
+	FRotator LoadingCameraRotation;
+
 	/** level music */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = LevelSettings)
 	USoundBase* Music;
@@ -162,6 +168,28 @@ public:
 	virtual void PostDuplicate(bool bDuplicateForPIE) override;
 	virtual void PostInitProperties() override;
 	virtual void PreSave(const class ITargetPlatform* TargetPlatform) override;
+
+	struct FDestroyedActorInfo
+	{
+		TWeakObjectPtr<ULevel> Level;
+		FName ActorName;
+		FDestroyedActorInfo(ULevel* InLevel, FName InName)
+			: Level(InLevel), ActorName(InName)
+		{}
+	};
+protected:
+	/** level placed Actors that were destroyed
+	 * this is used for client-side replays to mirror the destruction of these Actors
+	 */
+	TArray<FDestroyedActorInfo> DestroyedLevelActors;
+
+	UFUNCTION()
+	void LevelActorDestroyed(AActor* TheActor);
+public:
+	inline const TArray<FDestroyedActorInfo>& GetDestroyedLevelActors() const
+	{
+		return DestroyedLevelActors;
+	}
 
 	/** overridden to set bBeginPlay to true BEFORE calling BeginPlay() events, which maintains the historical behavior when an Actor spawns another from within BeginPlay(),
 	  * specifically that said second Actor's BeginPlay() is called immediately as part of SpawnActor()

@@ -51,13 +51,16 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			[
-				SNew(SBox).HeightOverride(42)
+				SNew(SHorizontalBox)
+				+SHorizontalBox::Slot().AutoWidth()
 				[
-					SAssignNew(ChatBar, SUTChatBar, PlayerOwner)
-					.InitialChatDestination(ChatDestinations::Local)
-				]
+					SNew(SBox).HeightOverride(42).WidthOverride(450)
+					[
+						SAssignNew(ChatBar, SUTChatBar, PlayerOwner)
+						.InitialChatDestination(ChatDestinations::Local)
+					]
+				] 
 			]
-
 		]
 	];
 
@@ -79,7 +82,6 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 			]
 		];
 	}
-
 }
 
 EVisibility SUTInGameHomePanel::GetSummaryVisibility() const
@@ -94,8 +96,6 @@ EVisibility SUTInGameHomePanel::GetSummaryVisibility() const
 	}
 	return EVisibility::Hidden;
 }
-
-
 
 void SUTInGameHomePanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
 {
@@ -116,6 +116,7 @@ void SUTInGameHomePanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
 		}
 	}
 }
+
 void SUTInGameHomePanel::OnHidePanel()
 {
 	SUTPanelBase::OnHidePanel();
@@ -136,7 +137,6 @@ void SUTInGameHomePanel::OnHidePanel()
 	}
 
 	HideMatchSummary();
-
 }
 
 // @Returns true if the mouse position is inside the viewport
@@ -192,7 +192,6 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 		]
 	];
 
-
 	if (MenuBox.IsValid())
 	{
 
@@ -220,16 +219,33 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 			}
 		}
 
-		// Add the show player card
-		MenuBox->AddSlot()
-		.AutoHeight()
-		[
-			SNew(SUTButton)
-			.OnClicked(this, &SUTInGameHomePanel::ContextCommand, ECONTEXT_COMMAND_ShowPlayerCard, SelectedPlayer)
-			.ButtonStyle(SUTStyle::Get(),"UT.ContextMenu.Item")
-			.Text(NSLOCTEXT("SUTInGameHomePanel","ShowPlayerCard","Show Player Card"))
-			.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small")
-		];
+		if (!SelectedPlayer->bIsABot)
+		{
+			// Add the show player card
+			MenuBox->AddSlot()
+			.AutoHeight()
+			[
+				SNew(SUTButton)
+				.OnClicked(this, &SUTInGameHomePanel::ContextCommand, ECONTEXT_COMMAND_ShowPlayerCard, SelectedPlayer)
+				.ButtonStyle(SUTStyle::Get(),"UT.ContextMenu.Item")
+				.Text(NSLOCTEXT("SUTInGameHomePanel","ShowPlayerCard","Show Player Card"))
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small")
+			];
+		}
+		else
+		{
+			// Add the show player card
+			MenuBox->AddSlot()
+			.AutoHeight()
+			[
+				SNew(SUTButton)
+				.OnClicked(this, &SUTInGameHomePanel::ContextCommand, 9000, SelectedPlayer)
+				.ButtonStyle(SUTStyle::Get(),"UT.ContextMenu.Item")
+				.Text(NSLOCTEXT("SUTInGameHomePanel","ShowPlayerCardBot","AI Player Cards Offline"))
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small")
+			];
+		
+		}
 
 		// If we are in a netgame, show online options.
 		if ( PlayerOwner->GetWorld()->GetNetMode() == ENetMode::NM_Client)
@@ -250,7 +266,9 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 					];
 				}
 
-				if (!SelectedPlayer->bIsABot)
+				AUTGameState* UTGameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
+
+				if (!SelectedPlayer->bIsABot && (UTGameState == nullptr || UTGameState->GetMatchState() != MatchState::InProgress || OwnerPlayerState == nullptr || !UTGameState->bTeamGame || OwnerPlayerState->GetTeamNum() == SelectedPlayer->GetTeamNum()))
 				{
 					// Mute Player
 					MenuBox->AddSlot()
@@ -291,10 +309,10 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 					];
 				}
 
-				AUTGameState* UTGameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
 				if (OwnerPlayerState && 
 						!UTGameState->bDisableVoteKick && 
 						!OwnerPlayerState->bOnlySpectator && 
+						!SelectedPlayer->bIsABot &&
 						(!UTGameState->bOnlyTeamCanVoteKick || UTGameState->OnSameTeam(OwnerPlayerState, SelectedPlayer.Get()))
 					)
 				{
@@ -346,10 +364,7 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 				];
 			}
 		}
-	
-	
 	}
-
 }
 
 void SUTInGameHomePanel::HideContextMenu()
@@ -379,7 +394,7 @@ FReply SUTInGameHomePanel::ContextCommand(int32 CommandId, TWeakObjectPtr<AUTPla
 
 			switch (CommandId)
 			{
-				case ECONTEXT_COMMAND_ShowPlayerCard:	PlayerOwner->ShowPlayerInfo(TargetPlayerState); break;
+				case ECONTEXT_COMMAND_ShowPlayerCard:	PlayerOwner->ShowPlayerInfo(TargetPlayerState->UniqueId.ToString(), TargetPlayerState->PlayerName); break;
 				case ECONTEXT_COMMAND_FriendRequest:	PlayerOwner->RequestFriendship(TargetPlayerState->UniqueId.GetUniqueNetId()); break;
 				case ECONTEXT_COMMAND_KickVote: 
 						if (TargetPlayerState != MyPlayerState)
@@ -410,10 +425,8 @@ FReply SUTInGameHomePanel::ContextCommand(int32 CommandId, TWeakObjectPtr<AUTPla
 			}
 		}
 	}
-
 	return FReply::Handled();
 }
-
 
 FReply SUTInGameHomePanel::OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
@@ -427,7 +440,7 @@ FReply SUTInGameHomePanel::OnMouseButtonUp(const FGeometry& MyGeometry, const FP
 			UUTScoreboard* SB = PC->MyUTHUD->GetScoreboard();
 			if (SB)
 			{
-				if ( MouseEvent.GetEffectingButton() == EKeys::RightMouseButton )
+				//if ( MouseEvent.GetEffectingButton() == EKeys::RightMouseButton )
 				{
 					if (SB->AttemptSelection(MousePosition))
 					{
@@ -440,6 +453,7 @@ FReply SUTInGameHomePanel::OnMouseButtonUp(const FGeometry& MyGeometry, const FP
 						HideContextMenu();
 					}
 				}
+/*
 				else
 				{
 					HideContextMenu();
@@ -450,9 +464,14 @@ FReply SUTInGameHomePanel::OnMouseButtonUp(const FGeometry& MyGeometry, const FP
 					}
 					else
 					{
-						PlayerOwner->HideMenu();
+						AUTGameState* UTGameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
+						if (UTGameState == nullptr || UTGameState->GetMatchState() != MatchState::WaitingToStart)
+						{
+							PlayerOwner->HideMenu();
+						}
 					}
 				}
+*/
 			}
 
 			UUTHUDWidget_ReplayTimeSlider* ReplayTimeSlider = PC->MyUTHUD->GetReplayTimeSlider();
@@ -465,7 +484,6 @@ FReply SUTInGameHomePanel::OnMouseButtonUp(const FGeometry& MyGeometry, const FP
 			}
 		}
 	}
-
 	return FReply::Unhandled();
 }
 

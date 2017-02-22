@@ -56,30 +56,41 @@ void AUTHUD_CTF::DrawMinimapSpectatorIcons()
 	for (int32 TeamIndex = 0; TeamIndex < 2; TeamIndex++)
 	{
 		AUTCTFFlagBase* Base = GS->GetFlagBase(TeamIndex);
-		AUTCarriedObject* Flag = Base ? Base->MyFlag : nullptr;
-		if (Flag)
+		if (Base)
 		{
-			bool bCanPickupFlag = (!GS->OnSameTeam(Base, UTPlayerOwner) ? Flag->bEnemyCanPickup : Flag->bFriendlyCanPickup);
+			AUTCarriedObject* Flag = Base->MyFlag;
 			FVector2D Pos = WorldToMapToScreen(Base->GetActorLocation());
-			if (!Flag->IsHome() || Flag->bEnemyCanPickup || Flag->bFriendlyCanPickup)
+			float Scaling = (LastHoveredActor == Base)
+				? 1.5f * RenderScale * FMath::InterpEaseOut<float>(1.0f, 1.25f, FMath::Min<float>(0.2f, GetWorld()->RealTimeSeconds - LastHoveredActorChangeTime) * 5.0f, 2.0f)
+				: RenderScale;
+			if (Flag)
 			{
-				Canvas->DrawColor = (TeamIndex == 0) ? FColor(255, 0, 0, 255) : FColor(0, 0, 255, 255);
-				Canvas->DrawTile(SelectedPlayerTexture, Pos.X - 12.0f * RenderScale, Pos.Y - 12.0f * RenderScale, 24.0f * RenderScale, 24.0f * RenderScale, 0.0f, 0.0f, SelectedPlayerTexture->GetSurfaceWidth(), SelectedPlayerTexture->GetSurfaceHeight());
+				bool bCanPickupFlag = (!GS->OnSameTeam(Base, UTPlayerOwner) ? Flag->bEnemyCanPickup : Flag->bFriendlyCanPickup);
+				if (!Flag->IsHome() || Flag->bEnemyCanPickup || Flag->bFriendlyCanPickup)
+				{
+					Canvas->DrawColor = (TeamIndex == 0) ? FColor(255, 0, 0, 255) : FColor(0, 0, 255, 255);
+					Canvas->DrawTile(SelectedPlayerTexture, Pos.X - 12.0f * Scaling, Pos.Y - 12.0f * Scaling, 24.0f * Scaling, 24.0f * Scaling, 0.0f, 0.0f, SelectedPlayerTexture->GetSurfaceWidth(), SelectedPlayerTexture->GetSurfaceHeight());
+				}
+				if (Flag->Team && (bShowAllFlags || bCanPickupFlag || Flag->IsHome() || Flag->bCurrentlyPinged))
+				{
+					Pos = WorldToMapToScreen(Base->MyFlag->GetActorLocation());
+					if (Flag->IsHome() && !Flag->bEnemyCanPickup && !Flag->bFriendlyCanPickup)
+					{
+						DrawMinimapIcon(HUDAtlas, Pos, FVector2D(36.f*Scaling, 36.f*Scaling), TeamIconUV[(Flag->Team->TeamIndex == 0) ? 0 : 1], FVector2D(72.f, 72.f), Base->MyFlag->Team->TeamColor, true);
+					}
+					else
+					{
+						float TimeD = 2.f*GetWorld()->GetTimeSeconds();
+						int32 TimeI = int32(TimeD);
+						float Scale = Base->MyFlag->IsHome() ? 24.f : ((TimeI % 2 == 0) ? 24.f + 12.f*(TimeD - TimeI) : 36.f - 12.f*(TimeD - TimeI));
+						Scale *= Scaling;
+						DrawMinimapIcon(HUDAtlas, Pos, FVector2D(Scale, Scale), FVector2D(843.f, 87.f), FVector2D(43.f, 41.f), Base->MyFlag->Team->TeamColor, true);
+					}
+				}
 			}
-			if (Flag->Team && (bShowAllFlags || bCanPickupFlag || Flag->IsHome() || Flag->bCurrentlyPinged))
+			else
 			{
-				Pos = WorldToMapToScreen(Base->MyFlag->GetActorLocation());
-				if (Flag->IsHome() && !Flag->bEnemyCanPickup && !Flag->bFriendlyCanPickup)
-				{
-					DrawMinimapIcon(HUDAtlas, Pos, FVector2D(36.f, 36.f), TeamIconUV[(Flag->Team->TeamIndex==0) ? 0 : 1], FVector2D(72.f, 72.f), Base->MyFlag->Team->TeamColor, true);
-				}
-				else
-				{
-					float TimeD = 2.f*GetWorld()->GetTimeSeconds();
-					int32 TimeI = int32(TimeD);
-					float Scale = Base->MyFlag->IsHome() ? 24.f : ((TimeI % 2 == 0) ? 24.f + 12.f*(TimeD - TimeI) : 36.f - 12.f*(TimeD - TimeI));
-					DrawMinimapIcon(HUDAtlas, Pos, FVector2D(Scale, Scale), FVector2D(843.f, 87.f), FVector2D(43.f, 41.f), Base->MyFlag->Team->TeamColor, true);
-				}
+				DrawMinimapIcon(HUDAtlas, Pos, FVector2D(36.f*Scaling, 36.f*Scaling), TeamIconUV[(Base->TeamNum == 0) ? 0 : 1], FVector2D(72.f, 72.f), (Base->TeamNum == 0) ? REDHUDCOLOR : BLUEHUDCOLOR, true);
 			}
 		}
 	}

@@ -120,8 +120,9 @@ protected:
 	virtual FReply ToggleFriendsAndChat();
 	virtual FReply OnShowStatsViewer();
 	virtual FReply OnShowPlayerCard();
+	virtual FReply OnLogout();
 	virtual FText GetBrowserButtonText() const;
-
+	virtual void SignOutConfirmationResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 
 private:
 
@@ -165,7 +166,7 @@ protected:
 
 	TSharedPtr<SUTButton> HomeButton;
 
-	TSharedPtr<SUTButton> PlayerButton;
+	TSharedPtr<SUTComboButton> PlayerButton;
 
 	TSharedRef<SWidget> BuildPlayerInfo();
 	const FSlateBrush* GetAvatarImage() const;

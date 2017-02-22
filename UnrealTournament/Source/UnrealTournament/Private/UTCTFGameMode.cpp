@@ -31,7 +31,6 @@ AUTCTFGameMode::AUTCTFGameMode(const FObjectInitializer& ObjectInitializer)
 	MercyScore = 5;
 	GoalScore = 0;
 	TimeLimit = 14;
-	QuickPlayersToStart = 8;
 	DisplayName = NSLOCTEXT("UTGameMode", "CTF", "Capture the Flag");
 	CTFScoringClass = AUTCTFScoring::StaticClass();
 }
@@ -256,22 +255,6 @@ void AUTCTFGameMode::HandleMatchIntermission()
 
 	CTFGameState->bPlayingAdvantage = false;
 	CTFGameState->AdvantageTeamIndex = 255;
-
-	if (bCasterControl)
-	{
-		//Reset all casters to "not ready"
-		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
-		{
-			AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-			if (PS != nullptr && PS->bCaster)
-			{
-				PS->bReadyToPlay = false;
-			}
-		}
-		CTFGameState->bStopGameClock = true;
-		CTFGameState->SetTimeLimit(10);
-	}
-
 	BroadcastLocalized(this, UUTCTFMajorMessage::StaticClass(), 11, NULL, NULL, NULL);
 }
 
@@ -279,27 +262,7 @@ void AUTCTFGameMode::DefaultTimer()
 {
 	Super::DefaultTimer();
 
-	//If caster control is enabled. check to see if one caster is ready then start the timer
-	if (GetMatchState() == MatchState::MatchIntermission && bCasterControl)
-	{
-		bool bReady = false;
-		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
-		{
-			AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-			if (PS != nullptr && PS->bCaster && PS->bReadyToPlay)
-			{
-				bReady = true;
-				break;
-			}
-		}
-
-		if (bReady && CTFGameState->bStopGameClock)
-		{
-			CTFGameState->bStopGameClock = false;
-			CTFGameState->SetTimeLimit(11);
-		}
-	}
-	else if (CTFGameState->IsMatchInOvertime())
+	if (CTFGameState->IsMatchInOvertime())
 	{
 		float OvertimeElapsed = CTFGameState->ElapsedTime - CTFGameState->OvertimeStartTime;
 		if (OvertimeElapsed > TimeLimit)
@@ -457,25 +420,6 @@ void AUTCTFGameMode::BuildServerResponseRules(FString& OutRules)
 	{
 		OutRules += FString::Printf(TEXT("Mutator\t%s\t"), *Mut->DisplayName.ToString());
 		Mut = Mut->NextMutator;
-	}
-}
-
-void AUTCTFGameMode::SetRemainingTime(int32 RemainingSeconds)
-{
-	if (bOfflineChallenge || bBasicTrainingGame)
-	{
-		return;
-	}
-	if (RemainingSeconds > TimeLimit)
-	{
-		// still in first half;
-		UTGameState->SetRemainingTime(RemainingSeconds - TimeLimit);
-	}
-	else
-	{
-		UTGameState->SetRemainingTime(1);
-		TimeLimit = RemainingSeconds;
-		IntermissionDuration = 5;
 	}
 }
 
@@ -674,4 +618,66 @@ int32 AUTCTFGameMode::GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPl
 	}
 
 	return Super::GetComSwitch(CommandTag, ContextActor, InInstigator, World);
+}
+
+void AUTCTFGameMode::HandleDefaultLineupSpawns(LineUpTypes LineUpType, TArray<AUTCharacter*>& PlayersSpawned, TArray<AUTCharacter*>& PlayersNotSpawned)
+{
+	if (CTFGameState && (CTFGameState->GetAppropriateSpawnList(LineUpType) == nullptr))
+	{
+		uint8 TeamToHighlight = 0;
+
+		AUTTeamInfo* UTTeamInfo = CTFGameState->FindLeadingTeam();
+		if (UTTeamInfo)
+		{
+			TeamToHighlight = UTTeamInfo->GetTeamNum();
+		}
+
+		if (Teams.Num() > TeamToHighlight)
+		{
+			PlayersSpawned.Empty();
+			PlayersNotSpawned.Empty();
+
+			if (LineUpType == LineUpTypes::Intermission)
+			{
+				PlacePlayersAroundFlagBase(255, TeamToHighlight);
+			}
+			else
+			{
+				PlacePlayersAroundFlagBase(TeamToHighlight, TeamToHighlight);
+			}
+
+			for (int TeamIndex = 0; TeamIndex < Teams.Num(); ++TeamIndex)
+			{
+				const TArray<AController*>& Members = Teams[TeamIndex]->GetTeamMembers();
+				
+				//Check at the team level if we need to add these players to the spawned list or not spawned list
+				TArray<AUTCharacter*>* ListToAddPlayerTo = &PlayersSpawned;
+				if (Teams[TeamIndex]->GetTeamNum() != TeamToHighlight)
+				{
+					ListToAddPlayerTo = &PlayersNotSpawned;
+				}
+
+				for (AController* C : Members)
+				{
+					IUTTeamInterface* TeamInterface = Cast<IUTTeamInterface>(C);
+					if (C && TeamInterface)
+					{
+						AUTCharacter* UTChar = Cast<AUTCharacter>(C->GetCharacter());
+						if (UTChar)
+						{
+							ListToAddPlayerTo->Add(UTChar);
+						}
+					}
+
+					AUTPlayerController* UTPC = Cast<AUTPlayerController>(C);
+					if (UTPC && (CTFGameState->FlagBases.Num() > TeamToHighlight))
+					{
+						UTPC->SetViewTarget(CTFGameState->FlagBases[TeamToHighlight]);
+					}
+				}
+			}
+		}
+	}
+
+	Super::HandleDefaultLineupSpawns(LineUpType, PlayersSpawned, PlayersNotSpawned);
 }

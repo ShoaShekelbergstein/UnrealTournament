@@ -87,11 +87,7 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 	AUTFlagRunGameState* GameState = UTHUDOwner->GetWorld()->GetGameState<AUTFlagRunGameState>();
 
 	bool bPlayerCanRally = UTHUDOwner->UTPlayerOwner->CanPerformRally();
-	bool bShowTimer = !bPlayerCanRally && PS && PS->Team && GameState && GameState->bAttackersCanRally && ((PS->Team->TeamIndex == 0) == GameState->bRedToCap) && UTC && UTC->bCanRally && (PS->RemainingRallyDelay > 0);
-	if (GameState && GameState->CurrentRallyPoint)
-	{
-		bShowTimer = bShowTimer || (GameState && !GameState->bAttackersCanRally && PS && PS->Team && ((PS->Team->TeamIndex == 0) == GameState->bRedToCap));
-	}
+	bool bShowTimer = GameState && GameState->CurrentRallyPoint && !GameState->bAttackersCanRally && PS && PS->Team && ((PS->Team->TeamIndex == 0) == GameState->bRedToCap);
 
 	if (UTC != NULL && !UTC->IsDead())
 	{
@@ -122,6 +118,7 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 		}
 
 		HealthText.Text = FText::AsNumber(UTC->Health);
+		FLinearColor HealthColor = (UTC->Health > 35) ? DefObj->HealthText.RenderColor : HealthNegativeFlashColor;
 		if (UTC->Health != LastHealth)
 		{
 			HealthText.RenderColor = (UTC->Health > LastHealth) ? HealthPositiveFlashColor : HealthNegativeFlashColor;
@@ -135,25 +132,24 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 			HealthFlashTimer = HealthFlashTimer - DeltaTime;
 			if (HealthFlashTimer < 0.5f*HealthFlashTime)
 			{
-				HealthText.RenderColor = FMath::CInterpTo(HealthText.RenderColor, DefObj->HealthText.RenderColor, DeltaTime, (1.f / (HealthFlashTime > 0.f ? 2.f*HealthFlashTime : 1.f)));
+				HealthText.RenderColor = FMath::CInterpTo(HealthText.RenderColor, HealthColor, DeltaTime, (1.f / (HealthFlashTime > 0.f ? 2.f*HealthFlashTime : 1.f)));
 			}
 			HealthText.TextScale = 1.f + HealthFlashTimer / HealthFlashTime;
 		}
 		else
 		{
-			HealthText.RenderColor = DefObj->HealthText.RenderColor;
+			HealthText.RenderColor = HealthColor;
 			HealthText.TextScale = 1.f;
 		}
 
-		int32 DesiredXOffset = 0;
-
+		float DesiredXOffset = 0.f;
 		bShowFlagInfo = PS && PS->CarriedObject;
 		if (bShowFlagInfo || bPlayerCanRally || bShowTimer)
 		{
 			if ( UTHUDOwner->GetQuickInfoHidden() )
 			{
 				// We have the flag.. make room for it.
-				DesiredXOffset = -64;		
+				DesiredXOffset = -64.f;		
 			}
 		}
 
@@ -212,7 +208,7 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 		FlagIcon.UVs = FlagHolderIconUVs;
 		FlagIcon.bUseTeamColors = false;
 		FlagIcon.RenderOpacity = 1.0f;
-		FLinearColor TeamColor = (PS && PS->Team && PS->Team->TeamIndex == 1) ? REDHUDCOLOR : BLUEHUDCOLOR;
+		FLinearColor TeamColor = (PS && PS->Team && PS->Team->TeamIndex == 1) ? BLUEHUDCOLOR : REDHUDCOLOR;
 		FlagIcon.RenderColor = (bPlayerCanRally|| bShowTimer) ? FLinearColor::Yellow : TeamColor;
 		RenderObj_Texture(FlagIcon);
 
@@ -226,9 +222,7 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 		}
 		else if (bShowTimer)
 		{
-			int32 RemainingTime = PS->CarriedObject && GameState && GameState->CurrentRallyPoint
-				? FMath::Min(int32(GameState->CurrentRallyPoint->RallyReadyDelay), 1 + GameState->CurrentRallyPoint->ReplicatedCountdown/10)
-				: 1 + FMath::Max(int32(PS->RemainingRallyDelay), (GameState && GameState->CurrentRallyPoint) ? GameState->CurrentRallyPoint->ReplicatedCountdown/10 : 0);
+			int32 RemainingTime = FMath::Min(int32(GameState->CurrentRallyPoint->RallyReadyDelay), 1 + GameState->CurrentRallyPoint->ReplicatedCountdown / 10);
 			FlagText.Text = FText::AsNumber(RemainingTime);
 			RenderObj_Text(FlagText);
 		}
@@ -271,9 +265,8 @@ void UUTHUDWidget_Paperdoll::DrawRallyIcon(float DeltaTime, AUTRallyPoint* Rally
 	}
 	for (int32 i = 0; i < RallyAnimTimers.Num(); i++)
 	{
-
 		RallyAnimTimers[i] += DeltaTime;
-		if (RallyAnimTimers[i] > RALLY_ANIMATION_TIME) RallyAnimTimers[i] = 0;
+		if (RallyAnimTimers[i] > RALLY_ANIMATION_TIME) RallyAnimTimers[i] = 0.f;
 		float DrawPosition = (RallyAnimTimers[i] / RALLY_ANIMATION_TIME);
 	
 		float XPos = FMath::InterpEaseOut<float>(64.0f, 0.0f, DrawPosition, 2.0f);

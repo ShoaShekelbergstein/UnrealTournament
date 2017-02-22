@@ -40,6 +40,9 @@ class UNREALTOURNAMENT_API UUTCTFMajorMessage : public UUTCarriedObjectMessage
 		FText RallyCompleteMessage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
+		FText RallyClearMessage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
 		USoundBase* FlagWarningSound;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)

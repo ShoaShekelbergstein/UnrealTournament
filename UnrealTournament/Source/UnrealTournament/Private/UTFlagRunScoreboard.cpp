@@ -37,10 +37,10 @@ UUTFlagRunScoreboard::UUTFlagRunScoreboard(const FObjectInitializer& ObjectIniti
 	DefendLines.Add(FText::GetEmpty());
 	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine2", "* You have 5 lives.  The attackers do not have a life limit."));
 	DefendLines.Add(FText::GetEmpty());
-	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine3", "* Attackers can earn 1 to 3 stars depending on how quickly they score."));
-	DefendLines.Add(FText::GetEmpty());
-	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine4", "* Defenders earn 1 star for preventing the attackers from scoring."));
-	DefendLines.Add(FText::GetEmpty());
+//	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine3", "* Attackers can earn 1 to 3 stars depending on how quickly they score."));
+//	DefendLines.Add(FText::GetEmpty());
+//	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine4", "* Defenders earn 1 star for preventing the attackers from scoring."));
+//	DefendLines.Add(FText::GetEmpty());
 	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine5", "* When the flag carrier powers up a Rally Point, teammates can"));
 	DefendLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine5b", "  teleport to it by pressing the rally button."));
 
@@ -49,10 +49,10 @@ UUTFlagRunScoreboard::UUTFlagRunScoreboard(const FObjectInitializer& ObjectIniti
 	AttackLines.Add(FText::GetEmpty());
 	AttackLines.Add(NSLOCTEXT("UTScoreboard", "AttackLine2", "* Defenders have 5 lives.  You do not have a life limit."));
 	AttackLines.Add(FText::GetEmpty());
-	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine3", "* Attackers can earn 1 to 3 stars depending on how quickly they score."));
-	AttackLines.Add(FText::GetEmpty());
-	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine4", "* Defenders earn 1 star for preventing the attackers from scoring."));
-	AttackLines.Add(FText::GetEmpty());
+//	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine3", "* Attackers can earn 1 to 3 stars depending on how quickly they score."));
+//	AttackLines.Add(FText::GetEmpty());
+//	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine4", "* Defenders earn 1 star for preventing the attackers from scoring."));
+//	AttackLines.Add(FText::GetEmpty());
 	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine5", "* When the flag carrier powers up a Rally Point, teammates can"));
 	AttackLines.Add(NSLOCTEXT("UTScoreboard", "DefenseLine5b", "  teleport to it by pressing the rally button."));
 
@@ -149,7 +149,7 @@ void UUTFlagRunScoreboard::DrawTeamPanel(float RenderDelta, float& YOffset)
 		float BackgroundY = YOffset - 2.f*Height;
 		int32 CurrentTiebreakValue = GS->TiebreakValue - PendingTiebreak;
 		float ChargePct = Width*FMath::Clamp(CurrentTiebreakValue, -100, 100) / 200.f;
-		FLinearColor TiebreakColor = (CurrentTiebreakValue > 0) ? GS->Teams[0]->TeamColor : FLinearColor::Blue; 
+		FLinearColor TiebreakColor = (CurrentTiebreakValue > 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
 		float ChargeOffset = (ChargePct < 0.f) ? 0.f : ChargePct;
 		DrawTexture(UTHUDOwner->HUDAtlas, 0.5f*Canvas->ClipX - ChargeOffset, BackgroundY, FMath::Abs(ChargePct), Height, 127.f, 641, 150.f, 21.f, 1.f, TiebreakColor, FVector2D(0.f, 0.5f));
 
@@ -232,6 +232,11 @@ void UUTFlagRunScoreboard::AnnounceRoundScore(AUTTeamInfo* InScoringTeam, APlaye
 		}
 		else if (ScoringTeam)
 		{
+			if (!GS->IsTeamOnOffense(ScoringTeam->TeamIndex))
+			{
+				int32 MessageIndex = (GS && (GS->CTFRound == 6) && (Reason == 1)) ? 10 : 9;
+				UTPlayerOwner->ClientReceiveLocalizedMessage(UUTCTFRewardMessage::StaticClass(), MessageIndex);
+			}
 			UTPlayerOwner->ClientReceiveLocalizedMessage(UUTShowdownGameMessage::StaticClass(), 3 + ScoringTeam->TeamIndex);
 		}
 	}
@@ -304,18 +309,18 @@ void UUTFlagRunScoreboard::GetScoringStars(int32& NumStars, FLinearColor& StarCo
 	if (GS != nullptr)
 	{
 		NumStars = 1;
-		StarColor = GS->BronzeBonusColor;
+		StarColor = BRONZECOLOR;
 		if (Reason == 0)
 		{
 			if (RoundBonus >= GS->GoldBonusThreshold)
 			{
 				NumStars = 3;
-				StarColor = GS->GoldBonusColor;
+				StarColor = GOLDCOLOR;
 			}
 			else if (RoundBonus >= GS->SilverBonusThreshold)
 			{
 				NumStars = 2;
-				StarColor = GS->SilverBonusColor;
+				StarColor = SILVERCOLOR;
 			}
 		}
 	}
@@ -337,7 +342,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 	float CurrentTime = GetWorld()->GetTimeSeconds() - ScoreReceivedTime;
 
 	int32 NumStars = 1;
-	FLinearColor BonusColor = GS->BronzeBonusColor;
+	FLinearColor BonusColor = BRONZECOLOR;
 	GetScoringStars(NumStars, BonusColor);
 
 	if (GS && GS->HasMatchEnded() && (CurrentTime >= 2.f + WooshStart + NumStars*WooshInterval + WooshTime + 1.f + FMath::Min(FMath::Abs(float(PendingTiebreak)), 20.f) * 0.05f + FMath::Max(0.f, FMath::Abs(float(PendingTiebreak)) - 20.f) * 0.025f))
@@ -350,6 +355,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 	float YL, EmphasisXL;
 	Canvas->StrLen(InFont, EmphasisText.ToString(), EmphasisXL, YL);
 	float YPos = (LastScorePanelYOffset > 0.f) ? LastScorePanelYOffset - 2.f : 0.25f*Canvas->ClipY;
+	float TopY = YPos;
 	float StarXL, StarYL;
 	UFont* StarFont = UTHUDOwner->HugeFont;
 	Canvas->StrLen(StarFont, StarText.ToString(), StarXL, StarYL);
@@ -364,10 +370,21 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 	float XOffset = 0.5f*(Canvas->ClipX - ScoreWidth);
 	DrawFramedBackground(XOffset, YPos, ScoreWidth, RenderScale * ScoreHeight);
 
-	// Draw scoring team string
 	FFontRenderInfo TextRenderInfo;
 	TextRenderInfo.bEnableShadow = true;
 	TextRenderInfo.bClipText = true;
+
+	// Draw Round number
+	Canvas->SetLinearDrawColor(FLinearColor::White);
+	FFormatNamedArguments Args;
+	Args.Add("RoundNum", FText::AsNumber(GS->CTFRound));
+	FText RoundText = FText::Format(NSLOCTEXT("FlagRun", "Round", "Round {RoundNum}"), Args);
+	float RoundXL, SmallYL;
+	Canvas->StrLen(UTHUDOwner->SmallFont, RoundText.ToString(), RoundXL, SmallYL);
+	Canvas->DrawText(UTHUDOwner->SmallFont, RoundText, 0.5f * (Canvas->ClipX - RenderScale * RoundXL), YPos, RenderScale, RenderScale, TextRenderInfo);
+	YPos += 0.65f*SmallYL*RenderScale;
+
+	// Draw scoring team string
 	FLinearColor EmphasisColor = (ScoringTeam && (ScoringTeam->TeamIndex == 0)) ? REDHUDCOLOR : BLUEHUDCOLOR;
 	float ScoreX = 0.5f * (Canvas->ClipX - RenderScale * (EmphasisXL + PostXL));
 
@@ -379,7 +396,6 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 	Canvas->DrawText(InFont, ScorePostfix, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
 
 	YPos += YL*RenderScale;
-
 	ScoreX = 0.5f * (Canvas->ClipX - 1.5f * RenderScale * StarXL * (float(NumStars) - 0.5f));
 	Canvas->SetLinearDrawColor(BonusColor);
 
@@ -393,7 +409,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 				UTHUDOwner->UTPlayerOwner->ClientPlaySound(StarPoundSound);
 			}
 			float StarXPos = ScoreX;
-			float StarYPos = YPos - 0.31f*YL*RenderScale;
+			float StarYPos = YPos - 0.42f*YL*RenderScale;
 			if (CurrentTime >= WooshStart + i*WooshInterval)
 			{
 				if (CurrentTime - DeltaTime < WooshStart + i*WooshInterval)
@@ -446,7 +462,6 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 	{
 		float BonusXL, BonusYL;
 		UFont* BonusFont = UTHUDOwner->MediumFont;
-		FFormatNamedArguments Args;
 		Args.Add("Bonus", FText::AsNumber(FMath::Abs(PendingTiebreak)));
 		FText BonusText = FText::Format(NSLOCTEXT("FlagRun", "BonusTime", "Bonus Time +{Bonus}"), Args);
 		Canvas->StrLen(BonusFont, BonusText.ToString(), BonusXL, BonusYL);
@@ -466,7 +481,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 				}
 			}
 			FVector LineEndPoint(0.5f*Canvas->ClipX, 0.06f*Canvas->ClipY, 0.f);
-			FVector LineStartPoint(0.545f*Canvas->ClipX, YPos + 1.19f*YL*RenderScale, 0.f);
+			FVector LineStartPoint(0.545f*Canvas->ClipX, YPos + 1.05f*YL*RenderScale, 0.f);
 			FLinearColor LineColor = EmphasisColor;
 			LineColor.A = 0.2f;
 			FBatchedElements* BatchedElements = Canvas->Canvas->GetBatchedElements(FCanvas::ET_Line);
@@ -475,15 +490,15 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 		}
 		Canvas->SetLinearDrawColor(FLinearColor::White);
 		TextRenderInfo.bEnableShadow = true;
-		Canvas->DrawText(BonusFont, BonusText, 0.5f*(Canvas->ClipX - RenderScale*BonusXL), YPos + 0.99f*YL*RenderScale, RenderScale, RenderScale, TextRenderInfo);
+		Canvas->DrawText(BonusFont, BonusText, 0.5f*(Canvas->ClipX - RenderScale*BonusXL), YPos + 0.85f*YL*RenderScale, RenderScale, RenderScale, TextRenderInfo);
 	}
 
 	// Draw scoring player string
 	if (ScoringPlayer)
 	{
-		YPos = YPos + StarYL*RenderScale;
 		float DeliveredXL;
 		Canvas->StrLen(UTHUDOwner->SmallFont, DeliveredPrefix.ToString(), DeliveredXL, YL);
+		YPos = TopY + RenderScale * (ScoreHeight - 1.1f*YL);
 		EmphasisText = FText::FromString(ScoringPlayer->PlayerName);
 		Canvas->StrLen(UTHUDOwner->SmallFont, EmphasisText.ToString(), EmphasisXL, YL);
 
@@ -509,6 +524,16 @@ void UUTFlagRunScoreboard::DrawScorePanel(float RenderDelta, float& YOffset)
 	}
 }
 
+FText UUTFlagRunScoreboard::GetRoundTitle(bool bIsOnDefense) const
+{
+	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+	FText Title = bIsOnDefense ? DefendTitle : AttackTitle;
+	FFormatNamedArguments Args;
+	Args.Add("RoundNum", FText::AsNumber(1));
+	Args.Add("NumRounds", FText::AsNumber(GS->NumRounds));
+	return FText::Format(Title, Args);
+}
+
 void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 {
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
@@ -523,6 +548,15 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 		}
 		if (bNeedReplay && GS->ScoringPlayerState)
 		{
+			// take care of any effects that got frozen
+			for (FObjectIterator It(UParticleSystemComponent::StaticClass()); It; ++It)
+			{
+				UParticleSystemComponent* PSC = (UParticleSystemComponent*)*It;
+				if (PSC && PSC->GetOwner() && (PSC->CustomTimeDilation == 0.001f) && (PSC->GetOwner()->GetWorld() == GetWorld()))
+				{
+					PSC->CustomTimeDilation = 1.f;
+				}
+			}
 			bNeedReplay = false;
 			if (GetWorld()->DemoNetDriver && (GetWorld()->GetTimeSeconds() - UTPlayerOwner->CreationTime > 15.0f + ScoreInfoDuration))
 			{
@@ -572,13 +606,9 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 				float Width = 0.38f * Canvas->ClipX;
 				DrawFramedBackground(0.5f * (Canvas->ClipX - Width), LeftCorner.Y, Width, Height);
 
-				FText Title = bIsOnDefense ? DefendTitle : AttackTitle;
 				float TextYPos = LeftCorner.Y + 16.f*RenderScale;
-				FFormatNamedArguments Args;
-				Args.Add("RoundNum", FText::AsNumber(1));
-				Args.Add("NumRounds", FText::AsNumber(GS->NumRounds));
-				FText FormattedTitle = FText::Format(Title, Args);
-				DrawText(FormattedTitle, MinimapCenter.X*Canvas->ClipX, TextYPos, UTHUDOwner->MediumFont, RenderScale, 1.0f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
+				FText FormattedTitle = GetRoundTitle(bIsOnDefense);
+				DrawText(FormattedTitle, MinimapCenter.X*Canvas->ClipX, TextYPos, UTHUDOwner->MediumFont, FVector2D(1.f, 1.f), FLinearColor::Black,RenderScale, 1.0f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
 				float TextXPos = 0.5f*Canvas->ClipX - 0.47f*Width;
 				TextYPos += 44.f*RenderScale;
 
@@ -611,7 +641,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 				for (int32 LineIndex = 0; LineIndex < NumLines; LineIndex++)
 				{
 					FText NextLine = bIsOnDefense ? DefendLines[LineIndex] : AttackLines[LineIndex];
-					DrawText(NextLine, TextXPos, TextYPos, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
+					DrawText(NextLine, TextXPos, TextYPos, UTHUDOwner->SmallFont, FVector2D(1.f, 1.f), FLinearColor::Black, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
 					TextYPos += NextLine.IsEmpty() ? 12.f*RenderScale : 32.f*RenderScale;
 				}
 			}

@@ -118,7 +118,21 @@ public:
 
 		AUTBaseGameMode* BaseGameMode = GetBaseGameMode();
 
-		if ((Flags & MATCH_FLAG_InProgress) == MATCH_FLAG_InProgress) Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("In Progress");
+		if ((Flags & MATCH_FLAG_InProgress) == MATCH_FLAG_InProgress)
+		{
+			FString StateString = TEXT("In Progress");
+			if (MatchInfo.IsValid())
+			{
+				StateString = MatchInfo->MatchUpdate.MatchState != NAME_None ? MatchInfo->MatchUpdate.MatchState.ToString() : TEXT("In Progress");
+			}
+			else if (MatchData.IsValid())
+			{
+				StateString = MatchData->MatchData.MatchState != NAME_None ? MatchData->MatchData.MatchState.ToString() : TEXT("In Progress");
+			}
+
+
+			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + StateString;
+		}
 		if ((Flags & MATCH_FLAG_Beginner) == MATCH_FLAG_Beginner)
 		{
 			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("Beginner");
@@ -133,7 +147,7 @@ public:
 			int32 MatchRankCheck = MatchInfo.IsValid() ? MatchInfo->RankCheck : (MatchData.IsValid() ? MatchData->RankCheck: DEFAULT_RANK_CHECK);
 			int32 PlayerRankCheck = PlayerState->GetRankCheck(BaseGameMode);
 
-			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("Ranked");
+			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("Rank Locked");
 		}
 
 		if ((Flags & MATCH_FLAG_NoJoinInProgress) == MATCH_FLAG_NoJoinInProgress) Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT("\n")) + TEXT("<img src=\"UT.Icon.Lock.Small\"/> No Join in Progress");
@@ -448,6 +462,7 @@ protected:
 	bool bSuspendPopups;
 
 	EVisibility GetMatchButtonVis() const;
+	TSharedPtr<SButton> StartMatchButton;
 };
 
 #endif

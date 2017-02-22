@@ -75,14 +75,11 @@ class UNREALTOURNAMENT_API AUTTeamGameMode : public AUTGameMode
 	virtual void BroadcastDeathMessage(AController* Killer, AController* Other, TSubclassOf<UDamageType> DamageType) override;
 	virtual bool AvoidPlayerStart(class AUTPlayerStart* P) override;
 
-	virtual bool CanSpectate_Implementation(APlayerController* Viewer, APlayerState* ViewTarget) override
-	{
-		AUTPlayerController* PC = Cast<AUTPlayerController>(Viewer);
-		return (Viewer->PlayerState->bOnlySpectator || ViewTarget == NULL || ViewTarget->bOnlySpectator || (PC != NULL && PC->GetTeamNum() == 255) || GetWorld()->GetGameState<AUTGameState>()->OnSameTeam(Viewer, ViewTarget));
-	}
-
 	virtual void CheckBotCount() override;
 	virtual void DefaultTimer() override;
+
+	/** Balance teams bots are on if necessary and desired. */
+	virtual void CheckBotTeams();
 
 	/** whether we should force teams to be balanced right now
 	 * @param bInitialTeam - if true, request comes from a player requesting its initial team (not a team switch)

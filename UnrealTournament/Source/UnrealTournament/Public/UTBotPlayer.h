@@ -6,7 +6,7 @@
 #include "UTBotPlayer.generated.h"
 
 UCLASS()
-class AUTBotPlayer : public AUTBot
+class UNREALTOURNAMENT_API AUTBotPlayer : public AUTBot
 {
 	GENERATED_BODY()
 public:

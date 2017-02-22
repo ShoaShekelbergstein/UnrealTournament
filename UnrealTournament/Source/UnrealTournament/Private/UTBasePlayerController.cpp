@@ -15,6 +15,7 @@
 #include "UTParty.h"
 #include "Net/OnlineEngineInterface.h"
 #include "UnrealTournamentFullScreenMovie.h"
+#include "UTHeartBeatManager.h"
 
 AUTBasePlayerController::AUTBasePlayerController(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -81,26 +82,14 @@ void AUTBasePlayerController::SetupInputComponent()
 
 	Super::SetupInputComponent();
 	InputComponent->BindAction("ShowMenu", IE_Released, this, &AUTBasePlayerController::execShowMenu);
-
-
-
 }
 
 void AUTBasePlayerController::SetName(const FString& S)
 {
-	if (!S.IsEmpty())
-	{
-		UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
-		if (LocalPlayer != NULL)
-		{
-			LocalPlayer->SetNickname(S);
-			UUTProfileSettings* ProfileSettings = GetProfileSettings();
-			if (ProfileSettings != nullptr)
-			{
-				LocalPlayer->SaveProfileSettings();
-			}
-		}
-	}
+}
+
+void AUTBasePlayerController::ClanName(const FString& S)
+{
 }
 
 void AUTBasePlayerController::execShowMenu()
@@ -124,6 +113,29 @@ void AUTBasePlayerController::HideMenu()
 	{
 		LP->HideMenu();
 	}
+}
+
+void AUTBasePlayerController::ServerChangeClanName_Implementation(const FString& S)
+{
+	if (UTPlayerState)
+	{
+		// Unicode 160 is an empty space, not sure what other characters are broken in our font
+		FString ClampedName = (S.Len() > 8) ? S.Left(8) : S;
+		FString InvalidNameChars = FString(INVALID_NAME_CHARACTERS);
+		for (int32 i = ClampedName.Len() - 1; i >= 0; i--)
+		{
+			if (InvalidNameChars.GetCharArray().Contains(ClampedName.GetCharArray()[i]))
+			{
+				ClampedName.GetCharArray().RemoveAt(i);
+			}
+		}
+		UTPlayerState->ClanName = ClampedName;
+	}
+}
+
+bool AUTBasePlayerController::ServerChangeClanName_Validate(const FString& S)
+{
+	return true;
 }
 
 #if !UE_SERVER
@@ -365,7 +377,7 @@ void AUTBasePlayerController::ClientRankedGameAbandoned_Implementation()
 	if (LP)
 	{
 		LP->LastRankedMatchSessionId.Empty();
-		LP->LastRankedMatchUniqueId.Empty();
+		LP->LastRankedMatchPlayerId.Empty();
 		LP->LastRankedMatchTimeString.Empty();
 		LP->SaveConfig();
 
@@ -383,7 +395,7 @@ void AUTBasePlayerController::ClientMatchmakingGameComplete_Implementation()
 	if (LP)
 	{
 		LP->LastRankedMatchSessionId.Empty();
-		LP->LastRankedMatchUniqueId.Empty();
+		LP->LastRankedMatchPlayerId.Empty();
 		LP->LastRankedMatchTimeString.Empty();
 		LP->SaveConfig();
 	}
@@ -395,7 +407,7 @@ void AUTBasePlayerController::ClientReturnToLobby_Implementation()
 	if (LP)
 	{
 		LP->LastRankedMatchSessionId.Empty();
-		LP->LastRankedMatchUniqueId.Empty();
+		LP->LastRankedMatchPlayerId.Empty();
 		LP->LastRankedMatchTimeString.Empty();
 		LP->SaveConfig();
 	}
@@ -945,7 +957,79 @@ void AUTBasePlayerController::ReceivedPlayer()
 	}
 
 	SendStatsIDToServer();
+	SendCosmeticsToServer();
 
+	if (GetNetMode() == NM_Client || GetNetMode() == NM_Standalone)
+	{
+		InitializeHeartbeatManager();
+	}
+}
+
+void AUTBasePlayerController::SendCosmeticsToServer()
+{
+	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(Player);
+	if (UTLocalPlayer)
+	{
+		FString CosmeticsUsage = FString::Printf(TEXT("?Hat=%s?LeaderHat=%s?Eyewear=%s?GroupTaunt=%s?Taunt=%s?Taunt2=%s?HatVar=%d?EyewearVar=%d"), 
+			*UTLocalPlayer->GetHatPath(), 
+			*UTLocalPlayer->GetLeaderHatPath(),
+			*UTLocalPlayer->GetEyewearPath(), 
+			*UTLocalPlayer->GetGroupTauntPath(), 
+			*UTLocalPlayer->GetTauntPath(), 
+			*UTLocalPlayer->GetTaunt2Path(), 
+			UTLocalPlayer->GetHatVariant(), 
+			UTLocalPlayer->GetEyewearVariant());
+
+		ServerReceiveCosmetics(CosmeticsUsage);
+	}
+}
+
+bool AUTBasePlayerController::ServerReceiveCosmetics_Validate(const FString& CosmeticString)
+{
+	return true;
+}
+
+void AUTBasePlayerController::ServerReceiveCosmetics_Implementation(const FString& CosmeticString)
+{
+	FString InOpt;
+	AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+	if (PS)
+	{
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("Hat"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveHatClass(InOpt);
+		}
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("LeaderHat"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveLeaderHatClass(InOpt);
+		}
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("Eyewear"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveEyewearClass(InOpt);
+		}
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("GroupTaunt"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveGroupTauntClass(InOpt);
+		}
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("Taunt"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveTauntClass(InOpt);
+		}
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("Taunt2"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveTaunt2Class(InOpt);
+		}
+		int32 HatVar = UGameplayStatics::GetIntOption(CosmeticString, TEXT("HatVar"), 0);
+		PS->ServerReceiveHatVariant(HatVar);
+		int32 EyewearVar = UGameplayStatics::GetIntOption(CosmeticString, TEXT("EyewearVar"), 0);
+		PS->ServerReceiveEyewearVariant(EyewearVar);
+	}
 }
 
 bool AUTBasePlayerController::ServerReceiveStatsID_Validate(const FString& NewStatsID)
@@ -1256,4 +1340,13 @@ FText AUTBasePlayerController::GetTutorialSectionText(TEnumAsByte<ETutorialSecti
 	}
 
 	return FText::GetEmpty();
+}
+
+void AUTBasePlayerController::InitializeHeartbeatManager()
+{
+	if (!HeartbeatManager)
+	{
+		HeartbeatManager = NewObject<UUTHeartbeatManager>(this);
+		HeartbeatManager->StartManager(this);
+	}
 }

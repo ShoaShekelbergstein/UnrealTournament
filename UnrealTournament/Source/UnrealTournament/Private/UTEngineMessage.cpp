@@ -25,6 +25,18 @@ Super(ObjectInitializer)
 
 FText UUTEngineMessage::GetText(int32 Switch, bool bTargetsPlayerState1, class APlayerState* RelatedPlayerState_1, class APlayerState* RelatedPlayerState_2, class UObject* OptionalObject) const
 {
+	if (RelatedPlayerState_1 && RelatedPlayerState_1->bOnlySpectator)
+	{
+		if (Switch != 16)
+		{
+			return FText::GetEmpty();
+		}
+		AUTPlayerState* UTPS = Cast<AUTPlayerState>(RelatedPlayerState_1);
+		if (UTPS != nullptr)
+		{
+			return FText::GetEmpty();
+		}
+	}
 	switch (Switch)
 	{
 	case 1:

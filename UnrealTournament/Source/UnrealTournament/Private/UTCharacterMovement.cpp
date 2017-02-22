@@ -534,6 +534,21 @@ void UUTCharacterMovement::TickComponent(float DeltaTime, enum ELevelTick TickTy
 		return;
 	}
 
+	// FIXMESTEVE do when character gets team, not every tick
+	// FIXMESTEVE TODO - need to check overlaps and push apart
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (GS && !GS->bTeamCollision && !bForceTeamCollision && UTOwner && Cast<UPrimitiveComponent>(UpdatedComponent))
+	{
+		for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
+		{
+			AUTCharacter* Char = It->IsValid() ? Cast<AUTCharacter>((*It).Get()) : nullptr;
+			if (Char && UTOwner != Char && !Char->IsDead())
+			{
+				((UPrimitiveComponent *)(UpdatedComponent))->IgnoreActorWhenMoving(Char, GS->OnSameTeam(UTOwner, Char));
+			}
+		}
+	}
+
 	if (CharacterOwner->Role > ROLE_SimulatedProxy)
 	{
 		if (CharacterOwner->Role == ROLE_Authority)
@@ -698,8 +713,8 @@ void UUTCharacterMovement::AddDampedImpulse(FVector Impulse, bool bSelfInflicted
 		float DampingThreshold = bSelfInflicted ? MaxUndampedImpulse : MaxAdditiveDodgeJumpSpeed;
 		if ((FinalImpulse.Z > 0.f) && (FinalImpulse.Z + PendingVelocity.Z > DampingThreshold))
 		{
-			float PctBelowBoost = FMath::Clamp((DampingThreshold - PendingVelocity.Z) / FinalImpulse.Z, 0.f, 1.f);
-			FinalImpulse.Z *= (PctBelowBoost + (1.f - PctBelowBoost)*FMath::Max(0.5f, PctBelowBoost));
+			float PctBelowBoost = FMath::Clamp((DampingThreshold - PendingVelocity.Z) / DampingThreshold, 0.f, 1.f);
+			FinalImpulse.Z *= (PctBelowBoost + (1.f - PctBelowBoost)*FMath::Max(0.25f, PctBelowBoost));
 		}
 
 		PendingImpulseToApply += FinalImpulse;
@@ -1047,6 +1062,7 @@ void UUTCharacterMovement::PerformMovement(float DeltaSeconds)
 	{
 		return;
 	}
+
 	AUTCharacter* UTOwner = Cast<AUTCharacter>(CharacterOwner);
 	bSlidingAlongWall = false;
 	if (!UTOwner || !UTOwner->IsRagdoll())
@@ -1091,6 +1107,13 @@ void UUTCharacterMovement::PerformMovement(float DeltaSeconds)
 		
 		if (Velocity.Size() > 0.f)
 		{
+			// Flag this player as not being idle.
+			AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(CharacterOwner->PlayerState);
+			if (UTPlayerState) 
+			{
+				UTPlayerState->NotIdle();
+			}
+
 //			UE_LOG(UT, Warning, TEXT("Delta %f Velocity %s Speed %f AccelRate %f"), DeltaSeconds, *Velocity.ToString(), Velocity.Size(), (Velocity - OldVelocity).Size() / DeltaSeconds);
 		}
 	}
@@ -1177,7 +1200,7 @@ float UUTCharacterMovement::GetMaxAcceleration() const
 
 bool UUTCharacterMovement::CanSprint() const
 {
-	if (CharacterOwner && IsMovingOnGround() && !IsCrouching() && (GetCurrentMovementTime() > SprintStartTime)) 
+/*	if (CharacterOwner && IsMovingOnGround() && !IsCrouching() && (GetCurrentMovementTime() > SprintStartTime)) 
 	{
 		AUTPlayerState* UTPlayerState = CharacterOwner ? Cast<AUTPlayerState>(CharacterOwner->PlayerState) : nullptr;
 		if (UTPlayerState && UTPlayerState->CarriedObject && UTPlayerState->CarriedObject->bSlowsMovement)
@@ -1188,7 +1211,7 @@ bool UUTCharacterMovement::CanSprint() const
 		FRotator TurnRot(0.f, CharacterOwner->GetActorRotation().Yaw, 0.f);
 		FVector X = FRotationMatrix(TurnRot).GetScaledAxis(EAxis::X);
 		return (((X | Velocity.GetSafeNormal()) > 0.8f) && ((X | Acceleration.GetSafeNormal()) > 0.9f));
-	}
+	}*/
 	return false;
 }
 
@@ -1254,9 +1277,9 @@ void UUTCharacterMovement::ApplyVelocityBraking(float DeltaTime, float Friction,
 
 void UUTCharacterMovement::CalcVelocity(float DeltaTime, float Friction, bool bFluid, float BrakingDeceleration)
 {
+	AUTCharacter* UTOwner = Cast<AUTCharacter>(CharacterOwner);
 	if (MovementMode == MOVE_Walking)
 	{
-		AUTCharacter* UTOwner = Cast<AUTCharacter>(CharacterOwner);
 		if (UTOwner != NULL)
 		{
 			Friction *= (1.0f - UTOwner->GetWalkMovementReductionPct());
@@ -1273,6 +1296,41 @@ void UUTCharacterMovement::CalcVelocity(float DeltaTime, float Friction, bool bF
 		}
 	}
 	Super::CalcVelocity(DeltaTime, Friction, bFluid, BrakingDeceleration);
+
+	// force away from stopped teammates
+	UPrimitiveComponent* UpdatedPrim = Cast<UPrimitiveComponent>(UpdatedComponent);
+	if (UpdatedPrim && UTOwner && ((Acceleration.IsZero() && (MovementMode != MOVE_Falling)) || (Velocity.Size2D() < MaxWalkSpeedCrouched)))
+	{
+		for (int32 i = 0; i < UpdatedPrim->MoveIgnoreActors.Num(); i++)
+		{
+			AUTCharacter* OverlappedChar = Cast<AUTCharacter>(UpdatedPrim->MoveIgnoreActors[i]);
+			// if overlapping, force away
+			if (OverlappedChar)
+			{
+				FVector Diff = OverlappedChar->GetActorLocation() - UTOwner->GetActorLocation();
+				// check for overlap.
+				if ((Diff.SizeSquared2D() < 1.21f * FMath::Square(UTOwner->GetCapsuleComponent()->GetUnscaledCapsuleRadius() + OverlappedChar->GetCapsuleComponent()->GetUnscaledCapsuleRadius())) 
+					&& (FMath::Abs(Diff.Z) < UTOwner->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() + OverlappedChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()))
+				{
+					if (!OverlappedChar->UTCharacterMovement || OverlappedChar->UTCharacterMovement->Acceleration.IsZero() || (OverlappedChar->GetVelocity().Size2D() < MaxWalkSpeedCrouched))
+					{
+						float VelZ = Velocity.Z;
+						FVector DeflectionDir = Velocity.IsNearlyZero() ? -1.f*Diff.GetSafeNormal() : (Velocity ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
+						if ((DeflectionDir | Diff) > 0.f)
+						{
+							DeflectionDir *= -1.f;
+						}
+						Velocity = FMath::Max(0.f, Velocity.Size() - 0.7f*MaxWalkSpeedCrouched) * Velocity.GetSafeNormal() + 0.7f*MaxWalkSpeedCrouched * DeflectionDir.GetSafeNormal();
+						if (MovementMode == MOVE_Falling)
+						{
+							Velocity.Z = VelZ;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	//UE_LOG(UTNet, Warning, TEXT("At %f DeltaTime %f Velocity is %f %f %f from acceleration %f %f slide %d"), GetCurrentSynchTime(), DeltaTime, Velocity.X, Velocity.Y, Velocity.Z, Acceleration.X, Acceleration.Y, bIsFloorSliding);
 
 	// workaround for engine path following code not setting Acceleration correctly

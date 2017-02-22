@@ -6,6 +6,7 @@
 #include "../Widgets/SUTChatWidget.h"
 #include "../Widgets/SUTFriendsWidget.h"
 #include "../SUWindowsStyle.h"
+#include "../SUTStyle.h"
 
 #if !UE_SERVER
 
@@ -14,11 +15,19 @@ void SUTFriendsPopupWindow::Construct(const FArguments& InArgs)
 	PlayerOwner = InArgs._PlayerOwner;
 	checkSlow(PlayerOwner != NULL);
 	ChildSlot
-		.Padding(0.0f,36.0f,0.0f,0.0f)
+		.Padding(0.0f,0.0f,0.0f,0.0f)
 		.VAlign(VAlign_Fill)
 		.HAlign(HAlign_Fill)
 		[
 			SNew(SOverlay)
+			+ SOverlay::Slot()
+			.HAlign(HAlign_Fill)
+			.VAlign(VAlign_Fill)
+			[
+				SNew(SImage)
+				.Image(SUTStyle::Get().GetBrush("UT.Background.Shadow"))
+				.ColorAndOpacity(FLinearColor(1.0f,1.0f,1.0f,0.5f))
+			]
 			+ SOverlay::Slot()
 			.HAlign(HAlign_Fill)
 			.VAlign(VAlign_Fill)
@@ -40,7 +49,7 @@ void SUTFriendsPopupWindow::Construct(const FArguments& InArgs)
 			+SOverlay::Slot()
 			.HAlign(HAlign_Right)
 			.VAlign(VAlign_Top)
-			.Padding(FMargin(15.0f, 30.0f))
+			.Padding(FMargin(80.0f, 46.0f))
 			[
 				SNew(SBorder)
 				.Padding(0)

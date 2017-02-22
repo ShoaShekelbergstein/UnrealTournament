@@ -68,12 +68,11 @@ float AUTArmor::BotDesireability_Implementation(APawn* Asker, AController* Reque
 
 bool AUTArmor::HandleArmorEffects(AUTCharacter* HitPawn) const
 {
-	bool bResult = false;
-	bool bRecentlyRendered = (HitPawn != NULL) && !HitPawn->IsPendingKillPending() && (HitPawn->GetWorld()->GetTimeSeconds() - HitPawn->GetLastRenderTime() < 1.0f);
+	bool bRecentlyRendered = (HitPawn != NULL) && !HitPawn->IsPendingKillPending() && (HitPawn->GetWorld()->GetTimeSeconds() - HitPawn->GetMesh()->LastRenderTime < 0.05f);
 	UParticleSystem* ChosenImpactEffect = (ShieldImpactEffect && (HitPawn->GetArmorAmount() + HitPawn->LastTakeHitInfo.Damage/2 > 100)) ? ShieldImpactEffect : ArmorImpactEffect;
+	bool bResult = (ChosenImpactEffect != nullptr);
 	if (ChosenImpactEffect && bRecentlyRendered)
 	{
-		bResult = true;
 		const FVector WorldHitLocation = HitPawn->GetActorLocation() + HitPawn->LastTakeHitInfo.RelHitLocation;
 		FRotationMatrix CenterToHit((WorldHitLocation - HitPawn->GetActorLocation()).GetSafeNormal2D().Rotation());
 		// play multiple hit effects if there were simultaneous hits

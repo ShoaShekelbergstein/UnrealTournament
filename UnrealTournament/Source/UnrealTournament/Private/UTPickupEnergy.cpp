@@ -14,6 +14,13 @@ AUTPickupEnergy::AUTPickupEnergy(const FObjectInitializer& ObjectInitializer)
 
 void AUTPickupEnergy::BeginPlay()
 {
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (GS != nullptr && GS->BoostRechargeTime <= 0.0f)
+	{
+		Destroy();
+		return;
+	}
+
 	Super::BeginPlay();
 
 	TArray<UMeshComponent*> MeshComponents;

@@ -967,10 +967,10 @@ void UUTGameplayStatics::RecordEvent_UTTutorialCompleted(AUTPlayerController* UT
 	}
 }
 
-void UUTGameplayStatics::RecordEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, int32 InstructionID)
+void UUTGameplayStatics::RecordEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, FString AnnouncementName, int32 InstructionID)
 {
 	if (FUTAnalytics::IsAvailable())
 	{
-		FUTAnalytics::FireEvent_UTTutorialPlayInstruction(UTPC, InstructionID);
+		FUTAnalytics::FireEvent_UTTutorialPlayInstruction(UTPC, AnnouncementName, InstructionID);
 	}
 }

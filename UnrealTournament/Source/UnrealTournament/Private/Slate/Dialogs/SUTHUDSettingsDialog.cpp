@@ -14,7 +14,6 @@
 
 #if !UE_SERVER
 
-const FName NAME_QuickStatsAngle			= FName(TEXT("QuickStatsAngle"));
 const FName NAME_QuickStatsDistance			= FName(TEXT("QuickStatsDistance"));
 const FName NAME_QuickStatsType				= FName(TEXT("QuickStatsType"));
 const FName NAME_QuickStatsBackgroundAlpha	= FName(TEXT("QuickStatsBackgroundAlpha"));
@@ -578,7 +577,6 @@ TSharedRef<SWidget> SUTHUDSettingsDialog::BuildQuickStatsTab()
 			SNew(SBox).HeightOverride(48)
 		]
 
-		+AddFloatOption(NAME_QuickStatsAngle, NSLOCTEXT("HUDSETTINGS", "QuickStatsAngle", "Angle:"),NSLOCTEXT("SUTHUDSettingsDialog", "QuickStatsAngleTT", "Changes where around the crosshair will the quick stats be displayed."), NSLOCTEXT("SUTHUDSettingsDialog", "Angle", "deg"), ProfileSettings->QuickStatsAngle, 0.0f, 360.0f)
 		+AddFloatOption(NAME_QuickStatsDistance, NSLOCTEXT("HUDSETTINGS", "QuickStatsDistance", "Distance:"), NSLOCTEXT("SUTHUDSettingsDialog", "QuickStatsDistanceTT", "Changes how far from the crosshair your quick stats menu should be."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), ProfileSettings->QuickStatsDistance, 0.05f, 0.55f)
 		+AddIntOption(NAME_QuickStatsForegroundAlpha, NSLOCTEXT("HUDSETTINGS", "QuickStatsForegroundAlpha", "Icon & Text Opacity:"), NSLOCTEXT("SUTHUDSettingsDialog", "QuickStatsForegroundAlphaTT", "Adjusts the opacity of the icon and text for each stat."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), int32(ProfileSettings->QuickStatsForegroundAlpha * 100.0f), 0, 100)
 		+AddIntOption(NAME_QuickStatsBackgroundAlpha, NSLOCTEXT("HUDSETTINGS", "QuickStatsBackgroundAlpha", "Background Opacity:"), NSLOCTEXT("SUTHUDSettingsDialog", "QuickStatsBackgroundAlphaTT", "Adjusts the opacity of the background."), NSLOCTEXT("SUTHUDSettingsDialog", "Percent", "%"), int32(ProfileSettings->QuickStatsBackgroundAlpha * 100.0f), 0, 100);
@@ -653,7 +651,6 @@ void SUTHUDSettingsDialog::ApplySettings()
 		ProfileSettings->bDrawHUDKillIconMsg = SettingsInfos[NAME_bDrawHUDKillIconMsg]->GetActualValue_bool();
 		ProfileSettings->bPlayKillSoundMsg = SettingsInfos[NAME_bPlayKillSoundMsg]->GetActualValue_bool();
 
-		ProfileSettings->QuickStatsAngle = SettingsInfos[NAME_QuickStatsAngle]->GetActualValue_float();
 		ProfileSettings->QuickStatsDistance = SettingsInfos[NAME_QuickStatsDistance]->GetActualValue_float();
 		ProfileSettings->QuickStatsBackgroundAlpha = float(SettingsInfos[NAME_QuickStatsBackgroundAlpha]->GetActualValue_int32()) / 100.0f;
 		ProfileSettings->QuickStatsForegroundAlpha = float(SettingsInfos[NAME_QuickStatsForegroundAlpha]->GetActualValue_int32()) / 100.0f;

@@ -39,6 +39,9 @@ class UNREALTOURNAMENT_API AUTWeap_LinkGun : public AUTWeapon
 	UPROPERTY(BlueprintReadOnly, Category = LinkGun)
 		AActor* CurrentLinkedTarget;
 
+	/** Returns true if InTarget is a valid link target. */
+	virtual bool IsValidLinkTarget(AActor* InTarget);
+
 	UPROPERTY(BlueprintReadOnly, Category = LinkGun)
 		float LinkStartTime;
 

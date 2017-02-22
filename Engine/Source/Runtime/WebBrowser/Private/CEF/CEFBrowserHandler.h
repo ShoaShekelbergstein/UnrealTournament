@@ -46,6 +46,7 @@ class FCEFBrowserHandler
 	, public CefRequestHandler
 	, public CefKeyboardHandler
 	, public CefJSDialogHandler
+	, public CefContextMenuHandler
 {
 public:
 
@@ -109,6 +110,12 @@ public:
 	{
 		return this;
 	}
+
+	virtual CefRefPtr<CefContextMenuHandler> GetContextMenuHandler() override
+	{
+		return this;
+	}
+
 
 	virtual bool OnProcessMessageReceived(CefRefPtr<CefBrowser> Browser,
 		CefProcessId SourceProcess,
@@ -244,6 +251,12 @@ public:
 	{
 		return CreateWindowDelegate;
 	}
+
+public:
+	virtual void OnBeforeContextMenu(CefRefPtr<CefBrowser> Browser, 
+ 		CefRefPtr<CefFrame> Frame,
+		CefRefPtr<CefContextMenuParams> Params,
+		CefRefPtr<CefMenuModel> Model) override;
 
 private:
 

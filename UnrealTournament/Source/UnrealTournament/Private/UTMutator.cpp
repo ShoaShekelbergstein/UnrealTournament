@@ -43,7 +43,7 @@ void AUTMutator::NotifyLogout_Implementation(AController* C)
 	}
 }
 
-void AUTMutator::TriggerBoost_Implementation(AUTPlayerController* Who)
+void AUTMutator::TriggerBoost_Implementation(AUTPlayerState* Who)
 {
 	if (NextMutator != NULL)
 	{

@@ -11,6 +11,8 @@
 #include "SWebBrowser.h"
 #include "IWebBrowserWindow.h"
 
+class SUTWebBrowserPanel;
+
 class UNREALTOURNAMENT_API SUTStatsViewerPanel : public SUTPanelBase
 {
 
@@ -34,7 +36,7 @@ protected:
 	virtual void DownloadStats();
 
 	TSharedPtr<SHorizontalBox> WebBrowserBox;
-	TSharedPtr<SWebBrowser> StatsWebBrowser;
+	TSharedPtr<SUTWebBrowserPanel> StatsWebBrowser;
 	virtual FString GetStatsFilename();
 
 	void ReadCloudStats();

@@ -44,6 +44,13 @@ private:
 	TAttribute<ECheckBoxState> SuppressibleCheckBoxState;
 	FOnCheckStateChanged OnSuppressibleCheckStateChanged;
 	bool bIsSuppressible;
+
+public:
+	virtual bool bRemainOpenThroughTravel()
+	{
+		return true;
+	}
+
 };
 
 #endif

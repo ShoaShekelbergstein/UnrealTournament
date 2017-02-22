@@ -5,8 +5,8 @@
 #include "UTPickupMessage.h"
 #include "UTGameVolume.h"
 
-AUTWeaponLocker::AUTWeaponLocker(const FObjectInitializer& OI)
-	: Super(OI)
+AUTWeaponLocker::AUTWeaponLocker(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	Collision->InitCapsuleSize(100.0f, 120.0f);
 	PickupMessageString = NSLOCTEXT("UnrealTournament", "WeaponLocker", "");
@@ -19,6 +19,25 @@ AUTWeaponLocker::AUTWeaponLocker(const FObjectInitializer& OI)
 	WeaponPlacements.Add(FTransform(FQuat(FRotator(0.0f, 0.0f, 90.0f)), FVector(60.0f, -60.0f, 0.0f)));
 	WeaponPlacements.Add(FTransform(FQuat(FRotator(0.0f, 0.0f, 90.0f)), FVector(-60.0f, 60.0f, 0.0f)));
 	WeaponPlacements.Add(FTransform(FQuat(FRotator(0.0f, 0.0f, 90.0f)), FVector(-60.0f, -60.0f, 0.0f)));
+
+	TimerEffect = ObjectInitializer.CreateOptionalDefaultSubobject<UParticleSystemComponent>(this, TEXT("TimerEffect"));
+	if (TimerEffect != NULL)
+	{
+		TimerEffect->SetHiddenInGame(true);
+		TimerEffect->SetupAttachment(RootComponent);
+		TimerEffect->LDMaxDrawDistance = 1024.0f;
+		TimerEffect->RelativeLocation.Z = 40.0f;
+		TimerEffect->Mobility = EComponentMobility::Static;
+		TimerEffect->SetCastShadow(false);
+	}
+	BaseEffect = ObjectInitializer.CreateOptionalDefaultSubobject<UParticleSystemComponent>(this, TEXT("BaseEffect"));
+	if (BaseEffect != NULL)
+	{
+		BaseEffect->SetupAttachment(RootComponent);
+		BaseEffect->LDMaxDrawDistance = 2048.0f;
+		BaseEffect->RelativeLocation.Z = -58.0f;
+		BaseEffect->Mobility = EComponentMobility::Static;
+	}
 }
 
 void AUTWeaponLocker::BeginPlay()

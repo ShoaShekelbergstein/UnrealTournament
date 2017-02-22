@@ -179,8 +179,8 @@ TSharedRef<SWidget> SUTMainMenu::BuildWatchSubMenu()
 		.ContentHAlign(HAlign_Left)
 	];
 
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_Watch_FragCenter", "Frag Center"), FOnClicked::CreateSP(this, &SUTMainMenu::OnFragCenterClick));
-	DropDownButton->AddSpacer();
+//	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_Watch_FragCenter", "Frag Center"), FOnClicked::CreateSP(this, &SUTMainMenu::OnFragCenterClick));
+//	DropDownButton->AddSpacer();
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_Replays_YourReplays", "Your Replays"), FOnClicked::CreateSP(this, &SUTMainMenu::OnYourReplaysClick));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_Replays_RecentReplays", "Recent Replays"), FOnClicked::CreateSP(this, &SUTMainMenu::OnRecentReplaysClick));
 	DropDownButton->AddSpacer();
@@ -231,8 +231,8 @@ TSharedRef<SWidget> SUTMainMenu::AddPlayNow()
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRun", "QuickPlay Flag Run"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRun));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayTSD", "QuickPlay Showdown"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::TEAMSHOWDOWN));
 	DropDownButton->AddSpacer();
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_ChallengesGame", "Challenges"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowGamePanel));
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_CreateGame", "Create Offline Match"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowCustomGamePanel));
+	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_ChallengesGame", "Single Player Challenges"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowGamePanel));
+	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_CreateGame", "Custom Single Player Match"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowCustomGamePanel));
 
 	DropDownButton->AddSpacer();
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_FindGame", "Find a Match..."), FOnClicked::CreateSP(this, &SUTMenuBase::OnShowServerBrowserPanel),true);
@@ -373,7 +373,17 @@ void SUTMainMenu::OpenDelayedMenu()
 						{
 							// Build out the map info
 							NewReplicatedRuleset->SetRules(NewRuleset, MapAssets);
-							AvailableGameRulesets.Add(NewReplicatedRuleset);
+
+							// If this ruleset doesn't have any maps, then don't use it
+							if (NewReplicatedRuleset->MapList.Num() > 0)
+							{
+								AvailableGameRulesets.Add(NewReplicatedRuleset);
+							}
+							else
+							{
+								UE_LOG(UT,Warning,TEXT("Detected a ruleset [%s] that has no maps"), *NewRuleset->UniqueTag);
+								NewReplicatedRuleset->Destroy();
+							}
 						}
 					}
 					else
@@ -715,7 +725,7 @@ void SUTMainMenu::StartGame(bool bLanGame)
 		}
 		else
 		{
-			GameOptions += FString::Printf(TEXT("?BotFill=0?MaxPlayers=%i"), DesiredPlayerCount);
+			GameOptions += FString::Printf(TEXT("?ForceNoBots=1?MaxPlayers=%i"), DesiredPlayerCount);
 		}
 
 		if (FUTAnalytics::IsAvailable())
@@ -739,14 +749,11 @@ void SUTMainMenu::StartGame(bool bLanGame)
 		GameOptions += CurrentRule->GameOptions;
 		if ( DefaultGameMode && CreateGameDialog->BotSkillLevel >= 0 )
 		{
-			// This match wants bots.  
-			int32 OptimalPlayerCount = DefaultGameMode->bTeamGame ? CreateGameDialog->MapPlayList[0].MapInfo->OptimalTeamPlayerCount : CreateGameDialog->MapPlayList[0].MapInfo->OptimalPlayerCount;
-			OptimalPlayerCount = FMath::Min(OptimalPlayerCount, CurrentRule->MaxPlayers);
-			GameOptions += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), OptimalPlayerCount, FMath::Clamp<int32>(CreateGameDialog->BotSkillLevel,0,7));				
+			GameOptions += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), CurrentRule->MaxPlayers, FMath::Clamp<int32>(CreateGameDialog->BotSkillLevel,0,7));				
 		}
 		else
 		{
-			GameOptions += TEXT("?BotFill=0");
+			GameOptions += TEXT("?ForceNoBots=1");
 		}
 
 		if (PlayerOwner.IsValid() && FUTAnalytics::IsAvailable() && CurrentRule)
@@ -773,6 +780,7 @@ void SUTMainMenu::StartGame(bool bLanGame)
 
 	if (bLanGame)
 	{
+		GameOptions += TEXT("?MaxPlayerWait=180");
 		FString ExecPath = TEXT("..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Shipping.exe");
 		FString Options = FString::Printf(TEXT("unrealtournament %s -log -server -LAN -AUTH_PASSWORD="), *URL);
 

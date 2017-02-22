@@ -29,9 +29,6 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	FlagRunMessageSwitch = 0;
 	FlagRunMessageTeam = nullptr;
 	bPlayStatusAnnouncements = true;
-	GoldBonusColor = FLinearColor(1.f, 0.9f, 0.15f);
-	SilverBonusColor = FLinearColor(0.5f, 0.5f, 0.75f);
-	BronzeBonusColor = FLinearColor(0.48f, 0.25f, 0.18f);
 	bEnemyRallyPointIdentified = false;
 	EarlyEndTime = 0;
 	bTeamGame = true;
@@ -132,6 +129,21 @@ void AUTFlagRunGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	DOREPLIFETIME(AUTFlagRunGameState, DefenseSelectablePowerups);
 }
 
+void AUTFlagRunGameState::PrepareForIntermission()
+{
+	Super::PrepareForIntermission();
+
+	// FIXMSTEVE move to super once we are doing end of round freeze and unfreeze everywhere
+	for (FObjectIterator It(UParticleSystemComponent::StaticClass()); It; ++It)
+	{
+		UParticleSystemComponent* PSC = (UParticleSystemComponent*)*It;
+		if (PSC && PSC->GetOwner() && (PSC->GetOwner()->GetWorld() == GetWorld()) && !Cast<AUTWeapon>(PSC->GetOwner()))
+		{
+			PSC->CustomTimeDilation = 0.001f;
+		}
+	}
+}
+
 void AUTFlagRunGameState::OnIntermissionChanged()
 {
 	// FIXMESTEVE don't need this or super once clean up CTF intermission.
@@ -192,9 +204,9 @@ FLinearColor AUTFlagRunGameState::GetGameStatusColor()
 	{
 		switch(BonusLevel)
 		{
-			case 1: return BronzeBonusColor; break;
-			case 2: return SilverBonusColor; break;
-			case 3: return GoldBonusColor; break;
+			case 1: return BRONZECOLOR; break;
+			case 2: return SILVERCOLOR; break;
+			case 3: return GOLDCOLOR; break;
 		}
 	}
 	UE_LOG(UT, Warning, TEXT("WHITE"));
@@ -400,7 +412,7 @@ bool AUTFlagRunGameState::IsTeamAbleToEarnPowerup(int32 TeamNumber) const
 AUTCTFFlag* AUTFlagRunGameState::GetOffenseFlag()
 {
 	int OffenseTeam = bRedToCap ? 0 : 1;
-	return ((FlagBases.Num() > OffenseTeam) ? FlagBases[OffenseTeam]->MyFlag : nullptr);
+	return ((FlagBases.Num() > OffenseTeam) && FlagBases[OffenseTeam]) ? FlagBases[OffenseTeam]->MyFlag : nullptr;
 }
 
 int AUTFlagRunGameState::GetKillsNeededForPowerup(int32 TeamNumber) const
@@ -548,7 +560,7 @@ void AUTFlagRunGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 	}
 	else if (PS->RoundKills >= FMath::Max(3, 2 * PS->RoundDeaths))
 	{
-		PS->MatchHighlights[0] = HighlightNames::HardToKill;
+		PS->AddMatchHighlight(HighlightNames::HardToKill, PS->RoundDeaths);
 	}
 	else if (!bHaveRallyPoweredHighlight && (NumRalliesPowered > 1))
 	{

@@ -3,6 +3,7 @@
 
 #include "UTCharacter.h"
 #include "UTMonsterAI.h"
+#include "UTReplicatedEmitter.h"
 
 #include "UTMonster.generated.h"
 
@@ -17,6 +18,7 @@ public:
 		Cost = 5;
 		bCanPickupItems = false;
 		UTCharacterMovement->AutoSprintDelayInterval = 10000.0f;
+		UTCharacterMovement->bForceTeamCollision = true;
 	}
 	/** display name shown on HUD/scoreboard/etc */
 	UPROPERTY(EditDefaultsOnly)
@@ -27,6 +29,9 @@ public:
 	/** how many times the monster can respawn before it is removed from the game (<= 0 is infinite, for the peon train) */
 	UPROPERTY(EditDefaultsOnly)
 	int32 NumRespawns;
+	/** AI personality settings to modulate behavior */
+	UPROPERTY(EditDefaultsOnly, Meta = (DisplayName = "AI Personality"))
+	FBotPersonality AIPersonality;
 	/** optional item drop beyond any droppable inventory (note: must have a valid DroppedPickupClass) */
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AUTInventory> ExtraDropType;
@@ -38,6 +43,14 @@ public:
 	/** prevent monster from picking up these types of items (only relevant when bCanPickupItems is true) */
 	UPROPERTY(EditDefaultsOnly)
 	TArray<TSubclassOf<AUTInventory>> DisallowedPickupTypes;
+
+	/** enables teleport dodge instead of normal dodge mechanic */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TeleportDodgeDistance;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<AUTReplicatedEmitter> TeleportDodgeEffect;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TeleportDodgeCooldown;
 
 private:
 	bool bAddingDefaultInventory;
@@ -76,6 +89,62 @@ public:
 		{
 			AUTInventory* Inv = CreateInventory<AUTInventory>(ExtraDropType, false);
 			TossInventory(Inv);
+		}
+	}
+
+	virtual bool CanDodgeInternal_Implementation() const override
+	{
+		bool bSavedCanJump = UTCharacterMovement->MovementState.bCanJump;
+		if (TeleportDodgeDistance > 0.0f)
+		{
+			UTCharacterMovement->MovementState.bCanJump = true;
+			UTCharacterMovement->NavAgentProps.bCanJump = true;
+		}
+		const bool bResult = Super::CanDodgeInternal_Implementation();
+		UTCharacterMovement->MovementState.bCanJump = bSavedCanJump;
+		UTCharacterMovement->NavAgentProps.bCanJump = bSavedCanJump;
+		return bResult;
+	}
+
+	virtual bool Dodge(FVector DodgeDir, FVector DodgeCross) override
+	{
+		if (TeleportDodgeDistance <= 0.0f)
+		{
+			return Super::Dodge(DodgeDir, DodgeCross);
+		}
+		else
+		{
+			if (!CanDodge())
+			{
+				return false;
+			}
+			else
+			{
+				const FVector OldLoc = GetActorLocation();
+				FHitResult Hit;
+				FVector TeleportDest;
+				if (GetWorld()->LineTraceSingleByChannel(Hit, OldLoc, OldLoc + DodgeDir * TeleportDodgeDistance, ECC_Pawn, FCollisionQueryParams(NAME_None, false, this)))
+				{
+					TeleportDest = Hit.Location - DodgeDir * GetCapsuleComponent()->GetUnscaledCapsuleRadius();
+				}
+				else
+				{
+					TeleportDest = OldLoc + DodgeDir * (TeleportDodgeDistance - GetCapsuleComponent()->GetUnscaledCapsuleRadius());
+				}
+				if (ACharacter::TeleportTo(TeleportDest, GetActorRotation()))
+				{
+					if (TeleportDodgeEffect != nullptr)
+					{
+						GetWorld()->SpawnActor<AUTReplicatedEmitter>(TeleportDodgeEffect, OldLoc, GetActorRotation());
+					}
+					UTCharacterMovement->DodgeResetTime = UTCharacterMovement->GetCurrentMovementTime() + TeleportDodgeCooldown;
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
 		}
 	}
 };

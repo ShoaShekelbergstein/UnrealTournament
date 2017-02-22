@@ -54,31 +54,45 @@ void AUTGameVolume::PostInitializeComponents()
 	}
 }
 
-void AUTGameVolume::HealthTimer()
+int32 AUTGameVolume::DetermineEntryDirection(AUTCharacter* EnteringCharacter, AUTFlagRunGameState* GS)
 {
-	TArray<AActor*> TouchingActors;
-	GetOverlappingActors(TouchingActors, AUTCharacter::StaticClass());
-
-	for (int32 iTouching = 0; iTouching < TouchingActors.Num(); ++iTouching)
+	// determine entry direction
+	int32 DirectionSwitch = 5;
+	AUTGameObjective* Objective = GS->GetFlagBase(GS->bRedToCap ? 1 : 0);
+	if (Objective)
 	{
-		AUTCharacter* const P = Cast<AUTCharacter>(TouchingActors[iTouching]);
-		if (P && (GetWorld()->GetTimeSeconds() - P->EnteredSafeVolumeTime) > 1.f)
+		FVector Dir = EnteringCharacter->GetActorLocation() - Objective->GetActorLocation();
+		FVector Dir2D = Dir;
+		Dir2D.Z = 0.f;
+		Dir2D = Dir2D.GetSafeNormal();
+		FVector Facing = Objective->GetActorRotation().Vector();
+		if (bTestBaseEntry)
 		{
-			if (P->Health < P->HealthMax)
+			DrawDebugLine(GetWorld(), Objective->GetActorLocation(), Objective->GetActorLocation() + 1000.f*Facing, FColor::Green, true);
+			UE_LOG(UT, Warning, TEXT("Angle is %f"), FMath::Abs(Facing | Dir2D));
+			// FIXMESTEVE show angle
+		}
+		if (FMath::Abs(Facing | Dir2D) > Objective->ForwardDot)
+		{
+			DirectionSwitch = 0;
+			// center, high, or low
+			if (Dir.Z > Objective->IncomingHeightOffset)
 			{
-				P->Health = FMath::Max<int32>(P->Health, FMath::Min<int32>(P->Health + 20, P->HealthMax));
-				AUTPlayerController* PC = Cast<AUTPlayerController>(P->GetController());
-				if (PC)
-				{
-					PC->ClientPlaySound(HealthSound);
-				}
+				DirectionSwitch = 1;
 			}
-			if ((TeamLockers.Num() > 0) && TeamLockers[0] && P->bHasLeftSafeVolume)
+			else if (Dir.Z < -1.f * Objective->IncomingHeightOffset)
 			{
-				TeamLockers[0]->ProcessTouch(P);
+				DirectionSwitch = 2;
 			}
 		}
+		else
+		{
+			// left or right
+			FVector Left = Facing ^ FVector(0.f, 0.f, 1.f);
+			DirectionSwitch = ((Left | Dir) > 0.f) ? 3 : 4;
+		}
 	}
+	return DirectionSwitch;
 }
 
 void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
@@ -152,7 +166,15 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 				{
 					if ((GetWorld()->GetTimeSeconds() - GS->LastEnteringEnemyBaseTime > 2.f) && Cast<AUTPlayerState>(P->PlayerState))
 					{
-						((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(StatusMessage::ImGoingIn);
+						if (bTestBaseEntry)
+						{
+							int32 DirectionSwitch = DetermineEntryDirection(P, GS);
+							((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(StatusMessage::Incoming, DirectionSwitch);
+						}
+						else
+						{
+							((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(StatusMessage::ImGoingIn);
+						}
 						if (VoiceLinesSet != NAME_None)
 						{
 							((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(VoiceLinesSet, 1);
@@ -178,7 +200,8 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 						}
 						if (PS)
 						{
-							PS->AnnounceStatus(StatusMessage::Incoming);
+							int32 DirectionSwitch = DetermineEntryDirection(P, GS);
+							PS->AnnounceStatus(StatusMessage::Incoming, DirectionSwitch);
 							if (VoiceLinesSet != NAME_None)
 							{
 								PS->AnnounceStatus(VoiceLinesSet, 0);

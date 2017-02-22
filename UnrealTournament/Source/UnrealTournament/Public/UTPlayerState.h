@@ -96,6 +96,7 @@ struct FCoolFactorHistoricalEvent
 
 class AUTReplicatedMapInfo;
 class AUTRconAdminInfo;
+class SUTWebBrowserPanel;
 
 UCLASS()
 class UNREALTOURNAMENT_API AUTPlayerState : public APlayerState, public IUTTeamInterface
@@ -158,17 +159,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = NotifyTeamChanged, Category = PlayerState)
 	class AUTTeamInfo* Team;
 
-	/** Whether this player has confirmed ready to play */
-	UPROPERTY(BlueprintReadWrite, replicated, Category = PlayerState)
-	uint32 bReadyToPlay:1;
-
+	/** Whether this player his currently warming up. */
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
 		uint32 bIsWarmingUp : 1;
-
-	virtual void SetReadyToPlay(bool bNewReadyState);
-
-	UPROPERTY(BlueprintReadWrite, replicated, Category = PlayerState)
-		uint8 ReadyMode;
 
 	/** Whether this spectator is a caster */
 	UPROPERTY(replicated)
@@ -185,19 +178,6 @@ public:
 	/** Persistent so deathmessage can know about it. */
 	UPROPERTY()
 		uint32 bAnnounceWeaponReward : 1;
-
-	/** Set if need to retry name change to account name. */
-	UPROPERTY()
-		FString RequestedName;
-
-	/** Last displayed ready state. */
-	uint8 LastReadyState;
-
-	/** Last Ready state change time. */
-	float LastReadySwitchTime;
-
-	/** Count of fast ready state changes. */
-	int32 ReadySwitchCount;
 
 	/** Voice used by this player/bot for speech (taunts, etc.). */
 	UPROPERTY(BlueprintReadOnly, Category = Sounds)
@@ -333,11 +313,13 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
 	bool bCanRally;
 
-	UPROPERTY(BlueprintReadOnly, Category = PlayerState)
-	float NextRallyTime;
-
+	/** Set when rallypoint is powered up, so that all attackers can then rally once to that point per power up. */
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
-	uint8 RemainingRallyDelay;
+	bool bRallyActivated;
+
+	/** Set when need to play rally now reminder. */
+	UPROPERTY()
+		bool bNeedRallyReminder;
 
 	UPROPERTY()
 	FVector RallyLocation;
@@ -359,11 +341,11 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = PlayerState, replicated)
 	bool bIsRconAdmin;
 
-	UPROPERTY(BlueprintReadOnly, replicated, Category = PlayerState)
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
 	bool bIsDemoRecording;
 
 	/** Whether this player currently has a limited number of lives. */
-	UPROPERTY(BlueprintReadOnly, replicated, Category = PlayerState)
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
 		bool bHasLifeLimit;
 
 	UPROPERTY()
@@ -374,6 +356,9 @@ public:
 
 	UPROPERTY()
 	FString PartyLeader;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
+		FString ClanName;
 
 	// Player Stats 
 
@@ -788,9 +773,14 @@ public:
 	void StatsWriteComplete(FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded);
 	virtual void AddMatchToStats(const FString& MapName, const FString& GameType, const TArray<class AUTTeamInfo*>* Teams, const TArray<APlayerState*>* ActivePlayerStates, const TArray<APlayerState*>* InactivePlayerStates);
 	
+	UPROPERTY(BlueprintReadOnly)
+		FString EpicAccountName;
+
 	/** Cached clamped player name for display. */
 	UPROPERTY(BlueprintReadWrite)
 	FString ClampedName;
+
+	virtual FString ValidatePlayerName();
 
 	/** True if clamped name is currently valid. */
 	bool bHasValidClampedName;
@@ -1259,6 +1249,37 @@ public:
 	UPROPERTY()
 	float LastSpawnTime;
 
+	/** Call this function to flag this player as not being idle */
+	UFUNCTION()
+	void NotIdle();
+
+	// returns true if the player is idle
+	UFUNCTION()
+	bool IsPlayerIdle();
+
+
+protected:
+	// The time at which the player that owns this PlayerState was active in real time seconds.  This should be set by calling NotActive()
+	float LastActiveTime;
+
+	// Will be true if this player is considered idle
+	UPROPERTY(replicated)
+	bool bPlayerIsIdle;
+
+
+#if !UE_SERVER
+	TSharedPtr<SUTWebBrowserPanel> PlayerCardWebBrowser;
+	TSharedPtr<SVerticalBox> PlayerCardBox;
+#endif
+	
+	UFUNCTION()
+	void OnPlayerCardLoadCompleted();
+
+	UFUNCTION()
+	void OnPlayerCardLoadError();
+
+	bool bPlayerCardLoadError;
+
 };
 
 USTRUCT()
@@ -1349,7 +1370,6 @@ struct FRemotePlayerInfo
 		FJsonObjectConverter::UStructToJsonObject(FRemotePlayerInfo::StaticStruct(), this,JsonObject.ToSharedRef(), 0, 0);
 		JsonObject->SetStringField("PlayerId", PlayerID.ToString());
 	}
-
 };
 
 

@@ -190,81 +190,65 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 				}
 				else
 				{
-					ShortMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "PressEnter", "Press [ENTER] to leave");
+					UUTLocalPlayer* LP = UTHUDOwner->UTPlayerOwner ? UTHUDOwner->UTPlayerOwner->GetUTLocalPlayer() : nullptr;
+					ShortMessage = (LP && LP->AreMenusOpen())
+						? NSLOCTEXT("UUTHUDWidget_Spectator", "ClickLeave", "Click on LEAVE WARM UP to leave")
+						: NSLOCTEXT("UUTHUDWidget_Spectator", "PressEnter", "Press [ENTER] to leave");
 					SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "Warmup", "Warm Up");
 				}
-			}
-			else if (UTPS && UTPS->bReadyToPlay && (UTPS->GetNetMode() != NM_Standalone))
-			{
-				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "IsReadyTeam", "You are ready, press [ENTER] to warm up.");
-			}
-			else if (UTGameState->PlayersNeeded > 0)
-			{
-				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayers", "Waiting for players to join. Press [FIRE] to ready up.");
 			}
 			else if (UTPS && UTPS->bCaster)
 			{
 				SpectatorMessage = (UTGameState->AreAllPlayersReady())
 					? NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForCaster", "All players are ready. Press [Enter] to start match.")
-					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForReady", "Waiting for players to ready up.");
-			}
-			else if (UTGameState->bRankedSession)
-			{
-				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "RankedSessionStart", "Your game will start shortly.");
+					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForReady", "Waiting for players to warm up.");
 			}
 			else if (UTPS && UTPS->bOnlySpectator)
 			{
-				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForReady", "Waiting for players to ready up.");
+				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForReady", "Waiting for players.");
 			}
 			else if (UTHUDOwner->GetScoreboard() && UTHUDOwner->GetScoreboard()->IsInteractive())
 			{
-				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "CloseMenu", "Press [ESC] to close menu.");
+				SpectatorMessage = (UTHUDOwner->GetNetMode() == NM_Standalone) 
+					? NSLOCTEXT("UUTHUDWidget_Spectator", "StartMatchFromMenu", "Click on START MATCH to begin.")
+					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayersMenu", "Click on WARM UP to warm up.");
 			}
 			else
 			{
-				SpectatorMessage = (UTGameState->bTeamGame && UTGameState->bAllowTeamSwitches)
-					? NSLOCTEXT("UUTHUDWidget_Spectator", "GetReadyTeam", "Press [FIRE] to ready up, [ALTFIRE] to change teams.")
-					: NSLOCTEXT("UUTHUDWidget_Spectator", "GetReady", "Press [FIRE] when you are ready.");
+				SpectatorMessage = (UTHUDOwner->GetNetMode() == NM_Standalone)
+					? NSLOCTEXT("UUTHUDWidget_Spectator", "StartMatchFromFire", "Press [FIRE] to begin.")
+					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayers", "Press [ENTER] to warm up.");
 			}
 		}
 		else if (!UTGameState->HasMatchEnded())
 		{
 			if (UTGameState->IsMatchIntermission())
 			{
-				if (UTGameState->bCasterControl && UTGameState->bStopGameClock == true && UTPS != nullptr)
+				int32 IntermissionTime = UTGameState->GetIntermissionTime();
+				if (IntermissionTime > 0)
 				{
-					SpectatorMessage = (UTPS->bCaster)
-						? NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingCasterHalfTime", "Press [Enter] to start next half.")
-						: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForCasterHalfTime", "Waiting for caster to start next half.");
-				}
-				else
-				{
-					int32 IntermissionTime = UTGameState->GetIntermissionTime();
-					if (IntermissionTime > 0)
+					FFormatNamedArguments Args;
+					if ((IntermissionTime > 5) && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive && UTPS->GetUTCharacter())
 					{
-						FFormatNamedArguments Args;
-						if ((IntermissionTime > 5) && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive && UTPS->GetUTCharacter())
+						if (UTGameState->LineUpHelper && UTGameState->LineUpHelper->CanInitiateGroupTaunt(UTPS) && !UTPS->ActiveGroupTaunt)
 						{
-							if (UTPS->CarriedObject && !UTPS->ActiveGroupTaunt)
-							{
-								Args.Add("GroupTaunt", UTHUDOwner->GroupTauntLabel);
-								SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "GroupTaunt", "Press {GroupTaunt} to start a group taunt."), Args);
-							}
-							else
-							{
-								Args.Add("Emote1", UTHUDOwner->TauntOneLabel);
-								Args.Add("Emote2", UTHUDOwner->TauntTwoLabel);
-								SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "GroupTaunt", "Press {Emote1} or {Emote2} to play your emotes."), Args);
-							}
+							Args.Add("GroupTaunt", UTHUDOwner->GroupTauntLabel);
+							SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "GroupTaunt", "Press {GroupTaunt} to start a group taunt."), Args);
 						}
-						else if (IntermissionTime < 10)
+						else
 						{
-							Args.Add("Time", FText::AsNumber(IntermissionTime));
-							AUTCTFGameState* CTFGameState = Cast<AUTCTFGameState>(UTGameState);
-							SpectatorMessage = !CTFGameState || (CTFGameState->CTFRound == 0)
-								? FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "HalfTime", "HALFTIME - Game resumes in {Time}"), Args)
-								: FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "Intermission", "Game resumes in {Time}"), Args);
+							Args.Add("Emote1", UTHUDOwner->TauntOneLabel);
+							Args.Add("Emote2", UTHUDOwner->TauntTwoLabel);
+							SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "GroupTaunt", "Press {Emote1} or {Emote2} to play your emotes."), Args);
 						}
+					}
+					else if (IntermissionTime < 10)
+					{
+						Args.Add("Time", FText::AsNumber(IntermissionTime));
+						AUTCTFGameState* CTFGameState = Cast<AUTCTFGameState>(UTGameState);
+						SpectatorMessage = !CTFGameState || (CTFGameState->CTFRound == 0)
+							? FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "HalfTime", "HALFTIME - Game resumes in {Time}"), Args)
+							: FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "Intermission", "Game resumes in {Time}"), Args);
 					}
 				}
 			}

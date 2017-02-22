@@ -27,6 +27,7 @@ class UNREALTOURNAMENT_API UUTTimerMessage : public UUTLocalMessage
 		Lifetime = 2.0f;
 		bIsStatusAnnouncement = true;
 		bOptionalSpoken = true; 
+		bPlayDuringInstantReplay = false;
 
 		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text1","1..."));
 		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text2","2..."));

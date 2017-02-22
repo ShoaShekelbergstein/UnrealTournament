@@ -11,6 +11,7 @@
 #include "BlueprintContextLibrary.h"
 #include "PartyContext.h"
 #include "UTLobbyMatchInfo.h"
+#include "UTAnalytics.h"
 
 AUTLobbyPlayerState::AUTLobbyPlayerState(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -93,6 +94,12 @@ void AUTLobbyPlayerState::ServerJoinMatch_Implementation(AUTLobbyMatchInfo* Matc
 			{
 				GameState->RemoveFromAMatch(this);
 			}
+
+			if (FUTAnalytics::IsAvailable())
+			{
+				FUTAnalytics::FireEvent_UTHubPlayerEnterInstance(MatchToJoin, this, bAsSpectator);
+			}
+
 			GameState->JoinMatch(MatchToJoin, this, bAsSpectator);
 		}
 	}
@@ -108,7 +115,6 @@ void AUTLobbyPlayerState::RemovedFromMatch(AUTLobbyMatchInfo* Match)
 {
 	CurrentMatch = NULL;
 	bIsInMatch = false;
-	bReadyToPlay = false;
 }
 
 void AUTLobbyPlayerState::ClientMatchError_Implementation(const FText &MatchErrorMessage, int32 OptionalInt)
@@ -253,7 +259,7 @@ void AUTLobbyPlayerState::NotifyBeginnerAutoLock_Implementation()
 		{
 			UTLocalPlayer->bAutoRankLockWarningShown = true;
 #if !UE_SERVER
-			UTLocalPlayer->ShowMessage(NSLOCTEXT("UTLobbyPlayerState","AutoLockTitle","AUTO RANK LOCKED ENABLED"),NSLOCTEXT("UTLobbyPlayerState","AutoLockMessage","Because you are a beginner, the match you are starting will be locked so that only other beginners of similar skill can join.  If you want to allow players of other skill levels to play, uncheck the \"Limit Rank\" check box in your matches settings."),UTDIALOG_BUTTON_OK);
+			UTLocalPlayer->ShowMessage(NSLOCTEXT("UTLobbyPlayerState","AutoLockTitle","AUTO RANK LOCKED ENABLED"),NSLOCTEXT("UTLobbyPlayerState","AutoLockMessage","The match you are starting will be locked so that only other players of similar skill can join.  If you want to allow players of other skill levels to play, uncheck the \"Limit Rank\" check box in your matches settings."),UTDIALOG_BUTTON_OK);
 #endif
 		}
 	}

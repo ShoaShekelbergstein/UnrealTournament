@@ -80,8 +80,10 @@
 #include "UTDemoNetDriver.h"
 #include "UTAnalytics.h"
 #include "QosInterface.h"
+#include "QosModule.h"
 #include "SUTReportUserDialog.h"
 #include "UTUMGWidget_Toast.h"
+#include "UTWorldSettings.h"
 
 #if WITH_SOCIAL
 #include "Social.h"
@@ -91,6 +93,7 @@ UUTLocalPlayer::UUTLocalPlayer(const class FObjectInitializer& ObjectInitializer
 	: Super(ObjectInitializer)
 {
 	bInitialSignInAttempt = true;
+	bAttemptedLauncherJoin = false;
 	LastProfileCloudWriteTime = 0.0f;
 	LastProgressionCloudWriteTime = 0.0f;
 	ProfileCloudWriteCooldownTime = 12.0f;
@@ -124,6 +127,25 @@ UUTLocalPlayer::UUTLocalPlayer(const class FObjectInitializer& ObjectInitializer
 
 	bQuickmatchOnLevelChange = false;
 
+	RankedEloRange = 20;
+	RankedMinEloRangeBeforeHosting = 100;
+	RankedMinEloSearchStep = 20;
+	
+	QMEloRange = 100;
+	QMMinEloRangeBeforeHosting = 300;
+	QMMinEloSearchStep = 100;
+
+	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Movement, TUTORIAL_Movement,TEXT("/Game/RestrictedAssets/Tutorials/TUT-MovementTraining"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTutorialGameMode.UTTutorialGameMode_C?timelimit=0"), TEXT(""), TEXT("Movement Tutorial")));
+	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Weapons, TUTOIRAL_Weapon,TEXT("/Game/RestrictedAssets/Tutorials/TUT-WeaponTraining"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTutorialGameMode.UTTutorialGameMode_C?timelimit=0"), TEXT(""), TEXT("Weapons Tutorial")));
+	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Pickups, TUTORIAL_Pickups,TEXT("/Game/RestrictedAssets/Tutorials/TUT-PickUpTraining"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTutorialGameMode.UTTutorialGameMode_C?timelimit=0"), TEXT(""), TEXT("Pickups Tutorial")));
+
+	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_DM, TUTORIAL_DM,TEXT("/Game/RestrictedAssets/Maps/DM-Underland"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTDMGameMode_Tut.UTDMGameMode_Tut_C?timelimit=10?GoalScore=0?botfill=4?Difficulty=2"), TEXT("TutorialMovies/dm-tutorial"), TEXT("Deathmatch Tutorial")));
+	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Flagrun, TUTORIAL_FlagRun,TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Fort"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTFlagrunGame_Tut.UTFlagrunGame_Tut_C?GoalScore=0?botfill=10?Difficulty=3"), TEXT("TutorialMovies/flagrun-tutorial"), TEXT("Flagrun Tutorial")));
+	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Showdown, TUTORIAL_Showdown,TEXT("/Game/RestrictedAssets/Maps/DM-Chill"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTeamShowdownGame_Tut.UTTeamShowdownGame_Tut_C?GoalScore=0?botfill=6?Difficulty=3"), TEXT("TutorialMovies/showdown-tutorial"), TEXT("Showdown Tutorial")));
+
+	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_CTF, TUTORIAL_CTF,TEXT("/Game/RestrictedAssets/Maps/CTF-Face"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTCTFGameMode_Tut.UTCTFGameMode_Tut_C?timelimit=10?GoalScore=0?botfill=10?Difficulty=3"), TEXT("TutorialMovies/ctf-tutorial"), TEXT("Capture the Flag Tutorial")));
+	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_TDM, TUTORIAL_TDM,TEXT("/Game/RestrictedAssets/Maps/DM-Outpost23"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTeamDMGameMode_Tut.UTTeamDMGameMode_Tut_C?timelimit=10?GoalScore=0?botfill=10?Difficulty=3"), TEXT("TutorialMovies/tdm-tutorial"), TEXT("Team Deathmatch Tutorial")));
+	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Duel, TUTORIAL_Duel,TEXT("/Game/RestrictedAssets/Maps/WIP/DM-ASDF"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTDuelGame_Tut.UTDuelGame_Tut_C?timelimit=10?GoalScore=0?botfill=2?Difficulty=4"), TEXT("TutorialMovies/duel-tutorial"), TEXT("Duel Tutorial")));
 }
 
 UUTLocalPlayer::~UUTLocalPlayer()
@@ -159,7 +181,6 @@ void UUTLocalPlayer::InitializeOnlineSubsystem()
 
 	if (OnlineUserCloudInterface.IsValid())
 	{
-		OnReadUserFileCompleteDelegate = OnlineUserCloudInterface->AddOnReadUserFileCompleteDelegate_Handle(FOnReadUserFileCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnReadUserFileComplete));
 		OnWriteUserFileCompleteDelegate = OnlineUserCloudInterface->AddOnWriteUserFileCompleteDelegate_Handle(FOnWriteUserFileCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnWriteUserFileComplete));
 		OnDeleteUserFileCompleteDelegate = OnlineUserCloudInterface->AddOnDeleteUserFileCompleteDelegate_Handle(FOnDeleteUserFileCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnDeleteUserFileComplete));
 		OnEnumerateUserFilesCompleteDelegate = OnlineUserCloudInterface->AddOnEnumerateUserFilesCompleteDelegate_Handle(FOnEnumerateUserFilesCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnEnumerateUserFilesComplete));
@@ -197,7 +218,6 @@ void UUTLocalPlayer::CleanUpOnlineSubSystyem()
 		}
 		if (OnlineUserCloudInterface.IsValid())
 		{
-			OnlineUserCloudInterface->ClearOnReadUserFileCompleteDelegate_Handle(OnReadUserFileCompleteDelegate);
 			OnlineUserCloudInterface->ClearOnWriteUserFileCompleteDelegate_Handle(OnWriteUserFileCompleteDelegate);
 			OnlineUserCloudInterface->ClearOnDeleteUserFileCompleteDelegate_Handle(OnDeleteUserFileCompleteDelegate);
 			OnlineUserCloudInterface->ClearOnEnumerateUserFilesCompleteDelegate_Handle(OnEnumerateUserFilesCompleteDelegate);
@@ -221,13 +241,12 @@ void UUTLocalPlayer::CleanUpOnlineSubSystyem()
 			VoiceInt->ClearOnPlayerTalkingStateChangedDelegate_Handle(SpeakerDelegate);
 		}
 	}
-
 }
 
 bool UUTLocalPlayer::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
 {
 	// disallow certain commands in shipping builds
-#if (UE_BUILD_SHIPPING || UE_BUILD_TEST)
+#if UE_BUILD_SHIPPING
 	if (FParse::Command(&Cmd, TEXT("SHOW")))
 	{
 		return true;
@@ -243,7 +262,25 @@ bool UUTLocalPlayer::IsAFriend(FUniqueNetIdRepl PlayerId)
 
 FString UUTLocalPlayer::GetNickname() const
 {
-	return PlayerNickname;
+	FString OfficialName = Super::GetNickname();
+	return (OfficialName.IsEmpty() || (OfficialName == TEXT("InvalidMCPUser"))) ? PlayerNickname : OfficialName;
+}
+
+FString UUTLocalPlayer::SetClanName(FString NewClanName)
+{
+	ClanName = NewClanName;
+	if (Cast<AUTBasePlayerController>(PlayerController))
+	{
+		Cast<AUTBasePlayerController>(PlayerController)->ServerChangeClanName(ClanName);
+	}
+	CurrentProfileSettings->ClanName = ClanName;
+	SetDefaultURLOption(TEXT("Clan"), ClanName);
+	return ClanName;
+}
+
+FString UUTLocalPlayer::GetClanName() const
+{
+	return ClanName;
 }
 
 FText UUTLocalPlayer::GetAccountDisplayName() const
@@ -346,7 +383,13 @@ void UUTLocalPlayer::PlayerAdded(class UGameViewportClient* InViewportClient, in
 			// Initialize the Online Subsystem for this player
 			InitializeOnlineSubsystem();
 
-			if (OnlineIdentityInterface.IsValid())
+			if ( FParse::Param(FCommandLine::Get(), TEXT("playoffline")))
+			{
+				LoginPhase = ELoginPhase::Offline;
+				bPlayingOffline = true;
+				bInitialSignInAttempt = false;
+			}
+			else if (OnlineIdentityInterface.IsValid())
 			{
 				// Attempt to Auto-Login to MCP
 				if (OnlineIdentityInterface->AutoLogin(GetControllerId()))
@@ -672,6 +715,7 @@ TSharedPtr<class SUTDialogBase> UUTLocalPlayer::ShowSupressableConfirmation(FTex
 void UUTLocalPlayer::OpenDialog(TSharedRef<SUTDialogBase> Dialog, int32 ZOrder)
 {
 	GEngine->GameViewport->AddViewportWidgetContent(Dialog, ZOrder);
+	Dialog->ZOrder = ZOrder;
 	Dialog->OnDialogOpened();
 	OpenDialogs.Add(Dialog);
 }
@@ -1000,6 +1044,8 @@ void UUTLocalPlayer::OnLoginComplete(int32 LocalUserNum, bool bWasSuccessful, co
 		}
 
 		PendingLoginUserName = TEXT("");
+
+		RemoveCosmeticsFromDefaultURL();
 	}
 	else
 	{
@@ -1061,8 +1107,31 @@ void UUTLocalPlayer::DelayedCreatePersistentParty()
 				UUTParty* UTParty = UTGameInstance->GetParties();
 				if (UTParty)
 				{
-					UTParty->CreatePersistentParty(*UserId);
+					UTParty->CreatePersistentParty(*UserId, UPartyDelegates::FOnCreateUPartyComplete::CreateUObject(this, &ThisClass::PersistentPartyCreated));
 				}
+			}
+		}
+	}
+}
+
+void UUTLocalPlayer::PersistentPartyCreated(const FUniqueNetId& LocalUserId, const ECreatePartyCompletionResult Result)
+{
+	if (!bAttemptedLauncherJoin)
+	{
+		bAttemptedLauncherJoin = true;
+		FString FriendId;
+		if (FParse::Value(FCommandLine::Get(), TEXT("invitefrom="), FriendId) && !FriendId.IsEmpty())
+		{
+			UE_LOG(LogParty, Display, TEXT("Attempting to join party of inviter %s"), *FriendId);
+			UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
+			if (PartyContext)
+			{
+				TSharedPtr<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(FriendId));
+				PartyContext->JoinParty(*UserId);
+			}
+			else
+			{
+				UE_LOG(LogParty, Warning, TEXT("Party context missing!"));
 			}
 		}
 	}
@@ -1180,7 +1249,7 @@ void UUTLocalPlayer::OnLoginStatusChanged(int32 LocalUserNum, ELoginStatus::Type
 void UUTLocalPlayer::ShowRankedReconnectDialog(const FString& UniqueID)
 {
 #if !UE_SERVER
-	if (UniqueID == LastRankedMatchUniqueId && !LastRankedMatchSessionId.IsEmpty())
+	if (UniqueID == LastRankedMatchPlayerId && !LastRankedMatchSessionId.IsEmpty())
 	{
 		FDateTime LastRankedMatchTime;
 		FDateTime::Parse(LastRankedMatchTimeString, LastRankedMatchTime);
@@ -1208,7 +1277,7 @@ void UUTLocalPlayer::RankedReconnectResult(TSharedPtr<SCompoundWidget> Widget, u
 		}
 	}
 
-	LastRankedMatchUniqueId.Empty();
+	LastRankedMatchPlayerId.Empty();
 	LastRankedMatchSessionId.Empty();
 	LastRankedMatchTimeString.Empty();
 	SaveConfig();
@@ -1462,6 +1531,8 @@ void UUTLocalPlayer::LoadProfileSettings()
 			if (OnlineUserCloudInterface.IsValid())
 			{
 				bIsPendingProfileLoadFromMCP = true;
+
+				OnReadProfileCompleteDelegate = OnlineUserCloudInterface->AddOnReadUserFileCompleteDelegate_Handle(FOnReadUserFileCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnReadProfileComplete));
 				OnlineUserCloudInterface->ReadUserFile(*UserID, GetProfileFilename());
 			}
 		}
@@ -1506,6 +1577,7 @@ void UUTLocalPlayer::LoadProgression()
 			if (OnlineUserCloudInterface.IsValid())
 			{
 				bIsPendingProgressionLoadFromMCP = true;
+				OnReadProgressionCompleteDelegate = OnlineUserCloudInterface->AddOnReadUserFileCompleteDelegate_Handle(FOnReadUserFileCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnReadProgressionComplete));
 				OnlineUserCloudInterface->ReadUserFile(*UserID, GetProgressionFilename());
 			}
 		}
@@ -1543,6 +1615,36 @@ void UUTLocalPlayer::OnDeleteUserFileComplete(bool bWasSuccessful, const FUnique
 #endif
 }
 
+UUTProfileSettings* UUTLocalPlayer::CreateProfileSettingsObject(const TArray<uint8>& Buffer)
+{
+	UUTProfileSettings* ProfileSettings = NewObject<UUTProfileSettings>(GetTransientPackage(),UUTProfileSettings::StaticClass());
+
+	// Serialize the object
+	FMemoryReader MemoryReader(Buffer, true);
+	FObjectAndNameAsStringProxyArchive Ar(MemoryReader, true);
+			
+	// FObjectAndNameAsStringProxyArchive does not have versioning, but we need it
+	// In 4.12, Serialization has been modified and we need the FArchive to use the right serialization path
+	uint32 PossibleMagicNumber;
+	Ar << PossibleMagicNumber;
+	if (CloudProfileMagicNumberVersion1 == PossibleMagicNumber)
+	{
+		int32 CloudProfileUE4Ver;
+		Ar << CloudProfileUE4Ver;
+		Ar.SetUE4Ver(CloudProfileUE4Ver);
+	}
+	else
+	{
+		// Very likely this is from an unversioned cloud profile, set it to the last released serialization version
+		Ar.SetUE4Ver(CloudProfileUE4VerForUnversionedProfile);
+		// Rewind to the beginning as the magic number was not in the archive
+		Ar.Seek(0);
+	}
+
+	ProfileSettings->Serialize(Ar);
+	return ProfileSettings;
+}
+
 
 //Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
 /*
@@ -1559,8 +1661,10 @@ void UUTLocalPlayer::OnDeleteUserFileComplete(bool bWasSuccessful, const FUnique
 *
 * @Comments
 */
-void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName)
+void UUTLocalPlayer::OnReadProfileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName)
 {
+	OnlineUserCloudInterface->ClearOnReadUserFileCompleteDelegate_Handle(OnReadProfileCompleteDelegate);
+
 	if (FileName == GetProfileFilename())
 	{
 		bIsPendingProfileLoadFromMCP = false;
@@ -1572,39 +1676,11 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 			// Next Step is to read the MMR
 			ReadMMRFromBackend();
 
-			// Create a new Profile object.  We always create a new one and discard the old one.
-			CurrentProfileSettings = NewObject<UUTProfileSettings>(GetTransientPackage(),UUTProfileSettings::StaticClass());
-
 			TArray<uint8> FileContents;
 			OnlineUserCloudInterface->GetFileContents(InUserId, FileName, FileContents);
-			
-			// Serialize the object
-			FMemoryReader MemoryReader(FileContents, true);
-			FObjectAndNameAsStringProxyArchive Ar(MemoryReader, true);
-			
-			// FObjectAndNameAsStringProxyArchive does not have versioning, but we need it
-			// In 4.12, Serialization has been modified and we need the FArchive to use the right serialization path
-			uint32 PossibleMagicNumber;
-			Ar << PossibleMagicNumber;
-			if (CloudProfileMagicNumberVersion1 == PossibleMagicNumber)
-			{
-				int32 CloudProfileUE4Ver;
-				Ar << CloudProfileUE4Ver;
-				Ar.SetUE4Ver(CloudProfileUE4Ver);
-			}
-			else
-			{
-				// Very likely this is from an unversioned cloud profile, set it to the last released serialization version
-				Ar.SetUE4Ver(CloudProfileUE4VerForUnversionedProfile);
-				// Rewind to the beginning as the magic number was not in the archive
-				Ar.Seek(0);
-			}
 
-			bool bNeedToSaveProfile = false;
-
-
-			CurrentProfileSettings->Serialize(Ar);
-			bNeedToSaveProfile = CurrentProfileSettings->VersionFixup();
+			CurrentProfileSettings = CreateProfileSettingsObject(FileContents);
+			bool bNeedToSaveProfile = CurrentProfileSettings->VersionFixup();
 
 			if (FUTAnalytics::IsAvailable())
 			{
@@ -1615,6 +1691,8 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
 
 				FUTAnalytics::GetProvider().RecordEvent(TEXT("CloudProfileLoaded"), ParamArray);
+				
+				FUTAnalytics::FireEvent_UTGraphicsSettings(Cast<AUTPlayerController>(PlayerController));
 			}
 
 			FString CmdLineSwitch = TEXT("");
@@ -1626,7 +1704,7 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 			{
 				CurrentProfileSettings->ApplyAllSettings(this);
 				SaveLocalProfileSettings();
-				// It's possible for the MCP data to get here before the profile, so we havbe to check for daily challenges 
+				// It's possible for the MCP data to get here before the profile, so we have to check for daily challenges 
 				// in two places.
 				UUTGameEngine* GameEngine = Cast<UUTGameEngine>(GEngine);
 				if (GameEngine && GameEngine->GetChallengeManager().IsValid())
@@ -1641,6 +1719,12 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 				if (bNeedToSaveProfile)
 				{
 					SaveProfileSettings();
+				}
+
+				// If there's no matchmaking region, run a QoS eval
+				if (CurrentProfileSettings->MatchmakingRegion.IsEmpty())
+				{
+					FQosModule::Get().GetQosInterface()->BeginQosEvaluation(GetWorld(), FUTAnalytics::GetProviderPtr(), FSimpleDelegate::CreateUObject(this, &ThisClass::QoSComplete));
 				}
 
 				return;
@@ -1666,8 +1750,20 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 		PlayerNickname = GetAccountDisplayName().ToString();
 		SaveConfig();
 		SaveProfileSettings();
+
+		// If there's no matchmaking region, run a QoS eval
+		if (CurrentProfileSettings->MatchmakingRegion.IsEmpty())
+		{
+			FQosModule::Get().GetQosInterface()->BeginQosEvaluation(GetWorld(), FUTAnalytics::GetProviderPtr(), FSimpleDelegate::CreateUObject(this, &ThisClass::QoSComplete));
+		}
 	}
-	else if (FileName == GetProgressionFilename())
+}
+
+void UUTLocalPlayer::OnReadProgressionComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName)
+{
+	OnlineUserCloudInterface->ClearOnReadUserFileCompleteDelegate_Handle(OnReadProfileCompleteDelegate);
+
+	if (FileName == GetProgressionFilename())
 	{
 		bIsPendingProgressionLoadFromMCP = false;
 
@@ -1760,6 +1856,8 @@ void UUTLocalPlayer::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNe
 	}
 }
 
+
+
 // Only send ELO and stars to the server once all the server responses are complete
 void UUTLocalPlayer::ReportStarsToServer()
 {
@@ -1812,11 +1910,8 @@ void UUTLocalPlayer::SaveProfileSettings()
 {
 	if ( CurrentProfileSettings != NULL )
 	{
-		if (PlayerController && PlayerController->PlayerState)
-		{
-			CurrentProfileSettings->PlayerName = PlayerController->PlayerState->PlayerName;
-		}
-
+		CurrentProfileSettings->PlayerName = GetNickname();
+		CurrentProfileSettings->ClanName = GetClanName();
 		CurrentProfileSettings->SettingsRevisionNum = CURRENT_PROFILESETTINGS_VERSION;
 		CurrentProfileSettings->bNeedProfileWriteOnLevelChange = false;
 		CurrentProfileSettings->SettingsSavedOn = FDateTime::UtcNow();
@@ -1942,20 +2037,21 @@ void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueN
 	}
 
 	HideSavingWidget();
-
-
 }
 
 void UUTLocalPlayer::SetNickname(FString NewName)
 {
-	if (!NewName.IsEmpty())
+	GetNickname();
+
+	// safety in case offline and no name set FIXMESTEVE make sure needed.
+	if (PlayerNickname.IsEmpty() && !NewName.IsEmpty())
 	{
 		PlayerNickname = NewName;
-		SaveConfig();
 		if (PlayerController)
 		{
 			PlayerController->ServerChangeName(NewName);
 		}
+		CurrentProfileSettings->PlayerName = PlayerNickname;
 	}
 }
 
@@ -2481,7 +2577,7 @@ void UUTLocalPlayer::SetHatVariant(int32 NewVariant)
 	{
 		CurrentProfileSettings->HatVariant = NewVariant;
 	}
-	SetDefaultURLOption(TEXT("HatVar"), FString::FromInt(NewVariant));
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -2503,7 +2599,7 @@ void UUTLocalPlayer::SetEyewearVariant(int32 NewVariant)
 	{
 		CurrentProfileSettings->EyewearVariant = NewVariant;
 	}
-	SetDefaultURLOption(TEXT("EyewearVar"), FString::FromInt(NewVariant));
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -2519,40 +2615,18 @@ FString UUTLocalPlayer::GetHatPath() const
 	return (CurrentProfileSettings != NULL) ? CurrentProfileSettings->HatPath : GetDefaultURLOption(TEXT("Hat"));
 }
 
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName HatChanged
-*
-* @Trigger Sent when a player changes their hat cosmetic
-*
-* @Type Sent by the Client
-*
-* @EventParam PlayerID Unique ID of the player
-* @EventParam HatPath string New hat used
-*
-* @Comments
-*/
 void UUTLocalPlayer::SetHatPath(const FString& NewHatPath)
 {
 	if (CurrentProfileSettings != NULL)
 	{
 		CurrentProfileSettings->HatPath = NewHatPath;
 	}
-	SetDefaultURLOption(TEXT("Hat"), NewHatPath);
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
 		if (PS != NULL)
 		{
-			if (FUTAnalytics::IsAvailable())
-			{
-				TArray<FAnalyticsEventAttribute> ParamArray;
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("HatPath"), NewHatPath));
-				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
-
-				FUTAnalytics::GetProvider().RecordEvent( TEXT("HatChanged"), ParamArray );
-			}
 			PS->ServerReceiveHatClass(NewHatPath);
 		}
 	}
@@ -2563,40 +2637,18 @@ FString UUTLocalPlayer::GetLeaderHatPath() const
 	return (CurrentProfileSettings != NULL) ? CurrentProfileSettings->LeaderHatPath : GetDefaultURLOption(TEXT("LeaderHat"));
 }
 
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName LeaderHatChanged
-*
-* @Trigger Sent when a player changes their leader hat
-*
-* @Type Sent by the Client
-*
-* @EventParam PlayerID Unique ID of the player
-* @EventParam LeaderHatPath string New Leader hat used
-*
-* @Comments
-*/
 void UUTLocalPlayer::SetLeaderHatPath(const FString& NewLeaderHatPath)
 {
 	if (CurrentProfileSettings != NULL)
 	{
 		CurrentProfileSettings->LeaderHatPath = NewLeaderHatPath;
 	}
-	SetDefaultURLOption(TEXT("LeaderHat"), NewLeaderHatPath);
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
 		if (PS != NULL)
 		{
-			if (FUTAnalytics::IsAvailable())
-			{
-				TArray<FAnalyticsEventAttribute> ParamArray;
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("LeaderHatPath"), NewLeaderHatPath));
-				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
-
-				FUTAnalytics::GetProvider().RecordEvent( TEXT("LeaderHatChanged"), ParamArray );
-			}
 			PS->ServerReceiveLeaderHatClass(NewLeaderHatPath);
 		}
 	}
@@ -2608,41 +2660,18 @@ FString UUTLocalPlayer::GetEyewearPath() const
 }
 
 
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName CharacterChanged
-*
-* @Trigger Sent when a player changes their eyewear
-*
-* @Type Sent by the Client
-*
-* @EventParam PlayerID Unique ID of the player
-* @EventParam EyewearPath string New eye wear used
-*
-* @Comments
-*/
 void UUTLocalPlayer::SetEyewearPath(const FString& NewEyewearPath)
 {
 	if (CurrentProfileSettings != NULL)
 	{
 		CurrentProfileSettings->EyewearPath = NewEyewearPath;
 	}
-	SetDefaultURLOption(TEXT("Eyewear"), NewEyewearPath);
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
 		if (PS != NULL)
 		{
-			if (FUTAnalytics::IsAvailable())
-			{
-				TArray<FAnalyticsEventAttribute> ParamArray;
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("EyewearPath"), NewEyewearPath));
-				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
-
-				FUTAnalytics::GetProvider().RecordEvent( TEXT("CharacterChanged"), ParamArray );
-			}
-
 			PS->ServerReceiveEyewearClass(NewEyewearPath);
 		}
 	}
@@ -2653,38 +2682,15 @@ FString UUTLocalPlayer::GetCharacterPath() const
 	return (CurrentProfileSettings != NULL) ? CurrentProfileSettings->CharacterPath : GetDefaultURLOption(TEXT("Character"));
 }
 
-
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName CharacterChanged
-*
-* @Trigger Sent when a player changes their character
-*
-* @Type Sent by the Client
-*
-* @EventParam PlayerID Unique ID of the player
-* @EventParam CharacterPath string New Character Used
-*
-* @Comments
-*/
 void UUTLocalPlayer::SetCharacterPath(const FString& NewCharacterPath)
 {
 	AUTPlayerState* PS = Cast<AUTPlayerState>((PlayerController != NULL) ? PlayerController->PlayerState : NULL);
-	if (PS != NULL && FUTAnalytics::IsAvailable())
-	{
-		TArray<FAnalyticsEventAttribute> ParamArray;
-		ParamArray.Add(FAnalyticsEventAttribute(TEXT("PlayerID"), PS->UniqueId.ToString()));
-		ParamArray.Add(FAnalyticsEventAttribute(TEXT("CharacterPath"), NewCharacterPath));
-		FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
-
-		FUTAnalytics::GetProvider().RecordEvent( TEXT("CharacterChanged"), ParamArray );
-	}
-
+	SetDefaultURLOption(TEXT("Character"), NewCharacterPath);
 	if (CurrentProfileSettings != NULL)
 	{
 		CurrentProfileSettings->CharacterPath = NewCharacterPath;
 	}
-	SetDefaultURLOption(TEXT("Character"), NewCharacterPath);
+
 	if (PS != NULL)
 	{
 		PS->ServerSetCharacter(NewCharacterPath);
@@ -2702,7 +2708,7 @@ void UUTLocalPlayer::SetGroupTauntPath(const FString& NewGroupTauntPath)
 	{
 		CurrentProfileSettings->GroupTauntPath = NewGroupTauntPath;
 	}
-	SetDefaultURLOption(TEXT("GroupTaunt"), NewGroupTauntPath);
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -2724,7 +2730,7 @@ void UUTLocalPlayer::SetTauntPath(const FString& NewTauntPath)
 	{
 		CurrentProfileSettings->TauntPath = NewTauntPath;
 	}
-	SetDefaultURLOption(TEXT("Taunt"), NewTauntPath);
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -2746,7 +2752,7 @@ void UUTLocalPlayer::SetTaunt2Path(const FString& NewTauntPath)
 	{
 		CurrentProfileSettings->Taunt2Path = NewTauntPath;
 	}
-	SetDefaultURLOption(TEXT("Taunt2"), NewTauntPath);
+
 	if (PlayerController != NULL)
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
@@ -3618,13 +3624,13 @@ TSharedPtr<SUTMatchSummaryPanel> UUTLocalPlayer::GetSummaryPanel()
 }
 #endif
 
-void UUTLocalPlayer::ShowPlayerInfo(TWeakObjectPtr<AUTPlayerState> Target, bool bAllowLogout)
+void UUTLocalPlayer::ShowPlayerInfo(const FString& TargetId, const FString PlayerName)
 {
 #if !UE_SERVER
 	TSharedPtr<SUTMatchSummaryPanel> MatchSummary = GetSummaryPanel();
-	if (MatchSummary.IsValid() && Target.IsValid())
+	if ( MatchSummary.IsValid() )
 	{
-		MatchSummary->SelectPlayerState(Target.Get());
+		//MatchSummary->SelectPlayerState(Target.Get());
 	}
 	else
 	{
@@ -3632,7 +3638,12 @@ void UUTLocalPlayer::ShowPlayerInfo(TWeakObjectPtr<AUTPlayerState> Target, bool 
 		{
 			HideMenu();
 		}
-		OpenDialog(SNew(SUTPlayerInfoDialog).PlayerOwner(this).TargetPlayerState(Target).bAllowLogout(bAllowLogout));
+		OpenDialog(
+				SNew(SUTPlayerInfoDialog)
+					.PlayerOwner(this)
+					.TargetUniqueId(TargetId)
+					.TargetName(PlayerName)
+		);
 	}
 #endif
 }
@@ -3691,7 +3702,6 @@ int32 UUTLocalPlayer::GetRecentPlayersList(TArray< FUTFriend >& OutRecentPlayers
 	return RetVal;
 }
 
-
 void UUTLocalPlayer::OnTauntPlayed(AUTPlayerState* PS, TSubclassOf<AUTTaunt> TauntToPlay, float EmoteSpeed)
 {
 #if !UE_SERVER
@@ -3729,7 +3739,6 @@ void UUTLocalPlayer::SendFriendRequest(AUTPlayerState* DesiredPlayerState)
 		RequestFriendship(DesiredPlayerState->UniqueId.GetUniqueNetId());
 	}
 }
-
 
 bool UUTLocalPlayer::ContentExists(const FPackageRedirectReference& Redirect)
 {
@@ -3792,7 +3801,6 @@ bool UUTLocalPlayer::RequiresDLCWarning()
 	}
 
 	return true;
-
 }
 
 void UUTLocalPlayer::ShowDLCWarning()
@@ -3905,7 +3913,6 @@ int32 UUTLocalPlayer::GetDownloadBytes()
 	return 0;
 }
 
-
 float UUTLocalPlayer::GetDownloadProgress()
 {
 	UUTGameViewportClient* UTGameViewport = Cast<UUTGameViewportClient>(ViewportClient);
@@ -3916,10 +3923,6 @@ float UUTLocalPlayer::GetDownloadProgress()
 
 	return 0.0f;
 }
-
-
-
-
 
 bool UUTLocalPlayer::IsDownloadInProgress()
 {
@@ -3949,6 +3952,7 @@ void UUTLocalPlayer::HandleNetworkFailureMessage(enum ENetworkFailure::Type Fail
 		BasePlayerController->HandleNetworkFailureMessage(FailureType, ErrorString);
 	}
 }
+
 void UUTLocalPlayer::OpenLoadout(bool bBuyMenu)
 {
 #if !UE_SERVER
@@ -3979,6 +3983,7 @@ void UUTLocalPlayer::OpenLoadout(bool bBuyMenu)
 	}
 #endif
 }
+
 void UUTLocalPlayer::CloseLoadout()
 {
 #if !UE_SERVER
@@ -4012,6 +4017,7 @@ void UUTLocalPlayer::OpenMapVote(AUTGameState* GameState)
 	}
 #endif
 }
+
 void UUTLocalPlayer::CloseMapVote()
 {
 #if !UE_SERVER
@@ -4567,28 +4573,35 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 
 	ChatArchive.Empty();
 
-	if (GetWorld()->WorldType == EWorldType::Game)
+#if !UE_SERVER
+	CloseAuth();
+#endif
+
+	if (GetWorld() && GetWorld()->WorldType == EWorldType::Game)
 	{
 		GEngine->GameViewport->RemoveAllViewportWidgets();
 	}
+
 #if !UE_SERVER
-	if (bExceptDialogs)
+
+	TArray<TSharedPtr<SUTDialogBase>> DialogsToClose;
+	for (TSharedPtr<SUTDialogBase> Dialog : OpenDialogs)
 	{
-		if (GetWorld()->WorldType == EWorldType::Game)
+		if (!bExceptDialogs || (Dialog.IsValid() && !Dialog->bRemainOpenThroughTravel()) )
 		{
-			// restore dialogs to the viewport
-			for (TSharedPtr<SUTDialogBase> Dialog : OpenDialogs)
-			{
-				if ( Dialog.IsValid() && (!MapVoteMenu.IsValid() || Dialog.Get() != MapVoteMenu.Get()) && (!DownloadAllDialog.IsValid() || Dialog.Get() != DownloadAllDialog.Get()) )
-				{
-					GEngine->GameViewport->AddViewportWidgetContent(Dialog.ToSharedRef(), 255);
-				}
-			}
+			DialogsToClose.Add(Dialog);
+		}
+		else
+		{
+			// ReAdd this dialog to the viewport.  This is a hacky solution until we have time to
+			// go through and make sure noone is opening dialogs/windows/etc that aren't in the stacks
+			GEngine->GameViewport->AddViewportWidgetContent(Dialog.ToSharedRef(), Dialog->ZOrder);
 		}
 	}
-	else
+
+	for (TSharedPtr<SUTDialogBase> Dialog : DialogsToClose)
 	{
-		OpenDialogs.Empty();
+		CloseDialog(Dialog.ToSharedRef());
 	}
 	
 	if (DesktopSlateWidget.IsValid())
@@ -4596,29 +4609,23 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 		DesktopSlateWidget->OnMenuClosed();
 		DesktopSlateWidget.Reset();
 	}
+
 	// These should all be proper closes
 	ServerBrowserWidget.Reset();
 	ReplayBrowserWidget.Reset();
 	StatsViewerWidget.Reset();
 	CreditsPanelWidget.Reset();
-	QuickMatchDialog.Reset();
-	LoginDialog.Reset();
 	ContentLoadingMessage.Reset();
 	FriendsMenu.Reset();
 	LoadoutMenu.Reset();
 	ReplayWindow.Reset();
-	YoutubeDialog.Reset();
-	YoutubeConsentDialog.Reset();
 	
-	AdminDialogClosed();
-	CloseMapVote();
 	CloseMatchSummary();
 	CloseSpectatorWindow();
 	CloseQuickChat();
-	HideHUDSettings();
-	HideRedirectDownload();
 	CloseWebMessage();
 	CloseSavingWidget();
+
 	while (WindowStack.Num() > 0)
 	{
 		CloseWindow(WindowStack[0]);
@@ -4934,7 +4941,7 @@ void UUTLocalPlayer::OnEnumerateTitleFilesComplete(bool bWasSuccessful)
 		if (OnlineTitleFileInterface.IsValid())
 		{
 			OnlineTitleFileInterface->ReadFile(GetMCPStorageFilename());
-			OnlineTitleFileInterface->ReadFile(GetRankedPlayFilename());
+			OnlineTitleFileInterface->ReadFile(GetOnlineSettingsFilename());
 		}
 	}
 }
@@ -4982,36 +4989,10 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 						SaveProfileSettings();
 					}
 				}
-
-				uint32 MyVersion = FNetworkVersion::GetNetworkCompatibleChangelist();
-				UE_LOG(UT,Warning,TEXT("Compatible Network Version: %i"), MyVersion)
-
-				if ((uint32)MCPPulledData.CurrentVersionNumber > MyVersion )
-				{
-#if !UE_SERVER
-					ShowWebMessage(NSLOCTEXT("UTLocalPlayer","NeedtoUpdateTitle","New Version Available"), TEXT("http://epic.gm/ood"));
-#endif
-				}
-				else if (IsMenuGame())
-				{
-					if (MCPPulledData.CurrentVersionNumber > LastLoadedVersionNumber)
-					{
-						// Delete the web cache to insure the new version is loaded.  CEFBrowser should give you a LoadURLIgnoringCache but it doesn't
-						FString WebCacheIndex = FPaths::GameSavedDir() + TEXT("/webcache/index");
-						FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*WebCacheIndex);
-
-						// Open a Web page with better info
-						ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), TEXT("http://epic.gm/updt"));
-					
-						LastLoadedVersionNumber = (uint32)MCPPulledData.CurrentVersionNumber;
-						SaveConfig();
-					}
-				}
-
 			}
 		}
 	}
-	else if (Filename == GetRankedPlayFilename())
+	else if (Filename == GetOnlineSettingsFilename())
 	{
 		ActiveRankedPlaylists.Empty();
 
@@ -5019,16 +5000,23 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 		if (bWasSuccessful)
 		{
 			TArray<uint8> FileContents;
-			OnlineTitleFileInterface->GetFileContents(GetRankedPlayFilename(), FileContents);
+			OnlineTitleFileInterface->GetFileContents(GetOnlineSettingsFilename(), FileContents);
 			FileContents.Add(0);
 			JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
 
 			if (JsonString != TEXT(""))
 			{
-				FActiveRankedPlaylists ActivePlaylists;
-				if (FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &ActivePlaylists, 0, 0))
+				FUTOnlineSettings UTOnlineSettings;
+				if (FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &UTOnlineSettings, 0, 0))
 				{
-					ActiveRankedPlaylists = ActivePlaylists.ActiveRankedPlaylists;
+					ActiveRankedPlaylists = UTOnlineSettings.ActiveRankedPlaylists;
+
+					RankedEloRange = UTOnlineSettings.RankedEloRange;
+					RankedMinEloRangeBeforeHosting = UTOnlineSettings.RankedMinEloRangeBeforeHosting;
+					RankedMinEloSearchStep = UTOnlineSettings.RankedMinEloSearchStep;
+					QMEloRange = UTOnlineSettings.QMEloRange;
+					QMMinEloRangeBeforeHosting = UTOnlineSettings.QMMinEloRangeBeforeHosting;
+					QMMinEloSearchStep = UTOnlineSettings.QMMinEloSearchStep;
 				}
 			}
 		}
@@ -5424,9 +5412,9 @@ void UUTLocalPlayer::Reconnect(bool bSpectator)
 		UMatchmakingContext* MatchmakingContext = Cast<UMatchmakingContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UMatchmakingContext::StaticClass()));
 		if (MatchmakingContext)
 		{
-			MatchmakingContext->AttemptReconnect(LastRankedMatchUniqueId);
+			MatchmakingContext->AttemptReconnect(LastRankedMatchSessionId);
 		}
-		LastRankedMatchUniqueId.Empty();
+		LastRankedMatchPlayerId.Empty();
 		LastRankedMatchSessionId.Empty();
 		LastRankedMatchTimeString.Empty();
 		SaveConfig();
@@ -5447,9 +5435,9 @@ void UUTLocalPlayer::Reconnect(bool bSpectator)
 void UUTLocalPlayer::EpicFlagCheck()
 {
 	if (CurrentProfileSettings != NULL && CommunityRole == EUnrealRoles::Developer && 
-			CurrentProfileSettings->CountryFlag == FName(TEXT("Unreal")) && !CurrentProfileSettings->bForcedToEpicAtLeastOnce)
+			GetCountryFlag() == FName(TEXT("Unreal")) && !CurrentProfileSettings->bForcedToEpicAtLeastOnce)
 	{
-		CurrentProfileSettings->CountryFlag = FName(TEXT("Epic"));
+		SetCountryFlagAndAvatar(FName(TEXT("Epic")), GetAvatar());
 		CurrentProfileSettings->bForcedToEpicAtLeastOnce = true;
 		SaveProfileSettings();
 	}
@@ -5527,13 +5515,25 @@ void UUTLocalPlayer::StartMatchmaking(int32 PlaylistId)
 			}
 		}
 
-		MatchmakingParams.MinimumEloRangeBeforeHosting = 100;
-		if (!MatchmakingParams.bRanked)
+		if (MatchmakingParams.bRanked)
 		{
-			MatchmakingParams.EloRange = 100;
+			MatchmakingParams.EloRange = RankedEloRange;
+			MatchmakingParams.MinimumEloRangeBeforeHosting = RankedMinEloRangeBeforeHosting;
+			MatchmakingParams.EloSearchStep = RankedMinEloSearchStep;
+		}
+		else
+		{
+			MatchmakingParams.EloRange = QMEloRange;
+			MatchmakingParams.MinimumEloRangeBeforeHosting = QMMinEloRangeBeforeHosting;
+			MatchmakingParams.EloSearchStep = QMMinEloSearchStep;
 		}
 
 		bool bSuccessfullyStarted = Matchmaking->FindGatheringSession(MatchmakingParams);
+
+		if (bSuccessfullyStarted && FUTAnalytics::IsAvailable())
+		{
+			FUTAnalytics::FireEvent_UTMatchMakingStart(Cast<AUTPlayerController>(PlayerController), &MatchmakingParams);
+		}
 	}
 }
 
@@ -5658,7 +5658,7 @@ void UUTLocalPlayer::ShowMatchmakingDialog()
 		CloseDialog(LeagueMatchResultsDialog.ToSharedRef());
 		LeagueMatchResultsDialog.Reset();
 	}
-	
+
 	OpenDialog(
 		SAssignNew(MatchmakingDialog, SUTMatchmakingDialog)
 		.PlayerOwner(this)
@@ -5707,6 +5707,11 @@ void UUTLocalPlayer::MatchmakingResult(TSharedPtr<SCompoundWidget> Widget, uint1
 				Party->RestorePersistentPartyState();
 			}
 		}
+
+		if (Matchmaking && FUTAnalytics::IsAvailable())
+		{
+			FUTAnalytics::FireEvent_UTMatchMakingCancelled(Cast<AUTPlayerController>(PlayerController), GetWorld()->RealTimeSeconds - Matchmaking->TimeMatchmakingStarted);
+		}
 	}
 
 	MatchmakingDialog.Reset();
@@ -5722,8 +5727,28 @@ void UUTLocalPlayer::VerifyChatWidget()
 		SAssignNew(ChatWidget, SUTChatEditBox, this)
 		.Style(SUTStyle::Get(), "UT.ChatEditBox")
 		.MinDesiredWidth(500.0f)
-		.MaxTextSize(MAX_CHAT_TEXT_SIZE);
+		.MaxTextSize(MAX_CHAT_TEXT_SIZE)
+		.OnConsoleKeyPressed(FUTChatEditConsoleKeyDelegate::CreateUObject(this, &UUTLocalPlayer::ChatWidgetConsoleKeyPressed));
 	}
+
+	if (ChatWidget.IsValid() && GetProfileSettings())
+	{
+
+		const FKeyConfigurationInfo* KeyConfig = GetProfileSettings()->FindGameAction(FName(TEXT("ShowConsole")));
+		if (KeyConfig)
+		{
+			ChatWidget->ConsoleKeyName = KeyConfig->PrimaryKey.GetFName();
+		}
+	}
+}
+
+void UUTLocalPlayer::ChatWidgetConsoleKeyPressed()
+{
+	if (ViewportClient->ViewportConsole)
+	{
+		ViewportClient->ViewportConsole->FakeGotoState(FName(TEXT("Typing")));
+	}
+
 }
 
 TSharedPtr<SUTChatEditBox> UUTLocalPlayer::GetChatWidget()
@@ -5974,25 +5999,34 @@ void UUTLocalPlayer::LoginProcessComplete()
 	{
 		FText WelcomeToast = FText::Format(NSLOCTEXT("MCP","MCPWelcomeBack","Welcome back {0}"), FText::FromString(*GetOnlinePlayerNickname()));
 		ShowToast(WelcomeToast);
-
-		// on successful auto login, attempt to join an accepted friend game invite
-		if (bInitialSignInAttempt)
-		{
-			FString SessionId;
-			FString FriendId;
-			if (FParse::Value(FCommandLine::Get(), TEXT("invitesession="), SessionId) && !SessionId.IsEmpty() &&
-				FParse::Value(FCommandLine::Get(), TEXT("invitefrom="), FriendId) && !FriendId.IsEmpty())
-			{
-				JoinFriendSession(FUniqueNetIdString(FriendId), FUniqueNetIdString(SessionId));
-				return;
-			}
-		}
-
+		
 		// If we have a pending session, then join it.
 		JoinPendingSession();
 
 		TSharedPtr<const FUniqueNetId> UserId = OnlineIdentityInterface->GetUniquePlayerId(GetControllerId());
 		ShowRankedReconnectDialog(UserId->ToString());
+	}
+}
+
+void UUTLocalPlayer::QoSComplete()
+{
+	FString MatchmakingRegion = FQosModule::Get().GetQosInterface()->GetRegionId();
+	UE_LOG(UT, Log, TEXT("QoS complete, recommended region %s"), *MatchmakingRegion);
+	if (CurrentProfileSettings)
+	{
+		if (MatchmakingRegion == TEXT("EU") || MatchmakingRegion == TEXT("NA"))
+		{
+			CurrentProfileSettings->MatchmakingRegion = MatchmakingRegion;
+			SaveProfileSettings();
+		}
+		else
+		{
+			UE_LOG(UT, Warning, TEXT("QoS complete, but invalid region %s"), *MatchmakingRegion);
+		}
+	}
+	else
+	{
+		UE_LOG(UT, Warning, TEXT("Matchmaking region chosen, but no profile settings to apply"));
 	}
 }
 
@@ -6034,7 +6068,15 @@ void UUTLocalPlayer::SetTutorialFinished(FName TutorialTag)
 				{
 					if (TutorialMask == TUTORIAL_DM)
 					{
-						ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlocked","Achievement: Fragger\nDeathmatch Quickmatch Unlocked!"),6.0f);			
+						ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlockedDM","Achievement: Fragger\nDeathmatch Quickmatch Unlocked!"),6.0f);			
+					}
+					if (TutorialMask == TUTORIAL_FlagRun)
+					{
+						ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlockedFR","Achievement: Running Man\nFlagrun Quickmatch Unlocked!"),6.0f);			
+					}
+					if (TutorialMask == TUTORIAL_Showdown)
+					{
+						ShowToast(NSLOCTEXT("Unlocks","DMQuickMatchUnlockedSD","Achievement: Mano E' Mano\nShowdown Quickmatch Unlocked!"),6.0f);			
 					}
 					if (TutorialMask == TUTORIAL_CTF)
 					{
@@ -6085,16 +6127,29 @@ void UUTLocalPlayer::InitializeSocial()
  	{
 		ISocialModule::Get().GetFriendsAndChatManager(TEXT(""), true)->GetNotificationService()->OnSendNotification().AddUObject(this, &UUTLocalPlayer::HandleFriendsActionNotification);
  	}
-				
+	
 #endif
+	
+	GetWorld()->GetTimerManager().SetTimer(SocialInitializationTimerHandle, this, &UUTLocalPlayer::SocialInitialized, 0.25f, true);
 
+}
+
+void UUTLocalPlayer::SocialInitialized()
+{
 #if !UE_SERVER
+
+	if (!ISocialModule::Get().GetFriendsAndChatManager(TEXT(""), true)->IsLoggedIn())
+	{
+		return;
+	}
+
+	GetWorld()->GetTimerManager().ClearTimer(SocialInitializationTimerHandle);
+
 	// Make sure popup is created so we dont lose any messages
 	GetFriendsPopup();
 #endif
 
 	LoginPhase = ELoginPhase::LoggedIn;
-
 }
 
 bool UUTLocalPlayer::SkipTutorialCheck()
@@ -6337,6 +6392,13 @@ FText UUTLocalPlayer::GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type
 
 bool UUTLocalPlayer::IsTutorialMaskCompleted(int32 TutorialMask) const
 {
+#if !UE_BUILD_SHIPPING
+	if (FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")))
+	{
+		return true;
+	}
+#endif
+
 	return ( GetTutorialMask() & TutorialMask ) == TutorialMask;
 }
 
@@ -6661,4 +6723,75 @@ void UUTLocalPlayer::ClearTutorialMask(int32 BitToClear)
 
 }
 
+void UUTLocalPlayer::RemoveCosmeticsFromDefaultURL()
+{
+	FURL DefaultURL;
+	DefaultURL.LoadURLConfig(TEXT("DefaultPlayer"), GGameIni);
+	if (DefaultURL.HasOption(TEXT("Hat")) ||
+		DefaultURL.HasOption(TEXT("LeaderHat")) ||
+		DefaultURL.HasOption(TEXT("Eyewear")) ||
+		DefaultURL.HasOption(TEXT("GroupTaunt")) ||
+		DefaultURL.HasOption(TEXT("Taunt")) ||
+		DefaultURL.HasOption(TEXT("Taunt2")))
+	{
+		ClearDefaultURLOption(TEXT("Hat"));
+		ClearDefaultURLOption(TEXT("LeaderHat"));
+		ClearDefaultURLOption(TEXT("Eyewear"));
+		ClearDefaultURLOption(TEXT("GroupTaunt"));
+		ClearDefaultURLOption(TEXT("Taunt"));
+		ClearDefaultURLOption(TEXT("Taunt2"));
+		ClearDefaultURLOption(TEXT("HatVar"));
+		ClearDefaultURLOption(TEXT("EyewearVar"));
+	}
+}
 
+FSceneView* UUTLocalPlayer::CalcSceneView(class FSceneViewFamily* ViewFamily, FVector& OutViewLocation, FRotator& OutViewRotation, FViewport* Viewport, class FViewElementDrawer* ViewDrawer, EStereoscopicPass StereoPass)
+{
+	if (PlayerController != nullptr)
+	{
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(PlayerController);
+		if (UTPC == nullptr)
+		{
+			AActor* ActorPlayerController = Cast<AActor>(PlayerController);
+			if (ActorPlayerController->GetActorLocation().IsNearlyZero())
+			{
+				AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
+				if (WS)
+				{
+					ActorPlayerController->SetActorLocationAndRotation(WS->LoadingCameraLocation, WS->LoadingCameraRotation);
+				}
+			}
+		}
+	}
+
+	return Super::CalcSceneView(ViewFamily, OutViewLocation, OutViewRotation, Viewport, ViewDrawer, StereoPass);
+}
+
+void UUTLocalPlayer::UpdateCheck()
+{
+#if !UE_SERVER
+
+	uint32 MyVersion = FNetworkVersion::GetNetworkCompatibleChangelist();
+	UE_LOG(UT,Warning,TEXT("Compatible Network Version: %i"), MyVersion)
+
+	if ((uint32)MCPPulledData.CurrentVersionNumber > MyVersion )
+	{
+		ShowWebMessage(NSLOCTEXT("UTLocalPlayer","NeedtoUpdateTitle","New Version Available"), TEXT("http://epic.gm/ood"));
+	}
+	else if (IsMenuGame())
+	{
+		if (MCPPulledData.CurrentVersionNumber > LastLoadedVersionNumber)
+		{
+			// Delete the web cache to insure the new version is loaded.  CEFBrowser should give you a LoadURLIgnoringCache but it doesn't
+			FString WebCacheIndex = FPaths::GameSavedDir() + TEXT("/webcache/index");
+			FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*WebCacheIndex);
+
+			// Open a Web page with better info
+			ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), TEXT("http://epic.gm/updt"));
+					
+			LastLoadedVersionNumber = (uint32)MCPPulledData.CurrentVersionNumber;
+			SaveConfig();
+		}
+	}
+#endif
+}

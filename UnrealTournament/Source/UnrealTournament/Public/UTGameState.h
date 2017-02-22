@@ -48,6 +48,12 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY()
 	TArray<UObject*> PreloadedAssets;
 
+	UPROPERTY()
+	TArray<UObject*> AsyncLoadedAssets;
+
+	/** Allow game states to react to asset packages being loaded asynchronously */
+	virtual void AsyncPackageLoaded(UObject* Package) override;
+
 	virtual void OnRep_GameModeClass() override;
 
 	/** teams, if the game type has them */
@@ -79,9 +85,9 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
 		uint32 bTeamProjHits : 1;
 
-	/**If enabled, the server grants special control for casters*/
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
-	uint32 bCasterControl : 1;
+	/** If true, teammates block each others movement. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = GameState)
+		uint32 bTeamCollision : 1;
 
 	/**If true, had to force balance teams. */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
@@ -180,8 +186,11 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	int32 RemainingTime;
 
 	// Used to sync the time on clients to the server. Updated at a lower frequency to reduce bandwidth cost -- See DefaultTimer()
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing=OnRepRemainingTime)
 		int32 ReplicatedRemainingTime;
+
+	UFUNCTION()
+		virtual void OnRepRemainingTime();
 
 	public:
 	int32 GetRemainingTime() { return RemainingTime; };
@@ -286,6 +295,8 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 
 	/** Return largest SpectatingIdTeam value in current PlayerArray. */
 	virtual int32 GetMaxTeamSpectatingId(int32 TeamNum);
+
+	virtual bool CanSpectate(APlayerController* Viewer, APlayerState* ViewTarget);
 
 	/** add an overlay to the OverlayMaterials list */
 	UFUNCTION(Meta = (DeprecatedFunction, DeprecationMessage = "Use AddOverlayEffect"), BlueprintCallable, BlueprintAuthorityOnly, Category = Effects)
@@ -628,8 +639,6 @@ public:
 
 	virtual bool CanShowBoostMenu(AUTPlayerController* Target);
 	
-	virtual bool ShouldUseInGameSummary(LineUpTypes SummaryType);
-
 	UPROPERTY(Replicated, GlobalConfig, EditAnywhere, BlueprintReadWrite, Category = GameState)
 	bool bOnlyTeamCanVoteKick;
 	
@@ -695,6 +704,11 @@ protected:
 	/** Allows the game to change the client's music volume based on the state of the game */
 	void ManageMusicVolume(float DeltaTime);
 
+	/** Holds a list of any line ups that have been spawned. 
+		Line Ups are only spawned when the level is missing them. **/
+	UPROPERTY()
+	TArray<AUTLineUpZone*> SpawnedLineUps;
+
 public:
 	// This is the GUID if the current servers.  See UTBaseGameMode for more information
 	UPROPERTY(Replicated)
@@ -706,6 +720,12 @@ public:
 	UPROPERTY(Replicated)
 	AUTPlayerState* LeadLineUpPlayer;
 
+	virtual AUTLineUpZone* GetAppropriateSpawnList(LineUpTypes ZoneType);
+
+	virtual void SpawnDefaultLineUpZones();
+
+	virtual AActor* GetCameraActorForLineUp(LineUpTypes ZoneType);
+	
 	// Returns true if the replication of the MapVote list is completed
 	bool IsMapVoteListReplicationCompleted();
 
@@ -714,7 +734,10 @@ public:
 	UPROPERTY(Replicated)
 	FString ReplayID;
 
+	// Will be set true on a client if their menu is opened.  We use this to override the
+	// code that fades out the level music while in a game
+	bool bLocalMenusAreActive;
+
+protected:
+	virtual AUTLineUpZone* CreateLineUpAtPlayerStart(LineUpTypes LineUpType, class APlayerStart* PlayerSpawn);
 };
-
-
-

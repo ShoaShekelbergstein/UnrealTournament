@@ -271,7 +271,7 @@ void UUTHUDWidgetMessage_KillIconMessages::AgeMessages_Implementation(float Delt
 {
 	Super::AgeMessages_Implementation(DeltaTime);
 
-	if (UTGameState && UTGameState->bPersistentKillIconMessages)
+	if (UTGameState && UTGameState->bPersistentKillIconMessages && UTGameState->HasMatchStarted())
 	{
 		for (int32 QueueIndex = 0; QueueIndex < MessageQueue.Num(); QueueIndex++)
 		{

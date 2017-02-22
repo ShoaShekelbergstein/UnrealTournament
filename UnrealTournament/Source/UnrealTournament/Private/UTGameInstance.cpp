@@ -13,6 +13,8 @@
 #include "UnrealTournamentFullScreenMovie.h"
 #include "OnlineSubsystemUtils.h"
 #include "UTLevelSummary.h"
+#include "UTWorldSettings.h"
+#include "Classes/Engine/ActorChannel.h"
 
 #if !UE_SERVER
 #include "SUTStyle.h"
@@ -321,6 +323,38 @@ void UUTGameInstance::StartRecordingReplay(const FString& Name, const FString& F
 	else
 	{
 		//UE_LOG(UT, VeryVerbose, TEXT("Num Network Actors: %i"), CurrentWorld->DemoNetDriver->GetNetworkObjectList().GetObjects().Num());
+		
+		// propagate level actors destroyed prior to replay being initialized as this isn't normally tracked in all cases
+		// NOTE: in the server case we could copy from the game net driver, but there's a lot of interdependencies between the list and the net GUID cache
+		//		and anyway the code below has to be reliable for non-server cases so there's no clear value in having split codepaths
+		if (CurrentWorld->DemoNetDriver->ClientConnections.Num() > 0 && CurrentWorld->DemoNetDriver->ClientConnections[0] != nullptr)
+		{
+			AUTWorldSettings* WS = Cast<AUTWorldSettings>(CurrentWorld->GetWorldSettings());
+			if (WS != nullptr)
+			{
+				for (const AUTWorldSettings::FDestroyedActorInfo& Obj : WS->GetDestroyedLevelActors())
+				{
+					if (Obj.Level.IsValid())
+					{
+						FActorDestructionInfo Info;
+
+						FNetGuidCacheObject CacheItem;
+						CacheItem.PathName = Obj.ActorName;
+						CacheItem.OuterGUID = CurrentWorld->DemoNetDriver->GuidCache->GetOrAssignNetGUID(Obj.Level.Get());
+						// warning: copied from AssignNewNetGUID_Server()
+						Info.NetGUID = FNetworkGUID((++CurrentWorld->DemoNetDriver->GuidCache->UniqueNetIDs[1] << 1) | 1);
+						CurrentWorld->DemoNetDriver->GuidCache->RegisterNetGUID_Internal(Info.NetGUID, CacheItem);
+						Info.PathName = Obj.ActorName.ToString();
+						Info.ObjOuter = Obj.Level.Get();
+						UActorChannel* Channel = (UActorChannel*)CurrentWorld->DemoNetDriver->ClientConnections[0]->CreateChannel(CHTYPE_Actor, 1);
+						if (Channel != nullptr)
+						{
+							Channel->SetChannelActorForDestroy(&Info);
+						}
+					}
+				}
+			}
+		}
 	}
 }
 void UUTGameInstance::PlayReplay(const FString& Name, UWorld* WorldOverride, const TArray<FString>& AdditionalOptions)
@@ -558,7 +592,7 @@ bool UUTGameInstance::ClientTravelToSession(int32 ControllerId, FName InSessionN
 					if (LP)
 					{
 						LP->LastRankedMatchSessionId = Session->SessionInfo->GetSessionId().ToString();
-						LP->LastRankedMatchUniqueId = Online::GetIdentityInterface()->GetUniquePlayerId(LP->GetControllerId())->ToString();
+						LP->LastRankedMatchPlayerId = Online::GetIdentityInterface()->GetUniquePlayerId(LP->GetControllerId())->ToString();
 						LP->LastRankedMatchTimeString = FDateTime::Now().ToString();
 						LP->SaveConfig();
 					}
@@ -798,7 +832,7 @@ FText UUTGameInstance::GetLevelLoadText() const
 		return FText::GetEmpty();
 	}
 
-	return NSLOCTEXT("UTGameInstance","PressFireToSkip","Press FIRE to Skip");
+	return NSLOCTEXT("UTGameInstance","PressFireToSkip","Press Any Key to Skip");
 }
 
 FText UUTGameInstance::GetVignetteText() const

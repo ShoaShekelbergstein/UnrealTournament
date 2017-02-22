@@ -4,7 +4,7 @@
 #include "UTLocalMessage.h"
 #include "UTCountDownMessage.h"
 #include "GameFramework/LocalMessage.h"
-#include "UTFlagRunGameState.h"
+#include "UTATypes.h"
 
 UUTCountDownMessage::UUTCountDownMessage(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -105,11 +105,7 @@ void UUTCountDownMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText
 		PrefixText = FText::GetEmpty();
 		PostfixText = FText::Format(EndingInText, Args);
 		EmphasisText = (Switch > 4000) ? GoldBonusMessage : SilverBonusMessage;
-		AUTFlagRunGameState* GS = AUTFlagRunGameState::StaticClass()->GetDefaultObject<AUTFlagRunGameState>();
-		if (GS)
-		{
-			EmphasisColor = (Switch > 4000) ? GS->GoldBonusColor : GS->SilverBonusColor;
-		}
+		EmphasisColor = (Switch > 4000) ? GOLDCOLOR : SILVERCOLOR;
 	}
 	else
 	{

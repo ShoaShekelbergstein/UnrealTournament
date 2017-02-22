@@ -429,6 +429,7 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 	HomeBase->ObjectWasPickedUp(NewHolder, bWasHome);
 
 	HoldingPawn = NewHolder;
+	HoldingPawn->UTCharacterMovement->bForceTeamCollision = false;
 	AttachTo(HoldingPawn->GetMesh());
 	Holder = Cast<AUTPlayerState>(HoldingPawn->PlayerState);
 	PickedUpTime = GetWorld()->GetTimeSeconds();
@@ -508,6 +509,7 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 			AUTRallyPoint* RallyPoint = Cast<AUTRallyPoint>(TouchingActor);
 			if (RallyPoint)
 			{
+				RallyPoint->TouchingFC = HoldingPawn;
 				RallyPoint->StartRallyCharging();
 				break;
 			}
@@ -563,6 +565,8 @@ void AUTCarriedObject::NoLongerHeld(AController* InstigatedBy)
 				}
 			}
 		}
+		HoldingPawn->UTCharacterMovement->bForceTeamCollision = HoldingPawn->GetClass()->GetDefaultObject<AUTCharacter>()->UTCharacterMovement->bForceTeamCollision;
+
 		TGuardValue<bool> DropGuard(bIsDropping, true); // make sure touch doesn't happen here, TossObject() will take care of it
 		DetachFrom(HoldingPawn->GetMesh());
 	}
@@ -759,6 +763,11 @@ void AUTCarriedObject::RemoveInvalidPastPositions()
 			bRemovingPositions = true;
 		}
 		else if (!bInNoRallyZone && PastPositions[PastPositions.Num() - 1].bIsInNoRallyZone)
+		{
+			PastPositions.RemoveAt(PastPositions.Num() - 1);
+			bRemovingPositions = true;
+		}
+		else if (PastPositions[PastPositions.Num() - 1].Location.IsZero())
 		{
 			PastPositions.RemoveAt(PastPositions.Num() - 1);
 			bRemovingPositions = true;

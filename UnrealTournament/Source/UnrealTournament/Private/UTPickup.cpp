@@ -34,24 +34,6 @@ AUTPickup::AUTPickup(const FObjectInitializer& ObjectInitializer)
 	Collision->OnComponentBeginOverlap.AddDynamic(this, &AUTPickup::OnOverlapBegin);
 	RootComponent = Collision;
 
-	TimerEffect = ObjectInitializer.CreateDefaultSubobject<UParticleSystemComponent>(this, TEXT("TimerEffect"));
-	if (TimerEffect != NULL)
-	{
-		TimerEffect->SetHiddenInGame(true);
-		TimerEffect->SetupAttachment(RootComponent);
-		TimerEffect->LDMaxDrawDistance = 1024.0f;
-		TimerEffect->RelativeLocation.Z = 40.0f;
-		TimerEffect->Mobility = EComponentMobility::Static;
-		TimerEffect->SetCastShadow(false);
-	}
-	BaseEffect = ObjectInitializer.CreateOptionalDefaultSubobject<UParticleSystemComponent>(this, TEXT("BaseEffect"));
-	if (BaseEffect != NULL)
-	{
-		BaseEffect->SetupAttachment(RootComponent);
-		BaseEffect->LDMaxDrawDistance = 2048.0f;
-		BaseEffect->RelativeLocation.Z = -58.0f;
-		BaseEffect->Mobility = EComponentMobility::Static;
-	}
 	TakenEffectTransform.SetScale3D(FVector(1.0f, 1.0f, 1.0f));
 	RespawnEffectTransform.SetScale3D(FVector(1.0f, 1.0f, 1.0f));
 

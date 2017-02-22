@@ -34,6 +34,15 @@ class UNREALTOURNAMENT_API AUTProj_ShockBall : public AUTProjectile
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
 	TSubclassOf<AUTShockComboEffect> ComboVortexType;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
+		UParticleSystem* OwnBallEffect;
+
+	UPROPERTY(BlueprintReadWrite, Category = Effects)
+		UParticleSystemComponent* OwnBallPSC;
+
+	virtual void ShutDown() override;
+	virtual void Destroyed() override;
+
 protected:
 	/** when set and InstigatorController is a bot, ask it when we should combo */
 	bool bMonitorBotCombo;
@@ -63,7 +72,7 @@ public:
 	virtual void ClearBotCombo();
 
 	virtual void Tick(float DeltaTime) override;
-
+	virtual void OnRep_Instigator() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	/** Reward announcement for impressive combo kill. */
@@ -72,4 +81,6 @@ public:
 
 	virtual float RateComboMovement(AUTPlayerController *PC);
 	virtual void RateShockCombo(AUTPlayerController *PC, AUTPlayerState* PS, int32 OldComboKillCount, float ComboScore);
+
+	virtual bool ShouldIgnoreHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp) override;
 };

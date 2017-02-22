@@ -11,6 +11,17 @@ AUTPickupHealth::AUTPickupHealth(const FObjectInitializer& ObjectInitializer)
 	HealAmount = 25;
 	BaseDesireability = 0.4f;
 	PickupMessageString = NSLOCTEXT("PickupMessage", "HealthPickedUp", "Health +50");
+
+	TimerEffect = ObjectInitializer.CreateOptionalDefaultSubobject<UParticleSystemComponent>(this, TEXT("TimerEffect"));
+	if (TimerEffect != NULL)
+	{
+		TimerEffect->SetHiddenInGame(true);
+		TimerEffect->SetupAttachment(RootComponent);
+		TimerEffect->LDMaxDrawDistance = 1024.0f;
+		TimerEffect->RelativeLocation.Z = 40.0f;
+		TimerEffect->Mobility = EComponentMobility::Static;
+		TimerEffect->SetCastShadow(false);
+	}
 }
 
 void AUTPickupHealth::BeginPlay()
@@ -90,6 +101,7 @@ void AUTPickupHealth::GiveTo_Implementation(APawn* Target)
 	{
 		AUTPickup::GiveTo_Implementation(Target);
 		P->Health = FMath::Max<int32>(P->Health, FMath::Min<int32>(P->Health + HealAmount, GetHealMax(P)));
+		P->OnHealthUpdated();
 		if (P->Health >= 100)
 		{
 			P->HealthRemovalAssists.Empty();

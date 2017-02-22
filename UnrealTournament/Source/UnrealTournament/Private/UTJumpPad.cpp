@@ -34,6 +34,8 @@ AUTJumpPad::AUTJumpPad(const FObjectInitializer& ObjectInitializer)
 	JumpTime = 1.0f;
 	bMaintainVelocity = false;
 
+	bLargeUnitUsable = true;
+
 #if WITH_EDITORONLY_DATA
 	JumpPadComp = ObjectInitializer.CreateDefaultSubobject<UUTJumpPadRenderingComponent>(this, TEXT("JumpPadComp"));
 	JumpPadComp->PostPhysicsComponentTick.bCanEverTick = false;
@@ -212,6 +214,7 @@ void AUTJumpPad::AddSpecialPaths(class UUTPathNode* MyNode, class AUTRecastNavMe
 		const FVector JumpTargetWorld = ActorToWorld().TransformPosition(JumpTarget);
 		const float GravityZ = GetLocationGravityZ(GetWorld(), GetActorLocation(), TriggerBox->GetCollisionShape());
 		const FCapsuleSize HumanSize = NavData->GetHumanPathSize();
+		const FCapsuleSize PathSize = bLargeUnitUsable ? NavData->GetMaxPathSize() : HumanSize;
 		bJumpThroughWater = false;
 		{
 			TArray<FHitResult> Hits;
@@ -270,7 +273,7 @@ void AUTJumpPad::AddSpecialPaths(class UUTPathNode* MyNode, class AUTRecastNavMe
 			{
 				UUTReachSpec_JumpPad* JumpSpec = NewObject<UUTReachSpec_JumpPad>(MyNode);
 				JumpSpec->JumpPad = this;
-				FUTPathLink* NewLink = new(MyNode->Paths) FUTPathLink(MyNode, MyPoly, TargetNode, TargetPoly, JumpSpec, HumanSize.Radius, HumanSize.Height, ReachFlags);
+				FUTPathLink* NewLink = new(MyNode->Paths) FUTPathLink(MyNode, MyPoly, TargetNode, TargetPoly, JumpSpec, PathSize.Radius, PathSize.Height, ReachFlags);
 				for (NavNodeRef SrcPoly : MyNode->Polys)
 				{
 					NewLink->Distances.Add(NavData->CalcPolyDistance(SrcPoly, MyPoly) + FMath::TruncToInt(1000.0f * JumpTime));
@@ -340,7 +343,7 @@ void AUTJumpPad::AddSpecialPaths(class UUTPathNode* MyNode, class AUTRecastNavMe
 								{
 									UUTReachSpec_JumpPad* JumpSpec = NewObject<UUTReachSpec_JumpPad>(MyNode);
 									JumpSpec->JumpPad = this;
-									FUTPathLink* NewLink = new(MyNode->Paths) FUTPathLink(MyNode, MyPoly, TargetNode, TargetPoly, JumpSpec, HumanSize.Radius, HumanSize.Height, ReachFlags);
+									FUTPathLink* NewLink = new(MyNode->Paths) FUTPathLink(MyNode, MyPoly, TargetNode, TargetPoly, JumpSpec, PathSize.Radius, PathSize.Height, ReachFlags);
 									for (NavNodeRef SrcPoly : MyNode->Polys)
 									{
 										NewLink->Distances.Add(NavData->CalcPolyDistance(SrcPoly, MyPoly) + FMath::TruncToInt(1000.0f * JumpTime)); // TODO: maybe Z adjust cost if this target is higher/lower and the jump will end slightly faster/slower?

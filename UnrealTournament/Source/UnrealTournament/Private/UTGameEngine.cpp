@@ -356,12 +356,7 @@ EBrowseReturnVal::Type UUTGameEngine::Browse( FWorldContext& WorldContext, FURL 
 		FURL NewURL(&DefaultURL, *URL.ToString(), TRAVEL_Absolute);
 		for (int32 i = 0; i < DefaultURL.Op.Num(); i++)
 		{
-			FString OpKey;
-			DefaultURL.Op[i].Split(TEXT("="), &OpKey, NULL);
-			if (!NewURL.HasOption(*OpKey))
-			{
-				new(NewURL.Op) FString(DefaultURL.Op[i]);
-			}
+			NewURL.AddOption(*DefaultURL.Op[i]);
 		}
 
 		if (NewURL.HasOption(TEXT("Rank")))
@@ -386,7 +381,7 @@ EBrowseReturnVal::Type UUTGameEngine::Browse( FWorldContext& WorldContext, FURL 
 		// clear Team from URL when leaving server (go back to no preference)
 		if (URL.IsLocalInternal())
 		{
-			UTLocalPlayer->ClearDefaultURLOption(TEXT("Team"));
+			UTLocalPlayer->SetDefaultURLOption(TEXT("Team"), FString::FromInt(255));
 		}
 
 		URL = NewURL;
@@ -650,6 +645,8 @@ void UUTGameEngine::AddAssetRegistry(const FString& PakFilename)
 
 void UUTGameEngine::IndexExpansionContent()
 {
+	double IndexExpansionContentStartTime = FPlatformTime::Seconds();
+
 	// Plugin manager should handle this instead of us, but we're not using plugin-based dlc just yet
 	if (FPlatformProperties::RequiresCookedData())
 	{
@@ -799,6 +796,9 @@ void UUTGameEngine::IndexExpansionContent()
 			}
 		}
 	}
+	
+	double IndexExpansionContentDuration = FPlatformTime::Seconds() - IndexExpansionContentStartTime;
+	UE_LOG(LogInit, Display, TEXT("IndexExpansionContent took %f seconds"), IndexExpansionContentDuration);
 }
 
 void UUTGameEngine::SetupLoadingScreen()

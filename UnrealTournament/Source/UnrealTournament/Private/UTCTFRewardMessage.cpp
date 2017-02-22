@@ -22,6 +22,9 @@ UUTCTFRewardMessage::UUTCTFRewardMessage(const class FObjectInitializer& ObjectI
 	EarnedSpecialPrefix = NSLOCTEXT("CTFGameMessage", "EarnedSpecialPrefix", "");
 	EarnedSpecialPostfix = NSLOCTEXT("CTFGameMessage", "EarnedSpecialPostfix", " earned a power up for your team!");
 	ExclamationPostfix = NSLOCTEXT("CTFGameMessage", "ExclamationPostfix", "!");
+	AceMessage = NSLOCTEXT("CTFRewardMessage", "Ace", "Ace!");
+	DefenseHoldsMessage = NSLOCTEXT("CTFRewardMessage", "DefenseHoldsMessage", "");
+	YouShallNotPassMessage = NSLOCTEXT("CTFRewardMessage", "YouShallNotPassMessage", "");
 	bIsStatusAnnouncement = false;
 	bWantsBotReaction = true;
 	ScaleInSize = 3.f;
@@ -32,7 +35,7 @@ UUTCTFRewardMessage::UUTCTFRewardMessage(const class FObjectInitializer& ObjectI
 
 bool UUTCTFRewardMessage::InterruptAnnouncement(const FAnnouncementInfo AnnouncementInfo, const FAnnouncementInfo OtherAnnouncementInfo) const
 {
-	if (AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass)
+	if ((AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass) && (OtherAnnouncementInfo.Switch < 9))
 	{
 		return ((AnnouncementInfo.Switch == 3) || (AnnouncementInfo.Switch == 4) || (AnnouncementInfo.Switch >= 100));
 	}
@@ -91,13 +94,16 @@ FName UUTCTFRewardMessage::GetAnnouncementName_Implementation(int32 Switch, cons
 	case 1: return TEXT("LastSecondSave"); break;
 	case 6: return TEXT("Denied"); break;
 	case 7: return TEXT("RZE_PowerupUnlocked"); break;
+	case 8: return TEXT("RZE_Ace"); break;
+	case 9: return TEXT("RZE_DefenceHolds"); break;
+	case 10: return TEXT("RZE_YouShallNotPass"); break;
 	}
 	return NAME_None;
 }
 
 bool UUTCTFRewardMessage::ShouldPlayAnnouncement(const FClientReceiveData& ClientData) const
 {
-	return (ClientData.MessageIndex == 0) || (ClientData.MessageIndex == 6)  || (ClientData.MessageIndex == 7) || IsLocalForAnnouncement(ClientData, true, true) || (ClientData.MessageIndex >= 100);
+	return (ClientData.MessageIndex != 1) || IsLocalForAnnouncement(ClientData, true, true);
 }
 
 void UUTCTFRewardMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText, FText& PostfixText, FLinearColor& EmphasisColor, int32 Switch, class APlayerState* RelatedPlayerState_1, class APlayerState* RelatedPlayerState_2, class UObject* OptionalObject) const
@@ -107,7 +113,7 @@ void UUTCTFRewardMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText
 		PrefixText = RejectedMessage;
 		EmphasisText = RelatedPlayerState_1 ? FText::FromString(RelatedPlayerState_1->PlayerName) : FText::GetEmpty();
 		AUTPlayerState* Denier = Cast<AUTPlayerState>(RelatedPlayerState_1);
-		EmphasisColor = Denier && Denier->Team && (Denier->Team->TeamIndex == 1) ? FLinearColor::Blue : FLinearColor::Red;
+		EmphasisColor = Denier && Denier->Team && (Denier->Team->TeamIndex == 1) ? BLUEHUDCOLOR : REDHUDCOLOR;
 		PostfixText = ExclamationPostfix;
 		return;
 	}
@@ -116,7 +122,7 @@ void UUTCTFRewardMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText
 		PrefixText = DeniedMessage;
 		EmphasisText = RelatedPlayerState_1 ? FText::FromString(RelatedPlayerState_1->PlayerName) : FText::GetEmpty();
 		AUTPlayerState* Denier = Cast<AUTPlayerState>(RelatedPlayerState_1);
-		EmphasisColor = Denier && Denier->Team && (Denier->Team->TeamIndex == 1) ? FLinearColor::Blue : FLinearColor::Red;
+		EmphasisColor = Denier && Denier->Team && (Denier->Team->TeamIndex == 1) ? BLUEHUDCOLOR : REDHUDCOLOR;
 		PostfixText = ExclamationPostfix;
 		return;
 	}
@@ -148,9 +154,11 @@ FText UUTCTFRewardMessage::GetText(int32 Switch, bool bTargetsPlayerState1, APla
 	case 4: return BuildEmphasisText(Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject); break;
 	case 6: return BuildEmphasisText(Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject); break;
 	case 7: return BuildEmphasisText(Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject); break;
+	case 8: return AceMessage; break;
+	case 9: return DefenseHoldsMessage; break;
+	case 10: return YouShallNotPassMessage; break;
 	}
 
 	return FText::GetEmpty();
 }
-
 

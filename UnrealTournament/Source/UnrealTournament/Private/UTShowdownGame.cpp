@@ -43,7 +43,6 @@ AUTShowdownGame::AUTShowdownGame(const FObjectInitializer& OI)
 	SuperweaponReplacementItemClass.SetPath(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_Invis.BP_Invis_C"));
 
 	bPowerupBreaker = true;
-	QuickPlayersToStart = 2;
 }
 
 void AUTShowdownGame::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -100,6 +99,25 @@ void AUTShowdownGame::ScoreDamage_Implementation(int32 DamageAmount, AUTPlayerSt
 	{
 		Attacker->AdjustScore(DamageAmount);
 	}
+}
+
+void AUTShowdownGame::StartMatch()
+{
+	if (HasMatchStarted())
+	{
+		// Already started
+		return;
+	}
+	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+	{
+		AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+		if (PS && !PS->bIsInactive && !PS->bOnlySpectator)
+		{
+			PS->SetOutOfLives(false);
+		}
+	}
+
+	Super::StartMatch();
 }
 
 void AUTShowdownGame::StartNewRound()
@@ -296,12 +314,13 @@ void AUTShowdownGame::ScoreKill_Implementation(AController* Killer, AController*
 					KillerPlayerState->AdjustScore(+100);
 					KillerPlayerState->IncrementKills(DamageType, true, OtherPlayerState);
 					CheckScore(KillerPlayerState);
-				}
 
-				if (!bFirstBloodOccurred)
-				{
-					BroadcastLocalized(this, UUTFirstBloodMessage::StaticClass(), 0, KillerPlayerState, NULL, NULL);
-					bFirstBloodOccurred = true;
+					if (!bFirstBloodOccurred)
+					{
+						BroadcastLocalized(this, UUTFirstBloodMessage::StaticClass(), 0, KillerPlayerState, NULL, NULL);
+						bFirstBloodOccurred = true;
+					}
+					TrackKillAssists(Killer, Other, KilledPawn, DamageType, KillerPlayerState, OtherPlayerState);
 				}
 			}
 		}

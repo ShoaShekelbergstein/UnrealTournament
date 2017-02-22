@@ -24,16 +24,12 @@ void SUTTabWidget::Construct(const FArguments& InArgs)
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			[
-				SNew(SBox)
-				.HeightOverride(43) //this is here to fix some flickering issue with the tab widget
+				SNew(SBorder)
+				.Padding(0.0f)
+				.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Dark"))
+				.Content()
 				[
-					SNew(SBorder)
-					.Padding(0.0f)
-					.BorderImage(SUWindowsStyle::Get().GetBrush("UT.TopMenu.MidFill"))
-					.Content()
-					[
-						TabsContainer.ToSharedRef()
-					]
+					TabsContainer.ToSharedRef()
 				]
 			]
 			+ SVerticalBox::Slot()
@@ -52,12 +48,11 @@ void SUTTabWidget::AddTab(FText ButtonLabel, TSharedPtr<SWidget> Widget)
 	{
 		TSharedPtr<SUTTabButton> Button = SNew(SUTTabButton)
 			.ContentPadding(FMargin(15.0f, 10.0f, 70.0f, 0.0f))
-			.ButtonStyle(SUWindowsStyle::Get(), "UT.TopMenu.OptionTabButton")
-			.ClickMethod(EButtonClickMethod::MouseDown)
+			.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
+			.IsToggleButton(true)
 			.TextStyle(TabTextStyle)
 			.Text(ButtonLabel)
 			.OnClicked(this, &SUTTabWidget::OnButtonClicked, ButtonLabel);
-
 		ButtonLabels.Add(ButtonLabel);
 		TabButtons.Add(Button);
 

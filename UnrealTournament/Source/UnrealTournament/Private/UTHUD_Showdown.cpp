@@ -48,7 +48,6 @@ AUTHUD_Showdown::AUTHUD_Showdown(const FObjectInitializer& OI)
 	SpawnPreviewCapture->SetHiddenInGame(false);
 	RootComponent = SpawnPreviewCapture; // just to quiet warning, has no relevance
 
-	LastHoveredActorChangeTime = -1000.0f;
 	bNeedOnDeckNotify = true;
 
 	static ConstructorHelpers::FObjectFinder<USoundBase> OtherSpreeSoundFinder(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Showdown/A_EnemyKilled.A_EnemyKilled'"));
@@ -201,21 +200,6 @@ void AUTHUD_Showdown::DrawHUD()
 				bLockedLookInput = true;
 			}
 
-			AActor* NewHoveredActor = FindHoveredIconActor();
-			if (NewHoveredActor != LastHoveredActor)
-			{
-				if (UTPlayerOwner != nullptr)
-				{
-					UTPlayerOwner->PlayMenuSelectSound();
-				}
-				LastHoveredActorChangeTime = GetWorld()->RealTimeSeconds;
-				LastHoveredActor = NewHoveredActor;
-			}
-
-			if (MinimapTexture == NULL)
-			{
-				CreateMinimapTexture(); // because we're using the size below
-			}
 			const float MapSize = float(Canvas->SizeY) * 0.75f;
 			DrawMinimap(FColor(164, 164, 164, 255), MapSize, FVector2D((Canvas->SizeX - MapSize) * 0.5f, (Canvas->SizeY - MapSize) * 0.5f));
 

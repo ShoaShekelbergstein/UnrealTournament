@@ -653,7 +653,7 @@ void AUTWeapon::ResendServerStartFire_Implementation(uint8 FireModeNum, uint8 In
 {
 	if (ValidateFireEventIndex(FireModeNum, InFireEventIndex) && UTOwner && !UTOwner->IsFiringDisabled())
 	{
-		UE_LOG(UT, Warning, TEXT("****RESENDStartFire mode %d %d"), FireModeNum, FireEventIndex);
+		//UE_LOG(UT, Warning, TEXT("****RESENDStartFire mode %d %d"), FireModeNum, FireEventIndex);
 		if (CurrentState == InactiveState && !UTOwner->IsLocallyControlled())
 		{
 			UTOwner->ClientVerifyWeapon();
@@ -675,7 +675,7 @@ void AUTWeapon::ResendServerStartFireOffset_Implementation(uint8 FireModeNum, ui
 {
 	if (ValidateFireEventIndex(FireModeNum, InFireEventIndex) && UTOwner && !UTOwner->IsFiringDisabled())
 	{
-		UE_LOG(UT, Warning, TEXT("****RESENDStartFireOffset mode %d %d"), FireModeNum, InFireEventIndex);
+		//UE_LOG(UT, Warning, TEXT("****RESENDStartFireOffset mode %d %d"), FireModeNum, InFireEventIndex);
 		if (CurrentState == InactiveState && !UTOwner->IsLocallyControlled())
 		{
 			UTOwner->ClientVerifyWeapon();
@@ -703,6 +703,16 @@ bool AUTWeapon::BeginFiringSequence(uint8 FireModeNum, bool bClientFired)
 {
 	if (UTOwner)
 	{
+		// Flag this player as not being idle
+		if (Role == ROLE_Authority)
+		{
+			AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTOwner->PlayerState);
+			if (UTPlayerState != nullptr)
+			{
+				UTPlayerState->NotIdle();
+			}
+		}
+
 		UTOwner->SetPendingFire(FireModeNum, true);
 		if (FiringState.IsValidIndex(FireModeNum) && CurrentState != EquippingState && CurrentState != UnequippingState)
 		{
@@ -908,7 +918,7 @@ void AUTWeapon::AttachToOwner_Implementation()
 
 void AUTWeapon::UpdateWeaponHand()
 {
-	if (Mesh != NULL && UTOwner != NULL)
+	if (Mesh != NULL && UTOwner != NULL && !UTOwner->IsPendingKillPending())
 	{
 		FirstPMeshOffset = FVector::ZeroVector;
 		FirstPMeshRotation = FRotator::ZeroRotator;
@@ -1087,7 +1097,7 @@ void AUTWeapon::PlayWeaponAnim(UAnimMontage* WeaponAnim, UAnimMontage* HandsAnim
 	{
 		RateOverride = UTOwner ? UTOwner->GetFireRateMultiplier() : 1.f;
 	}
-	if (UTOwner != NULL)
+	if (UTOwner != NULL && !UTOwner->IsPendingKillPending())
 	{
 		if (WeaponAnim != NULL)
 		{
@@ -1304,7 +1314,14 @@ void AUTWeapon::FireShot()
 		}
 		else if (InstantHitInfo.IsValidIndex(CurrentFireMode) && InstantHitInfo[CurrentFireMode].DamageType != NULL)
 		{
-			FireInstantHit();
+			if (InstantHitInfo[CurrentFireMode].ConeDotAngle > 0.0f)
+			{
+				FireCone();
+			}
+			else
+			{
+				FireInstantHit();
+			}
 		}
 		//UE_LOG(UT, Warning, TEXT("FireShot"));
 		PlayFiringEffects();
@@ -2037,6 +2054,176 @@ void AUTWeapon::SpawnDelayedFakeProjectile()
 		{
 			NewProjectile->InitFakeProjectile(OwningPlayer);
 			NewProjectile->SetLifeSpan(FMath::Min(NewProjectile->GetLifeSpan(), 0.002f * FMath::Max(0.f, OwningPlayer->MaxPredictionPing + OwningPlayer->PredictionFudgeFactor)));
+		}
+	}
+}
+
+void AUTWeapon::FireCone()
+{
+	UE_LOG(LogUTWeapon, Verbose, TEXT("%s::FireCone()"), *GetName());
+
+	checkSlow(InstantHitInfo.IsValidIndex(CurrentFireMode));
+	checkSlow(InstantHitInfo[CurrentFireMode].ConeDotAngle > 0.0f);
+
+	const FVector SpawnLocation = GetFireStartLoc();
+	const FRotator SpawnRotation = GetAdjustedAim(SpawnLocation);
+	const FVector FireDir = SpawnRotation.Vector();
+	const FVector EndTrace = SpawnLocation + FireDir * InstantHitInfo[CurrentFireMode].TraceRange;
+
+	AUTPlayerController* UTPC = UTOwner ? Cast<AUTPlayerController>(UTOwner->Controller) : NULL;
+	AUTPlayerState* PS = (UTOwner && UTOwner->Controller) ? Cast<AUTPlayerState>(UTOwner->Controller->PlayerState) : NULL;
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
+	
+	TArray<FOverlapResult> OverlapHits;
+	TArray<FHitResult> RealHits;
+	GetWorld()->OverlapMultiByChannel(OverlapHits, SpawnLocation, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceRange));
+	for (const FOverlapResult& Overlap : OverlapHits)
+	{
+		if (Overlap.GetActor() != nullptr)
+		{
+			FVector ObjectLoc = Overlap.GetComponent()->Bounds.Origin;
+			if (((ObjectLoc - SpawnLocation).GetSafeNormal() | FireDir) >= InstantHitInfo[CurrentFireMode].ConeDotAngle)
+			{
+				bool bClear;
+				if (InstantHitInfo[CurrentFireMode].TraceHalfSize <= 0.0f)
+				{
+					bClear = !GetWorld()->LineTraceTestByChannel(SpawnLocation, ObjectLoc, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionQueryParams(NAME_None, true, UTOwner), WorldResponseParams);
+				}
+				else
+				{
+					bClear = !GetWorld()->SweepTestByChannel(SpawnLocation, ObjectLoc, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceHalfSize), FCollisionQueryParams(NAME_None, true, UTOwner), WorldResponseParams);
+				}
+				if (bClear)
+				{
+					// trace only against target to get good hit info
+					FHitResult Hit;
+					if (!Overlap.GetComponent()->LineTraceComponent(Hit, SpawnLocation, ObjectLoc, FCollisionQueryParams(NAME_None, true, UTOwner)))
+					{
+						Hit = FHitResult(Overlap.GetActor(), Overlap.GetComponent(), ObjectLoc, -FireDir);
+					}
+					RealHits.Add(Hit);
+				}
+			}
+		}
+	}
+	// do characters separately to handle forward prediction
+	for (FConstPawnIterator Iterator = GetWorld()->GetPawnIterator(); Iterator; ++Iterator)
+	{
+		AUTCharacter* Target = Cast<AUTCharacter>(*Iterator);
+		if (Target && (Target != UTOwner) && (bTeammatesBlockHitscan || !GS || !GS->OnSameTeam(UTOwner, Target)))
+		{
+			// find appropriate rewind position, and test against trace from StartLocation to Hit.Location
+			FVector TargetLocation = ((PredictionTime > 0.f) && (Role == ROLE_Authority)) ? Target->GetRewindLocation(PredictionTime) : Target->GetActorLocation();
+			const FVector Diff = TargetLocation - SpawnLocation;
+			if (Diff.Size() <= InstantHitInfo[CurrentFireMode].TraceRange && (Diff.GetSafeNormal() | FireDir) >= InstantHitInfo[CurrentFireMode].ConeDotAngle)
+			{
+				// now see if trace would hit the capsule
+				float CollisionHeight = Target->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+				if (Target->UTCharacterMovement && Target->UTCharacterMovement->bIsFloorSliding)
+				{
+					TargetLocation.Z = TargetLocation.Z - CollisionHeight + Target->SlideTargetHeight;
+					CollisionHeight = Target->SlideTargetHeight;
+				}
+				float CollisionRadius = Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
+
+				bool bHitTarget = false;
+				FVector ClosestPoint(0.f);
+				FVector ClosestCapsulePoint = TargetLocation;
+				if (CollisionRadius >= CollisionHeight)
+				{
+					ClosestPoint = TargetLocation;
+				}
+				else
+				{
+					FVector CapsuleSegment = FVector(0.f, 0.f, CollisionHeight - CollisionRadius);
+					FMath::SegmentDistToSegmentSafe(SpawnLocation, TargetLocation, TargetLocation - CapsuleSegment, TargetLocation + CapsuleSegment, ClosestPoint, ClosestCapsulePoint);
+				}
+				// first find proper hit location on surface of capsule
+				float ClosestDistSq = (ClosestPoint - ClosestCapsulePoint).SizeSquared();
+				float BackDist = FMath::Sqrt(FMath::Max(0.f, CollisionRadius*CollisionRadius - ClosestDistSq));
+				const FVector HitLocation = ClosestPoint + BackDist * (SpawnLocation - EndTrace).GetSafeNormal();
+
+				bool bClear;
+				if (InstantHitInfo[CurrentFireMode].TraceHalfSize <= 0.0f)
+				{
+					bClear = !GetWorld()->LineTraceTestByChannel(SpawnLocation, HitLocation, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionQueryParams(NAME_None, true, UTOwner), WorldResponseParams);
+				}
+				else
+				{
+					bClear = !GetWorld()->SweepTestByChannel(SpawnLocation, HitLocation, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceHalfSize), FCollisionQueryParams(NAME_None, true, UTOwner), WorldResponseParams);
+				}
+				if (bClear)
+				{
+					FHitResult* NewHit = new(RealHits) FHitResult;
+					NewHit->Location = HitLocation;
+					NewHit->Normal = (EndTrace - ClosestCapsulePoint).GetSafeNormal();
+					NewHit->ImpactNormal = NewHit->Normal;
+					NewHit->Actor = Target;
+					NewHit->bBlockingHit = true;
+					NewHit->Component = Target->GetCapsuleComponent();
+					NewHit->ImpactPoint = ClosestPoint; //FIXME
+					NewHit->Time = (ClosestPoint - SpawnLocation).Size() / (EndTrace - SpawnLocation).Size();
+				}
+			}
+		}
+	}
+	RealHits.Sort([](const FHitResult& A, const FHitResult& B) { return A.Time < B.Time; });
+
+	if (Role == ROLE_Authority)
+	{
+		if (PS && (ShotsStatsName != NAME_None))
+		{
+			PS->ModifyStatsValue(ShotsStatsName, 1);
+		}
+		UTOwner->IncrementFlashCount(CurrentFireMode);
+		// warn bot target, if any
+		if (UTPC != NULL)
+		{
+			APawn* PawnTarget = RealHits.Num() > 0 ? Cast<APawn>(RealHits[0].Actor.Get()) : nullptr;
+			if (PawnTarget != NULL)
+			{
+				UTPC->LastShotTargetGuess = PawnTarget;
+			}
+			if (UTPC->LastShotTargetGuess != NULL)
+			{
+				AUTBot* EnemyBot = Cast<AUTBot>(UTPC->LastShotTargetGuess->Controller);
+				if (EnemyBot != NULL)
+				{
+					EnemyBot->ReceiveInstantWarning(UTOwner, FireDir);
+				}
+			}
+		}
+		else
+		{
+			AUTBot* B = Cast<AUTBot>(UTOwner->Controller);
+			if (B != NULL)
+			{
+				APawn* PawnTarget = RealHits.Num() > 0 ? Cast<APawn>(RealHits[0].Actor.Get()) : nullptr;
+				if (PawnTarget == NULL)
+				{
+					PawnTarget = Cast<APawn>(B->GetTarget());
+				}
+				if (PawnTarget != NULL)
+				{
+					AUTBot* EnemyBot = Cast<AUTBot>(PawnTarget->Controller);
+					if (EnemyBot != NULL)
+					{
+						EnemyBot->ReceiveInstantWarning(UTOwner, FireDir);
+					}
+				}
+			}
+		}
+	}
+	for (const FHitResult& Hit : RealHits)
+	{
+		if (Hit.Actor != NULL && Hit.Actor->bCanBeDamaged)
+		{
+			if ((Role == ROLE_Authority) && PS && (HitsStatsName != NAME_None))
+			{
+				PS->ModifyStatsValue(HitsStatsName, 1);
+			}
+			Hit.Actor->TakeDamage(InstantHitInfo[CurrentFireMode].Damage, FUTPointDamageEvent(InstantHitInfo[CurrentFireMode].Damage, Hit, FireDir, InstantHitInfo[CurrentFireMode].DamageType, FireDir * GetImpartedMomentumMag(Hit.Actor.Get())), UTOwner->Controller, this);
 		}
 	}
 }
@@ -2965,7 +3152,7 @@ void AUTWeapon::TickZoom(float DeltaTime)
 				}
 				else
 				{
-					FOV = FMath::Lerp(StartFov, EndFov, ZoomTime / ZoomModes[CurrentZoomMode].Time);
+					FOV = FMath::Lerp(StartFov, EndFov, FMath::Max(0.f, ZoomTime - 0.15f) / ZoomModes[CurrentZoomMode].Time);
 					FOV = FMath::Clamp(FOV, EndFov, StartFov);
 				}
 

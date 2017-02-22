@@ -49,7 +49,7 @@ void UUTCTFGameMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText, 
 		PostfixText = (Switch == 5) ? KilledMessagePostfix : CaptureMessagePostfix;
 		EmphasisText = RelatedPlayerState_1 ? FText::FromString(RelatedPlayerState_1->PlayerName) : FText::GetEmpty();
 		AUTPlayerState* PS = Cast<AUTPlayerState>(RelatedPlayerState_1);
-		EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : FLinearColor::Red;
+		EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : REDHUDCOLOR;
 
 		FFormatNamedArguments Args;
 		GetArgs(Args, Switch, false, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
@@ -146,7 +146,7 @@ bool UUTCTFGameMessage::InterruptAnnouncement(const FAnnouncementInfo Announceme
 
 float UUTCTFGameMessage::GetAnnouncementSpacing_Implementation(int32 Switch, const UObject* OptionalObject) const
 {
-	return 0.1f;
+	return 0.05f;
 }
 
 bool UUTCTFGameMessage::CancelByAnnouncement_Implementation(int32 Switch, const UObject* OptionalObject, TSubclassOf<UUTLocalMessage> OtherMessageClass, int32 OtherSwitch, const UObject* OtherOptionalObject) const

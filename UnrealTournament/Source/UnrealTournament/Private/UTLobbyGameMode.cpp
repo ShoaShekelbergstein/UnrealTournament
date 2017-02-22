@@ -101,6 +101,11 @@ void AUTLobbyGameMode::InitGameState()
 	{
 		GameSession->RegisterServer();
 	}
+
+	if (FUTAnalytics::IsAvailable() && (GetNetMode() == NM_DedicatedServer))
+	{
+		FUTAnalytics::FireEvent_UTHubBootUp(this);
+	}
 }
 
 void AUTLobbyGameMode::StartMatch()

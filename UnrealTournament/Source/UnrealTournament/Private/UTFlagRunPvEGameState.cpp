@@ -9,6 +9,7 @@ void AUTFlagRunPvEGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 	DOREPLIFETIME(AUTFlagRunPvEGameState, KillsUntilExtraLife);
 	DOREPLIFETIME(AUTFlagRunPvEGameState, NextStarTime);
+	DOREPLIFETIME_CONDITION(AUTFlagRunPvEGameState, GameDifficulty, COND_InitialOnly);
 }
 
 FText AUTFlagRunPvEGameState::GetRoundStatusText(bool bForScoreboard)

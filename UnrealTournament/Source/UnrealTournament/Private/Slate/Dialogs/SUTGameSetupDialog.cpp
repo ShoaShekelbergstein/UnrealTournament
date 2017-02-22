@@ -20,7 +20,7 @@ void SUTGameSetupDialog::Construct(const FArguments& InArgs)
 {
 	CurrentTabIndex = -1;
 	bBeginnerMatch = false;
-	bUserTurnedOffRankCheck = false;
+	bUserHasBeenWarned = false;
 	bHubMenu = InArgs._PlayerOwner->GetWorld()->GetGameState<AUTLobbyGameState>() != NULL;
 	SUTDialogBase::Construct(SUTDialogBase::FArguments()
 							.PlayerOwner(InArgs._PlayerOwner)
@@ -167,12 +167,11 @@ void SUTGameSetupDialog::BuildCategories()
 
 	TabButtonPanel->AddSlot()
 	.Padding(FMargin(25.0f,0.0f,0.0f,0.0f))
-	.FillWidth(1.0f)
-	.HAlign(HAlign_Right)
-	[
+		.AutoWidth()
+		[
 		SAssignNew(Button, SUTTabButton)
 		.ContentPadding(FMargin(15.0f, 10.0f, 15.0f, 0.0f))
-		.Text(NSLOCTEXT("SUTGameSetupDialog","CustomGameButtonText","Custom Game"))
+		.Text(NSLOCTEXT("SUTGameSetupDialog","CustomGameButtonText","Custom"))
 		.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
 		.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 		.IsToggleButton(true)
@@ -367,24 +366,6 @@ FReply SUTGameSetupDialog::OnRuleClick(int32 RuleIndex)
 		if (SelectedRuleset != RuleSubset[RuleIndex].Ruleset)
 		{
 			SelectedRuleset = RuleSubset[RuleIndex].Ruleset;
-
-			TWeakObjectPtr<AUTLobbyPlayerState> MatchOwner = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
-			if (MatchOwner.IsValid() && MatchOwner->IsABeginner(SelectedRuleset.IsValid() ? SelectedRuleset->GetDefaultGameModeObject() : NULL))
-			{
-				bBeginnerMatch = true;
-
-				// We are a beginner....
-				if (!bUserTurnedOffRankCheck)
-				{
-					cbRankLocked->SetIsChecked(ECheckBoxState::Checked);
-					MatchOwner->NotifyBeginnerAutoLock();
-				}
-			}
-			else
-			{
-				bBeginnerMatch = false;
-			}
-
 			BuildMapList();
 		}
 	}
@@ -675,10 +656,13 @@ void SUTGameSetupDialog::SelectMap(int32 MapIndex)
 
 FReply SUTGameSetupDialog::OnMapClick(int32 MapIndex)
 {
-	if (!MapPlayList[MapIndex].MapInfo->bHasRights)
+	if (MapPlayList.IsValidIndex(MapIndex) && MapPlayList[MapIndex].MapInfo.IsValid() && !MapPlayList[MapIndex].MapInfo->bHasRights)
 	{
 		DesiredMapIndex = MapIndex;
-		MapPlayList[MapIndex].Button->UnPressed();
+		if (MapPlayList[MapIndex].Button.IsValid())
+		{
+			MapPlayList[MapIndex].Button->UnPressed();
+		}
 
 		PlayerOwner->ShowMessage(
 			NSLOCTEXT("SUTGameSetupDialog", "RightsTitle", "Epic Store"), 
@@ -825,7 +809,7 @@ FReply SUTGameSetupDialog::OnButtonClick(uint16 ButtonID)
 	{
 		if (PlayerOwner->GetProfileSettings())
 		{
-			PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel = BotSkillLevel;
+			PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel = sBotSkill->GetSnapValue();
 			PlayerOwner->SaveProfileSettings();
 		}
 
@@ -875,7 +859,9 @@ FReply SUTGameSetupDialog::OnButtonClick(uint16 ButtonID)
 
 TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 {
-	int32 DefaultBotSkill = PlayerOwner->GetProfileSettings() ? PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel + 1 : 3;
+	int32 DefaultBotSkillLevel = PlayerOwner->GetProfileSettings() ? PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel : 3;
+	DefaultBotSkillLevel = FMath::Clamp<int32>(DefaultBotSkillLevel,0,9);
+	BotSkillLevel = DefaultBotSkillLevel - 1;
 
 	TSharedPtr<SHorizontalBox> Final;
 	SAssignNew(Final, SHorizontalBox)
@@ -892,7 +878,7 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 				SAssignNew(sBotSkill, SUTSlider)
 				.SnapCount(9)
 				.IndentHandle(false)
-				.InitialSnap(DefaultBotSkill)
+				.InitialSnap(DefaultBotSkillLevel)
 				.Style(SUTStyle::Get(), "UT.Slider")
 				.OnValueChanged(this, &SUTGameSetupDialog::OnBotSkillChanged)
 			]
@@ -916,20 +902,7 @@ void SUTGameSetupDialog::OnBotSkillChanged(float NewValue)
 FText SUTGameSetupDialog::GetBotSkillText() const
 {
 	int32 Skill = int32(8.0f * sBotSkill->GetValue());
-	switch (Skill)
-	{
-		case 0: return NSLOCTEXT("BotSkillLevels","NoBots","No Bots"); break;
-		case 1: return NSLOCTEXT("BotSkillLevels","Novice","Novice"); break;
-		case 2: return NSLOCTEXT("BotSkillLevels","Average","Average"); break;
-		case 3: return NSLOCTEXT("BotSkillLevels","Experienced","Experienced"); break;
-		case 4: return NSLOCTEXT("BotSkillLevels","Skilled","Skilled"); break;
-		case 5: return NSLOCTEXT("BotSkillLevels","Adept","Adept"); break;
-		case 6: return NSLOCTEXT("BotSkillLevels","Masterful","Masterful"); break;
-		case 7: return NSLOCTEXT("BotSkillLevels","Inhuman","Inhuman"); break;
-		case 8: return NSLOCTEXT("BotSkillLevels","Godlike","Godlike"); break;
-	}
-
-	return NSLOCTEXT("BotSkillLevels","Broken","Broken");
+	return (Skill == 0) ? NSLOCTEXT("BotSkillLevels", "NoBots", "No Bots") : GetBotSkillName(Skill - 1);
 }
 
 void SUTGameSetupDialog::AddButtonsToLeftOfButtonBar(uint32& ButtonCount)
@@ -990,6 +963,8 @@ void SUTGameSetupDialog::ConfigureMatchInfo(TWeakObjectPtr<AUTLobbyMatchInfo> Ma
 	bool bRankLocked = cbRankLocked.IsValid() ? cbRankLocked->IsChecked() : true;
 	bool bSpectatable = cbSpectatable.IsValid() ? cbSpectatable->IsChecked() : true;
 	bool bPrivateMatch = cbPrivateMatch.IsValid() ? cbPrivateMatch->IsChecked() : false;
+	TWeakObjectPtr<AUTLobbyPlayerState> MatchOwner = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
+	bBeginnerMatch = (MatchOwner.IsValid() && MatchOwner->IsABeginner(SelectedRuleset.IsValid() ? SelectedRuleset->GetDefaultGameModeObject() : NULL));
 
 	if ( IsCustomSettings() )
 	{
@@ -1023,7 +998,15 @@ void SUTGameSetupDialog::ConfigureMatchInfo(TWeakObjectPtr<AUTLobbyMatchInfo> Ma
 
 void SUTGameSetupDialog::RankCheckChanged(ECheckBoxState NewState)
 {
-	if (NewState == ECheckBoxState::Unchecked) bUserTurnedOffRankCheck = true;
+	if (NewState == ECheckBoxState::Checked && !bUserHasBeenWarned)
+	{
+		TWeakObjectPtr<AUTLobbyPlayerState> MatchOwner = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
+		if (MatchOwner.IsValid())
+		{
+			bUserHasBeenWarned = true;
+			MatchOwner->NotifyBeginnerAutoLock();
+		}
+	}
 }
 
 #endif

@@ -8,6 +8,7 @@
 #include "UTSquadAI.h"
 #include "UTWeaponStateFiring.h"
 #include "Animation/AnimInstance.h"
+#include "UTRewardMessage.h"
 
 AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 : Super(OI)
@@ -34,11 +35,11 @@ AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 
 	HUDIcon = MakeCanvasIcon(HUDIcon.Texture, 453.0f, 467.0, 147.0f, 41.0f);
 
-	BeamPulseInterval = 0.4f;
+	BeamPulseInterval = 0.3f;
 	BeamPulseMomentum = -220000.0f;
 	BeamPulseAmmoCost = 4;
 	PullWarmupTime = 0.15f;
-	LinkPullDamage = 0;
+	LinkPullDamage = 25;
 	ReadyToPullColor = FLinearColor::White;
 
 	bRecommendSuppressiveFire = true;
@@ -292,10 +293,16 @@ void AUTWeap_LinkGun::StartLinkPull()
 	LinkStartTime = -100.f;
 }
 
+bool AUTWeap_LinkGun::IsValidLinkTarget(AActor* InTarget)
+{
+	return (InTarget && Cast<AUTCharacter>(InTarget) && !InTarget->bTearOff && InTarget != GetUTOwner());
+}
+
 bool AUTWeap_LinkGun::ServerSetPulseTarget_Validate(AActor* InTarget)
 {
 	return true;
 }
+
 void AUTWeap_LinkGun::ServerSetPulseTarget_Implementation(AActor* InTarget)
 {
 	if (!UTOwner || !UTOwner->Controller || !InTarget)
@@ -307,7 +314,7 @@ void AUTWeap_LinkGun::ServerSetPulseTarget_Implementation(AActor* InTarget)
 	Super::FireInstantHit(false, &Hit);
 	FVector PulseStart = UTOwner->GetActorLocation();
 
-	PulseTarget = Hit.Actor.Get();
+	PulseTarget = IsValidLinkTarget(Hit.Actor.Get()) ? Hit.Actor.Get() : nullptr;
 	// try CSHD result if it's reasonable
 	if (PulseTarget == NULL && ClientPulseTarget != NULL)
 	{
@@ -332,6 +339,15 @@ void AUTWeap_LinkGun::ServerSetPulseTarget_Implementation(AActor* InTarget)
 		UTOwner->SetFlashExtra(UTOwner->FlashExtra + 1, CurrentFireMode);
 		if (Role == ROLE_Authority)
 		{
+			AUTCharacter* PulledChar = Cast<AUTCharacter>(PulseTarget);
+			if (PulledChar && !PulledChar->IsDead() && BeamPulseDamageType && Cast<AUTPlayerController>(UTOwner->GetController()))
+			{
+				TSubclassOf<UUTDamageType> UTDamage(*BeamPulseDamageType);
+				if (UTDamage && UTDamage.GetDefaultObject()->RewardAnnouncementClass)
+				{
+					((AUTPlayerController*)(UTOwner->GetController()))->SendPersonalMessage(UTDamage.GetDefaultObject()->RewardAnnouncementClass, 0, ((AUTPlayerController*)(UTOwner->GetController()))->UTPlayerState, nullptr);
+				}
+			}
 			AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
 			if (!GameMode || GameMode->bAmmoIsLimited || (Ammo > 11))
 			{
@@ -461,9 +477,8 @@ void AUTWeap_LinkGun::DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHud
 		float HeightScale = (bIsInCoolDown ? 1.f : 0.5f) * WidthScale;
 		WidthScale *= (bIsInCoolDown ? 0.75f : 0.5f);
 	//	WeaponHudWidget->DrawTexture(WeaponHudWidget->UTHUDOwner->HUDAtlas, 0.f, 96.f, Scale*Width, Scale*Height, 127, 671, Width, Height, 0.7f, FLinearColor::White, FVector2D(0.5f, 0.5f));
-		FLinearColor ChargeColor = FLinearColor::White;
 		float ChargePct = FMath::Clamp(OverheatFactor, 0.f, 1.f);
-		WeaponHudWidget->DrawTexture(WeaponHudWidget->UTHUDOwner->HUDAtlas, 0.f, 32.f, WidthScale*Width*ChargePct, HeightScale*Height, 127, 641, Width, Height, bIsInCoolDown ? OverheatFactor : 0.7f, FLinearColor::White, FVector2D(0.5f, 0.5f));
+		WeaponHudWidget->DrawTexture(WeaponHudWidget->UTHUDOwner->HUDAtlas, 0.f, 32.f, WidthScale*Width*ChargePct, HeightScale*Height, 127, 641, Width, Height, bIsInCoolDown ? OverheatFactor : 0.7f, REDHUDCOLOR, FVector2D(0.5f, 0.5f));
 		if (bIsInCoolDown)
 		{
 			WeaponHudWidget->DrawText(NSLOCTEXT("LinkGun", "Overheat", "OVERHEAT"), 0.f, 28.f, WeaponHudWidget->UTHUDOwner->TinyFont, 1.f, FMath::Min(3.f*OverheatFactor, 1.f), FLinearColor::Yellow, ETextHorzPos::Center, ETextVertPos::Center);

@@ -232,7 +232,7 @@ FName UUTLocalMessage::GetAnnouncementName_Implementation(int32 Switch, const UO
 
 float UUTLocalMessage::GetAnnouncementSpacing_Implementation(int32 Switch, const UObject* OptionalObject) const
 {
-	return 0.1f;
+	return 0.05f;
 }
 
 USoundBase* UUTLocalMessage::GetAnnouncementSound_Implementation(int32 Switch, const UObject* OptionalObject) const

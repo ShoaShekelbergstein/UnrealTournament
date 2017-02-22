@@ -27,6 +27,9 @@ class UNREALTOURNAMENT_API SUTWebBrowserPanel : public SUTPanelBase
 	SLATE_EVENT(SWebBrowser::FOnBeforeBrowse, OnBeforeBrowse)
 
 	SLATE_EVENT(FOnBeforePopupDelegate, OnBeforePopup)
+	SLATE_EVENT(FSimpleDelegate, OnLoadCompleted)
+	SLATE_EVENT(FSimpleDelegate, OnLoadError)
+
 
 	SLATE_END_ARGS()
 	
@@ -58,6 +61,14 @@ public:
 		}
 	}
 
+	void SetContent(const FString& NewContent)
+	{
+		if (WebBrowserPanel.IsValid())
+		{
+			WebBrowserPanel->LoadString(NewContent,TEXT("Test"));
+		}
+	}
+
 protected:
 	
 	TSharedPtr<SOverlay> Overlay;
@@ -71,10 +82,16 @@ protected:
 	
 	virtual bool BeforeBrowse(const FString& TargetURL, const FWebNavigationRequest& Request);
 	virtual bool BeforePopup(FString TargetURL, FString FrameName);
-	
+
+	virtual void OnLoadCompleted();
+	virtual void OnLoadError();
+
 	SWebBrowser::FOnBeforeBrowse OnBeforeBrowse;
 
 	FOnBeforePopupDelegate OnBeforePopup;
+
+	FSimpleDelegate OnLoadCompletedDelegate;
+	FSimpleDelegate OnLoadErrorDelegate;
 
 	float GetReverseScale() const;
 	bool ShowControls;
@@ -84,6 +101,10 @@ protected:
 	bool bShowWarning;
 
 	void WarningResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
+	bool DisableContextMenu()
+	{
+		return true;
+	}
 };
 
 #endif

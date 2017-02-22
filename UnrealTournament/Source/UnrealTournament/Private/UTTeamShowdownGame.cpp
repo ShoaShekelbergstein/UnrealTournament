@@ -26,9 +26,9 @@ AUTTeamShowdownGame::AUTTeamShowdownGame(const FObjectInitializer& OI)
 	GoalScore = 5;
 	DisplayName = NSLOCTEXT("UTGameMode", "TeamShowdown", "Showdown");
 	bAnnounceTeam = true;
-	QuickPlayersToStart = 6;
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+	DefaultMaxPlayers = 6;
 }
 
 void AUTTeamShowdownGame::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -46,6 +46,10 @@ void AUTTeamShowdownGame::InitGame(const FString& MapName, const FString& Option
 			BotFillCount = ChallengeManager->GetNumPlayers(this);
 		}
 	}
+	else if (bForceNoBots)
+	{
+		BotFillCount = 0;
+	}
 	else if (UGameplayStatics::HasOption(Options, TEXT("Bots")))
 	{
 		BotFillCount = UGameplayStatics::GetIntOption(Options, TEXT("Bots"), SavedBotFillCount) + 1;
@@ -57,7 +61,7 @@ void AUTTeamShowdownGame::InitGame(const FString& MapName, const FString& Option
 	GameSession->MaxPlayers = UGameplayStatics::GetIntOption(Options, TEXT("MaxPlayers"), 8);
 	if (GameSession->MaxPlayers <= 0)
 	{
-		GameSession->MaxPlayers = 6;
+		GameSession->MaxPlayers = DefaultMaxPlayers;
 	}
 }
 
@@ -216,12 +220,12 @@ void AUTTeamShowdownGame::ScoreKill_Implementation(AController* Killer, AControl
 				{
 					KillerPlayerState->AdjustScore(+100);
 					KillerPlayerState->IncrementKills(DamageType, true, OtherPlayerState);
-				}
-
-				if (!bFirstBloodOccurred)
-				{
-					BroadcastLocalized(this, UUTFirstBloodMessage::StaticClass(), 0, KillerPlayerState, NULL, NULL);
-					bFirstBloodOccurred = true;
+					if (!bFirstBloodOccurred)
+					{
+						BroadcastLocalized(this, UUTFirstBloodMessage::StaticClass(), 0, KillerPlayerState, NULL, NULL);
+						bFirstBloodOccurred = true;
+					}
+					TrackKillAssists(Killer, Other, KilledPawn, DamageType, KillerPlayerState, OtherPlayerState);
 				}
 			}
 		}
@@ -418,6 +422,10 @@ void AUTTeamShowdownGame::GetGameURLOptions(const TArray<TSharedPtr<TAttributePr
 void AUTTeamShowdownGame::CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps)
 {
 	Super::CreateGameURLOptions(MenuProps);
+	if (BotFillCount == 0)
+	{
+		BotFillCount = DefaultMaxPlayers;
+	}
 	MenuProps.Add(MakeShareable(new TAttributeProperty<int32>(this, &BotFillCount, TEXT("BotFill"))));
 }
 #if !UE_SERVER

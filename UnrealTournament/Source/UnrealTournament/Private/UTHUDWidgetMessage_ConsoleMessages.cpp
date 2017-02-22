@@ -9,7 +9,7 @@ UUTHUDWidgetMessage_ConsoleMessages::UUTHUDWidgetMessage_ConsoleMessages(const c
 {
 	ManagedMessageArea = FName(TEXT("ConsoleMessage"));
 	Position = FVector2D(0.0f, 0.0f);			
-	ScreenPosition = FVector2D(0.01f, 0.8f);
+	ScreenPosition = FVector2D(0.01f, 0.92f);
 	Size = FVector2D(0.0f, 0.0f);			
 	Origin = FVector2D(0.0f, 0.0f);				
 	NumVisibleLines=4;

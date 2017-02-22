@@ -143,7 +143,6 @@ class UNREALTOURNAMENT_API UUTWeaponStateFiringChargedRocket : public UUTWeaponS
 				}
 				else
 				{
-					RocketLauncher->SetLeadRocket();
 					FireLoadedRocket();
 				}
 			}

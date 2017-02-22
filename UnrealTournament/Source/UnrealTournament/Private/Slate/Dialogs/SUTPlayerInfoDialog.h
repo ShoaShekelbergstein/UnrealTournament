@@ -101,7 +101,8 @@ public:
 	, _bAllowLogout(false)
 	{}
 	SLATE_ARGUMENT(TWeakObjectPtr<class UUTLocalPlayer>, PlayerOwner)												
-	SLATE_ARGUMENT(TWeakObjectPtr<class AUTPlayerState>, TargetPlayerState)
+	SLATE_ARGUMENT(FString, TargetUniqueId)
+	SLATE_ARGUMENT(FString, TargetName)
 	SLATE_ARGUMENT(FVector2D, DialogSize)										
 	SLATE_ARGUMENT(bool, bDialogSizeIsRelative)									
 	SLATE_ARGUMENT(FVector2D, DialogPosition)									
@@ -119,27 +120,51 @@ public:
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 	virtual TSharedRef<class SWidget> BuildTitleBar(FText InDialogTitle) override;
 
+	virtual void OnUniqueIdChanged();
+
 protected:
 
-	TWeakObjectPtr<class AUTPlayerState> TargetPlayerState;
-	TSharedPtr<const FUniqueNetId> TargetUniqueId;
+	// This is the target id of who is currently being designed
+	FString TargetUniqueId;
+
+	// Holds a reference to a live player state if there is one.  This way we can pull
+	// proper team information/etc.
+
+	TWeakObjectPtr<AUTPlayerState> TargetPlayerState;
+
+	// These are the various character customization settings that we need.  We either pull them from the player state if it's available,
+	// or they are pulled from that player's profile.
+
+	TSubclassOf<class AUTCharacterContent> CharacterClass;
+	TSubclassOf<AUTHat> HatClass;
+	int32 HatVariant;
+	TSubclassOf<AUTEyewear> EyewearClass;
+	int32 EyewearVariant;
 
 	/** world for rendering the player preview */
 	class UWorld* PlayerPreviewWorld;
+
 	/** view state for player preview (needed for LastRenderTime to work) */
 	FSceneViewStateReference ViewState;
+
 	/** preview actors */
 	class AUTCharacter* PlayerPreviewMesh;
+
 	/** preview weapon */
 	AUTWeaponAttachment* PreviewWeapon;
+
 	/** render target for player mesh and cosmetic items */
 	class UUTCanvasRenderTarget2D* PlayerPreviewTexture;
+
 	/** material for the player preview since Slate doesn't support rendering the target directly */
 	class UMaterialInstanceDynamic* PlayerPreviewMID;
+
 	/** Slate brush to render the preview */
 	FSlateBrush* PlayerPreviewBrush;
+
 	/** Do you want the player model to spin? */
 	bool bSpinPlayer;
+
 	/** The Zoom offset to apply to the camera. */
 	float ZoomOffset;
 
@@ -149,8 +174,6 @@ protected:
 
 	int32 OldSSRQuality;
 
-
-	virtual TSharedRef<class SWidget> BuildCustomButtonBar();
 	virtual FReply OnButtonClick(uint16 ButtonID);
 
 	virtual void DragPlayerPreview(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent);
@@ -163,14 +186,11 @@ protected:
 
 	TSharedPtr<class SOverlay> InfoPanel;
 	TSharedPtr<class SHorizontalBox> FriendPanel;
-	TSharedPtr<class SButton> KickButton;
 	FName FriendStatus;
 
 	FText GetFunnyText();
 	virtual void BuildFriendPanel();
 	virtual FReply OnSendFriendRequest();
-
-	virtual FReply KickVote();
 
 	//Holds references to all of the stat attributes that are created
 	TArray<TSharedPtr<TAttributeStat> > StatList;
@@ -183,19 +203,29 @@ protected:
 	AUTPlayerState* GetNextPlayerState(int32 dir);
 	FText CurrentTab; //Store the current tab so we can go back to it when switching players
 
-	void OnUpdatePlayerState();
+	void UpdatePlayerCustomization();
 
-	bool bAllowLogout;
+	void CreatePlayerTab();
 
-	virtual void AddButtonsToLeftOfButtonBar(uint32& ButtonCount);
-
-	FReply Logout();
-	void SignOutConfirmationResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
-	EVisibility VoteKickVis() const;
 private:
 	void UpdatePlayerStateInReplays();
 	void UpdatePlayerCharacterPreviewInReplays();
 	void UpdatePlayerStateRankingStatsFromLocalPlayer(int32 NewDuelRank, int32 NewCTFRank, int32 NewTDMRank, int32 NewDMRank, int32 NewShowdownRank, int32 NewFlagRunRank, int32 TotalStars, uint8 DuelMatchesPlayed, uint8 CTFMatchesPlayed, uint8 TDMMatchesPlayed, uint8 DMMatchesPlayed, uint8 ShowdownMatchesPlayed, uint8 FlagRunMatchesPlayed);
+
+protected:
+	FDelegateHandle OnReadUserFileCompleteDelegate;
+	virtual void OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
+
+	TSharedPtr<SVerticalBox> PlayerCardBox;
+	TSharedPtr<SUTWebBrowserPanel> PlayerCardWebBrowser;
+
+	UFUNCTION()
+	void OnPlayerCardLoadCompleted();
+
+	UFUNCTION()
+	void OnPlayerCardLoadError();
+
+	TSharedPtr<SVerticalBox> ModelBox;
 
 };
 #endif

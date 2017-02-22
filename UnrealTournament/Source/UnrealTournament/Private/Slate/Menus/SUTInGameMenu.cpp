@@ -43,7 +43,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 		AUTGameState* GS = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
 		AUTPlayerState* PS = PlayerOwner->PlayerController ? Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState) : NULL;
 		bool bIsSpectator = PS && PS->bOnlySpectator;
-		if (GS && GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches && (!PS || !PS->bIsWarmingUp))
+		if (GS && GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches)
 		{
 			LeftMenuBar->AddSlot()
 			.Padding(5.0f,0.0f,0.0f,0.0f)
@@ -61,14 +61,13 @@ void SUTInGameMenu::BuildLeftMenuBar()
 					[
 						SNew(STextBlock)
 						.Text(NSLOCTEXT("SUTMenuBase","MenuBar_ChangeTeam","CHANGE TEAM"))
-						.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.TextStyle")
+						.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
 					]
 				]
 			];
 		}
 
-
-		if (GS && (GS->GetMatchState() == MatchState::WaitingToStart) && (!PS || !PS->bIsWarmingUp))
+		if (GS && (GS->GetMatchState() == MatchState::WaitingToStart))
 		{
 			if (GS->GetNetMode() == NM_Standalone)
 			{
@@ -87,9 +86,31 @@ void SUTInGameMenu::BuildLeftMenuBar()
 							[
 								SNew(STextBlock)
 								.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_StartMatch", "START MATCH"))
-								.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.TextStyle")
+								.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
 							]
 						]
+					];
+			}
+			else if (PS && PS->bIsWarmingUp)
+			{
+				LeftMenuBar->AddSlot()
+					.Padding(5.0f, 0.0f, 0.0f, 0.0f)
+					.AutoWidth()
+					[
+						SNew(SUTButton)
+						.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
+					.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
+					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
+					[
+						SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot()
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_LeaveWarmup", "LEAVE WARM UP"))
+					.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
+					]
+					]
 					];
 			}
 			else if (!bIsSpectator)
@@ -108,8 +129,8 @@ void SUTInGameMenu::BuildLeftMenuBar()
 							.VAlign(VAlign_Center)
 							[
 								SNew(STextBlock)
-								.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "CHANGE READY"))
-								.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.TextStyle")
+								.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "WARM UP"))
+								.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
 							]
 						]
 					];
@@ -132,7 +153,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 				[
 					SNew(STextBlock)
 					.Text(this, &SUTInGameMenu::GetMapVoteTitle)
-					.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.TextStyle")
+					.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
 				]
 			]
 		];
@@ -153,16 +174,13 @@ void SUTInGameMenu::BuildLeftMenuBar()
 				[
 					SNew(STextBlock)
 					.Text(NSLOCTEXT("SUTMenuBase","MenuBar_MatchSummary","MATCH SUMMARY"))
-					.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.TextStyle")
+					.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
 				]
 			]
 		];
-
-
 	}
 	
 	FSlateApplication::Get().PlaySound(SUTStyle::PauseSound,0);
-
 }
 
 void SUTInGameMenu::BuildExitMenu(TSharedPtr<SUTComboButton> ExitButton)
@@ -185,6 +203,16 @@ FReply SUTInGameMenu::OnCloseMenu()
 
 FReply SUTInGameMenu::OnReturnToLobby()
 {
+	const bool bIsPartyLeader = PlayerOwner->IsPartyLeader();
+	if (!bIsPartyLeader)
+	{
+		UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(PlayerOwner->GetWorld(), UPartyContext::StaticClass()));
+		if (PartyContext)
+		{
+			PartyContext->LeaveParty();
+		}
+	}
+
 	AUTGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
 	if ( GameState && GameState->HubGuid.IsValid() )
 	{
@@ -240,6 +268,16 @@ void SUTInGameMenu::WriteQuitMidGameAnalytics()
 			}
 		}
 	}
+	
+	if (FUTAnalytics::IsAvailable())
+	{
+		AUTGameMode* UTGameMode = Cast<AUTGameMode>(PlayerOwner->GetWorld()->GetAuthGameMode());
+		if (UTGameMode && (UTGameMode->TutorialMask != 0))
+		{
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+			FUTAnalytics::FireEvent_UTTutorialQuit(UTPC, PlayerOwner->GetWorld()->GetMapName());
+		}
+	}
 }
 
 FReply SUTInGameMenu::OnReturnToMainMenu()
@@ -258,7 +296,6 @@ FReply SUTInGameMenu::OnReturnToMainMenu()
 			bIsQuickMatch = true;
 		}
 	}
-	
 
 	const bool bIsPartyLeader = PlayerOwner->IsPartyLeader();
 	if (!bIsPartyLeader || bIsRankedGame || bIsQuickMatch)
@@ -309,7 +346,7 @@ FReply SUTInGameMenu::OnReadyChangeClick()
 	if (PC)
 	{
 //		PC->PlayMenuSelectSound();
-		PC->ServerRestartPlayer();
+		PC->ServerToggleWarmup();
 		PlayerOwner->HideMenu();
 	}
 	return FReply::Handled();
@@ -320,7 +357,6 @@ FReply SUTInGameMenu::OnSpectateClick()
 	ConsoleCommand(TEXT("ChangeTeam 255"));
 	return FReply::Handled();
 }
-
 
 void SUTInGameMenu::SetInitialPanel()
 {
@@ -346,7 +382,6 @@ FReply SUTInGameMenu::OnMapVoteClick()
 	{
 		PlayerOwner->OpenMapVote(GameState);
 	}
-
 	return FReply::Handled();
 }
 
@@ -357,7 +392,6 @@ FText SUTInGameMenu::GetMapVoteTitle() const
 	{
 		return FText::Format(NSLOCTEXT("SUTInGameMenu","MapVoteFormat","MAP VOTE ({0})"), FText::AsNumber(GameState->VoteTimer));
 	}
-
 	return NSLOCTEXT("SUTMenuBase","MenuBar_MapVote","MAP VOTE");
 }
 
@@ -440,7 +474,6 @@ void SUTInGameMenu::ShowExitDestinationMenu()
 	}
 
 	PlayerOwner->OpenDialog(QP.ToSharedRef(), 200);
-
 }
 
 void SUTInGameMenu::QuitConfirmation()
@@ -541,7 +574,6 @@ EVisibility SUTInGameMenu::GetMapVoteVisibility() const
 	}
 }
 
-
 EVisibility SUTInGameMenu::GetMatchSummaryVisibility() const
 {
 	return StaticCastSharedPtr<SUTInGameHomePanel>(HomePanel)->GetSummaryVisibility();
@@ -557,10 +589,8 @@ EVisibility SUTInGameMenu::GetMatchSummaryButtonVisibility() const
 			return EVisibility::Visible;
 		}
 	}
-
 	return EVisibility::Collapsed;
 }
-
 
 FReply SUTInGameMenu::ShowSummary()
 {
@@ -579,7 +609,6 @@ void SUTInGameMenu::OnMenuOpened(const FString& Parameters)
 	{
 		PlayerOwner->FocusWidget(PlayerOwner->GetChatWidget());
 	}
-
 }
 
 bool SUTInGameMenu::SkipWorldRender()
@@ -597,7 +626,6 @@ FReply SUTInGameMenu::OnKeyUp( const FGeometry& MyGeometry, const FKeyEvent& InK
 			ChatBox->SetText(FText::GetEmpty());
 		}
 	}
-
 	return SUTMenuBase::OnKeyUp(MyGeometry, InKeyboardEvent);
 }
 
@@ -610,7 +638,6 @@ void SUTInGameMenu::OnMenuClosed()
 
 	SUTMenuBase::OnMenuClosed();
 }
-
 
 
 #endif

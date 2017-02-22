@@ -467,10 +467,17 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 		bool bWasInWarningZone;
 
 	protected:
-		UPROPERTY(BlueprintReadWrite, Category = Pawn, ReplicatedUsing=UpdateArmorOverlay)
+		UPROPERTY(BlueprintReadWrite, Category = Pawn, ReplicatedUsing=OnArmorUpdated)
 			int32 ArmorAmount;
+
+		UPROPERTY()
+			int32 OldArmorAmount;
+
 	public:
-	/** Limit to armor stacking */
+		UFUNCTION()
+			virtual void OnArmorUpdated();
+
+		/** Limit to armor stacking */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Pawn")
 	int32 MaxStackedArmor;
 
@@ -722,8 +729,14 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	UFUNCTION()
 	virtual void FiringInfoReplicated();
 
-	UPROPERTY(BlueprintReadWrite, Category = Pawn, Replicated)
+	UPROPERTY(BlueprintReadWrite, Category = Pawn, ReplicatedUsing=OnHealthUpdated)
 	int32 Health;
+
+	UPROPERTY()
+		int32 OldHealth;
+
+	UFUNCTION()
+		virtual void OnHealthUpdated();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
 	int32 HealthMax;
@@ -850,12 +863,25 @@ public:
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = Pawn)
 	bool bDisallowWeaponFiring;
+
+	UPROPERTY(BlueprintReadOnly, Category = Pawn)
+		bool bDisallowWeaponSwitching;
+
 public:
 	/** allows disabling all weapon firing from this Pawn
 	 * NOT replicated, must be called on both sides to work properly
 	 */
 	UFUNCTION(BlueprintCallable, Category = Pawn)
 	virtual void DisallowWeaponFiring(bool bDisallowed);
+
+	/** Call after calling DissallowWeaponFiring(true) to re-enable weapon switching without enabling weapon firing.  NOT replicated. */
+	UFUNCTION(BlueprintCallable, Category = Pawn)
+		virtual void EnableWeaponSwitching();
+
+	inline bool IsSwitchingDisabled() const
+	{
+		return bDisallowWeaponSwitching;
+	}
 
 	inline bool IsFiringDisabled() const
 	{
@@ -930,6 +956,10 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = Pawn)
 	int32 UnfeignCount;
 
+	/* Used to limit how often impulses are applied to ragdolls, particularly when projectile is passing through it. */
+	UPROPERTY(BlueprintReadWrite, Category = Pawn)
+		float LastRagdollDamageTime;
+
 public:
 	/** Return true if character is in a ragdoll state */
 	UFUNCTION(BlueprintCallable, Category = "Pawn|Character")
@@ -990,6 +1020,18 @@ public:
 	UParticleSystem* HeadArmorHitEffect;
 
 	virtual void NotifyBlockedHeadShot(AUTCharacter* ShotInstigator);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
+		UParticleSystem* FirstPersonHealthEffect;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
+		UParticleSystem* ThirdPersonHealthEffect;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
+		UParticleSystem* FirstPersonArmorEffect;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
+		UParticleSystem* ThirdPersonArmorEffect;
 
 	UFUNCTION(exec)
 		void OV(FName InName, float value);
@@ -1177,7 +1219,7 @@ public:
 
 	/** Return true if character is currently able to slide. */
 	UFUNCTION(BlueprintCallable, Category = "Pawn|Character")
-		bool CanSlide() const;
+	bool CanSlide() const;
 
 	/** Dodge requested by controller, return whether dodge occurred. */
 	virtual bool Dodge(FVector DodgeDir, FVector DodgeCross);
@@ -2175,6 +2217,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Aim)
 	AActor* GetCurrentAimContext();
 
+	FTimerHandle TriggerBoostPowerTimerHandle;
+
+	/** Trigger boost. */
+	virtual void TriggerBoostPower();
+	virtual void TeamNotifyBoostPowerUse();
 
 private:
 	FTimerHandle SpeedBoostTimerHandle;

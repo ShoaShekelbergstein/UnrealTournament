@@ -5,6 +5,7 @@
 #include "UTGameInstance.h"
 #include "UTOnlineGameSettingsBase.h"
 #include "OnlineSubsystemUtils.h"
+#include "UTLocalPlayer.h"
 
 #define LOCTEXT_NAMESPACE "UTMatchmaking"
 
@@ -18,6 +19,12 @@ void UUTMatchmakingSingleSession::Init(const FMatchmakingParams& InParams)
 {
 	SessionName = GameSessionName;
 	CurrentParams = InParams;
+
+	UUTLocalPlayer* UTLP = Cast<UUTLocalPlayer>(GEngine->GetFirstGamePlayer(GetWorld()));
+	if (UTLP)
+	{
+		UTLP->LastMatchmakingSessionId.Empty();
+	}
 }
 
 void UUTMatchmakingSingleSession::StartMatchmaking()

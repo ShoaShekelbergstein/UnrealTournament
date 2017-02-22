@@ -111,7 +111,17 @@ void AUTLobbyGameState::PostInitializeComponents()
 							// Build out the map info
 
 							NewReplicatedRuleset->SetRules(NewRuleset, MapAssets);
-							AvailableGameRulesets.Add(NewReplicatedRuleset);
+
+							// If this ruleset doesn't have any maps, then don't use it
+							if (NewReplicatedRuleset->MapList.Num() > 0)
+							{
+								AvailableGameRulesets.Add(NewReplicatedRuleset);
+							}
+							else
+							{
+								UE_LOG(UT,Warning,TEXT("Detected a ruleset [%s] that has no maps"), *NewRuleset->UniqueTag);
+								NewReplicatedRuleset->Destroy();
+							}
 						}
 					}
 					else

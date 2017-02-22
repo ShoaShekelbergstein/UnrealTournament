@@ -164,19 +164,23 @@ public:
 	/** Return how long to wait after end of match before travelling to next map. */
 	virtual float GetTravelDelay();
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = Game)
 	uint32 bAllowOvertime:1;
 
 	/**If enabled, the server grants special control for casters*/
 	UPROPERTY()
 	uint32 bCasterControl:1;
 
+	/**True when caster is ready to start match*/
+	UPROPERTY()
+		uint32 bCasterReady : 1;
+
 	/** True if this match was started as a quickmatch. */
 	UPROPERTY()
 		uint32 bIsQuickMatch : 1;
 
 	/** If TRUE, force dead players to respawn immediately. Can be overridden with ForceRespawn=x on the url */
-	UPROPERTY(Config, EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = Game)
 	bool bForceRespawn;
 
 	UPROPERTY(EditDefaultsOnly)
@@ -197,16 +201,47 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 		bool bPastELOLimit;
 
-	/** If true, require full set of players to be ready to start. */
-	UPROPERTY()
+	/** If true, require full set of players to be ready to start  (ready implied by warming up). */
+	UPROPERTY(EditDefaultsOnly, Category = Game)
 		bool bRequireReady;
 
-	/** maximum amount of time (in seconds) to wait for players to be ready before giving up and starting the game anyway; <= 0 means wait forever until everyone readies up */
-	UPROPERTY()
-	int32 MaxReadyWaitTime;
+	/** If true, bots will not fill undermanned match. */
+	UPROPERTY(EditDefaultsOnly, Category = Game)
+		bool bForceNoBots;
+
+	UPROPERTY(BlueprintReadWrite)
+		bool bAutoAdjustBotSkill;
+
+	UPROPERTY(BlueprintReadWrite)
+		float RedTeamSkill;
+
+	UPROPERTY(BlueprintReadWrite)
+		float BlueTeamSkill;
+
+	UPROPERTY(BlueprintReadWrite)
+		int32 BlueTeamKills;
+
+	UPROPERTY(BlueprintReadWrite)
+		int32 RedTeamKills;
+
+	UPROPERTY(BlueprintReadWrite)
+		int32 BlueTeamDeaths;
+
+	UPROPERTY(BlueprintReadWrite)
+		int32 RedTeamDeaths;
+
+	virtual void UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, const AUTPlayerState* KilledPlayerState);
+
+	/** Delay to start match after start conditions are met. */
+	UPROPERTY(EditDefaultsOnly, Category = Game)
+		float StartDelay;
+
+	/** Last time match was not ready to start. */
+	UPROPERTY(EditDefaultsOnly, Category = Game)
+		float LastMatchNotReady;
 
 	/** Score needed to win the match.  Can be overridden with GOALSCORE=x on the url */
-	UPROPERTY(config)
+	UPROPERTY(EditDefaultsOnly, Category = Game)
 	int32 GoalScore;    
 
 	/** How long should the match be.  Can be overridden with TIMELIMIT=x on the url */
@@ -233,27 +268,26 @@ public:
 	bool bFirstBloodOccurred;
 
 	/** Minimum number of players that must have joined match before it will start. */
-	UPROPERTY(EditDefaultsOnly, BLueprintReadWrite, Category="MatchStart")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="MatchStart")
 	int32 MinPlayersToStart;
 
-	/** Minimum number of players that must have joined quickmatch before it will start. */
-	UPROPERTY(EditDefaultsOnly, BLueprintReadWrite, Category = "MatchStart")
-		int32 QuickPlayersToStart;
-
 	/** After this wait, add bots to min players level */
-	UPROPERTY(EditDefaultsOnly, BLueprintReadWrite, Category = "MatchStart")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MatchStart")
 		int32 MaxWaitForPlayers;
 
-	/** Wait at least this long in quick match to fill to QuickPlayersToStart */
-	UPROPERTY(EditDefaultsOnly, BLueprintReadWrite, Category = "MatchStart")
-		int32 MaxWaitForQuickMatch;
+	/** MaxWaitForPlayers for QuickMatch */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MatchStart")
+		int32 QuickWaitForPlayers;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MatchStart")
+		int32 DefaultMaxPlayers;
 
 	/** World time when match was first ready to start. */
 	UPROPERTY()
 	float StartPlayTime;
 
 	/** add bots until NumPlayers + NumBots is this number */
-	UPROPERTY(config)
+	UPROPERTY(BlueprintReadWrite, Category = "MatchStart")
 	int32 BotFillCount;
 
 	// How long a player must wait before respawning.  Set to 0 for no delay.
@@ -323,6 +357,10 @@ public:
 	/** If true, is a training mode with no cheats allowed. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
 	bool bBasicTrainingGame;
+
+	/** To make it easier to customize for instagib.  FIXMESTEVE should eventually all be mutator driven so other mutators can take advantage too. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
+		bool bIsInstagib;
 
 	/** Tag of the current challenge */
 	UPROPERTY(BlueprintReadOnly, Category = "Game")
@@ -606,6 +644,9 @@ public:
 	/** The standard IsHandlingReplays() codepath is not flexible enough for UT, this is the compromise */
 	virtual bool UTIsHandlingReplays();
 
+	/** This is called when no LineUpZone was setup in a level as a fall back so that the Line-up can still occur. **/
+	virtual void HandleDefaultLineupSpawns(LineUpTypes LineUpType, /*OUT*/TArray<AUTCharacter*>& PlayersSpawned, /*OUT*/ TArray<AUTCharacter*>& PlayersNotSpawned);
+
 protected:
 
 	/** Returns random bot character skill matched to current GameDifficulty. */
@@ -725,6 +766,11 @@ public:
 
 	/**Sends a pickup message to all spectators*/
 	virtual void BroadcastSpectatorPickup(AUTPlayerState* PS, FName StatsName, UClass* PickupClass);
+
+	virtual bool CanSpectate_Implementation(APlayerController* Viewer, APlayerState* ViewTarget) override
+	{
+		return UTGameState && UTGameState->CanSpectate(Viewer, ViewTarget);
+	}
 
 	/** called on the default object of the game class being played to precache announcer sounds
 	 * needed because announcers are dynamically loaded for convenience of user announcer packs, so we need to load up the audio we think we'll use at game time
@@ -961,13 +1007,13 @@ public:
 #endif
 
 	// Returns true if a player can activate a boost
-	virtual bool CanBoost(AUTPlayerController* Who);
+	virtual bool CanBoost(AUTPlayerState* Who);
 
 	/** PlayerController wants to trigger boost, return true if he can handle it. Mutator hooks as well. */
-	virtual bool TriggerBoost(AUTPlayerController* Who);
+	virtual bool TriggerBoost(AUTPlayerState* Who);
 
 	// Look to see if we can attempt a boost.  It will use up the charge if we can and return true, otherwise it returns false.
-	virtual bool AttemptBoost(AUTPlayerController* Who);
+	virtual bool AttemptBoost(AUTPlayerState* Who);
 
 	/**
 	 *	Calculates the Com menu switch for a command command tag.
@@ -997,7 +1043,9 @@ public:
 	 * example: pawn classes for class-based modes
 	 * prevents client hitches when the objects are replicated the first time
 	 */
-	virtual void PreloadClientAssets(TArray<UObject*>& ObjList) const
-	{}
+	virtual void PreloadClientAssets(TArray<UObject*>& ObjList) const;
+
+	UPROPERTY(EditDefaultsOnly, Meta = (MetaClass = "UObject"))
+	TArray<FStringClassReference> AssetsToPreloadOnClients;
 };
 

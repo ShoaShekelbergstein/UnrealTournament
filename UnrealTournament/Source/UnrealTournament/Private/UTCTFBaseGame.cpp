@@ -186,21 +186,30 @@ void AUTCTFBaseGame::ScoreDamage_Implementation(int32 DamageAmount, AUTPlayerSta
 void AUTCTFBaseGame::ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType)
 {
 	CTFScoring->ScoreKill(Killer, Other, KilledPawn, DamageType);
-	if ((Killer != NULL && Killer != Other))
+	if (Killer != NULL)
 	{
-		AddKillEventToReplay(Killer, Other, DamageType);
-
 		AUTPlayerState* AttackerPS = Cast<AUTPlayerState>(Killer->PlayerState);
-		if (AttackerPS != NULL)
+		if (Killer != Other)
 		{
-			if (!bFirstBloodOccurred)
+			AddKillEventToReplay(Killer, Other, DamageType);
+			if (AttackerPS != NULL)
 			{
-				BroadcastLocalized(this, UUTFirstBloodMessage::StaticClass(), 0, AttackerPS, NULL, NULL);
-				bFirstBloodOccurred = true;
+				if (!bFirstBloodOccurred)
+				{
+					BroadcastLocalized(this, UUTFirstBloodMessage::StaticClass(), 0, AttackerPS, NULL, NULL);
+					bFirstBloodOccurred = true;
+				}
+				AUTPlayerState* OtherPlayerState = Other ? Cast<AUTPlayerState>(Other->PlayerState) : NULL;
+				AttackerPS->IncrementKills(DamageType, true, OtherPlayerState);
+				TrackKillAssists(Killer, Other, KilledPawn, DamageType, AttackerPS, OtherPlayerState);
 			}
-			AUTPlayerState* OtherPlayerState = Other ? Cast<AUTPlayerState>(Other->PlayerState) : NULL;
-			AttackerPS->IncrementKills(DamageType, true, OtherPlayerState);
-			TrackKillAssists(Killer, Other, KilledPawn, DamageType, AttackerPS, OtherPlayerState);
+		}
+		else
+		{
+			if (AttackerPS != nullptr)
+			{
+				AttackerPS->ModifyStatsValue(NAME_Suicides, 1);
+			}
 		}
 	}
 	if (BaseMutator != NULL)
@@ -274,7 +283,7 @@ void AUTCTFBaseGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AU
 			{
 				// tell bots about the cap
 				AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-				if (GS != NULL)
+				if (GS != NULL && HolderPawn != nullptr && GameObject != nullptr)
 				{
 					for (AUTTeamInfo* TeamIter : GS->Teams)
 					{
@@ -358,7 +367,7 @@ void AUTCTFBaseGame::HandleMatchIntermission()
 			PlacePlayersAroundFlagBase(i, i);
 		}
 	}
-	
+
 	UTGameState->PrepareForIntermission();
 
 	// Tell the controllers to look at own team flag
@@ -528,6 +537,24 @@ void AUTCTFBaseGame::PlacePlayersAroundFlagBase(int32 TeamNum, int32 FlagTeamNum
 	TArray<AController*> Members = Teams[TeamNum]->GetTeamMembers();
 	const int32 MaxPlayers = FMath::Min(8, Members.Num());
 
+	//Commented out for now. Uncomment when we put back in line-ups in all game modes
+	////Spawn all players under team num of 255 (FFA team num)
+	//if ((TeamNum == 255) && (Teams.Num() > 1))
+	//{
+	//	Members.Append(Teams[1-TeamNum]->GetTeamMembers());
+
+	//	//Sort by team num so team mates are next to each other
+	//	Members.Sort([=](AController& A, AController& B) 
+	//	{
+	//		const IUTTeamInterface* TeamInterfaceA = Cast<IUTTeamInterface>(&A);
+	//		const IUTTeamInterface* TeamInterfaceB = Cast<IUTTeamInterface>(&B);
+	//	
+	//		return (TeamInterfaceA && TeamInterfaceB && TeamInterfaceA->GetTeamNum() > TeamInterfaceB->GetTeamNum()); 
+	//	});
+	//}
+	
+	//const int32 MaxPlayers = FMath::Min(10, Members.Num());
+
 	FVector FlagLoc = CTFGameState->FlagBases[FlagTeamNum]->GetActorLocation();
 	float AngleSlices = 360.0f / MaxPlayers;
 	int32 PlacementCounter = 0;
@@ -551,6 +578,10 @@ void AUTCTFBaseGame::PlacePlayersAroundFlagBase(int32 TeamNum, int32 FlagTeamNum
 					C->GetPawn()->TurnOff();
 				}
 			}
+		}
+		if (PlacementCounter == 8)
+		{
+			break;
 		}
 	}
 	bPlacingPlayersAtIntermission = false;
@@ -587,10 +618,6 @@ void AUTCTFBaseGame::PlacePlayersAroundFlagBase(int32 TeamNum, int32 FlagTeamNum
 				}
 				UTChar->bIsTranslocating = false;
 				UTChar->TurnOff();
-			}
-			if (PlacementCounter == 8)
-			{
-				break;
 			}
 		}
 	}

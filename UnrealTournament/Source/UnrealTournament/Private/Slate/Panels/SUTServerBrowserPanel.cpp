@@ -2431,6 +2431,11 @@ void SUTServerBrowserPanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
 {
 	SUTPanelBase::OnShowPanel(inParentWindow);
 
+	if (!PlayerOwner->IsLoggedIn())
+	{
+		PlayerOwner->ShowMessage(NSLOCTEXT("SUTServerBrowserPanel","NotLoggedInMessageTitle","Not Logged In"), NSLOCTEXT("SUTServerBrowserPanel","NotLoggedInText","You are currently logged out.  You will need to log in to see servers not running on your local area network."),UTDIALOG_BUTTON_OK);
+	}
+
 	if (AnimWidget.IsValid())
 	{
 		AnimWidget->Animate(FVector2D(200, 0), FVector2D(0, 0), 0.0f, 1.0f, 0.3f);

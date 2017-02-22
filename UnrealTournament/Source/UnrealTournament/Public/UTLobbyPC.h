@@ -39,9 +39,6 @@ public:
 
 	virtual void ServerDebugTest_Implementation(const FString& TestCommand);
 
-	UFUNCTION(reliable, Server , WithValidation)
-	virtual void ServerSetReady(uint32 bNewReadyToPlay);
-
 	virtual void PlayerTick( float DeltaTime );
 
 	UFUNCTION(exec)
@@ -81,6 +78,10 @@ protected:
 	int32 RedirectCount;
 
 	virtual bool ForwardDirectSay(AUTPlayerState* SenderPlayerState, FString& Message);
+
+public:
+	virtual void ServerReceiveStatsID_Implementation(const FString& NewStatsID) override;
+
 public:
 	
 	bool bReceivedServerContentList;

@@ -183,18 +183,10 @@ public:
 		FText WarmupText;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
-		FText WarmupWarningText;
-
-	UPROPERTY()
-		bool bHaveWarmup;
+		FText InteractiveText;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		bool bDrawMinimapInScoreboard;
-
-	/** If true force Epic account names on scoreboard. */
-	UPROPERTY()
-		bool bForceRealNames;
-
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Scoreboard")
@@ -209,7 +201,9 @@ protected:
 	}
 
 	virtual void DrawGamePanel(float RenderDelta, float& YOffset);
-	virtual void DrawGameOptions(float RenderDelta, float& YOffset, float RightEdge);
+
+	/** Draw timer and game goal on scoreboard game panel.  If bGetLengthOnly, just return the max length of these strings. */
+	virtual float DrawGameOptions(float RenderDelta, float& YOffset, float RightEdge, bool bGetLengthOnly=false);
 
 	virtual void DrawTeamPanel(float RenderDelta, float& YOffset);
 	virtual void DrawMinimap(float RenderDelta);

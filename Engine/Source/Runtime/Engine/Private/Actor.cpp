@@ -2993,9 +2993,9 @@ void AActor::PostNetInit()
 {
 	if(RemoteRole != ROLE_Authority)
 	{
-		UE_LOG(LogActor, Warning, TEXT("AActor::PostNetInit %s Remoterole: %d"), *GetName(), (int)RemoteRole);
+		UE_LOG(LogActor, Warning, TEXT("AActor::PostNetInit %s RemoteRole: %d"), *GetName(), (int)RemoteRole);
 	}
-	check(RemoteRole == ROLE_Authority);
+	checkf(RemoteRole == ROLE_Authority, TEXT("AActor::PostNetInit %s RemoteRole: %d"), *GetName(), (int)RemoteRole);
 
 	if (!HasActorBegunPlay())
 	{

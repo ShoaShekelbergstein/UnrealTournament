@@ -39,6 +39,14 @@ class UNREALTOURNAMENT_API AUTBasePlayerController : public APlayerController , 
 
 	virtual void SetName(const FString& S);
 
+	/** Change name of server */
+	UFUNCTION(reliable, server, WithValidation)
+		void ServerChangeClanName(const FString& S);
+
+	/** Tries to set the player's clan tag to the given name. */
+	UFUNCTION(exec)
+		virtual void ClanName(const FString& S);
+
 	/**	Will popup the in-game menu	 **/
 	UFUNCTION(exec, BlueprintCallable, Category = "UI")
 	virtual void ShowMenu(const FString& Parameters);
@@ -154,6 +162,11 @@ public:
 	virtual void ServerReceiveStatsID(const FString& NewStatsID);
 
 	void SendStatsIDToServer();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerReceiveCosmetics(const FString& CosmeticString);
+
+	void SendCosmeticsToServer();
 
 protected:
 	FOnFindSessionsCompleteDelegate OnFindGUIDSessionCompleteDelegate;
@@ -325,4 +338,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual FText GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const;
+
+protected:
+	void InitializeHeartbeatManager();
+
+	UPROPERTY()
+	class UUTHeartbeatManager* HeartbeatManager;
 };

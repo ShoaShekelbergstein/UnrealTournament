@@ -38,6 +38,7 @@ UUTGameViewportClient::UUTGameViewportClient(const class FObjectInitializer& Obj
 	SplitscreenInfo[9].PlayerData.Add(FPerPlayerSplitscreenData(OneThird, 0.5f, OneThird, 0.5f));
 	SplitscreenInfo[9].PlayerData.Add(FPerPlayerSplitscreenData(OneThird, 0.5f, TwoThirds, 0.0f));
 	SplitscreenInfo[9].PlayerData.Add(FPerPlayerSplitscreenData(OneThird, 0.5f, TwoThirds, 0.5f));
+	KickReason = FText::GetEmpty();
 }
 
 void UUTGameViewportClient::AddViewportWidgetContent(TSharedRef<class SWidget> ViewportContent, const int32 ZOrder)
@@ -370,7 +371,6 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 			// TODO: Explain to the engine team why you can't localize server error strings :(
 			else if (ErrorString == TEXT("Server full."))
 			{
-
 				if (!FirstPlayer->QuickMatchCheckFull())
 				{
 					FirstPlayer->ShowMenu(TEXT(""));
@@ -387,7 +387,15 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 	{
 		case ENetworkFailure::FailureReceived:
 		case ENetworkFailure::ConnectionLost:
-			NetworkErrorMessage = NSLOCTEXT("UTGameViewportClient","NetworkErrors_ConnectionLost","Connection to server Lost!");
+			if (!KickReason.IsEmpty())
+			{
+				NetworkErrorMessage = KickReason;
+				KickReason = FText::GetEmpty();
+			}
+			else
+			{
+				NetworkErrorMessage = NSLOCTEXT("UTGameViewportClient","NetworkErrors_ConnectionLost","Connection to server Lost!");
+			}
 			break;
 		case ENetworkFailure::ConnectionTimeout:
 			NetworkErrorMessage = NSLOCTEXT("UTGameViewportClient","NetworkErrors_ConnectionTimeout","Connection to server timed out!");
@@ -403,7 +411,7 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 			break;
 	}
 
-	if (!ReconnectDialog.IsValid())
+	if (!FirstPlayer->QuickMatchCheckFull() && !ReconnectDialog.IsValid())
 	{
 		if (FirstPlayer->GetCurrentMenu().IsValid())
 		{

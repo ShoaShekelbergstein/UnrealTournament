@@ -15,9 +15,11 @@
 #include "UTHUDWidget_ReplayTimeSlider.h"
 #include "UTPlayerInput.h"
 #include "StatNames.h"
+#include "Panels/SUTWebBrowserPanel.h"
 
 #if !UE_SERVER
-
+#include "SlateBasics.h"
+#include "SlateExtras.h"
 #include "SScaleBox.h"
 #include "Widgets/SDragImage.h"
 
@@ -25,11 +27,9 @@ void SUTPlayerInfoDialog::Construct(const FArguments& InArgs)
 {
 	FVector2D ViewportSize;
 	InArgs._PlayerOwner->ViewportClient->GetViewportSize(ViewportSize);
-	bAllowLogout = InArgs._bAllowLogout;
+	TargetUniqueId = InArgs._TargetUniqueId;
 
-	TargetPlayerState = InArgs._TargetPlayerState;
-	
-	FText NewDialogTitle = FText::Format(NSLOCTEXT("SUTMenuBase", "PlayerInfoTitleFormat", "Player Info - {0}"), FText::FromString(InArgs._TargetPlayerState->PlayerName));
+	FText NewDialogTitle = FText::Format(NSLOCTEXT("SUTMenuBase", "PlayerInfoTitleFormat", "Player Info - {0}"), FText::FromString(InArgs._TargetName));
 	SUTDialogBase::Construct(SUTDialogBase::FArguments()
 							.PlayerOwner(InArgs._PlayerOwner)
 							.DialogTitle(NewDialogTitle)
@@ -42,20 +42,6 @@ void SUTPlayerInfoDialog::Construct(const FArguments& InArgs)
 							.OnDialogResult(InArgs._OnDialogResult)
 							.bShadow(false)
 						);
-
-	if (TargetPlayerState.IsValid()) 
-	{
-		TargetUniqueId = TargetPlayerState->UniqueId.GetUniqueNetId();
-
-		if (TargetPlayerState->Role == ROLE_Authority && PlayerOwner.IsValid() && PlayerOwner->GetProfileSettings())
-		{
-			TargetPlayerState->ServerSetCharacter(PlayerOwner->GetProfileSettings()->CharacterPath);
-			TargetPlayerState->ServerReceiveHatClass(PlayerOwner->GetProfileSettings()->HatPath);
-			TargetPlayerState->ServerReceiveHatVariant(PlayerOwner->GetProfileSettings()->HatVariant);
-			TargetPlayerState->ServerReceiveEyewearClass(PlayerOwner->GetProfileSettings()->EyewearPath);
-			TargetPlayerState->ServerReceiveEyewearVariant(PlayerOwner->GetProfileSettings()->EyewearVariant);
-		}
-	}
 
 	PlayerPreviewMesh = nullptr;
 	PreviewWeapon = nullptr;
@@ -115,13 +101,20 @@ void SUTPlayerInfoDialog::Construct(const FArguments& InArgs)
 					SNew(SBox)
 					.WidthOverride(850)
 					[
-						SNew(SScaleBox)
-						.Stretch(EStretch::ScaleToFill)
+						SAssignNew(ModelBox, SVerticalBox)
+						+SVerticalBox::Slot().FillHeight(1.0f).VAlign(VAlign_Center)
 						[
-							SNew(SDragImage)
-							.Image(PlayerPreviewBrush)
-							.OnDrag(this, &SUTPlayerInfoDialog::DragPlayerPreview)
-							.OnZoom(this, &SUTPlayerInfoDialog::ZoomPlayerPreview)
+							SNew(SVerticalBox)
+							+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+							[
+								SNew(STextBlock)
+								.Text(NSLOCTEXT("SUTPlayerInfoDialog", "Loading", "Requesting Player Information..."))
+								.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
+							]
+							+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+							[
+								SNew(SThrobber)
+							]
 						]
 					]
 				]
@@ -143,23 +136,14 @@ void SUTPlayerInfoDialog::Construct(const FArguments& InArgs)
 		];
 	}
 
-	OnUpdatePlayerState();
-	TabWidget->SelectTab(0);
+	OnUniqueIdChanged();
+
 
 	// Turn on Screen Space Reflection max quality
 	auto SSRQualityCVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.SSR.Quality"));
 	OldSSRQuality = SSRQualityCVar->GetInt();
 	SSRQualityCVar->Set(4, ECVF_SetByCode);
 }
-
-void SUTPlayerInfoDialog::AddButtonsToLeftOfButtonBar(uint32& ButtonCount)
-{
-	if (ButtonBar.IsValid() && bAllowLogout)
-	{
-		BuildButton(ButtonBar, NSLOCTEXT("SUTPlayerInfoDialog","LogoutButton","LOG OUT"),0xFFFF, ButtonCount);
-	}
-}
-
 
 SUTPlayerInfoDialog::~SUTPlayerInfoDialog()
 {
@@ -206,15 +190,92 @@ void SUTPlayerInfoDialog::AddReferencedObjects(FReferenceCollector& Collector)
 	Collector.AddReferencedObject(PlayerPreviewAnimFemaleBlueprint);
 }
 
+void SUTPlayerInfoDialog::OnUniqueIdChanged()
+{
+
+	// Start off by looking to see if we have an assoicated player state that matches this unique id
+
+	TargetPlayerState.Reset();
+
+	AUTGameState* UTGameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
+	if (UTGameState)
+	{
+		for (int32 i=0; i < UTGameState->PlayerArray.Num(); i++)
+		{
+			if (UTGameState->PlayerArray[i] && UTGameState->PlayerArray[i]->UniqueId.ToString().Equals(TargetUniqueId, ESearchCase::IgnoreCase))
+			{
+				TargetPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				break;
+			}
+		}
+	}
+
+	if (false) // TargetPlayerState.IsValid())
+	{
+		// We have the player state, so we can instantly use it to get the latest configuration data.
+		
+		CharacterClass = TargetPlayerState->GetSelectedCharacter();
+		HatClass = TargetPlayerState->HatClass;
+		HatVariant = TargetPlayerState->HatVariant;
+		EyewearClass = TargetPlayerState->EyewearClass;
+		EyewearVariant = TargetPlayerState->EyewearVariant;
+	}
+	else
+	{
+		// We need to hide the model preview until we get it from the MCP	
+
+		IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+		if (OnlineSubsystem && OnlineSubsystem->GetUserCloudInterface().IsValid())
+		{
+			OnReadUserFileCompleteDelegate = OnlineSubsystem->GetUserCloudInterface()->AddOnReadUserFileCompleteDelegate_Handle(FOnReadUserFileCompleteDelegate::CreateSP(this, &SUTPlayerInfoDialog::OnReadUserFileComplete));
+
+			FUniqueNetId* Id = new FUniqueNetIdString(TargetUniqueId);
+			OnlineSubsystem->GetUserCloudInterface()->ReadUserFile(*Id, PlayerOwner->GetProfileFilename());
+			delete Id;
+		}
+	}
+
+	UpdatePlayerCustomization();
+	TabWidget->SelectTab(0);
+}
+
+
+void SUTPlayerInfoDialog::OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName)
+{
+	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+	if (OnlineSubsystem)
+	{
+		IOnlineUserCloudPtr CloudInterface = OnlineSubsystem->GetUserCloudInterface();
+		if (CloudInterface.IsValid())
+		{
+			CloudInterface->ClearOnReadUserFileCompleteDelegate_Handle(OnReadUserFileCompleteDelegate);
+
+			if (bWasSuccessful)
+			{
+				TArray<uint8> FileContents;
+				CloudInterface->GetFileContents(InUserId, FileName, FileContents);
+				UUTProfileSettings* TargetProfileSettings = PlayerOwner->CreateProfileSettingsObject(FileContents);
+				if (TargetProfileSettings != nullptr)
+				{
+					CharacterClass = (!TargetProfileSettings->CharacterPath.IsEmpty()) ? TSubclassOf<AUTCharacterContent>(FindObject<UClass>(NULL, *TargetProfileSettings->CharacterPath, false)) : GetDefault<AUTCharacter>()->CharacterData;
+					HatClass = (!TargetProfileSettings->HatPath.IsEmpty()) ? LoadClass<AUTHat>(NULL, *TargetProfileSettings->HatPath, NULL, LOAD_NoWarn, NULL) : nullptr;
+					HatVariant = TargetProfileSettings->HatVariant;
+					EyewearClass = (!TargetProfileSettings->EyewearPath.IsEmpty()) ? LoadClass<AUTEyewear>(NULL, *TargetProfileSettings->EyewearPath, NULL, LOAD_NoWarn, NULL) : nullptr;
+					EyewearVariant = TargetProfileSettings->EyewearVariant;
+					UpdatePlayerCustomization();
+				}
+			}
+		}
+	}
+}
+
+
+
 FReply SUTPlayerInfoDialog::OnButtonClick(uint16 ButtonID)
 {
 	if (ButtonID == UTDIALOG_BUTTON_OK) 
 	{
 		GetPlayerOwner()->CloseDialog(SharedThis(this));	
-	}
-	else if (ButtonID == 0xFFFF)
-	{
-		Logout();
 	}
 	return FReply::Handled();
 }
@@ -246,15 +307,30 @@ void SUTPlayerInfoDialog::Tick(const FGeometry& AllottedGeometry, const double I
 	{
 		PlayerPreviewTexture->FastUpdateResource();
 	}
-
-	BuildFriendPanel();
 }
 
 void SUTPlayerInfoDialog::RecreatePlayerPreview()
 {
+	if (ModelBox.IsValid())
+	{
+		ModelBox->ClearChildren();
+		ModelBox->AddSlot().FillHeight(1.0f)
+		[
+			SNew(SScaleBox)
+			.Stretch(EStretch::ScaleToFill)
+			[
+				SNew(SDragImage)
+				.Image(PlayerPreviewBrush)
+				.OnDrag(this, &SUTPlayerInfoDialog::DragPlayerPreview)
+				.OnZoom(this, &SUTPlayerInfoDialog::ZoomPlayerPreview)
+			]
+		];
+	}
+
 	FRotator ActorRotation = FRotator(0.0f, 180.0f, 0.0f);
 
-	if (!TargetPlayerState.IsValid()) return;
+	// If we haven't received a character class yet, then just don't change anything
+	if (CharacterClass == nullptr) return;
 
 	if (PlayerPreviewMesh != nullptr)
 	{
@@ -273,7 +349,7 @@ void SUTPlayerInfoDialog::RecreatePlayerPreview()
 	{
 		TSubclassOf<class APawn> DefaultPawnClass = Cast<UClass>(StaticLoadObject(UClass::StaticClass(), NULL, *DefaultGameMode->PlayerPawnObject.ToStringReference().ToString(), NULL, LOAD_NoWarn));
 
-		//For gamemodes without a default pawn class (menu gamemodes), spawn our default one
+		//For game modes without a default pawn class (menu game modes), spawn our default one
 		if (DefaultPawnClass == nullptr)
 		{
 			DefaultPawnClass = Cast<UClass>(StaticLoadObject(UClass::StaticClass(), NULL, *AUTGameMode::StaticClass()->GetDefaultObject<AUTGameMode>()->PlayerPawnObject.ToStringReference().ToString(), NULL, LOAD_NoWarn));
@@ -282,13 +358,13 @@ void SUTPlayerInfoDialog::RecreatePlayerPreview()
 		PlayerPreviewMesh = PlayerPreviewWorld->SpawnActor<AUTCharacter>(DefaultPawnClass, FVector(300.0f, 0.f, 4.f), ActorRotation);
 		if (PlayerPreviewMesh && PlayerPreviewMesh->GetMesh())
 		{
-			PlayerPreviewMesh->ApplyCharacterData(TargetPlayerState->GetSelectedCharacter());
-			PlayerPreviewMesh->SetHatClass(TargetPlayerState->HatClass);
-			PlayerPreviewMesh->SetHatVariant(TargetPlayerState->HatVariant);
-			PlayerPreviewMesh->SetEyewearClass(TargetPlayerState->EyewearClass);
-			PlayerPreviewMesh->SetEyewearVariant(TargetPlayerState->EyewearVariant);
+			PlayerPreviewMesh->ApplyCharacterData(CharacterClass);
+			PlayerPreviewMesh->SetHatClass(HatClass);
+			PlayerPreviewMesh->SetHatVariant(HatVariant);
+			PlayerPreviewMesh->SetEyewearClass(EyewearClass);
+			PlayerPreviewMesh->SetEyewearVariant(EyewearVariant);
 						
-			if (TargetPlayerState->Team != NULL)
+			if (TargetPlayerState.IsValid() && TargetPlayerState->Team != NULL)
 			{
 				float SkinSelect = TargetPlayerState->Team->TeamIndex;
 				
@@ -299,7 +375,7 @@ void SUTPlayerInfoDialog::RecreatePlayerPreview()
 			}
 
 			PlayerPreviewMesh->GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
-			if (TargetPlayerState.IsValid() && TargetPlayerState->IsFemale())
+			if (CharacterClass.GetDefaultObject()->bIsFemale)
 			{
 				if (PlayerPreviewAnimFemaleBlueprint)
 				{
@@ -314,11 +390,13 @@ void SUTPlayerInfoDialog::RecreatePlayerPreview()
 				}
 			}
 
-			UClass* PreviewAttachmentType = TargetPlayerState.IsValid() && TargetPlayerState->FavoriteWeapon ? TargetPlayerState->FavoriteWeapon->GetDefaultObject<AUTWeapon>()->AttachmentType : NULL;
+			// FIXME: Figure out the favorite weapon
+			UClass* PreviewAttachmentType = nullptr; //TargetPlayerState.IsValid() && TargetPlayerState->FavoriteWeapon ? TargetPlayerState->FavoriteWeapon->GetDefaultObject<AUTWeapon>()->AttachmentType : NULL;
 			if (!PreviewAttachmentType)
 			{
 				PreviewAttachmentType = LoadClass<AUTWeaponAttachment>(NULL, TEXT("/Game/RestrictedAssets/Weapons/ShockRifle/ShockAttachment.ShockAttachment_C"), NULL, LOAD_None, NULL);
 			}
+
 			if (PreviewAttachmentType != NULL)
 			{
 				PreviewWeapon = PlayerPreviewWorld->SpawnActor<AUTWeaponAttachment>(PreviewAttachmentType, FVector(0, 0, 0), FRotator(0, 0, 0));
@@ -405,61 +483,10 @@ void SUTPlayerInfoDialog::ZoomPlayerPreview(float WheelDelta)
 	ZoomOffset = FMath::Clamp(ZoomOffset + (-WheelDelta * 5.0f), -100.0f, 400.0f);
 }
 
-TSharedRef<class SWidget> SUTPlayerInfoDialog::BuildCustomButtonBar()
-{
-	TSharedPtr<SHorizontalBox> CustomBox;
-	SAssignNew(CustomBox, SHorizontalBox);
-	CustomBox->AddSlot()
-	.AutoWidth()
-	[
-		SAssignNew(FriendPanel, SHorizontalBox)
-	];
-
-	if (!PlayerOwner->PlayerController->PlayerState->bOnlySpectator)
-	{
-		CustomBox->AddSlot()
-		.Padding(10.0f,0.0f,10.0f,0.0f)
-		[
-			SAssignNew(KickButton, SButton)
-			.HAlign(HAlign_Center)
-			.ButtonStyle(SUWindowsStyle::Get(), "UT.BottomMenu.Button")
-			.ContentPadding(FMargin(5.0f, 5.0f, 5.0f, 5.0f))
-			.Text(NSLOCTEXT("SUTPlayerInfoDialog","KickVote","Vote to Kick"))
-			.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.SmallTextStyle")
-			.Visibility(this, &SUTPlayerInfoDialog::VoteKickVis)
-			.OnClicked(this, &SUTPlayerInfoDialog::KickVote)
-		];
-	}
-
-	return CustomBox.ToSharedRef();
-}
-
-EVisibility SUTPlayerInfoDialog::VoteKickVis() const
-{
-	if (PlayerOwner.IsValid() && PlayerOwner->PlayerController)
-	{
-		AUTGameState* UTGameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
-		AUTPlayerState* OwnerPlayerState = Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState);
-		if ( GetPlayerOwner()->GetWorld()->GetNetMode() == NM_Client && 
-				OwnerPlayerState != nullptr && 
-				!OwnerPlayerState->bOnlySpectator && 
-				TargetPlayerState.IsValid() && 
-				!TargetPlayerState->bIsABot && 
-				OwnerPlayerState != TargetPlayerState &&
-				!UTGameState->bDisableVoteKick &&
-				(!UTGameState->bOnlyTeamCanVoteKick || UTGameState->OnSameTeam(OwnerPlayerState, TargetPlayerState.Get()))
-			)
-		{
-			return EVisibility::Visible;
-		}
-	}
-
-	return EVisibility::Collapsed;
-}
-
 
 FReply SUTPlayerInfoDialog::OnSendFriendRequest()
 {
+/*
 	if (FriendStatus != FFriendsStatus::FriendRequestPending && FriendStatus != FFriendsStatus::IsBot)
 	{
 		GetPlayerOwner()->RequestFriendship(TargetUniqueId);
@@ -475,6 +502,7 @@ FReply SUTPlayerInfoDialog::OnSendFriendRequest()
 
 		FriendStatus = FFriendsStatus::FriendRequestPending;
 	}
+*/
 	return FReply::Handled();
 }
 
@@ -485,6 +513,7 @@ FText SUTPlayerInfoDialog::GetFunnyText()
 
 void SUTPlayerInfoDialog::BuildFriendPanel()
 {
+/*
 	if (TargetPlayerState == NULL) return;
 
 	FName NewFriendStatus;
@@ -568,27 +597,9 @@ void SUTPlayerInfoDialog::BuildFriendPanel()
 				];
 		}
 	}
-
+*/
 }
 
-FReply SUTPlayerInfoDialog::KickVote()
-{
-	if (TargetPlayerState.IsValid()) 
-	{
-		AUTPlayerState* MyPlayerState =  Cast<AUTPlayerState>(GetPlayerOwner()->PlayerController->PlayerState);
-		if (TargetPlayerState != MyPlayerState)
-		{
-			AUTPlayerController* PC = Cast<AUTPlayerController>(GetPlayerOwner()->PlayerController);
-			if (PC)
-			{
-				PC->ServerRegisterBanVote(TargetPlayerState.Get());
-				KickButton->SetEnabled(false);
-			}
-		}
-	}
-
-	return FReply::Handled();
-}
 
 FReply SUTPlayerInfoDialog::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
 {
@@ -664,6 +675,7 @@ void SUTPlayerInfoDialog::OnTabButtonSelectionChanged(const FText& NewText)
 
 FReply SUTPlayerInfoDialog::NextPlayer()
 {
+/*
 	if (TargetPlayerState.IsValid())
 	{
 		TargetPlayerState = GetNextPlayerState(1);
@@ -676,11 +688,12 @@ FReply SUTPlayerInfoDialog::NextPlayer()
 			GetPlayerOwner()->CloseDialog(SharedThis(this));
 		}
 	}
-	
+*/	
 	return FReply::Handled();
 }
 FReply SUTPlayerInfoDialog::PreviousPlayer()
 {
+/*
 	if (TargetPlayerState.IsValid())
 	{
 		TargetPlayerState = GetNextPlayerState(-1);
@@ -693,6 +706,7 @@ FReply SUTPlayerInfoDialog::PreviousPlayer()
 			GetPlayerOwner()->CloseDialog(SharedThis(this));
 		}
 	}
+*/
 	return FReply::Handled();
 }
 
@@ -739,25 +753,25 @@ AUTPlayerState* SUTPlayerInfoDialog::GetNextPlayerState(int32 dir)
 	return NULL;
 }
 
-void SUTPlayerInfoDialog::OnUpdatePlayerState()
+void SUTPlayerInfoDialog::UpdatePlayerCustomization()
 {
+	UpdatePlayerStateInReplays();
+
+	StatList.Empty();
+	InfoPanel->ClearChildren();
+
+	InfoPanel->AddSlot()
+	.HAlign(HAlign_Fill)
+	.VAlign(VAlign_Fill)
+	[
+		SAssignNew(TabWidget, SUTTabWidget)
+		.OnTabButtonSelectionChanged(this, &SUTPlayerInfoDialog::OnTabButtonSelectionChanged)
+	];
+
+	CreatePlayerTab();
+
 	if (TargetPlayerState.IsValid())
 	{
-		UpdatePlayerStateInReplays();
-
-		StatList.Empty();
-		InfoPanel->ClearChildren();
-
-		InfoPanel->AddSlot()
-		.HAlign(HAlign_Fill)
-		.VAlign(VAlign_Fill)
-		[
-			SAssignNew(TabWidget, SUTTabWidget)
-			.OnTabButtonSelectionChanged(this, &SUTPlayerInfoDialog::OnTabButtonSelectionChanged)
-		];
-	
-		TargetPlayerState->BuildPlayerInfo(TabWidget, StatList);
-
 		//Draw the game specific stats
 		AGameStateBase* GameState = GetPlayerOwner()->GetWorld()->GetGameState();
 		if (GameState && !TargetPlayerState->bOnlySpectator)
@@ -768,24 +782,114 @@ void SUTPlayerInfoDialog::OnUpdatePlayerState()
 				UTDefaultGameMode->BuildPlayerInfo(TargetPlayerState.Get(), TabWidget, StatList);
 			}
 		}
+	}
 
-		FriendStatus = NAME_None;
-		RecreatePlayerPreview();
+	FriendStatus = NAME_None;
+	RecreatePlayerPreview();
 
-		TabWidget->OnButtonClicked(CurrentTab);
+	TabWidget->OnButtonClicked(CurrentTab);
+}
 
-		//We are in a game where we can only ever be a spectator. 
-		//This means we are not in the player list, and thus need to use our Account Display Name as our Player Name isn't accurate.
-		if (TargetPlayerState->bOnlySpectator)
+void SUTPlayerInfoDialog::CreatePlayerTab()
+{
+	// Add code here to grab a different URL based on the epicapp id.  
+	FString PlayerInfoURL = TEXT("https://epicgames-gamedev.ol.epicgames.net/unrealtournament/playerCard?playerId=");
+
+	const IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+
+	if (OnlineSub != nullptr)
+	{
+		EOnlineEnvironment::Type Env = OnlineSub->GetOnlineEnvironment();
+		if (Env == EOnlineEnvironment::Production)
 		{
-			DialogTitle->SetText(GetPlayerOwner()->GetAccountDisplayName());
+			PlayerInfoURL = TEXT("https://www.epicgames.com/unrealtournament/playerCard?playerId=");
+		}
+	}
+		
+	PlayerInfoURL += TargetUniqueId;
+												   		
+	TabWidget->AddTab(NSLOCTEXT("AUTPlayerState", "PlayerInfo", "Player Info"),
+		SAssignNew(PlayerCardBox,SVerticalBox)
+		+SVerticalBox::Slot()
+		.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+		.AutoHeight().HAlign(HAlign_Fill).VAlign(VAlign_Center)
+		[
+			SNew(SBox).HeightOverride(890)
+			[
+				SNew(SHorizontalBox)
+				+SHorizontalBox::Slot().FillWidth(1.0).VAlign(VAlign_Center)
+				[
+					SNew(SVerticalBox)
+					+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text(NSLOCTEXT("SUTPlayerInfoDialog", "Loading", "Requesting Player Information..."))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
+					]
+					+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+					[
+						SNew(SThrobber)
+					]
+				]
+			]
+		]
+	);
+
+	if ( PlayerOwner.IsValid() )
+	{
+		if (PlayerCardWebBrowser.IsValid())
+		{
+			PlayerCardWebBrowser->Browse(PlayerInfoURL);
 		}
 		else
 		{
-			DialogTitle->SetText(FText::FromString(TargetPlayerState->PlayerName));
+			SAssignNew(PlayerCardWebBrowser, SUTWebBrowserPanel, PlayerOwner)
+			.InitialURL(PlayerInfoURL)
+			.ShowControls(false)
+			.OnLoadCompleted(FSimpleDelegate::CreateSP(this, &SUTPlayerInfoDialog::OnPlayerCardLoadCompleted))
+			.OnLoadError(FSimpleDelegate::CreateSP(this, &SUTPlayerInfoDialog::OnPlayerCardLoadError));
 		}
 	}
+
 }
+
+void SUTPlayerInfoDialog::OnPlayerCardLoadCompleted()
+{
+	if (PlayerCardBox.IsValid() && PlayerCardWebBrowser.IsValid())
+	{
+		PlayerCardBox->ClearChildren();
+		if (true)
+		{
+			PlayerCardBox->AddSlot()
+				.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+				.AutoHeight().HAlign(HAlign_Fill)
+				[
+					SNew(SBox).HeightOverride(890)
+					[
+						PlayerCardWebBrowser.ToSharedRef()
+					]
+				];
+		}
+		else
+		{
+			PlayerCardBox->AddSlot()
+				.Padding(10.0f, 20.0f, 10.0f, 5.0f)
+				.AutoHeight().HAlign(HAlign_Fill)
+				[
+					SNew(STextBlock)
+					.Text(FText(NSLOCTEXT("AUTPlayerState", "LoadingPlayerCardLoadError", "Could not load player information from the NEG player database.  Please try again later.")))
+				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+				];
+		}
+	}
+
+}
+
+void SUTPlayerInfoDialog::OnPlayerCardLoadError()
+{
+}
+
+
 
 void SUTPlayerInfoDialog::UpdatePlayerStateInReplays()
 {
@@ -893,21 +997,6 @@ TSharedRef<class SWidget> SUTPlayerInfoDialog::BuildTitleBar(FText InDialogTitle
 		}
 	}
 	return SUTDialogBase::BuildTitleBar(InDialogTitle);
-}
-
-FReply SUTPlayerInfoDialog::Logout()
-{
-	PlayerOwner->ShowMessage(NSLOCTEXT("SUTPlayerInfoDialog", "SignOuttConfirmationTitle", "Sign Out?"), NSLOCTEXT("SUTPlayerInfoDialog", "SignOuttConfirmationMessage", "You are about to sign out of this account.  Doing so will return you to the main menu.  Are you sure?"), UTDIALOG_BUTTON_YES + UTDIALOG_BUTTON_NO, FDialogResultDelegate::CreateSP(this, &SUTPlayerInfoDialog::SignOutConfirmationResult));
-	return FReply::Handled();
-}
-
-void SUTPlayerInfoDialog::SignOutConfirmationResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID)
-{
-	if (ButtonID == UTDIALOG_BUTTON_YES)
-	{
-		PlayerOwner->CloseDialog(SharedThis(this));
-		PlayerOwner->Logout();
-	}
 }
 
 

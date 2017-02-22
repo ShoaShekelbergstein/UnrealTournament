@@ -29,6 +29,8 @@
 #include "UTLineUpHelper.h"
 #include "Runtime/Analytics/Analytics/Public/AnalyticsEventAttribute.h"
 #include "UTIntermissionBeginInterface.h"
+#include "UTPlayerStart.h"
+#include "UTTeamPlayerStart.h"
 
 AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -39,12 +41,13 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	SpawnProtectionTime = 2.f;
 	bWeaponStay = true;
 	bAllowTeamSwitches = true;
-	bCasterControl = false;
 	bForcedBalance = false;
 	KickThreshold=51.0f;
 	TauntSelectionIndex = 0;
 	bPersistentKillIconMessages = false;
 	bTeamProjHits = false;
+	bTeamCollision = false;
+	NetUpdateFrequency = 60.0f;
 
 	// We want to be ticked.
 	PrimaryActorTick.bCanEverTick = true;
@@ -52,7 +55,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	ServerName = TEXT("My First Server");
 	ServerMOTD = TEXT("Welcome!");
 	SecondaryAttackerStat = NAME_None;
-	GoalScoreText = NSLOCTEXT("UTScoreboard", "GoalScoreFormat", "First to {0} Frags");
+	GoalScoreText = NSLOCTEXT("UTScoreboard", "GoalScoreFormat", "{0} Frags");
 
 	GameScoreStats.Add(NAME_AttackerScore);
 	GameScoreStats.Add(NAME_DefenderScore);
@@ -197,11 +200,11 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	HighlightMap.Add(HighlightNames::DamageAward, NSLOCTEXT("AUTGameMode", "DamageAward", "{0} Damage Done"));
 	HighlightMap.Add(HighlightNames::ParticipationAward, NSLOCTEXT("AUTGameMode", "ParticipationAward", "Was there, more or less"));
 
-	HighlightMap.Add(NAME_AmazingCombos, NSLOCTEXT("AUTGameMode", "AmazingCombosHL", "Amazing Combos ({0})"));
-	HighlightMap.Add(NAME_SniperHeadshotKills, NSLOCTEXT("AUTGameMode", "SniperHeadshotKillsHL", "Headshot Kills ({0})"));
-	HighlightMap.Add(NAME_AirRox, NSLOCTEXT("AUTGameMode", "AirRoxHL", "Air Rocket Kills ({0})"));
-	HighlightMap.Add(NAME_FlakShreds, NSLOCTEXT("AUTGameMode", "FlakShredsHL", "Flak Shred Kills ({0})"));
-	HighlightMap.Add(NAME_AirSnot, NSLOCTEXT("AUTGameMode", "AirSnotHL", "Air Snot Kills ({0})"));
+	HighlightMap.Add(NAME_AmazingCombos, NSLOCTEXT("AUTGameMode", "AmazingCombosHL", "{0} Amazing Combos"));
+	HighlightMap.Add(NAME_SniperHeadshotKills, NSLOCTEXT("AUTGameMode", "SniperHeadshotKillsHL", "{0} Headshot Kills"));
+	HighlightMap.Add(NAME_AirRox, NSLOCTEXT("AUTGameMode", "AirRoxHL", "{0} Air Rocket Kills"));
+	HighlightMap.Add(NAME_FlakShreds, NSLOCTEXT("AUTGameMode", "FlakShredsHL", "{0} Flak Shred Kills"));
+	HighlightMap.Add(NAME_AirSnot, NSLOCTEXT("AUTGameMode", "AirSnotHL", "{0} Air Snot Kills"));
 	HighlightMap.Add(NAME_MultiKillLevel0, NSLOCTEXT("AUTGameMode", "MultiKillLevel0", "Double Kill ({0})"));
 	HighlightMap.Add(NAME_MultiKillLevel1, NSLOCTEXT("AUTGameMode", "MultiKillLevel1", "Multi Kill ({0})"));
 	HighlightMap.Add(NAME_MultiKillLevel2, NSLOCTEXT("AUTGameMode", "MultiKillLevel2", "Ultra Kill ({0})"));
@@ -335,7 +338,6 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME(AUTGameState, MapVoteListCount);
 	DOREPLIFETIME(AUTGameState, VoteTimer);
 
-	DOREPLIFETIME_CONDITION(AUTGameState, bCasterControl, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, bPlayPlayerIntro, COND_InitialOnly);
 	DOREPLIFETIME(AUTGameState, bForcedBalance);
 
@@ -352,7 +354,7 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 
 	DOREPLIFETIME(AUTGameState, LineUpHelper);
 	DOREPLIFETIME(AUTGameState, ReplayID);
-	DOREPLIFETIME(AUTGameState, LeadLineUpPlayer); 
+	DOREPLIFETIME(AUTGameState, LeadLineUpPlayer);
 }
 
 void AUTGameState::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
@@ -372,6 +374,11 @@ void AUTGameState::OnRep_GameModeClass()
 			DefGame->PreloadClientAssets(PreloadedAssets);
 		}
 	}
+}
+
+void AUTGameState::AsyncPackageLoaded(UObject* Package)
+{
+	AsyncLoadedAssets.Add(Package);
 }
 
 void AUTGameState::AddOverlayMaterial(UMaterialInterface* NewOverlay, UMaterialInterface* NewOverlay1P)
@@ -419,6 +426,17 @@ void AUTGameState::OnRep_OverlayEffects()
 	}
 }
 
+bool AUTGameState::CanSpectate(APlayerController* Viewer, APlayerState* ViewTarget)
+{
+	if (bTeamGame)
+	{
+		AUTPlayerController* PC = Cast<AUTPlayerController>(Viewer);
+		return (Viewer->PlayerState->bOnlySpectator || ViewTarget == NULL || ViewTarget->bOnlySpectator || (PC != NULL && PC->GetTeamNum() == 255) || GetWorld()->GetGameState<AUTGameState>()->OnSameTeam(Viewer, ViewTarget));
+	}
+	return true;
+}
+
+
 void AUTGameState::Tick(float DeltaTime)
 {
 	ManageMusicVolume(DeltaTime);
@@ -431,6 +449,7 @@ void AUTGameState::ManageMusicVolume(float DeltaTime)
 	{
 		UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings()); 
 		float DesiredVolume = IsMatchInProgress() && !IsMatchIntermission() ? UserSettings->GetSoundClassVolume(EUTSoundClass::GameMusic) : 1.f;
+		if (bLocalMenusAreActive) DesiredVolume = 1.0f;
 		MusicVolume = MusicVolume * (1.f - 0.5f*DeltaTime) + 0.5f*DeltaTime*DesiredVolume;
 		Settings->MusicComp->SetVolumeMultiplier(MusicVolume);
 	}
@@ -515,6 +534,7 @@ void AUTGameState::BeginPlay()
 
 		LineUpHelper->SetReplicates(true);
 	}
+	//SpawnDefaultLineUpZones();
 }
 
 void AUTGameState::AddUserInfoQuery(TSharedRef<const FUniqueNetId> UserId)
@@ -648,6 +668,11 @@ void AUTGameState::SetRemainingTime(int32 NewRemainingTime)
 	ForceNetUpdate();
 }
 
+void AUTGameState::OnRepRemainingTime()
+{
+	RemainingTime = ReplicatedRemainingTime;
+}
+
 void AUTGameState::DefaultTimer()
 {
 	Super::DefaultTimer();
@@ -670,12 +695,6 @@ void AUTGameState::DefaultTimer()
 
 	if (GetWorld()->GetNetMode() == NM_Client)
 	{
-		if (ReplicatedRemainingTime > 0)
-		{
-			RemainingTime = ReplicatedRemainingTime;
-			ReplicatedRemainingTime = 0;
-		}
-
 		// might have been deferred while waiting for teams to replicate
 		if (TeamSwapSidesOffset != PrevTeamSwapSidesOffset)
 		{
@@ -932,6 +951,11 @@ void AUTGameState::HandleMatchHasStarted()
 		FUTAnalytics::FireEvent_UTStartRankedMatch(Cast<AUTGameMode>(GetWorld()->GetAuthGameMode()));
 	}
 
+	if (bIsQuickMatch)
+	{
+		FUTAnalytics::FireEvent_UTStartQuickplayMatch(Cast<AUTGameMode>(GetWorld()->GetAuthGameMode()));
+	}
+
 	Super::HandleMatchHasStarted();
 
 	AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
@@ -950,6 +974,11 @@ void AUTGameState::HandleMatchHasEnded()
 	if (bRankedSession)
 	{
 		FUTAnalytics::FireEvent_UTEndRankedMatch(Cast<AUTGameMode>(GetWorld()->GetAuthGameMode()));
+	}
+
+	if (bIsQuickMatch)
+	{
+		FUTAnalytics::FireEvent_UTEndQuickplayMatch(Cast<AUTGameMode>(GetWorld()->GetAuthGameMode()));
 	}
 
 	Super::HandleMatchHasEnded();
@@ -1509,17 +1538,25 @@ void AUTGameState::VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter)
 	if (Game && Game->NumPlayers > 0)
 	{
 		// Quick out.
-		if (bDisableVoteKick || (bOnlyTeamCanVoteKick && OnSameTeam(BadGuy, Voter)))
+		if (bDisableVoteKick || (bOnlyTeamCanVoteKick && !OnSameTeam(BadGuy, Voter)))
 		{
 			return;
 		}
 		
-
 		BadGuy->LogBanRequest(Voter);
 		Game->BroadcastLocalized(Voter, UUTGameMessage::StaticClass(), 13, Voter, BadGuy);
 
-		int32 NumPlayers = bOnlyTeamCanVoteKick ? BadGuy->Team->GetSize() : Game->NumPlayers;
-
+		int32 NumPlayers = 0;
+		for (int32 i = 0; i <PlayerArray.Num(); i++)
+		{
+			if (!PlayerArray[i]->bIsSpectator && !PlayerArray[i]->bOnlySpectator && !PlayerArray[i]->bIsABot)
+			{
+				if (!bOnlyTeamCanVoteKick || OnSameTeam(BadGuy, PlayerArray[i]))
+				{
+					NumPlayers += 1.0f;
+				}
+			}
+		}
 		float Perc = (float(BadGuy->CountBanVotes()) / float(NumPlayers)) * 100.0f;
 		BadGuy->KickCount = BadGuy->CountBanVotes();
 		UE_LOG(UT,Log,TEXT("[KICK VOTE] Target = %s - # of Votes = %i (%i players), % = %f"), * BadGuy->PlayerName, BadGuy->KickCount, NumPlayers, Perc);
@@ -1837,7 +1874,7 @@ bool AUTGameState::AreAllPlayersReady()
 		for (int32 i = 0; i < PlayerArray.Num(); i++)
 		{
 			AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerArray[i]);
-			if (PS != NULL && !PS->bOnlySpectator && !PS->bReadyToPlay)
+			if (PS != NULL && !PS->bOnlySpectator && !PS->bIsWarmingUp && !PS->bIsInactive && !PS->bIsABot)
 			{
 				return false;
 			}
@@ -2278,7 +2315,6 @@ void AUTGameState::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject)
 	JsonObject->SetBoolField(TEXT("bTeamGame"), bTeamGame);
 	JsonObject->SetBoolField(TEXT("bAllowTeamSwitches"), bAllowTeamSwitches);
 	JsonObject->SetBoolField(TEXT("bStopGameClock"), bStopGameClock);
-	JsonObject->SetBoolField(TEXT("bCasterControl"), bCasterControl);
 	JsonObject->SetBoolField(TEXT("bForcedBalance"), bForcedBalance);
 	JsonObject->SetBoolField(TEXT("bPlayPlayerIntro"), bPlayPlayerIntro);
 
@@ -2313,23 +2349,130 @@ bool AUTGameState::CanShowBoostMenu(AUTPlayerController* Target)
 	return IsMatchIntermission() || !HasMatchStarted();
 }
 
-bool AUTGameState::ShouldUseInGameSummary(LineUpTypes SummaryType)
+AUTLineUpZone* AUTGameState::GetAppropriateSpawnList(LineUpTypes ZoneType)
 {
-	if ((GetWorld() == nullptr) || (SummaryType == LineUpTypes::Invalid))
-	{
-		return false;
-	}
+	AUTLineUpZone* FoundPotentialMatch = nullptr;
 
-	//find matching ZoneType to SummaryType
-	for (TActorIterator<AUTLineUpZone> It(GetWorld()); It; ++It)
+	if (GetWorld() && ZoneType != LineUpTypes::Invalid)
 	{
-		if (It->ZoneType == SummaryType)
+		AUTTeamGameMode* TeamGM = Cast<AUTTeamGameMode>(GetWorld()->GetAuthGameMode());
+		
+		for (TActorIterator<AUTLineUpZone> It(GetWorld()); It; ++It)
 		{
-			return true;
+			if (It->ZoneType == ZoneType)
+			{
+				//Found a perfect match, so return it right away. Perfect match because this is a team spawn point in a team game
+				if (It->bIsTeamSpawnList && TeamGM &&  TeamGM->Teams.Num() > 2)
+				{
+					return *It;
+				}
+				//Found a perfect match, so return it right away. Perfect match because this is not a team spawn point in a non-team game
+				else if (!It->bIsTeamSpawnList && (TeamGM == nullptr))
+				{
+					return *It;
+				}
+
+				//Imperfect match, try and find a perfect match before returning it
+				FoundPotentialMatch = *It;
+			}
 		}
 	}
 
-	return false;
+	return FoundPotentialMatch;
+}
+
+AUTLineUpZone* AUTGameState::CreateLineUpAtPlayerStart(LineUpTypes LineUpType, APlayerStart* PlayerSpawn)
+{
+	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
+	AUTLineUpZone* NewZone = nullptr;
+
+	if (PlayerSpawn)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = PlayerSpawn;
+		NewZone = GetWorld()->SpawnActor<AUTLineUpZone>(AUTLineUpZone::StaticClass(), SpawnParams);
+
+		if (NewZone)
+		{
+			NewZone->ZoneType = LineUpType;
+			NewZone->bIsTeamSpawnList = (Teams.Num() > 0) ? true : false;
+			NewZone->bSnapToFloor = false;
+
+			NewZone->SetActorLocationAndRotation(PlayerSpawn->GetActorLocation() + FVector(0.0f, 0.0f, NewZone->SnapFloorOffset), PlayerSpawn->GetActorRotation());
+			NewZone->DefaultCreateForOnly1Character();
+
+			NewZone->AttachToActor(PlayerSpawn, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		}
+
+		SpawnedLineUps.Add(NewZone);
+
+		//See if the new zone's camera is stuck inside of a wall
+		if (GetWorld() && NewZone->Camera)
+		{
+			FHitResult CameraCollision;
+			GetWorld()->SweepSingleByChannel(CameraCollision, NewZone->GetActorLocation(), NewZone->Camera->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
+
+			if (CameraCollision.bBlockingHit)
+			{
+				NewZone->Camera->SetActorLocation(CameraCollision.ImpactPoint);
+			}
+		}
+	}
+	return NewZone;
+}
+
+void AUTGameState::SpawnDefaultLineUpZones()
+{
+	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
+	const bool bIsTeamGame = (Teams.Num() > 0) ? true : false;
+
+	APlayerStart* PlayerStartToSpawnOn = nullptr;
+	
+	for (TActorIterator<AUTTeamPlayerStart> It(GetWorld()); It; ++It)
+	{
+		PlayerStartToSpawnOn = *It;
+		break;
+	}
+	
+	if (!bIsTeamGame || (PlayerStartToSpawnOn == nullptr))
+	{
+		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		{
+			PlayerStartToSpawnOn = *It;
+			break;
+		}
+	}
+
+	if (PlayerStartToSpawnOn)
+	{
+		if (GetAppropriateSpawnList(LineUpTypes::Intro) == nullptr)
+		{
+			AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::Intro, PlayerStartToSpawnOn);
+		}
+
+		if (GetAppropriateSpawnList(LineUpTypes::Intermission) == nullptr)
+		{
+			AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::Intermission, PlayerStartToSpawnOn);
+		}
+
+		if (GetAppropriateSpawnList(LineUpTypes::PostMatch) == nullptr)
+		{
+			AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::PostMatch, PlayerStartToSpawnOn);
+		}
+	}
+}
+
+AActor* AUTGameState::GetCameraActorForLineUp(LineUpTypes ZoneType)
+{
+	AActor* FoundCamera = nullptr;
+
+	AUTLineUpZone* SpawnPointList = GetAppropriateSpawnList(ZoneType);
+	if (SpawnPointList)
+	{
+		FoundCamera = SpawnPointList->Camera;
+	}
+
+	return FoundCamera;
 }
 
 bool AUTGameState::IsMapVoteListReplicationCompleted()
@@ -2394,7 +2537,6 @@ void AUTGameState::PrepareForIntermission()
 			IUTIntermissionBeginInterface::Execute_IntermissionBegin(*It);
 		}
 	}
-
 }
 
 bool AUTGameState::HasMatchEnded() const

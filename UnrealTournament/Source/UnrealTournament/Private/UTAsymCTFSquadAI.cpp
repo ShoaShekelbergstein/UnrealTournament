@@ -54,7 +54,7 @@ bool AUTAsymCTFSquadAI::MustKeepEnemy(AUTBot* B, APawn* TheEnemy)
 void AUTAsymCTFSquadAI::ModifyAggression(AUTBot* B, float& Aggressiveness)
 {
 	// reduce aggression against enemies that are much farther away from objective, no need to pursue as they need to come to us
-	if ((B->GetEnemyLocation(B->GetEnemy(), true) - B->GetPawn()->GetActorLocation()).Size() > 4000.0f + (B->GetPawn()->GetActorLocation() - Objective->GetActorLocation()).Size())
+	if (Objective != nullptr && (B->GetEnemyLocation(B->GetEnemy(), true) - B->GetPawn()->GetActorLocation()).Size() > 4000.0f + (B->GetPawn()->GetActorLocation() - Objective->GetActorLocation()).Size())
 	{
 		Aggressiveness -= 0.5f;
 	}
@@ -264,6 +264,15 @@ bool AUTAsymCTFSquadAI::HuntEnemyFlag(AUTBot* B)
 		{
 			if ((B->GetPawn()->GetActorLocation() - Flag->HoldingPawn->GetActorLocation()).Size() < TotalFlagRunDistance * (0.33f - 0.1f * B->Personality.Aggressiveness))
 			{
+				for (AController* C : Team->GetTeamMembers())
+				{
+					if (C != B && C->GetPawn() != nullptr && (C->GetPawn()->GetActorLocation() - B->GetPawn()->GetActorLocation()).Size() < 1000.0f && C->GetPawn()->GetVelocity().IsNearlyZero())
+					{
+						// teammate is here, go somewhere else
+						return FollowAlternateRoute(B, Flag->HoldingPawn, SquadRoutes, true, true, TEXT("Continue prior route to flag carrier"));
+					}
+				}
+
 				B->GoalString = TEXT("Wait here for enemy assault to begin");
 				B->DoCamp();
 				return true;

@@ -20,6 +20,15 @@ AUTProj_ShockBall::AUTProj_ShockBall(const class FObjectInitializer& ObjectIniti
 	bMoveFakeToReplicatedPos = false;
 }
 
+void AUTProj_ShockBall::OnRep_Instigator()
+{
+	Super::OnRep_Instigator();
+	if (InstigatorController && OwnBallEffect && (GetCachedScalabilityCVars().DetailMode > 0) && Cast<AUTPlayerController>(InstigatorController) && InstigatorController->IsLocalController())
+	{
+		OwnBallPSC = UGameplayStatics::SpawnEmitterAttached(OwnBallEffect, RootComponent);
+	}
+}
+
 void AUTProj_ShockBall::InitFakeProjectile(AUTPlayerController* OwningPlayer)
 {
 	Super::InitFakeProjectile(OwningPlayer);
@@ -81,6 +90,38 @@ float AUTProj_ShockBall::TakeDamage(float Damage, const FDamageEvent& DamageEven
 	}
 
 	return Damage;
+}
+
+void AUTProj_ShockBall::Destroyed()
+{
+	if (OwnBallPSC)
+	{
+		OwnBallPSC->DeactivateSystem();
+		OwnBallPSC->bAutoDestroy = true;
+		OwnBallPSC = nullptr;
+	}
+	Super::Destroyed();
+}
+
+void AUTProj_ShockBall::ShutDown()
+{
+	if (OwnBallPSC)
+	{
+		OwnBallPSC->DeactivateSystem();
+		OwnBallPSC->bAutoDestroy = true;
+		OwnBallPSC = nullptr;
+	}
+	Super::ShutDown();
+}
+
+
+bool AUTProj_ShockBall::ShouldIgnoreHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp)
+{
+	if (Super::ShouldIgnoreHit_Implementation(OtherActor, OtherComp))
+	{
+		return (Cast<AUTProj_ShockBall>(OtherActor) == NULL);
+	}
+	return false;
 }
 
 void AUTProj_ShockBall::NotifyClientSideHit(AUTPlayerController* InstigatedBy, FVector HitLocation, AActor* DamageCauser, int32 Damage)

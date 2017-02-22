@@ -79,6 +79,11 @@ void AUTWorldSettings::CreateLevelSummary()
 	}
 }
 
+void AUTWorldSettings::LevelActorDestroyed(AActor* TheActor)
+{
+	new(DestroyedLevelActors) FDestroyedActorInfo(TheActor->GetLevel(), TheActor->GetFName());
+}
+
 void AUTWorldSettings::NotifyBeginPlay()
 {
 	UWorld* World = GetWorld();
@@ -104,6 +109,12 @@ void AUTWorldSettings::NotifyBeginPlay()
 		FullActorList.Append(LevelActorList);
 		for (AActor* Actor : FullActorList)
 		{
+			// there's no convenient world delegate or game code virtual call so we have to hook into every actor individually
+			if (Actor->bNetStartup)
+			{
+				// note: OnDestroyed() instead of OnEndPlay() as Actors that are destroyed by BeginPlay() don't always call EndPlay()
+				Actor->OnDestroyed.AddDynamic(this, &AUTWorldSettings::LevelActorDestroyed);
+			}
 			Actor->BeginPlay();
 		}
 	}

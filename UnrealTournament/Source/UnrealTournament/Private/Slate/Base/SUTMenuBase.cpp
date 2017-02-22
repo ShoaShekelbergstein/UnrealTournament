@@ -16,6 +16,7 @@
 #include "../Dialogs/SUTInputBoxDialog.h"
 #include "../Dialogs/SUTMessageBoxDialog.h"
 #include "../Widgets/SUTScaleBox.h"
+#include "../Widgets/SUTImage.h"
 #include "Runtime/Engine/Classes/Engine/Console.h"
 #include "SOverlay.h"
 #include "SUTFriendsPopupWindow.h"
@@ -29,6 +30,8 @@
 #include "BlueprintContextLibrary.h"
 #include "MatchmakingContext.h"
 
+const float ICON_SIZE=38.0f;
+
 #if !UE_SERVER
 
 void SUTMenuBase::Construct(const FArguments& InArgs)
@@ -40,6 +43,10 @@ void SUTMenuBase::Construct(const FArguments& InArgs)
 
 void SUTMenuBase::OnMenuOpened(const FString& Parameters)
 {
+
+	AUTGameState* UTGameState = (PlayerOwner.IsValid() && PlayerOwner->GetWorld() != nullptr) ? PlayerOwner->GetWorld()->GetGameState<AUTGameState>() : nullptr;
+	if (UTGameState != nullptr) UTGameState->bLocalMenusAreActive = true;
+
 	GameViewportWidget = FSlateApplication::Get().GetKeyboardFocusedWidget();
 	FSlateApplication::Get().SetKeyboardFocus(SharedThis(this), EKeyboardFocusCause::Keyboard);
 
@@ -51,6 +58,9 @@ void SUTMenuBase::OnMenuOpened(const FString& Parameters)
 
 void SUTMenuBase::OnMenuClosed()
 {
+	AUTGameState* UTGameState = ( PlayerOwner.IsValid() && PlayerOwner->GetWorld() != nullptr) ? PlayerOwner->GetWorld()->GetGameState<AUTGameState>() : nullptr;
+	if (UTGameState != nullptr) UTGameState->bLocalMenusAreActive = false;
+
 	// Deactivate the current panel
 
 	if (ActivePanel.IsValid())
@@ -240,7 +250,7 @@ void SUTMenuBase::CreateDesktop()
 				.HAlign(HAlign_Fill)
 				[
 					SNew(SBox)
-					.HeightOverride(64)
+					.HeightOverride(48)
 					[
 						SNew(SBorder)
 						.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Dark"))
@@ -250,7 +260,7 @@ void SUTMenuBase::CreateDesktop()
 							.AutoHeight()
 							[
 								SNew(SBox)
-								.HeightOverride(56)
+								.HeightOverride(48)
 								[
 									// Left Menu
 									SNew(SOverlay)
@@ -292,7 +302,6 @@ void SUTMenuBase::SetInitialPanel()
 {
 }
 
-
 /****************************** [ Build Sub Menus ] *****************************************/
 
 void SUTMenuBase::BuildLeftMenuBar() {}
@@ -313,15 +322,13 @@ TSharedRef<SWidget> SUTMenuBase::BuildDefaultLeftMenuBar()
 			.Visibility(this, &SUTMenuBase::GetBackVis)
 			[
 				SNew(SHorizontalBox)
-				+SHorizontalBox::Slot()
-				.VAlign(VAlign_Center)
+				+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
 				[
-					SNew(SBox)
-					.WidthOverride(48)
-					.HeightOverride(48)
+					SNew(SVerticalBox)
+					+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
 					[
-						SNew(SImage)
-						.Image(SUTStyle::Get().GetBrush("UT.Icon.Back"))
+						SNew(SUTImage)
+						.Image(SUTStyle::Get().GetBrush("UT.Icon.Back")).WidthOverride(ICON_SIZE).HeightOverride(ICON_SIZE)
 					]
 				]
 			]
@@ -337,22 +344,20 @@ TSharedRef<SWidget> SUTMenuBase::BuildDefaultLeftMenuBar()
 				.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
 				.OnClicked(this, &SUTMenuBase::OnShowServerBrowserPanel)
 				[
+
 					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-					.VAlign(VAlign_Center)
+					+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
 					[
-						SNew(SBox)
-						.WidthOverride(48)
-						.HeightOverride(48)
+						SNew(SVerticalBox)
+						+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
 						[
-							SNew(SImage)
-							.Image(SUTStyle::Get().GetBrush("UT.Icon.Browser"))
+							SNew(SUTImage)
+							.Image(SUTStyle::Get().GetBrush("UT.Icon.Browser")).WidthOverride(ICON_SIZE).HeightOverride(ICON_SIZE)
 						]
 					]
 				]
 			];
 		}
-
 
 		BuildLeftMenuBar();
 	}
@@ -379,34 +384,32 @@ TSharedRef<SWidget> SUTMenuBase::BuildDefaultRightMenuBar()
 
 	if (RightMenuBar.IsValid())
 	{
-
 		BuildRightMenuBar();
 
 		RightMenuBar->AddSlot()
-		.Padding(0.0f,0.0f,5.0f,0.0f)
+		.Padding(0.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
 		[
 			BuildAboutSubMenu()
 		];
 
 		RightMenuBar->AddSlot()
-		.Padding(0.0f,0.0f,5.0f,0.0f)
+		.Padding(0.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
 		.VAlign(VAlign_Center)
 		[
 			BuildOnlinePresence()
 		];
 
-
 		RightMenuBar->AddSlot()
-		.Padding(0.0f,0.0f,5.0f,0.0f)
+		.Padding(0.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
 		[
 			BuildOptionsSubMenu()
 		];
 
 		RightMenuBar->AddSlot()
-		.Padding(70.0f,0.0f,5.0f,0.0f)
+		.Padding(70.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
 		[
 			SNew(SUTButton)
@@ -414,58 +417,62 @@ TSharedRef<SWidget> SUTMenuBase::BuildDefaultRightMenuBar()
 			.OnClicked(this, &SUTMenuBase::MinimizeClicked)
 			[
 				SNew(SHorizontalBox)
-				+SHorizontalBox::Slot()
-				.VAlign(VAlign_Center)
+				+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
 				[
-					SNew(SBox)
-					.WidthOverride(48)
-					.HeightOverride(48)
+					SNew(SVerticalBox)
+					+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
 					[
-						SNew(SImage)
-						.Image(SUTStyle::Get().GetBrush("UT.Icon.Minimize"))
+						SNew(SUTImage)
+						.Image(SUTStyle::Get().GetBrush("UT.Icon.Minimize")).WidthOverride(ICON_SIZE).HeightOverride(ICON_SIZE)
 					]
 				]
 			]
 		];
 
 		RightMenuBar->AddSlot()
-		.Padding(0.0f,0.0f,5.0f,0.0f)
+		.Padding(0.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
 		[
 			SNew(SUTButton)
 			.OnClicked(this, &SUTMenuBase::ToggleFullscreenClicked)
 			.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
+			.ToolTipText(NSLOCTEXT("ToolTips","TPFullScreen","Toggles between fullscreen and widowed mode."))
 			[
-				SNew(SBox)
-				.WidthOverride(48)
-				.HeightOverride(48)
+				SNew(SHorizontalBox)
+				+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
 				[
-					SNew(SImage)
-					.Image(this, &SUTMenuBase::GetFullvsWindowButtonImage)
+					SNew(SVerticalBox)
+					+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+					[
+						SNew(SUTImage)
+						.Image(this, &SUTMenuBase::GetFullvsWindowButtonImage).WidthOverride(ICON_SIZE).HeightOverride(ICON_SIZE)
+					]
 				]
+
 			]
 		];
 
 		RightMenuBar->AddSlot()
-		.Padding(0.0f,0.0f,5.0f,0.0f)
+		.Padding(0.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
 		[
 			SNew(SUTButton)
 			.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
 			.OnClicked(this, &SUTMenuBase::ExitClicked)
 			[
-				SNew(SBox)
-				.WidthOverride(48)
-				.HeightOverride(48)
+				SNew(SHorizontalBox)
+				+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
 				[
-					SNew(SImage)
-					.Image(SUTStyle::Get().GetBrush("UT.Icon.Exit"))
+					SNew(SVerticalBox)
+					+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+					[
+						SNew(SUTImage)
+						.Image(SUTStyle::Get().GetBrush("UT.Icon.Exit")).WidthOverride(ICON_SIZE).HeightOverride(ICON_SIZE)
+					]
 				]
 			]
 		];
 	}
-
-
 	return RightMenuBar.ToSharedRef();
 }
 
@@ -483,31 +490,20 @@ EVisibility SUTMenuBase::GetSocialBangVisibility() const
 
 TSharedRef<SWidget> SUTMenuBase::BuildOptionsSubMenu()
 {
-	
 	TSharedPtr<SUTComboButton> DropDownButton = NULL;
-	
+
 	SNew(SHorizontalBox)
-	+SHorizontalBox::Slot()
-	.AutoWidth()
+	+ SHorizontalBox::Slot()
+	.AutoWidth().VAlign(VAlign_Fill).Padding(0.0f)
 	[
-		SNew(SVerticalBox)
-		+SVerticalBox::Slot()
-		.AutoHeight()
+		SAssignNew(DropDownButton, SUTComboButton)
+		.HasDownArrow(false)
+		.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
+		.ContentPadding(0.0f)
+		.ButtonContent()
 		[
-			SNew(SBox)
-			.WidthOverride(48)
-			.HeightOverride(48)
-			[
-				SAssignNew(DropDownButton, SUTComboButton)
-				.HasDownArrow(false)
-				.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
-				.ContentPadding(FMargin(0.0f, 0.0f))
-				.ButtonContent()
-				[
-					SNew(SImage)
-					.Image(SUTStyle::Get().GetBrush("UT.Icon.Settings"))
-				]
-			]
+			SNew(SUTImage).WidthOverride(38).HeightOverride(38)
+			.Image(SUTStyle::Get().GetBrush("UT.Icon.Settings"))
 		]
 	];
 
@@ -530,25 +526,16 @@ TSharedRef<SWidget> SUTMenuBase::BuildAboutSubMenu()
 
 	SNew(SHorizontalBox)
 	+ SHorizontalBox::Slot()
-	.AutoWidth()
+	.AutoWidth().VAlign(VAlign_Fill).Padding(0.0f)
 	[
-		SNew(SVerticalBox)
-		+ SVerticalBox::Slot()
-		.AutoHeight()
+		SAssignNew(DropDownButton, SUTComboButton)
+		.HasDownArrow(false)
+		.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
+		.ContentPadding(0.0f)
+		.ButtonContent()
 		[
-			SNew(SBox)
-			.WidthOverride(48)
-			.HeightOverride(48)
-			[
-				SAssignNew(DropDownButton, SUTComboButton)
-				.HasDownArrow(false)
-				.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
-				.ButtonContent()
-				[
-					SNew(SImage)
-					.Image(SUTStyle::Get().GetBrush("UT.Icon.About"))
-				]
-			]
+			SNew(SUTImage).WidthOverride(38).HeightOverride(38)
+			.Image(SUTStyle::Get().GetBrush("UT.Icon.About"))
 		]
 	];
 
@@ -717,16 +704,15 @@ TSharedRef<SWidget> SUTMenuBase::BuildOnlinePresence()
 				.OnClicked(this, &SUTMenuBase::OnShowStatsViewer)
 				.ToolTipText(NSLOCTEXT("ToolTips","TPMyStats","Show stats for this player, friends, and recent opponents."))
 				[
+
 					SNew(SHorizontalBox)
-					+SHorizontalBox::Slot()
-					.VAlign(VAlign_Center)
+					+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
 					[
-						SNew(SBox)
-						.WidthOverride(48)
-						.HeightOverride(48)
+						SNew(SVerticalBox)
+						+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
 						[
-							SNew(SImage)
-							.Image(SUTStyle::Get().GetBrush("UT.Icon.Stats"))
+							SNew(SUTImage)
+							.Image(SUTStyle::Get().GetBrush("UT.Icon.Stats")).WidthOverride(38).HeightOverride(38)
 						]
 					]
 				]
@@ -740,15 +726,13 @@ TSharedRef<SWidget> SUTMenuBase::BuildOnlinePresence()
 				.ToolTipText(NSLOCTEXT("ToolTips", "TPMyItems", "Show collectable items you own."))
 				[
 					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-					.VAlign(VAlign_Center)
+					+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
 					[
-						SNew(SBox)
-						.WidthOverride(48)
-						.HeightOverride(48)
+						SNew(SVerticalBox)
+						+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
 						[
-							SNew(SImage)
-							.Image(SUWindowsStyle::Get().GetBrush("UT.Icon.UpArrow"))
+							SNew(SUTImage)
+							.Image(SUWindowsStyle::Get().GetBrush("UT.Icon.UpArrow")).WidthOverride(38).HeightOverride(38)
 						]
 					]
 				]
@@ -757,14 +741,21 @@ TSharedRef<SWidget> SUTMenuBase::BuildOnlinePresence()
 			.AutoWidth()
 			.Padding(10.0f, 0.0f, 20.0f, 0.0f)
 			[
-				SAssignNew(PlayerButton,SUTButton)
-				.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
-				.ContentPadding(FMargin(25.0,0.0,5.0,5.0))
-				.ToolTipText(NSLOCTEXT("ToolTips","TPMyPlayerCard","Show this player's player card."))
-				.OnClicked(this, &SUTMenuBase::OnShowPlayerCard)
-				.IsEnabled(this, &SUTMenuBase::IsPlayerCardDataLoaded)
+
+				SNew(SBox)
+				.HeightOverride(56)
 				[
-					BuildPlayerInfo()
+					SAssignNew(PlayerButton, SUTComboButton)
+					.HasDownArrow(false)
+					.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
+					.ToolTipText(NSLOCTEXT("ToolTips","TPMyPlayerCard","Show this player's player card."))
+					.ContentPadding(FMargin(35.0,0.0,35.0,0.0))
+					.ContentHAlign(HAlign_Left)
+					.IsEnabled(this, &SUTMenuBase::IsPlayerCardDataLoaded)
+					.ButtonContent()
+					[
+						BuildPlayerInfo()
+					]
 				]
 			]
 
@@ -784,32 +775,37 @@ TSharedRef<SWidget> SUTMenuBase::BuildOnlinePresence()
 #endif
 					[
 						SNew(SHorizontalBox)
-						+SHorizontalBox::Slot()
-						.VAlign(VAlign_Center)
+						+SHorizontalBox::Slot().VAlign(VAlign_Center).AutoWidth()
 						[
-							SNew(SOverlay)
-							+ SOverlay::Slot()
+							SNew(SVerticalBox)
+							+SVerticalBox::Slot()
+							.AutoHeight()
 							[
-								SNew(SBox)
-								.WidthOverride(48)
-								.HeightOverride(48)
+								SNew(SOverlay)
+								+ SOverlay::Slot()
+								[
+									SNew(SUTImage)
+									.Image(SUTStyle::Get().GetBrush("UT.Icon.Online")).WidthOverride(38).HeightOverride(38)
+								]
+								+ SOverlay::Slot()
+								.HAlign(HAlign_Right)
+								.VAlign(VAlign_Top)
 								[
 									SNew(SImage)
-									.Image(SUTStyle::Get().GetBrush("UT.Icon.Online"))
+									.Visibility(this, &SUTMenuBase::GetSocialBangVisibility)
+									.Image(SUTStyle::Get().GetBrush("UT.Icon.SocialBang"))
 								]
-							]
-							+ SOverlay::Slot()
-							.HAlign(HAlign_Right)
-							.VAlign(VAlign_Top)
-							[
-								SNew(SImage)
-								.Visibility(this, &SUTMenuBase::GetSocialBangVisibility)
-								.Image(SUTStyle::Get().GetBrush("UT.Icon.SocialBang"))
 							]
 						]
 					]
 				]
 			];
+
+		if (PlayerButton.IsValid())
+		{
+			PlayerButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_ShowPlayerCard", "Show Player Card"), FOnClicked::CreateSP(this, &SUTMenuBase::OnShowPlayerCard));
+			PlayerButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_Logout", "Log Out"), FOnClicked::CreateSP(this, &SUTMenuBase::OnLogout),true);
+		}
 
 		return Box.ToSharedRef();
 	
@@ -828,14 +824,17 @@ TSharedRef<SWidget> SUTMenuBase::BuildOnlinePresence()
 			.AutoWidth()
 			.VAlign(VAlign_Center)
 			[
-				SNew(SBox)
-				.WidthOverride(48)
-				.HeightOverride(48)
+				SNew(SVerticalBox)
+				+SVerticalBox::Slot().AutoHeight()
 				[
-					SNew(SImage)
-					.Image(SUTStyle::Get().GetBrush("UT.Icon.SignIn"))
+					SNew(SBox)
+					.WidthOverride(36)
+					.HeightOverride(36)
+					[
+						SNew(SImage)
+						.Image(SUTStyle::Get().GetBrush("UT.Icon.SignIn"))
+					]
 				]
-
 			]
 		];
 	}
@@ -949,6 +948,22 @@ FReply SUTMenuBase::OpenHUDSettings()
 	return FReply::Handled();
 }
 
+FReply SUTMenuBase::OnLogout()
+{
+	PlayerOwner->ShowMessage(NSLOCTEXT("SUTPlayerInfoDialog", "SignOuttConfirmationTitle", "Sign Out?"), NSLOCTEXT("SUTPlayerInfoDialog", "SignOuttConfirmationMessage", "You are about to sign out of this account.  Doing so will return you to the main menu.  Are you sure?"), UTDIALOG_BUTTON_YES + UTDIALOG_BUTTON_NO, FDialogResultDelegate::CreateSP(this, &SUTMenuBase::SignOutConfirmationResult));
+	return FReply::Handled();
+}
+
+void SUTMenuBase::SignOutConfirmationResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID)
+{
+	if (ButtonID == UTDIALOG_BUTTON_YES)
+	{
+		PlayerOwner->Logout();
+	}
+}
+
+
+
 FReply SUTMenuBase::OnShowPlayerCard()
 {
 	if (PlayerOwner.IsValid() && PlayerOwner->PlayerController && PlayerOwner->PlayerController->PlayerState)
@@ -956,7 +971,7 @@ FReply SUTMenuBase::OnShowPlayerCard()
 		AUTPlayerState* PlayerState = Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState);
 		if (PlayerState)
 		{
-			PlayerOwner->ShowPlayerInfo(PlayerState, true);
+			PlayerOwner->ShowPlayerInfo(PlayerState->UniqueId.ToString(), PlayerState->PlayerName);
 		}
 	}
 	return FReply::Handled();
@@ -976,14 +991,21 @@ const FSlateBrush* SUTMenuBase::GetFullvsWindowButtonImage() const
 
 FReply SUTMenuBase::ToggleFullscreenClicked()
 {
-	if (PlayerOwner->ViewportClient->IsFullScreenViewport())
+	UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());	
+
+	if (UserSettings)
 	{
-		PlayerOwner->ConsoleCommand("fullscreen 0");
+		if (PlayerOwner->ViewportClient->IsFullScreenViewport())
+		{
+			UserSettings->SetFullscreenMode(EWindowMode::Windowed);
+		}
+		else
+		{
+			UserSettings->SetFullscreenMode(EWindowMode::Fullscreen);
+		}
+		UserSettings->ApplyResolutionSettings(false);
 	}
-	else
-	{
-		PlayerOwner->ConsoleCommand("fullscreen 1");
-	}
+
 	return FReply::Handled();
 }
 
@@ -1052,7 +1074,7 @@ TSharedRef<SWidget> SUTMenuBase::BuildPlayerInfo()
 	float LevelAlpha = (LevelXPRange > 0) ? (float)(PlayerXP - LevelXPStart) / (float)LevelXPRange : 0.0f;
 	TSharedPtr<SVerticalBox> Container;
 	SAssignNew(Container, SVerticalBox)
-	+SVerticalBox::Slot().VAlign(VAlign_Fill).Padding(0.0f,5.0f,0.0f,0.0f)
+	+SVerticalBox::Slot().FillHeight(1.0).Padding(0.0f,0.0f,0.0f,0.0f)
 	[
 		SNew(SHorizontalBox)	
 		+SHorizontalBox::Slot()
@@ -1060,83 +1082,63 @@ TSharedRef<SWidget> SUTMenuBase::BuildPlayerInfo()
 			SNew(SHorizontalBox)
 			+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
 			[
-				SNew(SBox)
-				.MinDesiredHeight(120.0F)
-				.MinDesiredHeight(57.0f)
-				.MaxDesiredHeight(57.0f)
+				SNew(SVerticalBox)
+				+SVerticalBox::Slot().HAlign(HAlign_Right).AutoHeight()
 				[
-					SNew(SVerticalBox)
-					+SVerticalBox::Slot().HAlign(HAlign_Right).AutoHeight()
+					SNew(STextBlock)
+					.Text(FText::FromString(PlayerOwner->GetOnlinePlayerNickname()))
+					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
+					.ColorAndOpacity(this, &SUTMenuBase::GetLabelColor)
+				]
+				+SVerticalBox::Slot().HAlign(HAlign_Right).AutoHeight()
+				[
+					SNew(SHorizontalBox)
+					+SHorizontalBox::Slot().AutoWidth().Padding(5.0f,0.0f,5.0f,0.0f)
 					[
 						SNew(STextBlock)
-						.Text(FText::FromString(PlayerOwner->GetOnlinePlayerNickname()))
-						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tween")
+						.Text(FText::Format(NSLOCTEXT("SUTMenuBase","LevelFormat","lvl.{0}"),FText::AsNumber(Level)))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tiny.Bold")
 						.ColorAndOpacity(this, &SUTMenuBase::GetLabelColor)
 					]
-					+SVerticalBox::Slot().HAlign(HAlign_Right).AutoHeight()
+					+SHorizontalBox::Slot().FillWidth(1.0f).VAlign(VAlign_Center)
 					[
-						SNew(SHorizontalBox)
-						+SHorizontalBox::Slot().AutoWidth().Padding(5.0f,0.0f,5.0f,0.0f)
+						SNew(SVerticalBox)
+						+SVerticalBox::Slot().AutoHeight().VAlign(VAlign_Center)
 						[
-							SNew(STextBlock)
-							.Text(FText::Format(NSLOCTEXT("SUTMenuBase","LevelFormat","lvl.{0}"),FText::AsNumber(Level)))
-							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tiny.Bold")
-							.ColorAndOpacity(this, &SUTMenuBase::GetLabelColor)
-						]
-						+SHorizontalBox::Slot().FillWidth(1.0f).VAlign(VAlign_Center)
-						[
-							SNew(SVerticalBox)
-							+SVerticalBox::Slot().AutoHeight().VAlign(VAlign_Center)
+							SNew(SBox).WidthOverride(75).HeightOverride(8)
 							[
-								SNew(SBox).WidthOverride(75).HeightOverride(8)
-								[
-									SNew(SProgressBar)
-									.Style(SUTStyle::Get(),"UT.ProgressBar.XP")
-									.Percent(LevelAlpha)
-								]
+								SNew(SProgressBar)
+								.Style(SUTStyle::Get(),"UT.ProgressBar.XP")
+								.Percent(LevelAlpha)
 							]
 						]
-						+SHorizontalBox::Slot().AutoWidth().Padding(5.0f,3.0f,5.0f,0.0f)
-						[
-							SNew(STextBlock)
-							.Text(FText::Format(NSLOCTEXT("SUTMenuBase","LevelFormatB","({0}xp)"),FText::AsNumber(PlayerXP)))
-							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Teenie")
-							.ColorAndOpacity(this, &SUTMenuBase::GetLabelColor)
-						]
-
-
-
+					]
+					+SHorizontalBox::Slot().AutoWidth().Padding(5.0f,3.0f,5.0f,0.0f)
+					[
+						SNew(STextBlock)
+						.Text(FText::Format(NSLOCTEXT("SUTMenuBase","LevelFormatB","({0}xp)"),FText::AsNumber(PlayerXP)))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Teenie")
+						.ColorAndOpacity(this, &SUTMenuBase::GetLabelColor)
 					]
 				]
 			]
 		]
 		+SHorizontalBox::Slot()
-		.AutoWidth().Padding(5.0f, 5.0f, 5.0f, 5.0f)
+		.AutoWidth().Padding(5.0f, 0.0f, 5.0f, 0.0f)
 		.VAlign(VAlign_Center)
 		[
 			// The Player's Avatar
 
-			SNew(SVerticalBox)
-			+SVerticalBox::Slot().FillHeight(1.0f)
+			SNew(SHorizontalBox)
+			+SHorizontalBox::Slot().AutoWidth()
 			[
-				SNew(SHorizontalBox)
-				+SHorizontalBox::Slot().AutoWidth()
+				SNew(SVerticalBox)
+				+SVerticalBox::Slot().AutoHeight()
 				[
-					SNew(SVerticalBox)
-					+SVerticalBox::Slot().AutoHeight()
-					[
-						SNew(SBox)
-						.WidthOverride(35.0f)
-						.HeightOverride(35.0f)
-						.MaxDesiredWidth(35.0f)
-						.MaxDesiredHeight(35.0f)
-						[
-							SNew(SImage)
-							.Image(this, &SUTMenuBase::GetAvatarImage)
-						]
-					]
-				]	
-			]
+					SNew(SUTImage).WidthOverride(ICON_SIZE).HeightOverride(ICON_SIZE)
+					.Image(this, &SUTMenuBase::GetAvatarImage)
+				]
+			]	
 		]
 	];
 

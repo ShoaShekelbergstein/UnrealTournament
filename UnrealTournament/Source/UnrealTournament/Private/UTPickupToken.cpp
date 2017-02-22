@@ -11,6 +11,7 @@
 AUTPickupToken::AUTPickupToken(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	bNetLoadOnClient = true;
+	bIsPickedUp = false;
 }
 
 void AUTPickupToken::PostLoad()
@@ -79,13 +80,18 @@ bool AUTPickupToken::HasBeenPickedUpBefore()
 
 void AUTPickupToken::PickedUp()
 {
+	bIsPickedUp = true;
+
 	if (TokenUniqueID != NAME_None)
 	{
-		UUTGameplayStatics::TokenPickedUp(GetWorld(), TokenUniqueID);
+		if (!UUTGameplayStatics::HasTokenBeenPickedUpBefore(GetWorld(), TokenUniqueID))
+		{
+			UUTGameplayStatics::TokenPickedUp(GetWorld(), TokenUniqueID);
+		}
 
 		if (FUTAnalytics::IsAvailable() && GetWorld())
 		{
-			FUTAnalytics::FireEvent_UTTutorialPickupToken(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), TokenUniqueID.ToString());
+			FUTAnalytics::FireEvent_UTTutorialPickupToken(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), TokenUniqueID, TokenDescription);
 		}
 	}
 }

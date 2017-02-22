@@ -23,6 +23,8 @@ class UNREALTOURNAMENT_API AUTDuelGame : public AUTTeamDMGameMode
 		return true;
 	}
 	virtual void SetPlayerDefaults(APawn* PlayerPawn) override;
+	virtual void CheckBotCount() override;
+	virtual void DefaultTimer() override;
 
 	virtual void FindAndMarkHighScorer() override;
 

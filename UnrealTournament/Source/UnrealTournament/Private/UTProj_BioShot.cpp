@@ -71,7 +71,7 @@ AUTProj_BioShot::AUTProj_BioShot(const class FObjectInitializer& ObjectInitializ
 	{
 		UTProjMovement->bPreventZHoming = true;
 	}
-	GlobRadiusScaling = 4.f;
+	GlobRadiusScaling = 6.f;
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
@@ -79,7 +79,6 @@ AUTProj_BioShot::AUTProj_BioShot(const class FObjectInitializer& ObjectInitializ
 	InitialBlobPulseRate = 3.f;
 	BlobPulseTime = 0.f;
 	BlobPulseScaling = 0.1f;
-	bAlwaysShootable = true;
 }
 
 void AUTProj_BioShot::BeginPlay()
@@ -576,18 +575,15 @@ void AUTProj_BioShot::SetGlobStrength(float NewStrength)
 
 	//Increase The collision of the flying Glob if over a certain strength
 	float GlobScalingSqrt = FMath::Sqrt(GlobStrength);
-	if (GlobStrength > 3.f)
+	CollisionComp->SetSphereRadius(GlobRadiusScaling * FMath::Max(2.f, GlobScalingSqrt));
+	if (!bLargeGlobLit && (GlobStrength > 3.f))
 	{
-		CollisionComp->SetSphereRadius(GlobRadiusScaling * GlobScalingSqrt);
-		if (!bLargeGlobLit)
+		bLargeGlobLit = true;
+		TArray<ULightComponent*> LightComponents;
+		GetComponents<ULightComponent>(LightComponents);
+		for (int32 i = 0; i < LightComponents.Num(); i++)
 		{
-			bLargeGlobLit = true;
-			TArray<ULightComponent*> LightComponents;
-			GetComponents<ULightComponent>(LightComponents);
-			for (int32 i = 0; i < LightComponents.Num(); i++)
-			{
-				LightComponents[i]->SetVisibility(true);
-			}
+			LightComponents[i]->SetVisibility(true);
 		}
 	}
 

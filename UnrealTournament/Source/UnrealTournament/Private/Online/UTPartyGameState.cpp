@@ -130,6 +130,20 @@ void UUTPartyGameState::OnPartyMatchmakingComplete(EMatchmakingCompleteResult Re
 			{
 				UTParty->LeaveAndRestorePersistentParty();
 			}
+			
+			UWorld* World = GetWorld();
+			if (World)
+			{
+				for (FLocalPlayerIterator It(GEngine, World); It; ++It)
+				{
+					UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(*It);
+					if (LP)
+					{
+						LP->MessageBox(NSLOCTEXT("UTPartyGameState", "FailedMatchmakingTitle", "Failed To Connect"), 
+							           NSLOCTEXT("UTPartyGameState", "FailedMatchmaking", "Failed to connect to the party leader's game. You have left the party. If it was a LAN game, you will need to join manually through the server browser as LAN games aren't supported with parties."));
+					}
+				}
+			}
 		}
 	}
 }
@@ -292,8 +306,7 @@ void UUTPartyGameState::SetPartyCancelQuickMatch()
 bool UUTPartyGameState::IsInJoinableGameState() const
 {
 	if (PartyState.PartyProgression == EUTPartyState::Matchmaking ||
-		PartyState.PartyProgression == EUTPartyState::PostMatchmaking ||
-		PartyState.PartyProgression == EUTPartyState::TravelToServer)
+		PartyState.PartyProgression == EUTPartyState::PostMatchmaking)
 	{
 		return false;
 	}

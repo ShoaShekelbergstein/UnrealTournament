@@ -16,11 +16,12 @@ UUTCTFMajorMessage::UUTCTFMajorMessage(const FObjectInitializer& ObjectInitializ
 	FlagReadyMessage = NSLOCTEXT("CTFGameMessage", "FlagReadyMessage", "Attacker flag activated!");
 	FlagRallyMessage = NSLOCTEXT("CTFGameMessage", "FlagRallyMessage", "RALLY NOW!");
 	RallyReadyMessage = NSLOCTEXT("CTFGameMessage", "RallyReadyMessage", "Rally Started!");
-	EnemyRallyMessage = NSLOCTEXT("CTFGameMessage", "EnemyRallyMessage", "Enemy Rally!");
+	EnemyRallyMessage = NSLOCTEXT("CTFGameMessage", "EnemyRallyMessage", "Enemy Rally Activated!");
 	EnemyRallyPrefix = NSLOCTEXT("CTFGameMessage", "EnemyRallyPrefix", "Enemy Rally at ");
 	EnemyRallyPostfix = NSLOCTEXT("CTFGameMessage", "EnemyRallyPostfix", "");
 	TeamRallyMessage = NSLOCTEXT("CTFGameMessage", "TeamRallyMessage", "");
 	RallyCompleteMessage = NSLOCTEXT("CTFGameMessage", "RallyCompleteMessage", "Rally Ended!");
+	RallyClearMessage = NSLOCTEXT("CTFGameMessage", "RallyClearMessage", "   ");
 	PressToRallyPrefix = NSLOCTEXT("CTFGameMessage", "PressToRallyPrefix", "Press ");
 	PressToRallyPostfix = NSLOCTEXT("CTFGameMessage", "PressToRallyPostfix", " to Rally Now!");
 	bIsStatusAnnouncement = true;
@@ -113,7 +114,7 @@ void UUTCTFMajorMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText,
 			EmphasisText = GV->VolumeName;
 			PostfixText = EnemyRallyPostfix;
 			AUTPlayerState* PS = Cast<AUTPlayerState>(RelatedPlayerState_1);
-			EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : FLinearColor::Red;
+			EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : REDHUDCOLOR;
 		}
 		else if (Cast<AUTRallyPoint>(OptionalObject))
 		{
@@ -121,7 +122,7 @@ void UUTCTFMajorMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText,
 			EmphasisText = Cast<AUTRallyPoint>(OptionalObject)->LocationText;
 			PostfixText = EnemyRallyPostfix;
 			AUTPlayerState* PS = Cast<AUTPlayerState>(RelatedPlayerState_1);
-			EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : FLinearColor::Red;
+			EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : REDHUDCOLOR;
 		}
 		else
 		{
@@ -132,7 +133,7 @@ void UUTCTFMajorMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText,
 				EmphasisText = Flag->GetHUDStatusMessage(nullptr);
 				PostfixText = EnemyRallyPostfix;
 				AUTPlayerState* PS = Cast<AUTPlayerState>(RelatedPlayerState_1);
-				EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : FLinearColor::Red;
+				EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : REDHUDCOLOR;
 			}
 			else
 			{
@@ -174,6 +175,7 @@ FText UUTCTFMajorMessage::GetText(int32 Switch, bool bTargetsPlayerState1, APlay
 	case 23: return RallyReadyMessage; break;
 	case 24: return BuildEmphasisText(Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject); break;
 	case 25: return RallyCompleteMessage; break;
+	case 26: return RallyClearMessage; break;
 	case 27: return TeamRallyMessage; break;
 	case 28: return EnemyRallyMessage; break;
 	case 30: return BuildEmphasisText(Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject); break;
@@ -194,7 +196,11 @@ bool UUTCTFMajorMessage::InterruptAnnouncement(const FAnnouncementInfo Announcem
 	}
 	if (AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass)
 	{
-		return false;
+		if (OtherAnnouncementInfo.Switch == 26)
+		{
+			return true;
+		}
+		return ((AnnouncementInfo.Switch == 25) || (AnnouncementInfo.Switch == 26)) && (OtherAnnouncementInfo.Switch == 30);
 	}
 	if (GetAnnouncementPriority(AnnouncementInfo) > OtherAnnouncementInfo.MessageClass->GetDefaultObject<UUTLocalMessage>()->GetAnnouncementPriority(OtherAnnouncementInfo))
 	{
@@ -205,7 +211,7 @@ bool UUTCTFMajorMessage::InterruptAnnouncement(const FAnnouncementInfo Announcem
 
 float UUTCTFMajorMessage::GetAnnouncementSpacing_Implementation(int32 Switch, const UObject* OptionalObject) const
 {
-	return 0.1f;
+	return 0.05f;
 }
 
 bool UUTCTFMajorMessage::CancelByAnnouncement_Implementation(int32 Switch, const UObject* OptionalObject, TSubclassOf<UUTLocalMessage> OtherMessageClass, int32 OtherSwitch, const UObject* OtherOptionalObject) const

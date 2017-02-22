@@ -148,7 +148,6 @@ void AUTBot::InitializeCharacter(UUTBotCharacter* NewCharacterData)
 	AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
 	if (PS != NULL)
 	{
-		PS->bReadyToPlay = true;
 		PS->SetCharacterVoice(CharacterData->CharacterVoice.ToString());
 		PS->SetCharacter(CharacterData->Character.ToString());
 		if (!CharacterData->HatType.ToString().IsEmpty())
@@ -307,6 +306,20 @@ float FHideLocEval::Eval(APawn* Asker, const FNavAgentProperties& AgentProps, AC
 			// TODO: early out?
 			return 0.5f / FMath::Max<int32>(1, Node->Paths.Num()) + 0.5f / FMath::Max<int32>(1, Node->Polys.Num());
 		}
+	}
+}
+
+void AUTBot::AutoUpdateSkillFor(AUTGameMode* Game)
+{
+	if (Game)
+	{
+		float NewSkill = Game->RedTeamSkill;  //also use for FFA
+		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+		if (PS && PS->Team && (PS->Team->TeamIndex == 1))
+		{
+			NewSkill = Game->BlueTeamSkill;
+		}
+		InitializeSkill(NewSkill);
 	}
 }
 
@@ -2076,11 +2089,50 @@ void AUTBot::NotifyJumpApex()
 		else if (Enemy != NULL && IsEnemyVisible(Enemy) && ((Skill >= 3.0f && Personality.MovementAbility >= 0.0f && FMath::FRand() > 0.04f * Skill) || FMath::FRand() < Personality.Jumpiness))
 		{
 			// make sure won't bump head on ceiling
+			const FVector MyLoc = UTChar->GetActorLocation();
 			float MultiJumpZ = UTChar->UTCharacterMovement->bIsDodging ? UTChar->UTCharacterMovement->DodgeJumpImpulse : UTChar->UTCharacterMovement->MultiJumpImpulse;
-			if (!GetWorld()->LineTraceTestByChannel(UTChar->GetActorLocation(), UTChar->GetActorLocation() + FVector(0.0f, 0.0f, MultiJumpZ * 0.5f), ECC_Pawn, FCollisionQueryParams(FName(TEXT("Jump")), false, UTChar)))
+			const FVector JumpTraceEnd = MyLoc + FVector(0.0f, 0.0f, MultiJumpZ * 0.5f);
+			if (!GetWorld()->LineTraceTestByChannel(MyLoc, JumpTraceEnd, ECC_Pawn, FCollisionQueryParams(FName(TEXT("Jump")), false, UTChar)))
 			{
 				UTChar->GetCharacterMovement()->DoJump(false);
-				// TODO: pick more appropriate landing spot for air control
+				// pick more appropriate landing spot for air control
+				FVector NewLandingSpot = FVector::ZeroVector;
+				float BestDistSq = FLT_MAX;
+				if (MoveTarget.IsValid() && !MoveTarget.Actor.IsValid())
+				{
+					TArray<FVector> TestSpots;
+					TestSpots.SetNumUninitialized(RouteCache.Num() + MoveTargetPoints.Num());
+					for (const FRouteCacheItem& TestItem : RouteCache)
+					{
+						TestSpots.Add(TestItem.GetLocation(UTChar));
+					}
+					for (const FComponentBasedPosition& TestPoint : MoveTargetPoints)
+					{
+						if (TestPoint.Base == nullptr)
+						{
+							TestSpots.Add(TestPoint.Get());
+						}
+					}
+					for (FVector GoalLoc : TestSpots)
+					{
+						float DistSq = (GoalLoc - MyLoc).SizeSquared();
+						if (DistSq < BestDistSq)
+						{
+							FVector JumpVel;
+							if ( FindBestJumpVelocityXY(JumpVel, MyLoc, GoalLoc, UTChar->GetCharacterMovement()->Velocity.Z, UTChar->GetCharacterMovement()->GetGravityZ(), UTChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()) &&
+								!GetWorld()->LineTraceTestByChannel(JumpTraceEnd, GoalLoc, ECC_Pawn, FCollisionQueryParams(FName(TEXT("Jump")), false, UTChar)) )
+							{
+								NewLandingSpot = GoalLoc;
+								BestDistSq = DistSq;
+							}
+						}
+					}
+					if (!NewLandingSpot.IsZero())
+					{
+						SetMoveTargetDirect(FRouteCacheItem(NewLandingSpot));
+						MoveTimer = -1.0f;
+					}
+				}
 			}
 		}
 	}
@@ -2682,6 +2734,15 @@ void AUTBot::ExecuteWhatToDoNext()
 			}
 		}
 
+		// if we're being spawn camped but are in a protected spawn area, try to shoot enemy from here
+		bool bHideInSpawnArea = false;
+		if (UTChar != nullptr && !UTChar->bDamageHurtsHealth && Enemy != nullptr && UTChar->LastGameVolume != nullptr && UTChar->LastGameVolume->bIsTeamSafeVolume && IsEnemyVisible(Enemy) && CanAttack(Enemy, Enemy->GetActorLocation(), true))
+		{
+			GoalString = TEXT("Stay in spawn protected volume and shoot spawn campers");
+			DoRangedAttackOn(Enemy);
+			return;
+		}
+
 		// low skill bots have a chance to get distracted by nearby visible enemy and try to fight them off
 		// this helps minimize bots running away too effectively at low skill levels because their movement speed is higher than other bots' and newbie humans' ability to target them
 		bool bLowSkillEnemyFocus = false;
@@ -2789,6 +2850,34 @@ void AUTBot::ExecuteWhatToDoNext()
 				}
 			}
 		}
+
+		// check for boost powers
+		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+		if (PS != nullptr && PS->GetRemainingBoosts() > 0 && UTChar != nullptr)
+		{
+			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+			if (GS != nullptr)
+			{
+				float BestRating = 0.0f;
+				int32 BestIndex = INDEX_NONE;
+				int32 i = 0;
+				for (TSubclassOf<AUTInventory> BoostType = GS->GetSelectableBoostByIndex(PS, i); BoostType != nullptr; i++, BoostType = GS->GetSelectableBoostByIndex(PS, i))
+				{
+					float NewRating = BoostType.GetDefaultObject()->GetBoostPowerRating(this);
+					if (NewRating > BestRating)
+					{
+						BestIndex = i;
+						BestRating = NewRating;
+					}
+				}
+				float BoostPowerRatingThreshold = (PS->RemainingLives == 1) ? 0.0f : 0.49f; // TODO: more complex decision on usage threshold
+				if (BestIndex != INDEX_NONE && BestRating > BoostPowerRatingThreshold)
+				{
+					PS->ServerSetBoostItem(BestIndex);
+					UTChar->TriggerBoostPower();
+				}
+			}
+		}
 	}
 }
 
@@ -2853,7 +2942,15 @@ void AUTBot::ChooseAttackMode()
 	else
 	*/
 	{
-		if (/*!bFrustrated && */!Squad->MustKeepEnemy(this, Enemy))
+		// always retreat if enemy is spawn protected
+		AUTCharacter* EnemyChar = Cast<AUTCharacter>(Enemy);
+		if (EnemyChar != nullptr && EnemyChar->LastGameVolume != nullptr && EnemyChar->LastGameVolume->bIsTeamSafeVolume && IsEnemyVisible(EnemyChar))
+		{
+			GoalString = TEXT("Retreat because enemy is in spawn volume");
+			DoRetreat();
+			return;
+		}
+		else if (/*!bFrustrated && */!Squad->MustKeepEnemy(this, Enemy))
 		{
 			float RetreatThreshold = Personality.Aggressiveness;
 			if (!NeedsWeapon())
@@ -2863,7 +2960,7 @@ void AUTBot::ChooseAttackMode()
 			}
 			if (EnemyStrength > RetreatThreshold)
 			{
-				GoalString = "Retreat";
+				GoalString = TEXT("Retreat");
 				// send retreating voice message
 				if (FMath::FRand() < 0.05f)
 				{
@@ -3193,7 +3290,7 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 	if (NewHuntTarget == NULL || !FBotEnemyInfo::StaticIsValid(NewHuntTarget) || GetEnemyInfo(NewHuntTarget, false) == NULL)
 	{
 		AUTCharacter* UTC = Cast<AUTCharacter>(NewHuntTarget);
-		UE_LOG(UT, Warning, TEXT("Bot %s in DoHunt() with no or invalid enemy %s (flag %s)"), *PlayerState->PlayerName, (NewHuntTarget->PlayerState != NULL) ? *NewHuntTarget->PlayerState->PlayerName : *GetNameSafe(NewHuntTarget), *GetNameSafe((UTC != NULL) ? UTC->GetCarriedObject() : NULL));
+		UE_LOG(UT, Warning, TEXT("Bot %s in DoHunt() with no or invalid enemy %s (flag %s)"), *PlayerState->PlayerName, (NewHuntTarget != NULL && NewHuntTarget->PlayerState != NULL) ? *NewHuntTarget->PlayerState->PlayerName : *GetNameSafe(NewHuntTarget), *GetNameSafe((UTC != NULL) ? UTC->GetCarriedObject() : NULL));
 		GoalString = TEXT("BUG - HUNT WITH BAD TARGET - Force CampAction");
 		StartNewAction(CampAction);
 	}
@@ -3285,7 +3382,8 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 				// calculate minimum amount of time enemy will have progressed from our starting point before we could possibly catch up
 				// note: this is an optimization, more correct would be to evaluate in the below pathfinding step
 				const float MoveSpeed = FMath::Max<float>(1.0f, GetPawn()->GetMovementComponent() ? GetPawn()->GetMovementComponent()->GetMaxSpeed() : 0);
-				float SkipTime = FMath::Max<float>(GetWorld()->TimeSeconds - EnemyInfo.LastFullUpdateTime, (GetPawn()->GetActorLocation() - EnemyInfo.LastKnownLoc).Size() / MoveSpeed);
+				const float DistFromEnemy = (GetPawn()->GetActorLocation() - EnemyInfo.LastKnownLoc).Size();
+				const float TimeSinceEnemyUpdate = GetWorld()->TimeSeconds - EnemyInfo.LastFullUpdateTime;
 
 				TArray<FRouteCacheItem> PathPredictionGoals;
 				for (const FPredictedGoal& TestSpot : CheckSpots)
@@ -3296,6 +3394,8 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 						FRouteCacheItem NewItem(NavData->GetNodeFromPoly(Poly), TestSpot.Location, Poly);
 						// for enemy path prediction include any point that we could prevent them from reaching (using straight line distance for simplicity and performance)
 						// or that are critical so we have to try even if it's probably hopeless
+						const float DistFromGoal = (TestSpot.Location - GetPawn()->GetActorLocation()).Size();
+						const float SkipTime = FMath::Max<float>(TimeSinceEnemyUpdate, FMath::Min<float>(DistFromEnemy, DistFromGoal) / MoveSpeed);
 						if (TestSpot.bCritical || (TestSpot.Location - EnemyInfo.LastKnownLoc).Size() > MoveSpeed * SkipTime)
 						{
 							PathPredictionGoals.Add(NewItem);
@@ -3307,6 +3407,12 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 						}
 					}
 				}
+				float DistFromEnemyOrGoal = DistFromEnemy;
+				for (const FRouteCacheItem& TestGoal : PathPredictionGoals)
+				{
+					DistFromEnemyOrGoal = FMath::Min<float>(DistFromEnemy, (TestGoal.GetLocation(GetPawn()) - GetPawn()->GetActorLocation()).Size());
+				}
+				float SkipTime = FMath::Max<float>(TimeSinceEnemyUpdate, DistFromEnemyOrGoal / MoveSpeed);
 				// pathfind as the target towards any of the predicted goals
 				// add the path found to the list of intercept endpoints
 				FMultiPathNodeEval NodeEval(PathPredictionGoals);
@@ -3360,7 +3466,7 @@ void AUTBot::DoHunt(APawn* NewHuntTarget)
 									{
 										// add anticipated intercept point
 										HuntEndpoints.Reset();
-										HuntEndpoints.Add(EnemyRouteCache[i]);
+										HuntEndpoints.Add((i > 0 && EnemyRouteCache[i].Node != nullptr && EnemyRouteCache[i].Node->bDestinationOnly) ? EnemyRouteCache[i - 1] : EnemyRouteCache[i]);
 									}
 								}
 							}

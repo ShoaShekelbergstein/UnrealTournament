@@ -235,11 +235,15 @@ bool AUTTeamGameMode::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroad
 						MovePlayerToTeam(NextPlayer, SwitchingPS, 1 - NewTeam);
 						SwitchingPS->HandleTeamChanged(NextPlayer);
 						MovePlayerToTeam(Player, PS, NewTeam);
+						if (Cast<APlayerController>(Player) && GetWorldSettings()->Pauser)
+						{
+							CheckBotTeams();
+						}
 						return true;
 					}
 				}
 
-				if (ShouldBalanceTeams(PS->Team == NULL))
+				if (ShouldBalanceTeams(PS->Team == NULL) || (bBalanceTeams && Cast<AUTBot>(Player)))
 				{
 					for (int32 i = 0; i < Teams.Num(); i++)
 					{
@@ -268,6 +272,10 @@ bool AUTTeamGameMode::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroad
 						PC->StartSpot = StartSpot;
 						PC->ViewStartSpot();
 					}
+				}
+				if (Cast<APlayerController>(Player) && GetWorldSettings()->Pauser)
+				{
+					CheckBotTeams();
 				}
 				return true;
 			}
@@ -299,10 +307,8 @@ bool AUTTeamGameMode::MovePlayerToTeam(AController* Player, AUTPlayerState* PS, 
 		PS->ForceNetUpdate();
 
 		// Clear the player's gameplay mute list.
-
 		APlayerController* PlayerController = Cast<APlayerController>(Player);
 		AUTGameState* MyGameState = GetWorld()->GetGameState<AUTGameState>();
-
 		if (PlayerController && MyGameState)
 		{
 			for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
@@ -356,6 +362,35 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 		else if (TestSize == BestSize)
 		{
 			BestTeams.Add(Teams[i]);
+		}
+	}
+	// if is a bot, move if allowed
+	if (PS->bIsABot)
+	{
+		for (int32 i = 0; i < BestTeams.Num(); i++)
+		{
+			if (BestTeams[i]->TeamIndex == RequestedTeam)
+			{
+				return RequestedTeam;
+			}
+		}
+	}
+
+	// if players from same party on a best team, move to it
+	if (PS->PartySize > 1)
+	{
+		for (AUTTeamInfo* TestTeam : BestTeams)
+		{
+			bool bHasParty = false;
+			TArray<AController*> Members = TestTeam->GetTeamMembers();
+			for (AController* C : Members)
+			{
+				AUTPlayerState* TeamPS = Cast<AUTPlayerState>(C->PlayerState);
+				if (TeamPS && (TeamPS->PartyLeader == PS->PartyLeader))
+				{
+					return TestTeam->TeamIndex;
+				}
+			}
 		}
 	}
 
@@ -479,7 +514,7 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 		}
 	}
 
-		return BestTeams[FMath::RandHelper(BestTeams.Num())]->TeamIndex;
+	return BestTeams[FMath::RandHelper(BestTeams.Num())]->TeamIndex;
 }
 
 void AUTTeamGameMode::HandlePlayerIntro()
@@ -638,6 +673,11 @@ void AUTTeamGameMode::DefaultTimer()
 	Super::DefaultTimer();
 	UTGameState->bTeamProjHits = UTGameState->bTeamProjHits || (TeamDamagePct > 0.f); // @TODO FIXMESTEVE make TeamDamagePct protected so don't need to set here
 
+	CheckBotTeams();
+}
+
+void AUTTeamGameMode::CheckBotTeams()
+{
 	// check if bots should switch teams for balancing
 	if (bBalanceTeams && NumBots > 0)
 	{
@@ -652,7 +692,7 @@ void AUTTeamGameMode::DefaultTimer()
 				for (AController* C : Members)
 				{
 					AUTBot* B = Cast<AUTBot>(C);
-					if (B != NULL && B->GetPawn() == NULL)
+					if (B != NULL && ((B->GetPawn() == NULL) || !HasMatchStarted() || UTGameState->IsMatchIntermission()))
 					{
 						ChangeTeam(B, SortedTeams[i]->GetTeamNum(), true);
 						break;

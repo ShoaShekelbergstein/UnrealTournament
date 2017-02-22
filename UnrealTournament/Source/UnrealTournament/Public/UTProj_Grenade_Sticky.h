@@ -22,6 +22,9 @@ public:
 	float LifeTime;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Projectile)
+	float LifeTimeAfterArmed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Projectile)
 	float MinimumLifeTime;
 
 	UPROPERTY(BlueprintReadOnly, Category=Projectile)
@@ -40,6 +43,18 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = Projectile)
 	void ArmGrenade();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = Projectile)
+	void PlayDamagedDetonationEffects();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = Projectile)
+	void PlayIdleEffects();
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	
+	virtual void OnStop(const FHitResult& Hit) override;
+
+	virtual void ProcessHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp, const FVector& HitLocation, const FVector& HitNormal) override;
 
 protected:
 

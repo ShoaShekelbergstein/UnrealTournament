@@ -207,11 +207,18 @@ class UNREALTOURNAMENT_API UUTLocalPlayer : public ULocalPlayer
 	GENERATED_UCLASS_BODY()
 
 public:
+
+	UPROPERTY()
+		FString ClanName;
+
+	virtual FString SetClanName(FString NewClanName);
+
 	virtual ~UUTLocalPlayer();
 
 	virtual bool IsMenuGame();
 
 	virtual FString GetNickname() const;
+	virtual FString GetClanName() const;
 	virtual FText GetAccountSummary() const;
 	virtual FString GetAccountName() const;
 	virtual FText GetAccountDisplayName() const;
@@ -328,7 +335,7 @@ public:
 	UPROPERTY(config)
 		FString YoutubeRefreshToken;
 
-protected:
+public:
 
 #if !UE_SERVER
 	TSharedPtr<class SUTMenuBase> DesktopSlateWidget;
@@ -404,7 +411,9 @@ public:
 	/** accessors for default URL options */
 	virtual FString GetDefaultURLOption(const TCHAR* Key) const;
 	virtual void SetDefaultURLOption(const FString& Key, const FString& Value);
-	virtual void ClearDefaultURLOption(const FString& Key);
+	virtual void ClearDefaultURLOption(const FString& Key); 
+	
+	void RemoveCosmeticsFromDefaultURL();
 
 	// ONLINE ------
 
@@ -471,7 +480,7 @@ protected:
 	bool bInitialSignInAttempt;
 
 	// Holds the local copy of the player nickname.
-	UPROPERTY(config)
+	UPROPERTY()
 	FString PlayerNickname;
 
 	// What is the Epic ID associated with this player.
@@ -515,7 +524,7 @@ public:
 	virtual void ShowAuth();
 
 	UPROPERTY(config)
-	FString LastRankedMatchUniqueId;
+	FString LastRankedMatchPlayerId;
 
 	UPROPERTY(config)
 	FString LastRankedMatchSessionId;
@@ -558,7 +567,6 @@ private:
 	FDelegateHandle OnLogoutCompleteDelegate;
 
 	FDelegateHandle OnEnumerateUserFilesCompleteDelegate;
-	FDelegateHandle OnReadUserFileCompleteDelegate;
 	FDelegateHandle OnWriteUserFileCompleteDelegate;
 	FDelegateHandle OnDeleteUserFileCompleteDelegate;
 
@@ -569,6 +577,10 @@ private:
 
 	FDelegateHandle OnReadTitleFileCompleteDelegate;
 	FDelegateHandle OnEnumerateTitleFilesCompleteDelegate;
+
+	FDelegateHandle OnReadProfileCompleteDelegate;
+	FDelegateHandle OnReadProgressionCompleteDelegate;
+
 
 public:
 	virtual void LoadProfileSettings();
@@ -590,19 +602,20 @@ public:
 
 	bool IsPendingMCPLoad() const;
 
+	virtual FString GetProfileFilename();
+	UUTProfileSettings* CreateProfileSettingsObject(const TArray<uint8>& Buffer);
+
 protected:
 
 	// Holds the current profile settings.  
 	UPROPERTY()
-		UUTProfileSettings* CurrentProfileSettings;
+	UUTProfileSettings* CurrentProfileSettings;
 
 	UPROPERTY()
-		UUTProgressionStorage* CurrentProgression;
+	UUTProgressionStorage* CurrentProgression;
 
-	virtual FString GetProfileFilename();
 	virtual FString GetProgressionFilename();
 	virtual void ClearProfileWarnResults(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
-	virtual void OnReadUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
 	virtual void OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
 	virtual void OnDeleteUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
 	virtual void OnEnumerateUserFilesComplete(bool bWasSuccessful, const FUniqueNetId& InUserId);
@@ -610,6 +623,11 @@ protected:
 	void EnumerateTitleFiles();
 	virtual void OnReadTitleFileComplete(bool bWasSuccessful, const FString& Filename);
 	virtual void OnEnumerateTitleFilesComplete(bool bWasSuccessful);
+
+
+	virtual void OnReadProfileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
+	virtual void OnReadProgressionComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
+
 
 #if !UE_SERVER
 	TSharedPtr<class SUTDialogBase> HUDSettings;
@@ -688,6 +706,8 @@ public:
 	// Holds the session info of the last session this player tried to join.  If there is a join failure, or the reconnect command is used, this session info
 	// will be used to attempt the reconnection.
 	FOnlineSessionSearchResult LastSession;
+
+	FString LastMatchmakingSessionId;
 
 	// Will be true if the last session was a join as spectator
 	bool bLastSessionWasASpectator;
@@ -823,7 +843,7 @@ public:
 	UPROPERTY(config)
 	int32 ServerPingBlockSize;
 
-	virtual void ShowPlayerInfo(TWeakObjectPtr<AUTPlayerState> Target, bool bAllowLogout=false);
+	virtual void ShowPlayerInfo(const FString& TargetId, const FString PlayerName);
 	virtual void OnTauntPlayed(AUTPlayerState* PS, TSubclassOf<AUTTaunt> TauntToPlay, float EmoteSpeed);
 	virtual void OnEmoteSpeedChanged(AUTPlayerState* PS, float EmoteSpeed);
 
@@ -966,6 +986,8 @@ public:
 	virtual void AttemptJoinInstance(TSharedPtr<FServerData> ServerData, FString InstanceId, bool bSpectate);
 	virtual void CloseJoinInstanceDialog();
 
+	void QoSComplete();
+
 protected:
 #if !UE_SERVER
 	TSharedPtr<SUTJoinInstanceWindow> JoinInstanceDialog;
@@ -1011,13 +1033,19 @@ public:
 	}
 
 
-	static const FString& GetRankedPlayFilename()
+	static const FString& GetOnlineSettingsFilename()
 	{
-		const static FString RankedPlayFilename = "UnrealTournamentRankedPlay.json";
-		return RankedPlayFilename;
+		const static FString OnlineSettingsFilename = "UnrealTournamentOnlineSettings.json";
+		return OnlineSettingsFilename;
 	}
 	bool IsRankedMatchmakingEnabled(int32 PlaylistId);
 	TArray<int32> ActiveRankedPlaylists;
+	int32 RankedEloRange;
+	int32 RankedMinEloRangeBeforeHosting;
+	int32 RankedMinEloSearchStep;
+	int32 QMEloRange;
+	int32 QMMinEloRangeBeforeHosting;
+	int32 QMMinEloSearchStep;
 	FOnRankedPlaylistsChangedDelegate OnRankedPlaylistsChanged;
 
 	/** Get the MCP account ID for this player */
@@ -1082,8 +1110,10 @@ protected:
 	int32 FragCenterCounter;
 
 	/** Party related items */
+	bool bAttemptedLauncherJoin;
 	void CreatePersistentParty();
 	void DelayedCreatePersistentParty();
+	void PersistentPartyCreated(const FUniqueNetId& LocalUserId, const ECreatePartyCompletionResult Result);
 	FTimerHandle PersistentPartyCreationHandle;
 	
 	bool bCancelJoinSession;
@@ -1217,7 +1247,7 @@ public:
 
 	virtual FText GetMenuCommandTooltipText(FName MenuCommand) const;
 
-	UPROPERTY(config)
+	UPROPERTY()
 	TArray<FTutorialData> TutorialData;
 
 	UFUNCTION(BlueprintCallable, Category=Tutorial)
@@ -1288,6 +1318,8 @@ public:
 	void ReportAbuse(TWeakObjectPtr<class AUTPlayerState> Troll);
 	void CloseAbuseDialog();
 
+	virtual FSceneView* CalcSceneView(class FSceneViewFamily* ViewFamily, FVector& OutViewLocation,	FRotator& OutViewRotation, FViewport* Viewport,	class FViewElementDrawer* ViewDrawer = NULL, EStereoscopicPass StereoPass = eSSP_FULL) override;
+	
 protected:
 	UPROPERTY()
 	UUTUMGWidget* SavingWidget;
@@ -1299,8 +1331,16 @@ protected:
 	// a save of some data is in progress (progression or profile).
 	uint8 SavingMask; 
 
+	void ChatWidgetConsoleKeyPressed();
+	void SocialInitialized();
+
 public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
 	void CloseSavingWidget();
+
+	UFUNCTION()
+	void UpdateCheck();
+
+	FTimerHandle SocialInitializationTimerHandle;
 };
 

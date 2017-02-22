@@ -15,6 +15,7 @@
 #include "UTPickupMessage.h"
 #include "UTHUDWidget_WeaponCrosshair.h"
 #include "UTATypes.h"
+#include "UTAnalytics.h"
 
 AUTRallyPoint::AUTRallyPoint(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -50,7 +51,7 @@ AUTRallyPoint::AUTRallyPoint(const FObjectInitializer& ObjectInitializer)
 
 	RallyReadyDelay = 3.f;
 	MinimumRallyTime = 10.f;
-	MinPersistentRemaining = 0.5f;
+	MinPersistentRemaining = 1.f;
 	UpdateRallyReadyCountdown(RallyReadyDelay);
 	bIsEnabled = true;
 	RallyOffset = 0;
@@ -59,6 +60,7 @@ AUTRallyPoint::AUTRallyPoint(const FObjectInitializer& ObjectInitializer)
 	bReplicateMovement = false;
 	RallyBeaconText = NSLOCTEXT("UTRallyPoint", "RallyHere", " RALLY HERE! ");
 	LocationText = FText::GetEmpty();
+	EnemyRallyWarning = StatusMessage::EnemyRally;
 }
 
 #if WITH_EDITORONLY_DATA
@@ -190,7 +192,7 @@ void AUTRallyPoint::WarnNoFlag(AUTCharacter* TouchingCharacter)
 {
 	if (TouchingCharacter && !TouchingCharacter->IsPendingKillPending() && Cast<AUTPlayerController>(TouchingCharacter->GetController()))
 	{
-		Cast<AUTPlayerController>(TouchingCharacter->GetController())->ClientReceiveLocalizedMessage(UUTFlagRunGameMessage::StaticClass(), 30);
+		Cast<AUTPlayerController>(TouchingCharacter->GetController())->ClientReceiveLocalizedMessage(UUTFlagRunGameMessage::StaticClass(), 30, TouchingCharacter->PlayerState);
 	}
 }
 
@@ -218,21 +220,57 @@ void AUTRallyPoint::SetRallyPointState(FName NewState)
 	if (Role == ROLE_Authority)
 	{
 		AUTFlagRunGameState* GameState = GetWorld()->GetGameState<AUTFlagRunGameState>();
-		if (GameState && (GameState->CurrentRallyPoint == this))
+		if (GameState)
 		{
-			if ((RallyPointState != RallyPointStates::Powered) && (RallyPointState != RallyPointStates::Charging))
+			if (GameState->CurrentRallyPoint == this)
 			{
-				GameState->CurrentRallyPoint = nullptr;
-				GameState->bEnemyRallyPointIdentified = false;
+				if ((RallyPointState != RallyPointStates::Powered) && (RallyPointState != RallyPointStates::Charging))
+				{
+					GameState->CurrentRallyPoint = nullptr;
+					GameState->bEnemyRallyPointIdentified = false;
+					if (GameState->PendingRallyPoint && ((GameState->PendingRallyPoint->RallyPointState == RallyPointStates::Powered) || (GameState->PendingRallyPoint->RallyPointState == RallyPointStates::Charging)))
+					{
+						GameState->CurrentRallyPoint = GameState->PendingRallyPoint;
+						GameState->PendingRallyPoint = nullptr;
+					}
+				}
 			}
-		}
-		else if (GameState && ((RallyPointState == RallyPointStates::Powered) || (RallyPointState == RallyPointStates::Charging)))
-		{
-			if (GameState->CurrentRallyPoint)
+			else if (RallyPointState == RallyPointStates::Powered)
 			{
-				GameState->CurrentRallyPoint->RallyPoweredTurnOff();
+				if (GameState->CurrentRallyPoint)
+				{
+					GameState->CurrentRallyPoint->RallyPoweredTurnOff();
+				}
+				GameState->CurrentRallyPoint = this;
+				if (GameState->PendingRallyPoint == this)
+				{
+					GameState->PendingRallyPoint = nullptr;
+				}
 			}
-			GameState->CurrentRallyPoint = this;
+			else if (RallyPointState == RallyPointStates::Charging)
+			{
+				if (GameState->CurrentRallyPoint)
+				{
+					if (GameState->PendingRallyPoint)
+					{
+						GameState->PendingRallyPoint->RallyPoweredTurnOff();
+					}
+					GameState->PendingRallyPoint = this;
+				}
+				else
+				{
+					GameState->CurrentRallyPoint = this;
+					if (GameState->PendingRallyPoint)
+					{
+						GameState->PendingRallyPoint->RallyPoweredTurnOff();
+						GameState->PendingRallyPoint = nullptr;
+					}
+				}
+			}
+			else if (GameState->PendingRallyPoint == this)
+			{
+				GameState->PendingRallyPoint = nullptr;
+			}
 		}
 	}
 }
@@ -241,11 +279,13 @@ void AUTRallyPoint::UpdateRallyReadyCountdown(float NewValue)
 {
 	RallyReadyCountdown = FMath::Clamp(NewValue, 0.f, RallyReadyDelay);
 	ReplicatedCountdown = FMath::Max(0, int32(10.f*RallyReadyCountdown));
+	OldClientCountdown = ClientCountdown;
 	ClientCountdown = RallyReadyCountdown;
 }
 
 void AUTRallyPoint::OnReplicatedCountdown()
 {
+	OldClientCountdown = ClientCountdown;
 	ClientCountdown = 0.1f * ReplicatedCountdown;
 }
 
@@ -258,15 +298,15 @@ void AUTRallyPoint::StartRallyCharging()
 	UpdateRallyReadyCountdown(FMath::Max(RallyReadyCountdown, MinPersistentRemaining));
 	SetRallyPointState(RallyPointStates::Charging);
 	OnRallyChargingChanged();
-	if ((Role == ROLE_Authority) && TouchingFC && TouchingFC->GetCarriedObject() && TouchingFC->GetCarriedObject()->bCurrentlyPinged && !GetWorldTimerManager().IsTimerActive(EnemyRallyWarningHandle) && (GetWorld()->GetTimeSeconds() - LastEnemyRallyWarning > 10.f))
+	if ((Role == ROLE_Authority) && TouchingFC && TouchingFC->GetCarriedObject() && TouchingFC->GetCarriedObject()->bCurrentlyPinged && !GetWorldTimerManager().IsTimerActive(EnemyRallyWarningHandle) && (GetWorld()->GetTimeSeconds() - LastEnemyRallyWarning > 9.f))
 	{
-		GetWorldTimerManager().SetTimer(EnemyRallyWarningHandle, this, &AUTRallyPoint::WarnEnemyRally, 0.5f, false);
+		GetWorldTimerManager().SetTimer(EnemyRallyWarningHandle, this, &AUTRallyPoint::WarnEnemyRally, 0.2f, false);
 	}
 }
 
 void AUTRallyPoint::WarnEnemyRally()
 {
-	if ((GetWorld()->GetTimeSeconds() - LastEnemyRallyWarning < 10.f) || (RallyPointState != RallyPointStates::Charging))
+	if ((GetWorld()->GetTimeSeconds() - LastEnemyRallyWarning < 8.f) || (RallyPointState != RallyPointStates::Charging))
 	{
 		return;
 	}
@@ -277,7 +317,7 @@ void AUTRallyPoint::WarnEnemyRally()
 		AUTPlayerState* UTPS = Cast<AUTPlayerState>((*Iterator)->PlayerState);
 		if (UTPS && UTPS->Team && ((UTPS->Team->TeamIndex == 0) != GS->bRedToCap))
 		{
-			UTPS->AnnounceStatus(StatusMessage::EnemyRally);
+			UTPS->AnnounceStatus(EnemyRallyWarning);
 			break;
 		}
 	}
@@ -312,8 +352,9 @@ void AUTRallyPoint::RallyPoweredComplete()
 	SetRallyPointState(NextState);
 	OnRallyChargingChanged();
 
-	if ( (Role == ROLE_Authority) && (NextState == RallyPointStates::Off))
+	if (Role == ROLE_Authority)
 	{
+		int32 MessageIndex = (NextState == RallyPointStates::Off) ? 25 : 26;
 		AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 		if (UTGS != nullptr)
 		{
@@ -322,7 +363,7 @@ void AUTRallyPoint::RallyPoweredComplete()
 				AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
 				if (PC && PC->UTPlayerState && PC->UTPlayerState->Team && (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0)))
 				{
-					PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 25, nullptr);
+					PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), MessageIndex, nullptr);
 				}
 			}
 		}
@@ -382,68 +423,94 @@ void AUTRallyPoint::FlagNearbyChanged(bool bIsNearby)
 
 void AUTRallyPoint::OnRallyChargingChanged()
 {
-	if (GetNetMode() != NM_DedicatedServer)
+	AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+	bool bRedColor = UTGS && UTGS->bRedToCap;
+	if (RallyPointState == RallyPointStates::Powered)
 	{
-		if (RallyPointState == RallyPointStates::Powered)
+		if (GetNetMode() != NM_DedicatedServer)
 		{
 			SetAmbientSound(FullyPoweredSound, false);
 			ChangeAmbientSoundPitch(PoweringUpSound, 1.5f);
-			if (RallyEffectPSC == nullptr)
+			if (!RallyPoweredEffectPSC && (bRedColor ? RallyPoweredEffectRed : RallyPoweredEffectBlue))
 			{
-				RallyEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, RallyChargingEffect, GetActorLocation() - FVector(0.f, 0.f, Capsule->GetUnscaledCapsuleHalfHeight()), GetActorRotation());
+				RallyPoweredEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyPoweredEffectRed : RallyPoweredEffectBlue, GetActorLocation(), GetActorRotation());
 			}
-			static FName NAME_MoteColor(TEXT("MoteColor"));
-			RallyEffectPSC->SetVectorParameter(NAME_MoteColor, FVector(1.f, 1.f, 0.f));
-			static FName NAME_ParticleVelocity(TEXT("ParticleVelocity"));
-			RallyEffectPSC->SetVectorParameter(NAME_ParticleVelocity, FVector(0.f, 0.f, 1000.f));
-			static FName NAME_SmallParticleVelocity(TEXT("SmallParticleVelocity"));
-			RallyEffectPSC->SetVectorParameter(NAME_SmallParticleVelocity, FVector(0.f, 0.f, 1000.f));
 		}
-		else
+
+		AUTFlagRunGame* FlagRunGame = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
+		AUTCharacter* NearbyFC = FlagRunGame && FlagRunGame->ActiveFlag ? FlagRunGame->ActiveFlag->HoldingPawn : nullptr;
+		if ((Role == ROLE_Authority) && FlagRunGame && NearbyFC && (FUTAnalytics::IsAvailable()))
 		{
-			if (RallyEffectPSC != nullptr)
-			{
-				// clear it
-				RallyEffectPSC->ActivateSystem(false);
-				RallyEffectPSC->UnregisterComponent();
-				RallyEffectPSC = nullptr;
-			}
-			if (RallyPointState == RallyPointStates::Charging)
+			FUTAnalytics::FireEvent_RallyPointCompleteActivate(FlagRunGame, Cast<AUTPlayerState>(NearbyFC->PlayerState));
+		}
+	}
+	else
+	{
+		if ((GetNetMode() != NM_DedicatedServer) && (RallyPoweredEffectPSC != nullptr))
+		{
+			// clear it
+			RallyPoweredEffectPSC->ActivateSystem(false);
+			RallyPoweredEffectPSC->UnregisterComponent();
+			RallyPoweredEffectPSC = nullptr;
+
+			// spawn rallyfinished
+			UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyFinishedEffectRed : RallyFinishedEffectBlue, GetActorLocation(), GetActorRotation());
+		}
+		if (RallyPointState == RallyPointStates::Charging)
+		{
+			if (GetNetMode() != NM_DedicatedServer)
 			{
 				SetAmbientSound(PoweringUpSound, false);
 				ChangeAmbientSoundPitch(PoweringUpSound, 0.5f);
 				UUTGameplayStatics::UTPlaySound(GetWorld(), FCTouchedSound, this, SRT_All);
-				RallyEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, RallyChargingEffect, GetActorLocation() - FVector(0.f, 0.f, Capsule->GetUnscaledCapsuleHalfHeight()), GetActorRotation());
-				AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-				bHaveGameState = (UTGS != nullptr);
-				static FName NAME_MoteColor(TEXT("MoteColor"));
-				RallyEffectPSC->SetVectorParameter(NAME_MoteColor, UTGS && UTGS->bRedToCap ? FVector(1.f, 0.f, 0.f) : FVector(0.f, 0.f, 1.f));
-				if ((Role == ROLE_Authority) && (UTGS != nullptr))
+				RallyChargingEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? RallyChargingEffectRed : RallyChargingEffectBlue, GetActorLocation(), GetActorRotation());
+			}
+			bHaveGameState = (UTGS != nullptr);
+			if ((Role == ROLE_Authority) && (UTGS != nullptr))
+			{
+				AUTFlagRunGame* FlagRunGame = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
+				AUTCharacter* NearbyFC = FlagRunGame && FlagRunGame->ActiveFlag ? FlagRunGame->ActiveFlag->HoldingPawn : nullptr;
+				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 				{
-					AUTFlagRunGame* FlagRunGame = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
-					AUTCharacter* NearbyFC = FlagRunGame && FlagRunGame->ActiveFlag ? FlagRunGame->ActiveFlag->HoldingPawn : nullptr;
-					for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+					AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+					if (PC && PC->UTPlayerState && (PC->GetPawn() != NearbyFC) && PC->UTPlayerState->Team && (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0)))
 					{
-						AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-						if (PC && PC->UTPlayerState && (PC->GetPawn() != NearbyFC) && PC->UTPlayerState->Team && (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0)))
-						{
-							PC->UTClientPlaySound(FCTouchedSound);
-						}
+						PC->UTClientPlaySound(FCTouchedSound);
 					}
 				}
-			}
-			else
-			{
-				SetAmbientSound(nullptr, false);
-				UUTGameplayStatics::UTPlaySound(GetWorld(), RallyBrokenSound, this, SRT_All);
-				if ((Role == ROLE_Authority) && ((RallyReadyCountdown  < 2.f) || !TouchingFC || TouchingFC->IsDead()))
+
+				//if this is a fresh attempt, send an analytic
+				if (FUTAnalytics::IsAvailable() && NearbyFC && FlagRunGame && (RallyReadyCountdown == RallyReadyDelay))
 				{
-					AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-					bool bNotifyAllPlayers = !TouchingFC || TouchingFC->IsDead() || (TouchingFC->GetCarriedObject() && TouchingFC->GetCarriedObject()->bCurrentlyPinged);
+					FUTAnalytics::FireEvent_RallyPointBeginActivate(FlagRunGame, Cast<AUTPlayerState>(NearbyFC->PlayerState));
+				}
+			}
+		}
+		else
+		{
+			if (GetNetMode() != NM_DedicatedServer)
+			{
+				if (RallyChargingEffectPSC != nullptr)
+				{
+					// clear it
+					RallyChargingEffectPSC->ActivateSystem(false);
+					RallyChargingEffectPSC->UnregisterComponent();
+					RallyChargingEffectPSC = nullptr;
+
+					// spawn charge stopped
+					LosingChargeEffectPSC = UGameplayStatics::SpawnEmitterAtLocation(this, bRedColor ? LosingChargeEffectRed : LosingChargeEffectBlue, GetActorLocation(), GetActorRotation());
+					UUTGameplayStatics::UTPlaySound(GetWorld(), RallyBrokenSound, this, SRT_All);
+				}
+				SetAmbientSound(nullptr, false);
+			}
+			if ((Role == ROLE_Authority) && ((RallyReadyCountdown  < 2.f) || !TouchingFC || TouchingFC->IsDead()))
+			{
+				if ((UTGS->CurrentRallyPoint == nullptr) || (UTGS->CurrentRallyPoint == this))
+				{
 					for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 					{
 						AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-						if (PC && PC->UTPlayerState && PC->UTPlayerState->Team && (bNotifyAllPlayers || (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0))))
+						if (PC && PC->UTPlayerState && PC->UTPlayerState->Team && (UTGS->bRedToCap == (PC->UTPlayerState->Team->TeamIndex == 0)))
 						{
 							PC->UTClientPlaySound(RallyBrokenSound);
 						}
@@ -451,14 +518,14 @@ void AUTRallyPoint::OnRallyChargingChanged()
 				}
 			}
 		}
-		OnAvailableEffectChanged();
 	}
+	OnAvailableEffectChanged();
 	OnRallyStateChanged();
 }
 
 void AUTRallyPoint::OnAvailableEffectChanged()
 {
-	if (bIsEnabled)
+	if (bIsEnabled && (GetNetMode() != NM_DedicatedServer))
 	{
 		if (AvailableEffectPSC == nullptr)
 		{
@@ -534,18 +601,28 @@ void AUTRallyPoint::Tick(float DeltaTime)
 						AUTFlagRunGameState* UTGS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 						if (UTGS != nullptr)
 						{
-							for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+							for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 							{
-								AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-								if (PC && PC->UTPlayerState)
+								AUTPlayerState* PS = Cast<AUTPlayerState>(Iterator->IsValid() ? Iterator->Get()->PlayerState : nullptr);
+								if (PS != nullptr)
 								{
-									if (!UTGS->OnSameTeam(NearbyFC, PC))
+									PS->bRallyActivated = true;
+									PS->ForceNetUpdate();
+									AUTPlayerController* PC = Cast<AUTPlayerController>(Iterator->Get());
+									if (PC != nullptr)
 									{
-										PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 28, NearbyFC->PlayerState);
-									}
-									else if (PC->UTPlayerState->bCanRally)
-									{
-										PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), PC->UTPlayerState->CarriedObject ? 22 : 30, NearbyFC->PlayerState);
+										if (!UTGS->OnSameTeam(NearbyFC, PC))
+										{
+											PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 28, NearbyFC->PlayerState);
+										}
+										else
+										{
+
+											if (!PC->GetUTCharacter() || PC->GetUTCharacter()->bCanRally || PC->GetUTCharacter()->GetCarriedObject())
+											{
+												PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), PC->UTPlayerState->CarriedObject ? 22 : 30, NearbyFC->PlayerState);
+											}
+										}
 									}
 								}
 							}
@@ -563,6 +640,7 @@ void AUTRallyPoint::Tick(float DeltaTime)
 						if (NearbyFC->Health < NearbyFC->HealthMax)
 						{
 							NearbyFC->Health += FMath::Min(50, NearbyFC->HealthMax - NearbyFC->Health);
+							NearbyFC->OnHealthUpdated();
 							AUTPlayerController* FCPC = Cast<AUTPlayerController>(NearbyFC->GetController());
 							if (FCPC)
 							{
@@ -781,7 +859,7 @@ void AUTRallyPoint::DrawChargingThermometer(APlayerController* PC, UCanvas* Canv
 		float WidthScale = Canvas->ClipX / 1920.f;;
 		float HeightScale = WidthScale;
 		WidthScale *= 0.75f;
-		FLinearColor ChargeColor = FLinearColor::White;
+		FLinearColor ChargeColor = (RallyPointState == RallyPointStates::Charging) ? FLinearColor::White : REDHUDCOLOR;
 		float ChargePct = FMath::Clamp((RallyReadyDelay - ClientCountdown) / RallyReadyDelay, 0.f, 1.f);
 		UTexture* Texture = UTPC->MyUTHUD->HUDAtlas;
 		float DistanceScaling = 1.f;

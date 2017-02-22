@@ -237,7 +237,7 @@ int32 UUTPathNode::GetBestLinkTo(NavNodeRef StartPoly, const struct FRouteCacheI
 		int32 BestIndex = INDEX_NONE;
 		for (int32 i = 0; i < Paths.Num(); i++)
 		{
-			if (Paths[i].End.IsValid() && Paths[i].End == Target.Node && Paths[i].EndPoly == Target.TargetPoly && Paths[i].Supports(ReachParams.Radius, ReachParams.HalfHeight, ReachParams.MoveFlags))
+			if (Paths[i].End.IsValid() && Paths[i].End == Target.Node && Paths[i].EndPoly == Target.TargetPoly && Paths[i].Supports(ReachParams.Radius, ReachParams.HalfHeight, ReachParams.InitialHalfHeight, ReachParams.MoveFlags))
 			{
 				int32 Dist = Paths[i].CostFor(Asker, AgentProps, ReachParams, RequestOwner, StartPoly, NavMesh);
 				if (Dist < BestDist)

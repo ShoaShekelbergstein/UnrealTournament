@@ -70,7 +70,7 @@ FVector2D UUTHUDWidget_QuickStats::CalcRotOffset(FVector2D InitialPosition, floa
 void UUTHUDWidget_QuickStats::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCanvas* InCanvas, FVector2D InCanvasCenter)
 {
 	// Look to see if we should draw the ammo...
-	DrawAngle = InUTHUDOwner->GetQuickStatsAngle();
+	DrawAngle = 180.f;
 
 	float DrawDistance = InUTHUDOwner->GetQuickStatsDistance();
 	FName DisplayTag = InUTHUDOwner->GetQuickStatsType();
@@ -336,11 +336,7 @@ void UUTHUDWidget_QuickStats::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCa
 
 		bool bPlayerCanRally = UTHUDOwner->UTPlayerOwner->CanPerformRally();
 		AUTFlagRunGameState* GameState = GetWorld()->GetGameState<AUTFlagRunGameState>();
-		bool bShowTimer = !bPlayerCanRally && !UTPlayerState->CarriedObject && UTPlayerState->Team && GameState && GameState->bAttackersCanRally && ((UTPlayerState->Team->TeamIndex == 0) == GameState->bRedToCap) && (UTPlayerState->CarriedObject == nullptr) && CharOwner && CharOwner->bCanRally && (UTPlayerState->RemainingRallyDelay > 0);
-		if (GameState && GameState->CurrentRallyPoint)
-		{
-			bShowTimer = bShowTimer || (GameState && !GameState->bAttackersCanRally && UTPlayerState->Team && ((UTPlayerState->Team->TeamIndex == 0) == GameState->bRedToCap));
-		}
+		bool bShowTimer = (GameState && GameState->CurrentRallyPoint && !GameState->bAttackersCanRally && UTPlayerState->Team && ((UTPlayerState->Team->TeamIndex == 0) == GameState->bRedToCap));
 		if (UTPlayerState->CarriedObject != nullptr || bPlayerCanRally || bShowTimer)
 		{
 			FlagInfo.bCustomIconUnderlay = false;
@@ -357,7 +353,7 @@ void UUTHUDWidget_QuickStats::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCa
 			}
 			else
 			{
-				FlagInfo.IconColor = UTPlayerState->CarriedObject->GetTeamNum() == 0 ? FLinearColor::Red : FLinearColor::Blue;
+				FlagInfo.IconColor = UTPlayerState->CarriedObject->GetTeamNum() == 0 ? REDHUDCOLOR : BLUEHUDCOLOR;
 				FlagInfo.Label = FText::GetEmpty();
 			}
 
@@ -381,11 +377,9 @@ void UUTHUDWidget_QuickStats::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCa
 					FlagInfo.Animate(StatAnimTypes::Scale, 2.0f, 3.25f, 1.0f, true);
 				}
 			}
-			else if (bShowTimer)
+			else if (bShowTimer && GameState && GameState->CurrentRallyPoint)
 			{
-				int32 RemainingTime = UTPlayerState->CarriedObject && GameState && GameState->CurrentRallyPoint
-											? FMath::Min(int32(GameState->CurrentRallyPoint->RallyReadyDelay), 1 + GameState->CurrentRallyPoint->ReplicatedCountdown/10)
-											: 1 + FMath::Max(int32(UTPlayerState->RemainingRallyDelay), (GameState && GameState->CurrentRallyPoint) ? GameState->CurrentRallyPoint->ReplicatedCountdown/10 : 0);
+				int32 RemainingTime = FMath::Min(int32(GameState->CurrentRallyPoint->RallyReadyDelay), 1 + GameState->CurrentRallyPoint->ReplicatedCountdown / 10);
 				FlagInfo.Label = FText::AsNumber(RemainingTime);
 			}
 

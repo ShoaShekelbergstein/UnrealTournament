@@ -16,7 +16,6 @@ class UNREALTOURNAMENT_API UUTPowerupUseMessage : public UUTLocalMessage
 	virtual FName GetAnnouncementName_Implementation(int32 Switch, const UObject* OptionalObject, const class APlayerState* RelatedPlayerState_1, const class APlayerState* RelatedPlayerState_2) const override;
 	virtual void PrecacheAnnouncements_Implementation(class UUTAnnouncer* Announcer) const override;
 	virtual bool ShouldPlayAnnouncement(const FClientReceiveData& ClientData) const override;
-	virtual float GetAnnouncementDelay(int32 Switch) override;
 	virtual bool InterruptAnnouncement(const FAnnouncementInfo AnnouncementInfo, const FAnnouncementInfo OtherAnnouncementInfo) const override;
 	virtual float GetAnnouncementPriority(const FAnnouncementInfo AnnouncementInfo) const override;
 };

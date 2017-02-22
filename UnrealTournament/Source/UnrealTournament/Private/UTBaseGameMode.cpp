@@ -16,6 +16,7 @@ AUTBaseGameMode::AUTBaseGameMode(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
 	ReplaySpectatorPlayerControllerClass = AUTDemoRecSpectator::StaticClass();
+	bIgnoreIdlePlayers = false;
 }
 
 void AUTBaseGameMode::PreInitializeComponents()
@@ -54,6 +55,9 @@ void AUTBaseGameMode::InitGame( const FString& MapName, const FString& Options, 
 
 	// Grab the InstanceID if it's there.
 	LobbyInstanceID = UGameplayStatics::GetIntOption(Options, TEXT("InstanceID"), 0);
+
+	//Make an instance GUID to report back in analytics. This is to track all actions that happened in a single context.
+	ContextGUID = FGuid::NewGuid();
 
 	// If we are a lobby instance, then we always want to generate a ServerInstanceID
 	if (LobbyInstanceID > 0)
@@ -120,7 +124,7 @@ void AUTBaseGameMode::InitGame( const FString& MapName, const FString& Options, 
 		UE_LOG(UT,Log,TEXT("=== This is a Training Ground Server.  It will only be visibly to beginners ==="));
 	}
 
-
+	bIgnoreIdlePlayers = EvalBoolOptions(UGameplayStatics::ParseOption(Options, TEXT("IgnoreIdle")), bIgnoreIdlePlayers);
 	UE_LOG(UT,Log,TEXT("Password: %i %s"), bRequirePassword, ServerPassword.IsEmpty() ? TEXT("NONE") : *ServerPassword)
 }
 
@@ -132,6 +136,12 @@ void AUTBaseGameMode::InitGameState()
 	{
 		GS->ServerInstanceGUID = ServerInstanceGUID;
 		GS->ServerName = ServerNameOverride;
+
+		// If someone decides to set the server name black in the ini, stop them
+		if (GS->ServerName.IsEmpty())
+		{
+			GS->ServerName = TEXT("UT Server");
+		}
 	}
 }
 
@@ -227,6 +237,16 @@ APlayerController* AUTBaseGameMode::Login(class UPlayer* NewPlayer, ENetRole InR
 
 	APlayerController* PC = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
 
+	// Init player's ClanTag
+	if (PC && Cast<AUTPlayerState>(PC->PlayerState))
+	{
+		FString InName = UGameplayStatics::ParseOption(Options, TEXT("Clan")).Left(8);
+		if (!InName.IsEmpty())
+		{
+			((AUTPlayerState*)(PC->PlayerState))->ClanName = InName;
+		}
+	}
+
 #if WITH_PROFILE
 	if (PC != NULL)
 	{
@@ -282,59 +302,32 @@ void AUTBaseGameMode::GenericPlayerInitialization(AController* C)
 
 void AUTBaseGameMode::ChangeName(AController* Other, const FString& S, bool bNameChange)
 {
-	// Cap player name at 15 characters...
-	FString ClampedName = (S.Len() > 16) ? S.Left(16) : S;
-
-	// Unicode 160 is an empty space, not sure what other characters are broken in our font
-	int32 FindCharIndex;
-	bool bForceAccountName = (ClampedName.FindChar(160, FindCharIndex) || ClampedName.FindChar(38, FindCharIndex)) || (FCString::Stricmp(TEXT("Player"), *ClampedName) == 0);
-
 	AUTPlayerState* PS = Cast<AUTPlayerState>(Other->PlayerState);
-	if (!PS || ((FCString::Stricmp(*PS->PlayerName, *ClampedName) == 0) && !bForceAccountName))
+	if (!PS)
 	{
 		return;
 	}
 
-	// Look to see if someone else is using the the new name
-	bool bNameMatchesAccount = false;
-	AUTGameState* UTGameState = Cast<AUTGameState>(GameState);
-	FText EpicAccountName = FText::GetEmpty();
-	if (UTGameState)
+	// Unicode 160 is an empty space, not sure what other characters are broken in our font
+	int32 FindCharIndex;
+	FString ClampedName = (S.Len() > 16) ? S.Left(16) : S;
+	FString InvalidNameChars = FString(INVALID_NAME_CHARACTERS);
+	for (int32 i = ClampedName.Len() - 1; i >= 0; i--)
 	{
-		TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*PS->StatsID));
-		EpicAccountName = UTGameState->GetEpicAccountNameForAccount(UserId);
-		if (bForceAccountName)
+		if (InvalidNameChars.GetCharArray().Contains(ClampedName.GetCharArray()[i]))
 		{
-			PS->RequestedName = EpicAccountName.IsEmpty() ? ClampedName : TEXT("");
-			ClampedName = EpicAccountName.IsEmpty() ? FString::Printf(TEXT("%s%i"), *DefaultPlayerName.ToString(), PS->PlayerId) : EpicAccountName.ToString();
-		}
-		bNameMatchesAccount = (EpicAccountName.ToString() == ClampedName);
-	}
-	else if (bForceAccountName)
-	{
-		ClampedName = TEXT("JCenaHLR");
-	}
-	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
-	{
-		AController* Controller = Iterator->Get();
-		if (Controller->PlayerState && (Controller->PlayerState != PS) && (FCString::Stricmp(*Controller->PlayerState->PlayerName, *ClampedName) == 0))
-		{
-			if (bNameMatchesAccount)
-			{
-				Controller->PlayerState->SetPlayerName("NOT" + Controller->PlayerState->PlayerName.Left(12));
-			}
-			else if (Cast<APlayerController>(Other) != NULL)
-			{
-				if (EpicAccountName.IsEmpty())
-				{
-					PS->RequestedName = ClampedName;
-				}
-				ClampedName = EpicAccountName.IsEmpty() ? FString::Printf(TEXT("%s%i"), *DefaultPlayerName.ToString(), PS->PlayerId) : EpicAccountName.ToString();
-				break;
-			}
+			ClampedName.GetCharArray().RemoveAt(i);
 		}
 	}
-	PS->SetPlayerName(ClampedName);
+	if ((ClampedName.FindChar(160, FindCharIndex) || ClampedName.FindChar(38, FindCharIndex)) || (FCString::Stricmp(TEXT("Player"), *ClampedName) == 0))
+	{
+		ClampedName = FString::Printf(TEXT("%s%i"), *DefaultPlayerName.ToString(), PS->PlayerId);
+	}
+
+	if (FCString::Stricmp(*PS->PlayerName, *ClampedName) != 0)
+	{
+		PS->SetPlayerName(ClampedName);
+	}
 }
 
 bool AUTBaseGameMode::FindRedirect(const FString& PackageName, FPackageRedirectReference& Redirect)

@@ -26,6 +26,12 @@ void AUTTeamPathBlocker::AddSpecialPaths(class UUTPathNode* MyNode, class AUTRec
 		}
 	}
 
+	// test pathable height of the team door when it's open
+	FCapsuleSize MaxSize = NavData->GetMaxPathSize();
+	FVector Origin, Extent;
+	GetActorBounds(false, Origin, Extent);
+	const int32 MaxHeight = GetWorld()->OverlapBlockingTestByChannel(Origin, FQuat::Identity, ECC_Pawn, FCollisionShape::MakeCapsule(MaxSize.Radius, MaxSize.Height), FCollisionQueryParams(NAME_None, false, this), WorldResponseParams) ? NavData->GetHumanPathSize().Height : MaxSize.Height;
+
 	// add reverse paths to the normal walking paths that use our special ReachSpec for team checking
 	for (const UUTPathNode* OtherNode : NavData->GetAllNodes())
 	{
@@ -37,7 +43,7 @@ void AUTTeamPathBlocker::AddSpecialPaths(class UUTPathNode* MyNode, class AUTRec
 				{
 					UUTReachSpec_Team* NewSpec = NewObject<UUTReachSpec_Team>(MyNode);
 					NewSpec->Arbiter = this;
-					FUTPathLink* NewLink = new(MyNode->Paths) FUTPathLink(MyNode, OtherLink.EndPoly, OtherNode, OtherLink.StartEdgePoly, NewSpec, OtherLink.CollisionRadius, OtherLink.CollisionHeight, OtherLink.ReachFlags);
+					FUTPathLink* NewLink = new(MyNode->Paths) FUTPathLink(MyNode, OtherLink.EndPoly, OtherNode, OtherLink.StartEdgePoly, NewSpec, OtherLink.CollisionRadius, FMath::Min<int32>(OtherLink.CollisionHeight, MaxHeight), OtherLink.ReachFlags);
 					for (NavNodeRef PolyRef : MyNode->Polys)
 					{
 						NewLink->Distances.Add(NavData->CalcPolyDistance(PolyRef, NewLink->EndPoly));

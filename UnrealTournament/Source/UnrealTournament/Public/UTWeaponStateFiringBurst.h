@@ -11,6 +11,10 @@ class UNREALTOURNAMENT_API UUTWeaponStateFiringBurst : public UUTWeaponStateFiri
 {
 	GENERATED_UCLASS_BODY()
 
+	/** (optional) startup time before first shot - does not apply to subsequent bursts if the button is held down and bSingleBurstOnly is false */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Burst)
+	float StartupDelay;
+
 	/** Number of shots in a burst */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Burst)
 	int32 BurstSize;
@@ -27,6 +31,7 @@ class UNREALTOURNAMENT_API UUTWeaponStateFiringBurst : public UUTWeaponStateFiri
 	int32 CurrentShot;
 
 	virtual void BeginState(const UUTWeaponState* PrevState) override;
+	virtual void EndState() override;
 	virtual void UpdateTiming() override;
 
 	/** called after the refire delay to see what we should do next (generally, fire or go back to active state) */

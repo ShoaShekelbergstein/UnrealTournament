@@ -7,6 +7,7 @@
 #include "UTFlagRunPvESquadAI.h"
 #include "UTPvEGameMessage.h"
 #include "UTFlagRunPvEGameState.h"
+#include "UTPickupEnergy.h"
 #include "SNumericEntryBox.h"
 #include "Slate/SUWindowsStyle.h"
 
@@ -15,7 +16,6 @@ AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 {
 	bBalanceTeams = false;
 	BotFillCount = 5;
-	QuickPlayersToStart = 5;
 	NumRounds = 1;
 	GoalScore = 1;
 	UnlimitedRespawnWaitTime = 10.0f;
@@ -30,18 +30,21 @@ AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 	SquadType = AUTFlagRunPvESquadAI::StaticClass();
 	GameStateClass = AUTFlagRunPvEGameState::StaticClass();
 	DisplayName = NSLOCTEXT("UTGameMode", "FRPVE", "Flag Invasion");
+	DefaultMaxPlayers = 5;
 
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/BronzeTaye.BronzeTaye_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/BronzeTayeBio.BronzeTayeBio_C")));
+	//EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/BronzeTayeFlame.BronzeTayeFlame_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/SilverSkaarj.SilverSkaarj_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/SilverSkaarjBoots.SilverSkaarjBoots_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/Ghost.Ghost_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/ShieldBot.ShieldBot_C")));
+	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/Bobodemon.Bobodemon_C")));
 
-	BoostPowerupTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_Recall.BP_Recall_C")));
 	BoostPowerupTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/Boost_RocketSalvo.Boost_RocketSalvo_C")));
 	BoostPowerupTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/Boost_ShieldBubble.Boost_ShieldBubble_C")));
 	BoostPowerupTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/Boost_AmmoShower.Boost_AmmoShower_C")));
+	BoostPowerupTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_Recall.BP_Recall_C")));
 
 	VialReplacement = FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Energy_Small.Energy_Small_C"));
 }
@@ -56,6 +59,8 @@ void AUTFlagRunPvEGame::PreloadClientAssets(TArray<UObject*>& ObjList) const
 			ObjList.Add(NewType);
 		}
 	}
+
+	Super::PreloadClientAssets(ObjList);
 }
 
 void AUTFlagRunPvEGame::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -77,28 +82,41 @@ void AUTFlagRunPvEGame::InitGame(const FString& MapName, const FString& Options,
 	}
 
 	Super::InitGame(MapName, Options, ErrorMessage);
-	GameSession->MaxPlayers = 5;
+	GameSession->MaxPlayers = FMath::Min(GameSession->MaxPlayers, DefaultMaxPlayers);
+
+	for (TActorIterator<AUTPickupEnergy> It(GetWorld()); It; ++It)
+	{
+		bLevelHasEnergyPickups = true;
+		break;
+	}
 }
 
 bool AUTFlagRunPvEGame::CheckRelevance_Implementation(AActor* Other)
 {
-	AUTPickupHealth* Health = Cast<AUTPickupHealth>(Other);
-	if (Health != nullptr && Health->bSuperHeal && Health->HealAmount <= 5)
+	if (bLevelHasEnergyPickups)
 	{
-		TSubclassOf<AUTPickup> NewItemType = VialReplacement.TryLoadClass<AUTPickup>();
-		if (NewItemType != nullptr)
+		return Super::CheckRelevance_Implementation(Other);
+	}
+	else
+	{
+		AUTPickupHealth* Health = Cast<AUTPickupHealth>(Other);
+		if (Health != nullptr && Health->bSuperHeal && Health->HealAmount <= 5)
 		{
-			GetWorld()->SpawnActor<AUTPickup>(NewItemType, Health->GetActorTransform());
-			return false;
+			TSubclassOf<AUTPickup> NewItemType = VialReplacement.TryLoadClass<AUTPickup>();
+			if (NewItemType != nullptr)
+			{
+				GetWorld()->SpawnActor<AUTPickup>(NewItemType, Health->GetActorTransform());
+				return false;
+			}
+			else
+			{
+				return Super::CheckRelevance_Implementation(Other);
+			}
 		}
 		else
 		{
 			return Super::CheckRelevance_Implementation(Other);
 		}
-	}
-	else
-	{
-		return Super::CheckRelevance_Implementation(Other);
 	}
 }
 
@@ -106,8 +124,17 @@ void AUTFlagRunPvEGame::InitGameState()
 {
 	Super::InitGameState();
 
-	// needed here also for warmup
-	InitBoostTypes();
+	AUTFlagRunPvEGameState* GS = Cast<AUTFlagRunPvEGameState>(GameState);
+	GS->GameDifficulty = FMath::TruncToInt(GameDifficulty);
+	if (BoostPowerupTypes.Num() > 0)
+	{
+		InitBoostTypes();
+		bAllowBoosts = true;
+		GS->bAllowBoosts = true;
+		GS->BoostRechargeTime = 180.0f;
+		GS->OffenseKillsNeededForPowerup = 1000000; // i.e. never
+		GS->DefenseKillsNeededForPowerup = 1000000;
+	}
 }
 
 void AUTFlagRunPvEGame::InitBoostTypes()
@@ -132,11 +159,7 @@ void AUTFlagRunPvEGame::StartMatch()
 	AUTFlagRunPvEGameState* GS = Cast<AUTFlagRunPvEGameState>(GameState);
 	if (BoostPowerupTypes.Num() > 0)
 	{
-		bAllowBoosts = true;
-		GS->bAllowBoosts = true;
-		GS->BoostRechargeTime = 180.0f;
-		GS->OffenseKillsNeededForPowerup = 1000000; // i.e. never
-		GS->DefenseKillsNeededForPowerup = 1000000;
+		// make sure selectable powerup options don't get clobbered by round start
 		InitBoostTypes();
 	}
 	GS->KillsUntilExtraLife = BaseKillsForExtraLife;
@@ -243,11 +266,11 @@ void AUTFlagRunPvEGame::SpawnMonster(TSubclassOf<AUTMonster> MonsterClass)
 	AUTMonsterAI* NewAI = GetWorld()->SpawnActor<AUTMonsterAI>(AIType);
 	NewAI->PawnClass = MonsterClass;
 	NewAI->PlayerState->SetPlayerName(MonsterClass.GetDefaultObject()->DisplayName.ToString());
+	NewAI->Personality = MonsterClass.GetDefaultObject()->AIPersonality;
 	NewAI->InitializeSkill(GameDifficulty);
 	AUTPlayerState* PS = Cast<AUTPlayerState>(NewAI->PlayerState);
 	if (PS != NULL)
 	{
-		PS->bReadyToPlay = true;
 		PS->bDrawNameOnDeathIndicator = MonsterClass.GetDefaultObject()->Cost > 0;
 		PS->HUDIcon = MonsterClass.GetDefaultObject()->HUDIcon;
 		PS->RemainingLives = MonsterClass.GetDefaultObject()->NumRespawns;

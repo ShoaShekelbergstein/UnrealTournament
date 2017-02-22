@@ -29,6 +29,9 @@ void SUTChatEditBox::Construct(const FArguments& InArgs, TWeakObjectPtr<UUTLocal
 	TAttribute<FSlateColor> BackgroundColor = BackgroundColorOverride.IsSet() ? BackgroundColorOverride : InArgs._Style->BackgroundColor;
 	ReadOnlyForegroundColor = InArgs._Style->ReadOnlyForegroundColor;
 
+	ConsoleKeyPressedDelegate = InArgs._OnConsoleKeyPressed;
+	ConsoleKeyName = InArgs._ConsoleKeyName;
+
 	SBorder::Construct( SBorder::FArguments()
 		.BorderImage( this, &SUTChatEditBox::GetBorderImage )
 		.BorderBackgroundColor( BackgroundColor )
@@ -89,6 +92,13 @@ void SUTChatEditBox::SetCommittedDelegate(FOnTextCommitted inOnTextCommitted)
 
 FReply SUTChatEditBox::InternalOnKeyDown( const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent )
 {
+	if (InKeyEvent.GetKey() == ConsoleKeyName)
+	{
+		if (ConsoleKeyPressedDelegate.IsBound())
+		{
+			ConsoleKeyPressedDelegate.Execute();
+		}
+	}
 
 	if (InKeyEvent.GetKey() == EKeys::Up || InKeyEvent.GetKey() == EKeys::Down)
 	{

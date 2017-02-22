@@ -102,7 +102,7 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 
 		if (!PC->SkipTutorialCheck())
 		{
-			if (ProfileSettings != nullptr && !FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")) )
+			if (ProfileSettings != nullptr && !FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")) && !FParse::Param(FCommandLine::Get(), TEXT("playoffline")) )
 			{
 				if (ProfileSettings->TutorialMask == 0 )
 				{
@@ -130,10 +130,10 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 		}
 
 #if !UE_SERVER
+		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(PC->Player);
 		// start with tutorial menu if requested
 		if (bForceTutorialMenu || LastURL.HasOption(TEXT("tutorialmenu")))
 		{
-			UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(PC->Player);
 			// NOTE: If we are in a party, never return to the tutorial menu
 			if (LP != NULL && !LP->IsInAnActiveParty())
 			{
@@ -147,6 +147,7 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 			// make sure this doesn't get kept around
 			LastURL.RemoveOption(TEXT("tutorialmenu"));
 		}
+		LP->UpdateCheck();
 #endif
 	}
 

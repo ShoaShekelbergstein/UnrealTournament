@@ -574,11 +574,11 @@ void SUTLoadoutWindow::RefreshSelectedItemsList()
 	}
 }
 
-void SUTLoadoutWindow::AvailableUpdateItemInfo(int32 Index)
+void SUTLoadoutWindow::AvailableUpdateItemInfo(TSharedPtr<SUTButton> Button)
 {
-	if (Index >= 0 && Index <= AvailableItems.Num())
+	if (Button.IsValid() && AvailableItems.IsValidIndex(Button->WidgetTag))
 	{
-		CurrentItem = AvailableItems[Index];
+		CurrentItem = AvailableItems[Button->WidgetTag];
 	}
 }
 

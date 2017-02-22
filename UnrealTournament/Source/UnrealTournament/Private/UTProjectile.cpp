@@ -64,6 +64,7 @@ AUTProjectile::AUTProjectile(const class FObjectInitializer& ObjectInitializer)
 	Momentum = 50000.0f;
 	InstigatorVelocityPct = 0.f;
 	bDamageOnBounce = true;
+	InstigatorTeamNum = 255;
 
 	SetReplicates(true);
 	bNetTemporary = false;
@@ -181,6 +182,8 @@ void AUTProjectile::OnRep_Instigator()
 {
 	if (Instigator != NULL)
 	{
+		InstigatorTeamNum = GetTeamNum(); // this checks Instigator first
+
 		InstigatorController = Instigator->Controller;
 		if (Cast<AUTCharacter>(Instigator))
 		{
@@ -522,11 +525,7 @@ void AUTProjectile::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& 
 		BPClass->GetLifetimeBlueprintReplicationList(OutLifetimeProps);
 	}
 
-	//DOREPLIFETIME(AActor, Role);
-	//DOREPLIFETIME(AActor, RemoteRole);
-	//DOREPLIFETIME(AActor, Owner);
 	DOREPLIFETIME(AActor, bHidden);
-
 	DOREPLIFETIME(AActor, bTearOff);
 	DOREPLIFETIME(AActor, bCanBeDamaged);
 
@@ -534,11 +533,7 @@ void AUTProjectile::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& 
 	//DOREPLIFETIME(AActor, AttachmentReplication);
 
 	DOREPLIFETIME(AActor, Instigator);
-
-	//DOREPLIFETIME_CONDITION(AActor, ReplicatedMovement, COND_SimulatedOrPhysics);
-
 	DOREPLIFETIME_CONDITION(AUTProjectile, UTProjReplicatedMovement, COND_SimulatedOrPhysics);
-
 	DOREPLIFETIME(AUTProjectile, Slomo);
 }
 
@@ -768,7 +763,13 @@ void AUTProjectile::OnBounce(const struct FHitResult& ImpactResult, const FVecto
 
 bool AUTProjectile::InteractsWithProj(AUTProjectile* OtherProj)
 {
-	return (bAlwaysShootable || OtherProj->bAlwaysShootable || (bIsEnergyProjectile && OtherProj->bIsEnergyProjectile)) && !bFakeClientProjectile && !OtherProj->bFakeClientProjectile;
+	if ((bAlwaysShootable || OtherProj->bAlwaysShootable || (bIsEnergyProjectile && OtherProj->bIsEnergyProjectile)) && !bFakeClientProjectile && !OtherProj->bFakeClientProjectile)
+	{
+		// interact if not same team
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+		return  GS == nullptr || !GS->OnSameTeam(this, OtherProj);
+	}
+	return false;
 }
 
 void AUTProjectile::InitFakeProjectile(AUTPlayerController* OwningPlayer)
@@ -789,16 +790,17 @@ bool AUTProjectile::ShouldIgnoreHit_Implementation(AActor* OtherActor, UPrimitiv
 	// ignore client-side actors if will bounce
 	// special case not blowing up on Repulsor bubble so that we can reflect / absorb projectiles
 	AUTTeamDeco* Deco = Cast<AUTTeamDeco>(OtherActor);
-	if (Deco && !Deco->bBlockTeamProjectiles && Instigator)
+	if (Deco && !Deco->bBlockTeamProjectiles)
 	{
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		return GS && GS->OnSameTeam(Instigator, Deco);
+		return GS != nullptr && GS->OnSameTeam(this, Deco);
 	}
 	return (((Cast<AUTTeleporter>(OtherActor) != NULL || Cast<AVolume>(OtherActor) != NULL) && !GetVelocity().IsZero())
 		|| (Cast<AUTRepulsorBubble>(OtherActor) != NULL)
 		|| (Cast<AUTProjectile>(OtherActor) != NULL && !InteractsWithProj(Cast<AUTProjectile>(OtherActor)))
-		|| Cast<AUTProj_WeaponScreen>(OtherActor) != NULL)
-		|| (ProjectileMovement->bShouldBounce && (Role != ROLE_Authority) && OtherActor && OtherActor->bTearOff);
+		|| Cast<AUTProj_WeaponScreen>(OtherActor) != NULL
+		|| Cast<AUTGib>(OtherActor) != NULL
+		|| ((Role != ROLE_Authority) && OtherActor && OtherActor->bTearOff));
 }
 
 void AUTProjectile::ProcessHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp, const FVector& HitLocation, const FVector& HitNormal)
@@ -818,7 +820,7 @@ void AUTProjectile::ProcessHit_Implementation(AActor* OtherActor, UPrimitiveComp
 		else
 		{
 			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-			if (!bCanHitTeammates && GS && !GS->bTeamProjHits && Cast<AUTCharacter>(OtherActor) && Instigator && (Instigator != OtherActor) && GS->OnSameTeam(OtherActor, Instigator))
+			if (!bCanHitTeammates && GS != nullptr && !GS->bTeamProjHits && Cast<AUTCharacter>(OtherActor) != nullptr && Instigator != OtherActor && GS->OnSameTeam(OtherActor, this))
 			{
 				// ignore team hits
 				return;

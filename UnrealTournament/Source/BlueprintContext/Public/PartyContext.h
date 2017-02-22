@@ -119,6 +119,8 @@ public:
 	virtual void Initialize() override;
 	virtual void Finalize() override;
 
+	void JoinParty(const FUniqueNetId& PartyMemberId);
+
 	void KickPartyMember(const FUniqueNetIdRepl& PartyMemberId);
 	void PromotePartyMemberToLeader(const FUniqueNetIdRepl& PartyMemberId);
 	bool IsPartyLeader(const FUniqueNetIdRepl& PartyMemberId);

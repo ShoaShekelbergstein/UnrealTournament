@@ -15,8 +15,10 @@ void SUTButton::Construct(const FArguments& InArgs)
 	SetRenderTransformPivot(FVector2D(0.5f,0.5f));
 
 	OnButtonClick = InArgs._UTOnButtonClicked;
-	OnMouseOver = InArgs._UTOnMouseOver;
+	UTOnMouseOver = InArgs._UTOnMouseOver;
+	UTOnMouseExit = InArgs._UTOnMouseExit;
 	WidgetTag = InArgs._WidgetTag;
+	WidgetNameTag = InArgs._WidgetNameTag;
 
 	bIsToggleButton = InArgs._IsToggleButton;
 
@@ -155,13 +157,16 @@ FReply SUTButton::Released(int32 MouseButtonIndex, bool bIsUnderCusor)
 
 				if( HasMouseCapture() && OnButtonClick.IsBound() )
 				{
+					if (!bIsToggleButton)
+					{
+						UnPressed();
+					}
 					return OnButtonClick.Execute(MouseButtonIndex).ReleaseMouseCapture();
 				}
 			}
-
 		}
 
-		if (!bIsToggleButton)
+		if (!bIsToggleButton || !bIsUnderCusor)
 		{
 			UnPressed();
 		}
@@ -238,6 +243,11 @@ void SUTButton::OnMouseLeave( const FPointerEvent& MouseEvent )
 		SetRenderTransform(FSlateRenderTransform(1.0f));
 	}
 
+	if (UTOnMouseExit.IsBound())
+	{
+		UTOnMouseExit.Execute(SharedThis(this));
+	}
+
 	if (bIsToggleButton)
 	{
 		// Call parent implementation
@@ -255,9 +265,9 @@ void SUTButton::OnMouseEnter( const FGeometry& MyGeometry, const FPointerEvent& 
 	{
 		SetRenderTransform(FSlateRenderTransform(1.075f));
 	}
-	if (OnMouseOver.IsBound())
+	if (UTOnMouseOver.IsBound())
 	{
-		OnMouseOver.Execute(WidgetTag);
+		UTOnMouseOver.Execute(SharedThis(this));
 	}
 	SButton::OnMouseEnter(MyGeometry, MouseEvent);
 }

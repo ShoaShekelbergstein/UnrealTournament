@@ -25,6 +25,8 @@ AUTProj_Rocket::AUTProj_Rocket(const class FObjectInitializer& ObjectInitializer
 	bLeadTarget = true;
 	bRocketTeamSet = false;
 	MaxLeadDistance = 2000.f;
+	MinSeekDistance = 200.f;
+	MaxTargetLockIndicatorDistance = 5000.f;
 }
 
 void AUTProj_Rocket::Tick(float DeltaTime)
@@ -33,24 +35,31 @@ void AUTProj_Rocket::Tick(float DeltaTime)
 
 	if (TargetActor != NULL)
 	{
-		FVector WantedDir = (TargetActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+		FVector WantedDir = TargetActor->GetActorLocation() - GetActorLocation();
 		float Dist = WantedDir.Size();
-		if (bLeadTarget && (Dist < MaxLeadDistance))
+		if (Dist < FMath::Max(1.f, MinSeekDistance))
 		{
-			WantedDir += TargetActor->GetVelocity() * Dist / ProjectileMovement->MaxSpeed;
+			TargetActor = nullptr;
 		}
-
-		ProjectileMovement->Velocity += WantedDir * AdjustmentSpeed * DeltaTime;
-		ProjectileMovement->Velocity = ProjectileMovement->Velocity.GetSafeNormal() * ProjectileMovement->MaxSpeed;
-
-		//If the rocket has passed the target stop following
-		if (FVector::DotProduct(WantedDir, ProjectileMovement->Velocity) < 0.0f)
+		else
 		{
-			TargetActor = NULL;
-		}
-		else if (!bRocketTeamSet && Instigator)
-		{
-			OnRep_Instigator();
+			if (bLeadTarget && (Dist < MaxLeadDistance))
+			{
+				WantedDir += TargetActor->GetVelocity() * Dist / ProjectileMovement->MaxSpeed;
+			}
+			WantedDir = WantedDir.GetSafeNormal();
+			ProjectileMovement->Velocity += WantedDir * AdjustmentSpeed * DeltaTime;
+			ProjectileMovement->Velocity = ProjectileMovement->Velocity.GetSafeNormal() * ProjectileMovement->MaxSpeed;
+
+			//If the rocket has passed the target stop following
+			if (FVector::DotProduct(WantedDir, ProjectileMovement->Velocity) < 0.0f)
+			{
+				TargetActor = NULL;
+			}
+			else if (!bRocketTeamSet && Instigator)
+			{
+				OnRep_Instigator();
+			}
 		}
 	}
 }
@@ -102,7 +111,7 @@ void AUTProj_Rocket::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVect
 		FVector::DotProduct(CameraDir, (GetActorLocation() - CameraPosition)) > 0.0f && (UTPC->MyUTHUD == nullptr || !UTPC->MyUTHUD->bShowScores))
 	{
 		float Dist = (GetActorLocation() - TargetActor->GetActorLocation()).Size();
-		if (Dist > 3800.f)
+		if (Dist > MaxTargetLockIndicatorDistance)
 		{
 			return;
 		}
@@ -177,23 +186,4 @@ void AUTProj_Rocket::DamageImpactedActor_Implementation(AActor* OtherActor, UPri
 		}
 	}
 	bPendingSpecialReward = false;
-}
-
-void AUTProj_Rocket::Explode_Implementation(const FVector& HitLocation, const FVector& HitNormal, UPrimitiveComponent* HitComp)
-{
-	AUTCharacter* HitCharacter = Cast<AUTCharacter>(ImpactedActor);
-	bool bFollowersTrack = (!bExploded && (Role == ROLE_Authority) && (FollowerRockets.Num() > 0) && HitCharacter);
-
-	Super::Explode_Implementation(HitLocation, HitNormal, HitComp);
-	if (bFollowersTrack && HitCharacter && (HitCharacter->Health > 0))
-	{
-		for (int32 i = 0; i < FollowerRockets.Num(); i++)
-		{
-			if (FollowerRockets[i] && !FollowerRockets[i]->IsPendingKillPending())
-			{
-				FollowerRockets[i]->TargetActor = HitCharacter;
-				FollowerRockets[i]->AdjustmentSpeed = 24000.f;
-			}
-		}
-	}
 }

@@ -79,23 +79,44 @@ UUTHUDWidget_SpectatorSlideOut::UUTHUDWidget_SpectatorSlideOut(const class FObje
 
 bool UUTHUDWidget_SpectatorSlideOut::ShouldDraw_Implementation(bool bShowScores)
 {
+	bool bShouldDraw = true;
+
+	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(UTHUDOwner->UTPlayerOwner->Player);
+#if !UE_SERVER
+
 	if (!bShowScores && UTHUDOwner->UTPlayerOwner && UTHUDOwner->UTPlayerOwner->UTPlayerState && UTGameState && (UTHUDOwner->UTPlayerOwner->UTPlayerState->bOnlySpectator || UTHUDOwner->UTPlayerOwner->UTPlayerState->bOutOfLives))
 	{
-		if (UTGameState->HasMatchEnded() || !UTGameState->HasMatchStarted() || UTGameState->IsMatchIntermission())
+		if ( UTGameState->HasMatchEnded() || !UTGameState->HasMatchStarted() || UTGameState->IsMatchIntermission() || (LP && LP->bRecordingReplay) )
 		{
-			return false;
+			bShouldDraw = false;
 		}
-
-#if !UE_SERVER
-		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(UTHUDOwner->UTPlayerOwner->Player);
-		if (LP && LP->bRecordingReplay)
+		else
 		{
-			return false;
+			bShouldDraw = true;
 		}
-#endif
-		return true;
 	}
-	return false;
+	else
+	{
+		bShouldDraw = false;
+	}
+#endif
+	if (LP)
+	{
+		// It's fine to call Open/CloseSpectatorWindow each frame because 
+		// they check to see if it's already opened/closed and will act accordingly.  In most cases,
+		// they just return.
+
+		if (bShouldDraw)
+		{
+			LP->OpenSpectatorWindow();	
+		}
+		else
+		{
+			LP->CloseSpectatorWindow();
+		}
+	}
+
+	return bShouldDraw;
 }
 
 void UUTHUDWidget_SpectatorSlideOut::InitPowerupList()

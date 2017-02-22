@@ -217,8 +217,12 @@ class UNREALTOURNAMENT_API UUTDamageType : public UDamageType
 		FText SpecialRewardText;
 
 	/** icon for drawing kill messages */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = HUD)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = HUD)
 	FCanvasIcon HUDIcon;
+
+	/** if set use shooter's location for displaying hit direction instead of damage origin */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = HUD, Meta = (DisplayName = "Damage HUD Uses Shooter Location"))
+	bool bDmgHUDUsesShooterLoc;
 };
 
 /** return the base momentum for the given damage event (before radial damage and any other modifiers) */

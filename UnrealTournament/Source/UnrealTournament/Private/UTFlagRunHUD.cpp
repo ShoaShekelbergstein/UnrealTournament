@@ -178,6 +178,15 @@ void AUTFlagRunHUD::DrawPlayerIcon(AUTPlayerState* PlayerState, float LiveScalin
 
 		float PipHeight = PipSize * (320.0f / 224.0f);
 
+		const float TimeSinceJoin = GetWorld()->TimeSeconds - PlayerState->CreationTime;
+		if (TimeSinceJoin < 1.0f)
+		{
+			const float SizeScale = 3.0f - (2.0f * TimeSinceJoin);
+			PipSize *= SizeScale;
+			PipHeight *= SizeScale;
+			YOffset += FMath::InterpEaseIn(PipHeight, 0.0f, GetWorld()->TimeSeconds - PlayerState->CreationTime, 3.0f);
+		}
+
 		// Draw the background.
 		const FCanvasIcon* BGIcon = PlayerState->GetTeamNum() == 1 ? &BlueTeamIcon : &RedTeamIcon;
 		Canvas->DrawTile(BGIcon->Texture, XOffset, YOffset, PipSize, PipHeight, BGIcon->U, BGIcon->V, BGIcon->UL, BGIcon->VL);
@@ -250,7 +259,7 @@ float AUTFlagRunHUD::DrawWinConditions(UFont* InFont, float XOffset, float YPos,
 		float BonusXL = 0.f;
 		float MustScoreXL = 0.f;
 		FText BonusType = GS->BronzeBonusText;
-		FLinearColor BonusColor = GS->BronzeBonusColor;
+		FLinearColor BonusColor = BRONZECOLOR;
 
 		int32 Switch = GS->FlagRunMessageSwitch;
 		int32 TimeNeeded = 0;
@@ -259,31 +268,22 @@ float AUTFlagRunHUD::DrawWinConditions(UFont* InFont, float XOffset, float YPos,
 			TimeNeeded = Switch / 100;
 			Switch = Switch - 100 * TimeNeeded;
 		}
-		if (bUseShortWinMessage && Switch < 4)
-		{
-			return 0.f;
-		}
 		FText PostfixText = FText::GetEmpty();
 		switch (Switch)
 		{
 		case 1: PostfixText = DefendersMustStop; break;
 		case 2: PostfixText = DefendersMustHold; break;
-		case 3: PostfixText = DefendersMustHold; BonusType = GS->SilverBonusText;  BonusColor = GS->SilverBonusColor; break;
+		case 3: PostfixText = DefendersMustHold; BonusType = GS->SilverBonusText;  BonusColor = SILVERCOLOR; break;
 		case 4: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTime : AttackersMustScore; break;
-		case 5: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTime : AttackersMustScore; BonusType = GS->SilverBonusText; BonusColor = GS->SilverBonusColor; break;
-		case 6: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTime : AttackersMustScore; BonusType = GS->GoldBonusText; BonusColor = GS->GoldBonusColor; break;
+		case 5: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTime : AttackersMustScore; BonusType = GS->SilverBonusText; BonusColor = SILVERCOLOR; break;
+		case 6: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTime : AttackersMustScore; BonusType = GS->GoldBonusText; BonusColor = GOLDCOLOR; break;
 		case 7: PostfixText = UnhandledCondition; break;
 		case 8: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTimeWin : AttackersMustScoreWin; break;
-		case 9: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTimeWin : AttackersMustScoreWin; BonusType = GS->SilverBonusText; BonusColor = GS->SilverBonusColor; break;
-		case 10: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTimeWin : AttackersMustScoreWin; BonusType = GS->GoldBonusText; BonusColor = GS->GoldBonusColor; break;
+		case 9: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTimeWin : AttackersMustScoreWin; BonusType = GS->SilverBonusText; BonusColor = SILVERCOLOR; break;
+		case 10: PostfixText = (TimeNeeded > 0) ? AttackersMustScoreTimeWin : AttackersMustScoreWin; BonusType = GS->GoldBonusText; BonusColor = GOLDCOLOR; break;
 		}	
 		if (bUseShortWinMessage)
 		{
-			// early out if bronze with no time
-			if ((TimeNeeded <= 0) && ((Switch == 4) || (Switch == 8)))
-			{
-				return 0.f;
-			}
 			PostfixText = (TimeNeeded > 0) ? AttackersMustScoreShort : FText::GetEmpty();
 		}
 

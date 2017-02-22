@@ -28,7 +28,7 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	bLockedOnTarget = false;
 	LockCheckTime = 0.1f;
 	LockRange = 16000.0f;
-	LockAcquireTime = 0.6f;
+	LockAcquireTime = 0.5f;
 	LockTolerance = 0.2f;
 	LockedTarget = NULL;
 	PendingLockedTarget = NULL;
@@ -49,9 +49,10 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	BarrelRadius = 9.0f;
 
 	GracePeriod = 0.6f;
-	BurstInterval = 0.08f;
+	BurstInterval = 0.06f;
 	GrenadeBurstInterval = 0.1f;
-	FullLoadSpread = 9.f;
+	FullLoadSpread = 5.f;
+	SeekingLoadSpread = 12.f;
 	bAllowGrenades = false;
 
 	BasePickupDesireability = 0.78f;
@@ -257,18 +258,6 @@ void AUTWeap_RocketLauncher::FireShot()
 	if (!FireShotOverride())
 	{
 		AUTProj_Rocket* NewRocket = Cast<AUTProj_Rocket>(FireProjectile());
-		if (NewRocket && !NewRocket->IsPendingKillPending() && (Role == ROLE_Authority))
-		{
-			if (bIsFiringLeadRocket)
-			{
-				LeadRocket = NewRocket;
-			}
-			else if (LeadRocket && !LeadRocket->IsPendingKillPending())
-			{
-				LeadRocket->FollowerRockets.Add(NewRocket);
-			}
-		}
-		bIsFiringLeadRocket = false;
 		PlayFiringEffects();
 		if (NumLoadedRockets <= 0)
 		{
@@ -427,11 +416,6 @@ void AUTWeap_RocketLauncher::PlayFiringEffects()
 	}
 }
 
-void AUTWeap_RocketLauncher::SetLeadRocket()
-{
-	bIsFiringLeadRocket = true;
-}
-
 AUTProjectile* AUTWeap_RocketLauncher::FireRocketProjectile()
 {
 	checkSlow(RocketFireModes.IsValidIndex(CurrentRocketFireMode) && RocketFireModes[CurrentRocketFireMode].ProjClass != NULL);
@@ -469,10 +453,7 @@ AUTProjectile* AUTWeap_RocketLauncher::FireRocketProjectile()
 	{
 		case 0://rockets
 		{
-			if (ShouldFireLoad() || HasLockedTarget())
-			{
-				SpawnRotation.Yaw += FullLoadSpread*float((NumLoadedRockets%3)-1.f);
-			}
+			SpawnRotation.Yaw += (HasLockedTarget() ? SeekingLoadSpread : FullLoadSpread)*float((NumLoadedRockets%3)-1.f);
 			NetSynchRandomSeed(); 
 			
 			FVector Offset = (FMath::Sin(NumLoadedRockets*PI*0.667f)*FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::Z) + FMath::Cos(NumLoadedRockets*PI*0.667f)*FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::X)) * BarrelRadius * 2.f;

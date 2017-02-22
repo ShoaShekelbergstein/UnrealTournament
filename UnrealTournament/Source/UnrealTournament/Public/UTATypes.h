@@ -22,7 +22,7 @@ const uint16 UTDIALOG_BUTTON_APPLY = 0x2000;
 const uint16 TUTORIAL_Movement = 0x0001;
 const uint16 TUTOIRAL_Weapon = 0x0002;
 const uint16 TUTORIAL_Pickups = 0x0004;
-const uint16 TUTORIAL_SkillMoves = TUTORIAL_Movement | TUTOIRAL_Weapon | TUTORIAL_Pickups;
+const uint16 TUTORIAL_SkillMoves = TUTORIAL_Movement;
 
 const uint16 TUTORIAL_DM = 0x0008;
 const uint16 TUTORIAL_TDM = 0x0010;
@@ -46,6 +46,9 @@ const float RALLY_ANIMATION_TIME = 1.2;
 
 const FLinearColor REDHUDCOLOR = FLinearColor(1.0f, 0.05f, 0.0f, 1.0f);
 const FLinearColor BLUEHUDCOLOR = FLinearColor(0.1f, 0.1f, 1.0f, 1.0f);
+const FLinearColor GOLDCOLOR = FLinearColor(1.f, 0.9f, 0.15f);
+const FLinearColor SILVERCOLOR = FLinearColor(0.5f, 0.5f, 0.75f);
+const FLinearColor BRONZECOLOR = FLinearColor(0.48f, 0.25f, 0.18f);
 
 UENUM()
 namespace EGameStage
@@ -153,6 +156,8 @@ namespace GameVolumeSpeechType
 	const FName GV_SniperTower = FName(TEXT("GV_SniperTower"));
 	const FName GV_Flak = FName(TEXT("GV_Flak"));
 	const FName GV_Waterfall = FName(TEXT("GV_Waterfall"));
+	const FName GV_Shrine = FName(TEXT("GV_Shrine"));
+	const FName GV_Stinger = FName(TEXT("GV_Stinger"));
 }
 
 namespace PickupSpeechType
@@ -217,6 +222,7 @@ namespace StatusMessage
 	const FName RedeemerKills = FName(TEXT("RedeemerKills"));
 	const FName RedeemerSpotted = FName(TEXT("RedeemerSpotted"));
 	const FName GetTheFlag = FName(TEXT("GetTheFlag"));
+	const FName DoorRally = FName(TEXT("DoorRally"));
 }
 
 namespace HighlightNames
@@ -1423,6 +1429,13 @@ struct FUTChallengeInfo
 	UPROPERTY()
 	bool bExpiredChallenge;
 
+	UPROPERTY()
+	bool bHighlighted;
+
+	UPROPERTY()
+	bool ShadowOpacity;
+
+
 	FUTChallengeInfo()
 		: Title(TEXT(""))
 		, Map(TEXT(""))
@@ -1439,6 +1452,8 @@ struct FUTChallengeInfo
 		EnemyTeamName[2] = NAME_None;
 		bExpiredChallenge = false;
 		bDailyChallenge = false;
+		bHighlighted = false;
+		ShadowOpacity = 1.0f;
 	}
 
 	FUTChallengeInfo(FName inTag, const FUTChallengeInfo& inInfo)
@@ -1453,6 +1468,8 @@ struct FUTChallengeInfo
 		, RewardTag(inInfo.RewardTag)
 		, bDailyChallenge(inInfo.bDailyChallenge)
 		, bExpiredChallenge(inInfo.bExpiredChallenge)
+		, bHighlighted(inInfo.bHighlighted)
+		, ShadowOpacity(inInfo.ShadowOpacity)
 	{
 		EnemyTeamName[0] = inInfo.EnemyTeamName[0];
 		EnemyTeamName[1] = inInfo.EnemyTeamName[1];
@@ -1475,6 +1492,8 @@ struct FUTChallengeInfo
 		EnemyTeamName[2] = HardEnemyTeam;
 		bExpiredChallenge = false;
 		bDailyChallenge = false;
+		bHighlighted = false;
+		ShadowOpacity = 1.0f;
 	}
 };
 
@@ -1537,14 +1556,33 @@ struct FMCPPulledData
 };
 
 USTRUCT()
-struct FActiveRankedPlaylists
+struct FUTOnlineSettings
 {
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY()
 	TArray<int32> ActiveRankedPlaylists;
+	
+	UPROPERTY()
+	int32 RankedEloRange;
 
-	FActiveRankedPlaylists()
+	UPROPERTY()
+	int32 RankedMinEloRangeBeforeHosting;
+
+	UPROPERTY()
+	int32 RankedMinEloSearchStep;
+
+	UPROPERTY()
+	int32 QMEloRange;
+
+	UPROPERTY()
+	int32 QMMinEloRangeBeforeHosting;
+
+	UPROPERTY()
+	int32 QMMinEloSearchStep;
+
+	FUTOnlineSettings()
+		: RankedEloRange(20), RankedMinEloRangeBeforeHosting(100), RankedMinEloSearchStep(20), QMEloRange(20), QMMinEloRangeBeforeHosting(100), QMMinEloSearchStep(20)
 	{}
 };
 
@@ -1997,6 +2035,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = INPUT)
 	uint32 bShowInUI : 1;
 
+	// If true, then this keybind is optional
+	UPROPERTY(BlueprintReadOnly, Category = INPUT)
+	uint32 bOptional : 1;
+
 	// These values are the meat of the key bind system.  Any GameAction can be used to build multiple Action/Axis/Custom mappings.  
 	// The game will clear and rebuild the key table each time it's loaded.  INI's are no longer used.
 
@@ -2019,13 +2061,14 @@ public:
 		bShowInUI = true;
 	}
 
-	FKeyConfigurationInfo(const FName& inGameActionTag, EControlCategory::Type inCategory, FKey inDefaultPrimaryKey, FKey inDefaultSecondayKey, FKey inGamepadKey, const FText& inMenuText)
+	FKeyConfigurationInfo(const FName& inGameActionTag, EControlCategory::Type inCategory, FKey inDefaultPrimaryKey, FKey inDefaultSecondayKey, FKey inGamepadKey, const FText& inMenuText, bool inbOptional)
 		: GameActionTag(inGameActionTag)
 		, Category(inCategory)
 		, MenuText(inMenuText)
 		, PrimaryKey(inDefaultPrimaryKey)
 		, SecondaryKey(inDefaultSecondayKey)
 		, GamepadKey(inGamepadKey)
+		, bOptional(inbOptional)
 	{
 		bShowInUI = true;
 	}
@@ -2217,4 +2260,50 @@ public:
 	{
 	}
 
+	FTutorialData(const FName& inTag, uint16 inMask,const FString& inMap, const FString& inLaunchArgs, const FString& inLoadingMovie, const FString& inLoadingText)	
+		: Tag(inTag)
+		, Mask(inMask)
+		, Map(inMap)
+		, LaunchArgs(inLaunchArgs)
+		, LoadingMovie(inLoadingMovie)
+		, LoadingText(inLoadingText)
+	{
+	}
+
 };
+
+USTRUCT()
+struct FHUDandUMGParticleSystemTracker
+{
+
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	UParticleSystemComponent* ParticleSystemComponent;
+
+	UPROPERTY()
+	FVector LocationModifier;
+
+	UPROPERTY()
+	FRotator DirectionModifier;
+
+	UPROPERTY()
+	FVector2D ScreenLocation;
+
+	FHUDandUMGParticleSystemTracker()
+		: ParticleSystemComponent(nullptr)
+	{
+	}
+
+
+	FHUDandUMGParticleSystemTracker(UParticleSystemComponent* inParticleSystemComponent, FVector inLocationModifier, FRotator inDirectionModifier, FVector2D inScreenLocation)
+	{
+		ParticleSystemComponent = inParticleSystemComponent;	
+		LocationModifier = inLocationModifier;
+		DirectionModifier = inDirectionModifier;
+		ScreenLocation = inScreenLocation;
+	}
+
+};
+
+

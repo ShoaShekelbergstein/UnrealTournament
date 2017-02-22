@@ -10,6 +10,7 @@
 #include "UTReplicatedMapInfo.h"
 #include "UTReplicatedGameRuleset.h"
 #include "UTServerBeaconLobbyClient.h"
+#include "UTAnalytics.h"
 
 void AUTLobbyMatchInfo::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
@@ -22,7 +23,6 @@ void AUTLobbyMatchInfo::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	Super::EndPlay(EndPlayReason);
 }
-
 
 AUTLobbyMatchInfo::AUTLobbyMatchInfo(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer
@@ -197,9 +197,6 @@ void AUTLobbyMatchInfo::AddPlayer(AUTLobbyPlayerState* PlayerToAdd, bool bIsOwne
 	Players.Add(PlayerToAdd);
 	PlayerToAdd->AddedToMatch(this);
 	PlayerToAdd->ChatDestination = ChatDestinations::Match;
-
-	// Players default to ready
-	PlayerToAdd->bReadyToPlay = true;
 }
 
 bool AUTLobbyMatchInfo::RemovePlayer(AUTLobbyPlayerState* PlayerToRemove)
@@ -387,33 +384,6 @@ void AUTLobbyMatchInfo::ServerStartMatch_Implementation()
 			return;
 		}
 
-		// Parties invalidate the balanced team code
-		/*
-		AUTTeamGameMode* TeamGame = Cast<AUTTeamGameMode>(CurrentRuleset->GetDefaultGameModeObject());
-		if (TeamGame != NULL)
-		{
-			bool bBalanceTeams = AUTBaseGameMode::EvalBoolOptions(UGameplayStatics::ParseOption(CurrentRuleset->GameOptions, TEXT("BalanceTeams")), TeamGame->bBalanceTeams);
-			if (bBalanceTeams)
-			{
-				 // don't allow starting if the teams aren't balanced
-				TArray<int32> TeamSizes = GetTeamSizes();
-				for (int32 i = 0; i < TeamSizes.Num(); i++)
-				{
-					for (int32 j = 0; j < TeamSizes.Num(); j++)
-					{
-						if (FMath::Abs<int32>(TeamSizes[i] - TeamSizes[j]) > 1)
-						{
-							GetOwnerPlayerState()->ClientMatchError(NSLOCTEXT("LobbyMessage", "UnbalancedTeams", "The teams must be balanced to start the match."));
-							return;
-						}
-					}
-				}
-			}
-		}
-		*/
-
-		// TODO: need to check for ready ups on server side
-
 		if (CurrentState == ELobbyMatchState::Setup)
 		{
 			LaunchMatch(false, 2);
@@ -426,32 +396,11 @@ void AUTLobbyMatchInfo::ServerStartMatch_Implementation()
 
 void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 {
-	for (int32 i=0;i<Players.Num();i++)
-	{
-		Players[i]->bReadyToPlay = true;
-	}
-
 	if (CheckLobbyGameState() && CurrentRuleset.IsValid() && InitialMapInfo.IsValid())
 	{
 		if (bQuickPlay) 
 		{
-			BotSkillLevel = 1;
-			if (RankCheck < 6)
-			{
-				BotSkillLevel = 1;
-			}
-			else if (RankCheck < 8)
-			{
-				BotSkillLevel = 2;
-			}
-			else if (RankCheck < 10)
-			{
-				BotSkillLevel = 3;
-			}
-			else
-			{
-				BotSkillLevel = FMath::Clamp(1 + (RankCheck-10)/2, 1, 6);
-			}
+			BotSkillLevel = 3;
 		}
 
 		// build all of the data needed to launch the map.
@@ -465,22 +414,15 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 		else if (!CurrentRuleset->bCustomRuleset)
 		{
 			// Custom rules already have their bot info set
-
-			// If the BotFill wasn't specified on in the GameOptions section of the rule, then use the map to determine the bot count
 			if ( CurrentRuleset->GameOptions.Find(TEXT("BotFill="),ESearchCase::IgnoreCase) == INDEX_NONE )
 			{
-				int32 OptimalPlayerCount = CurrentRuleset->bTeamGame ? InitialMapInfo->OptimalTeamPlayerCount : InitialMapInfo->OptimalPlayerCount;
-
-				int32 DesiredBotFill = BotSkillLevel >= 0 ? FMath::Clamp<int32>(OptimalPlayerCount,0, CurrentRuleset->MaxPlayers) : 0;
-				if (DesiredBotFill < CurrentRuleset->MinPlayersToStart) DesiredBotFill = CurrentRuleset->MinPlayersToStart;
-
 				if (BotSkillLevel >= 0)
 				{
-					GameURL += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), DesiredBotFill, FMath::Clamp<int32>(BotSkillLevel,0,7));			
+					GameURL += FString::Printf(TEXT("?Difficulty=%i"), FMath::Clamp<int32>(BotSkillLevel,0,7));
 				}
 				else
 				{
-					GameURL += FString::Printf(TEXT("?BotFill=%i"), DesiredBotFill);			
+					GameURL += FString::Printf(TEXT("?ForceNoBots=1"));			
 				}
 			}
 		}
@@ -490,18 +432,6 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 
 		LobbyGameState->LaunchGameInstance(this, GameURL, DebugCode);
 	}
-}
-
-bool AUTLobbyMatchInfo::ServerAbortMatch_Validate() { return true; }
-void AUTLobbyMatchInfo::ServerAbortMatch_Implementation()
-{
-	if (CheckLobbyGameState())
-	{
-		LobbyGameState->TerminateGameInstance(this, true);
-	}
-
-	TWeakObjectPtr<AUTLobbyPlayerState> OwnerPS = GetOwnerPlayerState();
-	if (OwnerPS.IsValid()) OwnerPS->bReadyToPlay = false;
 }
 
 void AUTLobbyMatchInfo::GameInstanceReady(FGuid inGameInstanceGUID)
@@ -761,6 +691,11 @@ void AUTLobbyMatchInfo::ServerSetRules_Implementation(const FString&RulesetTag, 
 			AUTBaseGameMode* DefaultGameMode = CurrentRuleset->GetDefaultGameModeObject();
 			if (DefaultGameMode == nullptr) DefaultGameMode = AUTBaseGameMode::StaticClass()->GetDefaultObject<AUTBaseGameMode>();
 			RankCheck = OwnerPlayerState->GetRankCheck(DefaultGameMode);
+
+			if (FUTAnalytics::IsAvailable())
+			{
+				FUTAnalytics::FireEvent_UTHubNewInstance(this, OwnerPlayerState.Get());
+			}
 		}
 	}
 }
@@ -847,24 +782,16 @@ void AUTLobbyMatchInfo::ServerCreateCustomRule_Implementation(const FString& Gam
 			}
 		}
 
-		int32 OptimalPlayerCount = 4;
-
 		InitialMap = StartingMap;
 		GetMapInformation();
-
-		if (InitialMapInfo.IsValid())
-		{
-			OptimalPlayerCount = ( CustomGameModeDefaultObject && CustomGameModeDefaultObject->bTeamGame) ? InitialMapInfo->OptimalTeamPlayerCount : InitialMapInfo->OptimalPlayerCount;
-		}
-
-		NewReplicatedRuleset->MaxPlayers = DesiredPlayerCount > 0 ? DesiredPlayerCount : OptimalPlayerCount;
+		NewReplicatedRuleset->MaxPlayers = (DesiredPlayerCount > 0) ? DesiredPlayerCount : CustomGameModeDefaultObject->DefaultMaxPlayers;
 		if (DesiredSkillLevel >= 0)
 		{
 			FinalGameOptions += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), NewReplicatedRuleset->MaxPlayers, FMath::Clamp<int32>(DesiredSkillLevel,0,7));				
 		}
 		else
 		{
-			FinalGameOptions += TEXT("?BotFill=0");
+			FinalGameOptions +=TEXT("?BotFill=0?ForceNoBots=1");
 		}
 		NewReplicatedRuleset->GameOptions = FinalGameOptions;
 		NewReplicatedRuleset->MinPlayersToStart = 2;

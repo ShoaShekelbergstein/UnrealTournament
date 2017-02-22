@@ -116,6 +116,9 @@ public:
 	// The Unique ID for this game instance.
 	FGuid ServerInstanceGUID;
 
+	// The Unique ID for this 
+	FGuid ContextGUID;
+
 	virtual bool IsGameInstanceServer() { return LobbyInstanceID > 0; }
 	virtual bool IsLobbyServer() { return false; }
 
@@ -255,5 +258,8 @@ private:
 
 protected:
 	FString ServerNameOverride;
+
+	UPROPERTY()
+	bool bIgnoreIdlePlayers;
 
 };

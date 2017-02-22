@@ -318,16 +318,7 @@ void SUTPlayerListPanel::GetMenuContent(FString SearchTag, TArray<FMenuOptionDat
 
 	MenuOptions.Empty();
 
-	// Showing a player card requires a valid player state which players in an instance might not have.
-	if (!TrackedPlayers[Idx]->bInInstance)
-	{
-		MenuOptions.Add(FMenuOptionData(NSLOCTEXT("PlayerListSubMenu","ShowPlayerCard","Player Card"), EPlayerListContentCommand::PlayerCard));
-	}
-	else
-	{
-		MenuOptions.Add(FMenuOptionData(NSLOCTEXT("PlayerListSubMenu","PlayerCardUnAvail","Player Card Unavailable"), EPlayerListContentCommand::PlayerCard));
-	}
-
+	MenuOptions.Add(FMenuOptionData(NSLOCTEXT("PlayerListSubMenu","ShowPlayerCard","Player Card"), EPlayerListContentCommand::PlayerCard));
 	AUTPlayerState* OwnerPlayerState = Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState);
 
 	bool bIsHost = false;
@@ -748,9 +739,16 @@ void SUTPlayerListPanel::OnSubMenuSelect(FName InTag, TSharedPtr<FTrackedPlayer>
 
 		if (InTag == EPlayerListContentCommand::PlayerCard)
 		{
-			if (PlayerOwner.IsValid() && InItem->PlayerState.IsValid())
+			if ( PlayerOwner.IsValid() )
 			{
-				PlayerOwner->ShowPlayerInfo(InItem->PlayerState);
+				if ( InItem->PlayerState.IsValid() )
+				{
+					PlayerOwner->ShowPlayerInfo(InItem->PlayerState->UniqueId.ToString(),InItem->PlayerState->PlayerName);
+				}
+				else
+				{
+					PlayerOwner->ShowPlayerInfo(InItem->PlayerID.ToString(),InItem->PlayerName);
+				}
 			}
 		}
 		else if (InTag == EPlayerListContentCommand::Kick)

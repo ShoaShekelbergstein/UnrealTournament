@@ -332,6 +332,9 @@ class UNREALTOURNAMENT_API AUTBot : public AAIController, public IUTTeamInterfac
 	UPROPERTY(BlueprintReadOnly, Category = Skill)
 	FRotator RotationRate;
 
+	/** If game is auto adjusting skill, it calls this function to ask bot to update skill. */
+	virtual void AutoUpdateSkillFor(class AUTGameMode* Game);
+
 	/** whether to call SeePawn() for friendlies */
 	UPROPERTY(BlueprintReadWrite, Category = AI)
 	bool bSeeFriendly;

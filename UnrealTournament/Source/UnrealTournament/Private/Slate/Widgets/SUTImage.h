@@ -7,7 +7,6 @@
 #if !UE_SERVER
 
 DECLARE_DELEGATE_RetVal_OneParam( FReply, FUTButtonClick, int32 );
-DECLARE_DELEGATE_OneParam( FUTMouseOver, int32 );
 
 class UNREALTOURNAMENT_API SUTImage : public SImage
 {

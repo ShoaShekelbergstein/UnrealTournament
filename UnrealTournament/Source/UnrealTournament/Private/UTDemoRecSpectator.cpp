@@ -103,11 +103,11 @@ void AUTDemoRecSpectator::ViewPlayerState(APlayerState* PS)
 	QueuedPlayerStateToView = PS;
 }
 
-void AUTDemoRecSpectator::DemoNotifyCausedHit_Implementation(APawn* InstigatorPawn, AUTCharacter* HitPawn, uint8 AppliedDamage, FVector Momentum, const FDamageEvent& DamageEvent)
+void AUTDemoRecSpectator::DemoNotifyCausedHit_Implementation(APawn* InstigatorPawn, AUTCharacter* HitPawn, uint8 AppliedDamage, FVector Momentum, const FDamageEvent& DamageEvent, bool bArmorDamage)
 {
 	if (GetViewTarget() == InstigatorPawn)
 	{
-		ClientNotifyCausedHit(HitPawn, AppliedDamage);
+		ClientNotifyCausedHit(HitPawn, AppliedDamage, bArmorDamage);
 	}
 	if (GetViewTarget() == HitPawn)
 	{
@@ -147,7 +147,10 @@ void AUTDemoRecSpectator::ServerViewProjectileShim()
 
 void AUTDemoRecSpectator::ViewPawn(APawn* PawnToView)
 {
-	ViewPlayerState(PawnToView->PlayerState);
+	if (PawnToView)
+	{
+		ViewPlayerState(PawnToView->PlayerState);
+	}
 }
 
 void AUTDemoRecSpectator::ViewAPlayer(int32 dir)
@@ -385,7 +388,6 @@ void AUTDemoRecSpectator::InitPlayerState()
 		if (!NetDriver->bIsLocalReplay)
 		{
 			PlayerState->bOnlySpectator = true;
-			PlayerState->PlayerName = TEXT("Replay Spectator");
 		}
 	}
 
@@ -510,8 +512,10 @@ void AUTDemoRecSpectator::MulticastReceiveLocalizedMessage_Implementation(TSubcl
 
 void AUTDemoRecSpectator::ClientReceiveLocalizedMessage_Implementation(TSubclassOf<ULocalMessage> Message, int32 Switch, APlayerState* RelatedPlayerState_1, APlayerState* RelatedPlayerState_2, UObject* OptionalObject)
 {
+	const bool bIsKillCamSpectator = IsKillcamSpectator();
+
 	TSubclassOf<UUTLocalMessage> UTMessage(*Message);
-	if (UTMessage && !UTMessage.GetDefaultObject()->bPlayDuringInstantReplay && IsKillcamSpectator())
+	if (UTMessage && !UTMessage.GetDefaultObject()->bPlayDuringInstantReplay && bIsKillCamSpectator)
 	{
 		return;
 	}
@@ -530,15 +534,18 @@ void AUTDemoRecSpectator::ClientReceiveLocalizedMessage_Implementation(TSubclass
 		}
 	}
 
-	UGameInstance* GameInstance = GetWorld()->GetGameInstance();
-	if (GameInstance != nullptr)
+	if (bIsKillCamSpectator)
 	{
-		UUTGameViewportClient* ViewportClient = Cast<UUTGameViewportClient>(GameInstance->GetGameViewportClient());
-		if (ViewportClient != nullptr)
+		UGameInstance* GameInstance = GetWorld()->GetGameInstance();
+		if (GameInstance != nullptr)
 		{
-			if (ViewportClient->GetActiveWorldOverride() == nullptr)
+			UUTGameViewportClient* ViewportClient = Cast<UUTGameViewportClient>(GameInstance->GetGameViewportClient());
+			if (ViewportClient != nullptr)
 			{
-				return;
+				if (ViewportClient->GetActiveWorldOverride() == nullptr)
+				{
+					return;
+				}
 			}
 		}
 	}

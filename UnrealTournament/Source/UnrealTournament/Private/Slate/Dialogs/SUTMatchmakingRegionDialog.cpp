@@ -24,8 +24,8 @@ void SUTMatchmakingRegionDialog::Construct(const FArguments& InArgs)
 		.OnDialogResult(InArgs._OnDialogResult)
 		);
 
-	MatchmakingRegionList.Add(MakeShareable(new FString(TEXT("NA"))));
-	MatchmakingRegionList.Add(MakeShareable(new FString(TEXT("EU"))));
+	MatchmakingRegionList.Add(MakeShareable(new FString(TEXT("North America"))));
+	MatchmakingRegionList.Add(MakeShareable(new FString(TEXT("Europe"))));
 
 	if (DialogContent.IsValid())
 	{		
@@ -85,7 +85,7 @@ FReply SUTMatchmakingRegionDialog::OnButtonClick(uint16 ButtonID)
 	UUTProfileSettings* ProfileSettings = GetPlayerOwner()->GetProfileSettings();
 	if (ProfileSettings)
 	{
-		ProfileSettings->MatchmakingRegion = *MatchmakingRegion->GetSelectedItem();
+		ProfileSettings->MatchmakingRegion = (MatchmakingRegion->GetSelectedItem()->Equals(TEXT("europe"),ESearchCase::IgnoreCase)) ?	TEXT("EU") : TEXT("NA");
 		GetPlayerOwner()->SaveProfileSettings();
 	}
 

@@ -53,7 +53,7 @@ void AUTProj_StingerShard2::OnPawnSphereOverlapBegin(UPrimitiveComponent* Overla
 {
 	APawn* P = Cast<APawn>(OtherActor);
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (P != nullptr && !P->bTearOff && (P != Instigator || bCanHitInstigator) && (GS == nullptr || !GS->OnSameTeam(P, InstigatorController)))
+	if (P != nullptr && !P->bTearOff && (P != Instigator || bCanHitInstigator) && (GS == nullptr || !GS->OnSameTeam(P, Instigator)))
 	{
 		PotentialTargets.Add(P);
 	}

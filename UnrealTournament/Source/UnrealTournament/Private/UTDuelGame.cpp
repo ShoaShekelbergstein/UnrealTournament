@@ -28,8 +28,8 @@ AUTDuelGame::AUTDuelGame(const class FObjectInitializer& ObjectInitializer)
 	bNoDefaultLeaderHat = true;
 	XPMultiplier = 7.0f;
 	SquadType = AUTDuelSquadAI::StaticClass();
-	QuickPlayersToStart = 2;
 	bAllowAllArmorPickups = true;
+	DefaultMaxPlayers = 2;
 }
 
 void AUTDuelGame::InitGameState()
@@ -84,8 +84,8 @@ void AUTDuelGame::InitGame(const FString& MapName, const FString& Options, FStri
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
 
-	GameSession->MaxPlayers = 2;
-	BotFillCount = FMath::Min(BotFillCount, 2);
+	GameSession->MaxPlayers = DefaultMaxPlayers;
+	BotFillCount = FMath::Min(BotFillCount, DefaultMaxPlayers);
 	bForceRespawn = true;
 	bBalanceTeams = true;
 }
@@ -280,4 +280,27 @@ void AUTDuelGame::SetEloFor(AUTPlayerState* PS, bool InbRankedSession, int32 New
 			PS->DuelMatchesPlayed++;
 		}
 	}
+}
+
+void AUTDuelGame::CheckBotCount()
+{
+	if (bRankedSession)
+	{
+		return;
+	}
+
+	Super::CheckBotCount();
+}
+
+void AUTDuelGame::DefaultTimer()
+{
+	if (bRankedSession && HasMatchStarted() && !HasMatchEnded())
+	{
+		if (NumPlayers == 1)
+		{
+			EndGame(Cast<AUTPlayerState>(GameState->PlayerArray[0]), FName(TEXT("OpponentDrop")));			
+		}
+	}
+
+	Super::DefaultTimer();
 }

@@ -36,6 +36,7 @@
 #include "UTRallyPoint.h"
 #include "UTFlagRunGameState.h"
 #include "UTHUDWidgetAnnouncements.h"
+#include "SUTWindowBase.h"
 
 static FName NAME_Intensity(TEXT("Intensity"));
 
@@ -119,7 +120,7 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 	SuffixNth = NSLOCTEXT("UTHUD", "NthPlaceSuffix", "th");
 
 	CachedProfileSettings = nullptr;
-	BuildText = NSLOCTEXT("UTHUD", "info", "PRE-ALPHA Build 0.1.7");
+	BuildText = NSLOCTEXT("UTHUD", "info", "PRE-ALPHA Build 0.1.8");
 	bShowVoiceDebug = false;
 	bDrawDamageNumbers = true;
 
@@ -130,6 +131,35 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 
 	MiniMapIconAlpha = 1.f;
 	MiniMapIconMuting = 0.8f;
+	MinimapScaleX = 1.f;
+	LastHoveredActorChangeTime = -1000.0f;
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> ELOBadgeGreen(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankBadge_Beginner_48x48.UT_RankBadge_Beginner_48x48'"));
+	ELOBadges.Add(ELOBadgeGreen.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> ELOBadgeBronze(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankBadge_Steel_48x48.UT_RankBadge_Steel_48x48'"));
+	ELOBadges.Add(ELOBadgeBronze.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> ELOBadgeSilver(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankBadge_Gold_48x48.UT_RankBadge_Gold_48x48'"));
+	ELOBadges.Add(ELOBadgeSilver.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> ELOBadgeGold(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankBadge_Tarydium_48x48.UT_RankBadge_Tarydium_48x48'"));
+	ELOBadges.Add(ELOBadgeGold.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> OneStar(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankStar_One_48x48.UT_RankStar_One_48x48'"));
+	XPStars.Add(OneStar.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> TwoStar(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankStar_Two_48x48.UT_RankStar_Two_48x48'"));
+	XPStars.Add(TwoStar.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> ThreeStar(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankStar_Three_48x48.UT_RankStar_Three_48x48'"));
+	XPStars.Add(ThreeStar.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> FourStar(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankStar_Four_48x48.UT_RankStar_Four_48x48'"));
+	XPStars.Add(FourStar.Object);
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> FiveStar(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankStar_Five_48x48.UT_RankStar_Five_48x48'"));
+	XPStars.Add(FiveStar.Object);
 }
 
 void AUTHUD::Destroyed()
@@ -567,6 +597,13 @@ void AUTHUD::NotifyMatchStateChange()
 			bShowScores = false;
 			bForceScores = false;
 		}
+		else if (GS->GetMatchState() == MatchState::WaitingToStart)
+		{
+			// We have to give a short delay before bringing up this menu because in most cases, we
+			// are still in the moving loading code.
+			FTimerHandle TmpHandle;
+			GetWorldTimerManager().SetTimer(TmpHandle, this, &AUTHUD::ShowUTMenu, 0.5f, false);
+		}
 		else if (GS->GetMatchState() == MatchState::WaitingPostMatch)
 		{
 			if (GS->GameModeClass != nullptr)
@@ -587,23 +624,28 @@ void AUTHUD::NotifyMatchStateChange()
 		}
 		else if (GS->GetMatchState() == MatchState::PlayerIntro)
 		{
+			if (UTLP)
+			{
+				UTLP->HideMenu();
+			}
+
 			bool bShouldUseLineUp = false;
 			if (GS->LineUpHelper)
 			{
-				AUTLineUpZone* IntroZoneFound = AUTLineUpHelper::GetAppropriateSpawnList(GetWorld(), LineUpTypes::Intro);
+				AUTLineUpZone* IntroZoneFound = GS->GetAppropriateSpawnList(LineUpTypes::Intro);
 				if (IntroZoneFound)
 				{
 					bShouldUseLineUp = true;
 				}
 			}
 
+			if (UTPlayerOwner->UTPlayerState && UTPlayerOwner->UTPlayerState->bIsWarmingUp)
+			{
+				UTPlayerOwner->ClientReceiveLocalizedMessage(UUTGameMessage::StaticClass(), 16, nullptr, nullptr, nullptr);
+			}
 			//if we can't line up, use old method
 			if (!bShouldUseLineUp)
 			{
-				if (UTPlayerOwner->UTPlayerState && UTPlayerOwner->UTPlayerState->bIsWarmingUp)
-				{
-					UTPlayerOwner->ClientReceiveLocalizedMessage(UUTGameMessage::StaticClass(), 16, nullptr, nullptr, nullptr);
-				}
 				GetWorldTimerManager().SetTimer(MatchSummaryHandle, this, &AUTHUD::OpenMatchSummary, 1.7f, false);
 			}
 		}
@@ -612,9 +654,12 @@ void AUTHUD::NotifyMatchStateChange()
 			ToggleScoreboard(false);
 			UTLP->HideMenu();
 
-			if (UTLP->HasChatText() && UTPlayerOwner && UTPlayerOwner->UTPlayerState)
+			if (GS->GetMatchState() != MatchState::InProgress)
 			{
-				UTLP->ShowQuickChat(UTPlayerOwner->UTPlayerState->ChatDestination);
+				if (UTLP->HasChatText() && UTPlayerOwner && UTPlayerOwner->UTPlayerState)
+				{
+					UTLP->ShowQuickChat(UTPlayerOwner->UTPlayerState->ChatDestination);
+				}
 			}
 		}
 		if (MyUTScoreboard)
@@ -635,16 +680,13 @@ void AUTHUD::OpenMatchSummary()
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (UTLP && GS && !GS->IsPendingKillPending())
 	{
-		if (PlayerOwner && PlayerOwner->PlayerState && !PlayerOwner->PlayerState->bOnlySpectator)
-		{
-			UTLP->CloseSpectatorWindow();
-		}
 		UTLP->ShowMenu(TEXT("forcesummary"));
 	}
 }
 
 void AUTHUD::PostRender()
 {
+#if !UE_SERVER
 	// @TODO FIXMESTEVE - need engine to also give pawn a chance to postrender so don't need this hack
 	AUTRemoteRedeemer* Missile = UTPlayerOwner ? Cast<AUTRemoteRedeemer>(UTPlayerOwner->GetViewTarget()) : NULL;
 	if (Missile && !UTPlayerOwner->IsBehindView())
@@ -659,11 +701,7 @@ void AUTHUD::PostRender()
 		GS->SortPRIArray();
 	}
 	Super::PostRender();
-
-
-	//DrawString(FText::Format( NSLOCTEXT("a","b","InputMode: {0}"),  FText::AsNumber(Cast<AUTBasePlayerController>(PlayerOwner)->InputMode)), 0, 0, ETextHorzPos::Left, ETextVertPos::Top, SmallFont, FLinearColor::White, 1.0, true);
-	//Canvas->SetDrawColor(255,0,0,255);
-
+#endif
 }
 
 void AUTHUD::CacheFonts()
@@ -724,14 +762,6 @@ void AUTHUD::DrawHUD()
 		if (!bFontsCached)
 		{
 			CacheFonts();
-		}
-		if (PlayerOwner && PlayerOwner->PlayerState && PlayerOwner->PlayerState->bOnlySpectator)
-		{
-			UUTLocalPlayer* UTLP = Cast<UUTLocalPlayer>(PlayerOwner->Player);
-			if (UTLP)
-			{
-				UTLP->OpenSpectatorWindow();
-			}
 		}
 
 		if (DamageScreenMID != nullptr)
@@ -1058,7 +1088,7 @@ void AUTHUD::DrawDamageIndicators()
 	}
 }
 
-void AUTHUD::CausedDamage(APawn* HitPawn, int32 Damage)
+void AUTHUD::CausedDamage(APawn* HitPawn, int32 Damage, bool bArmorDamage)
 {
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if ((HitPawn != UTPlayerOwner->GetViewTarget()) && (GS == NULL || !GS->OnSameTeam(HitPawn, PlayerOwner)))
@@ -1081,7 +1111,7 @@ void AUTHUD::CausedDamage(APawn* HitPawn, int32 Damage)
 			}
 			// save amount, scale , 2D location
 			float HalfHeight = Cast<ACharacter>(HitPawn) ? 1.15f * ((ACharacter *)(HitPawn))->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 0.f;
-			DamageNumbers.Add(FEnemyDamageNumber(HitPawn, GetWorld()->GetTimeSeconds(), FMath::Min(Damage, 255), HitPawn->GetActorLocation() + FVector(0.f, 0.f, HalfHeight), 0.75f));
+			DamageNumbers.Add(FEnemyDamageNumber(HitPawn, GetWorld()->GetTimeSeconds(), FMath::Min(Damage, 255), HitPawn->GetActorLocation() + FVector(0.f, 0.f, HalfHeight), 0.75f, bArmorDamage));
 		}
 	}
 }
@@ -1089,27 +1119,35 @@ void AUTHUD::CausedDamage(APawn* HitPawn, int32 Damage)
 void AUTHUD::DrawDamageNumbers()
 {
 	FFontRenderInfo TextRenderInfo;
-	TextRenderInfo.bEnableShadow = true;
-	Canvas->DrawColor = FColor::Red;
 	const float RenderScale = float(Canvas->SizeY) / 1080.0f;
 
 	for (int32 i = 0; i < DamageNumbers.Num(); i++)
 	{
-		DamageNumbers[i].Scale = DamageNumbers[i].Scale + 2.3f * GetWorld()->DeltaTimeSeconds;
-		if (DamageNumbers[i].Scale > 1.7f)
+		DamageNumbers[i].Scale = DamageNumbers[i].Scale + 1.6f * GetWorld()->DeltaTimeSeconds;
+		float MaxScale = FMath::Clamp(0.055f * float(DamageNumbers[i].DamageAmount), 1.7f, 2.4f);
+		if (DamageNumbers[i].Scale > MaxScale)
 		{
 			DamageNumbers.RemoveAt(i, 1);
 			i--;
 		}
 		else
 		{
-			Canvas->DrawColor.A = 255.f * (1.f - 0.45f * DamageNumbers[i].Scale);
+			float Alpha = 1.f - FMath::Clamp((DamageNumbers[i].Scale-1.f)/(MaxScale - 1.f), 0.f, 1.f);
 			FVector ScreenPosition = Canvas->Project(DamageNumbers[i].WorldPosition);
 			float XL, YL;
 			FString DamageString = FString::Printf(TEXT("%d"), DamageNumbers[i].DamageAmount);
-			float NumberScale = RenderScale * DamageNumbers[i].Scale;
+			float NumberScale = RenderScale * FMath::Min(2.0f, DamageNumbers[i].Scale);
 			Canvas->TextSize(MediumFont, DamageString, XL, YL, 1.f, 1.f);
-			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*NumberScale, ScreenPosition.Y - NumberScale * (0.5f*YL + (DamageNumbers[i].Scale - 0.75f)*0.5f*YL), NumberScale, NumberScale, TextRenderInfo);
+			FLinearColor BlackColor = FLinearColor::Black;
+			BlackColor.A = Alpha;
+			Canvas->SetLinearDrawColor(BlackColor);
+			float OutlineScale = 1.075f*NumberScale;
+			float Rise = RenderScale * (10.f + (DamageNumbers[i].Scale - 1.f) * 75.f);
+			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*OutlineScale, ScreenPosition.Y - OutlineScale * 0.5f*YL - Rise, OutlineScale, OutlineScale, TextRenderInfo);
+			FLinearColor NumberColor = DamageNumbers[i].bArmorDamage ? GOLDCOLOR : REDHUDCOLOR;
+			NumberColor.A = Alpha;
+			Canvas->SetLinearDrawColor(NumberColor);
+			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*NumberScale, ScreenPosition.Y - NumberScale * 0.5f*YL - Rise, NumberScale, NumberScale, TextRenderInfo);
 		}
 	}
 }
@@ -1375,6 +1413,7 @@ void AUTHUD::UpdateMinimapTexture(UCanvas* C, int32 Width, int32 Height)
 		if (LevelBox.IsValid)
 		{
 			LevelBox = LevelBox.ExpandBy(LevelBox.GetSize() * 0.01f); // extra so edges aren't right up against the texture
+			MinimapScaleX = FMath::Min(1.f, LevelBox.GetExtent().X / LevelBox.GetExtent().Y);
 			CalcMinimapTransform(LevelBox, Width, Height);
 			for (TMap<const UUTPathNode*, FNavMeshTriangleList>::TConstIterator It(TriangleMap); It; ++It)
 			{
@@ -1424,6 +1463,64 @@ void AUTHUD::UpdateMinimapTexture(UCanvas* C, int32 Width, int32 Height)
 	}
 }
 
+AActor* AUTHUD::FindHoveredIconActor() const
+{
+	AActor* BestHovered = NULL;
+	float BestHoverDist = 40.f;
+	if ((GetInputMode() == EInputMode::EIM_GameAndUI) || (MyUTScoreboard && MyUTScoreboard->IsInteractive()))
+	{
+		FVector2D ClickPos;
+		UTPlayerOwner->GetMousePosition(ClickPos.X, ClickPos.Y);
+		for (TActorIterator<AUTPickup> It(GetWorld()); It; ++It)
+		{
+			FCanvasIcon Icon = It->GetMinimapIcon();
+			if (Icon.Texture != NULL)
+			{
+				FVector2D Pos(WorldToMapToScreen(It->GetActorLocation()));
+				float NewHoverDist = (ClickPos - Pos).Size();
+				if (NewHoverDist < BestHoverDist)
+				{
+					BestHovered = *It;
+					BestHoverDist = NewHoverDist;
+				}
+			}
+		}
+		for (TActorIterator<AUTRallyPoint> It(GetWorld()); It; ++It)
+		{
+			AUTRallyPoint* RP = *It;
+			if (RP)
+			{
+				FVector2D Pos(WorldToMapToScreen(It->GetActorLocation()));
+				float NewHoverDist = (ClickPos - Pos).Size();
+				if (NewHoverDist < BestHoverDist)
+				{
+					BestHovered = *It;
+					BestHoverDist = NewHoverDist;
+				}
+			}
+		}
+		AUTCTFGameState* GS = GetWorld()->GetGameState<AUTCTFGameState>();
+		if (GS != nullptr)
+		{
+			for (int32 TeamIndex = 0; TeamIndex < 2; TeamIndex++)
+			{
+				AUTCTFFlagBase* Base = GS->GetFlagBase(TeamIndex);
+				if (Base)
+				{
+					FVector2D Pos(WorldToMapToScreen(Base->GetActorLocation()));
+					float NewHoverDist = (ClickPos - Pos).Size();
+					if (NewHoverDist < BestHoverDist)
+					{
+						BestHovered = Base;
+						BestHoverDist = NewHoverDist;
+					}
+				}
+			}
+		}
+	}
+	return BestHovered;
+}
+
 void AUTHUD::DrawMinimap(const FColor& DrawColor, float MapSize, FVector2D DrawPos)
 {
 	if (MinimapTexture == NULL)
@@ -1431,6 +1528,17 @@ void AUTHUD::DrawMinimap(const FColor& DrawColor, float MapSize, FVector2D DrawP
 		CreateMinimapTexture();
 	}
 
+	AActor* NewHoveredActor = FindHoveredIconActor();
+	if (NewHoveredActor != LastHoveredActor)
+	{
+		if (UTPlayerOwner != nullptr)
+		{
+			UTPlayerOwner->PlayMenuSelectSound();
+		}
+		LastHoveredActorChangeTime = GetWorld()->RealTimeSeconds;
+		LastHoveredActor = NewHoveredActor;
+	}
+	DrawPos.X -= 0.5f*MapSize*(1.f - MinimapScaleX);
 	FVector ScaleFactor(MapSize / MinimapTexture->GetSurfaceWidth(), MapSize / MinimapTexture->GetSurfaceHeight(), 1.0f);
 	MapToScreen = FTranslationMatrix(FVector(DrawPos, 0.0f) / ScaleFactor) * FScaleMatrix(ScaleFactor);
 	bInvertMinimap = ShouldInvertMinimap();
@@ -1447,11 +1555,11 @@ void AUTHUD::DrawMinimap(const FColor& DrawColor, float MapSize, FVector2D DrawP
 		Canvas->DrawColor = DrawColor;
 		if (bInvertMinimap)
 		{
-			Canvas->DrawTile(MinimapTexture, MapToScreen.GetOrigin().X - MapSize, MapToScreen.GetOrigin().Y - MapSize, MapSize, MapSize, 0.0f, MinimapTexture->GetSurfaceHeight(), -1.f * MinimapTexture->GetSurfaceWidth(), -1.f *MinimapTexture->GetSurfaceHeight());
+			Canvas->DrawTile(MinimapTexture, MapToScreen.GetOrigin().X - MapSize * (1.f - 0.5f*(1.f - MinimapScaleX)), MapToScreen.GetOrigin().Y - MapSize, MapSize*MinimapScaleX, MapSize, MinimapTexture->GetSurfaceWidth() * (1.f - 0.5f*(1.f - MinimapScaleX)), MinimapTexture->GetSurfaceHeight(), -1.f * MinimapTexture->GetSurfaceWidth()*MinimapScaleX, -1.f *MinimapTexture->GetSurfaceHeight());
 		}
 		else
 		{
-			Canvas->DrawTile(MinimapTexture, MapToScreen.GetOrigin().X, MapToScreen.GetOrigin().Y, MapSize, MapSize, 0.0f, 0.0f, MinimapTexture->GetSurfaceWidth(), MinimapTexture->GetSurfaceHeight());
+			Canvas->DrawTile(MinimapTexture, MapToScreen.GetOrigin().X + 0.5f*MapSize*(1.f - MinimapScaleX), MapToScreen.GetOrigin().Y, MapSize*MinimapScaleX, MapSize, 0.5f*MinimapTexture->GetSurfaceWidth()*(1.f - MinimapScaleX), 0.0f, MinimapTexture->GetSurfaceWidth()*MinimapScaleX, MinimapTexture->GetSurfaceHeight());
 		}
 		DrawMinimapSpectatorIcons();
 	}
@@ -1473,13 +1581,16 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 	// draw pickup icons
 	AUTPickup* NamedPickup = NULL;
 	FVector2D NamedPickupPos = FVector2D::ZeroVector;
+	AUTRallyPoint* NamedRallyPoint = NULL;
+	FVector2D NamedObjectivePos = FVector2D::ZeroVector;
+	FLinearColor NamedObjectiveColor = FLinearColor::White;
+
 	for (TActorIterator<AUTPickup> It(GetWorld()); It; ++It)
 	{
 		FCanvasIcon Icon = It->GetMinimapIcon();
 		if (Icon.Texture != NULL)
 		{
 			FVector2D Pos(WorldToMapToScreen(It->GetActorLocation()));
-			const float Ratio = Icon.UL / Icon.VL;
 			FLinearColor MutedColor = (LastHoveredActor == *It) ? It->IconColor: It->IconColor * MiniMapIconMuting;
 			MutedColor.A = (LastHoveredActor == *It) ? 1.f : MiniMapIconAlpha;
 			float IconSize = (LastHoveredActor == *It) ? (48.0f * RenderScale * FMath::InterpEaseOut<float>(1.0f, 1.25f, FMath::Min<float>(0.2f, GetWorld()->RealTimeSeconds - LastHoveredActorChangeTime) * 5.0f, 2.0f)) : (32.0f * RenderScale);
@@ -1494,7 +1605,7 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 				IconSize = IconSize * (1.f + Scaling);
 			}
 			Canvas->DrawColor = MutedColor.ToFColor(false);
-			Canvas->DrawTile(Icon.Texture, Pos.X - 0.5f * Ratio * IconSize, Pos.Y - 0.5f * IconSize, Ratio * IconSize, IconSize, Icon.U, Icon.V, Icon.UL, Icon.VL);
+			Canvas->DrawTile(Icon.Texture, Pos.X - 0.5f * IconSize, Pos.Y - 0.5f * IconSize, IconSize, IconSize, Icon.U, Icon.V, Icon.UL, Icon.VL);
 			if (LastHoveredActor == *It)
 			{
 				NamedPickup = *It;
@@ -1516,6 +1627,12 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 				FLinearColor RallyColor = FLinearColor::Gray;
 				float IconSizeX = 48.f*RenderScale;
 				float IconSizeY = 36.f*RenderScale;
+				if (LastHoveredActor == RP)
+				{
+					float Scaling = 1.5f * FMath::InterpEaseOut<float>(1.0f, 1.25f, FMath::Min<float>(0.2f, GetWorld()->RealTimeSeconds - LastHoveredActorChangeTime) * 5.0f, 2.0f);
+					IconSizeX *= Scaling;
+					IconSizeY *= Scaling;
+				}
 				if (GS && (GS->CurrentRallyPoint == RP) && (UTPlayerOwner->UTPlayerState->bOnlySpectator || GS->bEnemyRallyPointIdentified || (GS->bRedToCap == (UTPlayerOwner->UTPlayerState->Team->TeamIndex == 0))))
 				{
 					RallyColor = GS->bRedToCap ? REDHUDCOLOR : BLUEHUDCOLOR;
@@ -1530,6 +1647,12 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 				}
 				Canvas->DrawColor = RallyColor.ToFColor(false);
 				Canvas->DrawTile(HUDAtlas, Pos.X - 0.5f * IconSizeX, Pos.Y - 0.5f * IconSizeY, IconSizeX, IconSizeY, 832.f, 0.f, 64.f, 48.f);
+				if (LastHoveredActor == RP)
+				{
+					NamedRallyPoint = RP;
+					NamedObjectivePos = Pos;
+					NamedObjectiveColor = RallyColor;
+				}
 			}
 		}
 	}
@@ -1545,10 +1668,12 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 			Pos.Y = bInvertMinimap ? Pos.Y + GV->MinimapOffset.Y * Canvas->ClipX /1280.f : Pos.Y - GV->MinimapOffset.Y * Canvas->ClipX / 1280.f;
 			float XL, YL;
 			Canvas->TextSize(TinyFont, GV->VolumeName.ToString(), XL, YL);
+			XL *= RenderScale;
+			YL *= RenderScale;
 			Canvas->DrawColor = FColor(0, 0, 0, 64);
 			Canvas->DrawTile(SpawnHelpTextBG.Texture, Pos.X - XL * 0.5f, Pos.Y - 0.29f*YL, XL, 0.8f*YL, 149, 138, 32, 32, BLEND_Translucent);
 			Canvas->DrawColor = FColor::White;
-			Canvas->DrawText(TinyFont, GV->VolumeName, Pos.X - XL * 0.5f, Pos.Y - 0.5f*YL);
+			Canvas->DrawText(TinyFont, GV->VolumeName, Pos.X - XL * 0.5f, Pos.Y - 0.5f*YL, RenderScale, RenderScale);
 		}
 	}
 
@@ -1574,7 +1699,7 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 					// draw line from hud to this loc - can't used Canvas line drawing code because it doesn't support translucency
 					FVector LineStartPoint(Pos.X, Pos.Y, 0.f);
 					FLinearColor LineColor = (PS == GetScorerPlayerState()) ? FLinearColor::Yellow : FLinearColor::White;
-					LineColor.A = 0.1f;
+					LineColor.A = (PS == GetScorerPlayerState()) ? 0.2f : 0.1f;
 					FBatchedElements* BatchedElements = Canvas->Canvas->GetBatchedElements(FCanvas::ET_Line);
 					FHitProxyId HitProxyId = Canvas->Canvas->GetHitProxyId();
 					BatchedElements->AddTranslucentLine(PS->ScoreCorner, LineStartPoint, LineColor, HitProxyId, 4.f);
@@ -1587,8 +1712,14 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 
 				if (Cast<AUTPlayerController>(PlayerOwner) && (Cast<AUTPlayerController>(PlayerOwner)->LastSpectatedPlayerId == PS->SpectatingID))
 				{
+					float Speed = 2.f;
+					float ScaleTime = Speed*GetWorld()->GetTimeSeconds() - int32(Speed*GetWorld()->GetTimeSeconds());
+					float Scaling = (ScaleTime < 0.5f)
+						? ScaleTime
+						: 1.f - ScaleTime;
+					const FVector2D OwnPlayerIconScale = PlayerIconScale * (1.f + Scaling);
 					Canvas->DrawColor = FColor(255, 255, 0, 255);
-					Canvas->DrawTile(SelectedPlayerTexture, Pos.X - 0.6f*PlayerIconScale.X, Pos.Y - 0.6f*PlayerIconScale.Y, 1.2f*PlayerIconScale.X, 1.2f*PlayerIconScale.Y, 0.0f, 0.0f, SelectedPlayerTexture->GetSurfaceWidth(), SelectedPlayerTexture->GetSurfaceHeight());
+					Canvas->DrawTile(SelectedPlayerTexture, Pos.X - 0.6f*OwnPlayerIconScale.X, Pos.Y - 0.6f*OwnPlayerIconScale.Y, 1.2f*OwnPlayerIconScale.X, 1.2f*OwnPlayerIconScale.Y, 0.0f, 0.0f, SelectedPlayerTexture->GetSurfaceWidth(), SelectedPlayerTexture->GetSurfaceHeight());
 				}
 			}
 		}
@@ -1606,16 +1737,35 @@ void AUTHUD::DrawMinimapSpectatorIcons()
 	}
 
 	// draw name last so it is on top of any conflicting icons
-	if (NamedPickup != NULL)
+	if (NamedPickup != nullptr)
 	{
 		float XL, YL;
-		Canvas->DrawColor = NamedPickup->IconColor.ToFColor(false);
 		Canvas->TextSize(TinyFont, NamedPickup->GetDisplayName().ToString(), XL, YL);
-		FColor TextColor = Canvas->DrawColor;
+		XL *= RenderScale;
+		YL *= RenderScale;
 		Canvas->DrawColor = FColor(0, 0, 0, 64);
 		Canvas->DrawTile(SpawnHelpTextBG.Texture, NamedPickupPos.X - XL * 0.5f, NamedPickupPos.Y - 26.0f * RenderScale - 0.8f*YL, XL, 0.8f*YL, 149, 138, 32, 32, BLEND_Translucent);
-		Canvas->DrawColor = TextColor;
-		Canvas->DrawText(TinyFont, NamedPickup->GetDisplayName(), NamedPickupPos.X - XL * 0.5f, NamedPickupPos.Y - 26.0f * RenderScale - YL);
+		Canvas->DrawColor = NamedPickup->IconColor.ToFColor(false);
+
+		FStatsFontInfo FontInfo;
+		FontInfo.TextRenderInfo.bEnableShadow = true;
+		FontInfo.TextFont = TinyFont;
+		Canvas->DrawText(TinyFont, NamedPickup->GetDisplayName(), NamedPickupPos.X - XL * 0.5f, NamedPickupPos.Y - 26.0f * RenderScale - YL, RenderScale, RenderScale, FontInfo.TextRenderInfo);
+	}
+	else if (NamedRallyPoint != nullptr)
+	{
+		float XL, YL;
+		Canvas->TextSize(TinyFont, NamedRallyPoint->RallyBeaconText.ToString(), XL, YL);
+		XL *= RenderScale;
+		YL *= RenderScale;
+		Canvas->DrawColor = FColor(0, 0, 0, 64);
+		Canvas->DrawTile(SpawnHelpTextBG.Texture, NamedObjectivePos.X - XL * 0.5f, NamedObjectivePos.Y - 26.0f * RenderScale - 0.8f*YL, XL, 0.8f*YL, 149, 138, 32, 32, BLEND_Translucent);
+		Canvas->DrawColor = FColor::White;
+
+		FStatsFontInfo FontInfo;
+		FontInfo.TextRenderInfo.bEnableShadow = true;
+		FontInfo.TextFont = TinyFont;
+		Canvas->DrawText(TinyFont, NamedRallyPoint->RallyBeaconText, NamedObjectivePos.X - XL * 0.5f, NamedObjectivePos.Y - 26.0f * RenderScale - YL, RenderScale, RenderScale, FontInfo.TextRenderInfo);
 	}
 }
 
@@ -1734,11 +1884,6 @@ bool AUTHUD::GetDrawHUDKillIconMsg()
 bool AUTHUD::GetPlayKillSoundMsg()
 {
 	return VerifyProfileSettings() ? CachedProfileSettings->bPlayKillSoundMsg : UUTProfileSettings::StaticClass()->GetDefaultObject<UUTProfileSettings>()->bPlayKillSoundMsg;
-}
-
-float AUTHUD::GetQuickStatsAngle()
-{
-	return VerifyProfileSettings() ? CachedProfileSettings->QuickStatsAngle : UUTProfileSettings::StaticClass()->GetDefaultObject<UUTProfileSettings>()->QuickStatsAngle;
 }
 
 float AUTHUD::GetQuickStatsDistance()
@@ -1963,7 +2108,9 @@ float AUTHUD::DrawWinConditions(UFont* InFont, float XPos, float YPos, float Sco
 	{
 		DrawText(ScoreMessageText.ToString(), FLinearColor::White, XPos, YPos, InFont, RenderScale, 1.f);
 	}
-	return 0.f;
+	float XL, YL;
+	Canvas->StrLen(InFont, ScoreMessageText.ToString(), XL, YL);
+	return RenderScale * XL;
 }
 
 void AUTHUD::ClearAllUMGWidgets()
@@ -1974,3 +2121,22 @@ void AUTHUD::ClearAllUMGWidgets()
 	}
 }
 
+void AUTHUD::ShowUTMenu()
+{
+	// If we are a tutorial game mode
+	if ( GetWorld()->GetNetMode() == NM_Standalone )
+	{
+		AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+		if (GameMode && GameMode->bBasicTrainingGame && GameMode->TutorialMask <= TUTORIAL_Pickups)
+		{
+			return;
+		}
+	}
+
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;
+	if (GS && UTLP && GS->GetMatchState() == MatchState::WaitingToStart)
+	{
+		UTLP->ShowMenu(TEXT(""));
+	}
+}

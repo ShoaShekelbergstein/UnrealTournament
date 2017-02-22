@@ -40,7 +40,6 @@ AUTCTFRoundGame::AUTCTFRoundGame(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
 	TimeLimit = 5;
-	QuickPlayersToStart = 10;
 	IntermissionDuration = 28.f;
 	RoundLives = 5;
 	bPerPlayerLives = true;
@@ -84,6 +83,11 @@ void AUTCTFRoundGame::PostLogin(APlayerController* NewPlayer)
 	if (NewPlayer)
 	{
 		InitPlayerForRound(Cast<AUTPlayerState>(NewPlayer->PlayerState));
+		AUTPlayerState* UTPS = Cast<AUTPlayerController>(NewPlayer) ? Cast<AUTPlayerController>(NewPlayer)->UTPlayerState : nullptr;
+		if (UTPS && UTPS->Team && IsMatchInProgress() && UTGameState && !UTGameState->IsMatchIntermission())
+		{
+			NewPlayer->ClientReceiveLocalizedMessage(UUTCTFRoleMessage::StaticClass(), IsTeamOnDefense(UTPS->Team->TeamIndex) ? 2 : 1);
+		}
 	}
 	Super::PostLogin(NewPlayer);
 }
@@ -91,6 +95,10 @@ void AUTCTFRoundGame::PostLogin(APlayerController* NewPlayer)
 void AUTCTFRoundGame::CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps)
 {
 	MenuProps.Empty();
+	if (BotFillCount == 0)
+	{
+		BotFillCount = DefaultMaxPlayers;
+	}
 	MenuProps.Add(MakeShareable(new TAttributeProperty<int32>(this, &BotFillCount, TEXT("BotFill"))));
 	MenuProps.Add(MakeShareable(new TAttributePropertyBool(this, &bBalanceTeams, TEXT("BalanceTeams"))));
 }
@@ -99,7 +107,7 @@ void AUTCTFRoundGame::InitGame(const FString& MapName, const FString& Options, F
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
 
-	if (!UGameplayStatics::HasOption(Options, TEXT("TimeLimit")))
+	if (!UGameplayStatics::HasOption(Options, TEXT("TimeLimit")) || (TimeLimit <= 0))
 	{
 		AUTWorldSettings* WorldSettings = bUseLevelTiming ? Cast<AUTWorldSettings>(GetWorldSettings()) : nullptr;
 		TimeLimit = WorldSettings ? WorldSettings->DefaultRoundLength : TimeLimit;
@@ -190,6 +198,21 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 {
 	if (bFirstRoundInitialized)
 	{
+/*
+		// kick idlers
+		if (UTGameState && GameSession)
+		{
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				if (UTPlayerState && !UTPlayerState->bIsABot && !UTPlayerState->bOutOfLives && UTPlayerState->IsPlayerIdle() && !UTPlayerState->bOnlySpectator && !UTPlayerState->bIsInactive && Cast<APlayerController>(UTPlayerState->GetOwner()))
+				{
+					Cast<APlayerController>(UTPlayerState->GetOwner())->ClientWasKicked(NSLOCTEXT("General", "IdleKick", "You were kicked for being idle."));
+					UTPlayerState->GetOwner()->Destroy();
+				}
+			}
+		}
+*/
 		// view defender base, with last team to score around it
 		int32 TeamToWatch = IntermissionTeamToView(nullptr);
 
@@ -597,14 +620,34 @@ void AUTCTFRoundGame::InitFlags()
 			// check for flag carrier already here waiting
 			TArray<AActor*> Overlapping;
 			Base->MyFlag->GetOverlappingActors(Overlapping, AUTCharacter::StaticClass());
+			// try humans first, then bots
 			for (AActor* A : Overlapping)
 			{
 				AUTCharacter* Character = Cast<AUTCharacter>(A);
-				if (Character != NULL)
+				if (Character != nullptr && Cast<APlayerController>(Character->Controller) != nullptr)
 				{
 					if (!GetWorld()->LineTraceTestByChannel(Character->GetActorLocation(), Base->MyFlag->GetActorLocation(), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams))
 					{
 						Base->MyFlag->TryPickup(Character);
+						if (Base->MyFlag->ObjectState == CarriedObjectState::Held)
+						{
+							return;
+						}
+					}
+				}
+			}
+			for (AActor* A : Overlapping)
+			{
+				AUTCharacter* Character = Cast<AUTCharacter>(A);
+				if (Character != nullptr && Cast<APlayerController>(Character->Controller) == nullptr)
+				{
+					if (!GetWorld()->LineTraceTestByChannel(Character->GetActorLocation(), Base->MyFlag->GetActorLocation(), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams))
+					{
+						Base->MyFlag->TryPickup(Character);
+						if (Base->MyFlag->ObjectState == CarriedObjectState::Held)
+						{
+							return;
+						}
 					}
 				}
 			}
@@ -783,7 +826,7 @@ void AUTCTFRoundGame::InitPlayerForRound(AUTPlayerState* PS)
 		PS->RoundKills = 0;
 		PS->RoundDeaths = 0;
 		PS->RoundKillAssists = 0;
-		PS->NextRallyTime = GetWorld()->GetTimeSeconds();
+		PS->bRallyActivated = false;
 		PS->RespawnWaitTime = IsPlayerOnLifeLimitedTeam(PS) ? LimitedRespawnWaitTime : UnlimitedRespawnWaitTime;
 		PS->SetRemainingBoosts(InitialBoostCount);
 		PS->bSpecialTeamPlayer = false;
@@ -1058,6 +1101,29 @@ void AUTCTFRoundGame::ScoreKill_Implementation(AController* Killer, AController*
 				}
 			}
 		}
+		else if (UTGameState && IsMatchInProgress() && (GetMatchState() != MatchState::MatchIntermission))
+		{
+			bool bFoundLiveTeammate = false;
+			int32 TeamCount = 0;
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				AUTPlayerState* TeamPS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				if (TeamPS && (OtherPS->Team == TeamPS->Team) && !TeamPS->bOutOfLives && !TeamPS->bIsInactive)
+				{
+					TeamCount++;
+					if (TeamPS->GetUTCharacter() && !TeamPS->GetUTCharacter()->IsDead())
+					{
+						bFoundLiveTeammate = true;
+						break;
+					}
+				}
+			}
+			if (!bFoundLiveTeammate && (TeamCount == 5) && (GetWorld()->GetTimeSeconds() - LastAceTime > 20.f))
+			{
+				LastAceTime = GetWorld()->GetTimeSeconds();
+				BroadcastLocalized(NULL, UUTCTFRewardMessage::StaticClass(), 8);
+			}
+		}
 
 		int32 RemainingDefenders = 0;
 		int32 RemainingLives = 0;
@@ -1116,7 +1182,7 @@ void AUTCTFRoundGame::ScoreKill_Implementation(AController* Killer, AController*
 		if (OtherPS->RemainingLives > 0)
 		{
 			OtherPS->RespawnWaitTime = FMath::Max(1.f, float(RemainingDefenders));
-			if (UTGameState && UTGameState->GetRemainingTime() > 180)
+			if (UTGameState && UTGameState->GetRemainingTime() > 150)
 			{
 				OtherPS->RespawnWaitTime = FMath::Min(OtherPS->RespawnWaitTime, 2.f);
 			}

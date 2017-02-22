@@ -333,66 +333,8 @@ void FUTMatchmakingStats::FinalizeSearchAttempt(MMStats_Attempt& SearchAttempt){
 	FinalizeSearchPass(SearchAttempt.SearchPass);
 }
 
-/**
-* @EventName MMStats_SingleSearchEvent
-* @Trigger Matchmaking completed for some reason
-* @Type static
-* @EventParam MMStats_SessionId string Guid of this whole matchmaking process
-* @EventParam MMStats_Version integer Matchmaking analytics version
-* @EventParam MMStats_SearchType string Matchmaking type of this single search
-* @EventParam MMStats_AttemptTime float Total time used in this single matchmaking search, includes delay after each join attempt actions (ms)
-* @EventParam MMStats_AttemptEndResult string End result of this single matchmaking search
-* @EventParam MMStats_AttemptSearchResultCount integer Number of results return in this single matchmaking search
-* @EventParam MMStats_QosDatacenterId string Selected data center for this single matchmaking
-* @EventParam MMStats_QosTotalTime float Time spent on finding data center (ms)
-* @EventParam MMStats_QosNumResults integer Number of Qos results returned
-* @EventParam MMStats_QosSearchDetails Array JSON serialization of Qos results, seperated by comma
-* @EventParam MMStats_SearchPassTime float Time spent on finding sessions (ms)
-* @EventParam MMStats_TotalJoinAttemptTime float Time spent on trying to join sessions  (ms)
-* @EventParam MMStats_NumDedicatedResults integer Number of dedicated results
-* @EventParam MMStats_NumSearchPassResults integer Number of results got from finding sessions
-* @EventParam MMStats_JoinAttemptNone_Count integer Counting of EMatchmakingJoinAction::NoAttempt
-* @EventParam MMStats_JoinAttemptSucceeded_Count integer Counting of EMatchmakingJoinAction::JoinSucceeded
-* @EventParam MMStats_JoinAttemptFailedFull_Count integer Counting of EMatchmakingJoinAction::JoinFailed_Full
-* @EventParam MMStats_JoinAttemptFailedTimeout_Count integer Counting of EMatchmakingJoinAction::JoinFailed_Timeout
-* @EventParam MMStats_JoinAttemptFailedDenied_Count integer Counting of EMatchmakingJoinAction::JoinFailed_Denied
-* @EventParam MMStats_JoinAttemptFailedDuplicate_Count integer Counting of EMatchmakingJoinAction::JoinFailed_Duplicate
-* @EventParam MMStats_JoinAttemptFailedOther_Count integer Counting of EMatchmakingJoinAction::JoinFailed_Other
-* @EventParam MMStats_SearchResultDetails Array JSON serialization of search pass and join results in this single matchmaking, separated by comma
-* @Comments Analytics data for a single matchmaking search attempt
-*/
 void FUTMatchmakingStats::ParseSearchAttempt(TSharedPtr<IAnalyticsProvider>& AnalyticsProvider, FGuid& SessionId, MMStats_Attempt& SearchAttempt)
 {
-	TArray<FAnalyticsEventAttribute> MMAttributes;
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSessionGuid, SessionId.ToString()));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsVersion, StatsVersion));
-
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchType, EMatchmakingSearchType::ToString(SearchAttempt.SearchType)));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchAttemptTime, SearchAttempt.AttemptTime.MSecs));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchAttemptEndResult, EMatchmakingAttempt::ToString(SearchAttempt.AttemptResult)));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsAttemptSearchResultCount, SearchAttempt.SearchPass.SearchResults.Num()));
-	//Qos stats
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsQosDatacenterId, SearchAttempt.QosPass.BestDatacenterId));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsQosTotalTime, SearchAttempt.QosPass.SearchTime.MSecs));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsQosNumResults, SearchAttempt.QosPass.SearchResults.Num()));
-	FString QosDetail;
-	if (SearchAttempt.QosPass.SearchResults.Num() > 0)
-	{
-		for (auto& QosResult : SearchAttempt.QosPass.SearchResults)
-		{
-			QosDetail += FString::Printf(TEXT("{\"OwnerId\":\"%s\", \"DatacenterId\":\"%s\", \"PingInMs\":%d, \"bIsValid\":%s},"),
-											QosResult.OwnerId.IsValid() ? *QosResult.OwnerId->ToString() : TEXT("Unknown"),
-											*QosResult.DatacenterId,
-											QosResult.PingInMs,
-											QosResult.bIsValid ? TEXT("true") : TEXT("false")
-										);
-		}
-		QosDetail = QosDetail.LeftChop(1);
-	}
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsQosSearchResultDetails, QosDetail));
-	//SearchPass stats
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchPassTime, SearchAttempt.SearchPass.SearchTime.MSecs));
-
 	int32 TotalSearchResults = 0;
 	int32 TotalDedicated = 0;
 	double TotalJoinAttemptTime = 0;
@@ -408,91 +350,10 @@ void FUTMatchmakingStats::ParseSearchAttempt(TSharedPtr<IAnalyticsProvider>& Ana
 			TotalJoinAttemptTime += SearchResult.JoinActionTime.MSecs;
 		}
 	}
-
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsTotalJoinAttemptTime, TotalJoinAttemptTime));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsTotalDedicatedCount, TotalDedicated));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchPassNumResults, TotalSearchResults));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsJoinAttemptNone_Count, JoinActionCount[EMatchmakingJoinAction::NoAttempt]));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsJoinAttemptSucceeded_Count, JoinActionCount[EMatchmakingJoinAction::JoinSucceeded]));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsJoinAttemptFailedFull_Count, JoinActionCount[EMatchmakingJoinAction::JoinFailed_Full]));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsJoinAttemptFailedTimeout_Count, JoinActionCount[EMatchmakingJoinAction::JoinFailed_Timeout]));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsJoinAttemptFailedDenied_Count, JoinActionCount[EMatchmakingJoinAction::JoinFailed_Denied]));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsJoinAttemptFailedDuplicate_Count, JoinActionCount[EMatchmakingJoinAction::JoinFailed_Duplicate]));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsJoinAttemptFailedOther_Count, JoinActionCount[EMatchmakingJoinAction::JoinFailed_Other]));
-	FString SearchResultDetail;
-	if (SearchAttempt.SearchPass.SearchResults.Num() > 0)
-	{
-		for (auto& SearchResult : SearchAttempt.SearchPass.SearchResults)
-		{
-			SearchResultDetail += FString::Printf(TEXT("{\"OwnerId\":\"%s\", \"bIsDedicated\":%s, \"JoinActionTime\":%.0f, \"JoinResult\":\"%s\"},"),
-													SearchResult.OwnerId.IsValid() ? *SearchResult.OwnerId->ToString() : TEXT("Unknown"),
-													SearchResult.bIsDedicated ? TEXT("true") : TEXT("false"),
-													SearchResult.JoinActionTime.MSecs,
-													EMatchmakingJoinAction::ToString(SearchResult.JoinResult)
-												);
-		}
-		SearchResultDetail = SearchResultDetail.LeftChop(1);
-	}
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchResultDetails, SearchResultDetail));
-	AnalyticsProvider->RecordEvent(MMStatsSingleSearchEvent, MMAttributes);
 }
 
-
-/**
-* @EventName MMStats_CompleteSearchEvent
-* @Trigger Matchmaking completed for some reason(Joined successfully or canceled)
-* @Type static
-* @EventParam MMStats_SessionId string Guid of this whole matchmaking process
-* @EventParam MMStats_Version integer Matchmaking analytics version
-* @EventParam MMStats_Timestamp string Timestamp when this whole matchmaking started
-* @EventParam MMStats_UserId string User who started the matchmaking
-* @EventParam MMStats_TotalSearchTime float Total time this complete matchmaking took, includes delay between two single searches (ms)
-* @EventParam MMStats_TotalAttemptCount integer Total number of search attempts in this complete matchmaking
-* @EventParam MMStats_TotalSearchResultsCount integer Sum of results of all matchmaking attempts from the complete matchmaking process
-* @EventParam MMStats_InitialSearchType string Initial search type of this complete matchmaking process
-* @EventParam MMStats_EndSearchType string Search type of the last search attempt in this complete matchmaking process 
-* @EventParam MMStats_EndSearchResult string Result of the last search attempt in this complete matchmaking process
-* @EventParam MMStats_EndQosDatacenterId string Data center selected in the last search attempt
-* @EventParam MMStats_PartyMember Array Party member Ids, seperated by comma
-* @Comments Analytics data for a complete matchmaking search attempt
-*/
 void FUTMatchmakingStats::ParseMatchmakingResult(TSharedPtr<IAnalyticsProvider>& AnalyticsProvider, FGuid& SessionId, const FUniqueNetId& MatchmakingUserId)
 {
-	TArray<FAnalyticsEventAttribute> MMAttributes;
-
-	// Matchmaking results header
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSessionGuid, SessionId.ToString()));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsVersion, StatsVersion));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchTimestamp, CompleteSearch.Timestamp));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchUserId, MatchmakingUserId.ToString()));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsTotalSearchTime, CompleteSearch.SearchTime.MSecs));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchAttemptCount, CompleteSearch.TotalSearchAttempts));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsTotalSearchResults, CompleteSearch.TotalSearchResults));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsIniSearchType, EMatchmakingSearchType::ToString(CompleteSearch.IniSearchType)));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsEndSearchType, EMatchmakingSearchType::ToString(CompleteSearch.SearchAttempts.Num()>0 ? CompleteSearch.SearchAttempts.Last().SearchType : CompleteSearch.IniSearchType)));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsEndSearchResult, EMatchmakingAttempt::ToString(CompleteSearch.EndResult)));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsEndQosDatacenterId, CompleteSearch.SearchAttempts.Num()>0 ? CompleteSearch.SearchAttempts.Last().QosPass.BestDatacenterId : TEXT("Unknown")));
-
-	//put party member id into single column, separated by comma
-	FString PartyMembers;
-	if (CompleteSearch.Members.Num() > 0)
-	{
-		for (auto& MemberId : CompleteSearch.Members)
-		{
-			PartyMembers += MemberId.UniqueId->ToString() + ",";
-		}
-		PartyMembers = PartyMembers.LeftChop(1);
-	}
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsPartyMember, PartyMembers));
-	
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchTypeNoneCount, CompleteSearch.SearchTypeCount.IsValidIndex(EMatchmakingSearchType::None) ? CompleteSearch.SearchTypeCount[EMatchmakingSearchType::None] : 0));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchTypeEmptyServerCount, CompleteSearch.SearchTypeCount.IsValidIndex(EMatchmakingSearchType::EmptyServer) ? CompleteSearch.SearchTypeCount[EMatchmakingSearchType::EmptyServer] : 0));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchTypeExistingSessionCount, CompleteSearch.SearchTypeCount.IsValidIndex(EMatchmakingSearchType::ExistingSession) ? CompleteSearch.SearchTypeCount[EMatchmakingSearchType::ExistingSession] : 0));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchTypeJoinPresenceCount, CompleteSearch.SearchTypeCount.IsValidIndex(EMatchmakingSearchType::JoinPresence) ? CompleteSearch.SearchTypeCount[EMatchmakingSearchType::JoinPresence] : 0));
-	MMAttributes.Add(FAnalyticsEventAttribute(MMStatsSearchTypeJoinInviteCount, CompleteSearch.SearchTypeCount.IsValidIndex(EMatchmakingSearchType::JoinInvite) ? CompleteSearch.SearchTypeCount[EMatchmakingSearchType::JoinInvite] : 0));
-
-	AnalyticsProvider->RecordEvent(MMStatsCompleteSearchEvent, MMAttributes);
-
 	//Constraint the result to be sent within the number indicated by ATTEMPT_SEND_CONSTRAINT 
 	if (CompleteSearch.SearchAttempts.Num() > ATTEMPT_SEND_CONSTRAINT)
 	{

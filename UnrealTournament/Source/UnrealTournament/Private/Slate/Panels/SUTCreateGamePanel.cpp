@@ -815,15 +815,9 @@ void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& Start
 		DefaultGameMode->GetGameURLOptions(GameConfigProps, GameOptions, DesiredPlayerCount);
 		bTeamGame = DefaultGameMode->bTeamGame;
 
-		// If we don't want bots, clear BotFillCount
-
 		if (BotSkillLevel >=0)
 		{
 			GameOptions.Add(FString::Printf(TEXT("Difficulty=%i"), BotSkillLevel));
-		}
-		else
-		{
-			DefaultGameMode->BotFillCount = 0;
 		}
 
 		for (int32 i = 0; i < GameOptions.Num(); i++)

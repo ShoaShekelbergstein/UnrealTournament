@@ -96,6 +96,7 @@ protected:
 	TArray<TAssetSubclassOf<AUTWeapon>> DefaultWeaponLoadoutObjects;
 
 	virtual bool IsPlayerOnLifeLimitedTeam(AUTPlayerState* PlayerState) const;
+	virtual void PlayEndOfMatchMessage() override;
 
 
 };

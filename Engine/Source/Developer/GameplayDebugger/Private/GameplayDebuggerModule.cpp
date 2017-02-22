@@ -21,6 +21,12 @@
 #include "Editor/GameplayDebuggerEdMode.h"
 #endif
 
+static TAutoConsoleVariable<int32> CVarGameplayDebuggerEnable(
+	TEXT("GameplayDebugger.Enable"),
+	1,
+	TEXT("True to enable the gameplay debugger module"),
+	ECVF_Default);
+
 class FGameplayDebuggerModule : public IGameplayDebugger
 {
 public:
@@ -45,6 +51,11 @@ IMPLEMENT_MODULE(FGameplayDebuggerModule, GameplayDebugger)
 
 void FGameplayDebuggerModule::StartupModule()
 {
+	if (CVarGameplayDebuggerEnable.GetValueOnGameThread() == 0)
+	{
+		return;
+	}
+
 	// This code will execute after your module is loaded into memory (but after global variables are initialized, of course.)
 	FWorldDelegates::OnPostWorldInitialization.AddRaw(this, &FGameplayDebuggerModule::OnWorldInitialized);
 
@@ -99,6 +110,11 @@ void FGameplayDebuggerModule::ShutdownModule()
 
 void FGameplayDebuggerModule::RegisterCategory(FName CategoryName, IGameplayDebugger::FOnGetCategory MakeInstanceDelegate, EGameplayDebuggerCategoryState CategoryState, int32 SlotIdx)
 {
+	if (CVarGameplayDebuggerEnable.GetValueOnGameThread() == 0)
+	{
+		return;
+	}
+
 	AddonManager.RegisterCategory(CategoryName, MakeInstanceDelegate, CategoryState, SlotIdx);
 }
 
@@ -114,6 +130,11 @@ void FGameplayDebuggerModule::NotifyCategoriesChanged()
 
 void FGameplayDebuggerModule::RegisterExtension(FName ExtensionName, IGameplayDebugger::FOnGetExtension MakeInstanceDelegate)
 {
+	if (CVarGameplayDebuggerEnable.GetValueOnGameThread() == 0)
+	{
+		return;
+	}
+
 	AddonManager.RegisterExtension(ExtensionName, MakeInstanceDelegate);
 }
 

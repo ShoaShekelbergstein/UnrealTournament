@@ -113,8 +113,12 @@ class UNREALTOURNAMENT_API AUTWeap_RocketLauncher : public AUTWeapon
 		int32 NumLoadedBarrels;
 
 	/** Spread in degrees when unloading loaded rockets on player death. */
-	UPROPERTY(BlueprintReadOnly, Category = RocketLauncher)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = RocketLauncher)
 		float FullLoadSpread;
+
+	/** Spread in degrees when unloading loaded rockets on player death. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = RocketLauncher)
+		float SeekingLoadSpread;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
 	float RocketLoadTime;
@@ -133,15 +137,6 @@ class UNREALTOURNAMENT_API AUTWeap_RocketLauncher : public AUTWeapon
 	/** Burst grenade firing interval */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
 		float GrenadeBurstInterval;
-
-	/** Lead rocket in burst */
-	UPROPERTY(BlueprintReadOnly)
-	class AUTProj_Rocket* LeadRocket;
-
-	UPROPERTY()
-		bool bIsFiringLeadRocket;
-
-	virtual void SetLeadRocket();
 
 	/**Distance from the center of the launcher to where the rockets fire from*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)

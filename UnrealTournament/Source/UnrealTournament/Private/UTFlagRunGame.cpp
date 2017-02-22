@@ -46,7 +46,7 @@
 AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	MinPlayersToStart = 10;
+	MinPlayersToStart = 4;
 	GoldScore = 3;
 	SilverScore = 2;
 	BronzeScore = 1;
@@ -67,6 +67,7 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	FlagPickupDelay = 15;
 	bTrackKillAssists = true;
 	CTFScoringClass = AUTFlagRunScoring::StaticClass();
+	DefaultMaxPlayers = 10;
 
 	ActivatedPowerupPlaceholderObject = FStringAssetReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_ActivatedPowerup_UDamage.BP_ActivatedPowerup_UDamage_C"));
 	RepulsorObject = FStringAssetReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_Repulsor.BP_Repulsor_C"));
@@ -104,7 +105,6 @@ void AUTFlagRunGame::InitGame(const FString& MapName, const FString& Options, FS
 		OffenseKillsNeededForPowerUp = 1000;
 		DefenseKillsNeededForPowerUp = 1000;
 	}
-	GameSession->MaxPlayers = 10;
 
 	if (bDevServer)
 	{
@@ -161,6 +161,7 @@ void AUTFlagRunGame::InitGameStateForRound()
 		FRGS->bIsDefenseAbleToGainPowerup = true;
 		FRGS->bRedToCap = !FRGS->bRedToCap;
 		FRGS->CurrentRallyPoint = nullptr;
+		FRGS->PendingRallyPoint = nullptr;
 		FRGS->bEnemyRallyPointIdentified = false;
 		FRGS->ScoringPlayerState = nullptr;
 	}
@@ -721,7 +722,6 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 			return;
 		}
 		UTCharacter->GetCapsuleComponent()->SetCollisionObjectType(SavedObjectType);
-		float RallyDelay = 15.f;
 
 		// teleport
 		UPrimitiveComponent* SavedPlayerBase = UTCharacter->GetMovementBase();
@@ -732,8 +732,8 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 			{
 				RequestingPC->UTClientSetRotation(WarpRotation);
 			}
-			UTPlayerState->NextRallyTime = GetWorld()->GetTimeSeconds() + RallyDelay;
-
+			UTPlayerState->bRallyActivated = false;
+			UTPlayerState->ForceNetUpdate();
 			if (TranslocatorClass)
 			{
 				if (TranslocatorClass->GetDefaultObject<AUTWeap_Translocator>()->DestinationEffect != nullptr)
@@ -814,6 +814,11 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 						PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 24, UTPlayerState, nullptr, RallySpot); 
 					}
 				}
+			}
+
+			if (FUTAnalytics::IsAvailable())
+			{
+				FUTAnalytics::FireEvent_PlayerUsedRally(this, UTPlayerState);
 			}
 		}
 	}
@@ -1069,7 +1074,27 @@ AActor* AUTFlagRunGame::SetIntermissionCameras(uint32 TeamToWatch)
 	AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(CTFGameState);
 	if (FRGS)
 	{
-		return FRGS->FlagBases[(FRGS && FRGS->bRedToCap) ? 1 : 0];
+		bool bWasCap = false;
+		if (IsTeamOnOffense(TeamToWatch))
+		{
+			// check if annihilation
+			bool bFoundDefender = false;
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				AUTPlayerState* TeamPS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				if (TeamPS && TeamPS->Team && (TeamPS->Team->TeamIndex != TeamToWatch) && !TeamPS->bOutOfLives && !TeamPS->bIsInactive)
+				{
+					bFoundDefender = true;
+					break;
+				}
+			}
+			bWasCap = bFoundDefender;
+		}
+		if (bWasCap || (FRGS->ScoringPlayerState == nullptr))
+		{
+			return FRGS->FlagBases[(FRGS && FRGS->bRedToCap) ? 1 : 0];
+		}
+		return FRGS->ScoringPlayerState;
 	}
 	return nullptr;
 }
@@ -1109,6 +1134,32 @@ void AUTFlagRunGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AU
 
 void AUTFlagRunGame::ScoreAlternateWin(int32 WinningTeamIndex, uint8 Reason /* = 0 */)
 {
+	// Find last killer on winning team - must do before super call
+	if (UTGameState && (Teams.Num() > WinningTeamIndex) && Teams[WinningTeamIndex])
+	{
+		LastTeamToScore = Teams[WinningTeamIndex];
+		float BestScore = 0.f;
+		float LastKill = -1000.f;
+		UTGameState->ScoringPlayerState = nullptr;
+		for (int32 PlayerIdx = 0; PlayerIdx < Teams[WinningTeamIndex]->GetTeamMembers().Num(); PlayerIdx++)
+		{
+			if (Teams[WinningTeamIndex]->GetTeamMembers()[PlayerIdx] != nullptr)
+			{
+				AUTPlayerState *PS = Cast<AUTPlayerState>(Teams[WinningTeamIndex]->GetTeamMembers()[PlayerIdx]->PlayerState);
+				if ((PS != nullptr) && (PS->LastKillTime >= LastKill))
+				{
+					PS->Score = PS->RoundKillAssists + PS->RoundKills;
+					if ((UTGameState->ScoringPlayerState == nullptr) || (PS->Score > BestScore))
+					{
+						BestScore = PS->Score;
+						LastKill = PS->LastKillTime;
+						UTGameState->ScoringPlayerState = PS;
+					}
+				}
+			}
+		}
+	}
+
 	Super::ScoreAlternateWin(WinningTeamIndex, Reason);
 
 	if (FUTAnalytics::IsAvailable())
@@ -1165,20 +1216,16 @@ void AUTFlagRunGame::FindAndMarkHighScorer()
 
 void AUTFlagRunGame::HandleRollingAttackerRespawn(AUTPlayerState* OtherPS)
 {
-	Super::HandleRollingAttackerRespawn(OtherPS);
+	OtherPS->RespawnWaitTime = RollingAttackerRespawnDelay;
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	int32 RoundTime = (TimeLimit == 0) ? 300 : TimeLimit;
-	if (GS && !GS->bAttackersCanRally && (GetWorld()->GetTimeSeconds() > OtherPS->NextRallyTime) && GS->bHaveEstablishedFlagRunner && !GS->CurrentRallyPoint && (GS->GetRemainingTime() < RoundTime - 30))
+	if (GS && !GS->bAttackersCanRally && GS->bHaveEstablishedFlagRunner && !GS->CurrentRallyPoint && (GS->GetRemainingTime() < RoundTime - 45))
 	{
 		OtherPS->AnnounceStatus(StatusMessage::NeedRally);
 	}
-	else if (GS && GS->CurrentRallyPoint && GS->bAttackersCanRally && (GS->CurrentRallyPoint->RallyTimeRemaining > FMath::Max(float(OtherPS->RemainingRallyDelay), 2.5f)))
+	else if (GS && GS->CurrentRallyPoint && GS->bAttackersCanRally && (GS->CurrentRallyPoint->RallyTimeRemaining > 3.5f))
 	{
-		float DesiredRespawnDelay = GS->CurrentRallyPoint->RallyTimeRemaining - 2.f;
-		if (OtherPS->RespawnWaitTime > DesiredRespawnDelay)
-		{
-			OtherPS->RespawnWaitTime = FMath::Max(1.f, DesiredRespawnDelay);
-		}
+		OtherPS->RespawnWaitTime = FMath::Min(OtherPS->RespawnWaitTime, GS->CurrentRallyPoint->RallyTimeRemaining - 2.f);
 	}
 }
 

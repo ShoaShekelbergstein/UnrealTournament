@@ -30,12 +30,6 @@ public:
 	virtual bool CheckRelevance_Implementation(AActor* Other) override;
 	virtual void DiscardInventory(APawn* Other, AController* Killer) override;
 
-	virtual bool CanSpectate_Implementation(APlayerController* Viewer, APlayerState* ViewTarget) override
-	{
-		AUTPlayerState* PS = Cast<AUTPlayerState>(ViewTarget);
-		return Super::CanSpectate_Implementation(Viewer, ViewTarget) && (PS == NULL || PS->GetUTCharacter() != NULL);
-	}
-
 	virtual bool ModifyDamage_Implementation(int32& Damage, FVector& Momentum, APawn* Injured, AController* InstigatedBy, const FHitResult& HitInfo, AActor* DamageCauser, TSubclassOf<UDamageType> DamageType) override;
 
 	virtual void GetGameURLOptions(const TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps, TArray<FString>& OptionsList, int32& DesiredPlayerCount) override;

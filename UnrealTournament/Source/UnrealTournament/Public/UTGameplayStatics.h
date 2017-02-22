@@ -234,7 +234,7 @@ class UNREALTOURNAMENT_API UUTGameplayStatics : public UBlueprintFunctionLibrary
 	static void RecordEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap);
 
 	UFUNCTION(BlueprintCallable, Category = "UTAnalytics")
-	static void RecordEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, int32 InstructionID);
+	static void RecordEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC, FString AnnouncementName, int32 InstructionID);
 
 	/** returns the game mode class
 	 * this function works on clients whereas GetGameMode() -> GetClass() does not

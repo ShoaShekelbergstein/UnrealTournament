@@ -12,7 +12,6 @@
 #include "UTCheatManager.h"
 #include "UTCTFGameState.h"
 #include "UTCTFGameMessage.h"
-#include "UTPowerupUseMessage.h"
 #include "Engine/Console.h"
 #include "UTAnalytics.h"
 #include "Online.h"
@@ -40,7 +39,6 @@
 #include "UTVictimMessage.h"
 #include "SUTSpawnWindow.h"
 #include "IAnalyticsProvider.h"
-#include "UTPlaceablePowerup.h"
 #include "UTKillcamPlayback.h"
 #include "UTWeaponAttachment.h"
 #include "UTGameViewportClient.h"
@@ -58,6 +56,8 @@
 #include "UTFlagRunScoreboard.h"
 #include "UTFlagRunPvEHUD.h"
 #include "UTGauntletGameMessage.h"
+#include "BlueprintContextLibrary.h"
+#include "PartyContext.h"
 
 static TAutoConsoleVariable<float> CVarUTKillcamStartDelay(
 	TEXT("UT.KillcamStartDelay"),
@@ -112,7 +112,7 @@ AUTPlayerController::AUTPlayerController(const class FObjectInitializer& ObjectI
 	bNeedsRallyNotify = true;
 	bNeedsBoostNotify = true;
 
-	TimeToHoldPowerUpButtonToActivate = 0.75f;
+	TimeToHoldPowerUpButtonToActivate = 0.25f;
 	ScoreboardDelayOnDeath = 2.f;
 
 	static ConstructorHelpers::FObjectFinder<USoundBase> PressedSelect(TEXT("SoundCue'/Game/RestrictedAssets/UI/UT99UI_LittleSelect_Cue.UT99UI_LittleSelect_Cue'"));
@@ -130,7 +130,7 @@ AUTPlayerController::AUTPlayerController(const class FObjectInitializer& ObjectI
 	LastBuyMenuOpenTime = 0.0f;
 	BuyMenuToggleDelay = 0.25f;
 
-	FootStepAmp.OwnVolumeMultiplier = 0.4f;
+	FootStepAmp.OwnVolumeMultiplier = 0.3f;
 	FootStepAmp.OwnPitchMultiplier = 0.5f;
 	FootStepAmp.TeammateVolumeMultiplier = 0.5f;
 	PainSoundAmp.InstigatorVolumeMultiplier = 2.5f;
@@ -458,8 +458,6 @@ void AUTPlayerController::SetupInputComponent()
 	InputComponent->BindAction("TapForward", IE_Pressed, this, &AUTPlayerController::OnTapForward);
 	InputComponent->BindAction("TapBack", IE_Pressed, this, &AUTPlayerController::OnTapBack);
 	InputComponent->BindAction("SingleTapDodge", IE_Pressed, this, &AUTPlayerController::OnSingleTapDodge);
-	InputComponent->BindAction("HoldDodge", IE_Pressed, this, &AUTPlayerController::HoldDodge);
-	InputComponent->BindAction("HoldDodge", IE_Released, this, &AUTPlayerController::ReleaseDodge);
 
 	InputComponent->BindAction("TapLeft", IE_Released, this, &AUTPlayerController::OnTapLeftRelease);
 	InputComponent->BindAction("TapRight", IE_Released, this, &AUTPlayerController::OnTapRightRelease);
@@ -507,7 +505,6 @@ void AUTPlayerController::SetupInputComponent()
 	InputComponent->BindAction("ToggleWeaponWheel", IE_Released, this, &AUTPlayerController::HideWeaponWheel);
 
 	InputComponent->BindAction("ActivateSpecial", IE_Pressed, this, &AUTPlayerController::ActivateSpecial);
-	InputComponent->BindAction("ActivateSpecial", IE_Released, this, &AUTPlayerController::ReleaseSpecial);
 
 	InputComponent->BindAction("PushToTalk", IE_Pressed, this, &AUTPlayerController::StartVOIPTalking);
 	InputComponent->BindAction("PushToTalk", IE_Released, this, &AUTPlayerController::StopVOIPTalking);
@@ -687,13 +684,6 @@ void AUTPlayerController::ClientRestart_Implementation(APawn* NewPawn)
 	{
 		MyUTHUD->ClientRestart();
 	}
-
-	//if a line-up is active, make sure we turn back on the ignore look input flag on client
-	AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
-	if (UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive)
-	{
-		SetIgnoreLookInput(true);
-	}
 }
 
 void AUTPlayerController::PawnPendingDestroy(APawn* InPawn)
@@ -822,12 +812,12 @@ bool AUTPlayerController::InputKey(FKey Key, EInputEvent EventType, float Amount
 	if (Key.GetFName() == NAME_Enter && (EventType == IE_Pressed) && UTPlayerState != nullptr)
 	{
 		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-		if (UTPlayerState->bCaster && !UTPlayerState->bReadyToPlay)
+		if (UTPlayerState->bCaster)
 		{
-			ServerRestartPlayer();
+			ServerCasterReady();
 			return true;
 		}
-		else if (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && UTPlayerState->bReadyToPlay && !UTPlayerState->bOnlySpectator)
+		else if (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && !UTPlayerState->bOnlySpectator)
 		{
 			ServerToggleWarmup();
 			bPlayerIsWaiting = true;
@@ -896,96 +886,18 @@ bool AUTPlayerController::ServerActivatePowerUpPress_Validate()
 
 void AUTPlayerController::ServerActivatePowerUpPress_Implementation()
 {
-	if (UTCharacter != NULL && UTPlayerState != NULL && !GetWorldTimerManager().IsTimerActive(TriggerBoostTimerHandle))
+	if (UTCharacter != NULL && UTPlayerState != NULL && !GetWorldTimerManager().IsTimerActive(UTCharacter->TriggerBoostPowerTimerHandle))
 	{
 		AUTGameMode* UTGM = GetWorld()->GetAuthGameMode<AUTGameMode>();
-		if (UTGM && UTGM->TriggerBoost(this))
+		if (UTGM && UTGM->TriggerBoost(UTPlayerState))
 		{
 			UTClientPlaySound(BoostActivateSound);
-			GetWorldTimerManager().SetTimer(TriggerBoostTimerHandle, this, &AUTPlayerController::TriggerBoost, TimeToHoldPowerUpButtonToActivate, false);
+			GetWorldTimerManager().SetTimer(UTCharacter->TriggerBoostPowerTimerHandle, UTCharacter, &AUTCharacter::TriggerBoostPower, TimeToHoldPowerUpButtonToActivate, false);
 			// spawn effect
 			TSubclassOf<AUTInventory> ActivatedPowerupPlaceholderClass = UTGM ? UTGM->GetActivatedPowerupPlaceholderClass() : nullptr;
 			if (ActivatedPowerupPlaceholderClass)
 			{
 				UTCharacter->AddInventory(GetWorld()->SpawnActor<AUTInventory>(ActivatedPowerupPlaceholderClass, FVector(0.0f), FRotator(0.0f, 0.0f, 0.0f)), true);
-			}
-		}
-	}
-}
-
-void AUTPlayerController::TriggerBoost()
-{
-	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (GameMode && UTCharacter && UTPlayerState)
-	{
-		if (GameMode->AttemptBoost(this))
-		{
-			if (UTPlayerState->BoostClass)
-			{
-				AUTInventory* Powerup = UTPlayerState->BoostClass->GetDefaultObject<AUTInventory>();
-				if (Powerup && Powerup->bNotifyTeamOnPowerupUse && GameMode->UTGameState && UTPlayerState->Team)
-				{
-					TeamNotifyOfPowerupUse();
-				}
-
-				AUTPlaceablePowerup* FoundPlaceablePowerup = UTCharacter->FindInventoryType<AUTPlaceablePowerup>(AUTPlaceablePowerup::StaticClass(), false);
-				if (FoundPlaceablePowerup)
-				{
-					FoundPlaceablePowerup->SpawnPowerup();
-				}
-				else if (!UTPlayerState->BoostClass.GetDefaultObject()->HandleGivenTo(UTCharacter))
-				{
-					AUTInventory* TriggeredBoost = GetWorld()->SpawnActor<AUTInventory>(UTPlayerState->BoostClass, FVector(0.0f), FRotator(0.f, 0.f, 0.f));
-					TriggeredBoost->InitAsTriggeredBoost(UTCharacter);
-
-					AUTInventory* DuplicatePowerup = UTCharacter->FindInventoryType<AUTInventory>(UTPlayerState->BoostClass, true);
-					if (!DuplicatePowerup || !DuplicatePowerup->StackPickup(nullptr))
-					{
-						UTCharacter->AddInventory(TriggeredBoost, true);
-					}
-
-					//if we gave you a weapon lets immediately switch on triggering the boost
-					AUTWeapon* BoostAsWeapon = Cast<AUTWeapon>(TriggeredBoost);
-					if (BoostAsWeapon)
-					{
-						UTCharacter->SwitchWeapon(BoostAsWeapon);
-					}
-				}
-			}
-		}
-	}
-}
-
-
-void AUTPlayerController::TeamNotifyOfPowerupUse()
-{
-	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (GameMode && UTPlayerState)
-	{
-		if (UTPlayerState->BoostClass)
-		{
-			AUTInventory* Powerup = UTPlayerState->BoostClass->GetDefaultObject<AUTInventory>();
-			if (Powerup && GameMode->UTGameState && UTPlayerState->Team)
-			{
-				for (int32 PlayerIndex = 0; PlayerIndex < GameMode->UTGameState->PlayerArray.Num(); ++PlayerIndex)
-				{
-					AUTPlayerState* PS = Cast<AUTPlayerState>(GameMode->UTGameState->PlayerArray[PlayerIndex]);
-					if (PS && PS->Team)
-					{
-						if (PS->Team->TeamIndex == UTPlayerState->Team->TeamIndex)
-						{
-							AUTPlayerController* PC = Cast<AUTPlayerController>(PS->GetOwner());
-							if (PC)
-							{
-								if (Powerup->bNotifyTeamOnPowerupUse)
-								{
-									//21 is Powerup Message
-									PC->ClientReceiveLocalizedMessage(UUTPowerupUseMessage::StaticClass(), 21, UTPlayerState);
-								}
-							}
-						}
-					}
-				}
 			}
 		}
 	}
@@ -1005,14 +917,6 @@ void AUTPlayerController::ActivateSpecial()
 	else
 	{
 		ToggleTranslocator();
-	}
-}
-void AUTPlayerController::ReleaseSpecial()
-{
-	AUTFlagRunPvEHUD* PvEHUD = Cast<AUTFlagRunPvEHUD>(MyHUD);
-	if (PvEHUD != nullptr)
-	{
-		PvEHUD->ToggleBoostWheel(false);
 	}
 }
 
@@ -1054,10 +958,6 @@ void AUTPlayerController::ThrowWeapon()
 			ServerThrowWeapon();
 		}
 	}
-	else if ((UTCharacter == nullptr) && UTPlayerState && (UTPlayerState->ReadyMode > 1))
-	{
-		ServerThrowWeapon();
-	}
 }
 
 bool AUTPlayerController::ServerThrowWeapon_Validate()
@@ -1075,15 +975,11 @@ void AUTPlayerController::ServerThrowWeapon_Implementation()
 			UTCharacter->TossInventory(UTCharacter->GetWeapon(), FVector(400.0f, 0, 200.f));
 		}
 	}
-	else if ((UTCharacter == nullptr) && UTPlayerState && (UTPlayerState->ReadyMode > 1))
-	{
-		UTPlayerState->ReadyMode = 4;
-	}
 }
 
 void AUTPlayerController::SwitchWeaponInSequence(bool bPrev)
 {
-	if (UTCharacter != NULL && IsLocalPlayerController() && UTCharacter->TauntCount == 0 && !UTCharacter->IsFiringDisabled())
+	if (UTCharacter != NULL && IsLocalPlayerController() && UTCharacter->TauntCount == 0 && !UTCharacter->IsSwitchingDisabled())
 	{
 		LastWeaponPrevNextTime = GetWorld()->GetTimeSeconds();
 		if (UTCharacter->GetWeapon() == NULL)
@@ -1395,14 +1291,17 @@ void AUTPlayerController::ViewPlayerNum(int32 Index, uint8 TeamNum)
 		}
 		if (PlayerToView != NULL)
 		{
-			if (PlayerState && !PlayerState->bOnlySpectator && !GS->OnSameTeam(this, *PlayerToView))
+			if (!PlayerState || !PlayerState->bOnlySpectator)
 			{
-				// can't view opposing players if not spectator
-				return;
-			}
-			if (Cast<AUTPlayerState>(*PlayerToView) && Cast<AUTPlayerState>(*PlayerToView)->bOutOfLives)
-			{
-				return;
+				if (!GS->OnSameTeam(this, *PlayerToView))
+				{
+					// can't view opposing players if not spectator
+					return;
+				}
+				if (Cast<AUTPlayerState>(*PlayerToView) && Cast<AUTPlayerState>(*PlayerToView)->bOutOfLives)
+				{
+					return;
+				}
 			}
 			bAutoCam = false;
 			BehindView(bSpectateBehindView);
@@ -1692,7 +1591,7 @@ void AUTPlayerController::TogglePlayerInfo()
 		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
 		if (PS != nullptr && LP != nullptr && PS != PlayerState)
 		{
-			LP->ShowPlayerInfo(PS);
+			LP->ShowPlayerInfo(PS->UniqueId.ToString(), PS->PlayerName);
 		}
 	}
 }
@@ -2163,7 +2062,7 @@ void AUTPlayerController::ClientWarnEnemyBehind_Implementation(AUTPlayerState* T
 void AUTPlayerController::CheckDodge(float LastTapTime, float MaxClickTime, bool bForward, bool bBack, bool bLeft, bool bRight)
 {
 	UUTCharacterMovement* MyCharMovement = UTCharacter ? UTCharacter->UTCharacterMovement : NULL;
-	if (MyCharMovement != NULL && !IsMoveInputIgnored() && (bIsHoldingDodge || (GetWorld()->GetRealTimeSeconds() - LastTapTime < MaxClickTime)))
+	if (MyCharMovement != NULL && !IsMoveInputIgnored() && (GetWorld()->GetRealTimeSeconds() - LastTapTime < MaxClickTime))
 	{
 		MyCharMovement->bPressedDodgeForward = bForward;
 		MyCharMovement->bPressedDodgeBack = bBack;
@@ -2247,16 +2146,6 @@ void AUTPlayerController::PerformSingleTapDodge()
 			}
 		}
 	}
-}
-
-void AUTPlayerController::HoldDodge()
-{
-	bIsHoldingDodge = true;
-}
-
-void AUTPlayerController::ReleaseDodge()
-{
-	bIsHoldingDodge = false;
 }
 
 void AUTPlayerController::OnTapForward()
@@ -2365,7 +2254,10 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 				if (Pickup->IsTaken(GetPawn()))
 				{
 					bTaken = true;
-					Pickup->TimerEffect->SetFloatParameter(NAME_Progress, 1.0f - Pickup->GetRespawnTimeOffset(GetPawn()) / Pickup->RespawnTime);
+					if (Pickup->TimerEffect)
+					{
+						Pickup->TimerEffect->SetFloatParameter(NAME_Progress, 1.0f - Pickup->GetRespawnTimeOffset(GetPawn()) / Pickup->RespawnTime);
+					}
 				}
 				else
 				{
@@ -2407,6 +2299,25 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 	}
 	else if (P != NULL)
 	{
+		UPrimitiveComponent* UpdatedComp = P->UTCharacterMovement ? Cast<UPrimitiveComponent>(P->UTCharacterMovement->UpdatedComponent) : nullptr;
+		if (UpdatedComp)
+		{
+			for (int32 i = 0; i < UpdatedComp->MoveIgnoreActors.Num(); i++)
+			{
+				AUTCharacter* OverlappedChar = Cast<AUTCharacter>(UpdatedComp->MoveIgnoreActors[i]);
+				// if overlapping, hide
+				if (OverlappedChar)
+				{
+					FVector Diff = OverlappedChar->GetActorLocation() - P->GetActorLocation();
+					// check for 2D overlap, and eye position with capsule radius of other capsule height extent.
+					if ((Diff.SizeSquared2D() < 0.81f*FMath::Square(P->GetCapsuleComponent()->GetUnscaledCapsuleRadius() + OverlappedChar->GetCapsuleComponent()->GetUnscaledCapsuleRadius())) 
+						&& (FMath::Abs(Diff.Z + P->BaseEyeHeight) < P->GetCapsuleComponent()->GetUnscaledCapsuleRadius() + OverlappedChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()))
+					{
+						HideComponentTree(OverlappedChar->GetMesh(), HiddenComponents);
+					}
+				}
+			}
+		}
 		// hide first person mesh (but not attachments) if hidden weapons
 		if (GetWeaponHand() == EWeaponHand::HAND_Hidden || (P->GetWeapon() != NULL && P->GetWeapon()->ZoomState != EZoomState::EZS_NotZoomed))
 		{
@@ -2556,6 +2467,31 @@ AUTCharacter* AUTPlayerController::GetUTCharacter()
 	return UTCharacter;
 }
 
+void AUTPlayerController::ClientUpdateWarmup_Implementation(bool bNewWarmingUp)
+{
+	UUTLocalPlayer* UTLP = Cast<UUTLocalPlayer>(Player);
+	if (UTLP)
+	{
+		if (bNewWarmingUp)
+		{
+			if (UTPlayerState)
+			{
+				UTPlayerState->bIsWarmingUp = true;
+			}
+			UTLP->HideMenu();
+			return;
+		}
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+		if (GS && GS->GetMatchState() == MatchState::WaitingToStart)
+		{
+			if (UTPlayerState)
+			{
+				UTPlayerState->bIsWarmingUp = false;
+			}
+			UTLP->ShowMenu(TEXT(""));
+		}
+	}
+}
 
 bool AUTPlayerController::ServerToggleWarmup_Validate()
 {
@@ -2565,12 +2501,19 @@ bool AUTPlayerController::ServerToggleWarmup_Validate()
 void AUTPlayerController::ServerToggleWarmup_Implementation()
 {
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (!GS || (GS->GetMatchState() != MatchState::WaitingToStart) || !UTPlayerState || !UTPlayerState->bReadyToPlay)
+	if (!GS || (GS->GetMatchState() != MatchState::WaitingToStart) || !UTPlayerState)
 	{
+		return;
+	}
+	UTPlayerState->bPendingTeamSwitch = false;
+	if (GetNetMode() == NM_Standalone)
+	{
+		UTPlayerState->bIsWarmingUp = true;
 		return;
 	}
 	UTPlayerState->bIsWarmingUp = !UTPlayerState->bIsWarmingUp;
 	UTPlayerState->ForceNetUpdate();
+	ClientUpdateWarmup(UTPlayerState->bIsWarmingUp);
 	if (UTPlayerState->bIsWarmingUp)
 	{
 		if (!IsFrozen())
@@ -2595,6 +2538,20 @@ void AUTPlayerController::ServerToggleWarmup_Implementation()
 	}
 }
 
+bool AUTPlayerController::ServerCasterReady_Validate()
+{
+	return true;
+}
+
+void AUTPlayerController::ServerCasterReady_Implementation()
+{
+	AUTGameMode* UTGM = GetWorld()->GetAuthGameMode<AUTGameMode>();
+	if (UTGM)
+	{
+		UTGM->bCasterReady = true;
+	}
+}
+
 void AUTPlayerController::ServerRestartPlayer_Implementation()
 {
 	bUseAltSpawnPoint = false;
@@ -2610,31 +2567,11 @@ void AUTPlayerController::ServerRestartPlayer_Implementation()
 		// this is a newly disconnected client
 		return;
 	}
-	// Ready up if match hasn't started and not a ranked match
-	if (!UTGM->HasMatchStarted() && !UTGM->bRankedSession && UTPlayerState && !UTPlayerState->bIsWarmingUp)
+	// Ready up if match hasn't started and standalone
+	if (!UTGM->HasMatchStarted() && (GetNetMode() == NM_Standalone))
 	{
-		if (UTPlayerState->bCaster)
-		{
-			//For casters, all players need to be ready before the caster can be ready. This avoids the game starting if the caster has been mashing buttons while players are getting ready
-			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-			if (UTPlayerState->bCaster && GS != nullptr && GS->AreAllPlayersReady())
-			{
-				UTPlayerState->SetReadyToPlay(true);
-				UTPlayerState->ForceNetUpdate();
-			}
-		}
-		else if ((UTGM->GetMatchState() != MatchState::CountdownToBegin) && (UTGM->GetMatchState() != MatchState::PlayerIntro))
-		{
-			UTPlayerState->SetReadyToPlay(!UTPlayerState->bReadyToPlay);
-			UTPlayerState->bPendingTeamSwitch = false;
-			UTPlayerState->ForceNetUpdate();
-		}
-	}
-	//Half-time ready up for caster control
-	else if (UTGM->bCasterControl && UTGM->GetMatchState() == MatchState::MatchIntermission && UTPlayerState != nullptr && UTPlayerState->bCaster)
-	{
-		UTPlayerState->SetReadyToPlay(true);
-		UTPlayerState->ForceNetUpdate();
+		UTPlayerState->bIsWarmingUp = true;
+		return;
 	}
 	else if (IsFrozen())
 	{
@@ -2644,6 +2581,9 @@ void AUTPlayerController::ServerRestartPlayer_Implementation()
 	{
 		return;
 	}
+
+	// Flag this player as not being idle
+	if (UTPlayerState) UTPlayerState->NotIdle();
 
 	Super::ServerRestartPlayer_Implementation();
 }
@@ -2662,6 +2602,9 @@ void AUTPlayerController::ServerSwitchTeam_Implementation()
 		return;
 	}
 
+	// Flag this player as not being idle
+	if (UTPlayerState) UTPlayerState->NotIdle();
+
 	if (UTPlayerState != NULL && UTPlayerState->Team != NULL)
 	{
 		uint8 NewTeam = (UTPlayerState->Team->TeamIndex + 1) % GetWorld()->GetGameState<AUTGameState>()->Teams.Num();
@@ -2671,15 +2614,11 @@ void AUTPlayerController::ServerSwitchTeam_Implementation()
 		}
 		else if (!GetWorld()->GetAuthGameMode()->HasMatchStarted())
 		{
+			ChangeTeam(NewTeam);
 			if (UTPlayerState->bIsWarmingUp)
 			{
-				// no team swaps while warming up
-				return;
-			}
-			ChangeTeam(NewTeam);
-			if (UTPlayerState->bPendingTeamSwitch)
-			{
-				UTPlayerState->SetReadyToPlay(false);
+				ServerToggleWarmup();
+				ServerToggleWarmup();
 			}
 		}
 		else
@@ -2699,29 +2638,20 @@ void AUTPlayerController::ServerRestartPlayerAltFire_Implementation()
 {
 	bUseAltSpawnPoint = true;
 
+	// Flag this player as not being idle
+	if (UTPlayerState) UTPlayerState->NotIdle();
+
 	if (UTPlayerState != nullptr)
 	{
 		UTPlayerState->bChosePrimaryRespawnChoice = false;
 		UTPlayerState->ForceNetUpdate();
 	}
 
-	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (GS && !GS->HasMatchStarted() && UTPlayerState && !UTPlayerState->bIsWarmingUp)
+	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+	if (GameMode && !GameMode->PlayerCanAltRestart(this))
 	{
-		if (GS->GetMatchState() != MatchState::CountdownToBegin && GS->GetMatchState() != MatchState::PlayerIntro)
-		{
-			ServerSwitchTeam();
-		}
+		return;
 	}
-	else 
-	{
-		AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-		if (GameMode && !GameMode->PlayerCanAltRestart(this))
-		{
-			return;
-		}
-	}
-
 	Super::ServerRestartPlayer_Implementation();
 }
 
@@ -2731,6 +2661,9 @@ bool AUTPlayerController::ServerSelectSpawnPoint_Validate(APlayerStart* DesiredS
 }
 void AUTPlayerController::ServerSelectSpawnPoint_Implementation(APlayerStart* DesiredStart)
 {
+	// Flag this player as not being idle
+	if (UTPlayerState) UTPlayerState->NotIdle();
+
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (GS != NULL && UTPlayerState != NULL)
 	{
@@ -3371,9 +3304,9 @@ void AUTPlayerController::PlayerTick( float DeltaTime )
 		LastPingCalcTime = GetWorld()->GetTimeSeconds();
 		ServerBouncePing(GetWorld()->GetTimeSeconds());
 	}
-	APawn* ViewTargetPawn = PlayerCameraManager->GetViewTargetPawn();
+	APawn* ViewTargetPawn = (PlayerCameraManager != nullptr) ? PlayerCameraManager->GetViewTargetPawn() : nullptr;
 	AUTCharacter* ViewTargetCharacter = Cast<AUTCharacter>(ViewTargetPawn);
-	if (IsInState(NAME_Spectating) && UTPlayerState  && bAutoCam && (UTPlayerState->bOnlySpectator || (UTPlayerState->bOutOfLives && !Cast<AUTGameObjective>(GetViewTarget()))) && (!ViewTargetCharacter || !ViewTargetCharacter->IsRecentlyDead()))
+	if (IsInState(NAME_Spectating) && UTPlayerState && (bAutoCam || !UTPlayerState->bOnlySpectator) && (UTPlayerState->bOnlySpectator || (UTPlayerState->bOutOfLives && !Cast<AUTGameObjective>(GetViewTarget()))) && (!ViewTargetCharacter || !ViewTargetCharacter->IsRecentlyDead()))
 	{
 		// possibly switch cameras
 		ChooseBestCamera();
@@ -3382,7 +3315,7 @@ void AUTPlayerController::PlayerTick( float DeltaTime )
 	// Follow the last spectated player again when they respawn
 	if ((StateName == NAME_Spectating) && LastSpectatedPlayerId >= 0 && IsLocalController() && (!Cast<AUTProjectile>(GetViewTarget()) || GetViewTarget()->IsPendingKillPending()))
 	{
-		ViewTargetPawn = PlayerCameraManager->GetViewTargetPawn();
+		ViewTargetPawn = (PlayerCameraManager != nullptr) ? PlayerCameraManager->GetViewTargetPawn() : nullptr;;
 		ViewTargetCharacter = Cast<AUTCharacter>(ViewTargetPawn);
 		if (!ViewTargetPawn || ViewTargetPawn->IsPendingKillPending() || (ViewTargetCharacter && ViewTargetCharacter->IsDead() && !ViewTargetCharacter->IsRecentlyDead()))
 		{
@@ -3539,18 +3472,19 @@ void AUTPlayerController::ChooseBestCamera()
 {
 	// for now, choose just between live players.  Eventually also use level cameras, etc.
 	float BestScore = 0.f;
-	APlayerState* BestPS = LastSpectatedPlayerState;
+	APlayerState* BestPS = nullptr;
 	AUTPlayerCameraManager* UTCam = Cast<AUTPlayerCameraManager>(PlayerCameraManager);
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (UTCam)
 	{
 		for (FConstPawnIterator Iterator = GetWorld()->GetPawnIterator(); Iterator; ++Iterator)
 		{
 			AUTCharacter* CamPawn = Cast<AUTCharacter>(*Iterator);
 			AUTPlayerState* NextPlayerState = (CamPawn && (CamPawn->Health > 0)) ? Cast<AUTPlayerState>(CamPawn->PlayerState) : NULL;
-			if (NextPlayerState)
+			if (NextPlayerState && GS && GS->CanSpectate(this, NextPlayerState))
 			{
 				float NewScore = UTCam->RatePlayerCamera(NextPlayerState, CamPawn, LastSpectatedPlayerState);
-				if (NewScore > BestScore)
+				if (!BestPS || (NewScore > BestScore))
 				{
 					BestScore = NewScore;
 					BestPS = NextPlayerState;
@@ -3569,9 +3503,14 @@ void AUTPlayerController::ChooseBestCamera()
 void AUTPlayerController::NotifyTakeHit(AController* InstigatedBy, int32 Damage, FVector Momentum, const FDamageEvent& DamageEvent)
 {
 	APlayerState* InstigatedByState = (InstigatedBy != NULL) ? InstigatedBy->PlayerState : NULL;
+	TSubclassOf<UUTDamageType> UTDmgType = *DamageEvent.DamageTypeClass;
 	FVector RelHitLocation(FVector::ZeroVector);
 	FVector ShotDir(FVector::ZeroVector);
-	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
+	if (UTDmgType != nullptr && UTDmgType.GetDefaultObject()->bDmgHUDUsesShooterLoc && InstigatedBy != nullptr && InstigatedBy->GetPawn() != nullptr && GetPawn() != nullptr)
+	{
+		ShotDir = (GetPawn()->GetActorLocation() - InstigatedBy->GetPawn()->GetActorLocation()).GetSafeNormal();
+	}
+	else if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
 		ShotDir = ((FPointDamageEvent*)&DamageEvent)->ShotDirection;
 	}
@@ -3583,8 +3522,8 @@ void AUTPlayerController::NotifyTakeHit(AController* InstigatedBy, int32 Damage,
 		}
 		else
 		{
-		ShotDir = (((FRadialDamageEvent*)&DamageEvent)->ComponentHits[0].ImpactPoint - ((FRadialDamageEvent*)&DamageEvent)->Origin).GetSafeNormal();
-	}
+			ShotDir = (((FRadialDamageEvent*)&DamageEvent)->ComponentHits[0].ImpactPoint - ((FRadialDamageEvent*)&DamageEvent)->Origin).GetSafeNormal();
+		}
 	}
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	bool bFriendlyFire = InstigatedByState != PlayerState && GS != NULL && GS->OnSameTeam(InstigatedByState, this);
@@ -3600,7 +3539,7 @@ void AUTPlayerController::ClientNotifyTakeHit_Implementation(bool bFriendlyFire,
 	}
 }
 
-void AUTPlayerController::ClientNotifyCausedHit_Implementation(APawn* HitPawn, uint8 Damage)
+void AUTPlayerController::ClientNotifyCausedHit_Implementation(APawn* HitPawn, uint8 Damage, bool bArmorDamage)
 {
 	// by default we only show HUD hitconfirms for hits that the player could conceivably see (i.e. target is in LOS)
 	if (HitPawn != NULL && HitPawn->GetRootComponent() != NULL && GetPawn() != NULL && MyUTHUD != NULL)
@@ -3618,7 +3557,7 @@ void AUTPlayerController::ClientNotifyCausedHit_Implementation(APawn* HitPawn, u
 		}
 		if (GetWorld()->TimeSeconds - VictimLastRenderTime < 0.15f)
 		{
-			MyUTHUD->CausedDamage(HitPawn, Damage);
+			MyUTHUD->CausedDamage(HitPawn, Damage, bArmorDamage);
 		}
 	}
 }
@@ -3662,10 +3601,6 @@ void AUTPlayerController::ServerSuicide_Implementation()
 				Char->PlayerSuicide();
 			}
 		}
-	}
-	else if ((UTCharacter == nullptr) && UTPlayerState && (UTPlayerState->ReadyMode == 4))
-	{
-		UTPlayerState->ReadyMode = 3;
 	}
 }
 
@@ -3727,11 +3662,7 @@ bool AUTPlayerController::ServerEmote_Validate(int32 EmoteIndex)
 
 void AUTPlayerController::ServerEmote_Implementation(int32 EmoteIndex)
 {
-	if ((UTCharacter == nullptr) && UTPlayerState && (UTPlayerState->ReadyMode == 3))
-	{
-		UTPlayerState->ReadyMode = 5;
-	}
-	else if (UTPlayerState != nullptr)
+	if (UTPlayerState != nullptr)
 	{
 		UTPlayerState->PlayTauntByIndex(EmoteIndex);
 	}
@@ -3742,7 +3673,7 @@ void AUTPlayerController::PlayGroupTaunt()
 	if (GetWorld()->GetRealTimeSeconds() - LastEmoteTime > EmoteCooldownTime)
 	{
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS && (GS->LeadLineUpPlayer == UTPlayerState) && (GS->IsMatchIntermission() || GS->HasMatchEnded()))
+		if (GS && GS->LineUpHelper && GS->LineUpHelper->CanInitiateGroupTaunt(UTPlayerState))
 		{
 			ServerPlayGroupTaunt();
 			LastEmoteTime = GetWorld()->GetRealTimeSeconds();
@@ -3796,10 +3727,9 @@ void AUTPlayerController::ReceivedPlayer()
 		}
 
 		// Send over the country flag....
-		UUTProfileSettings* Settings = GetProfileSettings();
-		if (Settings != NULL)
+		if (LP != NULL)
 		{
-			FName CountryFlag = Settings->CountryFlag;
+			FName CountryFlag = LP->GetCountryFlag();
 
 			UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
 			if (UTEngine != nullptr)
@@ -3818,11 +3748,6 @@ void AUTPlayerController::ReceivedPlayer()
 			ServerReceiveCountryFlag(CountryFlag);
 		}
 	}
-
-	if (GetNetMode() == NM_Client || GetNetMode() == NM_Standalone)
-	{
-		InitializeHeartbeatManager();
-	}
 }
 
 bool AUTPlayerController::ServerReceiveCountryFlag_Validate(FName NewCountryFlag)
@@ -3830,34 +3755,11 @@ bool AUTPlayerController::ServerReceiveCountryFlag_Validate(FName NewCountryFlag
 	return true;
 }
 
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName FlagChange
-*
-* @Trigger Sent when a user changes their country flag
-*
-* @Type Sent by the Client
-*
-* @EventParam CountryFlag string New Country
-* @EventParam UserId string UniqueId of the user that changed their flag
-*
-* @Comments
-*/
 void AUTPlayerController::ServerReceiveCountryFlag_Implementation(FName NewCountryFlag)
 {
 	if (UTPlayerState != NULL)
 	{
 		UTPlayerState->CountryFlag = NewCountryFlag;
-
-		if (FUTAnalytics::IsAvailable())
-		{
-			TArray<FAnalyticsEventAttribute> ParamArray;
-			ParamArray.Add(FAnalyticsEventAttribute(TEXT("CountryFlag"), UTPlayerState->CountryFlag.ToString()));
-			ParamArray.Add(FAnalyticsEventAttribute(TEXT("UserId"), UTPlayerState->UniqueId.ToString()));
-			FUTAnalytics::SetClientInitialParameters(this, ParamArray, false);
-
-			FUTAnalytics::GetProvider().RecordEvent(TEXT("FlagChange"), ParamArray);
-		}
 	}
 }
 
@@ -4404,7 +4306,10 @@ void AUTPlayerController::ClientPumpkinPickedUp_Implementation(float GainedAmoun
 
 void AUTPlayerController::DebugTest(FString TestCommand)
 {
-	ClientReceiveLocalizedMessage(UUTGauntletGameMessage::StaticClass(), 6, nullptr, nullptr, nullptr);
+
+	int32 Index = FCString::Atoi(*TestCommand);
+
+	ClientReceiveLocalizedMessage(UUTGauntletGameMessage::StaticClass(), Index, PlayerState, nullptr, nullptr);
 	Super::DebugTest(TestCommand);
 
 }
@@ -5256,15 +5161,6 @@ bool AUTPlayerController::CanPerformRally() const
 	return (GameState && UTPlayerState && UTPlayerState->bCanRally && UTPlayerState->Team && GameState->bAttackersCanRally && ((UTPlayerState->Team->TeamIndex == 0) == GameState->bRedToCap));
 }
 
-void AUTPlayerController::InitializeHeartbeatManager()
-{
-	if (!HeartbeatManager)
-	{
-		HeartbeatManager = NewObject<UUTHeartbeatManager>(this);
-		HeartbeatManager->StartManager(this);
-	}
-}
-
 EWeaponHand AUTPlayerController::GetPreferredWeaponHand()
 {
 	if (GetNetMode() == NM_DedicatedServer)
@@ -5304,7 +5200,7 @@ void AUTPlayerController::PlayTutorialAnnouncement(int32 Index, UObject* Optiona
 
 		if (FUTAnalytics::IsAvailable())
 		{
-			FUTAnalytics::FireEvent_UTTutorialPlayInstruction(this, Index, OptionalObject ? OptionalObject->GetName() : FString());
+			FUTAnalytics::FireEvent_UTTutorialPlayInstruction(this, NewAnnName.ToString(), Index, OptionalObject ? OptionalObject->GetName() : FString());
 		}
 	}
 }
@@ -5336,16 +5232,13 @@ void AUTPlayerController::ClientPrepareForLineUp_Implementation()
 	}
 }
 
-void AUTPlayerController::ClientSetActiveLineUp_Implementation(bool bNewIsActive, LineUpTypes LastType)
+void AUTPlayerController::ClientSetActiveLineUp_Implementation()
 {
 	if (GetWorld())
 	{
 		AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
 		if (UTGS && UTGS->LineUpHelper)
 		{
-			UTGS->LineUpHelper->bIsActive = bNewIsActive;
-			UTGS->LineUpHelper->LastActiveType = LastType;
-
 			for (FActorIterator It(GetWorld()); It; ++It)
 			{
 				AActor* TestActor = *It;
@@ -5353,11 +5246,16 @@ void AUTPlayerController::ClientSetActiveLineUp_Implementation(bool bNewIsActive
 				{
 					TestActor->Destroy();
 				}
+
+				AUTCharacter* UTChar = Cast<AUTCharacter>(*It);
+				if (UTChar && UTChar->IsDead())
+				{
+					UTChar->Destroy();
+				}
 			}
 
-			if (bNewIsActive)
+			if (UTGS->LineUpHelper->bIsActive)
 			{
-				SetIgnoreLookInput(true);
 				ToggleScoreboard(false);
 
 				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
@@ -5382,13 +5280,6 @@ void AUTPlayerController::ClientSetActiveLineUp_Implementation(bool bNewIsActive
 			else
 			{
 				AUTLineUpHelper::CleanUpPlayerAfterLineUp(this);
-
-				//Need to kill local pawn and then restart, so that we sync back up with the server
-				if (GetPawn())
-				{
-					GetPawn()->Destroy();
-				}
-				ClientRestart(nullptr);
 			}
 		}
 	}
@@ -5444,31 +5335,6 @@ void AUTPlayerController::ClientDrawLine_Implementation(FVector Start, FVector E
 	DrawDebugLine(GetWorld(), Start, End, Color, (Duration != 0.f), Duration);
 }
 
-void AUTPlayerController::RealNames()
-{
-	if (MyUTHUD && MyUTHUD->MyUTScoreboard)
-	{
-		MyUTHUD->MyUTScoreboard->bForceRealNames = true;
-		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS)
-		{
-			for (int32 i = 0; i < GS->PlayerArray.Num(); i++)
-			{
-				AUTPlayerState* PS = Cast<AUTPlayerState>(GS->PlayerArray[i]);
-				if (PS)
-				{
-					TSharedRef<const FUniqueNetId> UserId = MakeShareable(new FUniqueNetIdString(*PS->StatsID));
-					FText EpicAccountName = GS->GetEpicAccountNameForAccount(UserId);
-					if (!EpicAccountName.IsEmpty())
-					{
-						PS->PlayerName = EpicAccountName.ToString();
-					}
-				}
-			}
-		}
-	}
-}
-
 void AUTPlayerController::ClientReceiveLocalizedMessage_Implementation(TSubclassOf<ULocalMessage> Message, int32 Switch, APlayerState* RelatedPlayerState_1, APlayerState* RelatedPlayerState_2, UObject* OptionalObject)
 {
 	Super::ClientReceiveLocalizedMessage_Implementation(Message, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
@@ -5515,4 +5381,26 @@ void AUTPlayerController::BeginSpectatingState()
 	Super::BeginSpectatingState();
 
 	FlushPressedKeys();
+}
+
+void AUTPlayerController::ClientWasKicked_Implementation(const FText& KickReason)
+{
+	ULocalPlayer* UTLocalPlayer = Cast<ULocalPlayer>(Player);
+	if (UTLocalPlayer != nullptr)
+	{
+		UUTGameViewportClient* ViewportClient = Cast<UUTGameViewportClient>(UTLocalPlayer->ViewportClient);
+		if (ViewportClient != nullptr)
+		{
+			ViewportClient->KickReason = KickReason;
+		}
+	}
+
+	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
+	if (PartyContext)
+	{
+		if (PartyContext->GetPartySize() > 1)
+		{
+			PartyContext->LeaveParty();
+		}
+	}
 }

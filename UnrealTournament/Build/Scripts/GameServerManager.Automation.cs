@@ -50,8 +50,8 @@ namespace UnrealTournamentGame.Automation
 			this.GameBinaryPath = "Engine/Binaries/Linux";
 			this.GameLogPath = "/UnrealTournament/Saved/Logs";
 			this.GameSavedPath = "/UnrealTournament/Saved";
-			this.MaxMatchLength = 0; /* value is in seconds. 0 disables ttl */
-			this.TtlInterval = 0; /* idle server refresh time in seconds.  0 disables ttl*/
+			this.MaxMatchLength = 10000; /* value is in seconds. 0 disables ttl */
+			this.TtlInterval = 5000; /* idle server refresh time in seconds.  0 disables ttl*/
 			this.GameBinary = "UE4Server-Linux-Shipping";
 			this.CpuBudget = 33;
 			this.RamBudget = 55;
@@ -142,14 +142,14 @@ namespace UnrealTournamentGame.Automation
 		{
 			string GceMachineType = "n1-standard-4";
 			string AwsMachineType = "c4.2xlarge";
-			string AwsSmallerMachineType = "c4.2xlarge";
+			string AwsMachineTypeMedium = "c4.xlarge";
 			string AwsBraMachineType = "c3.2xlarge";
 
 			if (AppName == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDev)
 			{
 				GceMachineType = "n1-standard-32";
 				AwsMachineType = "c4.8xlarge";
-				AwsSmallerMachineType = "c4.4xlarge";
+				AwsMachineTypeMedium = "c4.4xlarge";
 				AwsBraMachineType = "c3.4xlarge";
 			}
 
@@ -164,7 +164,7 @@ namespace UnrealTournamentGame.Automation
 			string AwsNaHub2 = Deployment2AwsArgs(AwsRegion: "us-west-1", tag: "AwsHub2", Region: "NA", InstanceType: AwsMachineType, HubServerName: "USA (West) Hub 1");
 			string AwsEuHub1 = Deployment2AwsArgs(AwsRegion: "eu-central-1", tag: "AwsHub1", Region: "EU", InstanceType: AwsMachineType, HubServerName: "GER (Frankfurt) Hub 1");
 			string AwsEuHub2 = Deployment2AwsArgs(AwsRegion: "eu-central-1", tag: "AwsHub2", Region: "EU", InstanceType: AwsMachineType, HubServerName: "GER (Frankfurt) Hub 2");
-			string AwsAuHub1 = Deployment2AwsArgs(AwsRegion: "ap-southeast-2", tag: "AwsHub1", Region: "AU", InstanceType: AwsSmallerMachineType, HubServerName: "AUS (Sydney) Hub 1");
+			string AwsAuHub1 = Deployment2AwsArgs(AwsRegion: "ap-southeast-2", tag: "AwsHub1", Region: "AU", InstanceType: AwsMachineTypeMedium, HubServerName: "AUS (Sydney) Hub 1");
 			string AwsSaHub1 = Deployment2AwsArgs(AwsRegion: "sa-east-1", tag: "AwsHub1", Region: "SA", InstanceType: AwsBraMachineType, HubServerName: "BRA (Sao Paulo) Hub 1");
 
 			/* Match Making */
@@ -172,8 +172,8 @@ namespace UnrealTournamentGame.Automation
 			string GceArgsNa2 = Deployment2GceArgs(tag: "GceMM2", MachineType: GceMachineType, Zone: "us-central1-b", Region: "NA");
 			string GceArgsEu1 = Deployment2GceArgs(tag: "GceMM1", MachineType: GceMachineType, Zone: "europe-west1-c", Region: "EU");
 			string GceArgsEu2 = Deployment2GceArgs(tag: "GceMM2", MachineType: GceMachineType, Zone: "europe-west1-d", Region: "EU");
-			string AwsArgsNa1 = Deployment2AwsArgs(tag: "AwsMM1", InstanceType: AwsMachineType, AwsRegion: "us-east-1", Region: "NA");
-			string AwsArgsEu1 = Deployment2AwsArgs(tag: "AwsMM1", InstanceType: AwsMachineType, AwsRegion: "eu-central-1", Region: "EU");
+			string AwsArgsNa1 = Deployment2AwsArgs(tag: "AwsMM1", InstanceType: AwsMachineTypeMedium, AwsRegion: "us-east-1", Region: "NA");
+			string AwsArgsEu1 = Deployment2AwsArgs(tag: "AwsMM1", InstanceType: AwsMachineTypeMedium, AwsRegion: "eu-central-1", Region: "EU");
 
 			CommandUtils.Log("Deploying new fleets for change list {0}", Changelist);
 
@@ -308,6 +308,8 @@ namespace UnrealTournamentGame.Automation
 		{
 			string AwsCredentialsFile = "AwsDedicatedServerCredentialsDecoded.txt";
 
+			int LocalTtlInterval = TtlInterval;
+			int LocalMaxMatchLength = MaxMatchLength;
 			int LocalCpuBudget = CpuBudget;
 			if (InstanceSize == 0)
 			{
@@ -337,6 +339,8 @@ namespace UnrealTournamentGame.Automation
 			{
 				CliArgBytes = System.Text.Encoding.UTF8.GetBytes("UnrealTournament ut-entry?game=lobby?ServerName=\""+HubServerName+"\" -nocore -epicapp=" + AppName.ToString() + " " + ExtraCliArgs);
 				LocalCpuBudget=32000;
+				LocalMaxMatchLength = 0;
+				LocalTtlInterval = 0;
 			}
 			else
 			{
@@ -349,11 +353,12 @@ namespace UnrealTournamentGame.Automation
 				"epic_game_binary_path=" + this.GameBinaryPath + "&" +
 				"epic_game_log_path=" + this.GameLogPath + "&" +
 				"epic_game_saved_path=" + this.GameSavedPath + "&" +
-				"epic_game_max_match_length=" + this.MaxMatchLength.ToString() + "&" +
-				"epic_game_ttl_interval=" + this.TtlInterval.ToString() + "&" +
+				"epic_game_max_match_length=" + LocalMaxMatchLength.ToString() + "&" +
+				"epic_game_ttl_interval=" + LocalTtlInterval.ToString() + "&" +
 				"epic_install_sumo=" + this.InstallSumo + "&" +
 				"epic_game_tag=" + GetTag(AppName, Region, tag) + "&" +
 				"epic_game_version=" + Changelist.ToString() + "&" +
+				"epic_game_region=" + Region + "&" +
 				"epic_game_buildstr_base64=" + System.Convert.ToBase64String(BuildStringBytes) + "&" +
 				"epic_game_cpu_budget=" + LocalCpuBudget +"&" +
 				"epic_game_ram_budget=" + RamBudget + "&" +
@@ -383,6 +388,8 @@ namespace UnrealTournamentGame.Automation
 										  string AppNameStringOverride = "",
 										  string HubServerName = "")
 		{
+			int LocalTtlInterval = TtlInterval;
+			int LocalMaxMatchLength = MaxMatchLength;
 			int LocalCpuBudget = CpuBudget;
 			UnrealTournamentBuild.UnrealTournamentAppName LocalAppName = AppName;
 			if( ! String.IsNullOrEmpty(AppNameStringOverride))
@@ -432,6 +439,8 @@ namespace UnrealTournamentGame.Automation
 			{
 				CliArgBytes = System.Text.Encoding.UTF8.GetBytes("UnrealTournament ut-entry?game=lobby?ServerName=\""+HubServerName+"\" -nocore -epicapp=" + LocalAppName.ToString() + " " + ExtraCliArgs);
 				LocalCpuBudget=32000;
+				LocalMaxMatchLength = 0;
+				LocalTtlInterval = 0;
 			}
 			else
 			{
@@ -443,8 +452,8 @@ namespace UnrealTournamentGame.Automation
 				"epic_game_binary_path=" + this.GameBinaryPath + "&" +
 				"epic_game_log_path=" + this.GameLogPath + "&" +
 				"epic_game_saved_path=" + this.GameSavedPath + "&" +
-				"epic_game_max_match_length=" + this.MaxMatchLength.ToString() + "&" +
-				"epic_game_ttl_interval=" + this.TtlInterval.ToString() + "&" +
+				"epic_game_max_match_length=" + LocalMaxMatchLength.ToString() + "&" +
+				"epic_game_ttl_interval=" + LocalTtlInterval.ToString() + "&" +
 				"epic_install_sumo=" + this.InstallSumo + "&" +
 				"epic_game_tag=" + GetTag(LocalAppName, Region, tag) + "&" +
 				"epic_game_version=" + Changelist.ToString() + "&" +
@@ -646,7 +655,7 @@ namespace UnrealTournamentGame.Automation
 			do
 			{
 				CommandUtils.Log("Uploading server binaries zip file to Amazon S3 bucket {0}.", S3BucketName);
-				bSuccess = S3.PostFile(S3BucketName, S3Filename, ServerZipFilePath, "application/zip").bSuccess;
+				bSuccess = S3.PostMultipartFile(S3BucketName, S3Filename, ServerZipFilePath, 8, ContentType: "application/zip").bSuccess;
 				if (!bSuccess)
 				{
 					bool bDoRetry = Retries + 1 < MaxRetries;
