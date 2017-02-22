@@ -72,6 +72,10 @@ class UNREALTOURNAMENT_API AUTGameObjective : public AActor, public IUTPathBuild
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObjective)
 		float ForwardDot;
 
+	/** How far off center to consider incoming direction as high or low */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObjective)
+		float HighLowDot;
+
 	/** How far off center is considered forward for incoming messages.  (1.0 is straight forward, cos of angle) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObjective)
 		float IncomingHeightOffset;

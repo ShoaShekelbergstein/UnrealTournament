@@ -175,6 +175,9 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 		float LastEnemyLocationReportTime;
 
 	UPROPERTY()
+		float LastIncomingWarningTime;
+
+	UPROPERTY()
 		FName LastFriendlyLocationName;
 
 	UPROPERTY()

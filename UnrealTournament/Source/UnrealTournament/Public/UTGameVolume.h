@@ -34,25 +34,28 @@ class UNREALTOURNAMENT_API AUTGameVolume : public APhysicsVolume, public IUTTeam
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	bool bIsTeamSafeVolume;
 
-	/** Can't rally to flag carrier in this zone. */
+	/** OBSOLETE */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 		bool bIsNoRallyZone;
+
+	/** Set true if this volume is part of the core defender base. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+		bool bIsDefenderBase;
+
+	/** If true, play incoming warning when enemy enters this zone. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+		bool bPlayIncomingWarning;
 
 	/** Character entering this volume immediately triggers teleporter in this volume. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 		bool bIsTeleportZone;
 
-	/** Character entering this volume immediately triggers teleporter in this volume. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 		bool bIsWarningZone;
 
 	/** Alarm sound played if this is bNoRallyZone and enemy flag carrier enters. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 		USoundBase* AlarmSound;
-
-	/** Sound played if player is getting health from this volume. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
-		USoundBase* HealthSound;
 
 	UPROPERTY()
 		class AUTTeleporter* AssociatedTeleporter;
@@ -100,6 +103,11 @@ class UNREALTOURNAMENT_API AUTGameVolume : public APhysicsVolume, public IUTTeam
 
 	// Determine which direction volume is being entered relative to defensive base
 	virtual int32 DetermineEntryDirection(class AUTCharacter* EnteringCharacter, class AUTFlagRunGameState* GS);
+
+	virtual void PostLoad() override;
+
+	/** Pick best enemy team player to play announcement. */
+	class AUTPlayerState* GetBestWarner(class AUTCharacter* StatusEnemy);
 };
 
 

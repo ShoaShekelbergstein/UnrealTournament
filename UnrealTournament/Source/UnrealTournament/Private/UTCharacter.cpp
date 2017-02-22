@@ -1422,7 +1422,7 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 				if ((UTPlayerState->Team->TeamIndex == 1) == GS->bRedToCap)
 				{
 					AUTGameVolume* EnemyVolume = Cast<AUTGameVolume>(Targeter->GetPawnPhysicsVolume());
-					if (EnemyVolume && EnemyVolume->bIsNoRallyZone && !EnemyVolume->bIsTeamSafeVolume)
+					if (EnemyVolume && EnemyVolume->bIsDefenderBase)
 					{
 						bBaseWarning = true;
 					}

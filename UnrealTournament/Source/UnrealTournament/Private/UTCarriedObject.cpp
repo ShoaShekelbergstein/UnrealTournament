@@ -487,7 +487,7 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 		PC->UTClientPlaySound(HolderPickupSound);
 	}
 	AUTGameVolume* GV = Cast<AUTGameVolume>(HoldingPawn->GetPawnPhysicsVolume());
-	if (GV && GV->bIsNoRallyZone && !GV->bIsTeamSafeVolume)
+	if (GV && GV->bIsDefenderBase)
 	{
 		// play alarm
 		if (GetWorld()->GetTimeSeconds() - EnteredEnemyBaseTime > 2.f)
@@ -752,7 +752,7 @@ void AUTCarriedObject::Drop(AController* Killer)
 void AUTCarriedObject::RemoveInvalidPastPositions()
 {
 	AUTGameVolume* GV = Cast<AUTGameVolume>(Collision->GetPhysicsVolume());
-	bool bInNoRallyZone = GV && GV->bIsNoRallyZone;
+	bool bInNoRallyZone = GV && (GV->bIsDefenderBase || GV->bIsTeamSafeVolume);
 	bool bRemovingPositions = true;
 	while ((PastPositions.Num() > 0) && bRemovingPositions)
 	{
