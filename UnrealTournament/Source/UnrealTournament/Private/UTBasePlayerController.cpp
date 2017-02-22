@@ -590,7 +590,6 @@ void AUTBasePlayerController::OnFindSessionsComplete(bool bWasSuccessful)
 							PingBeacon->OnServerRequestResults = FServerRequestResultsDelegate::CreateUObject(this, &AUTBasePlayerController::OnPingBeaconResult);
 							PingBeacon->OnServerRequestFailure = FServerRequestFailureDelegate::CreateUObject(this, &AUTBasePlayerController::OnPingBeaconFailure);
 						
-							IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 							IOnlineSessionPtr OnlineSessionInterface;
 							if (OnlineSubsystem) OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
 
