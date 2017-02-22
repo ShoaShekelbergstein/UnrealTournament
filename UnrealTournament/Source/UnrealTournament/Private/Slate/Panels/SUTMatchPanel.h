@@ -123,11 +123,11 @@ public:
 			FString StateString = TEXT("In Progress");
 			if (MatchInfo.IsValid())
 			{
-				StateString = MatchInfo->MatchUpdate.MatchState != NAME_None ? MatchInfo->MatchUpdate.MatchState.ToString() : TEXT("In Progress");
+				StateString = MatchInfo->MatchUpdate.MatchState != NAME_None ? MatchInfo->MatchUpdate.MatchState.ToString() : TEXT("Launching");
 			}
 			else if (MatchData.IsValid())
 			{
-				StateString = MatchData->MatchData.MatchState != NAME_None ? MatchData->MatchData.MatchState.ToString() : TEXT("In Progress");
+				StateString = MatchData->MatchData.MatchState != NAME_None ? MatchData->MatchData.MatchState.ToString() : TEXT("Launching");
 			}
 
 

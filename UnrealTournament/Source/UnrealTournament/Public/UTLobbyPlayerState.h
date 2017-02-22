@@ -47,6 +47,10 @@ class UNREALTOURNAMENT_API AUTLobbyPlayerState : public AUTPlayerState
 	// Server-Side - Called when this player has been added to a match
 	virtual void AddedToMatch(AUTLobbyMatchInfo* Match);
 
+
+	UFUNCTION(Client, Reliable)
+	void ClientAddedToMatch(bool bIsHost);
+
 	// Server-Side - Called when this player has been removed from a match
 	virtual void RemovedFromMatch(AUTLobbyMatchInfo* Match);
 

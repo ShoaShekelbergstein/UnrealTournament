@@ -12,6 +12,7 @@
 #include "PartyContext.h"
 #include "UTLobbyMatchInfo.h"
 #include "UTAnalytics.h"
+#include "SUTStartMatchWindow.h"
 
 AUTLobbyPlayerState::AUTLobbyPlayerState(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -88,6 +89,34 @@ void AUTLobbyPlayerState::AddedToMatch(AUTLobbyMatchInfo* Match)
 {
 	CurrentMatch = Match;
 	bIsInMatch = true;
+	ClientAddedToMatch( CurrentMatch->OwnerId == UniqueId );
+}
+
+void AUTLobbyPlayerState::ClientAddedToMatch_Implementation(bool bIsHost)
+{
+	if (!bIsHost)
+	{
+		AUTBasePlayerController* PC = Cast<AUTBasePlayerController>(GetOwner());
+		if (PC)
+		{
+			UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(PC->Player);
+			if (UTLocalPlayer)
+			{
+
+#if !UE_SERVER
+				TSharedPtr<SUTStartMatchWindow> StartMatchWindow;
+				SAssignNew(StartMatchWindow, SUTStartMatchWindow, UTLocalPlayer)
+					.bIsHost(false);
+		 
+				if (StartMatchWindow.IsValid())
+				{
+					UTLocalPlayer->OpenWindow(StartMatchWindow);
+				}
+			}
+#endif
+		}
+	}
+
 }
 
 void AUTLobbyPlayerState::RemovedFromMatch(AUTLobbyMatchInfo* Match)

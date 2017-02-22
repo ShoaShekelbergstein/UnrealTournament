@@ -447,7 +447,7 @@ bool AUTLobbyMatchInfo::ShouldShowInDock()
 	}
 	else
 	{
-		return (OwnerId.IsValid() || bQuickPlayMatch) && CurrentRuleset.IsValid() && (CurrentState == ELobbyMatchState::InProgress || CurrentState == ELobbyMatchState::WaitingForPlayers);
+		return (OwnerId.IsValid() || bQuickPlayMatch) && CurrentRuleset.IsValid() && (CurrentState == ELobbyMatchState::InProgress || CurrentState == ELobbyMatchState::WaitingForPlayers || CurrentState == ELobbyMatchState::Launching);
 	}
 }
 
