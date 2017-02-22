@@ -203,7 +203,7 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 			if (ShouldPlay1PVisuals())
 			{
 				// try and play a firing animation if specified
-				if ((!BurstFireMode || BurstFireMode->CurrentShot == 0) && FireAnimation.IsValidIndex(CurrentFireMode) && FireAnimation[CurrentFireMode] != NULL)
+				if ((!BurstFireMode || BurstFireMode->CurrentShot == 0) && FireAnimationLeft.IsValidIndex(CurrentFireMode) && FireAnimationLeft[CurrentFireMode] != NULL)
 				{
 					UAnimInstance* AnimInstance = LeftMesh->GetAnimInstance();
 					if (AnimInstance != NULL)
