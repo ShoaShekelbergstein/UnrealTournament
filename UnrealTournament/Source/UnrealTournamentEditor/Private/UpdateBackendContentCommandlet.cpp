@@ -58,7 +58,7 @@ struct FJsonExporter : public TSharedFromThis<FJsonExporter>
 			bool bSuccess = true;
 			
 			// TODO:
-			//bSuccess = ExportLootTables() && bSuccess;
+			bSuccess = ExportLootTables() && bSuccess;
 			// TODO:
 			//bSuccess = WriteCatalogJson() && bSuccess;
 			bSuccess = ExportProfileItems() && bSuccess;
@@ -226,7 +226,7 @@ protected:
 		UE_LOG(LogTemplates, Display, TEXT("BEGIN EXPORT - LootTables"));
 
 		// get the loot tables root object
-		static const TCHAR* LOOT_TABLES_PATH = TEXT("/Game/GameObjects/GameData/DataTables/Loot/LootTables.LootTables");
+		static const TCHAR* LOOT_TABLES_PATH = TEXT("/Game/EpicInternal/Loot/LootTables.LootTables");
 		ULootTables* LootTables = LoadObject<ULootTables>(nullptr, LOOT_TABLES_PATH);
 		if (LootTables == nullptr)
 		{
