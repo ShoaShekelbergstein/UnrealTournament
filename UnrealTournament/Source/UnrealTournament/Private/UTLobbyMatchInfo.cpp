@@ -351,7 +351,7 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
 		}
 
 		// build all of the data needed to launch the map.
-		FString GameURL = FString::Printf(TEXT("%s?Game=%s?MaxPlayers=%i?MinPlayers=%i"),*InitialMap, *CurrentRuleset->GameMode, CurrentRuleset->MaxPlayers, CurrentRuleset->MinPlayersToStart);
+		FString GameURL = FString::Printf(TEXT("%s?Game=%s?MaxPlayers=%i"),*InitialMap, *CurrentRuleset->GameMode, CurrentRuleset->MaxPlayers);
 		GameURL += CurrentRuleset->GameOptions;
 
 		if (CurrentRuleset->bCompetitiveMatch)
@@ -741,7 +741,6 @@ void AUTLobbyMatchInfo::ServerCreateCustomRule_Implementation(const FString& Gam
 			FinalGameOptions +=TEXT("?BotFill=0?ForceNoBots=1");
 		}
 		NewReplicatedRuleset->GameOptions = FinalGameOptions;
-		NewReplicatedRuleset->MinPlayersToStart = 2;
 		NewReplicatedRuleset->DisplayTexture = "Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_Custom.GB_Custom'";
 		NewReplicatedRuleset->bCustomRuleset = true;
 

@@ -30,7 +30,6 @@ void AUTReplicatedGameRuleset::GetLifetimeReplicatedProps(TArray< FLifetimePrope
 	DOREPLIFETIME(AUTReplicatedGameRuleset, Description);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, MaxMapsInList);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, MapList);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, MinPlayersToStart);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, MaxPlayers);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, OptimalPlayers);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, DisplayTexture);
@@ -58,7 +57,6 @@ void AUTReplicatedGameRuleset::SetRules(UUTGameRuleset* NewRules, const TArray<F
 	Title				= NewRules->Title;
 	Tooltip				= NewRules->Tooltip;
 	Description			= Fixup(NewRules->Description);
-	MinPlayersToStart	= NewRules->MinPlayersToStart;
 	MaxPlayers			= NewRules->MaxPlayers;
 	bTeamGame			= NewRules->bTeamGame;
 	DefaultMap			= NewRules->DefaultMap;
@@ -306,7 +304,6 @@ void AUTReplicatedGameRuleset::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject
 	JsonObject->SetStringField(TEXT("GameMode"), GameMode);
 	JsonObject->SetStringField(TEXT("GameOptions"), GameOptions);
 
-	JsonObject->SetNumberField(TEXT("MinPlayersToStart"), MinPlayersToStart);
 	JsonObject->SetNumberField(TEXT("MaxPlayers"), MaxPlayers);
 	JsonObject->SetNumberField(TEXT("OptimalPlayers"), OptimalPlayers);
 

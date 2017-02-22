@@ -46,7 +46,6 @@
 AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	MinPlayersToStart = 4;
 	GoldScore = 3;
 	SilverScore = 2;
 	BronzeScore = 1;

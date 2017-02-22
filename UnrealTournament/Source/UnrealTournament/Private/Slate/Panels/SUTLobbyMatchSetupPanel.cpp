@@ -568,7 +568,7 @@ FText SUTLobbyMatchSetupPanel::GetStartMatchText() const
 			{
 				if (!MatchInfo->bJoinAnytime || !LobbyGameState->bAllowInstancesToStartWithBots || MatchInfo->BotSkillLevel < 0)
 				{
-					int32 NumPlayersNeeded = MatchInfo->CurrentRuleset->MinPlayersToStart - MatchInfo->Players.Num();
+					int32 NumPlayersNeeded = 2 - MatchInfo->Players.Num();
 					if (NumPlayersNeeded > 0)
 					{
 						return FText::Format(NSLOCTEXT("HUB","StartMatchFormat"," Need {0} Player(s)"), FText::AsNumber(NumPlayersNeeded));

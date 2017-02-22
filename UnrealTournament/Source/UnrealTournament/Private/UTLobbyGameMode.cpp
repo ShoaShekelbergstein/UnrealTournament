@@ -17,8 +17,6 @@
 AUTLobbyGameMode::AUTLobbyGameMode(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	MinPlayersToStart = 2;
-
 	// use our custom HUD class
 	HUDClass = AUTLobbyHUD::StaticClass();
 
@@ -52,8 +50,6 @@ void AUTLobbyGameMode::InitGame( const FString& MapName, const FString& Options,
 			UTGameSession->MaxPlayers = MaxPlayersInLobby;
 		}
 	}
-
-	MinPlayersToStart = FMath::Max(1, UGameplayStatics::GetIntOption(Options, TEXT("MinPlayers"), MinPlayersToStart));
 
 	// I should move this code up in to UTBaseGameMode and probably will (the code hooks are all there) but
 	// for right now I want to limit this to just Lobbies.

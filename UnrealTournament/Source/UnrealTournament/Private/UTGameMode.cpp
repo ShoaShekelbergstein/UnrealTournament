@@ -105,9 +105,8 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	DefaultMaxPlayers = 10;
 
 	bHasRespawnChoices = false;
-	MinPlayersToStart = 2;
-	MaxWaitForPlayers = 480;
-	QuickWaitForPlayers = 300;
+	MaxWaitForPlayers = 300;
+	QuickWaitForPlayers = 180;
 	EndScoreboardDelay = 4.f;
 	MainScoreboardDisplayTime = 5.f;
 	ScoringPlaysDisplayTime = 0.f; 
@@ -281,7 +280,6 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	{
 		GoalScore = 0;
 	}
-	MinPlayersToStart = FMath::Max(1, UGameplayStatics::GetIntOption(Options, TEXT("MinPlayers"), MinPlayersToStart));
 
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("RankCheck"));
 	if (!InOpt.IsEmpty())
@@ -3359,8 +3357,9 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 		float ElapsedWaitTime = FMath::Max(0.f, GetWorld()->GetTimeSeconds() - StartPlayTime);
 
 		UTGameState->PlayersNeeded = FMath::Max(0, GameSession->MaxPlayers - NumPlayers);
-		if (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers)
+		if (!bRequireReady && !bRankedSession && (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers))
 		{
+			int32 MinPlayersToStart = bIsQuickMatch ? 1 : 2;
 			UTGameState->PlayersNeeded = FMath::Max(0, MinPlayersToStart - NumPlayers);
 		}
 		if (((GetNetMode() == NM_Standalone) || bDevServer || (UTGameState->PlayersNeeded == 0)) && (NumPlayers + NumSpectators > 0))
