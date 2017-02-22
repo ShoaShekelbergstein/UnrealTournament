@@ -2951,6 +2951,9 @@ bool UUTLocalPlayer::JoinSession(const FOnlineSessionSearchResult& SearchResult,
 	UE_LOG(UT,Log, TEXT("Joining a New Session"));
 	UE_LOG(UT,Log, TEXT("##########################"));
 
+	LastSession = SearchResult;
+	bLastSessionWasASpectator = bSpectate;
+
 	UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(GetGameInstance());
 	if (UTGameInstance)
 	{

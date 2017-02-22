@@ -442,7 +442,7 @@ void AUTBasePlayerController::CancelConnectViaGUID()
 		}
 }
 
-void AUTBasePlayerController::ConnectToServerViaGUID(FString ServerGUID, int32 DesiredTeam, bool bSpectate)
+void AUTBasePlayerController::ConnectToServerViaGUID(FString ServerGUID, int32 DesiredTeam, bool bSpectate, bool bVerifyServerFirst)
 {
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 	if (OnlineSubsystem && !GUIDSessionSearchSettings.IsValid()) 
@@ -457,6 +457,7 @@ void AUTBasePlayerController::ConnectToServerViaGUID(FString ServerGUID, int32 D
 		GUIDJoinAttemptCount = 0;
 		GUIDSessionSearchSettings.Reset();
 		GUIDJoinDesiredTeam = DesiredTeam;
+		bGUIDJoinVerifyFirst = bVerifyServerFirst;
 		
 		// Check to make sure we are not downloading content.  If we are.. stall until it's completed.
 
@@ -504,6 +505,7 @@ void AUTBasePlayerController::OnCancelGUIDFindSessionComplete(bool bWasSuccessfu
 		IOnlineSessionPtr OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
 		OnlineSessionInterface->ClearOnCancelFindSessionsCompleteDelegate_Handle(OnCancelGUIDFindSessionCompleteDelegateHandle);
 		OnlineSessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(OnFindGUIDSessionCompleteDelegateHandle);
+
 		AttemptGUIDJoin();
 	}
 	else
@@ -576,16 +578,34 @@ void AUTBasePlayerController::OnFindSessionsComplete(bool bWasSuccessful)
 				UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
 				if (LP)
 				{
-
-					LP->LastSession = Result;
-					LP->bLastSessionWasASpectator = GUIDJoinWantsToSpectate;
-
 					// Clear the Quickmatch wait timer.
 					LP->QuickMatchLimitTime = 0.0;
-					if (LP->JoinSession(Result, GUIDJoinWantsToSpectate, GUIDJoinDesiredTeam))
+
+					if (bGUIDJoinVerifyFirst)
 					{
-						//LP->HideMenu(); // should happen on level change now
+						// Build the beacon
+						PingBeacon = GetWorld()->SpawnActor<AUTServerBeaconClient>(AUTServerBeaconClient::StaticClass());
+						if (PingBeacon)
+						{
+							PingBeacon->OnServerRequestResults = FServerRequestResultsDelegate::CreateUObject(this, &AUTBasePlayerController::OnPingBeaconResult);
+							PingBeacon->OnServerRequestFailure = FServerRequestFailureDelegate::CreateUObject(this, &AUTBasePlayerController::OnPingBeaconFailure);
+						
+							IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+							IOnlineSessionPtr OnlineSessionInterface;
+							if (OnlineSubsystem) OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
+
+							if (OnlineSessionInterface.IsValid())
+							{
+								FString BeaconIP;
+								OnlineSessionInterface->GetResolvedConnectString(Result, FName(TEXT("BeaconPort")), BeaconIP);
+								FURL BeaconURL(nullptr, *BeaconIP, TRAVEL_Absolute);
+								PingBeacon->InitClient(BeaconURL);
+								return;
+							}
+						}
 					}
+
+					LP->JoinSession(Result, GUIDJoinWantsToSpectate, GUIDJoinDesiredTeam);
 				}
 
 				GUIDJoinWantsToSpectate = false;
@@ -599,6 +619,30 @@ void AUTBasePlayerController::OnFindSessionsComplete(bool bWasSuccessful)
 	FTimerHandle TempHandle;
 	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTBasePlayerController::AttemptGUIDJoin, 10.0f, false);
 }
+
+void AUTBasePlayerController::OnPingBeaconResult(AUTServerBeaconClient* Sender, FServerBeaconInfo ServerInfo)
+{
+	PingBeacon->Destroy();
+	PingBeacon = nullptr;
+
+	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
+	if (LP)
+	{
+		LP->JoinSession(GUIDSessionSearchSettings->SearchResults[0], GUIDJoinWantsToSpectate, GUIDJoinDesiredTeam);
+	}
+}
+void AUTBasePlayerController::OnPingBeaconFailure(AUTServerBeaconClient* Sender)
+{
+	PingBeacon->Destroy();
+	PingBeacon = nullptr;
+
+	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
+	if (LP)
+	{
+		LP->ReturnToMainMenu();
+	}
+}
+
 
 void AUTBasePlayerController::ClientReturnedToMenus()
 {

@@ -4,6 +4,8 @@
 
 #include "UTTeamInterface.h"
 #include "OnlineSessionInterface.h"
+#include "UTServerBeaconClient.h"
+
 #include "UTBasePlayerController.generated.h"
 
 class UUTGameViewportClient;
@@ -114,7 +116,7 @@ public:
 	/**
 	 *	User a GUID to find a server via the MCP and connect to it.  NOTE.. DesiredTeam = 0, 1, 255 or -1 for don't set the team
 	 **/
-	virtual void ConnectToServerViaGUID(FString ServerGUID, int32 DesiredTeam, bool bSpectate=false);
+	virtual void ConnectToServerViaGUID(FString ServerGUID, int32 DesiredTeam, bool bSpectate=false, bool bVerifyServerFirst = false);
 
 	/**
 	 *	Used by the hub system to cancel a pending connect if the player is downloading content.  Used for aborting.
@@ -181,6 +183,13 @@ protected:
 	bool GUIDJoinWantsToSpectate;
 	int32 GUIDJoinAttemptCount;
 	int32 GUIDJoinDesiredTeam;
+	bool bGUIDJoinVerifyFirst;
+
+	virtual void OnPingBeaconResult(AUTServerBeaconClient* Sender, FServerBeaconInfo ServerInfo);
+	virtual void OnPingBeaconFailure(AUTServerBeaconClient* Sender);
+	
+	UPROPERTY()
+	AUTServerBeaconClient* PingBeacon;
 
 public:
 	void StartGUIDJoin();
