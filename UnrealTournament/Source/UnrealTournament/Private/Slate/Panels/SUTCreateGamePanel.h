@@ -102,10 +102,11 @@ protected:
 	void OnStoreDialogResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 	void OnStoreReturnResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 
-
 public:
 
 	bool IsReadyToPlay();
+
+
 
 };
 

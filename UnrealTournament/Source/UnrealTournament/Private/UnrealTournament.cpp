@@ -955,3 +955,22 @@ FText GetBotSkillName(int32 Difficulty)
 			return (Difficulty > 7) ? NSLOCTEXT("BotSkillLevels", "Godlike", "Godlike") : NSLOCTEXT("BotSkillLevels", "Broken", "Broken");
 	}
 }
+
+FString GetMutatorShortName(const FString& inMutatorPath)
+{
+	int32 PeriodIndex = INDEX_NONE;
+	inMutatorPath.FindChar(TCHAR('.'), PeriodIndex);
+	if (PeriodIndex != INDEX_NONE)
+	{
+		FString MutatorName = inMutatorPath.Right(inMutatorPath.Len() - PeriodIndex -1);
+		MutatorName = MutatorName.Replace(TEXT("_C"), TEXT(""),ESearchCase::IgnoreCase);
+		MutatorName = MutatorName.Replace(TEXT("UTMutator_"), TEXT(""),ESearchCase::IgnoreCase);
+		MutatorName = MutatorName.Replace(TEXT("Mutator_"), TEXT(""),ESearchCase::IgnoreCase);
+
+		return MutatorName;
+	}
+	else
+	{
+		return inMutatorPath;
+	}
+}

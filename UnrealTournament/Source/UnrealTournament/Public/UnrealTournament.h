@@ -156,3 +156,6 @@ extern UNREALTOURNAMENT_API int32 GetXPForLevel(int32 Level);
 
 /** @return localized name for a bot skil level */
 extern UNREALTOURNAMENT_API FText GetBotSkillName(int32 Difficulty);
+
+extern UNREALTOURNAMENT_API FString GetMutatorShortName(const FString& inMutatorPath);
+

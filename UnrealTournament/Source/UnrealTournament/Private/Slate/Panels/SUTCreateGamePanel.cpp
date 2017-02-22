@@ -831,12 +831,12 @@ void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& Start
 			FString MutatorOption = TEXT("");
 			LastMutators.Add(MutatorListEnabled[0]->GetPathName());
 
-			MutatorOption += FString::Printf(TEXT("?mutator=%s"), *MutatorListEnabled[0]->GetPathName());
+			MutatorOption += FString::Printf(TEXT("?mutator=%s"), *GetMutatorShortName(MutatorListEnabled[0]->GetPathName()));
 			GetCustomMutatorOptions(MutatorListEnabled[0], Description, GameOptions);
 
 			for (int32 i = 1; i < MutatorListEnabled.Num(); i++)
 			{
-				MutatorOption += TEXT(",") + MutatorListEnabled[i]->GetPathName();
+				MutatorOption += TEXT(",") + GetMutatorShortName(MutatorListEnabled[i]->GetPathName());
 				GetCustomMutatorOptions(MutatorListEnabled[i], Description, GameOptions);
 				LastMutators.Add(MutatorListEnabled[i]->GetPathName());
 			}
