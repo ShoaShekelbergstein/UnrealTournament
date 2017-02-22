@@ -221,7 +221,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		else
 		{
 			//if we don't have a camera setup, just use FreeCam
-			//CameraStyle = NAME_FreeCam;
+			CameraStyle = NAME_FreeCam;
 		}
 	}
 	

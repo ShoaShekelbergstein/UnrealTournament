@@ -199,7 +199,6 @@ void AUTCTFRoundGame::BeginGame()
 
 AActor* AUTCTFRoundGame::SetIntermissionCameras(uint32 TeamToWatch)
 {
-	PlacePlayersAroundFlagBase(TeamToWatch, TeamToWatch);
 	return CTFGameState->FlagBases[TeamToWatch];
 }
 
