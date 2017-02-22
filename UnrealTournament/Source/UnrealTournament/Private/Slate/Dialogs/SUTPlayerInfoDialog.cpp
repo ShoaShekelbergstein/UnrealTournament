@@ -213,7 +213,7 @@ void SUTPlayerInfoDialog::OnUniqueIdChanged()
 		}
 	}
 
-	if (false) // TargetPlayerState.IsValid())
+	if (TargetPlayerState.IsValid())
 	{
 		// We have the player state, so we can instantly use it to get the latest configuration data.
 		
