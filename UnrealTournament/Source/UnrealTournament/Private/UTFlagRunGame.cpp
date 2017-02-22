@@ -354,6 +354,11 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 {
 	if (Super::CheckForWinner(ScoringTeam))
 	{
+		if (FUTAnalytics::IsAvailable())
+		{
+			const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
+			FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true);
+		}
 		return true;
 	}
 
@@ -367,6 +372,12 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 		{
 			AUTTeamInfo* BestTeam = (Teams[0]->Score > Teams[1]->Score) ? Teams[0] : Teams[1];
 			EndTeamGame(BestTeam, FName(TEXT("scorelimit")));
+
+			if (FUTAnalytics::IsAvailable())
+			{
+				const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
+				FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true);
+			}
 			return true;
 		}
 		if (CTFGameState->CTFRound == NumRounds - 1)
@@ -377,11 +388,23 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 				if ((Teams[0]->Score > Teams[1]->Score + GoldScore) || ((GS->TiebreakValue > 60) && (Teams[0]->Score == Teams[1]->Score + GoldScore)))
 				{
 					EndTeamGame(Teams[0], FName(TEXT("scorelimit")));
+
+					if (FUTAnalytics::IsAvailable())
+					{
+						const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
+						FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true);
+					}
 					return true;
 				}
 				if ((Teams[1]->Score > Teams[0]->Score + DefenseScore) || ((Teams[1]->Score == Teams[0]->Score + DefenseScore) && (GS->TiebreakValue < 0)))
 				{
 					EndTeamGame(Teams[1], FName(TEXT("scorelimit")));
+
+					if (FUTAnalytics::IsAvailable())
+					{
+						const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
+						FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true);
+					}
 					return true;
 				}
 			}
@@ -391,15 +414,33 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 				if ((Teams[1]->Score > Teams[0]->Score + GoldScore) || ((GS->TiebreakValue < -60) && (Teams[1]->Score == Teams[0]->Score + GoldScore)))
 				{
 					EndTeamGame(Teams[1], FName(TEXT("scorelimit")));
+
+					if (FUTAnalytics::IsAvailable())
+					{
+						const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
+						FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true);
+					}
 					return true;
 				}
 				if ((Teams[0]->Score > Teams[1]->Score + DefenseScore) || ((Teams[0]->Score == Teams[1]->Score + DefenseScore) && (GS->TiebreakValue > 0)))
 				{
 					EndTeamGame(Teams[0], FName(TEXT("scorelimit")));
+
+					if (FUTAnalytics::IsAvailable())
+					{
+						const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
+						FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true);
+					}
 					return true;
 				}
 			}
 		}
+	}
+
+	if (FUTAnalytics::IsAvailable())
+	{
+		const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
+		FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, false);
 	}
 	return false;
 }
@@ -1121,11 +1162,6 @@ void AUTFlagRunGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AU
 {
 	Super::ScoreObject_Implementation(GameObject,HolderPawn,Holder,Reason);
 
-	if (FUTAnalytics::IsAvailable())
-	{
-		FUTAnalytics::FireEvent_FlagRunRoundEnd(this, false, (UTGameState->WinningTeam != nullptr));
-	}
-
 	if (UTGameState)
 	{
 		UTGameState->ScoringPlayerState = Cast<AUTPlayerState>(HolderPawn->PlayerState);
@@ -1161,11 +1197,6 @@ void AUTFlagRunGame::ScoreAlternateWin(int32 WinningTeamIndex, uint8 Reason /* =
 	}
 
 	Super::ScoreAlternateWin(WinningTeamIndex, Reason);
-
-	if (FUTAnalytics::IsAvailable())
-	{
-		FUTAnalytics::FireEvent_FlagRunRoundEnd(this, IsTeamOnDefense(WinningTeamIndex), (UTGameState->WinningTeam != nullptr));
-	}
 }
 
 bool AUTFlagRunGame::SupportsInstantReplay() const
