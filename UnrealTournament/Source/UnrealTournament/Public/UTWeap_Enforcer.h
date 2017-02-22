@@ -58,6 +58,14 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 	UPROPERTY(BlueprintReadWrite, Category = Enforcer)
 	float StoppingPower;
 
+	/** socket to attach weapon to hands; if None, then the hands are hidden */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		FName HandsAttachSocketLeft;
+
+	/** AnimMontage to play each time we fire */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		TArray<UAnimMontage*> FireAnimationLeft;
+
 	/** Left hand mesh equip anims */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	UAnimMontage* LeftBringUpAnim;

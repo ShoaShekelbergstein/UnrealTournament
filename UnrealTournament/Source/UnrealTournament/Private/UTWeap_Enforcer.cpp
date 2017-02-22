@@ -71,39 +71,6 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	HighlightText = NSLOCTEXT("Weapon", "EnforcerHighlightText", "Gunslinger");
 }
 
-void AUTWeap_Enforcer::AttachLeftMesh()
-{
-	if (UTOwner == NULL)
-	{
-		return;
-	}
-
-	if (LeftMesh != NULL && LeftMesh->SkeletalMesh != NULL)
-	{
-		LeftMesh->SetHiddenInGame(false);
-		LeftMesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform);
-		if (Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
-		{
-			LeftMesh->LastRenderTime = GetWorld()->TimeSeconds;
-			LeftMesh->bRecentlyRendered = true;
-		}
-
-		if (LeftBringUpAnim != NULL)
-		{
-			UAnimInstance* AnimInstance = LeftMesh->GetAnimInstance();
-			if (AnimInstance != NULL)
-			{
-				AnimInstance->Montage_Play(LeftBringUpAnim, LeftBringUpAnim->SequenceLength / EnforcerEquippingState->EquipTime);
-			}
-		}
-
-		if (UTOwner != NULL && UTOwner->GetWeapon() == this && GetNetMode() != NM_DedicatedServer)
-		{
-			UpdateOverlays();
-		}
-	}
-}
-
 void AUTWeap_Enforcer::UpdateViewBob(float DeltaTime)
 {
 	Super::UpdateViewBob(DeltaTime);
@@ -111,14 +78,10 @@ void AUTWeap_Enforcer::UpdateViewBob(float DeltaTime)
 	// if weapon is up in first person, view bob with movement
 	if (LeftMesh != NULL && LeftMesh->GetAttachParent() != NULL && UTOwner != NULL && UTOwner->GetWeapon() == this && ShouldPlay1PVisuals() && GetWeaponHand() != EWeaponHand::HAND_Hidden)
 	{
-		if (FirstPLeftMeshOffset.IsZero())
-		{
-			FirstPLeftMeshOffset = LeftMesh->GetRelativeTransform().GetLocation();
-			FirstPLeftMeshRotation = LeftMesh->GetRelativeTransform().Rotator();
-		}
+		FirstPLeftMeshOffset = FVector::ZeroVector;
+		FirstPLeftMeshRotation = LeftMesh->GetRelativeTransform().Rotator();
 		LeftMesh->SetRelativeLocation(FirstPLeftMeshOffset);
 		LeftMesh->SetWorldLocation(LeftMesh->GetComponentLocation() + UTOwner->GetWeaponBobOffset(0.0f, this));
-
 		LeftMesh->SetRelativeRotation(Mesh->RelativeRotation - FirstPMeshRotation + FirstPLeftMeshRotation);
 	}
 }
@@ -245,7 +208,7 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 					UAnimInstance* AnimInstance = LeftMesh->GetAnimInstance();
 					if (AnimInstance != NULL)
 					{
-						AnimInstance->Montage_Play(FireAnimation[CurrentFireMode], UTOwner->GetFireRateMultiplier());
+						AnimInstance->Montage_Play(FireAnimationLeft[CurrentFireMode], UTOwner->GetFireRateMultiplier());
 					}
 				}
 
@@ -500,23 +463,37 @@ void AUTWeap_Enforcer::SetSkin(UMaterialInterface* NewSkin)
 	Super::SetSkin(NewSkin);
 }
 
-void AUTWeap_Enforcer::AttachToOwner_Implementation()
+
+void AUTWeap_Enforcer::AttachLeftMesh()
 {
 	if (UTOwner == NULL)
 	{
 		return;
 	}
-	
-	if (bBecomeDual && !bDualEnforcerMode)
-	{
-		DualEquipFinished();
-	}
 
-	// attach left mesh
-	if (LeftMesh != NULL && LeftMesh->SkeletalMesh != NULL && bDualEnforcerMode)
+	if (LeftMesh != NULL && LeftMesh->SkeletalMesh != NULL)
 	{
 		LeftMesh->SetHiddenInGame(false);
-		LeftMesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform);
+		LeftMesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, (GetWeaponHand() != EWeaponHand::HAND_Hidden) ? HandsAttachSocketLeft : NAME_None);
+		if (Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
+		{
+			LeftMesh->LastRenderTime = GetWorld()->TimeSeconds;
+			LeftMesh->bRecentlyRendered = true;
+		}
+
+		if (LeftBringUpAnim != NULL)
+		{
+			UAnimInstance* AnimInstance = LeftMesh->GetAnimInstance();
+			if (AnimInstance != NULL)
+			{
+				AnimInstance->Montage_Play(LeftBringUpAnim, LeftBringUpAnim->SequenceLength / EnforcerEquippingState->EquipTime);
+			}
+		}
+
+		if (UTOwner != NULL && UTOwner->GetWeapon() == this && GetNetMode() != NM_DedicatedServer)
+		{
+			UpdateOverlays();
+		}
 		if (ShouldPlay1PVisuals())
 		{
 			LeftMesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPose; // needed for anims to be ticked even if weapon is not currently displayed, e.g. sniper zoom
@@ -530,15 +507,26 @@ void AUTWeap_Enforcer::AttachToOwner_Implementation()
 			}
 		}
 	}
+}
 
+void AUTWeap_Enforcer::AttachToOwner_Implementation()
+{
+	if (UTOwner == NULL)
+	{
+		return;
+	}
+	
+	if (bBecomeDual && !bDualEnforcerMode)
+	{
+		DualEquipFinished();
+	}
+
+	// attach left mesh
 	if (bDualEnforcerMode)
 	{
+		AttachLeftMesh();
 		AttachmentType = DualWieldAttachmentType;
-
-		if (UTOwner != NULL)
-		{
-			GetUTOwner()->SetWeaponAttachmentClass(AttachmentType);
-		}
+		GetUTOwner()->SetWeaponAttachmentClass(AttachmentType);
 	}
 
 	Super::AttachToOwner_Implementation();
