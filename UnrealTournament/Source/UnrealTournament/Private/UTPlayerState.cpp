@@ -1298,6 +1298,9 @@ void AUTPlayerState::CopyProperties(APlayerState* PlayerState)
 		PS->RankedCTFMatchesPlayed = RankedCTFMatchesPlayed;
 		PS->RankedShowdownMatchesPlayed = RankedShowdownMatchesPlayed;
 		PS->RankedFlagRunMatchesPlayed = RankedFlagRunMatchesPlayed;
+
+		PS->KickCount = KickCount;
+
 	}
 }
 void AUTPlayerState::OverrideWith(APlayerState* PlayerState)
