@@ -5,6 +5,7 @@
 #include "UTLocalPlayer.h"
 #include "SlateBasics.h"
 #include "../Widgets/SUTScaleBox.h"
+#include "../Widgets/SUTBorder.h"
 #include "SlateExtras.h"
 #include "Slate/SlateGameResources.h"
 #include "SUTWebBrowserPanel.h"
@@ -68,6 +69,11 @@ void SUTWebBrowserPanel::ConstructPanel(FVector2D ViewportSize)
 			.DPIScale(this, &SUTWebBrowserPanel::GetReverseScale)
 			[
 				SAssignNew(Overlay, SOverlay)
+				+ SOverlay::Slot()
+				[
+					SNew(SUTBorder)
+					.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.SuperDark"))
+				]
 				+ SOverlay::Slot()
 				[
 					SAssignNew(WebBrowserContainer, SVerticalBox)
