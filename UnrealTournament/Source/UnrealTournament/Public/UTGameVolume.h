@@ -35,7 +35,7 @@ class UNREALTOURNAMENT_API AUTGameVolume : public APhysicsVolume, public IUTTeam
 	bool bIsTeamSafeVolume;
 
 	/** OBSOLETE */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+	UPROPERTY()
 		bool bIsNoRallyZone;
 
 	/** Set true if this volume is part of the core defender base. */

@@ -451,7 +451,7 @@ void AUTFlagRunGame::DefaultTimer()
 	if (UTGameState && UTGameState->IsMatchInProgress() && !UTGameState->IsMatchIntermission())
 	{
 		AUTCTFRoundGameState* RCTFGameState = Cast<AUTCTFRoundGameState>(CTFGameState);
-		if (RCTFGameState && (RCTFGameState->RemainingPickupDelay <= 0) && (GetWorld()->GetTimeSeconds() - LastEntryDefenseWarningTime > 15.f))
+		if (RCTFGameState && (RCTFGameState->RemainingPickupDelay <= 0) && (GetWorld()->GetTimeSeconds() - LastEntryDefenseWarningTime > 12.f))
 		{
 			// check for uncovered routes - support up to 5 entries for now
 			AUTGameVolume* EntryRoutes[MAXENTRYROUTES];
@@ -480,7 +480,7 @@ void AUTFlagRunGame::DefaultTimer()
 				{
 					Speaker = UTPS;
 					int32 CoveredRoute = UTChar->LastGameVolume->RouteID;
-					if ((CoveredRoute == 0) || UTChar->LastGameVolume->bIsTeamSafeVolume)
+					if (UTChar->LastGameVolume->bIsDefenderBase)
 					{
 						bFoundInnerDefender = true;
 						break;
