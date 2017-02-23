@@ -59,4 +59,5 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 	virtual void OnStoppedFiring_Implementation() override;
 	virtual void OnRep_ZoomState_Implementation() override;
 	virtual void Removed() override;
+	virtual void ConsumeAmmo(uint8 FireModeNum) override;
 };

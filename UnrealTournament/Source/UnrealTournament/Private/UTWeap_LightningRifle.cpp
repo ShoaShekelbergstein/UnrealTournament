@@ -172,6 +172,29 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 	}
 }
 
+void AUTWeap_LightningRifle::ConsumeAmmo(uint8 FireModeNum)
+{
+	if (Role == ROLE_Authority)
+	{
+		AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+		if (AmmoCost.IsValidIndex(FireModeNum) && (!GameMode || GameMode->bAmmoIsLimited || (Ammo > 9)))
+		{
+			if (bIsFullyPowered)
+			{
+				AddAmmo(-AmmoCost[FireModeNum] * 2);
+			}
+			else
+			{
+				AddAmmo(-AmmoCost[FireModeNum]);
+			}
+		}
+		else if (!AmmoCost.IsValidIndex(FireModeNum))
+		{
+			UE_LOG(UT, Warning, TEXT("Invalid fire mode %i in %s::ConsumeAmmo()"), int32(FireModeNum), *GetName());
+		}
+	}
+}
+
 void AUTWeap_LightningRifle::FireShot()
 {
 	if (UTOwner)
@@ -179,7 +202,7 @@ void AUTWeap_LightningRifle::FireShot()
 		UTOwner->DeactivateSpawnProtection();
 	}
 
-	ConsumeAmmo(bIsFullyPowered ? 2 : 1);
+	ConsumeAmmo(CurrentFireMode);
 	if (!FireShotOverride() && GetUTOwner() != NULL) // script event may kill user
 	{
 		if ((ZoomState == EZoomState::EZS_NotZoomed) && ProjClass.IsValidIndex(CurrentFireMode) && ProjClass[CurrentFireMode] != NULL)
