@@ -340,8 +340,8 @@ TSharedRef<SWidget> SUTControlSettingsDialog::BuildMouseTab()
 	UUTProfileSettings* ProfileSettings = PlayerOwner->GetProfileSettings();
 
 	MouseSensitivityRange = FVector2D(0.001f, 0.15f);
-	MouseAccelerationRange = FVector2D(0.00001f, 0.0001f);
-	MouseAccelerationMaxRange = FVector2D(0.5f, 1.5f);
+	MouseAccelerationRange = FVector2D(0.000001f, 0.0001f);
+	MouseAccelerationMaxRange = FVector2D(0.2f, 1.5f);
 		
 	return SNew(SBox)
 	.VAlign(VAlign_Fill)
