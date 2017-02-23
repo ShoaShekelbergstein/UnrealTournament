@@ -71,21 +71,6 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	HighlightText = NSLOCTEXT("Weapon", "EnforcerHighlightText", "Gunslinger");
 }
 
-void AUTWeap_Enforcer::UpdateViewBob(float DeltaTime)
-{
-	Super::UpdateViewBob(DeltaTime);
-
-	// if weapon is up in first person, view bob with movement
-	if (LeftMesh != NULL && LeftMesh->GetAttachParent() != NULL && UTOwner != NULL && UTOwner->GetWeapon() == this && ShouldPlay1PVisuals() && GetWeaponHand() != EWeaponHand::HAND_Hidden)
-	{
-		FirstPLeftMeshOffset = FVector::ZeroVector;
-		FirstPLeftMeshRotation = LeftMesh->GetRelativeTransform().Rotator();
-		LeftMesh->SetRelativeLocation(FirstPLeftMeshOffset);
-		LeftMesh->SetWorldLocation(LeftMesh->GetComponentLocation() + UTOwner->GetWeaponBobOffset(0.0f, this));
-		LeftMesh->SetRelativeRotation(Mesh->RelativeRotation - FirstPMeshRotation + FirstPLeftMeshRotation);
-	}
-}
-
 float AUTWeap_Enforcer::GetPutDownTime()
 {
 	return bDualEnforcerMode ? DualPutDownTime : PutDownTime;

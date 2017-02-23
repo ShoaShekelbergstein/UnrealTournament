@@ -111,9 +111,6 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	TArray<UParticleSystemComponent*> LeftMuzzleFlash;
 
-	/**Update the left hand mesh positioning*/
-	virtual void UpdateViewBob(float DeltaTime) override;
-
 	virtual void PlayFiringEffects() override;
 	virtual void FireInstantHit(bool bDealDamage, FHitResult* OutHit) override;
 	virtual bool StackPickup_Implementation(AUTInventory* ContainedInv) override; 
