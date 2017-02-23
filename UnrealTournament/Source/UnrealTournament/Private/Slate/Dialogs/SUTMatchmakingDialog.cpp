@@ -151,12 +151,16 @@ FText SUTMatchmakingDialog::GetMatchmakingText() const
 			}
 		}
 
-		if (Matchmaking)
+		// Only party leader has the correct team elo
+		if (PlayerOwner->IsPartyLeader())
 		{
-			int32 MatchmakingTeamElo = Matchmaking->GetMatchmakingTeamElo();
-			if (MatchmakingTeamElo > 0)
+			if (Matchmaking)
 			{
-				return FText::Format(NSLOCTEXT("Generic", "SearchingTeamElo", "Your Team ELO is {0}."), FText::AsNumber(MatchmakingTeamElo));
+				int32 MatchmakingTeamElo = Matchmaking->GetMatchmakingTeamElo();
+				if (MatchmakingTeamElo > 0)
+				{
+					return FText::Format(NSLOCTEXT("Generic", "SearchingTeamElo", "Your Team ELO is {0}."), FText::AsNumber(MatchmakingTeamElo));
+				}
 			}
 		}
 	}
