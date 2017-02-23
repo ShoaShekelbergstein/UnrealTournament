@@ -215,7 +215,6 @@ void AUTLineUpHelper::OnRep_LineUpInfo()
 
 void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 {	
-	static const FName NAME_LineUpCam = FName(TEXT("LineUpCam"));
 	bIsPlacingPlayers = true;
 	bIsActive = true;
 
@@ -266,12 +265,6 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 				if (UTChar && !UTChar->IsDead())
 				{
 					PlayerPreviewCharacters.Add(UTChar);
-				}
-				
-				AUTPlayerController* UTPC = Cast<AUTPlayerController>(C);
-				if (UTPC)
-				{
-					UTPC->SetCameraMode(NAME_LineUpCam);
 				}
 			}
 		}
