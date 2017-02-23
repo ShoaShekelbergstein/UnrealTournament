@@ -100,8 +100,8 @@ UUTCharacterMovement::UUTCharacterMovement(const class FObjectInitializer& Objec
 	WallDodgeImpulseVertical = 470.f; 
 
 	MaxSlideRiseZ = 650.f; 
-	MaxSlideFallZ = -180.f;
-	SlideGravityScaling = 0.15f;
+	MaxSlideFallZ = -120.f;
+	SlideGravityScaling = 0.08f;
 	MinWallSlideSpeed = 500.f;
 	MaxSlideWallDist = 20.f;
 	FloorSlideJumpZ = 50.f;
@@ -1808,7 +1808,7 @@ float UUTCharacterMovement::GetGravityZ() const
 	AUTCharacter* UTCharOwner = Cast<AUTCharacter>(CharacterOwner);
 	if (UTCharOwner && UTCharOwner->bApplyWallSlide && (Velocity.Z < 0.f))
 	{
-		return Super::GetGravityZ() * SlideGravityScaling * (1.f - FMath::Square(WallSlideNormal.Z));
+		return Super::GetGravityZ() * SlideGravityScaling * (1.f - FMath::Square(0.5f + 0.5f*WallSlideNormal.Z));
 	}
 	return Super::GetGravityZ();
 }
@@ -1952,7 +1952,7 @@ void UUTCharacterMovement::PhysFalling(float deltaTime, int32 Iterations)
 	FVector FallAcceleration = Acceleration;
 	FallAcceleration.Z = 0.f;
 
-	if ((CurrentWallDodgeCount > 0) && (Velocity.Z > 0.f) && ((FallAcceleration | LastWallDodgeNormal) < 0.f) && ((FallAcceleration.GetSafeNormal() | LastWallDodgeNormal) < -1.f*WallDodgeMinNormal))
+	if ((CurrentWallDodgeCount > 0) && (Velocity.Z > 0.f) && ((FallAcceleration | LastWallDodgeNormal) < 0.f) && ((Velocity.GetSafeNormal2D() | LastWallDodgeNormal) < 0.f))
 	{
 		// don't air control back into wall you just dodged from  
 		FallAcceleration = FallAcceleration - (FallAcceleration | LastWallDodgeNormal) * LastWallDodgeNormal;
