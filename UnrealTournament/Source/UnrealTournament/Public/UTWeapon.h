@@ -764,6 +764,9 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UFUNCTION(BlueprintCallable, Category = Firing)
 	void K2_FireInstantHit(bool bDealDamage, FHitResult& OutHit);
 
+	/** return true if Actor should be ignored by weapon traces in HitScanTrace() and FireCone() */
+	virtual bool ShouldTraceIgnore(AActor* TestActor);
+
 	/** Handles rewind functionality for net games with ping prediction */
 	virtual void HitScanTrace(const FVector& StartLocation, const FVector& EndTrace, float TraceRadius, FHitResult& Hit, float PredictionTime);
 

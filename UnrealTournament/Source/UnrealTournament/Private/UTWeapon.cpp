@@ -1626,6 +1626,23 @@ void AUTWeapon::NetSynchRandomSeed()
 	}
 }
 
+bool AUTWeapon::ShouldTraceIgnore(AActor* TestActor)
+{
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (bIgnoreShockballs && Cast<AUTProj_ShockBall>(TestActor))
+	{
+		return true;
+	}
+	else if (UTOwner != nullptr && (Cast<AUTProj_WeaponScreen>(TestActor) != nullptr || (Cast<AUTTeamDeco>(TestActor) != nullptr && !((AUTTeamDeco*)(TestActor))->bBlockTeamProjectiles)))
+	{
+		return (GS != nullptr && GS->OnSameTeam(UTOwner, TestActor));
+	}
+	else
+	{
+		return false;
+	}
+}
+
 void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTrace, float TraceRadius, FHitResult& Hit, float PredictionTime)
 {
 	ECollisionChannel TraceChannel = COLLISION_TRACE_WEAPONNOCHARACTER;
@@ -1641,26 +1658,10 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 			{
 				Hit.Location = EndTrace;
 			}
-			else if (Hit.Actor.IsValid())
+			else if (Hit.Actor.IsValid() && ShouldTraceIgnore(Hit.GetActor()))
 			{
-				if (bIgnoreShockballs && Cast<AUTProj_ShockBall>(Hit.Actor.Get()))
-				{
-					QueryParams.AddIgnoredActor(Hit.Actor.Get());
-					NewSkipActorCount = SkipActorCount--;
-				}
-				else if (UTOwner && Cast<AUTTeamDeco>(Hit.Actor.Get()) && !((AUTTeamDeco *)(Hit.Actor.Get()))->bBlockTeamProjectiles)
-				{
-					if (GS && GS->OnSameTeam(UTOwner, Hit.Actor.Get()))
-					{
-						QueryParams.AddIgnoredActor(Hit.Actor.Get());
-						NewSkipActorCount = SkipActorCount--;
-					}
-				}
-				else if (Cast<AUTProj_WeaponScreen>(Hit.Actor.Get()) != nullptr && GS != nullptr && GS->OnSameTeam(UTOwner, ((AUTProj_WeaponScreen*)Hit.Actor.Get())->Instigator))
-				{
-					QueryParams.AddIgnoredActor(Hit.Actor.Get());
-					NewSkipActorCount = SkipActorCount--;
-				}
+				QueryParams.AddIgnoredActor(Hit.Actor.Get());
+				NewSkipActorCount = SkipActorCount--;
 			}
 			SkipActorCount = NewSkipActorCount;
 		}
@@ -2082,6 +2083,8 @@ void AUTWeapon::FireCone()
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
 	
+	FCollisionResponseParams TraceResponseParams = WorldResponseParams;
+	TraceResponseParams.CollisionResponse.SetResponse(COLLISION_PROJECTILE_SHOOTABLE, ECR_Block);
 	TArray<FOverlapResult> OverlapHits;
 	TArray<FHitResult> RealHits;
 	GetWorld()->OverlapMultiByChannel(OverlapHits, SpawnLocation, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceRange));
@@ -2093,14 +2096,28 @@ void AUTWeapon::FireCone()
 			if (((ObjectLoc - SpawnLocation).GetSafeNormal() | FireDir) >= InstantHitInfo[CurrentFireMode].ConeDotAngle)
 			{
 				bool bClear;
-				if (InstantHitInfo[CurrentFireMode].TraceHalfSize <= 0.0f)
+				int32 Retries = 2;
+				FCollisionQueryParams QueryParams(NAME_None, true, UTOwner);
+				do 
 				{
-					bClear = !GetWorld()->LineTraceTestByChannel(SpawnLocation, ObjectLoc, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionQueryParams(NAME_None, true, UTOwner), WorldResponseParams);
-				}
-				else
-				{
-					bClear = !GetWorld()->SweepTestByChannel(SpawnLocation, ObjectLoc, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceHalfSize), FCollisionQueryParams(NAME_None, true, UTOwner), WorldResponseParams);
-				}
+					FHitResult Hit;
+					if (InstantHitInfo[CurrentFireMode].TraceHalfSize <= 0.0f)
+					{
+						bClear = !GetWorld()->LineTraceSingleByChannel(Hit, SpawnLocation, ObjectLoc, COLLISION_TRACE_WEAPONNOCHARACTER, QueryParams, TraceResponseParams);
+					}
+					else
+					{
+						bClear = !GetWorld()->SweepSingleByChannel(Hit, SpawnLocation, ObjectLoc, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceHalfSize), QueryParams, TraceResponseParams);
+					}
+					if (bClear || Hit.GetActor() == nullptr || !ShouldTraceIgnore(Hit.GetActor()))
+					{
+						break;
+					}
+					else
+					{
+						QueryParams.AddIgnoredActor(Hit.GetActor());
+					}
+				} while (Retries-- > 0);
 				if (bClear)
 				{
 					// trace only against target to get good hit info
@@ -2152,14 +2169,28 @@ void AUTWeapon::FireCone()
 				const FVector HitLocation = ClosestPoint + BackDist * (SpawnLocation - EndTrace).GetSafeNormal();
 
 				bool bClear;
-				if (InstantHitInfo[CurrentFireMode].TraceHalfSize <= 0.0f)
+				int32 Retries = 2;
+				FCollisionQueryParams QueryParams(NAME_None, true, UTOwner);
+				do
 				{
-					bClear = !GetWorld()->LineTraceTestByChannel(SpawnLocation, HitLocation, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionQueryParams(NAME_None, true, UTOwner), WorldResponseParams);
-				}
-				else
-				{
-					bClear = !GetWorld()->SweepTestByChannel(SpawnLocation, HitLocation, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceHalfSize), FCollisionQueryParams(NAME_None, true, UTOwner), WorldResponseParams);
-				}
+					FHitResult Hit;
+					if (InstantHitInfo[CurrentFireMode].TraceHalfSize <= 0.0f)
+					{
+						bClear = !GetWorld()->LineTraceTestByChannel(SpawnLocation, HitLocation, COLLISION_TRACE_WEAPONNOCHARACTER, QueryParams, TraceResponseParams);
+					}
+					else
+					{
+						bClear = !GetWorld()->SweepTestByChannel(SpawnLocation, HitLocation, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceHalfSize), QueryParams, TraceResponseParams);
+					}
+					if (bClear || Hit.GetActor() == nullptr || !ShouldTraceIgnore(Hit.GetActor()))
+					{
+						break;
+					}
+					else
+					{
+						QueryParams.AddIgnoredActor(Hit.GetActor());
+					}
+				} while (Retries-- > 0);
 				if (bClear)
 				{
 					FHitResult* NewHit = new(RealHits) FHitResult;
