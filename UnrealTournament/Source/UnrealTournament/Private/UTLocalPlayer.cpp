@@ -6793,7 +6793,7 @@ FSceneView* UUTLocalPlayer::CalcSceneView(class FSceneViewFamily* ViewFamily, FV
 					{
 						BestCamera = *It;
 					}
-					else if (It->CamLocationName == TEXT("LoadingCamera"))
+					else if (It->bLoadingCamera)
 					{
 						ActorPlayerController->SetActorLocationAndRotation(It->GetActorLocation(), It->GetActorRotation());
 						break;
