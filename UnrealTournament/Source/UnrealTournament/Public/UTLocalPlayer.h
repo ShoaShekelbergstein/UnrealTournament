@@ -1250,7 +1250,7 @@ public:
 
 	virtual FText GetMenuCommandTooltipText(FName MenuCommand) const;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TArray<FTutorialData> TutorialData;
 
 	UFUNCTION(BlueprintCallable, Category=Tutorial)
@@ -1283,7 +1283,17 @@ public:
 	virtual void NextTutorial();
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual void PrevTutorial();
+
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual FText GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const;
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	FText GetNextTutorialName();
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	FText GetPrevTutorialName();
 
 protected:
 	UPROPERTY()

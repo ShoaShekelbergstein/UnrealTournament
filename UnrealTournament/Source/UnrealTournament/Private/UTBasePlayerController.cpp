@@ -1420,6 +1420,16 @@ void AUTBasePlayerController::NextTutorial()
 	}
 }
 
+void AUTBasePlayerController::PrevTutorial()
+{
+	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
+	if (LocalPlayer)
+	{
+		LocalPlayer->PrevTutorial();
+	}
+}
+
+
 void AUTBasePlayerController::RepeatTutorial()
 {
 	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
@@ -1483,4 +1493,17 @@ void AUTBasePlayerController::ClientWasKicked_Implementation(const FText& KickRe
 			PartyContext->LeaveParty();
 		}
 	}
+}
+
+
+FText AUTBasePlayerController::GetNextTutorialName()
+{
+	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(Player);
+	return (UTLocalPlayer != nullptr) ? UTLocalPlayer->GetNextTutorialName() : FText::GetEmpty();
+}
+
+FText AUTBasePlayerController::GetPrevTutorialName()
+{
+	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(Player);
+	return (UTLocalPlayer != nullptr) ? UTLocalPlayer->GetPrevTutorialName() : FText::GetEmpty();
 }

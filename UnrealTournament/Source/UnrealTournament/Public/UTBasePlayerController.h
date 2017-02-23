@@ -349,6 +349,9 @@ public:
 	virtual void NextTutorial();
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual void PrevTutorial();
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual void RepeatTutorial();
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
@@ -359,6 +362,12 @@ public:
 	virtual void GuaranteedKick( const FText& KickReason);
 
 	void ClientWasKicked_Implementation(const FText& KickReason) override;
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	FText GetNextTutorialName();
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	FText GetPrevTutorialName();
 
 
 protected:

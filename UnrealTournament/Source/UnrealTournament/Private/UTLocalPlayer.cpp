@@ -6382,6 +6382,50 @@ void UUTLocalPlayer::NextTutorial()
 	}
 }
 
+void UUTLocalPlayer::PrevTutorial()
+{
+	for (int32 i = 0; i < TutorialData.Num(); i++)
+	{
+		if (TutorialData[i].Tag == LastTutorial)
+		{
+			int32 PrevTutorialIndex = (i - 1) % TutorialData.Num();
+			if (TutorialData.IsValidIndex(PrevTutorialIndex))
+			{
+				LaunchTutorial(TutorialData[PrevTutorialIndex].Tag, TEXT(""));
+				break;
+			}
+		}
+	}
+}
+
+
+FText UUTLocalPlayer::GetNextTutorialName()
+{
+	for (int32 i = 0; i < TutorialData.Num()-1; i++)
+	{
+		if (TutorialData[i].Tag == LastTutorial)
+		{
+			return FText::FromString(TutorialData[i+1].LoadingText);
+		}
+	}
+	return FText::GetEmpty();
+}
+
+FText UUTLocalPlayer::GetPrevTutorialName()
+{
+	for (int32 i = 1; i < TutorialData.Num(); i++)
+	{
+		if (TutorialData[i].Tag == LastTutorial)
+		{
+			return FText::FromString(TutorialData[i-1].LoadingText);
+		}
+	}
+	return FText::GetEmpty();
+}
+
+
+
+
 FText UUTLocalPlayer::GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const
 {
 	if (Section == ETutorialSections::SkillMoves)
