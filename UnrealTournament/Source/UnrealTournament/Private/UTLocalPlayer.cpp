@@ -84,6 +84,7 @@
 #include "SUTReportUserDialog.h"
 #include "UTUMGWidget_Toast.h"
 #include "UTWorldSettings.h"
+#include "UTSpectatorCamera.h"
 
 #if WITH_SOCIAL
 #include "Social.h"
@@ -6784,6 +6785,23 @@ FSceneView* UUTLocalPlayer::CalcSceneView(class FSceneViewFamily* ViewFamily, FV
 				if (WS)
 				{
 					ActorPlayerController->SetActorLocationAndRotation(WS->LoadingCameraLocation, WS->LoadingCameraRotation);
+				}
+				AUTSpectatorCamera* BestCamera = nullptr;
+				for (TActorIterator<AUTSpectatorCamera> It(GetWorld()); It; ++It)
+				{
+					if (BestCamera == nullptr)
+					{
+						BestCamera = *It;
+					}
+					else if (It->CamLocationName == TEXT("LoadingCamera"))
+					{
+						ActorPlayerController->SetActorLocationAndRotation(It->GetActorLocation(), It->GetActorRotation());
+						break;
+					}
+				}
+				if (BestCamera && ActorPlayerController->GetActorLocation().IsNearlyZero())
+				{
+					ActorPlayerController->SetActorLocationAndRotation(BestCamera->GetActorLocation(), BestCamera->GetActorRotation());
 				}
 			}
 		}
