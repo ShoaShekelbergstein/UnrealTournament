@@ -2450,7 +2450,7 @@ bool AUTBot::FindInventoryGoal(float MinWeight)
 						if (ItemPickup != nullptr)
 						{
 							TSubclassOf<AUTWeapon> WeaponClass(*ItemPickup->GetInventoryType());
-							if (WeaponClass != nullptr || !WeaponClass.GetDefaultObject()->bWeaponStay)
+							if (WeaponClass == nullptr || !WeaponClass.GetDefaultObject()->bWeaponStay)
 							{
 								NodeEval.ClaimedPickups.Add(A);
 							}
