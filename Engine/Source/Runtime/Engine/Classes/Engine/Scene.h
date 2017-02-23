@@ -1204,10 +1204,10 @@ struct FPostProcessSettings
 		AutoExposureLowPercent = 80.0f;
 		AutoExposureHighPercent = 98.3f;
 		// next value might get overwritten by r.DefaultFeature.AutoExposure
-		AutoExposureMinBrightness = 0.03f;
+		AutoExposureMinBrightness = 1.0f;
 		// next value might get overwritten by r.DefaultFeature.AutoExposure
-		AutoExposureMaxBrightness = 2.0f;
-		AutoExposureBias = 0.0f;
+		AutoExposureMaxBrightness = 1.0f;
+		AutoExposureBias = 1.0f;
 		AutoExposureSpeedUp = 3.0f;
 		AutoExposureSpeedDown = 1.0f;
 		LPVDirectionalOcclusionIntensity = 0.0f;
@@ -1219,7 +1219,7 @@ struct FPostProcessSettings
 		HistogramLogMin = -8.0f;
 		HistogramLogMax = 4.0f;
 		// next value might get overwritten by r.DefaultFeature.LensFlare
-		LensFlareIntensity = 1.0f;
+		LensFlareIntensity = 0.0f;
 		LensFlareTint = FLinearColor(1.0f, 1.0f, 1.0f);
 		LensFlareBokehSize = 3.0f;
 		LensFlareThreshold = 8.0f;
@@ -1276,7 +1276,7 @@ struct FPostProcessSettings
 		MotionBlurPerObjectSize = 0.5f;
 		ScreenPercentage = 100.0f;
 		ScreenSpaceReflectionIntensity = 100.0f;
-		ScreenSpaceReflectionQuality = 50.0f;
+		ScreenSpaceReflectionQuality = 100.0f;
 		ScreenSpaceReflectionMaxRoughness = 0.6f;
 		bMobileHQGaussian = false;
 	}
