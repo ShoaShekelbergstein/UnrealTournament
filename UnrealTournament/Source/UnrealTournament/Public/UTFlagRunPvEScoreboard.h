@@ -6,6 +6,7 @@
 #include "UTFlagRunPvEGameState.h"
 #include "UTLineUpHelper.h"
 #include "StatNames.h"
+#include "UTGameEngine.h"
 
 #include "UTFlagRunPvEScoreboard.generated.h"
 
@@ -31,6 +32,12 @@ public:
 		DefendLines.Add(FText::GetEmpty());
 		DefendLines.Add(NSLOCTEXT("UTPvEScoreboard", "DefenseLine5", "* The enemy flag carrier can power up Rally Points to cause monsters"));
 		DefendLines.Add(NSLOCTEXT("UTPvEScoreboard", "DefenseLine5b", "  to spawn there for a limited time. "));
+
+		BlueTeamName = NSLOCTEXT("CTFPvERewardMessage", "BlueTeamName", "PLAYERS");
+		RedTeamName = NSLOCTEXT("CTFPvERewardMessage", "RedTeamName", "MONSTERS");
+		TeamScorePrefix = NSLOCTEXT("CTFPvERewardMessage", "TeamScorePrefix", "");
+		TeamScorePostfix = NSLOCTEXT("CTFPvERewardMessage", "TeamScorePostfix", " Overrun the Base!");
+		DefenseScorePostfix = NSLOCTEXT("CTFPvERewardMessage", "DefenseScoreBonusPostfix", " Successfully Defend!");
 	}
 
 	virtual FText GetRoundTitle(bool bIsOnDefense) const override
@@ -70,6 +77,19 @@ public:
 					StarColor = GOLDCOLOR;
 					break;
 			}
+		}
+	}
+
+	virtual bool ShowScorePanel() override
+	{
+		AUTFlagRunPvEGameState* GS = GetWorld()->GetGameState<AUTFlagRunPvEGameState>();
+		if (GS != nullptr && GS->HasMatchEnded() && GS->LineUpHelper != nullptr && GS->LineUpHelper->bIsActive)
+		{
+			return false;
+		}
+		else
+		{
+			return Super::ShowScorePanel();
 		}
 	}
 
@@ -208,6 +228,103 @@ public:
 		if (PlayerState->GetTeamNum() == 1)
 		{
 			Super::DrawPlayer(Index, PlayerState, RenderDelta, XOffset, YOffset);
+		}
+	}
+
+	virtual void DrawScoringPlays(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float MaxHeight) override
+	{}
+
+	virtual bool ShowScoringInfo() override
+	{
+		AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+		return GS != nullptr && (GS->IsMatchIntermission() || GS->HasMatchEnded()) && !IsBeforeFirstRound();
+	}
+
+	virtual void DrawScoreAnnouncement(float DeltaTime) override
+	{
+		AUTFlagRunPvEGameState* GS = GetWorld()->GetGameState<AUTFlagRunPvEGameState>();
+		if (GS == nullptr || ScoringTeam == nullptr)
+		{
+			return;
+		}
+
+		float PoundStart = 1.2f;
+		float PoundInterval = 0.5f;
+		float WooshStart = 3.1f;
+		float WooshTime = 0.25f;
+		float WooshInterval = 0.4f;
+		float CurrentTime = GetWorld()->GetTimeSeconds() - ScoreReceivedTime;
+
+		UFont* InFont = UTHUDOwner->LargeFont;
+		FText EmphasisText = (ScoringTeam && (ScoringTeam->TeamIndex == 0)) ? RedTeamName : BlueTeamName;
+		float YL, EmphasisXL;
+		Canvas->StrLen(InFont, EmphasisText.ToString(), EmphasisXL, YL);
+		float YPos = (LastScorePanelYOffset > 0.f) ? LastScorePanelYOffset - 2.f : 0.25f*Canvas->ClipY;
+		float TopY = YPos;
+
+		FText ScorePrefix = (Reason == 0) ? TeamScorePrefix : DefenseScorePrefix;
+		FText ScorePostfix = (Reason == 0) ? TeamScorePostfix : DefenseScorePostfix;
+		float PostXL;
+		Canvas->StrLen(InFont, ScorePostfix.ToString(), PostXL, YL);
+
+		float ScoreWidth = RenderScale * 1.2f * (PostXL + EmphasisXL);
+		float ScoreHeight = 3.5f * YL;
+		float XOffset = 0.5f*(Canvas->ClipX - ScoreWidth);
+		DrawFramedBackground(XOffset, YPos, ScoreWidth, RenderScale * ScoreHeight);
+
+		FFontRenderInfo TextRenderInfo;
+		TextRenderInfo.bEnableShadow = true;
+		TextRenderInfo.bClipText = true;
+
+		// Draw scoring team string
+		FLinearColor EmphasisColor = (ScoringTeam && (ScoringTeam->TeamIndex == 0)) ? REDHUDCOLOR : BLUEHUDCOLOR;
+		float ScoreX = 0.5f * (Canvas->ClipX - RenderScale * (EmphasisXL + PostXL));
+
+		Canvas->SetLinearDrawColor(ScoringTeam->TeamColor);
+		Canvas->DrawText(InFont, EmphasisText, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
+		ScoreX += EmphasisXL*RenderScale;
+
+		Canvas->SetLinearDrawColor(FLinearColor::White);
+		Canvas->DrawText(InFont, ScorePostfix, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
+
+		YPos += YL*RenderScale;
+
+		if (ScoringTeam->TeamIndex == 0)
+		{
+			float TimeXL;
+			FString TimeString = UUTGameEngine::ConvertTime(NSLOCTEXT("UTPvEScoreboard", "SurvivalTime", "Survival Time: "), FText::GetEmpty(), GetWorld()->GetGameState<AUTGameState>()->ElapsedTime, false, true, false).ToString();
+			Canvas->StrLen(InFont, TimeString, TimeXL, YL);
+			ScoreX = 0.5f * (Canvas->ClipX - RenderScale * TimeXL);
+			Canvas->SetLinearDrawColor(FLinearColor::White);
+			Canvas->DrawText(InFont, TimeString, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
+			YPos += YL * RenderScale;
+		}
+
+		{
+			float KillsXL;
+			FString KillString = FText::Format(NSLOCTEXT("UTPvEScoreboard", "Kills", "Total Kills: {0}"), FText::AsNumber(GS->Teams[1]->GetStatsValue(NAME_TeamKills))).ToString();
+			Canvas->StrLen(InFont, KillString, KillsXL, YL);
+			ScoreX = 0.5f * (Canvas->ClipX - RenderScale * KillsXL);
+			Canvas->SetLinearDrawColor(FLinearColor::White);
+			Canvas->DrawText(InFont, KillString, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
+			YPos += YL * RenderScale;
+		}
+
+		// Draw scoring player string
+		if (ScoringPlayer != nullptr)
+		{
+			float DeliveredXL;
+			Canvas->StrLen(UTHUDOwner->SmallFont, DeliveredPrefix.ToString(), DeliveredXL, YL);
+			YPos = TopY + RenderScale * (ScoreHeight - 1.1f*YL);
+			EmphasisText = FText::FromString(ScoringPlayer->PlayerName);
+			Canvas->StrLen(UTHUDOwner->SmallFont, EmphasisText.ToString(), EmphasisXL, YL);
+
+			ScoreX = 0.5f * (Canvas->ClipX - RenderScale * (EmphasisXL + DeliveredXL));
+			Canvas->SetLinearDrawColor(FLinearColor::White);
+			Canvas->DrawText(UTHUDOwner->SmallFont, DeliveredPrefix, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
+			ScoreX += DeliveredXL*RenderScale;
+			Canvas->SetLinearDrawColor(ScoringTeam->TeamColor);
+			Canvas->DrawText(UTHUDOwner->SmallFont, EmphasisText, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
 		}
 	}
 };

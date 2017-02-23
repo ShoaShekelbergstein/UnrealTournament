@@ -86,8 +86,7 @@ bool UUTFlagRunScoreboard::ShowScorePanel()
 		return !bHasAnnouncedWin;
 	}
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-	AUTFlagRunGame* DefaultGame = GS && GS->GameModeClass ? GS->GameModeClass->GetDefaultObject<AUTFlagRunGame>() : nullptr;
-	if (!DefaultGame || (GS->GetMatchState() == MatchState::CountdownToBegin) || (GS->GetMatchState() == MatchState::PlayerIntro) || bHasAnnouncedWin)
+	if (GS == nullptr || (GS->GetMatchState() == MatchState::CountdownToBegin) || (GS->GetMatchState() == MatchState::PlayerIntro) || bHasAnnouncedWin)
 	{
 		return false;
 	}
@@ -97,12 +96,7 @@ bool UUTFlagRunScoreboard::ShowScorePanel()
 bool UUTFlagRunScoreboard::ShowScoringInfo()
 {
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-	AUTFlagRunGame* DefaultGame = GS && GS->GameModeClass ? GS->GameModeClass->GetDefaultObject<AUTFlagRunGame>() : nullptr;
-	if (!DefaultGame)
-	{
-		return false;
-	}
-	return (GS->IsMatchIntermission() || GS->HasMatchEnded()) && !IsBeforeFirstRound() && (GetWorld()->GetTimeSeconds() - ScoreReceivedTime < ScoreInfoDuration);
+	return GS != nullptr && (GS->IsMatchIntermission() || GS->HasMatchEnded()) && !IsBeforeFirstRound() && (GetWorld()->GetTimeSeconds() - ScoreReceivedTime < ScoreInfoDuration);
 }
 
 void UUTFlagRunScoreboard::DrawTeamPanel(float RenderDelta, float& YOffset)

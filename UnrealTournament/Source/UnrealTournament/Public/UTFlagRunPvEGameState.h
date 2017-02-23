@@ -28,4 +28,8 @@ public:
 	{
 		// GameMode sets this via SetSelectablePowerups()
 	}
+	virtual void AddScoringPlay(const FCTFScoringPlay& NewScoringPlay) override
+	{
+		// there's no point in a scoring play entry since there's only ever one score per PvE match
+	}
 };
