@@ -1805,13 +1805,6 @@ void AUTPlayerState::WriteStatsToCloud()
 		// Write the stats stored in the cloud file
 		if (bReadStatsFromCloud && OnlineUserCloudInterface.IsValid() && !bOnlySpectator)
 		{
-			// We ended with this player name, save it in the stats
-			StatManager->PreviousPlayerNames.AddUnique(PlayerName);
-			if (StatManager->PreviousPlayerNames.Num() > StatManager->NumPreviousPlayerNamesToKeep)
-			{
-				StatManager->PreviousPlayerNames.RemoveAt(0, StatManager->PreviousPlayerNames.Num() - StatManager->NumPreviousPlayerNamesToKeep);
-			}
-
 			TArray<uint8> FileContents;
 			TSharedPtr<FJsonObject> StatsJson = MakeShareable(new FJsonObject);
 			StatsJson->SetStringField(TEXT("StatsID"), StatsID);
