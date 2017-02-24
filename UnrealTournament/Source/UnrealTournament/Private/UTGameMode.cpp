@@ -4814,7 +4814,6 @@ void AUTGameMode::BuildMovementInfo(AUTPlayerState* PlayerState, TSharedPtr<clas
 	TabWidget->AddTab(NSLOCTEXT("AUTGameMode", "Movement", "Movement"), HBox);
 
 	NewPlayerInfoLine(LeftPane, NSLOCTEXT("AUTGameMode", "RunDistance", "Run Distance"), MakeShareable(new TAttributeStat(PlayerState, NAME_RunDist, ConvertToMeters, OneDecimal)), StatList);
-	NewPlayerInfoLine(LeftPane, NSLOCTEXT("AUTGameMode", "SprintDistance", "Sprint Distance"), MakeShareable(new TAttributeStat(PlayerState, NAME_SprintDist, ConvertToMeters, OneDecimal)), StatList);
 	NewPlayerInfoLine(LeftPane, NSLOCTEXT("AUTGameMode", "SlideDistance", "Slide Distance"), MakeShareable(new TAttributeStat(PlayerState, NAME_SlideDist, ConvertToMeters, OneDecimal)), StatList);
 	NewPlayerInfoLine(LeftPane, NSLOCTEXT("AUTGameMode", "WallRunDistance", "WallRun Distance"), MakeShareable(new TAttributeStat(PlayerState, NAME_WallRunDist, ConvertToMeters, OneDecimal)), StatList);
 	NewPlayerInfoLine(LeftPane, NSLOCTEXT("AUTGameMode", "FallDistance", "Fall Distance"), MakeShareable(new TAttributeStat(PlayerState, NAME_InAirDist, ConvertToMeters, OneDecimal)), StatList);
@@ -4825,7 +4824,6 @@ void AUTGameMode::BuildMovementInfo(AUTPlayerState* PlayerState, TSharedPtr<clas
 	{
 		float Total = 0.0f;
 		Total += PS->GetStatsValue(NAME_RunDist);
-		Total += PS->GetStatsValue(NAME_SprintDist);
 		Total += PS->GetStatsValue(NAME_SlideDist);
 		Total += PS->GetStatsValue(NAME_WallRunDist);
 		Total += PS->GetStatsValue(NAME_InAirDist);

@@ -147,7 +147,6 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	RewardStats.Add(NAME_SpreeKillLevel4);
 
 	MovementStats.Add(NAME_RunDist);
-	MovementStats.Add(NAME_SprintDist);
 	MovementStats.Add(NAME_InAirDist);
 	MovementStats.Add(NAME_SwimDist);
 	MovementStats.Add(NAME_TranslocDist);

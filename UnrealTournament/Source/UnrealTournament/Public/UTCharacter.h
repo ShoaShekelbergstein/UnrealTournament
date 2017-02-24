@@ -1459,10 +1459,6 @@ public:
 	/** Ambient sound played while wall sliding */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
 		USoundBase* WallSlideAmbientSound;
-
-	/** Running speed to engage sprint sound */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
-	float SprintAmbientStartSpeed;
 	
 	/** Ambient sound played while falling fast */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)

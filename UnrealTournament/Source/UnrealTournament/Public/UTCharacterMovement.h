@@ -323,6 +323,10 @@ public:
 	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Reset Interval"))
 		float DodgeResetInterval;
 
+	/** Adjustment from DodgeResetInterval for when bIsDodgeLanding acceleration adjust ends. */
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Reset Interval"))
+		float DodgeLandingTimeAdjust;
+
 	/** Time after landing dodge-jump before another can be attempted. */
 	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Jump Reset Interval"))
 		float DodgeJumpResetInterval;
@@ -574,43 +578,15 @@ public:
 	/** Return true if can multijump now. */
 	virtual bool CanMultiJump();
 
-	//=========================================
-	// AUTO-SPRINT
+	/** Max speed when sliding. */
+	UPROPERTY(Category = "FloorSlide", EditAnywhere, BlueprintReadWrite)
+		float MaxSlideSpeed;
 
-	/** How long you have to be running/grounded before auto-sprint engages. */
-	UPROPERTY(Category = "Autosprint", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Auto Sprint Delay Interval"))
-		float AutoSprintDelayInterval;
+	/** True when just landed a dodge and acceleration is still limited. */
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadOnly)
+		bool bIsDodgeLanding;
 
-	/** Max speed when sprinting. */
-	UPROPERTY(Category = "Autosprint", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Sprint Speed"))
-		float SprintSpeed;
-
-	/** Acceleration when sprinting. */
-	UPROPERTY(Category = "Autosprint", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Sprint Acceleration"))
-		float SprintAccel;
-
-	/** Max dotproduct of wall surface sprinter ran into that doesn't stop sprint. */
-	UPROPERTY(Category = "Autosprint", EditAnywhere, BlueprintReadWrite)
-		float SprintMaxWallNormal;
-
-	/** World time when sprinting can start. */
-	UPROPERTY(Category = "Autosprint", BlueprintReadWrite, meta = (DisplayName = "Sprint Start Time"))
-		float SprintStartTime;
-
-	/** True when sprinting. */
-	UPROPERTY(Category = "Autosprint", EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "Is sprinting"))
-		bool bIsSprinting;
-
-	/** Reset sprint start if braking. */
-	virtual void ApplyVelocityBraking(float DeltaTime, float Friction, float BrakingDeceleration) override;
-
-	/** Support for sprint acceleration. */
 	virtual float GetMaxAcceleration() const override;
-
-	/** Return true if character can sprint right now */
-	virtual bool CanSprint() const;
-
-	/** Return SprintSpeed if CanSprint(). */
 	virtual float GetMaxSpeed() const override;
 
 	//=========================================
@@ -747,7 +723,7 @@ public:
 	bool bPressedDodgeBack;
 	bool bPressedDodgeLeft;
 	bool bPressedDodgeRight;
-	bool bSavedIsSprinting;
+	bool bSavedIsDodgeLanding;
 	bool bSavedIsRolling;
 	bool bSavedWantsWallSlide;
 	bool bSavedWantsSlide;
@@ -756,7 +732,6 @@ public:
 	// local only properties (not replicated) used when replaying moves
 	int32 SavedMultiJumpCount;
 	int32 SavedWallDodgeCount;
-	float SavedSprintStartTime;
 	float SavedDodgeResetTime;
 	float SavedFloorSlideEndTime;
 	bool bSavedJumpAssisted;

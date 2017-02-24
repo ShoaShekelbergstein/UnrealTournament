@@ -1126,11 +1126,6 @@ void AUTBot::UpdateMovementOptions(bool bNewPath)
 		{
 			DodgeChance *= 2.0f;
 		}
-		else if (GetUTChar()->UTCharacterMovement->bIsSprinting)
-		{
-			// dodge will nullify sprinting bonus so reduce chance
-			DodgeChance *= 0.5f;
-		}
 		if (FMath::FRand() < DodgeChance)
 		{
 			FRotationMatrix RotMat(GetPawn()->GetActorRotation());
@@ -2799,7 +2794,7 @@ void AUTBot::ExecuteWhatToDoNext()
 		bool bLowSkillEnemyFocus = false;
 		if (!bLeadTarget && Enemy != nullptr && IsEnemyVisible(Enemy) && (Enemy->GetActorLocation() - GetPawn()->GetActorLocation()).Size() < 2000.0f)
 		{
-			bLowSkillEnemyFocus = (UTChar != nullptr && UTChar->UTCharacterMovement->bIsSprinting) || FMath::FRand() < 0.3f - (Skill * 0.1f);
+			bLowSkillEnemyFocus = FMath::FRand() < 0.3f - (Skill * 0.1f);
 		}
 		if ((bLowSkillEnemyFocus || Squad == NULL || !Squad->CheckSquadObjectives(this)) && !ShouldDefendPosition())
 		{

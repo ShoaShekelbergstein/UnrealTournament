@@ -122,7 +122,6 @@ UStatManager::UStatManager(const FObjectInitializer& ObjectInitializer)
 	Stats.Add(NAME_AirSnot, new FStat(FNewKillAwardXP(3)));
 
 	Stats.Add(NAME_RunDist, new FStat());
-	Stats.Add(NAME_SprintDist, new FStat());
 	Stats.Add(NAME_InAirDist, new FStat());
 	Stats.Add(NAME_SwimDist, new FStat());
 	Stats.Add(NAME_TranslocDist, new FStat());
@@ -166,7 +165,6 @@ UStatManager::UStatManager(const FObjectInitializer& ObjectInitializer)
 	Stats.Add(NAME_PlayerXP, new FStat());
 
 	NumMatchesToKeep = 5;
-	NumPreviousPlayerNamesToKeep = 5;
 
 	JSONVersionNumber = 0;
 }

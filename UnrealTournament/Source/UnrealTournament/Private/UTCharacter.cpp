@@ -150,7 +150,6 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 	MinPainSoundInterval = 0.35f;
 	LastPainSoundTime = -100.0f;
 
-	SprintAmbientStartSpeed = 1000.f;
 	FallingAmbientStartSpeed = -1300.f;
 	LandEffectSpeed = 500.f;
 
@@ -4785,21 +4784,9 @@ void AUTCharacter::Tick(float DeltaTime)
 			{
 				SetLocalAmbientSound(WallSlideAmbientSound, 1.f, false);
 			}
-			else if (GetCharacterMovement()->IsMovingOnGround() && (GetCharacterMovement()->Velocity.Size2D() > SprintAmbientStartSpeed))
-			{
-				float NewLocalAmbientVolume = FMath::Min(1.f, (GetCharacterMovement()->Velocity.Size2D() - SprintAmbientStartSpeed) / (UTCharacterMovement->SprintSpeed - SprintAmbientStartSpeed));
-				LocalAmbientVolume = LocalAmbientVolume*(1.f - DeltaTime) + NewLocalAmbientVolume*DeltaTime;
-				SetLocalAmbientSound(CharacterData.GetDefaultObject()->SprintAmbientSound, LocalAmbientVolume, false);
-			}
-			else if ((LocalAmbientSound == CharacterData.GetDefaultObject()->SprintAmbientSound) && (LocalAmbientVolume > 0.05f))
-			{
-				LocalAmbientVolume = LocalAmbientVolume*(1.f - DeltaTime);
-				SetLocalAmbientSound(CharacterData.GetDefaultObject()->SprintAmbientSound, LocalAmbientVolume, false);
-			}
 			else
 			{
 				SetLocalAmbientSound(WallSlideAmbientSound, 0.f, true);
-				SetLocalAmbientSound(CharacterData.GetDefaultObject()->SprintAmbientSound, 0.f, true);
 			}
 		}
 	}
