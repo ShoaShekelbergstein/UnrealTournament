@@ -50,7 +50,6 @@ const FVector& NewAccel
 	//UE_LOG(UT, Warning, TEXT("+++++++Set server move time %f"), CurrentServerMoveTime); //MinTimeBetweenTimeStampResets
 	UpdateFromCompressedFlags(CompressedFlags);
 
-	UE_LOG(UT, Warning, TEXT("DodgeLanding %d acceleration %f %f"), bIsDodgeLanding, Acceleration.X, Acceleration.Y);
 	bool bOldIsDodgeLanding = bIsDodgeLanding;
 	FVector OldAccel = NewAccel;
 	CharacterOwner->CheckJumpInput(DeltaTime);
