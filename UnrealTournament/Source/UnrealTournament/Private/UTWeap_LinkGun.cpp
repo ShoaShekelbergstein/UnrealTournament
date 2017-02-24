@@ -130,6 +130,15 @@ void AUTWeap_LinkGun::UpdateScreenTexture(UCanvas* C, int32 Width, int32 Height)
 	}
 }
 
+void AUTWeap_LinkGun::Removed()
+{
+	if (UTOwner)
+	{
+		UTOwner->SetAmbientSound(OverheatSound, true);
+	}
+	Super::Removed();
+}
+
 void AUTWeap_LinkGun::FireShot()
 {
 	if (!bIsInCoolDown)

@@ -57,6 +57,10 @@ void AUTWeap_LightningRifle::Removed()
 	bZoomHeld = false;
 	bIsFullyPowered = false;
 	bIsCharging = false;
+	if (UTOwner)
+	{
+		UTOwner->SetAmbientSound(ChargeSound, true);
+	}
 	Super::Removed();
 }
 
@@ -162,35 +166,12 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 			bIsFullyPowered = (ChargePct >= 1.f);
 			if (bIsFullyPowered && !bWasFullyPowered && Cast<AUTPlayerController>(UTOwner->GetController()))
 			{
-				Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredNoHitEnemySound);
+				Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredSound);
 			}
 		}
 		else
 		{
 			UTOwner->SetAmbientSound(ChargeSound, true);
-		}
-	}
-}
-
-void AUTWeap_LightningRifle::ConsumeAmmo(uint8 FireModeNum)
-{
-	if (Role == ROLE_Authority)
-	{
-		AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-		if (AmmoCost.IsValidIndex(FireModeNum) && (!GameMode || GameMode->bAmmoIsLimited || (Ammo > 9)))
-		{
-			if (bIsFullyPowered)
-			{
-				AddAmmo(-AmmoCost[FireModeNum] * 2);
-			}
-			else
-			{
-				AddAmmo(-AmmoCost[FireModeNum]);
-			}
-		}
-		else if (!AmmoCost.IsValidIndex(FireModeNum))
-		{
-			UE_LOG(UT, Warning, TEXT("Invalid fire mode %i in %s::ConsumeAmmo()"), int32(FireModeNum), *GetName());
 		}
 	}
 }
@@ -202,7 +183,8 @@ void AUTWeap_LightningRifle::FireShot()
 		UTOwner->DeactivateSpawnProtection();
 	}
 
-	ConsumeAmmo(CurrentFireMode);
+	AmmoCost[0] = bIsFullyPowered ? 2 : 1;
+	ConsumeAmmo(0);
 	if (!FireShotOverride() && GetUTOwner() != NULL) // script event may kill user
 	{
 		if ((ZoomState == EZoomState::EZS_NotZoomed) && ProjClass.IsValidIndex(CurrentFireMode) && ProjClass[CurrentFireMode] != NULL)

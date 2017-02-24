@@ -186,4 +186,5 @@ public:
 	}
 
 	virtual void DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHudWidget, float RenderDelta) override;
+	virtual void Removed() override;
 };
