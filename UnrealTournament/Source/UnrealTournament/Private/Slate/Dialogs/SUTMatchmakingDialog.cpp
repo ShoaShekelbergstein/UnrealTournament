@@ -199,7 +199,7 @@ FText SUTMatchmakingDialog::GetMatchmakingText2() const
 			int32 MatchmakingEloRange = Matchmaking->GetMatchmakingEloRange();
 			if (MatchmakingEloRange > 0 && MatchmakingTeamElo > 0)
 			{
-				return FText::Format(NSLOCTEXT("Generic", "SearchingForServerWithEloRange", "Searching For Server Within ELO Between {0} and {1}..."), FText::AsNumber(MatchmakingTeamElo - MatchmakingEloRange), FText::AsNumber(MatchmakingTeamElo + MatchmakingEloRange));
+				return FText::Format(NSLOCTEXT("Generic", "SearchingForServerWithEloRange", "Searching For Server Within ELO Between {0} and {1}..."), FText::AsNumber(FMath::Max(MatchmakingTeamElo - MatchmakingEloRange, 0)), FText::AsNumber(MatchmakingTeamElo + MatchmakingEloRange));
 			}
 		}
 	}

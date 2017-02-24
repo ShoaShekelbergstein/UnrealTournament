@@ -73,7 +73,7 @@ void UUTMatchmakingGather::FindGatheringSession()
 		NewSearchSettings->QuerySettings.Set(SETTING_NEEDS, CurrentParams.PartySize, EOnlineComparisonOp::GreaterThanEquals);
 		NewSearchSettings->QuerySettings.Set(SETTING_NEEDSSORT, SORT_ASC, EOnlineComparisonOp::Near);
 		
-		NewSearchSettings->QuerySettings.Set(SETTING_TEAMELO, CurrentParams.TeamElo - CurrentParams.EloRange, EOnlineComparisonOp::GreaterThanEquals);
+		NewSearchSettings->QuerySettings.Set(SETTING_TEAMELO, FMath::Max(CurrentParams.TeamElo - CurrentParams.EloRange, 0), EOnlineComparisonOp::GreaterThanEquals);
 		NewSearchSettings->QuerySettings.Set(SETTING_TEAMELO2, CurrentParams.TeamElo + CurrentParams.EloRange, EOnlineComparisonOp::LessThanEquals);
 
 		FUTSearchPassParams SearchPassParams;
