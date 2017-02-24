@@ -293,21 +293,6 @@ void UStatManager::PopulateJsonObjectForNonBackendStats(TSharedPtr<FJsonObject> 
 {
 	JsonObject->SetNumberField(TEXT("Version"), JSONVersionNumber);
 	
-	if (PreviousPlayerNames.Num() > 0)
-	{
-		TArray< TSharedPtr<FJsonValue> > PreviousPlayerNamesJson;
-		PreviousPlayerNamesJson.AddZeroed(PreviousPlayerNames.Num());
-		for (int32 PlayerNameIdx = 0; PlayerNameIdx < PreviousPlayerNames.Num(); PlayerNameIdx++)
-		{
-			TSharedPtr<FJsonObject> PlayerNameJson = MakeShareable(new FJsonObject);
-			PlayerNameJson->SetStringField(TEXT("Name"), PreviousPlayerNames[PlayerNameIdx]);
-
-			PreviousPlayerNamesJson[PlayerNameIdx] = MakeShareable(new FJsonValueObject(PlayerNameJson));
-		}
-
-		JsonObject->SetArrayField(TEXT("Aliases"), PreviousPlayerNamesJson);
-	}
-
 	if (MatchStats.Num() > 0)
 	{
 		TArray< TSharedPtr<FJsonValue> > MatchStatsJson;
@@ -369,20 +354,7 @@ void UStatManager::PopulateJsonObjectForNonBackendStats(TSharedPtr<FJsonObject> 
 }
 
 void UStatManager::InsertDataFromNonBackendJsonObject(TSharedPtr<FJsonObject> JsonObject)
-{	
-	const TArray<TSharedPtr<FJsonValue>>* Aliases;
-	if (JsonObject->TryGetArrayField(TEXT("Aliases"), Aliases))
-	{
-		PreviousPlayerNames.Empty();
-		PreviousPlayerNames.AddZeroed(Aliases->Num());
-
-		for (int32 PlayerIdx = 0; PlayerIdx < Aliases->Num(); PlayerIdx++)
-		{
-			const TSharedPtr<FJsonValue>& AliasJsonValue = (*Aliases)[PlayerIdx];
-			PreviousPlayerNames[PlayerIdx] = AliasJsonValue->AsObject()->GetStringField(TEXT("Name"));
-		}
-	}
-
+{
 	// It would most likely be a performance win to leave matches in JsonValue form so we have less parsing after a user's json is downloaded
 	// We don't do anything with MatchStats from previous matches during game time anyway
 	const TArray<TSharedPtr<FJsonValue>>* Matches;
