@@ -144,11 +144,6 @@ void AUTFlagRunGameState::PrepareForIntermission()
 	}
 }
 
-void AUTFlagRunGameState::OnIntermissionChanged()
-{
-	// FIXMESTEVE don't need this or super once clean up CTF intermission.
-}
-
 void AUTFlagRunGameState::OnBonusLevelChanged()
 {
 	if (BonusLevel < 3)

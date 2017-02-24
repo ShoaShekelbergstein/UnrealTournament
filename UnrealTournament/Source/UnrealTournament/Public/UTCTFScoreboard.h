@@ -56,6 +56,7 @@ class UNREALTOURNAMENT_API UUTCTFScoreboard : public UUTTeamScoreboard
 		float TimeLineOffset;
 
 	virtual bool ShouldDrawScoringStats() override;
+	virtual void PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCanvas* InCanvas, FVector2D InCanvasCenter) override;
 
 protected:
 	virtual void DrawScoreHeaders(float RenderDelta, float& YOffset);

@@ -11,7 +11,6 @@ class UNREALTOURNAMENT_API AUTFlagRunHUD : public AUTHUD_CTF
 {
 	GENERATED_UCLASS_BODY()
 
-	virtual bool ScoreboardIsUp() override;
 	virtual void DrawHUD() override;
 	virtual void NotifyMatchStateChange() override;
 	virtual void BeginPlay() override;

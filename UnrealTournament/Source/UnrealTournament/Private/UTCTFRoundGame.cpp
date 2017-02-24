@@ -246,9 +246,8 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 	if (CTFGameState)
 	{
 		CTFGameState->bIsAtIntermission = true;
-		CTFGameState->OnIntermissionChanged();
 		CTFGameState->bStopGameClock = true;
-		Cast<AUTCTFRoundGameState>(CTFGameState)->IntermissionTime = IntermissionDuration;
+		CTFGameState->IntermissionTime = IntermissionDuration;
 	}
 }
 
@@ -593,7 +592,6 @@ void AUTCTFRoundGame::HandleExitingIntermission()
 	// Send all flags home..
 	CTFGameState->ResetFlags();
 	CTFGameState->bIsAtIntermission = false;
-	CTFGameState->OnIntermissionChanged();
 	CTFGameState->SetTimeLimit(TimeLimit);		// Reset the GameClock for the second time.
 	SetMatchState(MatchState::InProgress);
 }

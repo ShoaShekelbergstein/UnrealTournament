@@ -154,12 +154,15 @@ class UNREALTOURNAMENT_API AUTCTFGameState: public AUTGameState
 	UPROPERTY(BlueprintReadOnly,Replicated,Category = CTF)
 	uint32 bSecondHalf : 1;
 
-	UPROPERTY(BlueprintReadOnly,Replicated,ReplicatedUsing=OnIntermissionChanged, Category = CTF)
+	UPROPERTY(BlueprintReadOnly,Replicated, Category = CTF)
 	uint32 bIsAtIntermission : 1;
 
 	/** The Elapsed time at which Overtime began */
 	UPROPERTY(BlueprintReadOnly, Category = CTF)
 	int32 OvertimeStartTime;
+
+	UPROPERTY(Replicated)
+		int32 IntermissionTime;
 
 	/** Will be true if the game is playing advantage going in to half-time */
 	UPROPERTY(Replicated)
@@ -231,13 +234,10 @@ class UNREALTOURNAMENT_API AUTCTFGameState: public AUTGameState
 	virtual bool IsMatchInOvertime() const override;
 	virtual bool IsMatchIntermission() const override;
 	virtual void OnRep_MatchState() override;
+	virtual float GetIntermissionTime() override;
+	virtual void DefaultTimer() override;
 
 	virtual FName OverrideCameraStyle(APlayerController* PCOwner, FName CurrentCameraStyle);
-	
-	UFUNCTION()
-		virtual void OnIntermissionChanged();
-
-	virtual void ToggleScoreboards();
 
 	virtual void UpdateHighlights_Implementation() override;
 	virtual void AddMinorHighlights_Implementation(AUTPlayerState* PS) override;

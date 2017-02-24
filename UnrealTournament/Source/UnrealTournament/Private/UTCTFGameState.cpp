@@ -106,6 +106,7 @@ void AUTCTFGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & O
 	DOREPLIFETIME(AUTCTFGameState, ScoringPlays);
 	DOREPLIFETIME(AUTCTFGameState, CTFRound); 
 	DOREPLIFETIME(AUTCTFGameState, NumRounds);
+	DOREPLIFETIME(AUTCTFGameState, IntermissionTime);
 }
 
 void AUTCTFGameState::SetMaxNumberOfTeams(int32 TeamCount)
@@ -130,7 +131,11 @@ void AUTCTFGameState::CacheFlagBase(AUTCTFFlagBase* BaseToCache)
 
 float AUTCTFGameState::GetClockTime()
 {
-	if (IsMatchInOvertime())
+	if (IsMatchIntermission())
+	{
+		return IntermissionTime;
+	}
+	else if (IsMatchInOvertime())
 	{
 		return ElapsedTime - OvertimeStartTime;
 	}
@@ -249,32 +254,6 @@ FName AUTCTFGameState::OverrideCameraStyle(APlayerController* PCOwner, FName Cur
 	}
 }
 
-void AUTCTFGameState::OnIntermissionChanged()
-{
-	if (bIsAtIntermission)
-	{
-		// delay toggling scoreboard
-		FTimerHandle TempHandle;
-		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTCTFGameState::ToggleScoreboards, HalftimeScoreDelay);
-	}
-	else
-	{
-		ToggleScoreboards();
-	}
-}
-
-void AUTCTFGameState::ToggleScoreboards()
-{
-	for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
-	{
-		AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
-		if (PC != NULL)
-		{
-			PC->ClientToggleScoreboard(bIsAtIntermission);
-		}
-	}
-}
-
 AUTLineUpZone* AUTCTFGameState::GetAppropriateSpawnList(LineUpTypes ZoneType)
 {
 	AUTLineUpZone* FoundPotentialMatch = nullptr;
@@ -302,6 +281,20 @@ AUTLineUpZone* AUTCTFGameState::GetAppropriateSpawnList(LineUpTypes ZoneType)
 	}
 
 	return (FoundPotentialMatch == nullptr) ? Super::GetAppropriateSpawnList(ZoneType) : FoundPotentialMatch;
+}
+
+void AUTCTFGameState::DefaultTimer()
+{
+	Super::DefaultTimer();
+	if (bIsAtIntermission)
+	{
+		IntermissionTime--;
+	}
+}
+
+float AUTCTFGameState::GetIntermissionTime()
+{
+	return IntermissionTime;
 }
 
 void AUTCTFGameState::SpawnDefaultLineUpZones()

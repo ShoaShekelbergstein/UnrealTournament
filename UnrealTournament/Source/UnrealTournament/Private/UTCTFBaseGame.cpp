@@ -333,7 +333,7 @@ void AUTCTFBaseGame::CheckGameTime()
 {
 	if (CTFGameState->IsMatchIntermission())
 	{
-		if (CTFGameState->GetRemainingTime() <= 0)
+		if (CTFGameState->GetIntermissionTime() <= 0)
 		{
 			SetMatchState(MatchState::MatchExitingIntermission);
 		}
@@ -375,8 +375,8 @@ void AUTCTFBaseGame::HandleMatchIntermission()
 	}
 
 	CTFGameState->bIsAtIntermission = true;
-	CTFGameState->OnIntermissionChanged();
-	CTFGameState->SetTimeLimit(IntermissionDuration);	// Reset the Game Clock for intermission
+	CTFGameState->bStopGameClock = true;
+	CTFGameState->IntermissionTime = IntermissionDuration;
 }
 
 int32 AUTCTFBaseGame::IntermissionTeamToView(AUTPlayerController* PC)
@@ -391,6 +391,7 @@ int32 AUTCTFBaseGame::IntermissionTeamToView(AUTPlayerController* PC)
 
 void AUTCTFBaseGame::HandleExitingIntermission()
 {
+	CTFGameState->bStopGameClock = false;
 	RemoveAllPawns();
 
 	for (FActorIterator It(GetWorld()); It; ++It)
@@ -431,7 +432,6 @@ void AUTCTFBaseGame::HandleExitingIntermission()
 	// Send all flags home..
 	CTFGameState->ResetFlags();
 	CTFGameState->bIsAtIntermission = false;
-	CTFGameState->OnIntermissionChanged();
 	CTFGameState->SetTimeLimit(TimeLimit);		// Reset the GameClock for the second time.
 	SetMatchState(MatchState::InProgress);
 }

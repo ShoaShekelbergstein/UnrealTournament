@@ -33,9 +33,16 @@ UUTCTFScoreboard::UUTCTFScoreboard(const FObjectInitializer& ObjectInitializer)
 	CH_Returns = NSLOCTEXT("UTCTFScoreboard", "ColumnHeader_PlayerReturns", "R");
 }
 
+void UUTCTFScoreboard::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCanvas* InCanvas, FVector2D InCanvasCenter)
+{
+	Super::PreDraw(DeltaTime, InUTHUDOwner, InCanvas, InCanvasCenter);
+
+	bDrawMinimapInScoreboard = (Cast<AUTCTFGameState>(UTGameState) && ((UTGameState->GetMatchState() == MatchState::MatchIntermission) || UTGameState->HasMatchEnded())) ? (Cast<AUTCTFGameState>(UTGameState)->IntermissionTime < 25) : true;
+}
+
 bool UUTCTFScoreboard::ShouldDrawScoringStats()
 {
-	return UTGameState && ((UTGameState->GetMatchState() == MatchState::MatchIntermission) || UTGameState->HasMatchEnded());
+	return UTGameState && ((UTGameState->GetMatchState() == MatchState::MatchIntermission) || UTGameState->HasMatchEnded()) && Cast<AUTCTFGameState>(UTGameState) && (Cast<AUTCTFGameState>(UTGameState)->IntermissionTime < 25);
 }
 
 void UUTCTFScoreboard::DrawScoreHeaders(float RenderDelta, float& YOffset)
