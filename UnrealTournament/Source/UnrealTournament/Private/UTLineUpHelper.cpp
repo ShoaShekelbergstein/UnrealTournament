@@ -124,6 +124,8 @@ void AUTLineUpHelper::CleanUpPlayerAfterLineUp(AUTPlayerController* UTPC)
 		
 		UTPC->SetEmoteSpeed(1.0f);
 		UTPC->FlushPressedKeys();
+
+		UTPC->SetViewTarget(UTPC->GetPawn());
 	}
 }
 
