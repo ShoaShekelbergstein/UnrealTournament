@@ -116,17 +116,17 @@ void UUTHUDWidget_CTFFlagStatus::DrawFlagStatus(AUTCTFGameState* GameState, FVec
 				if (bAlwaysDrawFlagHolderName)
 				{
 					FlagHolderNameTemplate.Text = FText::FromString(FlagHolder->PlayerName);
+					RenderObj_Text(FlagHolderNameTemplate, IndicatorPosition);
 				}
-				else
+				else if (FlagHolder == UTHUDOwner->UTPlayerOwner->UTPlayerState)
 				{
-					FlagHolderNameTemplate.Text = (FlagHolder == UTHUDOwner->UTPlayerOwner->UTPlayerState) ? YouHaveFlagText : FText::GetEmpty();
+					FlagHolderNameTemplate.Text = YouHaveFlagText;
+					RenderObj_Text(FlagHolderNameTemplate, IndicatorPosition);
 				}
-				RenderObj_Text(FlagHolderNameTemplate, IndicatorPosition);
 			}
 
 			float CarriedX = XPos - 0.25f * FlagIconTemplate.GetWidth() * FlagStatusScale;
 			float CarriedY = YPos - 0.25f * FlagIconTemplate.GetHeight() * FlagStatusScale;
-
 			RenderObj_TextureAt(FlagIconTemplate, CarriedX, CarriedY, FlagStatusScale * FlagIconTemplate.GetWidth(), FlagStatusScale * FlagIconTemplate.GetHeight());
 		}
 		else
@@ -454,16 +454,6 @@ FVector UUTHUDWidget_CTFFlagStatus::GetAdjustedScreenPosition(const FVector& Wor
 		DrawScreenPosition.X = FMath::Clamp(DrawScreenPosition.X, Edge, GetCanvas()->ClipX - Edge);
 		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, Edge, GetCanvas()->ClipY - Edge);
 		DrawScreenPosition.Z = 0.0f;
-
-		// keep out of center
-		float MinDistSq = FMath::Square(0.05f*GetCanvas()->ClipX);
-		float ActualDistSq = FMath::Square(DrawScreenPosition.X - 0.5f*GetCanvas()->ClipX) + FMath::Square(DrawScreenPosition.Y - 0.5f*GetCanvas()->ClipY);
-		if (ActualDistSq < MinDistSq)
-		{
-			float Scaling = FMath::Sqrt(MinDistSq / FMath::Max(ActualDistSq, 1.f));
-			DrawScreenPosition.X = 0.5f*GetCanvas()->ClipX + (DrawScreenPosition.X - 0.5f*GetCanvas()->ClipX)*Scaling;
-			DrawScreenPosition.Y = 0.5f*GetCanvas()->ClipY + (DrawScreenPosition.Y - 0.5f*GetCanvas()->ClipY)*Scaling;
-		}
 	}
 	return DrawScreenPosition;
 }
