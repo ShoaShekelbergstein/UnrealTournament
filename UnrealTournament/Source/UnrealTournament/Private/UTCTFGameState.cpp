@@ -277,29 +277,31 @@ void AUTCTFGameState::ToggleScoreboards()
 
 AUTLineUpZone* AUTCTFGameState::GetAppropriateSpawnList(LineUpTypes ZoneType)
 {
-	AUTLineUpZone* ZoneToUse = Super::GetAppropriateSpawnList(ZoneType);
-
-	//See if we have a child LineUpZone on the winning team flag to use for intermission / end game
-	if (ZoneType == LineUpTypes::Intermission || ZoneType == LineUpTypes::PostMatch)
+	AUTLineUpZone* FoundPotentialMatch = nullptr;
+	AUTCTFFlagBase* ScoringBase = GetLeadTeamFlagBase();
+	
+	if (GetWorld())
 	{
-		AUTCTFFlagBase* ScoringBase = GetLeadTeamFlagBase();
-		if (ScoringBase)
+		for (TActorIterator<AUTLineUpZone> It(GetWorld()); It; ++It)
 		{
-			for (AActor* ChildActor : ScoringBase->Children)
+			if (It->ZoneType == ZoneType)
 			{
-				AUTLineUpZone* LineUp = Cast<AUTLineUpZone>(ChildActor);
-				if (LineUp)
+				//Found perfect match, lets return it!
+				if (It->GameObjectiveReference == ScoringBase)
 				{
-					if (LineUp->ZoneType == ZoneType)
-					{
-						ZoneToUse = LineUp;
-					}
+					return *It;
+				}
+
+				//imperfect match, but it might be all we have
+				else if (It->GameObjectiveReference == nullptr)
+				{
+					FoundPotentialMatch = *It;
 				}
 			}
 		}
 	}
 
-	return ZoneToUse;
+	return (FoundPotentialMatch == nullptr) ? Super::GetAppropriateSpawnList(ZoneType) : FoundPotentialMatch;
 }
 
 void AUTCTFGameState::SpawnDefaultLineUpZones()
@@ -376,6 +378,8 @@ void AUTCTFGameState::SpawnLineUpZoneOnFlagBase(AUTCTFFlagBase* BaseToSpawnOn, L
 				NewZone->Camera->SetActorLocation(CameraCollision.ImpactPoint);
 			}
 		}
+
+		NewZone->GameObjectiveReference = BaseToSpawnOn;
 
 		SpawnedLineUps.Add(NewZone);
 	}

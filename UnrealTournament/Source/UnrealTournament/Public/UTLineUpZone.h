@@ -49,6 +49,10 @@ class AUTLineUpZone : public AActor
 	UPROPERTY(Instanced, EditAnywhere, Category = "Team Spawn Point List")
 	ACameraActor* Camera;
 
+	/** If set, certain game modes will use this reference to pick between different Line-Ups. In CTF, this should reference the flag base of the team associated with this LineUpZone.*/
+	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List")
+	AUTGameObjective* GameObjectiveReference;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Team Spawn Point List")
 	TSubclassOf<AUTLineUpZoneVisualizationCharacter> EditorVisualizationCharacter;
 
