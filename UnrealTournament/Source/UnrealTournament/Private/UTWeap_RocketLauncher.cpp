@@ -118,6 +118,14 @@ void AUTWeap_RocketLauncher::EndLoadRocket()
 		NumLoadedRockets++;
 		SetRocketFlashExtra(CurrentFireMode, NumLoadedRockets + 1, CurrentRocketFireMode, bDrawRocketModeString);
 		ConsumeAmmo(CurrentFireMode);
+		if ((Ammo <= LowAmmoThreshold) && (Ammo > 0) && (LowAmmoSound != nullptr))
+		{
+			AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+			if (!GameMode || GameMode->bAmmoIsLimited)
+			{
+				GetWorldTimerManager().SetTimer(PlayLowAmmoSoundHandle, this, &AUTWeapon::PlayLowAmmoSound, LowAmmoSoundDelay, false);
+			}
+		}
 	}
 	else
 	{
@@ -497,7 +505,6 @@ AUTProjectile* AUTWeap_RocketLauncher::FireRocketProjectile()
 	return ResultProj;
 }
 
-
 float AUTWeap_RocketLauncher::GetSpread(int32 ModeIndex)
 {
 	if (RocketFireModes.IsValidIndex(ModeIndex))
@@ -506,7 +513,6 @@ float AUTWeap_RocketLauncher::GetSpread(int32 ModeIndex)
 	}
 	return 0.0f;
 }
-
 
 // Target Locking Code
 void AUTWeap_RocketLauncher::StateChanged()
