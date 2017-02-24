@@ -195,7 +195,10 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 			PS->ModifyStatsValue(HitsStatsName, 1);
 		}
 	}
-	SetFlashExtra(Hit.Actor.Get());
+	if (Role == ROLE_Authority)
+	{
+		SetFlashExtra(Hit.Actor.Get());
+	}
 	if (OutHit != NULL)
 	{
 		*OutHit = Hit;

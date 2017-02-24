@@ -119,11 +119,7 @@ void AUTWeap_LightningRifle::SetFlashExtra(AActor* HitActor)
 {
 	if (UTOwner)
 	{
-		if (!bIsCharging)
-		{
-			UTOwner->SetFlashExtra(0, CurrentFireMode);
-		}
-		else if (bIsFullyPowered)
+		if (bIsFullyPowered)
 		{
 			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 			if (Cast<AUTCharacter>(HitActor) && GS && !GS->OnSameTeam(UTOwner, HitActor))
@@ -142,6 +138,10 @@ void AUTWeap_LightningRifle::SetFlashExtra(AActor* HitActor)
 					Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredNoHitEnemySound);
 				}
 			}
+		}
+		else
+		{
+			UTOwner->SetFlashExtra(1, CurrentFireMode);
 		}
 	}
 }
@@ -166,6 +166,7 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 			bIsFullyPowered = (ChargePct >= 1.f);
 			if (bIsFullyPowered && !bWasFullyPowered && Cast<AUTPlayerController>(UTOwner->GetController()))
 			{
+				UTOwner->SetFlashExtra(4, CurrentFireMode);
 				Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredSound);
 			}
 		}
