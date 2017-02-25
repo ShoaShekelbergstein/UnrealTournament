@@ -310,7 +310,7 @@ void AUTCTFFlag::UpdateOutline()
 	// 0 is a null value for the stencil so use team + 1
 	// last bit in stencil is a bitflag so empty team uses 127
 	uint8 NewStencilValue = (GetTeamNum() == 255) ? 127 : (GetTeamNum() + 1);
-	if (HoldingPawn != NULL && HoldingPawn->GetOutlineWhenUnoccluded())
+	if (HoldingPawn == NULL || HoldingPawn->GetOutlineWhenUnoccluded())
 	{
 		NewStencilValue |= 128;
 	}
