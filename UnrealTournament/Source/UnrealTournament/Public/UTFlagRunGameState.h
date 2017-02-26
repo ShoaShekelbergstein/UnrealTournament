@@ -108,7 +108,6 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 	virtual void UpdateSelectablePowerups();
 
 	virtual void CheckTimerMessage() override;
-	virtual void PrepareForIntermission() override;
 
 	virtual bool IsTeamOnOffense(int32 TeamNumber) const override;
 	virtual bool IsTeamOnDefense(int32 TeamNumber) const override;

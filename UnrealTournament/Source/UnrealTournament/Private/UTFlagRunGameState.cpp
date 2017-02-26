@@ -129,21 +129,6 @@ void AUTFlagRunGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	DOREPLIFETIME(AUTFlagRunGameState, DefenseSelectablePowerups);
 }
 
-void AUTFlagRunGameState::PrepareForIntermission()
-{
-	Super::PrepareForIntermission();
-
-	// FIXMSTEVE move to super once we are doing end of round freeze and unfreeze everywhere
-	for (FObjectIterator It(UParticleSystemComponent::StaticClass()); It; ++It)
-	{
-		UParticleSystemComponent* PSC = (UParticleSystemComponent*)*It;
-		if (PSC && PSC->GetOwner() && (PSC->GetOwner()->GetWorld() == GetWorld()) && !Cast<AUTWeapon>(PSC->GetOwner()))
-		{
-			PSC->CustomTimeDilation = 0.001f;
-		}
-	}
-}
-
 void AUTFlagRunGameState::OnBonusLevelChanged()
 {
 	if (BonusLevel < 3)

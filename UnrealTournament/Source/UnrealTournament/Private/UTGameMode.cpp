@@ -2830,8 +2830,12 @@ void AUTGameMode::SetEndGameFocus(AUTPlayerState* Winner)
 
 	for( FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator )
 	{
-		AController* Controller = Iterator->Get();
-		Controller->GameHasEnded(EndGameFocus, (Controller->PlayerState != NULL) && (Controller->PlayerState == Winner) );
+		AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+		if (PC != NULL)
+		{
+			PC->SetViewTarget(EndGameFocus);
+			PC->ClientGameEnded(EndGameFocus, (PC->PlayerState != NULL) && (PC->PlayerState == Winner));
+		}
 	}
 }
 

@@ -2829,7 +2829,7 @@ void AUTPlayerController::ClientGameEnded_Implementation(AActor* EndGameFocus, b
 {
 	static const FName NAME_GameOver = FName(TEXT("GameOver"));
 	ChangeState(NAME_GameOver);
-
+	ClientPrepareForIntermission();
 	bool bIsInGameIntroHandlingEndGameSummary = false;
 	if (GetWorld() && GetWorld()->GetGameState())
 	{
