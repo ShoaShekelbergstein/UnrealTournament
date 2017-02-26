@@ -70,7 +70,7 @@ UUTCharacterMovement::UUTCharacterMovement(const class FObjectInitializer& Objec
 	SlopeDodgeScaling = 0.93f;
 	bSlideFromGround = false;
 	bHasPlayedWallHitSound = false;
-	DodgeLandingTimeAdjust = 0.f;
+	DodgeLandingTimeAdjust = -0.15f;
 
 	FastInitialAcceleration = 12000.f;
 	MaxFastAccelSpeed = 200.f;
