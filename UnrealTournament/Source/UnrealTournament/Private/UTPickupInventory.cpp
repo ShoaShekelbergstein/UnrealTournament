@@ -648,7 +648,6 @@ void AUTPickupInventory::PostRenderFor(APlayerController* PC, UCanvas* Canvas, F
 		return;
 	}
 
-	const bool bIsViewTarget = (PC->GetViewTarget() == this);
 	FVector WorldPosition = GetActorLocation() + FVector(0.f, 0.f, 100.f);
 	float TextXL, YL;
 	float Scale = Canvas->ClipX / 1920.f;
@@ -663,6 +662,16 @@ void AUTPickupInventory::PostRenderFor(APlayerController* PC, UCanvas* Canvas, F
 	float YPos = ScreenPosition.Y - YL - 16.f*Scale;
 	if (XPos < Canvas->ClipX || XPos + TextXL < 0.0f)
 	{
+		bool bPulse = false;
+		if (bViewerOnOffense && UTPC->GetUTCharacter())
+		{
+			AUTGameVolume* GameVolume = Cast<AUTGameVolume>(UTPC->GetUTCharacter()->GetPawnPhysicsVolume());
+			if (GameVolume && GameVolume->bIsTeamSafeVolume)
+			{
+				bPulse = true;
+			}
+		}
+			
 		FLinearColor TeamColor = FLinearColor::Yellow;
 		float CenterFade = 1.f;
 		float PctFromCenter = (ScreenPosition - FVector(0.5f*Canvas->ClipX, 0.5f*Canvas->ClipY, 0.f)).Size() / Canvas->ClipX;
@@ -670,16 +679,30 @@ void AUTPickupInventory::PostRenderFor(APlayerController* PC, UCanvas* Canvas, F
 		TeamColor.A = 0.2f * CenterFade;
 		UTexture* BarTexture = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->HUDAtlas;
 
-		Canvas->SetLinearDrawColor(TeamColor);
 		float Border = 2.f*Scale;
 		float Height = 0.75*YL + 0.7f * YL;
 		float Width = TextXL + 2.f*Border;
+		float PulseScale = 1.f;
+		if (bPulse)
+		{
+			PulseScale = 0.25f* FMath::Cos(2.f * GetWorld()->GetTimeSeconds() * PI) + 1.25f;
+			Height *= PulseScale;
+			Width *= PulseScale;
+			XPos = XPos + 0.5f*(1.f - PulseScale)*TextXL;
+			YPos = YPos + 0.5f*(1.f - PulseScale)*(YL + 16.f*Scale);
+			TeamColor.A = 0.5f * CenterFade;
+			FLinearColor BlackColor = FLinearColor::Black;
+			BlackColor.A = TeamColor.A;
+			Canvas->SetLinearDrawColor(BlackColor);
+			Canvas->DrawTile(Canvas->DefaultTexture, XPos - 2.f*Border, YPos - YL - 3.f*Border, Width + 4.f*Border, Height + 6.f*Border, 0, 0, 1, 1);
+		}
+		Canvas->SetLinearDrawColor(TeamColor);
 		Canvas->DrawTile(Canvas->DefaultTexture, XPos - Border, YPos - YL - Border, Width, Height + 2.f*Border, 0, 0, 1, 1);
 
 		FLinearColor BeaconTextColor = FLinearColor::White;
 		BeaconTextColor.A = 0.6f * CenterFade;
 		FUTCanvasTextItem TextItem(FVector2D(FMath::TruncToFloat(Canvas->OrgX + XPos), FMath::TruncToFloat(Canvas->OrgY + YPos - 1.2f*YL)), RedeemerText, SmallFont, BeaconTextColor, NULL);
-		TextItem.Scale = FVector2D(Scale, Scale);
+		TextItem.Scale = PulseScale*FVector2D(Scale, Scale);
 		TextItem.BlendMode = SE_BLEND_Translucent;
 		FLinearColor ShadowColor = FLinearColor::Black;
 		ShadowColor.A = BeaconTextColor.A;
@@ -690,7 +713,7 @@ void AUTPickupInventory::PostRenderFor(APlayerController* PC, UCanvas* Canvas, F
 		FFormatNamedArguments Args;
 		FText NumberText = FText::AsNumber(int32(0.01f*Dist));
 		UFont* TinyFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->TinyFont;
-		Canvas->TextSize(TinyFont, TEXT("XX meters"), TextXL, YL, Scale, Scale);
+		Canvas->TextSize(TinyFont, TEXT("XX meters"), TextXL, YL, Scale*PulseScale, Scale*PulseScale);
 		Args.Add("Dist", NumberText);
 		FText DistText = NSLOCTEXT("UTRallyPoint", "DistanceText", "{Dist} meters");
 		TextItem.Font = TinyFont;
