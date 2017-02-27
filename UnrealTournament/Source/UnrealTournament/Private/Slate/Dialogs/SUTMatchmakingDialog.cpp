@@ -281,6 +281,23 @@ void SUTMatchmakingDialog::Tick(const FGeometry & AllottedGeometry, const double
 		PlayerOwner->HideMatchmakingDialog();
 	}
 
+	if (PlayerOwner.IsValid() && PlayerOwner->IsMenuGame() && !PlayerOwner->IsPartyLeader())
+	{
+		UUTGameInstance* GameInstance = Cast<UUTGameInstance>(GetPlayerOwner()->GetGameInstance());
+		if (GameInstance)
+		{
+			UUTParty* Party = GameInstance->GetParties();
+			if (Party)
+			{
+				UUTPartyGameState* PartyState = Party->GetUTPersistentParty();
+				if (PartyState && PartyState->GetPartyProgression() == EUTPartyState::Menus)
+				{
+					PlayerOwner->HideMatchmakingDialog();
+				}
+			}
+		}
+	}
+
 	if (PlayerOwner.IsValid() && PlayerOwner->IsMenuGame() && PlayerOwner->IsPartyLeader())
 	{
 		UUTGameInstance* GameInstance = Cast<UUTGameInstance>(GetPlayerOwner()->GetGameInstance());
