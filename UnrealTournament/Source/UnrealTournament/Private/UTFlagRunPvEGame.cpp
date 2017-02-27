@@ -90,6 +90,10 @@ void AUTFlagRunPvEGame::InitGame(const FString& MapName, const FString& Options,
 		bLevelHasEnergyPickups = true;
 		break;
 	}
+
+	// set all bots on players team to defend so they're less aggressive
+	Teams[1]->DefaultOrders.Reset();
+	Teams[1]->DefaultOrders.Add(NAME_Defend);
 }
 
 bool AUTFlagRunPvEGame::CheckRelevance_Implementation(AActor* Other)
