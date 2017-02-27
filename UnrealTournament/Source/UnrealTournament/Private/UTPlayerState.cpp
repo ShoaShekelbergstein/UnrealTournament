@@ -1244,6 +1244,7 @@ void AUTPlayerState::CopyProperties(APlayerState* PlayerState)
 		{
 			// MovePlayerToTeam(AController* Player, AUTPlayerState* PS, uint8 NewTeam
 		}
+		PS->ClanName = ClanName;
 		PS->Team = Team;
 		PS->bReadStatsFromCloud = bReadStatsFromCloud;
 		PS->bSuccessfullyReadStatsFromCloud = bSuccessfullyReadStatsFromCloud;
