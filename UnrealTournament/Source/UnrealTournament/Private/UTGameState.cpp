@@ -354,12 +354,25 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME(AUTGameState, LineUpHelper);
 	DOREPLIFETIME(AUTGameState, ReplayID);
 	DOREPLIFETIME(AUTGameState, LeadLineUpPlayer);
+
+	DOREPLIFETIME(AUTGameState, FCFriendlyLocCount);
+	DOREPLIFETIME(AUTGameState, FCEnemyLocCount);
 }
 
 void AUTGameState::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
 {
 	NumTeams = Teams.Num();
 	Super::PreReplication(ChangedPropertyTracker);
+}
+
+void AUTGameState::OnUpdateFriendlyLocation()
+{
+	LastFriendlyLocationReportTime = GetWorld()->GetTimeSeconds();
+}
+
+void AUTGameState::OnUpdateEnemyLocation()
+{
+	LastEnemyLocationReportTime = GetWorld()->GetTimeSeconds();
 }
 
 void AUTGameState::OnRep_GameModeClass()

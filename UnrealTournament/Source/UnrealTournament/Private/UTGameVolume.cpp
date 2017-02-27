@@ -193,6 +193,8 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 							((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(VoiceLinesSet, 1);
 							GS->LastFriendlyLocationReportTime = GetWorld()->GetTimeSeconds();
 							GS->LastFriendlyLocationName = VoiceLinesSet;
+							GS->FCFriendlyLocCount++;
+							GS->ForceNetUpdate();
 						}
 						GS->LastEnteringEnemyBaseTime = GetWorld()->GetTimeSeconds();
 					}
@@ -208,6 +210,8 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 								GS->LastEnemyLocationName = VoiceLinesSet;
 							}
 							GS->LastEnemyFCEnteringBaseTime = GetWorld()->GetTimeSeconds();
+							GS->FCEnemyLocCount++;
+							GS->ForceNetUpdate();
 						}
 					}
 				}
@@ -218,12 +222,16 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 						((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(VoiceLinesSet, 1);
 						GS->LastFriendlyLocationReportTime = GetWorld()->GetTimeSeconds();
 						GS->LastFriendlyLocationName = VoiceLinesSet;
+						GS->FCFriendlyLocCount++;
+						GS->ForceNetUpdate();
 					}
 					if ((VoiceLinesSet != NAME_None) && P->GetCarriedObject()->bCurrentlyPinged && P->GetCarriedObject()->LastPinger && ((GetWorld()->GetTimeSeconds() - GS->LastEnemyLocationReportTime > 1.f) || !bHasFCEntry) && (GS->LastEnemyLocationName != VoiceLinesSet))
 					{
 						P->GetCarriedObject()->LastPinger->AnnounceStatus(VoiceLinesSet, 0);
 						GS->LastEnemyLocationReportTime = GetWorld()->GetTimeSeconds();
 						GS->LastEnemyLocationName = VoiceLinesSet;
+						GS->FCEnemyLocCount++;
+						GS->ForceNetUpdate();
 					}
 					else if (bIsWarningZone && !P->bWasInWarningZone && !bIsDefenderBase)
 					{
@@ -238,6 +246,8 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 								Warner->AnnounceStatus(VoiceLinesSet, 0);
 								GS->LastEnemyLocationReportTime = GetWorld()->GetTimeSeconds();
 								GS->LastEnemyLocationName = VoiceLinesSet;
+								GS->FCEnemyLocCount++;
+								GS->ForceNetUpdate();
 							}
 						}
 					}
