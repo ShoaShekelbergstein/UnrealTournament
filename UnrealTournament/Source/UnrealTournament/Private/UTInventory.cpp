@@ -379,3 +379,7 @@ float AUTInventory::GetBoostPowerRating_Implementation(AUTBot* B) const
 {
 	return 0.0f;
 }
+
+void AUTInventory::DrawBoostHUD_Implementation(AUTHUD* Hud, UCanvas* C, APawn* P) const
+{
+}

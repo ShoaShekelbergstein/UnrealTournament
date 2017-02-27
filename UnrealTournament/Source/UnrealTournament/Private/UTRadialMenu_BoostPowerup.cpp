@@ -45,6 +45,16 @@ void UUTRadialMenu_BoostPowerup::Draw_Implementation(float RenderDelta)
 	}
 
 	DrawMenu(ScreenCenter, RenderDelta);
+
+	if (SelectedPowerup != INDEX_NONE && UTPlayerOwner->UTPlayerState != nullptr)
+	{
+		AUTGameState* GS = UTHUDOwner->GetWorld()->GetGameState<AUTGameState>();
+		TSubclassOf<AUTInventory> ItemType = GS->GetSelectableBoostByIndex(UTPlayerOwner->UTPlayerState, SelectedPowerup);
+		if (ItemType != nullptr)
+		{
+			ItemType.GetDefaultObject()->DrawBoostHUD(UTHUDOwner, Canvas, UTPlayerOwner->GetPawn());
+		}
+	}
 }
 
 void UUTRadialMenu_BoostPowerup::DrawMenu(FVector2D ScreenCenter, float RenderDelta)

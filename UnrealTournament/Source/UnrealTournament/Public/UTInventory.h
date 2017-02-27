@@ -326,6 +326,10 @@ public:
 	 */
 	UFUNCTION(BlueprintNativeEvent, Category = AI)
 	float GetBoostPowerRating(AUTBot* B) const;
+
+	/** draw HUD overlays when preparing to use this item as a boost power */
+	UFUNCTION(BlueprintNativeEvent, Category = HUD)
+	void DrawBoostHUD(AUTHUD* Hud, UCanvas* C, APawn* P) const;
 };
 
 // template to access a character's inventory
