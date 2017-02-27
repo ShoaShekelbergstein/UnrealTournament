@@ -186,6 +186,9 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UFUNCTION()
 		void OnUpdateEnemyLocation();
 
+	virtual void UpdateFCFriendlyLocation(AUTPlayerState* AnnouncingPlayer, FName VoiceLineSet);
+	virtual void UpdateFCEnemyLocation(AUTPlayerState* AnnouncingPlayer, FName VoiceLineSet);
+
 	UPROPERTY()
 		float LastIncomingWarningTime;
 

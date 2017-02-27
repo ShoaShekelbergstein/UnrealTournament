@@ -365,6 +365,30 @@ void AUTGameState::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTra
 	Super::PreReplication(ChangedPropertyTracker);
 }
 
+void AUTGameState::UpdateFCFriendlyLocation(AUTPlayerState* AnnouncingPlayer, FName VoiceLinesSet)
+{
+	if (AnnouncingPlayer)
+	{
+		AnnouncingPlayer->AnnounceStatus(VoiceLinesSet, 1);
+		LastFriendlyLocationReportTime = GetWorld()->GetTimeSeconds();
+		LastFriendlyLocationName = VoiceLinesSet;
+		FCFriendlyLocCount++;
+		ForceNetUpdate();
+	}
+}
+
+void AUTGameState::UpdateFCEnemyLocation(AUTPlayerState* AnnouncingPlayer, FName VoiceLinesSet)
+{
+	if (AnnouncingPlayer)
+	{
+		AnnouncingPlayer->AnnounceStatus(VoiceLinesSet, 0);
+		LastEnemyLocationReportTime = GetWorld()->GetTimeSeconds();
+		LastEnemyLocationName = VoiceLinesSet;
+		FCEnemyLocCount++;
+		ForceNetUpdate();
+	}
+}
+
 void AUTGameState::OnUpdateFriendlyLocation()
 {
 	LastFriendlyLocationReportTime = GetWorld()->GetTimeSeconds();

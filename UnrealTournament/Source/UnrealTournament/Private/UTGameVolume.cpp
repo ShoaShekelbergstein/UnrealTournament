@@ -190,11 +190,7 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 						((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(StatusMessage::ImGoingIn);
 						if (VoiceLinesSet != NAME_None)
 						{
-							((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(VoiceLinesSet, 1);
-							GS->LastFriendlyLocationReportTime = GetWorld()->GetTimeSeconds();
-							GS->LastFriendlyLocationName = VoiceLinesSet;
-							GS->FCFriendlyLocCount++;
-							GS->ForceNetUpdate();
+							GS->UpdateFCFriendlyLocation(((AUTPlayerState *)(P->PlayerState)), VoiceLinesSet);
 						}
 						GS->LastEnteringEnemyBaseTime = GetWorld()->GetTimeSeconds();
 					}
@@ -205,13 +201,9 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 						{
 							if (VoiceLinesSet != NAME_None)
 							{
-								PS->AnnounceStatus(VoiceLinesSet, 0);
-								GS->LastEnemyLocationReportTime = GetWorld()->GetTimeSeconds();
-								GS->LastEnemyLocationName = VoiceLinesSet;
+								GS->UpdateFCEnemyLocation(PS, VoiceLinesSet);
 							}
 							GS->LastEnemyFCEnteringBaseTime = GetWorld()->GetTimeSeconds();
-							GS->FCEnemyLocCount++;
-							GS->ForceNetUpdate();
 						}
 					}
 				}
@@ -219,19 +211,11 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 				{
 					if ((VoiceLinesSet != NAME_None) && ((GetWorld()->GetTimeSeconds() - GS->LastFriendlyLocationReportTime > 1.f) || !bHasFCEntry) && Cast<AUTPlayerState>(P->PlayerState) && (GS->LastFriendlyLocationName != VoiceLinesSet))
 					{
-						((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(VoiceLinesSet, 1);
-						GS->LastFriendlyLocationReportTime = GetWorld()->GetTimeSeconds();
-						GS->LastFriendlyLocationName = VoiceLinesSet;
-						GS->FCFriendlyLocCount++;
-						GS->ForceNetUpdate();
+						GS->UpdateFCFriendlyLocation(((AUTPlayerState *)(P->PlayerState)), VoiceLinesSet);
 					}
 					if ((VoiceLinesSet != NAME_None) && P->GetCarriedObject()->bCurrentlyPinged && P->GetCarriedObject()->LastPinger && ((GetWorld()->GetTimeSeconds() - GS->LastEnemyLocationReportTime > 1.f) || !bHasFCEntry) && (GS->LastEnemyLocationName != VoiceLinesSet))
 					{
-						P->GetCarriedObject()->LastPinger->AnnounceStatus(VoiceLinesSet, 0);
-						GS->LastEnemyLocationReportTime = GetWorld()->GetTimeSeconds();
-						GS->LastEnemyLocationName = VoiceLinesSet;
-						GS->FCEnemyLocCount++;
-						GS->ForceNetUpdate();
+						GS->UpdateFCEnemyLocation(P->GetCarriedObject()->LastPinger, VoiceLinesSet);
 					}
 					else if (bIsWarningZone && !P->bWasInWarningZone && !bIsDefenderBase)
 					{
@@ -243,11 +227,7 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 							AUTPlayerState* Warner = GetBestWarner(P);
 							if (Warner && ((GetWorld()->GetTimeSeconds() - GS->LastEnemyLocationReportTime > 1.f) || !bHasFCEntry))
 							{
-								Warner->AnnounceStatus(VoiceLinesSet, 0);
-								GS->LastEnemyLocationReportTime = GetWorld()->GetTimeSeconds();
-								GS->LastEnemyLocationName = VoiceLinesSet;
-								GS->FCEnemyLocCount++;
-								GS->ForceNetUpdate();
+								GS->UpdateFCEnemyLocation(Warner, VoiceLinesSet);
 							}
 						}
 					}
