@@ -81,7 +81,7 @@ void AUTWorldSettings::CreateLevelSummary()
 
 void AUTWorldSettings::LevelActorDestroyed(AActor* TheActor)
 {
-	new(DestroyedLevelActors) FDestroyedActorInfo(TheActor->GetLevel(), TheActor->GetFName());
+	new(DestroyedLevelActors) FDestroyedActorInfo(TheActor);
 }
 
 void AUTWorldSettings::NotifyBeginPlay()

@@ -421,6 +421,7 @@ void UUTGameInstance::StartRecordingReplay(const FString& Name, const FString& F
 						{
 							Channel->SetChannelActorForDestroy(&Info);
 						}
+						CurrentWorld->DemoNetDriver->DeletedNetStartupActors.Add(Obj.FullName);
 					}
 				}
 			}
