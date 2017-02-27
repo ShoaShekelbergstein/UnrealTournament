@@ -39,6 +39,8 @@ namespace EGenericAnalyticParam
 		UTMatchMakingStart,
 		UTMatchMakingCancelled,
 		UTMatchMakingJoinGame,
+		UTMatchMakingFailed,
+		LastMatchMakingSessionId,
 
 		HitchThresholdInMs,
 		NumHitchesAboveThreshold,

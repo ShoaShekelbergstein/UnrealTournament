@@ -157,6 +157,8 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(UTMatchMakingStart);
 	AddGenericParamName(UTMatchMakingCancelled);
 	AddGenericParamName(UTMatchMakingJoinGame);
+	AddGenericParamName(UTMatchMakingFailed);
+	AddGenericParamName(LastMatchMakingSessionId);
 
 	AddGenericParamName(HitchThresholdInMs);
 	AddGenericParamName(NumHitchesAboveThreshold);
@@ -993,6 +995,31 @@ void FUTAnalytics::FireEvent_UTMatchMakingJoinGame(AUTBasePlayerController* UTPC
 	}
 }
 
+/*
+* @EventName UTMatchMakingFailed
+*
+* @Trigger Sent when a player was added to a quickmatch server but it was full
+*
+* @Type Sent by the Client
+*
+* @EventParam LastMatchMakingSessionId string The GUID for the last matchmaking session
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTMatchMakingFailed(AUTBasePlayerController* UTPC, FString LastMatchMakingSessionId)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (UTPC && AnalyticsProvider.IsValid())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetClientInitialParameters(UTPC, ParamArray, false);
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::LastMatchMakingSessionId), LastMatchMakingSessionId));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTMatchMakingFailed), ParamArray);
+	}
+}
 
 /*
 * @EventName FlagRunRoundEnd

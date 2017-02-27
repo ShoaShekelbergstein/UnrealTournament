@@ -4898,20 +4898,7 @@ void UUTLocalPlayer::ChallengeCompleted(FName ChallengeTag, int32 Stars)
 	}
 }
 
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName QuickmatchFull
-*
-* @Trigger Sent when a player was added to a quickmatch server but it was full
-*
-* @Type Sent by the Client
-*
-* @EventParam ChallengeTag string Challenge Tag name
-* @EventParam Stars int32 Stars this challenge is worth
-* @EventParam TotalStars int32 Total earned stars
-*
-* @Comments
-*/
+
 
 
 bool UUTLocalPlayer::QuickMatchCheckFull()
@@ -4921,10 +4908,7 @@ bool UUTLocalPlayer::QuickMatchCheckFull()
 	{
 		if (FUTAnalytics::IsAvailable())
 		{
-			TArray<FAnalyticsEventAttribute> ParamArray;
-			ParamArray.Add(FAnalyticsEventAttribute(TEXT("LastMatchmakingSessionId"), LastMatchmakingSessionId));
-			FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerController), ParamArray, false);
-			FUTAnalytics::GetProvider().RecordEvent(TEXT("QuickmatchFull"), ParamArray);
+			FUTAnalytics::FireEvent_UTMatchMakingFailed(Cast<AUTPlayerController>(PlayerController), LastMatchmakingSessionId);
 		}
 
 		FTimerHandle TmpHandle;
