@@ -907,9 +907,6 @@ public:
 	virtual void BuildWeaponInfo(AUTPlayerState* PlayerState, TSharedPtr<class SUTTabWidget> TabWidget, TArray<TSharedPtr<struct TAttributeStat> >& StatList);
 	virtual void BuildMovementInfo(AUTPlayerState* PlayerState, TSharedPtr<class SUTTabWidget> TabWidget, TArray<TSharedPtr<struct TAttributeStat> >& StatList);
 #endif
-
-	virtual void InstanceNextMap(const FString& NextMap);
-
 	// Allow game modes to restrict some content.
 	virtual bool ValidateHat(AUTPlayerState* HatOwner, const FString& HatClass);
 	

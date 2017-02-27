@@ -6,6 +6,7 @@
 #include "SWidgetSwitcher.h"
 #include "../Base/SUTPanelBase.h"
 #include "../Widgets/SUTTabButton.h"
+#include "../Widgets/SUTSlider.h"
 
 #if !UE_SERVER
 
@@ -102,11 +103,12 @@ protected:
 	void OnStoreDialogResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 	void OnStoreReturnResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 
+	TSharedPtr<SVerticalBox> BotSkillBox;
+
 public:
 
 	bool IsReadyToPlay();
-
-
+	void SetBoxSkill(TSharedRef<SCompoundWidget> AllowBotsWidgets, TSharedRef<SHorizontalBox> BotSkillWidgets);
 
 };
 

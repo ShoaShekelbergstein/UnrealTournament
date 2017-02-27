@@ -192,6 +192,8 @@ public:
 
 	void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime);
 
+	bool ShouldAllowBots();
+
 protected:
 
 	TArray<class AUTReplicatedGameRuleset*> GameRulesets;
@@ -260,8 +262,6 @@ protected:
 	int32 DesiredMapIndex;
 
 	TSharedRef<SWidget> BuildBotSkill();
-	FReply OnBotSkillClick(int32 NewSkill);
-	TArray<TSharedPtr<SUTTabButton>> BotSkillButtons;
 
 	virtual void AddButtonsToLeftOfButtonBar(uint32& ButtonCount);
 	
@@ -270,6 +270,7 @@ protected:
 	TSharedPtr<SCheckBox> cbPrivateMatch;
 
 	TSharedPtr<SUTSlider> sBotSkill;
+	TSharedPtr<SCheckBox> cbUseBots;
 
 	bool bBeginnerMatch;
 	bool bUserHasBeenWarned;
@@ -286,6 +287,13 @@ protected:
 
 	TSharedPtr<SEditableTextBox> GameNameText;
 	TSharedRef<SWidget> BuildSessionName();
+	
+	TSharedPtr<SHorizontalBox> BotSkillLevelBox;
+
+	bool GetBotSkillEnabled() const;
+	FSlateColor GetBotSkillColor() const;
+
+	TSharedPtr<SBox> BotSkillBox;
 
 public:
 	FString GetSelectedMap();

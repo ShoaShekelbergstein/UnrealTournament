@@ -10,6 +10,7 @@
 #include "UTCTFMajorMessage.h"
 #include "UTCTFRewardMessage.h"
 #include "SUWindowsStyle.h"
+#include "SUTStyle.h"
 #include "SlateGameResources.h"
 #include "SNumericEntryBox.h"
 #include "StatNames.h"
@@ -849,7 +850,7 @@ void AUTTeamGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpa
 				.WidthOverride(350)
 				[
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(),"UT.Common.NormalText")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 					.Text(NSLOCTEXT("UTTeamGameMode", "BalanceTeams", "Balance Teams"))
 				]
 			]

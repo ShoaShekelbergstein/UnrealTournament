@@ -719,7 +719,7 @@ void SUTMainMenu::StartGame(bool bLanGame)
 			GameOptions += FString::Printf(TEXT("?%s"),*GameOptionsList[i]);
 		}
 
-		if (CreateGameDialog->BotSkillLevel >= 0)
+		if (CreateGameDialog->ShouldAllowBots())
 		{
 			GameOptions += FString::Printf(TEXT("?Difficulty=%i?BotFill=%i?MaxPlayers=%i"),CreateGameDialog->BotSkillLevel, DesiredPlayerCount, DesiredPlayerCount);
 		}

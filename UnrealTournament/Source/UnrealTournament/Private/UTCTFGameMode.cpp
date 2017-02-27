@@ -465,7 +465,7 @@ void AUTCTFGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpac
 				.WidthOverride(350)
 				[
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 					.Text(NSLOCTEXT("UTCTFGameMode", "MercyScore", "Mercy Score"))
 				]
 			]
@@ -479,7 +479,7 @@ void AUTCTFGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpac
 					bCreateReadOnly ?
 					StaticCastSharedRef<SWidget>(
 						SNew(STextBlock)
-						.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+						.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween.Bold")
 						.Text(MercyScoreAttr.ToSharedRef(), &TAttributeProperty<int32>::GetAsText)
 					) :
 					StaticCastSharedRef<SWidget>(

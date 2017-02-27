@@ -37,7 +37,7 @@ void SUTGameSetupDialog::Construct(const FArguments& InArgs)
 						);
 
 	GameRulesets = InArgs._GameRuleSets;
-	BotSkillLevel = 3;
+	BotSkillLevel = 2;
 
 	if (DialogContent.IsValid())
 	{
@@ -91,7 +91,7 @@ void SUTGameSetupDialog::Construct(const FArguments& InArgs)
 
 			+ SVerticalBox::Slot().Padding(15.0f, 10.0f, 10.0f, 0.0f).AutoHeight()
 			[
-				SNew(SBox).HeightOverride(46)
+				SAssignNew(BotSkillBox, SBox).HeightOverride(46)
 				[
 					BuildBotSkill()
 				]
@@ -236,12 +236,22 @@ void SUTGameSetupDialog::BuildRuleList(FName Category)
 			]
 		];
 
+		if (CustomPanel.IsValid())
+		{
+			CustomPanel->SetBoxSkill(cbUseBots.ToSharedRef(), BotSkillLevelBox.ToSharedRef());
+		}
+
+
+		BotSkillBox->SetVisibility(EVisibility::Collapsed);
+
 		return;	
 	}
 	else
 	{
 		CustomPanel.Reset();
 	}
+
+	BotSkillBox->SetVisibility(EVisibility::Visible);
 
 	RulesInfoBox->AddSlot()
 		.Padding(15.0f, 0.0f, 10.0f, 10.0f)
@@ -911,49 +921,80 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildSessionName()
 TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 {
 	int32 DefaultBotSkillLevel = PlayerOwner->GetProfileSettings() ? PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel : 3;
-	DefaultBotSkillLevel = FMath::Clamp<int32>(DefaultBotSkillLevel,0,9);
-	BotSkillLevel = DefaultBotSkillLevel - 1;
+	DefaultBotSkillLevel = FMath::Clamp<int32>(DefaultBotSkillLevel,0,8);
+	BotSkillLevel = DefaultBotSkillLevel;
 
 	TSharedPtr<SHorizontalBox> Final;
 	SAssignNew(Final, SHorizontalBox)
+		+SHorizontalBox::Slot().AutoWidth().Padding(0.0f,0.0f,25.0f,0.0f).VAlign(VAlign_Center)
+		[
+			SAssignNew(cbUseBots, SCheckBox)
+			.IsChecked(ECheckBoxState::Unchecked)
+			.Style(SUTStyle::Get(), "UT.CheckBox")
+			.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","AllowBotsTT","If checked, bots will be added to this match.")))
+			//.OnCheckStateChanged(this, &SUTGameSetupDialog::RankCheckChanged)
+			.Content()
+			[
+				SNew(STextBlock)
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
+				.Text(NSLOCTEXT("SULobbySetup", "USeBots", "Allow Bots"))
+			]
+
+		]
 		+SHorizontalBox::Slot().AutoWidth().Padding(0.0f,0.0f,10.0f,0.0f).VAlign(VAlign_Center)
 		[
-			SNew(STextBlock)
-			.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
-			.Text(NSLOCTEXT("SUTGameSetupDialog","BotSkillCaption","Bot Skill Level:"))
-		]
-		+SHorizontalBox::Slot().AutoWidth().Padding(10.0f,0.0f,10.0f,0.0f)
-		[
-			SNew(SBox).WidthOverride(400)
+			SAssignNew(BotSkillLevelBox, SHorizontalBox)
+			+SHorizontalBox::Slot().AutoWidth().Padding(0.0f,0.0f,10.0f,0.0f).VAlign(VAlign_Center)
 			[
-				SAssignNew(sBotSkill, SUTSlider)
-				.SnapCount(9)
-				.IndentHandle(false)
-				.InitialSnap(DefaultBotSkillLevel)
-				.Style(SUTStyle::Get(), "UT.Slider")
-				.OnValueChanged(this, &SUTGameSetupDialog::OnBotSkillChanged)
+				SNew(STextBlock)
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
+				.Text(NSLOCTEXT("SUTGameSetupDialog","BotSkillCaption","Bot Skill Level:"))
 			]
-		]
-		+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
-		[
-			SNew(STextBlock)
-			.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
-			.Text(this, &SUTGameSetupDialog::GetBotSkillText)
+			+SHorizontalBox::Slot().AutoWidth().Padding(10.0f,0.0f,10.0f,0.0f)
+			[
+				SNew(SBox).WidthOverride(400)
+				[
+					SAssignNew(sBotSkill, SUTSlider)
+					.SnapCount(8)
+					.IndentHandle(false)
+					.InitialSnap(DefaultBotSkillLevel)
+					.Style(SUTStyle::Get(), "UT.Slider")
+					.OnValueChanged(this, &SUTGameSetupDialog::OnBotSkillChanged)
+					.IsEnabled(this, &SUTGameSetupDialog::GetBotSkillEnabled)
+				]
+			]
+			+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+			[
+				SNew(STextBlock)
+				.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
+				.Text(this, &SUTGameSetupDialog::GetBotSkillText)
+				.ColorAndOpacity(this, &SUTGameSetupDialog::GetBotSkillColor)
+			]
 		];
 
 
 	return Final.ToSharedRef();
 }
 
+bool SUTGameSetupDialog::GetBotSkillEnabled() const
+{
+	return (cbUseBots.IsValid() && cbUseBots->IsChecked());
+}
+
+FSlateColor SUTGameSetupDialog::GetBotSkillColor() const
+{
+	return GetBotSkillEnabled() ? FSlateColor(FLinearColor::White) : FSlateColor(FLinearColor(0.4f,0.4f,0.4f,1.0f));
+}
+
 void SUTGameSetupDialog::OnBotSkillChanged(float NewValue)
 {
-	BotSkillLevel = sBotSkill->GetSnapValue() - 1;
+	BotSkillLevel = sBotSkill->GetSnapValue();
 }
 
 FText SUTGameSetupDialog::GetBotSkillText() const
 {
 	int32 Skill = int32(8.0f * sBotSkill->GetValue());
-	return (Skill == 0) ? NSLOCTEXT("BotSkillLevels", "NoBots", "No Bots") : GetBotSkillName(Skill - 1);
+	return GetBotSkillName(Skill);
 }
 
 void SUTGameSetupDialog::AddButtonsToLeftOfButtonBar(uint32& ButtonCount)
@@ -1029,7 +1070,7 @@ void SUTGameSetupDialog::ConfigureMatchInfo(TWeakObjectPtr<AUTLobbyMatchInfo> Ma
 		int32 DesiredPlayerCount = 0;
 		int32 bTeamGame = 0;
 		GetCustomGameSettings(GameMode, StartingMap, Description, GameModeName, GameOptions, DesiredPlayerCount, bTeamGame);
-		MatchInfo->ServerCreateCustomRule(GameMode, StartingMap, Description, GameOptions, BotSkillLevel, DesiredPlayerCount, bTeamGame != 0, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch);
+		MatchInfo->ServerCreateCustomRule(GameMode, StartingMap, Description, GameOptions, ShouldAllowBots(), BotSkillLevel, DesiredPlayerCount, bTeamGame != 0, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch);
 	}
 
 	else if (SelectedRuleset.IsValid())
@@ -1042,7 +1083,7 @@ void SUTGameSetupDialog::ConfigureMatchInfo(TWeakObjectPtr<AUTLobbyMatchInfo> Ma
 		}
 
 		FString StartingMap = GetSelectedMap();
-		MatchInfo->ServerSetRules(SelectedRuleset->UniqueTag, StartingMap, BotSkillLevel, bIsInParty, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch);
+		MatchInfo->ServerSetRules(SelectedRuleset->UniqueTag, StartingMap, ShouldAllowBots(), BotSkillLevel, bIsInParty, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch);
 	}
 
 }
@@ -1073,5 +1114,11 @@ void SUTGameSetupDialog::OnGameNameTextCommited(const FText &NewText,ETextCommit
 		GameName = NewText;
 	}
 }
+
+bool SUTGameSetupDialog::ShouldAllowBots()
+{
+	return cbUseBots.IsValid() && cbUseBots->IsChecked();
+}
+
 
 #endif

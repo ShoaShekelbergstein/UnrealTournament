@@ -2555,24 +2555,6 @@ bool AUTGameMode::UTIsHandlingReplays()
 	return bRecordReplays && GetNetMode() == ENetMode::NM_DedicatedServer;
 }
 
-void AUTGameMode::InstanceNextMap(const FString& NextMap)
-{
-	if (NextMap != TEXT(""))
-	{
-		FString TravelMapName = NextMap;
-		if ( FPackageName::IsShortPackageName(NextMap) )
-		{
-			FPackageName::SearchForPackageOnDisk(NextMap, &TravelMapName); 
-		}
-		
-		GetWorld()->ServerTravel(TravelMapName, false);
-	}
-	else
-	{
-		SendEveryoneBackToLobby();
-	}
-}
-
 /**
  *	NOTE: This is a really simple map list.  It doesn't support multiple maps in the list, etc and is really dumb.  But it
  *  will work for now.
@@ -2759,7 +2741,7 @@ void AUTGameMode::TravelToNextMap_Implementation()
 				FPackageName::SearchForPackageOnDisk(RconNextMapName, &TravelMapName); 
 			}
 
-			GetWorld()->ServerTravel(TravelMapName, false);
+			GetWorld()->ServerTravel(TravelMapName + TEXT("?NextMap=1"), false);
 			return;
 		}
 
@@ -2785,7 +2767,7 @@ void AUTGameMode::TravelToNextMap_Implementation()
 					FPackageName::SearchForPackageOnDisk(MapRotation[MapIndex], &TravelMapName); 
 				}
 		
-				GetWorld()->ServerTravel(TravelMapName, false);
+				GetWorld()->ServerTravel(TravelMapName + TEXT("?NextMap=1"), false);
 				return;
 			}
 		}
@@ -4079,7 +4061,7 @@ void AUTGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, 
 				.WidthOverride(350)
 				[
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 					.Text(NSLOCTEXT("UTGameMode", "NumCombatants", "Number of Combatants"))
 				]
 			]
@@ -4093,7 +4075,7 @@ void AUTGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, 
 					bCreateReadOnly ?
 					StaticCastSharedRef<SWidget>(
 						SNew(STextBlock)
-						.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+						.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween.Bold")
 						.Text(CombatantsAttr.ToSharedRef(), &TAttributeProperty<int32>::GetAsText)
 					) :
 					StaticCastSharedRef<SWidget>(
@@ -4129,7 +4111,7 @@ void AUTGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, 
 				.WidthOverride(350)
 				[
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(),"UT.Common.NormalText")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 					.Text(NSLOCTEXT("UTGameMode", "GoalScore", "Goal Score"))
 				]
 			]
@@ -4143,7 +4125,7 @@ void AUTGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, 
 					bCreateReadOnly ?
 					StaticCastSharedRef<SWidget>(
 						SNew(STextBlock)
-						.TextStyle(SUWindowsStyle::Get(),"UT.Common.ButtonText.White")
+						.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween.Bold")
 						.Text(GoalScoreAttr.ToSharedRef(), &TAttributeProperty<int32>::GetAsText)
 					) :
 					StaticCastSharedRef<SWidget>(
@@ -4178,7 +4160,7 @@ void AUTGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, 
 				.WidthOverride(350)
 				[
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(),"UT.Common.NormalText")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 					.Text(NSLOCTEXT("UTGameMode", "TimeLimit", "Time Limit"))
 				]
 			]
@@ -4192,7 +4174,7 @@ void AUTGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, 
 					bCreateReadOnly ?
 					StaticCastSharedRef<SWidget>(
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween.Bold")
 					.Text(TimeLimitAttr.ToSharedRef(), &TAttributeProperty<int32>::GetAsText)
 					) :
 					StaticCastSharedRef<SWidget>(
@@ -4227,7 +4209,7 @@ void AUTGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, 
 				.WidthOverride(350)
 				[
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(),"UT.Common.NormalText")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 					.Text(NSLOCTEXT("UTGameMode", "ForceRespawn", "Force Respawn"))
 				]
 			]
@@ -4275,7 +4257,6 @@ void AUTGameMode::ProcessServerTravel(const FString& URL, bool bAbsolute)
 			UTGameSession->UnRegisterServer(false);
 		}
 	}
-
 	Super::ProcessServerTravel(URL, bAbsolute);
 }
 
@@ -5031,7 +5012,7 @@ void AUTGameMode::TallyMapVotes()
 	if (Best.Num() > 0)
 	{
 		int32 Idx = FMath::RandRange(0, Best.Num() - 1);
-		GetWorld()->ServerTravel(Best[Idx]->MapPackageName, false);
+		GetWorld()->ServerTravel(Best[Idx]->MapPackageName  + TEXT("?NextMap=1"), false);
 	}
 	else
 	{

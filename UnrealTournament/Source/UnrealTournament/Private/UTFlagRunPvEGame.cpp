@@ -10,6 +10,7 @@
 #include "UTPickupEnergy.h"
 #include "SNumericEntryBox.h"
 #include "Slate/SUWindowsStyle.h"
+#include "Slate/SUTStyle.h"
 
 AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 	: Super(OI)
@@ -486,7 +487,7 @@ void AUTFlagRunPvEGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuS
 				.WidthOverride(350)
 				[
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 					.Text(NSLOCTEXT("UTGameMode", "NumCombatants", "Number of Combatants"))
 				]
 			]
@@ -500,7 +501,7 @@ void AUTFlagRunPvEGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuS
 					bCreateReadOnly ?
 					StaticCastSharedRef<SWidget>(
 						SNew(STextBlock)
-						.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+						.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween.Bold")
 						.Text(CombatantsAttr.ToSharedRef(), &TAttributeProperty<int32>::GetAsText)
 						) :
 					StaticCastSharedRef<SWidget>(

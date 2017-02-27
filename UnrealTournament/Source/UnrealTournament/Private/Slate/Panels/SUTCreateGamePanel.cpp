@@ -15,6 +15,7 @@
 #include "UTLobbyGameState.h"
 #include "PartyContext.h"
 #include "BlueprintContextLibrary.h"
+#include "../SUTUtils.h"
 
 #if !UE_SERVER
 
@@ -315,7 +316,7 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 			.Padding(FMargin(0, 0, 60, 0))
 			[
 				SNew(SBox)
-				.WidthOverride(700)
+				.WidthOverride(800)
 				[
 					SNew(SVerticalBox)
 					// Heading
@@ -328,9 +329,14 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 						.Text(NSLOCTEXT("SUTCreateGamePanel", "GameSettings", "Game Settings:"))
 					]
 					// Game config panel
-					+ SVerticalBox::Slot()
+					+ SVerticalBox::Slot().AutoHeight()
 					[
 						SAssignNew(GameConfigPanel, SVerticalBox)
+					]
+
+					+SVerticalBox::Slot().AutoHeight().Padding(0.0f,50.0f,0.0f,0.0f)
+					[
+						SAssignNew(BotSkillBox, SVerticalBox)
 					]
 				]
 			]
@@ -905,6 +911,23 @@ EVisibility SUTCreateGamePanel::GetLockImageVis() const
 
 	return EVisibility::Collapsed;
 }
+
+void SUTCreateGamePanel::SetBoxSkill(TSharedRef<SCompoundWidget> AllowBotsWidgets, TSharedRef<SHorizontalBox> BotSkillWidgets)
+{
+	if (BotSkillBox.IsValid())
+	{
+		BotSkillBox->AddSlot()
+		[
+			AllowBotsWidgets
+		];
+
+		BotSkillBox->AddSlot()
+		[
+			BotSkillWidgets
+		];
+	}
+}
+
 
 
 #endif

@@ -43,6 +43,7 @@ AUTLobbyMatchInfo::AUTLobbyMatchInfo(const class FObjectInitializer& ObjectIniti
 	bJoinAnytime = true;
 	bMapChanged = false;
 	BotSkillLevel = -1;
+	bAllowBots = false;
 	bBeginnerMatch = false;
 	TrackedMatchId = -1;
 }
@@ -63,6 +64,7 @@ void AUTLobbyMatchInfo::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &
 	DOREPLIFETIME(AUTLobbyMatchInfo, bSpectatable);
 	DOREPLIFETIME(AUTLobbyMatchInfo, bRankLocked);
 	DOREPLIFETIME(AUTLobbyMatchInfo, BotSkillLevel);
+	DOREPLIFETIME(AUTLobbyMatchInfo, bAllowBots);
 	DOREPLIFETIME(AUTLobbyMatchInfo, RankCheck);
 	DOREPLIFETIME(AUTLobbyMatchInfo, Redirects);
 	DOREPLIFETIME(AUTLobbyMatchInfo, AllowedPlayerList);
@@ -613,8 +615,8 @@ void AUTLobbyMatchInfo::SetRules(TWeakObjectPtr<AUTReplicatedGameRuleset> NewRul
 	bMapChanged = true;
 }
 
-bool AUTLobbyMatchInfo::ServerSetRules_Validate(const FString& RulesetTag, const FString& StartingMap,int32 NewBotSkillLevel, bool bIsInParty, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch) { return true; }
-void AUTLobbyMatchInfo::ServerSetRules_Implementation(const FString&RulesetTag, const FString& StartingMap,int32 NewBotSkillLevel, bool bIsInParty, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch)
+bool AUTLobbyMatchInfo::ServerSetRules_Validate(const FString& RulesetTag, const FString& StartingMap, bool bNewAllowBots, int32 NewBotSkillLevel, bool bIsInParty, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch) { return true; }
+void AUTLobbyMatchInfo::ServerSetRules_Implementation(const FString&RulesetTag, const FString& StartingMap, bool bNewAllowBots, int32 NewBotSkillLevel, bool bIsInParty, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch)
 {
 	bBeginnerMatch = _bBeginnerMatch;
 	if ( CheckLobbyGameState() )
@@ -630,6 +632,7 @@ void AUTLobbyMatchInfo::ServerSetRules_Implementation(const FString&RulesetTag, 
 			SetRules(NewRuleSet, StartingMap);
 		}
 		BotSkillLevel = NewBotSkillLevel;
+		bAllowBots = bNewAllowBots;
 
 		// Update the rank badges...
 		TWeakObjectPtr<AUTLobbyPlayerState> OwnerPlayerState = GetOwnerPlayerState();
@@ -658,8 +661,8 @@ void AUTLobbyMatchInfo::OnRep_MatchUpdate()
 {
 }
 
-bool AUTLobbyMatchInfo::ServerCreateCustomRule_Validate(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch) { return true; }
-void AUTLobbyMatchInfo::ServerCreateCustomRule_Implementation(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch)
+bool AUTLobbyMatchInfo::ServerCreateCustomRule_Validate(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, bool bDesiredAllowBots, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch) { return true; }
+void AUTLobbyMatchInfo::ServerCreateCustomRule_Implementation(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, bool bDesiredAllowBots, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch)
 {
 	bool bOldTeamGame = CurrentRuleset.IsValid() ? CurrentRuleset->bTeamGame : false;
 
@@ -732,7 +735,8 @@ void AUTLobbyMatchInfo::ServerCreateCustomRule_Implementation(const FString& Gam
 		InitialMap = StartingMap;
 		GetMapInformation();
 		NewReplicatedRuleset->MaxPlayers = (DesiredPlayerCount > 0) ? DesiredPlayerCount : CustomGameModeDefaultObject->DefaultMaxPlayers;
-		if (DesiredSkillLevel >= 0)
+		bAllowBots = bDesiredAllowBots;
+		if ( bAllowBots )
 		{
 			FinalGameOptions += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), NewReplicatedRuleset->MaxPlayers, FMath::Clamp<int32>(DesiredSkillLevel,0,7));				
 		}

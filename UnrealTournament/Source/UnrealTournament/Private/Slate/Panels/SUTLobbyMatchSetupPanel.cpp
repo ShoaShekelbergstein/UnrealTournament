@@ -792,7 +792,7 @@ void SUTLobbyMatchSetupPanel::OnGameChangeDialogResult(TSharedPtr<SCompoundWidge
 			int32 DesiredPlayerCount = 0;
 			int32 bTeamGame = 0;
 			SetupDialog->GetCustomGameSettings(GameMode, StartingMap, Description, GameModeName, GameOptions, DesiredPlayerCount, bTeamGame);
-			MatchInfo->ServerCreateCustomRule(GameMode, StartingMap, Description, GameOptions, SetupDialog->BotSkillLevel, DesiredPlayerCount, bTeamGame != 0);
+			MatchInfo->ServerCreateCustomRule(GameMode, StartingMap, Description, GameOptions, SetupDialog->ShouldAllowBots(), SetupDialog->BotSkillLevel, DesiredPlayerCount, bTeamGame != 0);
 		}
 
 		else if (SetupDialog->SelectedRuleset.IsValid())
@@ -805,7 +805,7 @@ void SUTLobbyMatchSetupPanel::OnGameChangeDialogResult(TSharedPtr<SCompoundWidge
 			}
 
 			FString StartingMap = SetupDialog->GetSelectedMap();
-			MatchInfo->ServerSetRules(SetupDialog->SelectedRuleset->UniqueTag, StartingMap, SetupDialog->BotSkillLevel, bIsInParty);
+			MatchInfo->ServerSetRules(SetupDialog->SelectedRuleset->UniqueTag, StartingMap, SetupDialog->ShouldAllowBots(), SetupDialog->BotSkillLevel, bIsInParty);
 			bLaunch = true;
 		}
 	}

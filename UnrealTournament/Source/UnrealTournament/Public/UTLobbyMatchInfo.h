@@ -62,6 +62,9 @@ public:
 	UPROPERTY(Replicated)
 	int32 BotSkillLevel;
 
+	UPROPERTY(Replicated)
+	uint32 bAllowBots : 1;
+
 	// Holds data about the match.  In matches that are not started yet, it holds the description of the match.  In matches in progress, it's 
 	// replicated data from the instance about the state of the match.  NOTE: Player information is not replicated from the instance to the server here
 	// it's replicated in the PlayersInMatchInstance array.  But this contains important information regarding the match in ?Key=Value form.
@@ -272,13 +275,13 @@ public:
 	virtual void SetRules(TWeakObjectPtr<AUTReplicatedGameRuleset> NewRuleset, const FString& StartingMap);
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerSetRules(const FString& RulesetTag, const FString& StartingMap, int32 NewBotSkillLevel, bool bIsInParty, bool _bRankLocked = true, bool _bSpectatable = true, bool _bPrivateMatch = false, bool _bBeginnerMatch = false);
+	virtual void ServerSetRules(const FString& RulesetTag, const FString& StartingMap, bool bNewAllowBots, int32 NewBotSkillLevel, bool bIsInParty, bool _bRankLocked = true, bool _bSpectatable = true, bool _bPrivateMatch = false, bool _bBeginnerMatch = false);
 
 	// Processing an update to the match coming from an instance
 	virtual void ProcessMatchUpdate(const FMatchUpdate& NewMatchUpdate);
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerCreateCustomRule(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame, bool _bRankLocked = true, bool _bSpectatable = true, bool _bPrivateMatch = false, bool _bBeginnerMatch = false);
+	void ServerCreateCustomRule(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  bool bDesiredAllowBots, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame, bool _bRankLocked = true, bool _bSpectatable = true, bool _bPrivateMatch = false, bool _bBeginnerMatch = false);
 
 	bool IsBanned(FUniqueNetIdRepl Who);
 	void GetMapInformation();
