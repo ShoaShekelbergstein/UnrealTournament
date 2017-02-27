@@ -19,8 +19,8 @@ AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 	BotFillCount = 5;
 	NumRounds = 1;
 	GoalScore = 1;
-	UnlimitedRespawnWaitTime = 10.0f;
-	RollingAttackerRespawnDelay = 10.0f;
+	UnlimitedRespawnWaitTime = 9.0f;
+	RollingAttackerRespawnDelay = 9.0f;
 	bRollingAttackerSpawns = true;
 	RoundLives = 3;
 	BaseKillsForExtraLife = 20;
