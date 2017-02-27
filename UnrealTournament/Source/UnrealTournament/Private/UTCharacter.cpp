@@ -5236,14 +5236,14 @@ void AUTCharacter::OnHealthUpdated()
 	if ((Health > OldHealth) && (GetNetMode() != NM_DedicatedServer))
 	{
 		// play first or third person armor effects
-	if (GetWorld()->TimeSeconds - GetMesh()->LastRenderTime < 0.1f)
-	{
-		if (GetCachedScalabilityCVars().DetailMode > 0)
+		if (GetWorld()->TimeSeconds - GetMesh()->LastRenderTime < 0.1f)
 		{
-			UGameplayStatics::SpawnEmitterAttached(ThirdPersonHealthEffect, GetCapsuleComponent(), NAME_None, GetActorLocation() - FVector(0.f, 0.f, 80.f), GetController() ? GetControlRotation() : GetActorRotation(), EAttachLocation::KeepWorldPosition);
+			if (GetCachedScalabilityCVars().DetailMode > 0)
+			{
+				UGameplayStatics::SpawnEmitterAttached(ThirdPersonHealthEffect, GetCapsuleComponent(), NAME_None, GetActorLocation() - FVector(0.f, 0.f, 80.f), GetController() ? GetControlRotation() : GetActorRotation(), EAttachLocation::KeepWorldPosition);
+			}
 		}
-	}
-	else if (IsLocallyViewed())
+		else if (IsLocallyViewed())
 		{
 			UGameplayStatics::SpawnEmitterAttached(FirstPersonHealthEffect, CharacterCameraComponent, NAME_None, FVector(0.f, 0.f, 0.f), FRotator(0.f), EAttachLocation::SnapToTarget);
 		}

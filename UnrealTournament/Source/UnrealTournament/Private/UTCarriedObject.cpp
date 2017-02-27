@@ -291,6 +291,11 @@ void AUTCarriedObject::OnHolderChanged()
 	{
 		Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Collision->bShouldUpdatePhysicsVolume = false;
+		UParticleSystem* FirstPersonEffect = (GetTeamNum() == 1) ? FirstPersonBlueFlagEffect : FirstPersonRedFlagEffect;
+		if (FirstPersonEffect && Holder->GetUTCharacter() && Holder->GetUTCharacter()->IsLocallyViewed())
+		{
+			UGameplayStatics::SpawnEmitterAttached(FirstPersonEffect, Holder->GetUTCharacter()->CharacterCameraComponent, NAME_None, FVector(0.f, 0.f, 0.f), FRotator(0.f), EAttachLocation::SnapToTarget);
+		}
 	}
 	else
 	{

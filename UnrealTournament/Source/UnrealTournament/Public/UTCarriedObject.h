@@ -110,6 +110,12 @@ class UNREALTOURNAMENT_API AUTCarriedObject : public AActor, public IUTTeamInter
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=UpdateOutline, Category = GameObject)
 	AUTCharacter* HoldingPawn;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = GameObject)
+		UParticleSystem* FirstPersonRedFlagEffect;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = GameObject)
+		UParticleSystem* FirstPersonBlueFlagEffect;
+
 	// Holds the home base for this object.
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameObject)
 	class AUTGameObjective* HomeBase;
