@@ -17,6 +17,7 @@ public:
 		TimeRemaining = 1.0f;
 		TriggeredTime = 1.0f;
 		TargetingRange = 8000.0f;
+		MinRockets = 3;
 		MaxTargets = 10;
 		CeilingCheckHeight = 1500.0f;
 	}
@@ -27,6 +28,9 @@ public:
 	/** range to look for enemies */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float TargetingRange;
+	/** minimum number of rockets per pulse */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 MinRockets;
 	/** maximum number of targets */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 MaxTargets;
@@ -77,12 +81,12 @@ public:
 		FActorSpawnParameters Params;
 		Params.Instigator = UTOwner;
 		const FVector SpawnLoc = UTOwner->GetActorLocation() + UTOwner->GetActorRotation().Vector() * UTOwner->GetSimpleCollisionRadius() + FVector(0.0f, 0.0f, UTOwner->GetSimpleCollisionHalfHeight() * 0.9f);
-		for (int32 i = FMath::Min<int32>(Targets.Num(), MaxTargets) - 1; i >= 0; i--)
+		for (int32 i = FMath::Clamp<int32>(Targets.Num(), MinRockets, MaxTargets) - 1; i >= 0; i--)
 		{
-			AUTProj_Rocket* Rocket = GetWorld()->SpawnActor<AUTProj_Rocket>(ProjClass, SpawnLoc, FRotator(90.0f, 0.0f, 0.0f), Params);
+			AUTProj_Rocket* Rocket = GetWorld()->SpawnActor<AUTProj_Rocket>(ProjClass, SpawnLoc + FMath::VRand() * (UTOwner->GetSimpleCollisionRadius() * 0.5f), UTOwner->GetActorRotation(), Params);
 			if (Rocket != nullptr)
 			{
-				Rocket->TargetActor = Targets[i];
+				Rocket->TargetActor = (i < Targets.Num()) ? Targets[i] : nullptr;
 			}
 		}
 	}
@@ -114,14 +118,6 @@ public:
 	{
 		const FVector CeilingTestLoc = P->GetActorLocation() + FVector(0.0f, 0.0f, CeilingCheckHeight);
 		bool bHitCeiling = P->GetWorld()->SweepTestByChannel(P->GetActorLocation(), CeilingTestLoc, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, false, P), WorldResponseParams);
-		if (bHitCeiling)
-		{
-			FString WarningText = NSLOCTEXT("RocketSalvo", "CeilingWarning", "!! CEILING HEIGHT WARNING !!").ToString();
-			float XL, YL;
-			C->TextSize(Hud->MediumFont, WarningText, XL, YL);
-			C->DrawColor = FColor::Red;
-			C->DrawText(Hud->MediumFont, WarningText, 0.5f * (C->ClipX - XL), C->ClipY * 0.4f);
-		}
 		TArray<APawn*> Targets = GatherTargets(P);
 		for (int32 i = FMath::Min<int32>(Targets.Num(), MaxTargets) - 1; i >= 0; i--)
 		{
@@ -131,9 +127,9 @@ public:
 				if (Pos.X > 0.0f && Pos.Y > 0.0f && Pos.X < C->SizeX && Pos.Y < C->SizeY && Pos.Z > 0.0f)
 				{
 					C->DrawColor = FColor::Red;
-					bool bBlocked = bHitCeiling;
+					bool bBlocked = P->GetWorld()->SweepTestByChannel(P->GetActorLocation(), Targets[i]->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, false, Targets[i]), WorldResponseParams);
 					// try both from ceiling loc direct to target as well as trace direct overhead and then down
-					if (!bBlocked && P->GetWorld()->SweepTestByChannel(CeilingTestLoc, Targets[i]->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, false, Targets[i]), WorldResponseParams))
+					if (bBlocked && !bHitCeiling && P->GetWorld()->SweepTestByChannel(CeilingTestLoc, Targets[i]->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, false, Targets[i]), WorldResponseParams))
 					{
 						FVector OverheadLoc = Targets[i]->GetActorLocation();
 						OverheadLoc.Z = CeilingTestLoc.Z;
