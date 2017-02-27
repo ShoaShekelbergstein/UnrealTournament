@@ -46,8 +46,8 @@ class AUTLineUpZone : public AActor
 	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List", meta = (EditCondition="!bIsTeamSpawnList",MakeEditWidget=""))
 	TArray<FTransform> FFATeamSpawnLocations;
 
-	UPROPERTY(Instanced, EditAnywhere, Category = "Team Spawn Point List")
-	ACameraActor* Camera;
+	UPROPERTY(Instanced, EditAnywhere, Category = "Camera")
+	UCameraComponent* Camera;
 
 	/** If set, certain game modes will use this reference to pick between different Line-Ups. In CTF, this should reference the flag base of the team associated with this LineUpZone.*/
 	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List")
@@ -92,7 +92,11 @@ class AUTLineUpZone : public AActor
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostEditMove(bool bFinished) override;
 	virtual void PostRegisterAllComponents() override;
-	virtual void PostDuplicate(bool bDuplicateForPIE) override;
+
+	virtual void PreEditUndo() override;
+	virtual void PostEditUndo() override;
+
+	virtual void SetIsTemporarilyHiddenInEditor(bool bIsHidden);
 #endif // WITH_EDITOR
 
 public:

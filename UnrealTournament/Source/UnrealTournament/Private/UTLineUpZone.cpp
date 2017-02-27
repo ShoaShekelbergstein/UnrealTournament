@@ -19,6 +19,28 @@ AUTLineUpZone::AUTLineUpZone(const FObjectInitializer& ObjectInitializer)
 
 	bIsTeamSpawnList = true;
 
+	// Create a CameraComponent	
+	Camera = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, TEXT("LineUpCamera"));
+	if (Camera)
+	{
+		Camera->SetupAttachment(RootComponent);
+
+		FTransform CameraTransform;
+		CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
+		Camera->SetFieldOfView(60.f);
+
+		FRotator DefaultCameraRotation;
+		DefaultCameraRotation.Roll = 0.f;
+		DefaultCameraRotation.Pitch = 0.f;
+		DefaultCameraRotation.Yaw = 0.f;
+
+		FTransform DefaultCameraTransform;
+		DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
+		DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
+
+		Camera->SetRelativeTransform(DefaultCameraTransform);
+	}
+
 #if WITH_EDITORONLY_DATA
 	SpriteComponent = CreateEditorOnlyDefaultSubobject<UBillboardComponent>(TEXT("Sprite"));
 
@@ -40,11 +62,6 @@ AUTLineUpZone::AUTLineUpZone(const FObjectInitializer& ObjectInitializer)
 void AUTLineUpZone::Destroyed()
 {
 	DeleteAllMeshVisualizations();
-
-	if (Camera)
-	{
-		Camera->Destroy();
-	}
 }
 
 #if WITH_EDITOR
@@ -56,32 +73,6 @@ void AUTLineUpZone::PostRegisterAllComponents()
 	if (GetWorld() && GetWorld()->WorldType == EWorldType::Editor)
 	{
 		InitializeMeshVisualizations();
-	}
-}
-
-void AUTLineUpZone::PostDuplicate(bool bDuplicateForPIE)
-{
-	//Don't use the duplicate camera, let us create a new one
-	if (Camera)
-	{
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-		Params.Template = Camera;
-
-		ACameraActor* SpawnedActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), Params);
-		if (SpawnedActor)
-		{
-#if WITH_EDITOR
-			FString CameraNameLabel = GetActorLabel();
-			CameraNameLabel.Append(TEXT("_Camera"));
-			Camera->SetActorLabel(CameraNameLabel);
-#endif
-
-			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
-
-			SpawnedActor->SetActorLocationAndRotation(Camera->GetActorLocation(), Camera->GetActorRotation());
-			Camera = SpawnedActor;
-		}
 	}
 }
 
@@ -100,6 +91,21 @@ void AUTLineUpZone::PostEditMove(bool bFinished)
 	}
 
 	Super::PostEditMove(bFinished);
+}
+
+void AUTLineUpZone::SetIsTemporarilyHiddenInEditor(bool bIsHidden)
+{
+	Super::SetIsTemporarilyHiddenInEditor(bIsHidden);
+
+	//Delete all the mesh visualizations if we are hiding the line up in editor
+	if (bIsHidden)
+	{
+		DeleteAllMeshVisualizations();
+	}
+	else
+	{
+		InitializeMeshVisualizations();
+	}
 }
 
 void AUTLineUpZone::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -195,9 +201,35 @@ void AUTLineUpZone::PostEditChangeProperty(FPropertyChangedEvent& PropertyChange
 		}
 	}
 
+	if (PropertyChangedEvent.Property != NULL && PropertyChangedEvent.Property->GetFName() == FName(TEXT("SceneRoot")))
+	{
+		if (RootComponent->IsVisible())
+		{
+			InitializeMeshVisualizations();
+		}
+		else
+		{
+			DeleteAllMeshVisualizations();
+		}
+	}
+
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
+void AUTLineUpZone::PreEditUndo()
+{
+	//Sometimes an edit undo will leave mesh visualizations stranded due to a change
+	//Go ahead and delete them all so we don't leave any behind in the level
+	DeleteAllMeshVisualizations();
+	Super::PreEditUndo();
+}
+
+void AUTLineUpZone::PostEditUndo()
+{
+	//We deleted all mesh visualiztions in preeditundo, so now recreate them after the undo.
+	InitializeMeshVisualizations();
+	Super::PostEditUndo();
+}
 #endif
 
 void AUTLineUpZone::UpdateMeshVisualizations()
@@ -214,20 +246,29 @@ void AUTLineUpZone::UpdateMeshVisualizations()
 	int MeshIndex = 0;
 	for (int RedTeamIndex = 0; ((RedTeamIndex < RedAndWinningTeamSpawnLocations.Num()) && (MeshVisualizations.Num() > MeshIndex)) ; ++RedTeamIndex)
 	{
-		MeshVisualizations[MeshIndex]->GetRootComponent()->SetRelativeTransform(RedAndWinningTeamSpawnLocations[RedTeamIndex]);
-		++MeshIndex;
+		if (MeshVisualizations[MeshIndex])
+		{
+			MeshVisualizations[MeshIndex]->GetRootComponent()->SetRelativeTransform(RedAndWinningTeamSpawnLocations[RedTeamIndex]);
+			++MeshIndex;
+		}
 	}
 
 	for (int BlueTeamIndex = 0; ((BlueTeamIndex < BlueAndLosingTeamSpawnLocations.Num()) && (MeshVisualizations.Num() > MeshIndex)); ++BlueTeamIndex)
 	{
-		MeshVisualizations[MeshIndex]->GetRootComponent()->SetRelativeTransform(BlueAndLosingTeamSpawnLocations[BlueTeamIndex]);
-		++MeshIndex;
+		if (MeshVisualizations[MeshIndex])
+		{
+			MeshVisualizations[MeshIndex]->GetRootComponent()->SetRelativeTransform(BlueAndLosingTeamSpawnLocations[BlueTeamIndex]);
+			++MeshIndex;
+		}
 	}
 
 	for (int FFAIndex = 0; ((FFAIndex < FFATeamSpawnLocations.Num()) && (MeshVisualizations.Num() > MeshIndex)); ++FFAIndex)
 	{
-		MeshVisualizations[MeshIndex]->GetRootComponent()->SetRelativeTransform(FFATeamSpawnLocations[FFAIndex]);
-		++MeshIndex;
+		if (MeshVisualizations[MeshIndex])
+		{
+			MeshVisualizations[MeshIndex]->GetRootComponent()->SetRelativeTransform(FFATeamSpawnLocations[FFAIndex]);
+			++MeshIndex;
+		}
 	}
 #endif
 }
@@ -256,8 +297,7 @@ void AUTLineUpZone::InitializeMeshVisualizations()
 #if WITH_EDITORONLY_DATA
 	DeleteAllMeshVisualizations();
 
-	//Without any player spawn locations, we should just early return after the empty. Nothing to see here.
-	if ((EditorVisualizationCharacter == nullptr) || (GetWorld() == nullptr))
+	if ((EditorVisualizationCharacter == nullptr) || (GetWorld() == nullptr) || (!RootComponent->IsVisible()) || (IsTemporarilyHiddenInEditor()))
 	{
 		return;
 	}
@@ -482,28 +522,10 @@ void AUTLineUpZone::DefaultCreateForTeamIntro()
 	DeleteAllMeshVisualizations();
 	InitializeMeshVisualizations();
 
-	if (!Camera)
-	{
-		FTransform CameraTransform;
-		CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
-
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-
-		ACameraActor* SpawnedActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), CameraTransform, Params);
-		if (SpawnedActor)
-		{
-			Camera = SpawnedActor;
-			
-#if WITH_EDITOR
-			FString CameraNameLabel = GetActorLabel();
-			CameraNameLabel.Append(TEXT("_Camera"));
-			Camera->SetActorLabel(CameraNameLabel);
-#endif
-			Camera->GetCameraComponent()->SetFieldOfView(60.f);
-			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-	}
+	FTransform CameraTransform;
+	CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
+	Camera->SetFieldOfView(60.f);
+	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
 	FRotator DefaultCameraRotation;
 	DefaultCameraRotation.Roll = 0.f;
@@ -514,7 +536,7 @@ void AUTLineUpZone::DefaultCreateForTeamIntro()
 	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
 	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
 
-	Camera->SetActorRelativeTransform(DefaultCameraTransform);
+	Camera->SetRelativeTransform(DefaultCameraTransform);
 }
 
 void AUTLineUpZone::DefaultCreateForFFAIntro()
@@ -557,30 +579,10 @@ void AUTLineUpZone::DefaultCreateForFFAIntro()
 	DeleteAllMeshVisualizations();
 	InitializeMeshVisualizations();
 
-	if (!Camera)
-	{
-		FTransform CameraTransform;
-		CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
-
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-
-		ACameraActor* SpawnedActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), CameraTransform, Params);
-		if (SpawnedActor)
-		{
-			Camera = SpawnedActor;
-
-#if WITH_EDITOR	
-			FString CameraNameLabel = GetActorLabel();
-			CameraNameLabel.Append(TEXT("_Camera"));
-			Camera->SetActorLabel(CameraNameLabel);
-#endif
-
-
-			Camera->GetCameraComponent()->SetFieldOfView(60.f);
-			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-	}
+	FTransform CameraTransform;
+	CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
+	Camera->SetFieldOfView(60.f);
+	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
 	FRotator DefaultCameraRotation;
 	DefaultCameraRotation.Roll = 0.f;
@@ -591,7 +593,7 @@ void AUTLineUpZone::DefaultCreateForFFAIntro()
 	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
 	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
 
-	Camera->SetActorRelativeTransform(DefaultCameraTransform);
+	Camera->SetRelativeTransform(DefaultCameraTransform);
 }
 
 void AUTLineUpZone::DefaultCreateForTeamIntermission()
@@ -643,30 +645,10 @@ void AUTLineUpZone::DefaultCreateForTeamIntermission()
 	DeleteAllMeshVisualizations();
 	InitializeMeshVisualizations();
 
-	if (!Camera)
-	{
-		FTransform CameraTransform;
-		CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
-
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-
-		ACameraActor* SpawnedActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), CameraTransform, Params);
-		if (SpawnedActor)
-		{
-			Camera = SpawnedActor;
-
-#if WITH_EDITOR
-			FString CameraNameLabel = GetActorLabel();
-			CameraNameLabel.Append(TEXT("_Camera"));
-			Camera->SetActorLabel(CameraNameLabel);
-#endif
-
-
-			Camera->GetCameraComponent()->SetFieldOfView(60.f);
-			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-	}
+	FTransform CameraTransform;
+	CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
+	Camera->SetFieldOfView(60.f);
+	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
 	FRotator DefaultCameraRotation;
 	DefaultCameraRotation.Roll = 0.f;
@@ -677,7 +659,7 @@ void AUTLineUpZone::DefaultCreateForTeamIntermission()
 	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
 	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
 
-	Camera->SetActorRelativeTransform(DefaultCameraTransform);
+	Camera->SetRelativeTransform(DefaultCameraTransform);
 }
 
 void AUTLineUpZone::DefaultCreateForFFAIntermission()
@@ -729,29 +711,10 @@ void AUTLineUpZone::DefaultCreateForFFAIntermission()
 	DeleteAllMeshVisualizations();
 	InitializeMeshVisualizations();
 
-	if (!Camera)
-	{
-		FTransform CameraTransform;
-		CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
-
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-
-		ACameraActor* SpawnedActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), CameraTransform, Params);
-		if (SpawnedActor)
-		{
-			Camera = SpawnedActor;
-
-#if WITH_EDITOR
-			FString CameraNameLabel = GetActorLabel();
-			CameraNameLabel.Append(TEXT("_Camera"));
-			Camera->SetActorLabel(CameraNameLabel);
-#endif
-
-			Camera->GetCameraComponent()->SetFieldOfView(60.f);
-			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-	}
+	FTransform CameraTransform;
+	CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
+	Camera->SetFieldOfView(60.f);
+	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
 	FRotator DefaultCameraRotation;
 	DefaultCameraRotation.Roll = 0.f;
@@ -762,7 +725,7 @@ void AUTLineUpZone::DefaultCreateForFFAIntermission()
 	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
 	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
 
-	Camera->SetActorRelativeTransform(DefaultCameraTransform);
+	Camera->SetRelativeTransform(DefaultCameraTransform);
 }
 
 void AUTLineUpZone::DefaultCreateForTeamEndMatch()
@@ -814,29 +777,10 @@ void AUTLineUpZone::DefaultCreateForTeamEndMatch()
 	DeleteAllMeshVisualizations();
 	InitializeMeshVisualizations();
 
-	if (!Camera)
-	{
-		FTransform CameraTransform;
-		CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
-
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-
-		ACameraActor* SpawnedActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), CameraTransform, Params);
-		if (SpawnedActor)
-		{
-			Camera = SpawnedActor;
-
-#if WITH_EDITOR
-			FString CameraNameLabel = GetActorLabel();
-			CameraNameLabel.Append(TEXT("_Camera"));
-			Camera->SetActorLabel(CameraNameLabel);
-#endif
-
-			Camera->GetCameraComponent()->SetFieldOfView(60.f);
-			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-	}
+	FTransform CameraTransform;
+	CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
+	Camera->SetFieldOfView(60.f);
+	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
 	FRotator DefaultCameraRotation;
 	DefaultCameraRotation.Roll = 0.f;
@@ -847,7 +791,7 @@ void AUTLineUpZone::DefaultCreateForTeamEndMatch()
 	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
 	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
 
-	Camera->SetActorRelativeTransform(DefaultCameraTransform);
+	Camera->SetRelativeTransform(DefaultCameraTransform);
 }
 
 void AUTLineUpZone::DefaultCreateForFFAEndMatch()
@@ -899,29 +843,10 @@ void AUTLineUpZone::DefaultCreateForFFAEndMatch()
 	DeleteAllMeshVisualizations();
 	InitializeMeshVisualizations();
 
-	if (!Camera)
-	{
-		FTransform CameraTransform;
-		CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
-
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-
-		ACameraActor* SpawnedActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), CameraTransform, Params);
-		if (SpawnedActor)
-		{
-			Camera = SpawnedActor;
-
-#if WITH_EDITOR
-			FString CameraNameLabel = GetActorLabel();
-			CameraNameLabel.Append(TEXT("_Camera"));
-			Camera->SetActorLabel(CameraNameLabel);
-#endif
-
-			Camera->GetCameraComponent()->SetFieldOfView(60.f);
-			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-	}
+	FTransform CameraTransform;
+	CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
+	Camera->SetFieldOfView(60.f);
+	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
 	FRotator DefaultCameraRotation;
 	DefaultCameraRotation.Roll = 0.f;
@@ -932,7 +857,7 @@ void AUTLineUpZone::DefaultCreateForFFAEndMatch()
 	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
 	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
 
-	Camera->SetActorRelativeTransform(DefaultCameraTransform);
+	Camera->SetRelativeTransform(DefaultCameraTransform);
 }
 
 void AUTLineUpZone::DefaultCreateForOnly1Character()
@@ -961,29 +886,10 @@ void AUTLineUpZone::DefaultCreateForOnly1Character()
 	DeleteAllMeshVisualizations();
 	InitializeMeshVisualizations();
 
-	if (!Camera)
-	{
-		FTransform CameraTransform;
-		CameraTransform.SetTranslation(FVector(200.f, 0.f, 30.f));
-
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-
-		ACameraActor* SpawnedActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), CameraTransform, Params);
-		if (SpawnedActor)
-		{
-			Camera = SpawnedActor;
-
-#if WITH_EDITOR
-			FString CameraNameLabel = GetActorLabel();
-			CameraNameLabel.Append(TEXT("_Camera"));
-			Camera->SetActorLabel(CameraNameLabel);
-#endif
-
-			Camera->GetCameraComponent()->SetFieldOfView(60.f);
-			SpawnedActor->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-	}
+	FTransform CameraTransform;
+	CameraTransform.SetTranslation(FVector(200.f, 0.f, 30.f));
+	Camera->SetFieldOfView(60.f);
+	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
 	FRotator DefaultCameraRotation;
 	DefaultCameraRotation.Roll = 0.f;
@@ -994,5 +900,5 @@ void AUTLineUpZone::DefaultCreateForOnly1Character()
 	DefaultCameraTransform.SetTranslation(FVector(750.f, 0.f, 47.5f));
 	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
 
-	Camera->SetActorRelativeTransform(DefaultCameraTransform);
+	Camera->SetRelativeTransform(DefaultCameraTransform);
 }

@@ -2443,14 +2443,14 @@ AUTLineUpZone* AUTGameState::CreateLineUpAtPlayerStart(LineUpTypes LineUpType, A
 		SpawnedLineUps.Add(NewZone);
 
 		//See if the new zone's camera is stuck inside of a wall
-		if (GetWorld() && NewZone->Camera)
+		if (GetWorld())
 		{
 			FHitResult CameraCollision;
-			GetWorld()->SweepSingleByChannel(CameraCollision, NewZone->GetActorLocation(), NewZone->Camera->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
+			GetWorld()->SweepSingleByChannel(CameraCollision, NewZone->GetActorLocation(), NewZone->Camera->GetComponentLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
 
 			if (CameraCollision.bBlockingHit)
 			{
-				NewZone->Camera->SetActorLocation(CameraCollision.ImpactPoint);
+				NewZone->Camera->SetWorldLocation(CameraCollision.ImpactPoint);
 			}
 		}
 	}
@@ -2498,9 +2498,9 @@ void AUTGameState::SpawnDefaultLineUpZones()
 	}
 }
 
-AActor* AUTGameState::GetCameraActorForLineUp(LineUpTypes ZoneType)
+UCameraComponent* AUTGameState::GetCameraComponentForLineUp(LineUpTypes ZoneType)
 {
-	AActor* FoundCamera = nullptr;
+	UCameraComponent* FoundCamera = nullptr;
 
 	AUTLineUpZone* SpawnPointList = GetAppropriateSpawnList(ZoneType);
 	if (SpawnPointList)

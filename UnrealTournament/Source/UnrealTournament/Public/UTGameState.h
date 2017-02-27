@@ -742,7 +742,7 @@ public:
 
 	virtual void SpawnDefaultLineUpZones();
 
-	virtual AActor* GetCameraActorForLineUp(LineUpTypes ZoneType);
+	virtual UCameraComponent* GetCameraComponentForLineUp(LineUpTypes ZoneType);
 	
 	// Returns true if the replication of the MapVote list is completed
 	bool IsMapVoteListReplicationCompleted();
