@@ -142,6 +142,11 @@ public:
 
 	virtual void DrawTeamStats(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float MaxHeight, const FStatsFontInfo& StatsFontInfo) override
 	{
+		if (UTGameState == nullptr || UTGameState->Teams.Num() < 2 || UTGameState->Teams[1] == nullptr)
+		{
+			return;
+		}
+
 		DrawStatsLine(NSLOCTEXT("UTScoreboard", "TeamKills", "Kills"), -1, UTGameState->Teams[1]->GetStatsValue(NAME_TeamKills), DeltaTime, XOffset, YPos, StatsFontInfo, ScoreWidth);
 
 		float SectionSpacing = 0.6f * StatsFontInfo.TextHeight;
