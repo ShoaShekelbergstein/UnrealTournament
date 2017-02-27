@@ -307,7 +307,7 @@ public:
 
 		{
 			float KillsXL;
-			FString KillString = FText::Format(NSLOCTEXT("UTPvEScoreboard", "Kills", "Total Kills: {0}"), FText::AsNumber(GS->Teams[1]->GetStatsValue(NAME_TeamKills))).ToString();
+			FString KillString = FText::Format(NSLOCTEXT("UTPvEScoreboard", "Kills", "Total Team Kills: {0}"), FText::AsNumber(GS->Teams[1]->GetStatsValue(NAME_TeamKills))).ToString();
 			Canvas->StrLen(InFont, KillString, KillsXL, YL);
 			ScoreX = 0.5f * (Canvas->ClipX - RenderScale * KillsXL);
 			Canvas->SetLinearDrawColor(FLinearColor::White);
