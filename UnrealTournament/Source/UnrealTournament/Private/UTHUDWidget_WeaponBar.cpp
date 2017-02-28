@@ -276,7 +276,7 @@ void UUTHUDWidget_WeaponBar::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCan
 				if (GroupInfo->WeaponClasses[WeapIdx] != nullptr)
 				{
 					bool bAddedCell = false;
-					if (!bHaveWeaponInGroup)
+					if (!bHaveWeaponInGroup && !GroupInfo->WeaponClasses[WeapIdx]->GetDefaultObject<AUTWeapon>()->bMustBeHolstered)
 					{
 						Cells.Add(FWeaponBarCell(DrawOffset, CellSize, GroupInfo->Weapons[WeapIdx], GroupInfo->WeaponClasses[WeapIdx], GroupInfo->Group));
 						bFinishedWithGroup = true;
