@@ -90,6 +90,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, F
 		DrawScreenPosition.X -= RenderPosition.X;
 		DrawScreenPosition.Y -= RenderPosition.Y;
 
+		CircleBorderTemplate.RenderColor = (TeamNum == 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
 		CircleBorderTemplate.RenderOpacity = CurrentWorldAlpha;
 		CircleTemplate.RenderOpacity = CurrentWorldAlpha;
 
@@ -130,7 +131,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 	if (Flag && GameState && (bSpectating || bShouldDrawFlagIcon) && (Flag->Holder != UTHUDOwner->GetScorerPlayerState()))
 	{
 		bScaleByDesignedResolution = false;
-		FlagIconTemplate.RenderColor = (GameState->Teams.IsValidIndex(TeamNum) && GameState->Teams[TeamNum]) ? GameState->Teams[TeamNum]->TeamColor : FLinearColor::Green;
+		FlagIconTemplate.RenderColor = (TeamNum == 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
 
 		// Draw the flag / flag base in the world
 		float Dist = (Flag->GetActorLocation() - PlayerViewPoint).Size();
