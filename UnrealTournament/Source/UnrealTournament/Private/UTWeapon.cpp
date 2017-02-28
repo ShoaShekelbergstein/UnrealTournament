@@ -1259,13 +1259,24 @@ void AUTWeapon::PlayImpactEffects_Implementation(const FVector& TargetLoc, uint8
 						UUTGameViewportClient* UTViewport = Cast<UUTGameViewportClient>(It->ViewportClient);
 						if (UTViewport != NULL)
 						{
-							AdjustedSpawnLocation = UTViewport->PaniniProjectLocationForPlayer(*It, SpawnLocation, Mesh->GetMaterial(0));
+							FVector PaniniAdjustedSpawnLocation = UTViewport->PaniniProjectLocationForPlayer(*It, SpawnLocation, Mesh->GetMaterial(0));
+							if (!PaniniAdjustedSpawnLocation.ContainsNaN())
+							{
+								AdjustedSpawnLocation = PaniniAdjustedSpawnLocation;
+							}
+							else
+							{
+								UE_LOG(UT, Warning, TEXT("Panini projection returned NaN %s"), *GetName());
+								PaniniAdjustedSpawnLocation.DiagnosticCheckNaN();
+							}
+
 							break;
 						}
 					}
 				}
 			}
 			FireEffectCount = 0;
+			AdjustedSpawnLocation.DiagnosticCheckNaN();
 			UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), FireEffect[FireMode], AdjustedSpawnLocation, SpawnRotation, true);
 
 			// limit dist to target
