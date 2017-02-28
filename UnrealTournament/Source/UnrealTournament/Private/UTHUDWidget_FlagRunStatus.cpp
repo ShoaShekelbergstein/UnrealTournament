@@ -179,13 +179,13 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 			InWorldFlagScale *= CircleScaling;
 			float DistFromCenter = (DrawScreenPosition - FVector(0.5f*GetCanvas()->ClipX, 0.5f*GetCanvas()->ClipY, 0.f)).Size();
 			CurrentCircleAlpha = CurrentCircleAlpha * 1.f / CircleScaling;
-			if ((CircleScaling < 1.5f) && (DistFromCenter < 1.1f*CircleScaling*CircleBorderTemplate.GetWidth()))
+			if ((CircleScaling >= 4.f) && !Holder)
 			{
-				CurrentCircleAlpha *= 0.2f;
+				CurrentCircleAlpha *= FMath::Max(0.2f, 1.f /(CircleScaling - 3.f));
 			}
-			else if ((CircleScaling > 4.f) && !Holder)
+			if ((CircleScaling < 6.f) && (DistFromCenter < 0.55f*CircleScaling*CircleBorderTemplate.GetWidth()))
 			{
-				CurrentCircleAlpha *= 1.f /(CircleScaling - 4.f);
+				CurrentCircleAlpha *= FMath::Min(1.f, 1.f/(7.f - CircleScaling));
 			}
 		}
 		FlagIconTemplate.RenderOpacity = CurrentWorldAlpha;
@@ -197,12 +197,14 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 		EdgeScreenPosition.X -= RenderPosition.X;
 		EdgeScreenPosition.Y -= RenderPosition.Y;
 
+		bool bNeedTeamCircle = true;
 		if (Holder || (CircleScaling > 2.f))
 		{
 			CircleBorderTemplate.RenderColor = FLinearColor::Black;
 			RenderObj_TextureAt(CircleBorderTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, CircleBorderTemplate.GetWidth()* InWorldFlagScale, CircleBorderTemplate.GetHeight()* InWorldFlagScale);
 			CircleBorderTemplate.RenderColor = FlagIconTemplate.RenderColor;
 			RenderObj_TextureAt(CircleBorderTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, 1.1f*CircleBorderTemplate.GetWidth()* InWorldFlagScale, 1.1f*CircleBorderTemplate.GetHeight()* InWorldFlagScale);
+			bNeedTeamCircle = false;
 		}
 		CircleBorderTemplate.RenderColor = FLinearColor::Black;
 		FVector DrawNumberPosition = EdgeScreenPosition;
@@ -214,14 +216,21 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 		}
 		else if (Holder == nullptr)
 		{
-			float PctFromCenter = (DrawNumberPosition - FVector(0.5f*GetCanvas()->ClipX, 0.5f*GetCanvas()->ClipY, 0.f)).Size() / GetCanvas()->ClipX;
-			CurrentNumberAlpha = InWorldAlpha * FMath::Min(8.f*PctFromCenter, 1.f);
+			if ((DrawNumberPosition + FVector(RenderPosition.X, RenderPosition.Y, 0.f) - FVector(0.5f*GetCanvas()->ClipX, 0.5f*GetCanvas()->ClipY, 0.f)).Size() < 1.2f*CircleTemplate.GetWidth()*WorldRenderScale*1.5f)
+			{
+				CurrentNumberAlpha *= 0.2f;
+			}
 			CircleBorderTemplate.RenderOpacity = CurrentNumberAlpha;
 			CircleTemplate.RenderOpacity = CurrentNumberAlpha;
 			FlagIconTemplate.RenderOpacity = CurrentNumberAlpha;
 			//DrawNumberPosition.Y += 0.5f*CircleBorderTemplate.GetHeight();
 			RenderObj_TextureAt(CircleTemplate, DrawNumberPosition.X, DrawNumberPosition.Y, CircleTemplate.GetWidth()*InWorldNumberScale, CircleTemplate.GetHeight()* InWorldNumberScale);
 			RenderObj_TextureAt(CircleBorderTemplate, DrawNumberPosition.X, DrawNumberPosition.Y, CircleTemplate.GetWidth()*InWorldNumberScale, CircleTemplate.GetHeight()* InWorldNumberScale);
+			if (bNeedTeamCircle)
+			{
+				CircleBorderTemplate.RenderColor = FlagIconTemplate.RenderColor;
+				RenderObj_TextureAt(CircleBorderTemplate, DrawNumberPosition.X, DrawNumberPosition.Y, 1.1f*CircleTemplate.GetWidth()*InWorldNumberScale, 1.1f*CircleTemplate.GetHeight()* InWorldNumberScale);
+			}
 			RenderObj_TextureAt(FlagIconTemplate, DrawNumberPosition.X, DrawNumberPosition.Y, FlagIconTemplate.GetWidth()* InWorldNumberScale, FlagIconTemplate.GetHeight()* InWorldNumberScale);
 		}
 		FText FlagStatusMessage = Flag->GetHUDStatusMessage(UTHUDOwner);
