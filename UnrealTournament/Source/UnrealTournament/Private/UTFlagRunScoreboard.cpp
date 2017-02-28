@@ -29,6 +29,7 @@ UUTFlagRunScoreboard::UUTFlagRunScoreboard(const FObjectInitializer& ObjectIniti
 	bGroupRoundPairs = true;
 	bUseRoundKills = true;
 
+	CH_Kills = NSLOCTEXT("UTScoreboard", "ColumnHeader_PlayerKills", "K+A(K)");
 	DefendTitle = NSLOCTEXT("UTScoreboard", "Defending", "Round {RoundNum} of {NumRounds} - DEFENDING");
 	AttackTitle = NSLOCTEXT("UTScoreboard", "Attacking", "Round {RoundNum} of {NumRounds} - ATTACKING");
 
