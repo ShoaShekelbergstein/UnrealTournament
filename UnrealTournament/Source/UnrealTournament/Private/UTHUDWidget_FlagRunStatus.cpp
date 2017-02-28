@@ -109,7 +109,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, F
 
 		if (bDrawEdgeArrow)
 		{
-			DrawEdgeArrow(WorldPosition, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
+			DrawEdgeArrow(WorldPosition, PlayerViewPoint, PlayerViewRotation, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
 		}
 		if (Flag && Flag->ObjectState != CarriedObjectState::Home)
 		{
@@ -201,8 +201,11 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 		{
 			CircleBorderTemplate.RenderColor = FLinearColor::Black;
 			RenderObj_TextureAt(CircleBorderTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, CircleBorderTemplate.GetWidth()* InWorldFlagScale, CircleBorderTemplate.GetHeight()* InWorldFlagScale);
-			CircleBorderTemplate.RenderColor = FlagIconTemplate.RenderColor;
-			RenderObj_TextureAt(CircleBorderTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, 1.1f*CircleBorderTemplate.GetWidth()* InWorldFlagScale, 1.1f*CircleBorderTemplate.GetHeight()* InWorldFlagScale);
+			if (!bDrawEdgeArrow)
+			{
+				CircleBorderTemplate.RenderColor = FlagIconTemplate.RenderColor;
+				RenderObj_TextureAt(CircleBorderTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, 1.1f*CircleBorderTemplate.GetWidth()* InWorldFlagScale, 1.1f*CircleBorderTemplate.GetHeight()* InWorldFlagScale);
+			}
 		}
 		CircleBorderTemplate.RenderColor = FLinearColor::Black;
 		FVector DrawNumberPosition = EdgeScreenPosition;
@@ -210,7 +213,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 		if (bDrawEdgeArrow)
 		{
 			RenderObj_TextureAt(CircleTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, CircleTemplate.GetWidth()* InWorldFlagScale, CircleTemplate.GetHeight()* InWorldFlagScale);
-			DrawEdgeArrow(WorldPosition, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
+			DrawEdgeArrow(WorldPosition, PlayerViewPoint, PlayerViewRotation, DrawScreenPosition, CurrentWorldAlpha, InWorldFlagScale, TeamNum);
 		}
 		else if (Holder == nullptr)
 		{

@@ -254,7 +254,7 @@ void UUTHUDWidget_CTFFlagStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 			
 			if (bDrawEdgeArrow)
 			{
-				DrawEdgeArrow(WorldPosition, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
+				DrawEdgeArrow(WorldPosition, PlayerViewPoint, PlayerViewRotation, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
 			}
 			else
 			{
@@ -344,7 +344,7 @@ void UUTHUDWidget_CTFFlagStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, F
 	
 			if (bDrawEdgeArrow)
 			{
-				DrawEdgeArrow(WorldPosition, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
+				DrawEdgeArrow(WorldPosition, PlayerViewPoint, PlayerViewRotation, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
 			}
 			else
 			{
@@ -465,30 +465,23 @@ FVector UUTHUDWidget_CTFFlagStatus::GetAdjustedScreenPosition(const FVector& Wor
 	return DrawScreenPosition;
 }
 
-void UUTHUDWidget_CTFFlagStatus::DrawEdgeArrow(FVector InWorldPosition, FVector InDrawScreenPosition, float CurrentWorldAlpha, float WorldRenderScale, int32 Team)
+void UUTHUDWidget_CTFFlagStatus::DrawEdgeArrow(FVector InWorldPosition, FVector PlayerViewPoint, FRotator PlayerViewRotation, FVector InDrawScreenPosition, float CurrentWorldAlpha, float WorldRenderScale, int32 Team)
 {
-	bool bLeftOfScreen = (InDrawScreenPosition.X < 0.f);
-	float DroppedAlpha = DroppedIconTemplate.RenderOpacity;
-	DroppedIconTemplate.RenderOpacity = CurrentWorldAlpha;
-	DroppedIconTemplate.Rotation = bLeftOfScreen ? 90.f : -90.f;
-	float ArrowOffsetY = bLeftOfScreen ? 0.5f : -0.5f;
-	ArrowOffsetY = ArrowOffsetY * CircleBorderTemplate.GetHeight()* WorldRenderScale + 0.5f*DroppedIconTemplate.GetHeight();
-	RenderObj_TextureAt(DroppedIconTemplate, InDrawScreenPosition.X + 0.5f*CircleTemplate.GetWidth()* WorldRenderScale, InDrawScreenPosition.Y + ArrowOffsetY, 2.f*DroppedIconTemplate.GetWidth()* WorldRenderScale, 2.f*DroppedIconTemplate.GetHeight()* WorldRenderScale);
-	DroppedIconTemplate.Rotation = 0.f;
-	DroppedIconTemplate.RenderOpacity = DroppedAlpha;
-}
-/*
-	FVector OffScreenPosition = GetCanvas()->Project(InWorldPosition);
-
 	ArrowTemplate.Atlas = UTHUDOwner->HUDAtlas;
 	ArrowTemplate.UVs = FTextureUVs(100.f, 836.f, 72.f, 96.f);
 	ArrowTemplate.RenderOffset = FVector2D(0.5f, 0.625f);
-	ArrowTemplate.RotPivot =  FVector2D(0.5f, 0.625f);
-	ArrowTemplate.RenderScale = 1.05f;
-	FVector Dir = (OffScreenPosition - InWorldPosition).GetSafeNormal();
-	FRotator Rot = Dir.Rotation();
-	RenderObj_TextureAtWithRotation(ArrowTemplate, FVector2D(InDrawScreenPosition.X, InDrawScreenPosition.Y), Rot.Yaw);
-}*/
+	ArrowTemplate.RotPivot = FVector2D(0.5f, 0.625f);
+	ArrowTemplate.RenderScale = 1.05f * WorldRenderScale;
+
+	ArrowTemplate.RenderOpacity = CurrentWorldAlpha;
+	ArrowTemplate.RenderColor = (Team == 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
+	float RotYaw = FMath::Acos(PlayerViewRotation.Vector() | (InWorldPosition - PlayerViewPoint).GetSafeNormal()) * 180.f / PI;
+	if (InDrawScreenPosition.X < 0.f)
+	{
+		RotYaw *= -1.f;
+	}
+	RenderObj_TextureAtWithRotation(ArrowTemplate, FVector2D(InDrawScreenPosition.X, InDrawScreenPosition.Y), RotYaw);
+}
 
 FText UUTHUDWidget_CTFFlagStatus::GetFlagReturnTime(AUTCTFFlag* Flag)
 {
