@@ -4838,11 +4838,11 @@ void UUTLocalPlayer::ChallengeCompleted(FName ChallengeTag, int32 Stars)
 						{
 							AwardAchievement(AchievementIDs::ChallengeStars25);
 						}
-						if (TotalStars >= 35)
+						if (TotalStars >= 40)
 						{
 							AwardAchievement(AchievementIDs::ChallengeStars35);
 						}
-						if (TotalStars >= 45)
+						if (TotalStars >= 60)
 						{
 							AwardAchievement(AchievementIDs::ChallengeStars45);
 						}

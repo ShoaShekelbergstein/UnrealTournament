@@ -2813,6 +2813,32 @@ TSharedRef<SWidget> AUTPlayerState::BuildRankInfo()
 				]
 			]
 			]
+		+ SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(FText::Format(NSLOCTEXT("AUTPlayerState", "ChallengeStarsFormatOld", ".          {0} "), FText::AsNumber(LP->GetRewardStars(NAME_REWARD_OldStars))))
+			.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+			.ColorAndOpacity(FLinearColor::Gray)
+			]
+		+ SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				SNew(SVerticalBox)
+				+ SVerticalBox::Slot()
+			[
+				SNew(SBox).WidthOverride(32).HeightOverride(32)
+				[
+					SNew(SImage)
+					.Image(SUTStyle::Get().GetBrush("UT.Star"))
+			.ColorAndOpacity(FLinearColor::Gray)
+				]
+			]
+			]
 			];
 	}
 	else

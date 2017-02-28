@@ -45,6 +45,10 @@ static const FName NAME_ChallengeChillFFA(TEXT("ChallengeChillFFA"));
 static const FName NAME_ChallengeChillTDM(TEXT("ChallengeChillTDM"));
 static const FName NAME_ChallengeChillBounce(TEXT("ChallengeChillBounce"));
 
+static const FName NAME_ChallengeFlagRunOne(TEXT("ChallengeFlagRun1"));
+static const FName NAME_ChallengeFlagRunTwo(TEXT("ChallengeFlagRun2"));
+static const FName NAME_ChallengeFlagRunThree(TEXT("ChallengeFlagRun3"));
+
 static const FName NAME_EasyNecrisTeam(TEXT("EasyNecrisTeam"));
 static const FName NAME_MediumNecrisTeam(TEXT("MediumNecrisTeam"));
 static const FName NAME_HardNecrisTeam(TEXT("HardNecrisTeam"));
@@ -103,6 +107,7 @@ static const FName NAME_REWARD_GoldStars(TEXT("REWARD_GoldStars"));
 static const FName NAME_REWARD_HalloweenStars(TEXT("REWARD_HalloweenStars"));
 static const FName NAME_REWARD_DailyStars(TEXT("REWARD_DailyStars"));
 static const FName NAME_REWARD_BlueStars(TEXT("REWARD_BlueStars"));
+static const FName NAME_REWARD_OldStars(TEXT("REWARD_OldStars"));
 
 static const FName NAME_REWARDSTYLE_STAR(TEXT("UT.Star.Outline"));
 static const FName NAME_REWARDSTYLE_STAR_COMPLETED(TEXT("UT.Star"));
