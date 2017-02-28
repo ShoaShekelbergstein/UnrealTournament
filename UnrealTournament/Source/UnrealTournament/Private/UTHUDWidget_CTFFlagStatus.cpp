@@ -467,12 +467,7 @@ FVector UUTHUDWidget_CTFFlagStatus::GetAdjustedScreenPosition(const FVector& Wor
 
 void UUTHUDWidget_CTFFlagStatus::DrawEdgeArrow(FVector InWorldPosition, FVector PlayerViewPoint, FRotator PlayerViewRotation, FVector InDrawScreenPosition, float CurrentWorldAlpha, float WorldRenderScale, int32 Team)
 {
-	ArrowTemplate.Atlas = UTHUDOwner->HUDAtlas;
-	ArrowTemplate.UVs = FTextureUVs(100.f, 836.f, 72.f, 96.f);
-	ArrowTemplate.RenderOffset = FVector2D(0.5f, 0.625f);
-	ArrowTemplate.RotPivot = FVector2D(0.5f, 0.625f);
-	ArrowTemplate.RenderScale = 1.05f * WorldRenderScale;
-
+	ArrowTemplate.RenderScale = 1.1f * WorldRenderScale;
 	ArrowTemplate.RenderOpacity = CurrentWorldAlpha;
 	ArrowTemplate.RenderColor = (Team == 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
 	float RotYaw = FMath::Acos(PlayerViewRotation.Vector() | (InWorldPosition - PlayerViewPoint).GetSafeNormal()) * 180.f / PI;
