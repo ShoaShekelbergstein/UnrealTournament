@@ -2958,7 +2958,7 @@ void AUTGameMode::RestartPlayer(AController* aPlayer)
 void AUTGameMode::GiveDefaultInventory(APawn* PlayerPawn)
 {
 	AUTCharacter* UTCharacter = Cast<AUTCharacter>(PlayerPawn);
-	if (UTCharacter != NULL)
+	if (UTCharacter != nullptr)
 	{
 		if (bClearPlayerInventory)
 		{
@@ -2972,6 +2972,15 @@ void AUTGameMode::GiveDefaultInventory(APawn* PlayerPawn)
 			}
 		}
 		UTCharacter->AddDefaultInventory(DefaultInventory);
+
+		AUTGameVolume* GV = UTCharacter->UTCharacterMovement ? Cast<AUTGameVolume>(UTCharacter->UTCharacterMovement->GetPhysicsVolume()) : nullptr;
+		if (GV && GV->bIsTeamSafeVolume)
+		{
+			if ((GV->TeamLockers.Num() > 0) && GV->TeamLockers[0])
+			{
+				GV->TeamLockers[0]->ProcessTouch(UTCharacter);
+			}
+		}
 	}
 }
 

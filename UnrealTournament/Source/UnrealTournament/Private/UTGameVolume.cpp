@@ -317,10 +317,6 @@ void AUTGameVolume::ActorLeavingVolume(class AActor* Other)
 		{
 			UTCharacter->bDamageHurtsHealth = true;
 			UTCharacter->bHasLeftSafeVolume = true;
-			if (UTCharacter->GetController() && (TeamLockers.Num() > 0) && TeamLockers[0])
-			{
-				TeamLockers[0]->ProcessTouch(UTCharacter);
-			}
 			AUTPlayerController* PC = Cast<AUTPlayerController>(UTCharacter->GetController());
 			if (PC)
 			{
