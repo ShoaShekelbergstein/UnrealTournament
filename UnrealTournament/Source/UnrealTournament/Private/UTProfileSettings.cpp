@@ -72,10 +72,10 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		HUDWidgetOpacity = 1.0f;
 		HUDWidgetBorderOpacity = 1.0f;
 		HUDWidgetSlateOpacity = 0.5f;
-		HUDWidgetWeaponbarInactiveOpacity = 0.35f;
+		HUDWidgetWeaponbarInactiveOpacity = 0.6f;
 		HUDWidgetWeaponBarScaleOverride = 1.f;
-		HUDWidgetWeaponBarInactiveIconOpacity = 0.35f;
-		HUDWidgetWeaponBarEmptyOpacity = 0.2f;
+		HUDWidgetWeaponBarInactiveIconOpacity = 0.6f;
+		HUDWidgetWeaponBarEmptyOpacity = 0.35f;
 		HUDWidgetScaleOverride = 1.f;
 		HUDMessageScaleOverride = 1.0f;
 		bUseWeaponColors = true;
