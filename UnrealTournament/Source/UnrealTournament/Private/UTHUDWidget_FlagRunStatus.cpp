@@ -168,15 +168,25 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 		float InWorldFlagScale = WorldRenderScale * (StatusScale - 0.5f*(StatusScale - 1.f));
 		float InWorldNumberScale = InWorldFlagScale;
 		FVector EdgeScreenPosition = DrawScreenPosition;
+		float CircleScaling = 1.f;
 		if (!bDrawEdgeArrow)
 		{
 			FVector FootPosition = Holder ? Holder->GetMesh()->GetComponentLocation() : Flag->GetActorLocation() + FVector(0.f,0.f, Flag->Collision->GetUnscaledCapsuleHalfHeight());
 			bool bIgnore = false;
 			EdgeScreenPosition = GetAdjustedScreenPosition(FootPosition, PlayerViewPoint, ViewDir, Dist, Edge, bIgnore, TeamNum);
 			float RingScaleFactor = Holder ? 4.4f : 4.f;
-			float CircleScaling = FMath::Max(1.f, RingScaleFactor * (DrawScreenPosition - EdgeScreenPosition).Size() / FMath::Max(1.f, CircleBorderTemplate.GetWidth()));
+			CircleScaling = FMath::Max(1.f, RingScaleFactor * (DrawScreenPosition - EdgeScreenPosition).Size() / FMath::Max(1.f, CircleBorderTemplate.GetWidth()));
 			InWorldFlagScale *= CircleScaling;
+			float DistFromCenter = (DrawScreenPosition - FVector(0.5f*GetCanvas()->ClipX, 0.5f*GetCanvas()->ClipY, 0.f)).Size();
 			CurrentCircleAlpha = CurrentCircleAlpha * 1.f / CircleScaling;
+			if ((CircleScaling < 1.5f) && (DistFromCenter < 1.1f*CircleScaling*CircleBorderTemplate.GetWidth()))
+			{
+				CurrentCircleAlpha *= 0.2f;
+			}
+			else if ((CircleScaling > 4.f) && !Holder)
+			{
+				CurrentCircleAlpha *= 1.f /(CircleScaling - 4.f);
+			}
 		}
 		FlagIconTemplate.RenderOpacity = CurrentWorldAlpha;
 		CircleTemplate.RenderOpacity = 1.5f*CurrentWorldAlpha;
@@ -187,10 +197,13 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 		EdgeScreenPosition.X -= RenderPosition.X;
 		EdgeScreenPosition.Y -= RenderPosition.Y;
 
-		CircleBorderTemplate.RenderColor = FLinearColor::Black;
-		RenderObj_TextureAt(CircleBorderTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, CircleBorderTemplate.GetWidth()* InWorldFlagScale, CircleBorderTemplate.GetHeight()* InWorldFlagScale);
-		CircleBorderTemplate.RenderColor = FlagIconTemplate.RenderColor;
-		RenderObj_TextureAt(CircleBorderTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, 1.1f*CircleBorderTemplate.GetWidth()* InWorldFlagScale, 1.1f*CircleBorderTemplate.GetHeight()* InWorldFlagScale);
+		if (Holder || (CircleScaling > 2.f))
+		{
+			CircleBorderTemplate.RenderColor = FLinearColor::Black;
+			RenderObj_TextureAt(CircleBorderTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, CircleBorderTemplate.GetWidth()* InWorldFlagScale, CircleBorderTemplate.GetHeight()* InWorldFlagScale);
+			CircleBorderTemplate.RenderColor = FlagIconTemplate.RenderColor;
+			RenderObj_TextureAt(CircleBorderTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, 1.1f*CircleBorderTemplate.GetWidth()* InWorldFlagScale, 1.1f*CircleBorderTemplate.GetHeight()* InWorldFlagScale);
+		}
 		CircleBorderTemplate.RenderColor = FLinearColor::Black;
 		FVector DrawNumberPosition = EdgeScreenPosition;
 		DrawNumberPosition.Y = FMath::Min(DrawScreenPosition.Y, DrawNumberPosition.Y + 0.25f*CircleTemplate.GetHeight()* InWorldNumberScale);
