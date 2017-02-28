@@ -190,7 +190,7 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 	}
 	else
 	{
-		UTHUDOwner->DrawWinConditions(UTHUDOwner->MediumFont, LeftEdge, YOffset, Canvas->ClipX, RenderScale, false);
+		UTHUDOwner->DrawWinConditions(UTHUDOwner->MediumFont, LeftEdge, YOffset - 0.24f*MessageY*RenderScale, Canvas->ClipX, RenderScale, false);
 	}
 
 	DrawGameOptions(RenderDelta, YOffset, LeftEdge + Width);
