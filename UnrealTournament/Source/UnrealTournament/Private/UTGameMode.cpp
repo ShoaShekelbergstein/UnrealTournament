@@ -107,6 +107,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	bHasRespawnChoices = false;
 	MaxWaitForPlayers = 300;
 	QuickWaitForPlayers = 180;
+	ShortWaitForPlayers = 60;
 	EndScoreboardDelay = 4.f;
 	MainScoreboardDisplayTime = 5.f;
 	ScoringPlaysDisplayTime = 0.f; 
@@ -259,6 +260,11 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	{
 		MaxWaitForPlayers = QuickWaitForPlayers;
 	}
+	if (UGameplayStatics::HasOption(Options, TEXT("NextMap")) || UGameplayStatics::HasOption(Options, TEXT("LAN")))
+	{
+		MaxWaitForPlayers = ShortWaitForPlayers;
+	}
+
 	Super::InitGame(MapName, Options, ErrorMessage);
 
 	GameDifficulty = FMath::Max(0, UGameplayStatics::GetIntOption(Options, TEXT("Difficulty"), GameDifficulty));

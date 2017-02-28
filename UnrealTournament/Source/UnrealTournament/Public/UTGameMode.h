@@ -275,6 +275,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MatchStart")
 		int32 QuickWaitForPlayers;
 
+	/** ShortWaitForPlayers for LAN servers or servers that have already been through a map vote */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MatchStart")
+		int32 ShortWaitForPlayers;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MatchStart")
 		int32 DefaultMaxPlayers;
 
