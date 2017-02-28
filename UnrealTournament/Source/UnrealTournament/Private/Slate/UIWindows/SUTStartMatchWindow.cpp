@@ -23,7 +23,6 @@ void SUTStartMatchWindow::Construct(const FArguments& InArgs, TWeakObjectPtr<UUT
 	Funny.Add(TEXT("Performing some dark magic..."));
 	Funny.Add(TEXT("Spell checking..."));
 	Funny.Add(TEXT("Activating the Field LAttice Generator..."));
-	Funny.Add(TEXT("Taking a WOW break..."));
 	Funny.Add(TEXT("Dividing by Zero..."));
 	Funny.Add(TEXT("Tightening up the graphics..."));
 	Funny.Add(TEXT("Let\'s BOUNCE!!!"));
