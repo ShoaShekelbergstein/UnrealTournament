@@ -262,19 +262,45 @@ void UUTHUDWidget_WeaponBar::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCan
 		FWeaponGroupInfo* GroupInfo = &WeaponMap[i];
 		if (GroupInfo->WeaponClasses.Num() > 0)
 		{
+			bool bHaveWeaponInGroup = false;
+			for (int32 WeapIdx = 0; WeapIdx < GroupInfo->WeaponClasses.Num(); WeapIdx++)
+			{
+				if (GroupInfo->Weapons[WeapIdx] != nullptr)
+				{
+					bHaveWeaponInGroup = true;
+				}
+			}
+			bool bFinishedWithGroup = false;
 			for (int32 WeapIdx = 0; WeapIdx < GroupInfo->WeaponClasses.Num(); WeapIdx++)
 			{
 				if (GroupInfo->WeaponClasses[WeapIdx] != nullptr)
 				{
-					Cells.Add(FWeaponBarCell(DrawOffset, CellSize, GroupInfo->Weapons[WeapIdx], GroupInfo->WeaponClasses[WeapIdx], GroupInfo->Group));
-					
-					if (bVerticalLayout)
+					bool bAddedCell = false;
+					if (!bHaveWeaponInGroup)
 					{
-						DrawOffset.Y += CellSize.Y + (i < WeaponMap.Num() -1 ? Padding : 0);
+						Cells.Add(FWeaponBarCell(DrawOffset, CellSize, GroupInfo->Weapons[WeapIdx], GroupInfo->WeaponClasses[WeapIdx], GroupInfo->Group));
+						bFinishedWithGroup = true;
+						bAddedCell = true;
 					}
-					else
+					else if (GroupInfo->Weapons[WeapIdx] != nullptr)
 					{
-						DrawOffset.X += CellSize.X + (i < WeaponMap.Num() -1 ? Padding : 0);
+						Cells.Add(FWeaponBarCell(DrawOffset, CellSize, GroupInfo->Weapons[WeapIdx], GroupInfo->WeaponClasses[WeapIdx], GroupInfo->Group));
+						bAddedCell = true;
+					}
+					if (bAddedCell)
+					{
+						if (bVerticalLayout)
+						{
+							DrawOffset.Y += CellSize.Y + (i < WeaponMap.Num() - 1 ? Padding : 0);
+						}
+						else
+						{
+							DrawOffset.X += CellSize.X + (i < WeaponMap.Num() - 1 ? Padding : 0);
+						}
+					}
+					if (bFinishedWithGroup)
+					{
+						break;
 					}
 				}
 			}
