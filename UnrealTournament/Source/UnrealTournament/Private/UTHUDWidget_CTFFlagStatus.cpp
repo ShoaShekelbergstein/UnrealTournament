@@ -410,16 +410,19 @@ FVector UUTHUDWidget_CTFFlagStatus::GetAdjustedScreenPosition(const FVector& Wor
 {
 	FVector Cross = (ViewDir ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
 	FVector DrawScreenPosition;
-	float ExtraPadding = 0.1f * Canvas->ClipX;
+	float ExtraPadding = 0.05f * Canvas->ClipX;
 	DrawScreenPosition = GetCanvas()->Project(WorldPosition);
-	FVector FlagDir = WorldPosition - ViewPoint;
+	FVector FlagDir = (WorldPosition - ViewPoint).GetSafeNormal();
 	if ((ViewDir | FlagDir) < 0.f)
 	{
 		bool bWasLeft = (Team == 0) ? bRedWasLeft : bBlueWasLeft;
 		bDrawEdgeArrow = true;
-		DrawScreenPosition.X = bWasLeft ? Edge + ExtraPadding : GetCanvas()->ClipX - Edge - ExtraPadding;
-		DrawScreenPosition.Y = 0.5f*GetCanvas()->ClipY;
+		FVector LeftDir = (ViewDir ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
+		bool bLeftOfScreen = (FlagDir | LeftDir) > 0.f;
+		DrawScreenPosition.X = bLeftOfScreen ? -0.5f*GetCanvas()->ClipX * (ViewDir | FlagDir) : GetCanvas()->ClipX * (1.f + 0.5f*(ViewDir | FlagDir));
+		DrawScreenPosition.Y = 0.9f*GetCanvas()->ClipY;
 		DrawScreenPosition.Z = 0.0f;
+		DrawScreenPosition.X = FMath::Clamp(DrawScreenPosition.X, Edge+ExtraPadding, GetCanvas()->ClipX - Edge-ExtraPadding);
 		return DrawScreenPosition;
 	}
 	else if ((DrawScreenPosition.X < 0.f) || (DrawScreenPosition.X > GetCanvas()->ClipX))
@@ -427,11 +430,15 @@ FVector UUTHUDWidget_CTFFlagStatus::GetAdjustedScreenPosition(const FVector& Wor
 		bool bLeftOfScreen = (DrawScreenPosition.X < 0.f);
 		float OffScreenDistance = bLeftOfScreen ? -1.f*DrawScreenPosition.X : DrawScreenPosition.X - GetCanvas()->ClipX;
 		bDrawEdgeArrow = true;
-		DrawScreenPosition.X = bLeftOfScreen ? Edge+ ExtraPadding : GetCanvas()->ClipX - Edge - ExtraPadding;
-		//Y approaches 0.5*Canvas->ClipY as further off screen
+		DrawScreenPosition.X = bLeftOfScreen ? Edge + ExtraPadding : GetCanvas()->ClipX - Edge - ExtraPadding;
+		//Y approaches 0.9*Canvas->ClipY as further off screen
 		float MaxOffscreenDistance = GetCanvas()->ClipX;
-		DrawScreenPosition.Y = 0.5f*GetCanvas()->ClipY + FMath::Clamp((MaxOffscreenDistance - OffScreenDistance)/ MaxOffscreenDistance, 0.f, 1.f) * (DrawScreenPosition.Y - 0.5f*GetCanvas()->ClipY);
-		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, 0.25f*GetCanvas()->ClipY, 0.75f*GetCanvas()->ClipY);
+		DrawScreenPosition.Y = 0.9f*GetCanvas()->ClipY + FMath::Clamp((MaxOffscreenDistance - OffScreenDistance)/ MaxOffscreenDistance, 0.f, 1.f) * (DrawScreenPosition.Y - 0.9f*GetCanvas()->ClipY);
+		if (Team == 1)
+		{
+			DrawScreenPosition.Y += 0.05f*GetCanvas()->ClipY;
+		}
+		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, 0.25f*GetCanvas()->ClipY, 0.9f*GetCanvas()->ClipY);
 		if (Team == 0)
 		{
 			bRedWasLeft = bLeftOfScreen;
