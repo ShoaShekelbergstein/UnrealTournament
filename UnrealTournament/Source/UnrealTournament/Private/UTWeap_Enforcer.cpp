@@ -2,6 +2,7 @@
 #include "UnrealTournament.h"
 #include "UTWeap_Enforcer.h"
 #include "UTWeaponState.h"
+#include "UTWeaponStateActive.h"
 #include "UTWeaponStateFiring.h"
 #include "UTWeaponStateFiring_Enforcer.h"
 #include "UTWeaponStateFiringBurstEnforcer.h"
@@ -140,6 +141,12 @@ void AUTWeap_Enforcer::StateChanged()
 		ImpactCount = 0;
 	}
 
+	//Reset bFireLeftSide everytime we stop firing and go back to active
+	if (Cast<UUTWeaponStateActive>(CurrentState))
+	{
+		bFireLeftSide = false;
+	}
+
 	Super::StateChanged();
 }
 
@@ -149,8 +156,8 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 
 	if (UTOwner != NULL)
 	{
-		// Fire on right side by default, unless dual and bFireLeftSide
-		if (!bDualEnforcerMode || (BurstFireMode ? (FireCount / BurstFireMode->BurstSize == 0) : !bFireLeftSide))
+		//Firing single right enforcer
+		if (!bDualEnforcerMode)
 		{
 			if (!BurstFireMode || BurstFireMode->CurrentShot == 0)
 			{
@@ -172,47 +179,63 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 		}
 		else
 		{
-			// try and play the sound if specified
-			if ((!BurstFireMode || BurstFireMode->CurrentShot == 0) && FireSound.IsValidIndex(CurrentFireMode) && FireSound[CurrentFireMode] != NULL)
+			if (FPFireSound.IsValidIndex(CurrentFireMode) && FPFireSound[CurrentFireMode] != NULL && Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
 			{
-				if (FPFireSound.IsValidIndex(CurrentFireMode) && FPFireSound[CurrentFireMode] != NULL && Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
-				{
-					UUTGameplayStatics::UTPlaySound(GetWorld(), FPFireSound[CurrentFireMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
-				}
-				else
-				{
-					UUTGameplayStatics::UTPlaySound(GetWorld(), FireSound[CurrentFireMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
-				}
+				UUTGameplayStatics::UTPlaySound(GetWorld(), FPFireSound[CurrentFireMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
 			}
-			
-			if (ShouldPlay1PVisuals())
+			else
 			{
-				// try and play a firing animation if specified
-				if ((!BurstFireMode || BurstFireMode->CurrentShot == 0) && FireAnimationLeft.IsValidIndex(CurrentFireMode) && FireAnimationLeft[CurrentFireMode] != NULL)
-				{
-					UAnimInstance* AnimInstance = LeftMesh->GetAnimInstance();
-					if (AnimInstance != NULL)
-					{
-						AnimInstance->Montage_Play(FireAnimationLeft[CurrentFireMode], UTOwner->GetFireRateMultiplier());
-					}
-				}
+				UUTGameplayStatics::UTPlaySound(GetWorld(), FireSound[CurrentFireMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
+			}
 
-				UTOwner->TargetEyeOffset.X = FiringViewKickback;
-				// muzzle flash
-				uint8 LeftHandMuzzleFlashIndex = CurrentFireMode + 2;
-				if (MuzzleFlash.IsValidIndex(LeftHandMuzzleFlashIndex) && MuzzleFlash[LeftHandMuzzleFlashIndex] != NULL && MuzzleFlash[LeftHandMuzzleFlashIndex]->Template != NULL)
+			if (UTOwner && ShouldPlay1PVisuals())
+			{
+				UAnimInstance* HandAnimInstance = UTOwner->FirstPersonMesh ? UTOwner->FirstPersonMesh->GetAnimInstance() : nullptr;
+
+				if (!BurstFireMode || (BurstFireMode->CurrentShot == 0))
 				{
-					// if we detect a looping particle system, then don't reactivate it
-					if (!MuzzleFlash[LeftHandMuzzleFlashIndex]->bIsActive || MuzzleFlash[LeftHandMuzzleFlashIndex]->bSuppressSpawning || !IsLoopingParticleSystem(MuzzleFlash[LeftHandMuzzleFlashIndex]->Template))
+					//Firing Dual Enforcer Right Gun
+					if (!bFireLeftSide)
 					{
-						MuzzleFlash[LeftHandMuzzleFlashIndex]->ActivateSystem();
+						if ((HandAnimInstance) && Dual_FireAnimationRightHand.IsValidIndex(CurrentFireMode) && (Dual_FireAnimationRightHand[CurrentFireMode] != NULL))
+						{
+							HandAnimInstance->Montage_Play(Dual_FireAnimationRightHand[CurrentFireMode], UTOwner->GetFireRateMultiplier());
+						}
+
+						if (Mesh && Dual_FireAnimationRightWeapon.IsValidIndex(CurrentFireMode) && (Dual_FireAnimationRightWeapon[CurrentFireMode] != NULL))
+						{
+							UAnimInstance* RightGunAnimInstance = Mesh->GetAnimInstance();
+							if (RightGunAnimInstance)
+							{
+								RightGunAnimInstance->Montage_Play(Dual_FireAnimationRightWeapon[CurrentFireMode], UTOwner->GetFireRateMultiplier());
+							}
+						}
+					}
+					// Firing Dual Enforcer Left Gun
+					else
+					{
+						if ((HandAnimInstance) && Dual_FireAnimationLeftHand.IsValidIndex(CurrentFireMode) && (Dual_FireAnimationLeftHand[CurrentFireMode] != NULL))
+						{
+							HandAnimInstance->Montage_Play(Dual_FireAnimationLeftHand[CurrentFireMode], UTOwner->GetFireRateMultiplier());
+						}
+
+						if (Mesh && Dual_FireAnimationLeftWeapon.IsValidIndex(CurrentFireMode) && (Dual_FireAnimationLeftWeapon[CurrentFireMode] != NULL))
+						{
+							UAnimInstance* LeftGunAnimInstance = LeftMesh->GetAnimInstance();
+							if (LeftGunAnimInstance)
+							{
+								LeftGunAnimInstance->Montage_Play(Dual_FireAnimationLeftWeapon[CurrentFireMode], UTOwner->GetFireRateMultiplier());
+							}
+						}
 					}
 				}
 			}
-		}
-		if (!BurstFireMode)
-		{
-			bFireLeftSide = !bFireLeftSide;
+
+			//Alternate every shot, or every volley in burst mode
+			if (!BurstFireMode || ((BurstFireMode->CurrentShot / BurstFireMode->BurstSize) == 0))
+			{
+				bFireLeftSide = !bFireLeftSide;
+			}
 		}
 	}
 }
@@ -395,16 +418,56 @@ void AUTWeap_Enforcer::ReloadClip()
 
 void AUTWeap_Enforcer::BringUp(float OverflowTime)
 {
-	if (LeftBringUpAnim != NULL)
+	Super::BringUp(OverflowTime);
+	
+	if ((Dual_BringUpHand != NULL) && UTOwner && UTOwner->FirstPersonMesh)
 	{
-		UAnimInstance* AnimInstance = LeftMesh->GetAnimInstance();
-		if (AnimInstance != NULL)
+		UAnimInstance* HandAnimInstance = UTOwner->FirstPersonMesh->GetAnimInstance();
+		if (HandAnimInstance != NULL)
 		{
-			AnimInstance->Montage_Play(LeftBringUpAnim, LeftBringUpAnim->SequenceLength / EnforcerEquippingState->EquipTime);
+			HandAnimInstance->Montage_Play(Dual_BringUpHand, Dual_BringUpHand->SequenceLength / EnforcerEquippingState->EquipTime);
 		}
 	}
+}
 
-	Super::BringUp(OverflowTime);
+bool AUTWeap_Enforcer::PutDown()
+{
+	const bool Result = Super::PutDown();
+	
+	if ((Result))
+	{
+		if (bDualEnforcerMode)
+		{
+			if (UTOwner && UTOwner->FirstPersonMesh)
+			{
+				UAnimInstance* HandsAnimInstance = UTOwner->FirstPersonMesh->GetAnimInstance();
+				if (HandsAnimInstance)
+				{
+					HandsAnimInstance->Montage_Play(Dual_PutDownHand, Dual_PutDownHand->SequenceLength / EnforcerEquippingState->EquipTime);
+				}
+			}
+
+			if (LeftMesh && Dual_PutDownLeftWeapon)
+			{
+				UAnimInstance* LeftAnimInstance = LeftMesh->GetAnimInstance();
+				if (LeftAnimInstance)
+				{
+					LeftAnimInstance->Montage_Play(Dual_PutDownLeftWeapon, Dual_PutDownLeftWeapon->SequenceLength / EnforcerEquippingState->EquipTime);
+				}
+			}
+
+			if (Mesh && Dual_PutDownRightWeapon)
+			{
+				UAnimInstance* RightAnimInstance = Mesh->GetAnimInstance();
+				if (RightAnimInstance)
+				{
+					RightAnimInstance->Montage_Play(Dual_PutDownRightWeapon, Dual_PutDownRightWeapon->SequenceLength / EnforcerEquippingState->EquipTime);
+				}
+			}
+		}
+	}
+	
+	return Result;
 }
 
 void AUTWeap_Enforcer::GotoEquippingState(float OverflowTime)
@@ -466,12 +529,21 @@ void AUTWeap_Enforcer::AttachLeftMesh()
 			LeftMesh->bRecentlyRendered = true;
 		}
 
-		if (LeftBringUpAnim != NULL)
+		if (Dual_BringUpLeftWeaponFirstAttach != NULL)
 		{
-			UAnimInstance* AnimInstance = LeftMesh->GetAnimInstance();
-			if (AnimInstance != NULL)
+			UAnimInstance* LeftWeaponAnimInstance = LeftMesh->GetAnimInstance();
+			if (LeftWeaponAnimInstance != NULL)
 			{
-				AnimInstance->Montage_Play(LeftBringUpAnim, LeftBringUpAnim->SequenceLength / EnforcerEquippingState->EquipTime);
+				LeftWeaponAnimInstance->Montage_Play(Dual_BringUpLeftWeaponFirstAttach, Dual_BringUpLeftWeaponFirstAttach->SequenceLength / EnforcerEquippingState->EquipTime);
+			}
+		}
+
+		if ((Dual_BringUpLeftHandFirstAttach != NULL) && UTOwner && UTOwner->FirstPersonMesh)
+		{
+			UAnimInstance* HandAnimInstance = UTOwner->FirstPersonMesh->GetAnimInstance();
+			if (HandAnimInstance != NULL)
+			{
+				HandAnimInstance->Montage_Play(Dual_BringUpLeftHandFirstAttach, Dual_BringUpLeftHandFirstAttach->SequenceLength / EnforcerEquippingState->EquipTime);
 			}
 		}
 
@@ -571,6 +643,15 @@ void AUTWeap_Enforcer::UpdateWeaponHand()
 				break;
 			}
 		}
+	}
+}
+
+void AUTWeap_Enforcer::PlayWeaponAnim(UAnimMontage* WeaponAnim, UAnimMontage* HandsAnim /* = NULL */, float RateOverride /* = 0.0f */)
+{
+	//Ignore this function if we are in Dual Enforcer Mode as we are manually handing weapon anims
+	if (!bDualEnforcerMode)
+	{
+		Super::PlayWeaponAnim(WeaponAnim, HandsAnim, RateOverride);
 	}
 }
 
