@@ -2,6 +2,7 @@
 #include "UnrealTournament.h"
 #include "UTCharacterVoice.h"
 #include "UTAnnouncer.h"
+#include "UTCTFGameMessage.h"
 
 UUTCharacterVoice::UUTCharacterVoice(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -607,6 +608,10 @@ bool UUTCharacterVoice::InterruptAnnouncement(const FAnnouncementInfo Announceme
 		{
 			return true;
 		}
+		if ((AnnouncementInfo.Switch == GetStatusIndex(StatusMessage::RallyNow)) && (OtherAnnouncementInfo.Switch == GetStatusIndex(StatusMessage::NeedRally)))
+		{
+			return true;
+		}
 	}
 	return false;
 }
@@ -627,10 +632,18 @@ bool UUTCharacterVoice::CancelByAnnouncement_Implementation(int32 Switch, const 
 		{
 			return true;
 		}
+		if ((OtherSwitch == GetStatusIndex(StatusMessage::RallyNow)) && (Switch == GetStatusIndex(StatusMessage::NeedRally)))
+		{
+			return true;
+		}
 		return false;
 	}
 	else
 	{
+		if ((OtherMessageClass == UUTCTFGameMessage::StaticClass()) && (OtherSwitch == 4) && (Switch == GetStatusIndex(StatusMessage::GetTheFlag)))
+		{
+			return true;
+		}
 		return (Switch < StatusBaseIndex + KEY_CALLOUTS);
 	}
 }
