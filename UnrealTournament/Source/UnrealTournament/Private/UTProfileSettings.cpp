@@ -93,7 +93,7 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		MouseAccelerationMax = 1.0f;
 		DoubleClickTime = 0.3f;
 
-		MouseSensitivity = 0.07f;
+		MouseSensitivity = 0.05f;
 
 		MaxDodgeClickTimeValue = 0.25;
 		bEnableDoubleTapDodge = true;
@@ -852,7 +852,7 @@ void UUTProfileSettings::ApplyInputSettings(UUTLocalPlayer* ProfilePlayer)
 
 	for (TObjectIterator<UUTPlayerInput> It(RF_NoFlags); It; ++It)
 	{
-		PlayerInput->SetMouseSensitivity(MouseSensitivity);
+		PlayerInput->SetMouseSensitivity(FMath::Max(0.1f, MouseSensitivity));
 		PlayerInput->AccelerationPower = MouseAccelerationPower;
 		PlayerInput->Acceleration = MouseAcceleration;
 		PlayerInput->AccelerationMax = MouseAccelerationMax;

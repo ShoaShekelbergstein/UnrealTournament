@@ -339,7 +339,6 @@ TSharedRef<SWidget> SUTControlSettingsDialog::BuildMouseTab()
 {
 	UUTProfileSettings* ProfileSettings = PlayerOwner->GetProfileSettings();
 
-	MouseSensitivityRange = FVector2D(0.001f, 0.15f);
 	MouseAccelerationRange = FVector2D(0.000001f, 0.0001f);
 	MouseAccelerationMaxRange = FVector2D(0.2f, 1.5f);
 		
@@ -441,7 +440,7 @@ TSharedRef<SWidget> SUTControlSettingsDialog::BuildMouseTab()
 					.IndentHandle(false)
 					.Style(SUWindowsStyle::Get(),"UT.Common.Slider")
 					.Orientation(Orient_Horizontal)
-					.Value((ProfileSettings->MouseSensitivity - MouseSensitivityRange.X) / (MouseSensitivityRange.Y - MouseSensitivityRange.X))
+					.Value((10.f*ProfileSettings->MouseSensitivity))
 				]
 			]
 		]		
@@ -844,7 +843,8 @@ void SUTControlSettingsDialog::SaveControlSettings()
 			GameAction->SecondaryKey = BindList[i]->SecondaryKeyBindWidget->GetKey();
 		}
 
-		ProfileSettings->MouseSensitivity = MouseSensitivity->GetValue() * (MouseSensitivityRange.Y - MouseSensitivityRange.X) + MouseSensitivityRange.X;
+		ProfileSettings->MouseSensitivity = FMath::Max(0.01f, 0.1f * MouseSensitivity->GetValue());
+		UE_LOG(UT, Warning, TEXT("Saved as %f"), ProfileSettings->MouseSensitivity);
 		ProfileSettings->MouseAcceleration = MouseAcceleration->GetValue() * (MouseAccelerationRange.Y - MouseAccelerationRange.X) + MouseAccelerationRange.X;
 		ProfileSettings->MouseAccelerationMax = MouseAccelerationMax->GetValue() * (MouseAccelerationMaxRange.Y - MouseAccelerationMaxRange.X) + MouseAccelerationMaxRange.X;
 		if (MouseAccelerationCheckBox->IsChecked())
@@ -896,7 +896,7 @@ void SUTControlSettingsDialog::EditSensitivity(const FText& Input, ETextCommit::
 
 	if (ChangedSensitivity >= 0.0f && ChangedSensitivity <= 20.0f)
 	{
-		ChangedSensitivity /= 20.0f;
+		ChangedSensitivity *= 0.1f;
 		MouseSensitivity->SetValue(ChangedSensitivity);
 	}
 }
@@ -929,7 +929,7 @@ void SUTControlSettingsDialog::Tick(const FGeometry& AllottedGeometry, const dou
 
 	if (MouseSensitivityEdit.IsValid() && !MouseSensitivityEdit->HasKeyboardFocus())
 	{		
-		MouseSensitivityEdit->SetText(FText::FromString(FString::Printf(TEXT("%f"), MouseSensitivity->GetValue() * 20.0f)));
+		MouseSensitivityEdit->SetText(FText::FromString(FString::Printf(TEXT("%f"), MouseSensitivity->GetValue() * 10.0f)));
 	}
 
 	if (MouseAccelerationEdit.IsValid() && !MouseAccelerationEdit->HasKeyboardFocus())
