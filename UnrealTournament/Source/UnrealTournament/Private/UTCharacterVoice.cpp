@@ -125,7 +125,7 @@ int32 UUTCharacterVoice::GetDestinationIndex(int32 MessageIndex) const
 
 FText UUTCharacterVoice::GetText(int32 Switch, bool bTargetsPlayerState1, class APlayerState* RelatedPlayerState_1, class APlayerState* RelatedPlayerState_2, class UObject* OptionalObject) const
 {
-	// @TOOD FIXMESTEVE option to turn these one
+	// @TOOD FIXMESTEVE option to turn these on
 	return FText::GetEmpty();
 
 	FFormatNamedArguments Args;
@@ -579,6 +579,10 @@ bool UUTCharacterVoice::ShouldPlayAnnouncement(const FClientReceiveData& ClientD
 
 bool UUTCharacterVoice::IsFlagLocationUpdate(int32 Switch) const
 {
+	if (Switch == GetStatusIndex(StatusMessage::DoorRally))
+	{
+		return true;
+	}
 	return (Switch > StatusBaseIndex + FIRSTGAMEVOLUMESPEECH) && (Switch < StatusBaseIndex + LASTGAMEVOLUMESPEECH) && (Switch % 10 < 2);
 }
 
