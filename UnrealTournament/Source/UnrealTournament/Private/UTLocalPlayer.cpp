@@ -5516,6 +5516,7 @@ void UUTLocalPlayer::StartMatchmaking(int32 PlaylistId)
 					if (UTGameInstance->GetPlaylistManager()->GetMaxTeamInfoForPlaylist(PlaylistId, TeamCount, TeamSize, MaxPartySize))
 					{
 						PersistentParty->SetPlayersNeeded((TeamSize * TeamCount) - PersistentParty->GetPartySize());
+						PersistentParty->SetPartyMaxSize(MaxPartySize);
 					}
 
 					MatchmakingParams.bRanked = UTGameInstance->GetPlaylistManager()->IsPlaylistRanked(PlaylistId);
