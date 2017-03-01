@@ -1988,7 +1988,7 @@ void AUTPlayerController::ClientHearSound_Implementation(USoundBase* TheSound, A
 					GetActorEyesViewPoint(ViewPoint, ViewRotation);
 					if (SoundPlayer && ((ViewRotation.Vector() | (SoundPlayer->GetActorLocation() - ViewPoint).GetSafeNormal()) < 0.7f))
 					{
-						VolumeMultiplier = 2.f;
+						VolumeMultiplier = 3.f;
 					}
 				}
 			}
