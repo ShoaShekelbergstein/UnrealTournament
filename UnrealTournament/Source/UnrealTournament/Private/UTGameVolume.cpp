@@ -163,23 +163,9 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 				}
 
 				// possibly play incoming warning
-				if ((bPlayIncomingWarning || bIsDefenderBase) && !P->GetCarriedObject()->bWasInEnemyBase && (GetWorld()->GetTimeSeconds() - GS->LastIncomingWarningTime > 4.f))
+				if ((bPlayIncomingWarning || bIsDefenderBase) && !P->GetCarriedObject()->bWasInEnemyBase && (GetWorld()->GetTimeSeconds() - GS->LastIncomingWarningTime > 3.f))
 				{
-					GS->LastIncomingWarningTime = GetWorld()->GetTimeSeconds();
-					if (bTestBaseEntry)
-					{
-						int32 DirectionSwitch = DetermineEntryDirection(P, GS);
-						((AUTPlayerState *)(P->PlayerState))->AnnounceStatus(StatusMessage::Incoming, DirectionSwitch);
-					}
-					else
-					{
-						AUTPlayerState* PS = GetBestWarner(P);
-						if (PS)
-						{
-							int32 DirectionSwitch = DetermineEntryDirection(P, GS);
-							PS->AnnounceStatus(StatusMessage::Incoming, DirectionSwitch);
-						}
-					}
+					WarnFCIncoming(P);
 				}
 
 				// possibly announce flag carrier changed zones
@@ -272,6 +258,29 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 			if (PS != nullptr)
 			{
 				PS->LastKnownLocation = this;
+			}
+		}
+	}
+}
+
+void AUTGameVolume::WarnFCIncoming(AUTCharacter* FlagCarrier)
+{
+	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+	if (GS)
+	{
+		GS->LastIncomingWarningTime = GetWorld()->GetTimeSeconds();
+		if (bTestBaseEntry && Cast<AUTPlayerState>(FlagCarrier->PlayerState))
+		{
+			int32 DirectionSwitch = DetermineEntryDirection(FlagCarrier, GS);
+			((AUTPlayerState *)(FlagCarrier->PlayerState))->AnnounceStatus(StatusMessage::Incoming, DirectionSwitch);
+		}
+		else
+		{
+			AUTPlayerState* PS = GetBestWarner(FlagCarrier);
+			if (PS)
+			{
+				int32 DirectionSwitch = DetermineEntryDirection(FlagCarrier, GS);
+				PS->AnnounceStatus(StatusMessage::Incoming, DirectionSwitch);
 			}
 		}
 	}

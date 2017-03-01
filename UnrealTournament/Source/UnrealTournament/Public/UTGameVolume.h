@@ -108,6 +108,9 @@ class UNREALTOURNAMENT_API AUTGameVolume : public APhysicsVolume, public IUTTeam
 
 	/** Pick best enemy team player to play announcement. */
 	class AUTPlayerState* GetBestWarner(class AUTCharacter* StatusEnemy);
+
+	/** Warn that enemy FC is incoming. */
+	virtual void WarnFCIncoming(AUTCharacter* FlagCarrier);
 };
 
 

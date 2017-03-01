@@ -1340,6 +1340,7 @@ void AUTCharacter::FlagPingedBy(AUTPlayerState* PS)
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	AUTGameVolume* GV = UTCharacterMovement ? Cast<AUTGameVolume>(UTCharacterMovement->GetPhysicsVolume()) : nullptr;
 	float MinTimeForVerbal = (GV && GS && (GV->VoiceLinesSet != GS->LastEnemyLocationName)) ? 0.f : 6.f;
+	Flag->LastPinger = PS ? PS : Flag->LastPinger;
 	if (PS && Flag && GS && (GetWorld()->GetTimeSeconds() - GS->LastEnemyLocationReportTime > MinTimeForVerbal) && !Flag->bCurrentlyPinged)
 	{
 		if (GS)
@@ -1354,13 +1355,16 @@ void AUTCharacter::FlagPingedBy(AUTPlayerState* PS)
 			{
 				GS->CurrentRallyPoint->WarnEnemyRally();
 			}
+			if (GV->bPlayIncomingWarning && (GetWorld()->GetTimeSeconds() - GS->LastIncomingWarningTime > 3.f))
+			{
+				GV->WarnFCIncoming(this);
+			}
 		}
 		else
 		{
 			PS->AnnounceStatus(StatusMessage::EnemyFCHere);
 		}
 	}
-	Flag->LastPinger = PS ? PS : Flag->LastPinger;
 }
 
 void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
@@ -1384,9 +1388,9 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 			}
 			if (bShouldPing)
 			{
-				TargeterChar->FlagPingedBy(Cast<AUTPlayerState>(PlayerState));
 				TargeterChar->LastTargeter = Cast<AUTPlayerState>(PlayerState);
 				TargeterChar->LastTargetSeenTime = GetWorld()->GetTimeSeconds();
+				TargeterChar->FlagPingedBy(Cast<AUTPlayerState>(PlayerState));
 			}
 		}
 	}
