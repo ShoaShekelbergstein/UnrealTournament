@@ -862,12 +862,12 @@ bool FMaterialResource::IsCrackFreeDisplacementEnabled() const
 
 bool FMaterialResource::IsSeparateTranslucencyEnabled() const 
 { 
-	return Material->bEnableSeparateTranslucency && !IsUIMaterial();
+	return Material->bEnableSeparateTranslucency && !IsUIMaterial() && !IsDeferredDecal();
 }
 
 bool FMaterialResource::IsMobileSeparateTranslucencyEnabled() const
 {
-	return Material->bEnableMobileSeparateTranslucency && !IsUIMaterial();
+	return Material->bEnableMobileSeparateTranslucency && !IsUIMaterial() && !IsDeferredDecal();
 }
 
 bool FMaterialResource::IsAdaptiveTessellationEnabled() const
