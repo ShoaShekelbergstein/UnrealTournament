@@ -60,7 +60,7 @@ class UNREALTOURNAMENT_API UUTCTFGameMessage : public UUTCarriedObjectMessage
 	virtual bool CancelByAnnouncement_Implementation(int32 Switch, const UObject* OptionalObject, TSubclassOf<UUTLocalMessage> OtherMessageClass, int32 OtherSwitch, const UObject* OtherOptionalObject) const override;
 
 	virtual FText GetText(int32 Switch = 0, bool bTargetsPlayerState1 = false, class APlayerState* RelatedPlayerState_1 = NULL, class APlayerState* RelatedPlayerState_2 = NULL, class UObject* OptionalObject = NULL) const override;
-	virtual bool ShouldPlayDuringIntermission(int32 MessageIndex) const override;
+	virtual bool ShouldStillPlay(class AUTGameState* GS, const FAnnouncementInfo AnnouncementInfo) const override;
 
 	virtual FLinearColor GetMessageColor_Implementation(int32 MessageIndex) const override;
 	virtual FName GetTeamAnnouncement(int32 Switch, uint8 TeamIndex, const UObject* OptionalObject = nullptr, const class APlayerState* RelatedPlayerState_1 = nullptr, const class APlayerState* RelatedPlayerState_2 = nullptr) const;

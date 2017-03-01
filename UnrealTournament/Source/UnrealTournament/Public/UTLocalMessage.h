@@ -63,10 +63,8 @@ class UNREALTOURNAMENT_API UUTLocalMessage : public ULocalMessage
 	UPROPERTY(EditDefaultsOnly, Category = Message)
 		uint32 bPlayDuringInstantReplay : 1;
 	
-	virtual bool ShouldPlayDuringIntermission(int32 MessageIndex) const
-	{
-		return bPlayDuringIntermission;
-	};
+	/** Return true if announcement is still valid and should still play. */
+	virtual bool ShouldStillPlay(class AUTGameState* GS, const FAnnouncementInfo AnnouncementInfo) const;
 
 	/** If true combine emphasis text with already displaying message of same class. */
 	UPROPERTY(EditDefaultsOnly, Category = Message)

@@ -29,11 +29,16 @@ UUTCTFGameMessage::UUTCTFGameMessage(const FObjectInitializer& ObjectInitializer
 	bIsStatusAnnouncement = true;
 	bIsPartiallyUnique = true;
 	bPlayDuringInstantReplay = false;
+	bPlayDuringIntermission = false;
 }
 
-bool UUTCTFGameMessage::ShouldPlayDuringIntermission(int32 MessageIndex) const
+bool UUTCTFGameMessage::ShouldStillPlay(class AUTGameState* GS, const FAnnouncementInfo AnnouncementInfo) const
 {
-	return (MessageIndex > 7) || (MessageIndex == 2) || (MessageIndex == 3);
+	if ((AnnouncementInfo.Switch > 7) || (AnnouncementInfo.Switch == 2) || (AnnouncementInfo.Switch == 3))
+	{
+		return true;
+	}
+	return Super::ShouldStillPlay(GS, AnnouncementInfo);
 }
 
 FLinearColor UUTCTFGameMessage::GetMessageColor_Implementation(int32 MessageIndex) const
