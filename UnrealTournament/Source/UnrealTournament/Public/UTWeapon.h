@@ -515,6 +515,10 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponBob")
 		float FiringViewKickbackY;
 
+	/**HUD recoil when firing weapon*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponBob")
+		FVector2D HUDViewKickback;
+
 	virtual void UpdateViewBob(float DeltaTime);
 
 	virtual void PostInitProperties() override;

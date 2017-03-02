@@ -384,6 +384,9 @@ public:
 	UFUNCTION(exec)
 		virtual void NetStats();
 
+	/** Add HUD impulse (to offset HUD). */
+	virtual void AddHUDImpulse(FVector2D NewImpulse);
+
 	virtual void SetViewTarget(class AActor* NewViewTarget, FViewTargetTransitionParams TransitionParams = FViewTargetTransitionParams()) override;
 	virtual void ServerViewSelf_Implementation(FViewTargetTransitionParams TransitionParams) override;
 	virtual void ViewSelf(FViewTargetTransitionParams TransitionParams = FViewTargetTransitionParams());

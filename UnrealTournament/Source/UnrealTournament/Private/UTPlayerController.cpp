@@ -5373,3 +5373,11 @@ void AUTPlayerController::BeginSpectatingState()
 	FlushPressedKeys();
 }
 
+void AUTPlayerController::AddHUDImpulse(FVector2D NewImpulse)
+{
+	if (MyUTHUD)
+	{
+		MyUTHUD->AddHUDImpulse(NewImpulse);
+	}
+}
+

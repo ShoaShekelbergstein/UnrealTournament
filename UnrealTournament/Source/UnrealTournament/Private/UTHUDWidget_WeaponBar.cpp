@@ -330,6 +330,7 @@ void UUTHUDWidget_WeaponBar::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCan
 	}
 
 	Origin = bVerticalLayout ? FVector2D(1.0f, 0.5f) : FVector2D(0.5f, 1.0f);
+	RealOrigin = Origin;
 	Size = FinalSize;
 	Super::PreDraw(DeltaTime, InUTHUDOwner, InCanvas, InCanvasCenter);
 }

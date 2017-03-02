@@ -52,6 +52,7 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	WeaponBobScaling = 1.f;
 	FiringViewKickback = -20.f;
 	FiringViewKickbackY = 12.f;
+	HUDViewKickback = FVector2D(0.1f, 0.1f);
 	bNetDelayedShot = false;
 
 	bFPFireFromCenter = true;
@@ -1167,11 +1168,15 @@ void AUTWeapon::PlayFiringEffects()
 				}
 			}
 		}
-
+		UTOwner->TargetEyeOffset.X = FiringViewKickback;
+		UTOwner->TargetEyeOffset.Y = FiringViewKickbackY;
+		AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
+		if (PC != NULL)
+		{
+			PC->AddHUDImpulse(HUDViewKickback);
+		}
 		if (ShouldPlay1PVisuals() && GetWeaponHand() != EWeaponHand::HAND_Hidden)
 		{
-			UTOwner->TargetEyeOffset.X = FiringViewKickback;
-			UTOwner->TargetEyeOffset.Y = FiringViewKickbackY;
 			// try and play a firing animation if specified
 			PlayWeaponAnim(GetFiringAnim(EffectFiringMode, false), GetFiringAnim(EffectFiringMode, true));
 

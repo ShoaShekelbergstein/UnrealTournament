@@ -869,6 +869,11 @@ void AUTCarriedObject::SendHome()
 					BasePosition.Location = GetHomeLocation();
 					PutGhostFlagAt(BasePosition);
 					bWantsGhostFlag = true;
+					AUTCTFFlagBase* FlagBase = Cast<AUTCTFFlagBase>(HomeBase);
+					if (FlagBase)
+					{
+						UUTGameplayStatics::UTPlaySound(GetWorld(), FlagBase->FlagReturnedSound, this);
+					}
 				}
 				if ((GetWorld()->GetTimeSeconds() - LastDroppedMessageTime > AutoReturnTime - 2.f) && GameState && !GameState->IsMatchIntermission() && !GameState->HasMatchEnded())
 				{

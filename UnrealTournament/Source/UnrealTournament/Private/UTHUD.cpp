@@ -730,6 +730,23 @@ bool AUTHUD::ScoreboardIsUp()
 
 void AUTHUD::DrawHUD()
 {
+	// FIXMESTEVE need to be reading animated values ASAP
+	float DeltaMag = RenderDelta * 4.f;
+	bool bTargetXWasGreater = (TargetHUDImpulse.X > CurrentHUDImpulse.X);
+	CurrentHUDImpulse.X += bTargetXWasGreater ? DeltaMag : -1.f*DeltaMag;
+	if (bTargetXWasGreater != (TargetHUDImpulse.X > CurrentHUDImpulse.X))
+	{
+		CurrentHUDImpulse.X = TargetHUDImpulse.X;
+		TargetHUDImpulse.X = 0.f;
+	}
+	bool bTargetYWasGreater = (TargetHUDImpulse.Y > CurrentHUDImpulse.Y);
+	CurrentHUDImpulse.Y += bTargetYWasGreater ? DeltaMag : -1.f*DeltaMag;
+	if (bTargetYWasGreater != (TargetHUDImpulse.Y > CurrentHUDImpulse.Y))
+	{
+		CurrentHUDImpulse.Y = TargetHUDImpulse.Y;
+		TargetHUDImpulse.Y = 0.f;
+	}
+
 	// FIXMESTEVE - once bShowHUD is not config, can just use it without bShowUTHUD and bCinematicMode
 	if (!bShowUTHUD || UTPlayerOwner == nullptr || (!bShowHUD && UTPlayerOwner && UTPlayerOwner->bCinematicMode))
 	{
@@ -2129,3 +2146,9 @@ void AUTHUD::ShowUTMenu()
 		UTLP->ShowMenu(TEXT(""));
 	}
 }
+
+void AUTHUD::AddHUDImpulse(FVector2D NewImpulse)
+{
+	TargetHUDImpulse = NewImpulse;
+}
+

@@ -716,6 +716,15 @@ public:
 	UPROPERTY()
 	UTexture2D* CharacterPortraitAtlas;
 
+	/** Add HUD impulse (to offset HUD). */
+	virtual void AddHUDImpulse(FVector2D NewImpulse);
+
+	UPROPERTY()
+		FVector2D TargetHUDImpulse;
+
+	UPROPERTY()
+		FVector2D CurrentHUDImpulse;
+
 protected:
 	TArray<TWeakObjectPtr<UUTUMGHudWidget>> UMGHudWidgetStack;
 

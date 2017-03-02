@@ -375,6 +375,11 @@ void AUTWeap_RocketLauncher::PlayFiringEffects()
 	{
 		UTOwner->TargetEyeOffset.X = FiringViewKickback;
 		UTOwner->TargetEyeOffset.Y = FiringViewKickbackY;
+		AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
+		if (PC != NULL)
+		{
+			PC->AddHUDImpulse(HUDViewKickback);
+		}
 
 		// try and play the sound if specified
 		if (RocketFireModes.IsValidIndex(CurrentRocketFireMode) && RocketFireModes[CurrentRocketFireMode].FireSound != NULL)

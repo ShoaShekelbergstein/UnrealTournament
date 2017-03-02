@@ -33,7 +33,7 @@ AUTWeap_ShockRifle::AUTWeap_ShockRifle(const FObjectInitializer& ObjectInitializ
 	TutorialAnnouncements.Add(TEXT("SecShockRifle"));
 
 	FiringViewKickback = -50.f;
-	FiringViewKickbackY = 20.f;
+	FiringViewKickbackY = 0.f;
 	HighlightText = NSLOCTEXT("Weapon", "ShockHighlightText", "Don't Tase Me Bro");
 }
 

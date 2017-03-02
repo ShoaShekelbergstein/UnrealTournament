@@ -78,6 +78,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widgets")
 	FVector2D Origin;
 
+	UPROPERTY()
+		FVector2D RealOrigin;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
+		bool bShouldKickBack;
+
 	// Holds Widget's normalized position relative to the  actual display.  Useful for quickly snapping
 	// the widget to the right or bottom edge and can be used with Negative position.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widgets")
