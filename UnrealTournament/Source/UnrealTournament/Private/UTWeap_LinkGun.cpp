@@ -41,7 +41,7 @@ AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 	PullWarmupTime = 0.15f;
 	LinkPullDamage = 25;
 	ReadyToPullColor = FLinearColor::White;
-	HUDViewKickback = FVector2D(0.1f, 0.f);
+	HUDViewKickback = FVector2D(0.f, 0.1f);
 
 	bRecommendSuppressiveFire = true;
 

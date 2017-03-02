@@ -52,7 +52,7 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	WeaponBobScaling = 1.f;
 	FiringViewKickback = -20.f;
 	FiringViewKickbackY = 6.f;
-	HUDViewKickback = FVector2D(0.1f, 0.05f);
+	HUDViewKickback = FVector2D(0.03f, 0.1f);
 	bNetDelayedShot = false;
 
 	bFPFireFromCenter = true;
