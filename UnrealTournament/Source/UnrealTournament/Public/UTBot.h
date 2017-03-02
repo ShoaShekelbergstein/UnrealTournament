@@ -267,10 +267,10 @@ class UNREALTOURNAMENT_API AUTBot : public AAIController, public IUTTeamInterfac
 	float TrackingReactionTime;
 	/** time needed for bot mental model to interpolate between velocities as enemy changes direction */
 	UPROPERTY(BlueprintReadWrite, Category = Skill)
-		float TrackingInterpTime;
+	float TrackingInterpTime;
 	/** timestamp when last tracked velocity */
 	UPROPERTY(BlueprintReadWrite, Category = Skill)
-		float TrackingTimeStamp;
+	float TrackingTimeStamp;
 	/** Max Error in bots estimate about how far to lead player based on misjudging tracking reaction */
 	UPROPERTY(BlueprintReadWrite, Category = Skill)
 	float MaxTrackingPredictionError;
@@ -282,7 +282,7 @@ class UNREALTOURNAMENT_API AUTBot : public AAIController, public IUTTeamInterfac
 	float MaxTrackingOffsetError;
 	/** Increase AdjustedMaxTrackingOffsetError error back to this pct of MaxTrackingOffsetError when enemy makes sudden direction change */
 	UPROPERTY(BlueprintReadWrite, Category = Skill)
-		float DirectionChangeOffsetPct;
+	float DirectionChangeOffsetPct;
 
 	/** max offset error adjusted for current combat factors (stopped, have a bead on current enemy, etc) */
 	UPROPERTY()
@@ -292,7 +292,7 @@ class UNREALTOURNAMENT_API AUTBot : public AAIController, public IUTTeamInterfac
 	float TrackingOffsetError;
 	/** True if tracked enemy just had a large velocity change. */
 	UPROPERTY(BlueprintReadOnly)
-		bool bLargeTrackedVelocityChange;
+	bool bLargeTrackedVelocityChange;
 	/** How frequently to update tracking error */
 	UPROPERTY(BlueprintReadWrite, Category = Skill)
 	float TrackingErrorUpdateInterval;
@@ -407,6 +407,9 @@ class UNREALTOURNAMENT_API AUTBot : public AAIController, public IUTTeamInterfac
 	UPROPERTY()
 	FString GoalString;
 
+	/** last time bot detected it was shot at (not necessarily hit) */
+	UPROPERTY()
+	float LastUnderFireTime;
 	/** last time bot died */
 	UPROPERTY()
 	float LastDeathTime;

@@ -72,6 +72,22 @@ void AUTWeap_LightningRifle::OnRep_ZoomState_Implementation()
 	}
 }
 
+bool AUTWeap_LightningRifle::ShouldAIDelayFiring_Implementation()
+{
+	// AI in zoomed mode checks if it should wait for charge
+	AUTBot* B = (UTOwner != nullptr) ? Cast<AUTBot>(UTOwner->Controller) : nullptr;
+	if (B != nullptr && (ZoomState == EZoomState::EZS_Zoomed || ZoomState == EZoomState::EZS_ZoomingIn) && !bIsFullyPowered && B->GetEnemy() != nullptr && GetWorld()->TimeSeconds - B->LastUnderFireTime > 5.0f - B->Skill * (0.5f + FMath::FRand()))
+	{
+		const FBotEnemyInfo* EnemyInfo = B->GetEnemyInfo(B->GetEnemy(), true);
+		// not if uncharged shot might be fatal
+		return (!EnemyInfo->bHasExactHealth || InstantHitInfo.Num() == 0 || FMath::TruncToInt(100.0f * EnemyInfo->EffectiveHealthPct) > InstantHitInfo[0].Damage);
+	}
+	else
+	{
+		return false;
+	}
+}
+
 void AUTWeap_LightningRifle::DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHudWidget, float RenderDelta)
 {
 	Super::DrawWeaponCrosshair_Implementation(WeaponHudWidget, RenderDelta);
@@ -146,6 +162,31 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 	{
 		if (Role == ROLE_Authority)
 		{
+			// AI chooses zoom or not from here
+			AUTBot* B = Cast<AUTBot>(UTOwner->GetController());
+			if (B != nullptr)
+			{
+				bool bWantZoom = false;
+				if (B->GetEnemy() != nullptr && B->GetFocusActor() == B->GetEnemy())
+				{
+					const float EnemyDist = (B->GetEnemyLocation(B->GetEnemy(), false) - B->GetPawn()->GetActorLocation()).Size();
+					if (EnemyDist > 1000.0f && (B->IsStopped() || B->IsSniping()))
+					{
+						bWantZoom = true;
+					}
+					else if (B->Skill > 4.5f && EnemyDist > 4000.0f)
+					{
+						bWantZoom = B->Skill + B->Personality.MovementAbility + B->Personality.Accuracy >= 6.0f || GetWorld()->TimeSeconds - B->LastUnderFireTime > 3.0f;
+					}
+				}
+				if (bWantZoom != (ZoomState == EZoomState::EZS_Zoomed || ZoomState == EZoomState::EZS_ZoomingIn))
+				{
+					// we don't really care about zoom depth for the AI so just do the minimum
+					UTOwner->StartFire(1);
+					UTOwner->StopFire(1);
+				}
+			}
+
 			bIsCharging = (ZoomState == EZoomState::EZS_Zoomed || ZoomState == EZoomState::EZS_ZoomingIn) && !IsFiring();
 		}
 		if (bIsCharging)
@@ -156,10 +197,22 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 			UTOwner->ChangeAmbientSoundPitch(ChargeSound, ChargePct);
 			bool bWasFullyPowered = bIsFullyPowered;
 			bIsFullyPowered = (ChargePct >= 1.f);
-			if (bIsFullyPowered && !bWasFullyPowered && Cast<AUTPlayerController>(UTOwner->GetController()))
+			if (bIsFullyPowered && !bWasFullyPowered)
 			{
-				UTOwner->SetFlashExtra(4, CurrentFireMode);
-				Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredSound);
+				if (Cast<AUTPlayerController>(UTOwner->GetController()))
+				{
+					UTOwner->SetFlashExtra(4, CurrentFireMode);
+					Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredSound);
+				}
+				else
+				{
+					// notify bot we're ready to fire charged
+					AUTBot* B = Cast<AUTBot>(UTOwner->GetController());
+					if (B != nullptr)
+					{
+						B->CheckWeaponFiring(true);
+					}
+				}
 			}
 		}
 		else

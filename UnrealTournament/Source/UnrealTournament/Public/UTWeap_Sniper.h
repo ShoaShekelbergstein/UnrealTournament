@@ -53,4 +53,13 @@ class UNREALTOURNAMENT_API AUTWeap_Sniper : public AUTWeapon
 	virtual int32 GetHitScanDamage();
 
 	virtual void SetFlashExtra(AActor* HitActor) {};
+
+	virtual float SuggestAttackStyle_Implementation() override
+	{
+		return -0.4;
+	}
+	virtual float SuggestDefenseStyle_Implementation() override
+	{
+		return 0.2;
+	}
 };

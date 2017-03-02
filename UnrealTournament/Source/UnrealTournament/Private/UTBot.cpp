@@ -133,6 +133,11 @@ AUTBot::AUTBot(const FObjectInitializer& ObjectInitializer)
 	HuntInterceptFailedTime = -100000.0f;
 	DirectionChangeOffsetPct = 0.5f;
 
+	LastDeathTime = -10000.0f;
+	LastUnderFireTime = -10000.0f;
+	LastTranslocTime = -10000.0f;
+	LastRespawnTime = -10000.0f;
+
 	WaitForMoveAction = ObjectInitializer.CreateDefaultSubobject<UUTAIAction_WaitForMove>(this, FName(TEXT("WaitForMove")));
 	WaitForLandingAction = ObjectInitializer.CreateDefaultSubobject<UUTAIAction_WaitForLanding>(this, FName(TEXT("WaitForLanding")));
 	TacticalMoveAction = ObjectInitializer.CreateDefaultSubobject<UUTAIAction_TacticalMove>(this, FName(TEXT("TacticalMove")));
@@ -475,6 +480,7 @@ void AUTBot::Possess(APawn* InPawn)
 void AUTBot::PawnPendingDestroy(APawn* InPawn)
 {
 	LastDeathTime = GetWorld()->TimeSeconds;
+	LastUnderFireTime = -10000.0f;
 	Enemy = NULL;
 	StartNewAction(NULL);
 	MoveTarget.Clear();
@@ -3199,7 +3205,7 @@ void AUTBot::FightEnemy(bool bCanCharge, float EnemyStrength)
 				GoalString = "Charge closer";
 				DoCharge();
 			}
-			else if (MyWeap->bPrioritizeAccuracy /*|| IsSniping()*/ || (FMath::FRand() > 0.17f * (Skill + Personality.Tactics - 1.0f)/* && !DefendMelee(EnemyDist)*/))
+			else if (MyWeap->bPrioritizeAccuracy || IsSniping() || (FMath::FRand() > 0.17f * (Skill + Personality.Tactics - 1.0f)/* && !DefendMelee(EnemyDist)*/))
 			{
 				GoalString = "Ranged Attack";
 				DoRangedAttackOn(Enemy);
@@ -4034,6 +4040,7 @@ void AUTBot::UTNotifyKilled(AController* Killer, AController* KilledPlayer, APaw
 
 void AUTBot::NotifyTakeHit(AController* InstigatedBy, int32 Damage, FVector Momentum, const FDamageEvent& DamageEvent)
 {
+	LastUnderFireTime = GetWorld()->TimeSeconds;
 	if (InstigatedBy != NULL && InstigatedBy != this && InstigatedBy->GetPawn() != NULL && (Enemy == NULL || !LineOfSightTo(Enemy)) && Squad != NULL && !IsTeammate(InstigatedBy))
 	{
 		UpdateEnemyInfo(InstigatedBy->GetPawn(), EUT_TookDamage);
@@ -4127,10 +4134,7 @@ void AUTBot::ReceiveProjWarning(AUTProjectile* Incoming)
 		// bots may duck if not falling or swimming
 		if (Skill >= 2.0f && (Enemy != NULL || FMath::FRand() < Personality.Alertness)) // TODO: if 1 on 1 (T)DM be more alert? maybe enemy will usually be set so doesn't matter
 		{
-			//LastUnderFire = WorldInfo.TimeSeconds;
-			//if (WorldInfo.TimeSeconds - LastWarningTime < 0.5)
-			//	return;
-			//LastWarningTime = WorldInfo.TimeSeconds;
+			LastUnderFireTime = GetWorld()->TimeSeconds;
 
 			// TODO: should adjust target location if projectile can explode in air like shock combo (i.e. account for damage radius and dodge earlier)
 			float ProjTime = Incoming->GetTimeToLocation(GetPawn()->GetActorLocation());
@@ -4174,10 +4178,7 @@ void AUTBot::ReceiveInstantWarning(AUTCharacter* Shooter, const FVector& FireDir
 			X.Z = 0;
 			if ((EnemyDir.GetSafeNormal() | X.GetSafeNormal()) >= PeripheralVision)
 			{
-				//LastUnderFire = WorldInfo.TimeSeconds;
-				//if (WorldInfo.TimeSeconds - LastWarningTime < 0.5)
-				//	return;
-				//LastWarningTime = WorldInfo.TimeSeconds;
+				LastUnderFireTime = GetWorld()->TimeSeconds;
 
 				UpdateEnemyInfo(Shooter, EUT_TookDamage);
 

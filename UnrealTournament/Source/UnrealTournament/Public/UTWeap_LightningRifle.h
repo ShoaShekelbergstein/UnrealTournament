@@ -52,6 +52,7 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 	virtual bool CanHeadShot() override;
 	virtual int32 GetHitScanDamage() override;
 	virtual void SetFlashExtra(AActor* HitActor) override;
+	virtual bool ShouldAIDelayFiring_Implementation() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void FireShot() override;
 	virtual void OnStartedFiring_Implementation() override;
