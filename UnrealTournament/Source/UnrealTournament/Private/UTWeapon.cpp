@@ -1348,11 +1348,25 @@ void AUTWeapon::FireShot()
 				FireInstantHit(true, &OutHit);
 				if (bTrackHitScanReplication && GetWorld()->GetGameState<AUTGameState>() && GetWorld()->GetGameState<AUTGameState>()->bTrackHitScanReplication)
 				{
+					UE_LOG(UT, Warning, TEXT("FireShot %d"), FireEventIndex);
 					HitScanHitChar = Cast<AUTCharacter>(OutHit.Actor.Get());
 					HitScanCharLoc = HitScanHitChar ? HitScanHitChar->GetActorLocation() : FVector::ZeroVector;
 					HitScanStart = GetFireStartLoc();
 					HitScanEnd = OutHit.Location;
 					HitScanTime = GetUTOwner()->UTCharacterMovement ? GetUTOwner()->UTCharacterMovement->GetCurrentMovementTime() : 0.f;
+					HitScanIndex = FireEventIndex;
+					if ((Role < ROLE_Authority) && HitScanHitChar)
+					{
+						ServerHitScanHit(HitScanHitChar, FireEventIndex);
+					}
+					else if ((Role == ROLE_Authority) && !HitScanHitChar && ReceivedHitScanHitChar)
+					{
+						AUTPlayerController* UTPC = UTOwner ? Cast<AUTPlayerController>(UTOwner->Controller) : NULL;
+						float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
+						FVector TargetLocation = ((PredictionTime > 0.f) && (Role == ROLE_Authority)) ? ReceivedHitScanHitChar->GetRewindLocation(PredictionTime) : ReceivedHitScanHitChar->GetActorLocation();
+						ClientMissedHitScan(HitScanStart, HitScanEnd, HitScanTime, HitScanIndex, ReceivedHitScanHitChar->GetActorLocation(), TargetLocation, ReceivedHitScanHitChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), PredictionTime);
+					}
+					ReceivedHitScanHitChar = nullptr;
 				}
 			}
 		}
@@ -1365,6 +1379,33 @@ void AUTWeapon::FireShot()
 	}
 	FireZOffsetTime = 0.f;
 }
+
+bool AUTWeapon::ServerHitScanHit_Validate(AUTCharacter* HitScanChar, uint8 HitScanEventIndex)
+{
+	return true;
+}
+
+void AUTWeapon::ServerHitScanHit_Implementation(AUTCharacter* HitScanChar, uint8 HitScanEventIndex)
+{
+	UE_LOG(UT, Warning, TEXT("Received ServerHitScanHit %d"), HitScanEventIndex);
+	ReceivedHitScanHitChar = HitScanChar;
+}
+
+void AUTWeapon::ClientMissedHitScan_Implementation(FVector_NetQuantize MissedHitScanStart, FVector_NetQuantize MissedHitScanEnd, float MissedHitScanTime, uint8 MissedHitScanIndex, FVector_NetQuantize TargetLocation, FVector_NetQuantize RewindLocation, float TargetCapsuleHeight, float PredictionTime)
+{
+	float CapsuleHeight = HitScanHitChar ? HitScanHitChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 108.f;
+	DrawDebugCapsule(GetWorld(), HitScanCharLoc, CapsuleHeight, 40.f, FQuat::Identity, FColor::Green, false, 8.f);
+	DrawDebugLine(GetWorld(), HitScanStart, HitScanEnd, FColor::Green, false, 8.f);
+	DrawDebugCapsule(GetWorld(), TargetLocation, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Red, false, 8.f);
+	DrawDebugCapsule(GetWorld(), RewindLocation, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Yellow, false, 8.f);
+	DrawDebugLine(GetWorld(), MissedHitScanStart, MissedHitScanEnd, FColor::Yellow, false, 8.f);
+	AUTPlayerController* PC = GetUTOwner() ? Cast<AUTPlayerController>(GetUTOwner()->GetController()) : nullptr;
+	if (PC)
+	{
+		PC->ClientSay(PC->UTPlayerState, FString::Printf(TEXT("HIT MISMATCH LOCAL index %d time %f prediction %f      SERVER index %d time %f prediction %f"), HitScanIndex, HitScanTime, PC->GetPredictionTime(), MissedHitScanIndex, MissedHitScanTime, PredictionTime), ChatDestinations::System);
+	}
+}
+
 
 bool AUTWeapon::IsFiring() const
 {
@@ -1948,6 +1989,10 @@ float AUTWeapon::GetImpartedMomentumMag(AActor* HitActor)
 
 void AUTWeapon::K2_FireInstantHit(bool bDealDamage, FHitResult& OutHit)
 {
+	if (bTrackHitScanReplication)
+	{
+		FFrame::KismetExecutionMessage(*FString::Printf(TEXT("%s::FireInstantHit(): from script!"), *GetName()), ELogVerbosity::Warning);
+	}
 	if (!InstantHitInfo.IsValidIndex(CurrentFireMode))
 	{
 		FFrame::KismetExecutionMessage(*FString::Printf(TEXT("%s::FireInstantHit(): Fire mode %i doesn't have instant hit info"), *GetName(), int32(CurrentFireMode)), ELogVerbosity::Warning);

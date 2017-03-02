@@ -93,7 +93,7 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 	float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
 	HitScanTrace(SpawnLocation, EndTrace, InstantHitInfo[CurrentFireMode].TraceHalfSize, Hit, PredictionTime);
 
-	if (Role == ROLE_Authority && Cast<AUTCharacter>(Hit.Actor.Get()) == NULL)
+	if (Cast<AUTCharacter>(Hit.Actor.Get()) == NULL)
 	{
 		// in some cases the head sphere is partially outside the capsule
 		// so do a second search just for that

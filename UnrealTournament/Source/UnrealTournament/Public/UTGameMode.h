@@ -1053,5 +1053,8 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Meta = (MetaClass = "UObject"))
 	TArray<FStringClassReference> AssetsToPreloadOnClients;
+
+	UPROPERTY()
+		uint32 bTrackHitScanReplication : 1;
 };
 
