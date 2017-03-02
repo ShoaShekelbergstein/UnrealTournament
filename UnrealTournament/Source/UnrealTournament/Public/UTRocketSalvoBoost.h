@@ -65,6 +65,7 @@ public:
 				It->Get() != User &&
 				!It->Get()->bTearOff &&
 				(It->Get()->GetActorLocation() - MyLoc).Size() < TargetingRange &&
+				((It->Get()->GetActorLocation() - MyLoc).GetSafeNormal() | User->GetActorRotation().Vector()) > 0.0f &&
 				(GS == nullptr || !GS->OnSameTeam(It->Get(), User)))
 			{
 				Targets.Add(It->Get());
@@ -105,7 +106,7 @@ public:
 			int32 Count = 0;
 			for (APawn* Target : PotentialTargets)
 			{
-				if (B->IsEnemyVisible(Target))
+				if (B->IsEnemyVisible(Target) && ((Target->GetActorLocation() - B->GetPawn()->GetActorLocation()).GetSafeNormal() | B->GetPawn()->GetActorRotation().Vector()) > 0.0f)
 				{
 					Count++;
 				}
