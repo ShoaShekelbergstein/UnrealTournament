@@ -105,8 +105,8 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	DefaultMaxPlayers = 10;
 
 	bHasRespawnChoices = false;
-	MaxWaitForPlayers = 300;
-	QuickWaitForPlayers = 180;
+	MaxWaitForPlayers = 180;
+	QuickWaitForPlayers = 120;
 	ShortWaitForPlayers = 60;
 	EndScoreboardDelay = 4.f;
 	MainScoreboardDisplayTime = 5.f;
@@ -133,6 +133,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	GameDifficulty = 3.f;
 	StartPlayTime = 10000000.f;
 	bRequireReady = false;
+	bRequireFull = false;
 	bRemovePawnsAtStart = true;
 
 	DefaultPlayerName = FText::FromString(TEXT("Player"));
@@ -307,7 +308,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	if (!InOpt.IsEmpty()) HubKey = InOpt;
 
 	bRequireReady = (UGameplayStatics::GetIntOption(Options, TEXT("RequireReady"), bRequireReady) == 0) ? false : true;
-
+	bRequireFull = (UGameplayStatics::GetIntOption(Options, TEXT("RequireFull"), bRequireFull) == 0) ? false : true;
 
 	if (!UGameplayStatics::HasOption(Options, TEXT("MaxPlayers")))
 	{
@@ -3359,7 +3360,7 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 		float ElapsedWaitTime = FMath::Max(0.f, GetWorld()->GetTimeSeconds() - StartPlayTime);
 
 		UTGameState->PlayersNeeded = FMath::Max(0, GameSession->MaxPlayers - NumPlayers);
-		if (!bRequireReady && !bRankedSession && (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers))
+		if (!bRequireReady && !bRequireFull && !bRankedSession && (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers))
 		{
 			int32 MinPlayersToStart = bIsQuickMatch ? 1 : 2;
 			UTGameState->PlayersNeeded = FMath::Max(0, MinPlayersToStart - NumPlayers);

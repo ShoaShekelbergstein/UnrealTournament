@@ -241,7 +241,7 @@ public:
 			NewRuleset->MaxPlayers = 2;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_Duel.GB_Duel'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTShowdownGame");
-			NewRuleset->GameOptions = FString(TEXT("?Timelimit=2?GoalScore=5"));
+			NewRuleset->GameOptions = FString(TEXT("?Timelimit=2?GoalScore=5?RequireFull=1"));
 			NewRuleset->bTeamGame = true;
 
 			NewRuleset->MaxMapsInList=16;
@@ -470,7 +470,6 @@ public:
 		{
 			NewRuleset->Categories.Empty();
 			NewRuleset->Categories.Add(TEXT("Featured"));
-			NewRuleset->Categories.Add(TEXT("Competitive"));
 
 			NewRuleset->Title = TEXT("Flag Run");
 			NewRuleset->Tooltip = TEXT("Attackers must deliver their flag to the enemy base.");

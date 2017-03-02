@@ -205,6 +205,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = Game)
 		bool bRequireReady;
 
+	/** If true, require full set of players to start. */
+	UPROPERTY(EditDefaultsOnly, Category = Game)
+		bool bRequireFull;
+
 	/** If true, bots will not fill undermanned match. */
 	UPROPERTY(EditDefaultsOnly, Category = Game)
 		bool bForceNoBots;
