@@ -324,8 +324,8 @@ public:
 
 	virtual void ShowDebugInfo(float& YL, float& YPos) override;
 
-	UPROPERTY()
-		bool bShowUTHUD;
+	UPROPERTY(BlueprintReadonly, Category = "HUD")
+	bool bShowUTHUD;
 
 	virtual void ShowHUD() override;
 
