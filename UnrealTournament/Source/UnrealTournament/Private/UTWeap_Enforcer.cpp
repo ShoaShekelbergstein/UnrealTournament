@@ -142,12 +142,6 @@ void AUTWeap_Enforcer::StateChanged()
 		ImpactCount = 0;
 	}
 
-	//Reset bFireLeftSide everytime we stop firing and go back to active
-	if (Cast<UUTWeaponStateActive>(CurrentState))
-	{
-		bFireLeftSide = false;
-	}
-
 	Super::StateChanged();
 }
 
@@ -193,6 +187,33 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 			{
 				UAnimInstance* HandAnimInstance = UTOwner->FirstPersonMesh ? UTOwner->FirstPersonMesh->GetAnimInstance() : nullptr;
 
+				UTOwner->TargetEyeOffset.X = FiringViewKickback;
+				// left muzzle flash
+				if (bFireLeftSide)
+				{
+					uint8 LeftHandMuzzleFlashIndex = CurrentFireMode + 2;
+					if (MuzzleFlash.IsValidIndex(LeftHandMuzzleFlashIndex) && MuzzleFlash[LeftHandMuzzleFlashIndex] != NULL && MuzzleFlash[LeftHandMuzzleFlashIndex]->Template != NULL)
+					{
+						// if we detect a looping particle system, then don't reactivate it
+						if (!MuzzleFlash[LeftHandMuzzleFlashIndex]->bIsActive || MuzzleFlash[LeftHandMuzzleFlashIndex]->bSuppressSpawning || !IsLoopingParticleSystem(MuzzleFlash[LeftHandMuzzleFlashIndex]->Template))
+						{
+							MuzzleFlash[LeftHandMuzzleFlashIndex]->ActivateSystem();
+						}
+					}
+				}
+				else
+				{
+					// right muzzle flash
+					if (MuzzleFlash.IsValidIndex(CurrentFireMode) && MuzzleFlash[CurrentFireMode] != NULL && MuzzleFlash[CurrentFireMode]->Template != NULL)
+					{
+						// if we detect a looping particle system, then don't reactivate it
+						if (!MuzzleFlash[CurrentFireMode]->bIsActive || !IsLoopingParticleSystem(MuzzleFlash[CurrentFireMode]->Template))
+						{
+							MuzzleFlash[CurrentFireMode]->ActivateSystem();
+						}
+					}
+				}
+
 				if (!BurstFireMode || (BurstFireMode->CurrentShot == 0))
 				{
 					//Firing Dual Enforcer Right Gun
@@ -232,8 +253,8 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 				}
 			}
 
-			//Alternate every shot, or every volley in burst mode
-			if (!BurstFireMode || ((BurstFireMode->CurrentShot / BurstFireMode->BurstSize) == 0))
+			//Alternate every shot, or every volley in burst mode. Check to see if we are at the end of a burst, and if so switch weapon sides
+			if (!BurstFireMode || ( ((BurstFireMode->CurrentShot + 1) / BurstFireMode->BurstSize) > 0))
 			{
 				bFireLeftSide = !bFireLeftSide;
 			}
@@ -246,7 +267,7 @@ void AUTWeap_Enforcer::PlayImpactEffects_Implementation(const FVector& TargetLoc
 	UUTWeaponStateFiringBurst* BurstFireMode = Cast<UUTWeaponStateFiringBurst>(FiringState[GetCurrentFireMode()]);
 	if (GetNetMode() != NM_DedicatedServer)
 	{
-		if (bDualEnforcerMode && (BurstFireMode ? (FireCount / BurstFireMode->BurstSize != 0) : bFireLeftSide))
+		if (bDualEnforcerMode && bFireLeftSide)
 		{
 			// fire effects
 			static FName NAME_HitLocation(TEXT("HitLocation"));
@@ -421,7 +442,7 @@ void AUTWeap_Enforcer::BringUp(float OverflowTime)
 {
 	Super::BringUp(OverflowTime);
 	
-	if ((Dual_BringUpHand != NULL) && UTOwner && UTOwner->FirstPersonMesh)
+	if (bDualEnforcerMode && (Dual_BringUpHand != NULL) && UTOwner && UTOwner->FirstPersonMesh)
 	{
 		UAnimInstance* HandAnimInstance = UTOwner->FirstPersonMesh->GetAnimInstance();
 		if (HandAnimInstance != NULL)
