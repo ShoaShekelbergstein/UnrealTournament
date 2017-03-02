@@ -26,8 +26,9 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	MaxAmmo = 40;
 	LastFireTime = 0.f;
 	SpreadResetInterval = 1.f;
-	SpreadIncrease = 0.03f;
-	MaxSpread = 0.12f;
+	SpreadIncrease = 0.01f;
+	MaxSpread = 0.05f;
+	VerticalSpreadScaling = 8.f;
 	BringUpTime = 0.28f;
 	DualBringUpTime = 0.36f;
 	PutDownTime = 0.2f;
@@ -44,7 +45,7 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	MaxTracerDist = 2500.f;
 	bNoDropInTeamSafe = true;
 	ReloadClipTime = 2.0f;
-
+	
 	LeftMesh = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("LeftMesh"));
 	LeftMesh->SetOnlyOwnerSee(true);
 	LeftMesh->SetupAttachment(RootComponent);

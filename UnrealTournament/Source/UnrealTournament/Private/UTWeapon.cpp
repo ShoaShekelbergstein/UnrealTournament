@@ -124,6 +124,7 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	FireEventIndex = 0;
 
 	WeaponSkinCustomizationTag = NAME_None;
+	VerticalSpreadScaling = 1.f;
 }
 
 void AUTWeapon::PostInitProperties()
@@ -1576,7 +1577,7 @@ FRotator AUTWeapon::GetAdjustedAim_Implementation(FVector StartFireLoc)
 		NetSynchRandomSeed();
 		float RandY = 0.5f * (FMath::FRand() + FMath::FRand() - 1.f);
 		float RandZ = FMath::Sqrt(0.25f - FMath::Square(RandY)) * (FMath::FRand() + FMath::FRand() - 1.f);
-		return (X + RandY * Spread[CurrentFireMode] * Y + RandZ * Spread[CurrentFireMode] * Z).Rotation();
+		return (X + RandY * Spread[CurrentFireMode] * Y + RandZ * VerticalSpreadScaling * Spread[CurrentFireMode] * Z).Rotation();
 	}
 	else
 	{

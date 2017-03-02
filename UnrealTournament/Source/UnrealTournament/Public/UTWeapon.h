@@ -235,6 +235,10 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	TArray<float> Spread;
 
+	/** Scale Vertical portion of spread by this value. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		float VerticalSpreadScaling;
+
 	/** First person, non attenuated sound to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 		TArray<USoundBase*> FPFireSound;
