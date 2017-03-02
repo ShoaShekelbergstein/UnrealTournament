@@ -10,7 +10,7 @@ AUTPickupHealth::AUTPickupHealth(const FObjectInitializer& ObjectInitializer)
 {
 	HealAmount = 25;
 	BaseDesireability = 0.4f;
-	PickupMessageString = NSLOCTEXT("PickupMessage", "HealthPickedUp", "Health +50");
+	PickupMessageString = NSLOCTEXT("PickupMessage", "HealthPickedUp", "Health +25");
 
 	TimerEffect = ObjectInitializer.CreateOptionalDefaultSubobject<UParticleSystemComponent>(this, TEXT("TimerEffect"));
 	if (TimerEffect != NULL)

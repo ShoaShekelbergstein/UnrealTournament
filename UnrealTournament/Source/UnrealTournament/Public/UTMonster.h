@@ -4,6 +4,7 @@
 #include "UTCharacter.h"
 #include "UTMonsterAI.h"
 #include "UTReplicatedEmitter.h"
+#include "UTDroppedHealth.h"
 
 #include "UTMonster.generated.h"
 
@@ -31,11 +32,14 @@ public:
 	/** AI personality settings to modulate behavior */
 	UPROPERTY(EditDefaultsOnly, Meta = (DisplayName = "AI Personality"))
 	FBotPersonality AIPersonality;
+	/** optional health item dropped on death (always 100% chance) */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TSubclassOf<AUTDroppedHealth> HealthDropType;
 	/** optional item drop beyond any droppable inventory (note: must have a valid DroppedPickupClass) */
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TSubclassOf<AUTInventory> ExtraDropType;
 	/** chance to drop */
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float DropChance;
 	UPROPERTY(EditDefaultsOnly)
 	FCanvasIcon HUDIcon;
@@ -53,6 +57,7 @@ public:
 
 private:
 	bool bAddingDefaultInventory;
+	bool bProcessedDrops;
 public:
 
 	virtual bool AddInventory(AUTInventory* InvToAdd, bool bAutoActivate) override
@@ -84,10 +89,23 @@ public:
 	{
 		Super::DiscardAllInventory();
 
-		if (ExtraDropType != nullptr && FMath::FRand() < DropChance)
+		if (!bProcessedDrops)
 		{
-			AUTInventory* Inv = CreateInventory<AUTInventory>(ExtraDropType, false);
-			TossInventory(Inv);
+			bProcessedDrops = true;
+			if (ExtraDropType != nullptr && FMath::FRand() < DropChance)
+			{
+				AUTInventory* Inv = CreateInventory<AUTInventory>(ExtraDropType, false);
+				TossInventory(Inv);
+			}
+			if (HealthDropType != nullptr)
+			{
+				AUTDroppedHealth* NewHealth = GetWorld()->SpawnActor<AUTDroppedHealth>(HealthDropType, GetActorLocation(), GetActorRotation());
+				if (NewHealth != nullptr)
+				{
+					NewHealth->Movement->Velocity = FMath::VRand().GetSafeNormal2D() * 300.0f;
+					NewHealth->Movement->Velocity.Z = 500.0f;
+				}
+			}
 		}
 	}
 
