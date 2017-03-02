@@ -25,7 +25,6 @@ void AUTWeap_LightningRifle::OnStartedFiring_Implementation()
 {
 	Super::OnStartedFiring_Implementation();
 	bZoomHeld = false;
-	bIsCharging = false;
 	ChargePct = 0.f;
 }
 
@@ -34,7 +33,6 @@ void AUTWeap_LightningRifle::OnContinuedFiring_Implementation()
 	Super::OnContinuedFiring_Implementation();
 	bZoomHeld = false;
 	bIsFullyPowered = false;
-	bIsCharging = false;
 	ChargePct = 0.f;
 }
 
@@ -45,10 +43,6 @@ void AUTWeap_LightningRifle::OnStoppedFiring_Implementation()
 	{
 		bIsFullyPowered = false;
 		bZoomHeld = true;
-		if ((ZoomState == EZoomState::EZS_Zoomed) || (ZoomState == EZoomState::EZS_ZoomingIn))
-		{
-			bIsCharging = true;
-		}
 	}
 }
 
@@ -56,7 +50,6 @@ void AUTWeap_LightningRifle::Removed()
 {
 	bZoomHeld = false;
 	bIsFullyPowered = false;
-	bIsCharging = false;
 	if (UTOwner)
 	{
 		UTOwner->SetAmbientSound(ChargeSound, true);
@@ -72,15 +65,10 @@ void AUTWeap_LightningRifle::OnRep_ZoomState_Implementation()
 		bZoomHeld = false;
 		ChargePct = 0.f;
 		bIsFullyPowered = false;
-		bIsCharging = false;
 	}
 	else if (ZoomState == EZoomState::EZS_ZoomingIn)
 	{
 		bZoomHeld = true;
-		if (Role == ROLE_Authority)
-		{
-			bIsCharging = true;
-		}
 	}
 }
 
@@ -156,6 +144,10 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 
 	if (UTOwner)
 	{
+		if (Role == ROLE_Authority)
+		{
+			bIsCharging = (ZoomState == EZoomState::EZS_Zoomed || ZoomState == EZoomState::EZS_ZoomingIn) && !IsFiring();
+		}
 		if (bIsCharging)
 		{
 			// FIXMESTEVE get charge value through timeline
@@ -172,6 +164,8 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 		}
 		else
 		{
+			ChargePct = 0.0f;
+			bIsFullyPowered = false;
 			UTOwner->SetAmbientSound(ChargeSound, true);
 		}
 	}
