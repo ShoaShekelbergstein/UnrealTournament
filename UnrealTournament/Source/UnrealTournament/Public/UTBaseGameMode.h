@@ -14,6 +14,7 @@
 #endif
 
 class UUTLocalPlayer;
+class AUTReplicatedGameRuleset;
 
 USTRUCT()
 struct FEpicMapData
@@ -261,5 +262,9 @@ protected:
 
 	UPROPERTY()
 	bool bIgnoreIdlePlayers;
+
+public:
+
+	static AUTReplicatedGameRuleset* CreateCustomReplicateGameRuleset(UWorld* World, AActor* Owner, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, int32 DesiredPlayerCount, bool bTeamGame);
 
 };

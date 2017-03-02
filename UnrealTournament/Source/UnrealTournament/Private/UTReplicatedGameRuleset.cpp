@@ -336,4 +336,15 @@ void AUTReplicatedGameRuleset::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject
 	}
 }
 
+FString AUTReplicatedGameRuleset::GenerateURL(const FString& StartingMap, bool bAllowBots, int32 BotDifficulty)
+{
+	FString URL = StartingMap;
+	URL += FString::Printf(TEXT("?Game=%s"), *GameMode);
+	URL += FString::Printf(TEXT("?MaxPlayers=%i"), MaxPlayers);
+	URL += GameOptions;
+	URL += bAllowBots ? FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), MaxPlayers, FMath::Clamp<int32>(BotDifficulty,0,7)) : TEXT("?ForceNoBots=1");
 
+	if (bCompetitiveMatch) URL += TEXT("?NoJIP");
+
+	return URL;
+}

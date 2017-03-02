@@ -801,7 +801,7 @@ FReply SUTCreateGamePanel::ConfigureMutator()
 	return FReply::Handled();
 }
 
-void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, FString& GameModeName, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32 BotSkillLevel, int32& bTeamGame)
+void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, FString& GameModeName, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32& bTeamGame)
 {
 	StartingMap = MapList->GetSelectedItem().IsValid() ? MapList->GetSelectedItem().Get()->MapPackageName : TEXT("");
 	AUTGameMode* DefaultGameMode = SelectedGameClass->GetDefaultObject<AUTGameMode>();
@@ -820,12 +820,6 @@ void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& Start
 
 		DefaultGameMode->GetGameURLOptions(GameConfigProps, GameOptions, DesiredPlayerCount);
 		bTeamGame = DefaultGameMode->bTeamGame;
-
-		if (BotSkillLevel >=0)
-		{
-			GameOptions.Add(FString::Printf(TEXT("Difficulty=%i"), BotSkillLevel));
-		}
-
 		for (int32 i = 0; i < GameOptions.Num(); i++)
 		{
 			Description += FString::Printf(TEXT("\n%s"), *GameOptions[i]);

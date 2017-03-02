@@ -199,7 +199,6 @@ FReply SUTStartMatchWindow::OnCancelClick()
 		{
 			UTLobbyPlayerState->ServerDestroyOrLeaveMatch();
 		}
-		PlayerOwner->CloseWindow(SharedThis(this));
 	}
 
 
@@ -218,6 +217,7 @@ void SUTStartMatchWindow::Tick( const FGeometry& AllottedGeometry, const double 
 	AUTLobbyPlayerState* LobbyPlayerState = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
 	if (LobbyPlayerState )
 	{
+/*
 		if (bAwaitingMatchInfo && LobbyPlayerState->CurrentMatch != nullptr)
 		{
 			bAwaitingMatchInfo = false;
@@ -226,7 +226,7 @@ void SUTStartMatchWindow::Tick( const FGeometry& AllottedGeometry, const double 
 				ParentPanel->ApplySetup(LobbyPlayerState->CurrentMatch);
 			}
 		}
-
+*/
 		if (LobbyPlayerState->CurrentMatch != nullptr && LobbyPlayerState->CurrentMatch->CurrentRuleset.IsValid())
 		{
 			FunnyTimer += InDeltaTime;

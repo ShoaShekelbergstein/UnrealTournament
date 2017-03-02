@@ -60,10 +60,10 @@ public:
 	UPROPERTY()
 	TArray<FString> RequiredPackages;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
 	uint32 bTeamGame:1;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
 	uint32 bCompetitiveMatch : 1;
 
 	// Not displayed, this wholes the game type that will be passed to the server via the URL.  
@@ -115,6 +115,10 @@ protected:
 public:
 	virtual void MakeJsonReport(TSharedPtr<FJsonObject> JsonObject);
 
+	/**
+	 *	Generates a URL that can be used to launch a match based on this Ruleset.
+	 **/
+	virtual FString GenerateURL(const FString& StartingMap, bool bAllowBots, int32 BotDifficulty);
 };
 
 

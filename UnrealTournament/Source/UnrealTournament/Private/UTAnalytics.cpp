@@ -1682,28 +1682,28 @@ void FUTAnalytics::FireEvent_UTHubBootUp(AUTBaseGameMode* UTGM)
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_UTHubNewInstance(AUTLobbyMatchInfo* NewGameInfo, AUTPlayerState* Host)
+void FUTAnalytics::FireEvent_UTHubNewInstance(AUTLobbyMatchInfo* NewGameInfo, const FString& HostId)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
-	if (AnalyticsProvider.IsValid() && NewGameInfo && NewGameInfo->CurrentRuleset.IsValid() && Host)
+	if (AnalyticsProvider.IsValid() && NewGameInfo && NewGameInfo->CurrentRuleset.IsValid())
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 
-		AUTLobbyGameState* GameState = Host->GetWorld()->GetGameState<AUTLobbyGameState>();
+		AUTLobbyGameState* GameState = NewGameInfo->GetWorld()->GetGameState<AUTLobbyGameState>();
 		if (GameState)
 		{
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerName), GameState->ServerName));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), GameState->HubGuid));
 		}
 
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), NewGameInfo->CurrentRuleset->Title));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), NewGameInfo->CurrentRuleset->GameMode));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MapName), NewGameInfo->InitialMap));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsCustomRuleset), (int32)(NewGameInfo->CurrentRuleset->bCustomRuleset)));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameOptions), NewGameInfo->CurrentRuleset->GameOptions));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RequiredPackages), NewGameInfo->CurrentRuleset->RequiredPackages));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::CurrentGameState), NewGameInfo->CurrentState.ToString()));
 
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(Host)));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), HostId));
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTHubNewInstance), ParamArray);
 	}

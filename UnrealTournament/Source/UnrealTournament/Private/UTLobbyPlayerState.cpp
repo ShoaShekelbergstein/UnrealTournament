@@ -31,22 +31,26 @@ void AUTLobbyPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	DOREPLIFETIME(AUTLobbyPlayerState, DesiredTeamNum);
 }
 
-bool AUTLobbyPlayerState::ServerCreateMatch_Validate(bool bIsInParty, const FString& CustomGameName) { return true; }
-void AUTLobbyPlayerState::ServerCreateMatch_Implementation(bool bIsInParty, const FString& CustomGameName)
+bool AUTLobbyPlayerState::ServerCreateCustomInstance_Validate(const FString& CustomName, const FString& GameMode, const FString& StartingMap, bool bIsInParty, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty) { return true; }
+void AUTLobbyPlayerState::ServerCreateCustomInstance_Implementation(const FString& CustomName, const FString& GameMode, const FString& StartingMap, bool bIsInParty, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty)
 {
-	if (CurrentMatch == NULL)
+	AUTLobbyGameState* LobbyGameState = GetWorld()->GetGameState<AUTLobbyGameState>();
+	if (LobbyGameState != nullptr)
 	{
-		AUTLobbyGameState* GameState = GetWorld()->GetGameState<AUTLobbyGameState>();
-		if (GameState)
+		LobbyGameState->RequestNewCustomMatch(this, ECreateInstanceTypes::Lobby, CustomName, GameMode, StartingMap, Description, GameOptions, DesiredPlayerCount, bTeamGame, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty);
+	}
+}
+
+bool AUTLobbyPlayerState::ServerCreateInstance_Validate(const FString& CustomName, const FString& RulesetTag, const FString& StartingMap, bool bIsInParty, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty) { return true; }
+void AUTLobbyPlayerState::ServerCreateInstance_Implementation(const FString& CustomName, const FString& RulesetTag, const FString& StartingMap, bool bIsInParty, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty)
+{
+	AUTLobbyGameState* LobbyGameState = GetWorld()->GetGameState<AUTLobbyGameState>();
+	if (LobbyGameState != nullptr)
+	{
+		TWeakObjectPtr<AUTReplicatedGameRuleset> Ruleset = LobbyGameState->FindRuleset(RulesetTag);
+		if (Ruleset != nullptr)
 		{
-			if (GameState->AvailableGameRulesets.Num() >0)
-			{
-				GameState->AddNewMatch(this, nullptr, bIsInParty, CustomGameName);
-			}
-			else
-			{
-				ClientMatchError(NSLOCTEXT("LobbyMessage","MatchRuleError","The server does not have any rulesets defined.  Please notify the server admin."));
-			}
+			LobbyGameState->RequestNewMatch(this, ECreateInstanceTypes::Lobby, CustomName, Ruleset.Get(), StartingMap, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty);	
 		}
 	}
 }
@@ -94,29 +98,6 @@ void AUTLobbyPlayerState::AddedToMatch(AUTLobbyMatchInfo* Match)
 
 void AUTLobbyPlayerState::ClientAddedToMatch_Implementation(bool bIsHost)
 {
-	if (!bIsHost)
-	{
-		AUTBasePlayerController* PC = Cast<AUTBasePlayerController>(GetOwner());
-		if (PC)
-		{
-			UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(PC->Player);
-			if (UTLocalPlayer)
-			{
-
-#if !UE_SERVER
-				TSharedPtr<SUTStartMatchWindow> StartMatchWindow;
-				SAssignNew(StartMatchWindow, SUTStartMatchWindow, UTLocalPlayer)
-					.bIsHost(false);
-		 
-				if (StartMatchWindow.IsValid())
-				{
-					UTLocalPlayer->OpenWindow(StartMatchWindow);
-				}
-#endif
-			}
-		}
-	}
-
 }
 
 void AUTLobbyPlayerState::RemovedFromMatch(AUTLobbyMatchInfo* Match)
@@ -152,6 +133,9 @@ void AUTLobbyPlayerState::OnRep_CurrentMatch()
 	if (PC)
 	{
 		PC->MatchChanged(CurrentMatch);
+
+		// Manage the UI
+		ManageStartMatchUI(PC);
 	}
 
 #if !UE_SERVER
@@ -161,6 +145,39 @@ void AUTLobbyPlayerState::OnRep_CurrentMatch()
 	}
 
 #endif
+}
+
+
+void AUTLobbyPlayerState::ManageStartMatchUI(AUTLobbyPC* PC)
+{
+#if !UE_SERVER
+		UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(PC->Player);
+		if (UTLocalPlayer)
+		{
+			if (bIsInMatch)
+			{
+				if (!StartMatchWindow.IsValid())
+				{
+					SAssignNew(StartMatchWindow, SUTStartMatchWindow, UTLocalPlayer)
+						.bIsHost(false);
+		 
+					if (StartMatchWindow.IsValid())
+					{
+						UTLocalPlayer->OpenWindow(StartMatchWindow);
+					}
+				}
+			}
+			else
+			{
+				if (StartMatchWindow.IsValid())
+				{
+					UTLocalPlayer->CloseWindow(StartMatchWindow);
+					StartMatchWindow.Reset();
+				}
+			}
+		}
+#endif
+
 }
 
 bool AUTLobbyPlayerState::Server_ReadyToBeginDataPush_Validate() { return true; }

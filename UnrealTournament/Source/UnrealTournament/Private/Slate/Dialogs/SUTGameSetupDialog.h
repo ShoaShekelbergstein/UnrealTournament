@@ -179,9 +179,6 @@ public:
 	TArray<FMapPlayListInfo> MapPlayList;
 	TWeakObjectPtr<class AUTReplicatedGameRuleset> SelectedRuleset;
 
-	void ApplyCurrentRuleset(TWeakObjectPtr<AUTLobbyMatchInfo> MatchInfo);
-	int32 BotSkillLevel;
-
 	// Will return true if this settings dialog is on the custom tab.  
 	bool IsCustomSettings()
 	{
@@ -191,8 +188,6 @@ public:
 	void GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, FString& GameModeName, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32& bTeamGame);
 
 	void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime);
-
-	bool ShouldAllowBots();
 
 protected:
 
@@ -277,17 +272,15 @@ protected:
 	void RankCheckChanged(ECheckBoxState NewState);
 
 	FText GetBotSkillText() const;
-	virtual void OnBotSkillChanged(float NewValue);
 
 	int32 CurrentTabIndex;
 
 	void OnGameNameTextCommited(const FText &NewText,ETextCommit::Type CommitType);
-
 	FText GameName;
 
 	TSharedPtr<SEditableTextBox> GameNameText;
+
 	TSharedRef<SWidget> BuildSessionName();
-	
 	TSharedPtr<SHorizontalBox> BotSkillLevelBox;
 
 	bool GetBotSkillEnabled() const;
@@ -298,9 +291,9 @@ protected:
 public:
 	FString GetSelectedMap();
 	bool bGameNameChanged;
-	void ConfigureMatchInfo(TWeakObjectPtr<AUTLobbyMatchInfo> MatchInfo);
 	FText GetGameNameText() const;
 
+	void ConfigureMatch(ECreateInstanceTypes::Type InstanceType);
 };
 
 

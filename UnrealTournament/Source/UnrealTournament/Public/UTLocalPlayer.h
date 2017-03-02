@@ -18,7 +18,6 @@ class SUTMenuBase;
 class SUTWindowBase;
 class SUTServerBrowserPanel;
 class SUTFriendsPopupWindow;
-class SUTQuickMatchWindow;
 class SUTLoginDialog;
 class SUTDownloadAllDialog;
 class SUTMapVoteDialog;
@@ -38,6 +37,7 @@ class SUTWebMessage;
 class SUTReportUserDialog;
 class UUTUMGWidget;
 class UUTUMGWidget_Toast;
+class AUTReplicatedGameRuleset;
 
 enum class EMatchmakingCompleteResult : uint8;
 
@@ -1355,5 +1355,17 @@ public:
 	void UpdateCheck();
 
 	FTimerHandle SocialInitializationTimerHandle;
+
+	/**
+	 *	Request a new custom match be created.
+	 **/
+	virtual void CreateNewCustomMatch(ECreateInstanceTypes::Type InstanceType, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty);
+
+	/**
+	 *	Request a new match be created.
+	 **/
+	virtual void CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty);
+
+
 };
 

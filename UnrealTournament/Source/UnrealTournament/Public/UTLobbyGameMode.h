@@ -112,4 +112,5 @@ public:
 	virtual void MakeJsonReport(TSharedPtr<FJsonObject> JsonObject);
 
 	virtual bool SupportsInstantReplay() const override;
+
 };

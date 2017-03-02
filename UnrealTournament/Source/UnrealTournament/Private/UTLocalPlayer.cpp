@@ -27,7 +27,6 @@
 #include "SUTPlayerSettingsDialog.h"
 #include "SUTPlayerInfoDialog.h"
 #include "SUTHUDSettingsDialog.h"
-#include "SUTQuickMatchWindow.h"
 #include "SUTQuickChatWindow.h"
 #include "SUTWebMessage.h"
 #include "SUTJoinInstanceWindow.h"
@@ -85,6 +84,7 @@
 #include "UTUMGWidget_Toast.h"
 #include "UTWorldSettings.h"
 #include "UTSpectatorCamera.h"
+#include "UTReplicatedGameRuleset.h"
 
 #if WITH_SOCIAL
 #include "Social.h"
@@ -3460,85 +3460,44 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 			}
 		}
 
-		if (1)
+		// Use matchmaking for quickmatch
+		if (ServerBrowserWidget.IsValid() && ServerBrowserWidget->IsRefreshing())
 		{
-			// Use matchmaking for quickmatch
-			if (ServerBrowserWidget.IsValid() && ServerBrowserWidget->IsRefreshing())
-			{
-				MessageBox(NSLOCTEXT("Generic", "RequestInProgressTitle", "Busy"), NSLOCTEXT("Generic", "RequestInProgressText", "A server list request is already in progress.  Please wait for it to finish before attempting to quickplay."));
-				return;
-			}
+			MessageBox(NSLOCTEXT("Generic", "RequestInProgressTitle", "Busy"), NSLOCTEXT("Generic", "RequestInProgressText", "A server list request is already in progress.  Please wait for it to finish before attempting to quickplay."));
+			return;
+		}
 
-			int32 NewPlaylistId = 0;
-			if (QuickMatchType == EEpicDefaultRuleTags::Deathmatch)
-			{
-				NewPlaylistId = 12;
-			}
-			else if (QuickMatchType == EEpicDefaultRuleTags::CTF)
-			{
-				NewPlaylistId = 11;
-			}
-			else if (QuickMatchType == EEpicDefaultRuleTags::TEAMSHOWDOWN)
-			{
-				NewPlaylistId = 13;
-			}
-			else if (QuickMatchType == EEpicDefaultRuleTags::FlagRun)
-			{
-				NewPlaylistId = 14;
-			}
-			else
-			{
-				UE_LOG(UT, Warning, TEXT("QuickMatch playlist not assigned for %s"), *QuickMatchType);
-				return;
-			}
-
-			UMatchmakingContext* MatchmakingContext = Cast<UMatchmakingContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UMatchmakingContext::StaticClass()));
-			if (MatchmakingContext)
-			{
-				MatchmakingContext->StartMatchmaking(NewPlaylistId);
-
-				if (FUTAnalytics::IsAvailable())
-				{
-					FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("QuickMatch - %s"), *QuickMatchType));
-				}
-			}
+		int32 NewPlaylistId = 0;
+		if (QuickMatchType == EEpicDefaultRuleTags::Deathmatch)
+		{
+			NewPlaylistId = 12;
+		}
+		else if (QuickMatchType == EEpicDefaultRuleTags::CTF)
+		{
+			NewPlaylistId = 11;
+		}
+		else if (QuickMatchType == EEpicDefaultRuleTags::TEAMSHOWDOWN)
+		{
+			NewPlaylistId = 13;
+		}
+		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRun)
+		{
+			NewPlaylistId = 14;
 		}
 		else
 		{
-			// Use classic hub
-			if (QuickMatchDialog.IsValid())
-			{
-				return;
-			}
-			if (GetWorld()->GetTimeSeconds() < QuickMatchLimitTime)
-			{
-				MessageBox(NSLOCTEXT("Generic", "CantStartQuickMatchTitle", "Please Wait"), NSLOCTEXT("Generic", "CantStartQuickMatchText", "You need to wait for at least 1 minute before you can attempt to quickplay again."));
-				return;
-			}
-			if (ServerBrowserWidget.IsValid() && ServerBrowserWidget->IsRefreshing())
-			{
-				MessageBox(NSLOCTEXT("Generic", "RequestInProgressTitle", "Busy"), NSLOCTEXT("Generic", "RequestInProgressText", "A server list request is already in progress.  Please wait for it to finish before attempting to quickplay."));
-				return;
-			}
+			UE_LOG(UT, Warning, TEXT("QuickMatch playlist not assigned for %s"), *QuickMatchType);
+			return;
+		}
 
-			CurrentQuickMatchType = QuickMatchType;
+		UMatchmakingContext* MatchmakingContext = Cast<UMatchmakingContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UMatchmakingContext::StaticClass()));
+		if (MatchmakingContext)
+		{
+			MatchmakingContext->StartMatchmaking(NewPlaylistId);
 
-			if (OnlineSessionInterface.IsValid())
+			if (FUTAnalytics::IsAvailable())
 			{
-				OnlineSessionInterface->CancelFindSessions();
-			}
-
-			SAssignNew(QuickMatchDialog, SUTQuickMatchWindow, this)
-				.QuickMatchType(QuickMatchType);
-			if (QuickMatchDialog.IsValid())
-			{
-				OpenWindow(QuickMatchDialog);
-				QuickMatchDialog->TellSlateIWantKeyboardFocus();
-
-				if (FUTAnalytics::IsAvailable())
-				{
-					FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("QuickMatch - %s"), *QuickMatchType));
-				}
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("QuickMatch - %s"), *QuickMatchType));
 			}
 		}
 	}
@@ -3549,10 +3508,9 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 }
 void UUTLocalPlayer::CloseQuickMatch()
 {
-	if (QuickMatchDialog.IsValid())
+	if (MatchmakingDialog.IsValid())
 	{
-		CloseWindow(QuickMatchDialog);
-		QuickMatchDialog.Reset();
+		CloseDialog(MatchmakingDialog.ToSharedRef());
 	}
 }
 
@@ -4904,7 +4862,7 @@ void UUTLocalPlayer::ChallengeCompleted(FName ChallengeTag, int32 Stars)
 bool UUTLocalPlayer::QuickMatchCheckFull()
 {
 #if !UE_SERVER
-	if (QuickMatchDialog.IsValid() || MatchmakingDialog.IsValid())
+	if (MatchmakingDialog.IsValid())
 	{
 		if (FUTAnalytics::IsAvailable())
 		{
@@ -4922,15 +4880,7 @@ bool UUTLocalPlayer::QuickMatchCheckFull()
 void UUTLocalPlayer::RestartQuickMatch()
 {
 #if !UE_SERVER
-	if (QuickMatchDialog.IsValid())
-	{
-		// Restart the quickmatch attempt.
-		QuickMatchDialog->FindHUBToJoin();
-	}
-	else
-	{
-		StartQuickMatch(CurrentQuickMatchType);
-	}
+	StartQuickMatch(CurrentQuickMatchType);
 #endif
 }
 
@@ -5647,11 +5597,6 @@ void UUTLocalPlayer::ShowMatchmakingDialog()
 {
 #if !UE_SERVER
 	if (MatchmakingDialog.IsValid())
-	{
-		return;
-	}
-
-	if (QuickMatchDialog.IsValid())
 	{
 		return;
 	}
@@ -6867,3 +6812,92 @@ void UUTLocalPlayer::UpdateCheck()
 	}
 #endif
 }
+
+void UUTLocalPlayer::CreateNewCustomMatch(ECreateInstanceTypes::Type InstanceType, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty)
+{
+	AUTReplicatedGameRuleset* CustomRuleset = AUTBaseGameMode::CreateCustomReplicateGameRuleset(GetWorld(), GetWorld()->GetGameState<AUTGameState>(), GameMode, StartingMap, Description, GameOptions, DesiredPlayerCount, bTeamGame);
+
+	if (CustomRuleset != nullptr)
+	{
+		return CreateNewMatch(InstanceType, CustomRuleset, StartingMap, bRankLocked, bSpectatable, _bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty);
+	}
+}
+
+void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty)
+{
+	FString URL = Ruleset->GenerateURL(StartingMap, bUseBots, BotDifficulty);
+	
+	if (FUTAnalytics::IsAvailable())
+	{
+		URL += FUTAnalytics::AnalyticsLoggedGameOptionTrue;
+	}
+
+	if (FUTAnalytics::IsAvailable())
+	{
+		if (Ruleset->bCustomRuleset)
+		{
+			FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("MainMenu - Custom Game - %s"),*Ruleset->GameMode));
+		}
+
+	}
+
+	if (InstanceType == ECreateInstanceTypes::LAN)
+	{
+		if (FUTAnalytics::IsAvailable())
+		{
+			if (Ruleset->bCustomRuleset)
+			{
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("LanGame - Custom Game - %s"),*Ruleset->GameMode));
+			}
+			else
+			{
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("LanGame - Predefined Game Type - %s"),*Ruleset->GameMode));
+			}
+		}
+
+		URL += TEXT("?MaxPlayerWait=180");
+		FString ExecPath = TEXT("..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Shipping.exe");
+		FString Options = FString::Printf(TEXT("unrealtournament %s -log -server -LAN -AUTH_PASSWORD="), *URL);
+
+		if (OnlineIdentityInterface.IsValid())
+		{
+			TSharedPtr<const FUniqueNetId> UserId = OnlineIdentityInterface->GetUniquePlayerId(GetControllerId());
+			if (UserId.IsValid())
+			{
+				Options += FString::Printf(TEXT(" -cloudID=%s"), *UserId->ToString());
+			}
+		}
+
+		FString AppName = GetEpicAppName();
+		if (!AppName.IsEmpty())
+		{
+			Options += FString::Printf(TEXT(" -EPICAPP=%s"), *AppName);
+		}
+
+		DedicatedServerProcessHandle = FPlatformProcess::CreateProc(*ExecPath, *(Options + FString::Printf(TEXT(" -ClientProcID=%u"), FPlatformProcess::GetCurrentProcessId())), true, false, false, NULL, 0, NULL, NULL);
+		if (DedicatedServerProcessHandle.IsValid())
+		{
+			GEngine->SetClientTravel(PlayerController->GetWorld(), TEXT("127.0.0.1"), TRAVEL_Absolute);
+			HideMenu();
+		}
+	}
+	else if (InstanceType == ECreateInstanceTypes::Standalone)
+	{
+
+		if (FUTAnalytics::IsAvailable())
+		{
+			if (Ruleset->bCustomRuleset)
+			{
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("MainMenu - Custom Game Type - %s"),*Ruleset->GameMode));
+			}
+			else
+			{
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("MainMenu - Predefined Game Type - %s"),*Ruleset->GameMode));
+			}
+		}
+
+		ConsoleCommand(TEXT("Start ") + URL);
+	}
+}
+
+

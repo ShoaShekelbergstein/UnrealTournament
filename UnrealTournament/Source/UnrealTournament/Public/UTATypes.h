@@ -1135,9 +1135,6 @@ struct FServerInstanceData
 	TArray<FMatchPlayerListStruct> Players;
 
 	UPROPERTY()
-	bool bQuickplayMatch;
-
-	UPROPERTY()
 	FString CustomGameName;
 
 	FServerInstanceData()
@@ -1152,13 +1149,12 @@ struct FServerInstanceData
 		, bJoinableAsPlayer(false)
 		, bJoinableAsSpectator(false)
 		, MutatorList(TEXT(""))
-		, bQuickplayMatch(false)
 		, CustomGameName(TEXT(""))
 	{
 		MatchData = FMatchUpdate();
 	}
 
-	FServerInstanceData(FGuid inInstanceId, const FString& inRulesTitle, const FString& inRulesTag, const FString&  inGameModeClass, const FString& inMapName, int32 inMaxPlayers, uint32 inFlags, int32 inRankCheck, bool inbTeamGame, bool inbJoinableAsPlayer, bool inbJoinableAsSpectator, const FString& inMutatorList, bool inbQuickplayMatch, const FString& inCustomGameName)
+	FServerInstanceData(FGuid inInstanceId, const FString& inRulesTitle, const FString& inRulesTag, const FString&  inGameModeClass, const FString& inMapName, int32 inMaxPlayers, uint32 inFlags, int32 inRankCheck, bool inbTeamGame, bool inbJoinableAsPlayer, bool inbJoinableAsSpectator, const FString& inMutatorList, const FString& inCustomGameName)
 		: InstanceId(inInstanceId)
 		, RulesTitle(inRulesTitle)
 		, RulesTag(inRulesTag)
@@ -1171,7 +1167,6 @@ struct FServerInstanceData
 		, bJoinableAsPlayer(inbJoinableAsPlayer)
 		, bJoinableAsSpectator(inbJoinableAsSpectator)
 		, MutatorList(inMutatorList)
-		, bQuickplayMatch(inbQuickplayMatch)
 		, CustomGameName(inCustomGameName)
 	{
 		MatchData = FMatchUpdate();
@@ -1196,9 +1191,9 @@ struct FServerInstanceData
 		return Count;
 	}
 
-	static TSharedRef<FServerInstanceData> Make(FGuid inInstanceId, const FString& inRulesTitle, const FString& inRulesTag, const FString& inGameModeClass, const FString& inMapName, int32 inMaxPlayers, uint32 inFlags, int32 inRankCheck, bool inbTeamGame, bool inbJoinableAsPlayer, bool inbJoinableAsSpectator, const FString& inMutatorList, bool inbQuickplayMatch, const FString& inCustomGameName)
+	static TSharedRef<FServerInstanceData> Make(FGuid inInstanceId, const FString& inRulesTitle, const FString& inRulesTag, const FString& inGameModeClass, const FString& inMapName, int32 inMaxPlayers, uint32 inFlags, int32 inRankCheck, bool inbTeamGame, bool inbJoinableAsPlayer, bool inbJoinableAsSpectator, const FString& inMutatorList, const FString& inCustomGameName)
 	{
-		return MakeShareable(new FServerInstanceData(inInstanceId, inRulesTitle, inRulesTag, inGameModeClass, inMapName, inMaxPlayers, inFlags, inRankCheck, inbTeamGame, inbJoinableAsPlayer, inbJoinableAsSpectator, inMutatorList, inbQuickplayMatch, inCustomGameName));
+		return MakeShareable(new FServerInstanceData(inInstanceId, inRulesTitle, inRulesTag, inGameModeClass, inMapName, inMaxPlayers, inFlags, inRankCheck, inbTeamGame, inbJoinableAsPlayer, inbJoinableAsSpectator, inMutatorList, inCustomGameName));
 	}
 	static TSharedRef<FServerInstanceData> Make(const FServerInstanceData& Other)
 	{
@@ -2305,4 +2300,15 @@ struct FHUDandUMGParticleSystemTracker
 
 };
 
+UENUM()
+namespace ECreateInstanceTypes
+{
+	enum Type
+	{
+		Lobby,
+		Standalone,
+		LAN,
+		MAX,
+	};
+}
 

@@ -16,7 +16,6 @@
 #include "UTBotPlayer.h"
 #include "UTMonsterAI.h"
 #include "UTSquadAI.h"
-#include "Panels/SUTLobbyMatchSetupPanel.h"
 #include "Dialogs/SUTPlayerInfoDialog.h"
 #include "Slate/SlateGameResources.h"
 #include "Widgets/SUTTabWidget.h"

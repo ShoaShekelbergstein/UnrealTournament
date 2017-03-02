@@ -53,7 +53,7 @@ public:
 	static void FireEvent_UTServerPlayerDisconnect(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	
 	static void FireEvent_UTHubBootUp(AUTBaseGameMode* UTGM);
-	static void FireEvent_UTHubNewInstance(class AUTLobbyMatchInfo* NewGameInfo, AUTPlayerState* Host);
+	static void FireEvent_UTHubNewInstance(class AUTLobbyMatchInfo* NewGameInfo, const FString& HostId);
 	static void FireEvent_UTHubPlayerJoinLobby(AUTBaseGameMode* UTGM, AUTPlayerState* UTPS);
 	static void FireEvent_UTHubPlayerEnterInstance(class AUTLobbyMatchInfo* GameInfo, AUTPlayerState* UTPS, bool bAsSpectator);
 

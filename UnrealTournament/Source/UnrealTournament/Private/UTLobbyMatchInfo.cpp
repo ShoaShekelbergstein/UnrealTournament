@@ -42,8 +42,6 @@ AUTLobbyMatchInfo::AUTLobbyMatchInfo(const class FObjectInitializer& ObjectIniti
 	bSpectatable = true;
 	bJoinAnytime = true;
 	bMapChanged = false;
-	BotSkillLevel = -1;
-	bAllowBots = false;
 	bBeginnerMatch = false;
 	TrackedMatchId = -1;
 }
@@ -63,8 +61,6 @@ void AUTLobbyMatchInfo::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &
 	DOREPLIFETIME(AUTLobbyMatchInfo, bJoinAnytime);
 	DOREPLIFETIME(AUTLobbyMatchInfo, bSpectatable);
 	DOREPLIFETIME(AUTLobbyMatchInfo, bRankLocked);
-	DOREPLIFETIME(AUTLobbyMatchInfo, BotSkillLevel);
-	DOREPLIFETIME(AUTLobbyMatchInfo, bAllowBots);
 	DOREPLIFETIME(AUTLobbyMatchInfo, RankCheck);
 	DOREPLIFETIME(AUTLobbyMatchInfo, Redirects);
 	DOREPLIFETIME(AUTLobbyMatchInfo, AllowedPlayerList);
@@ -78,7 +74,6 @@ void AUTLobbyMatchInfo::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &
 	DOREPLIFETIME_CONDITION(AUTLobbyMatchInfo, DedicatedServerDescription, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTLobbyMatchInfo, DedicatedServerGameMode, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTLobbyMatchInfo, bDedicatedMatch, COND_InitialOnly);
-	DOREPLIFETIME_CONDITION(AUTLobbyMatchInfo, bQuickPlayMatch, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTLobbyMatchInfo, PrivateKey, COND_InitialOnly);
 }
 
@@ -137,6 +132,23 @@ TArray<int32> AUTLobbyMatchInfo::GetTeamSizes() const
 	}
 	return TeamSizes;
 }
+
+void AUTLobbyMatchInfo::InitializeMatch(AUTLobbyPlayerState* Creator, const FString& GameName, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginner)
+{
+	bRankLocked = _bRankLocked;
+	bPrivateMatch = _bPrivateMatch;
+	bSpectatable = _bSpectatable;
+
+	SetOwner(Creator->GetOwner());
+	AddPlayer(Creator, true, false);
+	SetRules(Ruleset, StartingMap);
+	RankCheck = Creator->GetRankCheck(Ruleset->GetDefaultGameModeObject());
+	SetRedirects();
+
+	CustomGameName = GameName;
+}
+
+
 
 void AUTLobbyMatchInfo::AddPlayer(AUTLobbyPlayerState* PlayerToAdd, bool bIsOwner, bool bIsSpectator)
 {
@@ -302,84 +314,21 @@ FText AUTLobbyMatchInfo::GetActionText()
 	return FText::GetEmpty();
 }
 
-void AUTLobbyMatchInfo::SetSettings(AUTLobbyGameState* GameState,  AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy, bool bIsInParty, const FString& inCustomGameName)
-{
-	if (MatchToCopy)
-	{
-		SetRules(MatchToCopy->CurrentRuleset, MatchToCopy->InitialMap);
-		BotSkillLevel = MatchToCopy->BotSkillLevel;
-	}
-
-	CustomGameName = inCustomGameName;
-
-	SetLobbyMatchState(ELobbyMatchState::Setup);
-}
-
-bool AUTLobbyMatchInfo::ServerMatchIsReadyForPlayers_Validate() { return true; }
-void AUTLobbyMatchInfo::ServerMatchIsReadyForPlayers_Implementation()
-{
-	SetLobbyMatchState(ELobbyMatchState::WaitingForPlayers);
-}
 
 
-bool AUTLobbyMatchInfo::ServerStartMatch_Validate() { return true; }
-void AUTLobbyMatchInfo::ServerStartMatch_Implementation()
-{
-	if (CheckLobbyGameState() && LobbyGameState->CanLaunch())
-	{
-		if (NumSpectatorsInMatch() > 0 && !bSpectatable)
-		{
-			GetOwnerPlayerState()->ClientMatchError(NSLOCTEXT("LobbyMessage", "HasSpectators","There are spectators in this match.  Please remove them or enable spectating before launching."));
-			return;
-		}
-
-		if (CurrentState == ELobbyMatchState::Setup)
-		{
-			LaunchMatch(false, 2);
-			return;
-		}
-	}
-
-	GetOwnerPlayerState()->ClientMatchError(NSLOCTEXT("LobbyMessage", "TooManyInstances","All available game instances are taken.  Please wait a bit and try starting again."));
-}
-
-void AUTLobbyMatchInfo::LaunchMatch(bool bQuickPlay, int32 DebugCode)
+void AUTLobbyMatchInfo::LaunchMatch(bool bAllowBots, int32 BotDifficulty)
 {
 	if (CheckLobbyGameState() && CurrentRuleset.IsValid() && InitialMapInfo.IsValid())
 	{
-		if (bQuickPlay) 
-		{
-			BotSkillLevel = 3;
-		}
 
 		// build all of the data needed to launch the map.
-		FString GameURL = FString::Printf(TEXT("%s?Game=%s?MaxPlayers=%i"),*InitialMap, *CurrentRuleset->GameMode, CurrentRuleset->MaxPlayers);
+		FString GameURL = CurrentRuleset->GenerateURL(InitialMap, bAllowBots, BotDifficulty);
 		GameURL += CurrentRuleset->GameOptions;
 
-		if (CurrentRuleset->bCompetitiveMatch)
-		{
-			bJoinAnytime = false;
-		}
-		else if (!CurrentRuleset->bCustomRuleset)
-		{
-			// Custom rules already have their bot info set
-			if ( CurrentRuleset->GameOptions.Find(TEXT("BotFill="),ESearchCase::IgnoreCase) == INDEX_NONE )
-			{
-				if (BotSkillLevel >= 0)
-				{
-					GameURL += FString::Printf(TEXT("?Difficulty=%i"), FMath::Clamp<int32>(BotSkillLevel,0,7));
-				}
-				else
-				{
-					GameURL += FString::Printf(TEXT("?ForceNoBots=1"));			
-				}
-			}
-		}
-
 		if (!bSpectatable) GameURL += TEXT("?MaxSpectators=0");
-		if (!bJoinAnytime) GameURL += TEXT("?NoJIP");
+		if (!bJoinAnytime && GameURL.Find(TEXT("NoJIP"), ESearchCase::IgnoreCase) == INDEX_NONE) GameURL += TEXT("?NoJIP");
 
-		LobbyGameState->LaunchGameInstance(this, GameURL, DebugCode);
+		LobbyGameState->LaunchGameInstance(this, GameURL);
 	}
 }
 
@@ -404,15 +353,6 @@ void AUTLobbyMatchInfo::GameInstanceReady(FGuid inGameInstanceGUID)
 	}
 
 	SetLobbyMatchState(ELobbyMatchState::InProgress);
-
-	for (int32 i = 0; i < NotifyBeacons.Num(); i++)
-	{
-		if (NotifyBeacons[i])
-		{
-			NotifyBeacons[i]->ClientJoinQuickplay(GameInstanceGUID);
-		}
-	}
-	NotifyBeacons.Empty();
 }
 
 void AUTLobbyMatchInfo::RemoveFromMatchInstance(AUTLobbyPlayerState* PlayerState)
@@ -449,39 +389,10 @@ bool AUTLobbyMatchInfo::ShouldShowInDock()
 	}
 	else
 	{
-		return (OwnerId.IsValid() || bQuickPlayMatch) && CurrentRuleset.IsValid() && (CurrentState == ELobbyMatchState::InProgress || CurrentState == ELobbyMatchState::WaitingForPlayers || CurrentState == ELobbyMatchState::Launching);
+		return (OwnerId.IsValid() && CurrentRuleset.IsValid() && (CurrentState == ELobbyMatchState::InProgress || CurrentState == ELobbyMatchState::WaitingForPlayers || CurrentState == ELobbyMatchState::Launching));
 	}
 }
 
-bool AUTLobbyMatchInfo::ServerSetLobbyMatchState_Validate(FName NewMatchState) { return true; }
-void AUTLobbyMatchInfo::ServerSetLobbyMatchState_Implementation(FName NewMatchState)
-{
-	SetLobbyMatchState(NewMatchState);
-}
-
-bool AUTLobbyMatchInfo::ServerSetAllowJoinInProgress_Validate(bool bAllow) { return true; }
-void AUTLobbyMatchInfo::ServerSetAllowJoinInProgress_Implementation(bool bAllow)
-{
-	bJoinAnytime = bAllow;
-}
-
-bool AUTLobbyMatchInfo::ServerSetAllowSpectating_Validate(bool bAllow) { return true; }
-void AUTLobbyMatchInfo::ServerSetAllowSpectating_Implementation(bool bAllow)
-{
-	bSpectatable = bAllow;
-}
-
-bool AUTLobbyMatchInfo::ServerSetRankLocked_Validate(bool bLocked) { return true; }
-void AUTLobbyMatchInfo::ServerSetRankLocked_Implementation(bool bLocked)
-{
-	bRankLocked = bLocked;
-}
-
-bool AUTLobbyMatchInfo::ServerSetPrivateMatch_Validate(bool bIsPrivate) { return true; }
-void AUTLobbyMatchInfo::ServerSetPrivateMatch_Implementation(bool bIsPrivate)
-{
-	bPrivateMatch = bIsPrivate;
-}
 
 FText AUTLobbyMatchInfo::GetDebugInfo()
 {
@@ -615,40 +526,6 @@ void AUTLobbyMatchInfo::SetRules(TWeakObjectPtr<AUTReplicatedGameRuleset> NewRul
 	bMapChanged = true;
 }
 
-bool AUTLobbyMatchInfo::ServerSetRules_Validate(const FString& RulesetTag, const FString& StartingMap, bool bNewAllowBots, int32 NewBotSkillLevel, bool bIsInParty, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch) { return true; }
-void AUTLobbyMatchInfo::ServerSetRules_Implementation(const FString&RulesetTag, const FString& StartingMap, bool bNewAllowBots, int32 NewBotSkillLevel, bool bIsInParty, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch)
-{
-	bBeginnerMatch = _bBeginnerMatch;
-	if ( CheckLobbyGameState() )
-	{
-		bRankLocked = _bRankLocked;
-		bSpectatable = _bSpectatable;
-		bPrivateMatch = _bPrivateMatch;
-
-		TWeakObjectPtr<AUTReplicatedGameRuleset> NewRuleSet = LobbyGameState->FindRuleset(RulesetTag);
-
-		if (NewRuleSet.IsValid())
-		{
-			SetRules(NewRuleSet, StartingMap);
-		}
-		BotSkillLevel = NewBotSkillLevel;
-		bAllowBots = bNewAllowBots;
-
-		// Update the rank badges...
-		TWeakObjectPtr<AUTLobbyPlayerState> OwnerPlayerState = GetOwnerPlayerState();
-		if (OwnerPlayerState.IsValid() && CurrentRuleset.IsValid())
-		{
-			AUTBaseGameMode* DefaultGameMode = CurrentRuleset->GetDefaultGameModeObject();
-			if (DefaultGameMode == nullptr) DefaultGameMode = AUTBaseGameMode::StaticClass()->GetDefaultObject<AUTBaseGameMode>();
-			RankCheck = OwnerPlayerState->GetRankCheck(DefaultGameMode);
-
-			if (FUTAnalytics::IsAvailable())
-			{
-				FUTAnalytics::FireEvent_UTHubNewInstance(this, OwnerPlayerState.Get());
-			}
-		}
-	}
-}
 
 void AUTLobbyMatchInfo::ProcessMatchUpdate(const FMatchUpdate& NewMatchUpdate)
 {
@@ -661,108 +538,6 @@ void AUTLobbyMatchInfo::OnRep_MatchUpdate()
 {
 }
 
-bool AUTLobbyMatchInfo::ServerCreateCustomRule_Validate(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, bool bDesiredAllowBots, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch) { return true; }
-void AUTLobbyMatchInfo::ServerCreateCustomRule_Implementation(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, bool bDesiredAllowBots, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginnerMatch)
-{
-	bool bOldTeamGame = CurrentRuleset.IsValid() ? CurrentRuleset->bTeamGame : false;
-
-	bBeginnerMatch = _bBeginnerMatch;
-	bRankLocked = _bRankLocked;
-	bSpectatable = _bSpectatable;
-	bPrivateMatch = _bPrivateMatch;
-
-	// We need to build a one off custom replicated ruleset just for this hub.  :)
-	AUTLobbyGameState* GameState = GetWorld()->GetGameState<AUTLobbyGameState>();
-
-	FActorSpawnParameters Params;
-	Params.Owner = GameState;
-	AUTReplicatedGameRuleset* NewReplicatedRuleset = GetWorld()->SpawnActor<AUTReplicatedGameRuleset>(Params);
-	if (NewReplicatedRuleset)
-	{
-		// Look up the game mode in the AllowedGameData array and get the text description.
-		NewReplicatedRuleset->Title = TEXT("Custom Rule");
-		NewReplicatedRuleset->Tooltip = TEXT("");
-		NewReplicatedRuleset->Description = Description;
-		int32 PlayerCount = 20;
-		NewReplicatedRuleset->GameMode = GameMode;
-		FString FinalGameOptions = TEXT("");
-
-		AUTGameMode* CustomGameModeDefaultObject = NewReplicatedRuleset->GetDefaultGameModeObject();
-		if (CustomGameModeDefaultObject)
-		{
-			NewReplicatedRuleset->Title = FString::Printf(TEXT("Custom %s"), *CustomGameModeDefaultObject->DisplayName.ToString());
-
-			TArray< TSharedPtr<TAttributePropertyBase> > AllowedProps;
-			CustomGameModeDefaultObject->CreateGameURLOptions(AllowedProps);
-
-			for (int32 i=0; i<GameOptions.Num();i++)
-			{
-				if (!GameOptions[i].IsEmpty())
-				{
-					FString Sanitized = GameOptions[i].Replace(TEXT(" "), TEXT(""));
-					Sanitized = Sanitized.Replace(TEXT("?"),TEXT(""));
-					Sanitized = Sanitized.Replace(TEXT("?"),TEXT(""));
-					Sanitized = Sanitized.Replace(TEXT("|"),TEXT(""));
-					Sanitized = Sanitized.Replace(TEXT(";"),TEXT(""));
-					Sanitized = Sanitized.Replace(TEXT("<"),TEXT(""));
-					Sanitized = Sanitized.Replace(TEXT(">"),TEXT(""));
-					TArray<FString> Split;
-					Sanitized.ParseIntoArray(Split, TEXT("="),true);
-					if (Split.Num() == 2)
-					{
-
-						// Verify the settings on time limit
-						if (Split[0].Equals(TEXT("timelimit"),ESearchCase::IgnoreCase))
-						{
-							int32 TimeLimitValue = FCString::Atoi(*Split[1]);												
-							if (TimeLimitValue <= 0 || TimeLimitValue >=60)
-							{
-								Sanitized = TEXT("TimeLimit=60");
-							}
-						}
-
-						// TODO: this doesn't handle mutators, etc
-						//TSharedPtr<TAttributePropertyBase> Prop = CustomGameModeDefaultObject->FindGameURLOption(AllowedProps, Split[0]);
-						//if (Prop.IsValid())
-						{
-							FinalGameOptions += TEXT("?") + Sanitized;
-						}
-					}
-				}
-			}
-		}
-
-		InitialMap = StartingMap;
-		GetMapInformation();
-		NewReplicatedRuleset->MaxPlayers = (DesiredPlayerCount > 0) ? DesiredPlayerCount : CustomGameModeDefaultObject->DefaultMaxPlayers;
-		bAllowBots = bDesiredAllowBots;
-		if ( bAllowBots )
-		{
-			FinalGameOptions += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), NewReplicatedRuleset->MaxPlayers, FMath::Clamp<int32>(DesiredSkillLevel,0,7));				
-		}
-		else
-		{
-			FinalGameOptions +=TEXT("?BotFill=0?ForceNoBots=1");
-		}
-		NewReplicatedRuleset->GameOptions = FinalGameOptions;
-		NewReplicatedRuleset->DisplayTexture = "Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_Custom.GB_Custom'";
-		NewReplicatedRuleset->bCustomRuleset = true;
-
-		// Add code to setup the required packages array
-		CurrentRuleset = NewReplicatedRuleset;
-		NewReplicatedRuleset->bTeamGame = bTeamGame;
-
-		if (CurrentRuleset->bTeamGame != bOldTeamGame) AssignTeams();
-		SetRedirects();
-
-		AUTBaseGameMode* DefaultGameMode = (CustomGameModeDefaultObject == nullptr) ? AUTBaseGameMode::StaticClass()->GetDefaultObject<AUTBaseGameMode>() : CustomGameModeDefaultObject;
-		TWeakObjectPtr<AUTLobbyPlayerState> OwnerPlayerState = GetOwnerPlayerState();
-		if (OwnerPlayerState.IsValid())
-		{
-			RankCheck = OwnerPlayerState->GetRankCheck(DefaultGameMode);
-		}
-	}
-}
 
 bool AUTLobbyMatchInfo::IsBanned(FUniqueNetIdRepl Who)
 {
@@ -845,20 +620,6 @@ int32 AUTLobbyMatchInfo::NumSpectatorsInMatch()
 	}
 
 	return 0;
-}
-
-
-bool AUTLobbyMatchInfo::IsMatchofType(const FString& MatchType)
-{
-	if (CurrentRuleset.IsValid() && !CurrentRuleset->bCustomRuleset)
-	{
-		if (MatchType == CurrentRuleset->UniqueTag)
-		{
-			return true;
-		}
-	}
-
-	return false;
 }
 
 bool AUTLobbyMatchInfo::MatchHasRoom(bool bForSpectator)
@@ -1122,7 +883,6 @@ void AUTLobbyMatchInfo::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject)
 	JsonObject->SetBoolField(TEXT("bJoinAnyTime"), bJoinAnytime);
 	JsonObject->SetBoolField(TEXT("bRankLocked"), bRankLocked);
 	JsonObject->SetBoolField(TEXT("bBeginnerMatch"), bBeginnerMatch );
-	JsonObject->SetNumberField(TEXT("BotSkillLevel"), BotSkillLevel);
 
 	TArray<TSharedPtr<FJsonValue>> APArray;
 	for (int32 i=0; i < Players.Num(); i++)

@@ -58,13 +58,6 @@ public:
 	UPROPERTY(Replicated)
 	bool bBeginnerMatch;
 
-	// -1 means no bots.
-	UPROPERTY(Replicated)
-	int32 BotSkillLevel;
-
-	UPROPERTY(Replicated)
-	uint32 bAllowBots : 1;
-
 	// Holds data about the match.  In matches that are not started yet, it holds the description of the match.  In matches in progress, it's 
 	// replicated data from the instance about the state of the match.  NOTE: Player information is not replicated from the instance to the server here
 	// it's replicated in the PlayersInMatchInstance array.  But this contains important information regarding the match in ?Key=Value form.
@@ -115,47 +108,10 @@ public:
 	// Cache some data
 	virtual void PreInitializeComponents() override;
 
+	virtual void InitializeMatch(AUTLobbyPlayerState* Creator, const FString& GameName, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool _bRankLocked, bool _bSpectatable, bool _bPrivateMatch, bool _bBeginner);
 	virtual void AddPlayer(AUTLobbyPlayerState* PlayerToAdd, bool bIsOwner = false, bool bIsSpectator = false);
 	virtual bool RemovePlayer(AUTLobbyPlayerState* PlayerToRemove);
 	virtual FText GetActionText();
-
-	// The GameState needs to tell this MatchInfo what settings should be made available
-	virtual void SetSettings(AUTLobbyGameState* GameState, AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy = NULL, bool bIsInParty = false, const FString& inCustomGameName = TEXT(""));
-
-	virtual void SetAllowJoinInProgress(bool bAllow)
-	{
-		bJoinAnytime = bAllow;
-		ServerSetAllowJoinInProgress(bAllow);
-	}
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerSetAllowJoinInProgress(bool bAllow);
-
-	virtual void SetAllowSpectating(bool bAllow)
-	{
-		bSpectatable = bAllow;
-		ServerSetAllowSpectating(bAllow);
-	}
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerSetAllowSpectating(bool bAllow);
-
-	void SetRankLocked(bool bLocked)
-	{
-		ServerSetRankLocked(bLocked);
-	}
-	
-	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerSetRankLocked(bool bLocked);
-
-	void SetPrivateMatch(bool bIsPrivate)
-	{
-		ServerSetPrivateMatch(bIsPrivate);
-	}
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerSetPrivateMatch(bool bIsPrivate);
-
 
 	FOnMatchInfoUpdated OnMatchInfoUpdatedDelegate;
 	FOnRulesetUpdated OnRulesetUpdatedDelegate;
@@ -163,14 +119,7 @@ public:
 	UPROPERTY()
 	TArray<FUniqueNetIdRepl> BannedIDs;
 
-	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerStartMatch();
-	
-	// Actually launch the map.  NOTE: This is used for QuickStart and doesn't check any of the "can I launch" metrics.
-	virtual void LaunchMatch(bool bQuickPlay, int32 DebugCode);
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerSetLobbyMatchState(FName NewMatchState);
+	virtual void LaunchMatch(bool bAllowBots, int32 BotDifficulty);
 
 	virtual void SetLobbyMatchState(FName NewMatchState);
 	virtual void GameInstanceReady(FGuid inGameInstanceGUID);
@@ -262,10 +211,6 @@ protected:
 	TArray<int32> GetTeamSizes() const;
 public:
 
-	// This is called by the host when he has received his owner id and the default ruleset
-	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerMatchIsReadyForPlayers();
-
 	// Returns true if the match has room for a new player to join it
 	virtual bool MatchHasRoom(bool bForSpectator=false);
 
@@ -274,14 +219,8 @@ public:
 
 	virtual void SetRules(TWeakObjectPtr<AUTReplicatedGameRuleset> NewRuleset, const FString& StartingMap);
 
-	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerSetRules(const FString& RulesetTag, const FString& StartingMap, bool bNewAllowBots, int32 NewBotSkillLevel, bool bIsInParty, bool _bRankLocked = true, bool _bSpectatable = true, bool _bPrivateMatch = false, bool _bBeginnerMatch = false);
-
 	// Processing an update to the match coming from an instance
 	virtual void ProcessMatchUpdate(const FMatchUpdate& NewMatchUpdate);
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerCreateCustomRule(const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  bool bDesiredAllowBots, int32 DesiredSkillLevel, int32 DesiredPlayerCount, bool bTeamGame, bool _bRankLocked = true, bool _bSpectatable = true, bool _bPrivateMatch = false, bool _bBeginnerMatch = false);
 
 	bool IsBanned(FUniqueNetIdRepl Who);
 	void GetMapInformation();
@@ -292,12 +231,6 @@ public:
 
 	int32 NumPlayersInMatch();
 	int32 NumSpectatorsInMatch();
-
-	UPROPERTY(replicated)
-	uint32 bQuickPlayMatch:1;
-
-	// Check to see if this match is of a given type.  This is used in Quickplay
-	virtual bool IsMatchofType(const FString& MatchType);
 
 	// When the hub receives the notice that the instance for this match is ready, notify any beacons in this array.
 	UPROPERTY()

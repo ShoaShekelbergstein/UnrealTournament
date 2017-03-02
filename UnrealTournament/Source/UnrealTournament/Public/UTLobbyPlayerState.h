@@ -5,8 +5,13 @@
 #include "UTLobbyPlayerState.generated.h"
 
 class AUTLobbyMatchInfo;
-
+class AUTLobbyPC;
 class AUTLobbyPlayerState;
+
+#if !UE_SERVER
+class SUTStartMatchWindow;
+#endif
+
 
 DECLARE_DELEGATE_OneParam(FCurrentMatchChangedDelegate, AUTLobbyPlayerState*)
 
@@ -32,9 +37,13 @@ class UNREALTOURNAMENT_API AUTLobbyPlayerState : public AUTPlayerState
 	UPROPERTY()
 	AUTLobbyMatchInfo* JoiningLeaderMatch;
 
-	// Server-Side.  Attempt to create a new match
+	// Server-Side - Attempt to create a custom match
 	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerCreateMatch(bool bIsInParty, const FString& CustomGameName);
+	void ServerCreateCustomInstance(const FString& CustomName, const FString& GameMode, const FString& StartingMap, bool bIsInParty, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty);
+
+	// Server-Side - Attempt to create a match based on a given game rule
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerCreateInstance(const FString& CustomName, const FString& RulesetTag, const FString& StartingMap, bool bIsInParty, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty);
 
 	// Server-Side.  Attempt to leave and or destory the existing match this player is in.
 	UFUNCTION(Server, Reliable, WithValidation)
@@ -115,6 +124,10 @@ protected:
 	UFUNCTION(Client, Reliable)
 	virtual void Client_ReceiveBlock(int32 Block, FAllowedData Data);
 
+#if !UE_SERVER
+	TSharedPtr<SUTStartMatchWindow> StartMatchWindow;
+#endif
+
 public:
 	// We don't need TeamInfo's for the lobby, just store a desired team num for now.  255 will be spectator.
 	UPROPERTY(Replicated)
@@ -133,6 +146,8 @@ public:
 	virtual void NotifyBeginnerAutoLock();
 
 	virtual void Tick(float DeltaTime) override;
+	virtual void ManageStartMatchUI(AUTLobbyPC* PC);
+
 };
 
 
