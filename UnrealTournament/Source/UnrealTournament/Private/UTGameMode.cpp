@@ -3019,6 +3019,8 @@ void AUTGameMode::SetPlayerDefaults(APawn* PlayerPawn)
 				Locker->ProcessTouch(PlayerPawn);
 			}
 		}
+
+		NotifyPlayerDefaultsSet(PlayerPawn);
 	}
 }
 

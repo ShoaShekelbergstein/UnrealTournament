@@ -587,6 +587,9 @@ public:
 
 	virtual void GiveDefaultInventory(APawn* PlayerPawn);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = UTGame)
+	void NotifyPlayerDefaultsSet(APawn* PlayerPawn);
+
 	virtual float OverrideRespawnTime(AUTPickupInventory* Pickup, TSubclassOf<AUTInventory> InventoryType);
 
 	/** Return true if playerstart P should be avoided for this game mode. */
