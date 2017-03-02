@@ -442,7 +442,7 @@ bool AUTWeap_Enforcer::PutDown()
 			if (UTOwner && UTOwner->FirstPersonMesh)
 			{
 				UAnimInstance* HandsAnimInstance = UTOwner->FirstPersonMesh->GetAnimInstance();
-				if (HandsAnimInstance)
+				if (HandsAnimInstance && Dual_PutDownHand)
 				{
 					HandsAnimInstance->Montage_Play(Dual_PutDownHand, Dual_PutDownHand->SequenceLength / EnforcerEquippingState->EquipTime);
 				}
