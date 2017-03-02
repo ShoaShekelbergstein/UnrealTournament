@@ -51,8 +51,8 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	RefirePutDownTimePercent = 1.0f;
 	WeaponBobScaling = 1.f;
 	FiringViewKickback = -20.f;
-	FiringViewKickbackY = 12.f;
-	HUDViewKickback = FVector2D(0.1f, 0.1f);
+	FiringViewKickbackY = 6.f;
+	HUDViewKickback = FVector2D(0.1f, 0.05f);
 	bNetDelayedShot = false;
 
 	bFPFireFromCenter = true;
@@ -1344,7 +1344,16 @@ void AUTWeapon::FireShot()
 			}
 			else
 			{
-				FireInstantHit();
+				FHitResult OutHit;
+				FireInstantHit(true, &OutHit);
+				if (bTrackHitScanReplication && GetWorld()->GetGameState<AUTGameState>() && GetWorld()->GetGameState<AUTGameState>()->bTrackHitScanReplication)
+				{
+					HitScanHitChar = Cast<AUTCharacter>(OutHit.Actor.Get());
+					HitScanCharLoc = HitScanHitChar ? HitScanHitChar->GetActorLocation() : FVector::ZeroVector;
+					HitScanStart = GetFireStartLoc();
+					HitScanEnd = OutHit.Location;
+					HitScanTime = GetUTOwner()->UTCharacterMovement ? GetUTOwner()->UTCharacterMovement->GetCurrentMovementTime() : 0.f;
+				}
 			}
 		}
 		//UE_LOG(UT, Warning, TEXT("FireShot"));

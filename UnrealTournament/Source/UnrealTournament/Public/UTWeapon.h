@@ -1195,7 +1195,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	FName WeaponSkinCustomizationTag;
 
-
 	/** Holds a pointer to the current crosshair */
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
 	UUTCrosshair* ActiveCrosshair;
@@ -1203,4 +1202,23 @@ public:
 	// The customization for this crosshair based on the customization info
 	UPROPERTY(BlueprintReadOnly, Category = Crosshair)
 	FWeaponCustomizationInfo ActiveCrosshairCustomizationInfo;
+
+	/** Hitscan replication debugging. */
+	UPROPERTY()
+		bool bTrackHitScanReplication;
+
+	UPROPERTY()
+		AUTCharacter* HitScanHitChar;
+
+	UPROPERTY()
+		FVector_NetQuantize HitScanCharLoc;
+
+	UPROPERTY()
+		FVector_NetQuantize HitScanStart;
+
+	UPROPERTY()
+		FVector_NetQuantize HitScanEnd;
+
+	UPROPERTY()
+		float HitScanTime;
 };

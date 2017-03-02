@@ -38,6 +38,7 @@ AUTWeap_Sniper::AUTWeap_Sniper(const FObjectInitializer& ObjectInitializer)
 	bCheckHeadSphere = true;
 	bCheckMovingHeadSphere = true;
 	bIgnoreShockballs = true;
+	bTrackHitScanReplication = true;
 
 	WeaponCustomizationTag = EpicWeaponCustomizationTags::Sniper;
 	WeaponSkinCustomizationTag = EpicWeaponSkinCustomizationTags::Sniper;

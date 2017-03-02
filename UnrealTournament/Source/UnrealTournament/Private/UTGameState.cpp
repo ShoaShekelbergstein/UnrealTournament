@@ -293,6 +293,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	UnplayableHitchThresholdInMs = 300;
 	MaxUnplayableHitchesToTolerate = 1;
 	bPlayStatusAnnouncements = false;
+	bTrackHitScanReplication = false;
 
 	MapVoteListCount = -1;
 }
@@ -357,6 +358,7 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 
 	DOREPLIFETIME(AUTGameState, FCFriendlyLocCount);
 	DOREPLIFETIME(AUTGameState, FCEnemyLocCount);
+	DOREPLIFETIME(AUTGameState, bTrackHitScanReplication);
 }
 
 void AUTGameState::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
