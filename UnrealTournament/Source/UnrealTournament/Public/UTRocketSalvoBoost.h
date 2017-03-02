@@ -95,7 +95,7 @@ public:
 	virtual float GetBoostPowerRating_Implementation(AUTBot* B) const override
 	{
 		if ( B->GetWorld()->SweepTestByChannel( B->GetPawn()->GetActorLocation(), B->GetPawn()->GetActorLocation() + FVector(0.0f, 0.0f, CeilingCheckHeight) + B->GetPawn()->GetActorRotation().Vector() * 500.0f,
-											FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, false, B->GetPawn()), WorldResponseParams ) )
+											FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, true, B->GetPawn()), WorldResponseParams ) )
 		{
 			// no room
 			return 0.0f;
@@ -118,7 +118,7 @@ public:
 	virtual void DrawBoostHUD_Implementation(AUTHUD* Hud, UCanvas* C, APawn* P) const override
 	{
 		const FVector CeilingTestLoc = P->GetActorLocation() + FVector(0.0f, 0.0f, CeilingCheckHeight);
-		bool bHitCeiling = P->GetWorld()->SweepTestByChannel(P->GetActorLocation(), CeilingTestLoc, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, false, P), WorldResponseParams);
+		bool bHitCeiling = P->GetWorld()->SweepTestByChannel(P->GetActorLocation(), CeilingTestLoc, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, true, P), WorldResponseParams);
 		TArray<APawn*> Targets = GatherTargets(P);
 		for (int32 i = FMath::Min<int32>(Targets.Num(), MaxTargets) - 1; i >= 0; i--)
 		{
@@ -128,14 +128,14 @@ public:
 				if (Pos.X > 0.0f && Pos.Y > 0.0f && Pos.X < C->SizeX && Pos.Y < C->SizeY && Pos.Z > 0.0f)
 				{
 					C->DrawColor = FColor::Red;
-					bool bBlocked = P->GetWorld()->SweepTestByChannel(P->GetActorLocation(), Targets[i]->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, false, Targets[i]), WorldResponseParams);
+					bool bBlocked = P->GetWorld()->SweepTestByChannel(P->GetActorLocation(), Targets[i]->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, true, Targets[i]), WorldResponseParams);
 					// try both from ceiling loc direct to target as well as trace direct overhead and then down
-					if (bBlocked && !bHitCeiling && P->GetWorld()->SweepTestByChannel(CeilingTestLoc, Targets[i]->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, false, Targets[i]), WorldResponseParams))
+					if (bBlocked && !bHitCeiling && P->GetWorld()->SweepTestByChannel(CeilingTestLoc, Targets[i]->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, true, Targets[i]), WorldResponseParams))
 					{
 						FVector OverheadLoc = Targets[i]->GetActorLocation();
 						OverheadLoc.Z = CeilingTestLoc.Z;
-						bBlocked = P->GetWorld()->SweepTestByChannel(CeilingTestLoc, OverheadLoc, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, false, Targets[i]), WorldResponseParams) ||
-							P->GetWorld()->SweepTestByChannel(OverheadLoc, Targets[i]->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, false, Targets[i]), WorldResponseParams);
+						bBlocked = P->GetWorld()->SweepTestByChannel(CeilingTestLoc, OverheadLoc, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, true, Targets[i]), WorldResponseParams) ||
+							P->GetWorld()->SweepTestByChannel(OverheadLoc, Targets[i]->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, true, Targets[i]), WorldResponseParams);
 					}
 					if (bBlocked)
 					{
