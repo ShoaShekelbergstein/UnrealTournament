@@ -557,6 +557,9 @@ public:
 		FText BuildText;
 
 	UPROPERTY()
+		FText WarmupText;
+
+	UPROPERTY()
 		float BuildTextWidth;
 
 	void DrawString(FText Text, float X, float Y, ETextHorzPos::Type HorzAlignment, ETextVertPos::Type VertAlignment, UFont* Font, FLinearColor Color, float Scale=1.0, bool bOutline=false);
