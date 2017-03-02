@@ -41,7 +41,7 @@ AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 	PullWarmupTime = 0.15f;
 	LinkPullDamage = 25;
 	ReadyToPullColor = FLinearColor::White;
-	HUDViewKickback = FVector2D(0.f, 0.1f);
+	HUDViewKickback = FVector2D(0.f, 0.05f);
 
 	bRecommendSuppressiveFire = true;
 
@@ -298,6 +298,11 @@ void AUTWeap_LinkGun::StartLinkPull()
 		MuzzleFlash[FiringState.Num()]->SetTemplate(PulseSuccessEffect);
 		MuzzleFlash[FiringState.Num()]->SetActorParameter(FName(TEXT("Player")), CurrentLinkedTarget);
 		PlayWeaponAnim(PulseAnim, PulseAnimHands);
+		AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
+		if (PC != NULL)
+		{
+			PC->AddHUDImpulse(FVector2D(0.f, 0.3f));
+		}
 	}
 	CurrentLinkedTarget = nullptr;
 	LinkStartTime = -100.f;

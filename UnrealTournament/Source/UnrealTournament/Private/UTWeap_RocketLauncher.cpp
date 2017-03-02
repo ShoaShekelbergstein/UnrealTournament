@@ -39,6 +39,7 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	LockOffset = 800.f;
 	bTargetLockingActive = true;
 	LastTargetLockCheckTime = 0.0f;
+	HUDViewKickback = FVector2D(0.f, 0.2f);
 
 	UnderReticlePadding = 20.0f;
 	CrosshairScale = 0.5f;
