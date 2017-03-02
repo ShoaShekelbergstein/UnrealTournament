@@ -13,4 +13,8 @@ class UNREALTOURNAMENT_API AUTHUD_InstantReplay : public AUTHUD
 	virtual void ToggleComsMenu(bool bShow) {}
 
 	virtual EInputMode::Type GetInputMode_Implementation() const override;
+	virtual void DrawHUD() override;
+
+	UPROPERTY()
+		FText InstantReplayText;
 };

@@ -884,40 +884,44 @@ void AUTHUD::DrawHUD()
 				Indicator.FadeTime -= RenderDelta;
 			}
 		}
-	}
 
-	if (bShowVoiceDebug)
-	{
-		float TextScale = Canvas->ClipY / 1080.0f;
-		IOnlineVoicePtr VoiceInt = Online::GetVoiceInterface(GetWorld());
-		if (VoiceInt.IsValid())
+		if (bShowVoiceDebug)
 		{
-			FString VoiceDebugString = 	VoiceInt->GetVoiceDebugState();
-			if (!VoiceDebugString.IsEmpty())
+			float TextScale = Canvas->ClipY / 1080.0f;
+			IOnlineVoicePtr VoiceInt = Online::GetVoiceInterface(GetWorld());
+			if (VoiceInt.IsValid())
 			{
-				TArray<FString> VDLines;
-				VoiceDebugString.ParseIntoArray(VDLines,TEXT("\n"), false);
-				FVector2D Pos = FVector2D(10, Canvas->ClipY * 0.2f);
-				for (int32 i=0 ; i < VDLines.Num(); i++)
+				FString VoiceDebugString = 	VoiceInt->GetVoiceDebugState();
+				if (!VoiceDebugString.IsEmpty())
 				{
-					DrawString(FText::FromString(VDLines[i]), Pos.X, Pos.Y, ETextHorzPos::Left, ETextVertPos::Top, TinyFont, FLinearColor::White, TextScale, true);
-					Pos.Y += TinyFont->GetMaxCharHeight() * TextScale;
+					TArray<FString> VDLines;
+					VoiceDebugString.ParseIntoArray(VDLines,TEXT("\n"), false);
+					FVector2D Pos = FVector2D(10, Canvas->ClipY * 0.2f);
+					for (int32 i=0 ; i < VDLines.Num(); i++)
+					{
+						DrawString(FText::FromString(VDLines[i]), Pos.X, Pos.Y, ETextHorzPos::Left, ETextVertPos::Top, TinyFont, FLinearColor::White, TextScale, true);
+						Pos.Y += TinyFont->GetMaxCharHeight() * TextScale;
+					}
 				}
 			}
 		}
-	}
 
-	AUTPlayerState* ViewedPS = GetScorerPlayerState();
-	if (ViewedPS && ViewedPS->bIsWarmingUp)
-	{
-		float RenderScale = Canvas->ClipX / 1920.0f;
-		float XL, YL;
-		Canvas->DrawColor = FColor(255, 255, 255, 255);
-		Canvas->TextSize(LargeFont, WarmupText.ToString(), XL, YL, 1.f, 1.f);
-		Canvas->DrawText(LargeFont, WarmupText, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f-0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
+		AUTPlayerState* ViewedPS = GetScorerPlayerState();
+		if (!bScoreboardIsUp && ViewedPS && ViewedPS->bIsWarmingUp && Cast<AUTCharacter>(UTPlayerOwner->GetViewTarget()))
+		{
+			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+			if (GS && GS->GetMatchState() == MatchState::WaitingToStart)
+			{
+				float RenderScale = Canvas->ClipX / 1920.0f;
+				float XL, YL;
+				Canvas->DrawColor = FColor(255, 255, 255, 255);
+				Canvas->TextSize(LargeFont, WarmupText.ToString(), XL, YL, 1.f, 1.f);
+				Canvas->DrawText(LargeFont, WarmupText, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
+			}
+		}
+		CachedProfileSettings = nullptr;
+		DrawWatermark();
 	}
-	CachedProfileSettings = nullptr;
-	DrawWatermark();
 }
 
 void AUTHUD::DrawKillSkulls()
