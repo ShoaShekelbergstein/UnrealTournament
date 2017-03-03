@@ -178,7 +178,6 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME(AUTPlayerState, SpectatingID);
 	DOREPLIFETIME(AUTPlayerState, SpectatingIDTeam);
 	DOREPLIFETIME(AUTPlayerState, bCaster);
-	DOREPLIFETIME(AUTPlayerState, bHasLifeLimit);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, bIsDemoRecording, COND_InitialOnly);
 	DOREPLIFETIME(AUTPlayerState, MatchHighlights);
 	DOREPLIFETIME(AUTPlayerState, MatchHighlightData);

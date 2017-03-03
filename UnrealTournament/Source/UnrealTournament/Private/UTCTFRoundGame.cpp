@@ -827,7 +827,6 @@ void AUTCTFRoundGame::InitPlayerForRound(AUTPlayerState* PS)
 {
 	if (PS)
 	{
-		PS->bHasLifeLimit = bPerPlayerLives;
 		PS->RoundKills = 0;
 		PS->RoundDeaths = 0;
 		PS->RoundKillAssists = 0;
@@ -849,7 +848,6 @@ void AUTCTFRoundGame::InitPlayerForRound(AUTPlayerState* PS)
 		else if (PS)
 		{
 			PS->RemainingLives = RoundLives;
-			PS->bHasLifeLimit = IsPlayerOnLifeLimitedTeam(PS);
 			PS->SetOutOfLives(false);
 		}
 		PS->ForceNetUpdate();
@@ -858,7 +856,6 @@ void AUTCTFRoundGame::InitPlayerForRound(AUTPlayerState* PS)
 
 void AUTCTFRoundGame::HandleTeamChange(AUTPlayerState* PS, AUTTeamInfo* OldTeam)
 {
-	PS->bHasLifeLimit = IsPlayerOnLifeLimitedTeam(PS);
 	if ((GetWorld()->WorldType == EWorldType::PIE) || bDevServer || !PS || !UTGameState || (UTGameState->GetMatchState() != MatchState::InProgress))
 	{
 		return;
