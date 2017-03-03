@@ -266,6 +266,7 @@ protected:
 
 	TSharedPtr<SUTSlider> sBotSkill;
 	TSharedPtr<SCheckBox> cbUseBots;
+	TSharedPtr<SCheckBox> cbRequireFull;
 
 	bool bBeginnerMatch;
 	bool bUserHasBeenWarned;
@@ -287,6 +288,9 @@ protected:
 	FSlateColor GetBotSkillColor() const;
 
 	TSharedPtr<SBox> BotSkillBox;
+
+	void AllowBotsChanged(ECheckBoxState NewState);
+	void RequireFullChanged(ECheckBoxState NewState);
 
 public:
 	FString GetSelectedMap();

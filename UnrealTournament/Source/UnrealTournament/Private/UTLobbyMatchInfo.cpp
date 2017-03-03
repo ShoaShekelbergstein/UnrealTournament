@@ -316,13 +316,13 @@ FText AUTLobbyMatchInfo::GetActionText()
 
 
 
-void AUTLobbyMatchInfo::LaunchMatch(bool bAllowBots, int32 BotDifficulty)
+void AUTLobbyMatchInfo::LaunchMatch(bool bAllowBots, int32 BotDifficulty, bool bRequireFilled)
 {
 	if (CheckLobbyGameState() && CurrentRuleset.IsValid() && InitialMapInfo.IsValid())
 	{
 
 		// build all of the data needed to launch the map.
-		FString GameURL = CurrentRuleset->GenerateURL(InitialMap, bAllowBots, BotDifficulty);
+		FString GameURL = CurrentRuleset->GenerateURL(InitialMap, bAllowBots, BotDifficulty, bRequireFilled);
 		GameURL += CurrentRuleset->GameOptions;
 
 		if (!bSpectatable) GameURL += TEXT("?MaxSpectators=0");

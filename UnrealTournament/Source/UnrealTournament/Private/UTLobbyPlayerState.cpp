@@ -31,18 +31,18 @@ void AUTLobbyPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	DOREPLIFETIME(AUTLobbyPlayerState, DesiredTeamNum);
 }
 
-bool AUTLobbyPlayerState::ServerCreateCustomInstance_Validate(const FString& CustomName, const FString& GameMode, const FString& StartingMap, bool bIsInParty, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty) { return true; }
-void AUTLobbyPlayerState::ServerCreateCustomInstance_Implementation(const FString& CustomName, const FString& GameMode, const FString& StartingMap, bool bIsInParty, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty)
+bool AUTLobbyPlayerState::ServerCreateCustomInstance_Validate(const FString& CustomName, const FString& GameMode, const FString& StartingMap, bool bIsInParty, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled) { return true; }
+void AUTLobbyPlayerState::ServerCreateCustomInstance_Implementation(const FString& CustomName, const FString& GameMode, const FString& StartingMap, bool bIsInParty, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled)
 {
 	AUTLobbyGameState* LobbyGameState = GetWorld()->GetGameState<AUTLobbyGameState>();
 	if (LobbyGameState != nullptr)
 	{
-		LobbyGameState->RequestNewCustomMatch(this, ECreateInstanceTypes::Lobby, CustomName, GameMode, StartingMap, Description, GameOptions, DesiredPlayerCount, bTeamGame, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty);
+		LobbyGameState->RequestNewCustomMatch(this, ECreateInstanceTypes::Lobby, CustomName, GameMode, StartingMap, Description, GameOptions, DesiredPlayerCount, bTeamGame, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);
 	}
 }
 
-bool AUTLobbyPlayerState::ServerCreateInstance_Validate(const FString& CustomName, const FString& RulesetTag, const FString& StartingMap, bool bIsInParty, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty) { return true; }
-void AUTLobbyPlayerState::ServerCreateInstance_Implementation(const FString& CustomName, const FString& RulesetTag, const FString& StartingMap, bool bIsInParty, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty)
+bool AUTLobbyPlayerState::ServerCreateInstance_Validate(const FString& CustomName, const FString& RulesetTag, const FString& StartingMap, bool bIsInParty, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled) { return true; }
+void AUTLobbyPlayerState::ServerCreateInstance_Implementation(const FString& CustomName, const FString& RulesetTag, const FString& StartingMap, bool bIsInParty, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled)
 {
 	AUTLobbyGameState* LobbyGameState = GetWorld()->GetGameState<AUTLobbyGameState>();
 	if (LobbyGameState != nullptr)
@@ -50,7 +50,7 @@ void AUTLobbyPlayerState::ServerCreateInstance_Implementation(const FString& Cus
 		TWeakObjectPtr<AUTReplicatedGameRuleset> Ruleset = LobbyGameState->FindRuleset(RulesetTag);
 		if (Ruleset != nullptr)
 		{
-			LobbyGameState->RequestNewMatch(this, ECreateInstanceTypes::Lobby, CustomName, Ruleset.Get(), StartingMap, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty);	
+			LobbyGameState->RequestNewMatch(this, ECreateInstanceTypes::Lobby, CustomName, Ruleset.Get(), StartingMap, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);	
 		}
 	}
 }

@@ -39,11 +39,11 @@ class UNREALTOURNAMENT_API AUTLobbyPlayerState : public AUTPlayerState
 
 	// Server-Side - Attempt to create a custom match
 	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerCreateCustomInstance(const FString& CustomName, const FString& GameMode, const FString& StartingMap, bool bIsInParty, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty);
+	void ServerCreateCustomInstance(const FString& CustomName, const FString& GameMode, const FString& StartingMap, bool bIsInParty, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled);
 
 	// Server-Side - Attempt to create a match based on a given game rule
 	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerCreateInstance(const FString& CustomName, const FString& RulesetTag, const FString& StartingMap, bool bIsInParty, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty);
+	virtual void ServerCreateInstance(const FString& CustomName, const FString& RulesetTag, const FString& StartingMap, bool bIsInParty, bool bRankLocked, bool bSpectatable, bool bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled);
 
 	// Server-Side.  Attempt to leave and or destory the existing match this player is in.
 	UFUNCTION(Server, Reliable, WithValidation)

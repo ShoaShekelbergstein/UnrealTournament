@@ -1359,12 +1359,12 @@ public:
 	/**
 	 *	Request a new custom match be created.
 	 **/
-	virtual void CreateNewCustomMatch(ECreateInstanceTypes::Type InstanceType, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty);
+	virtual void CreateNewCustomMatch(ECreateInstanceTypes::Type InstanceType, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled);
 
 	/**
 	 *	Request a new match be created.
 	 **/
-	virtual void CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty);
+	virtual void CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled);
 
 
 };

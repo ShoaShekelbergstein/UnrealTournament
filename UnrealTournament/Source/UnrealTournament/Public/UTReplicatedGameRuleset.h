@@ -118,7 +118,7 @@ public:
 	/**
 	 *	Generates a URL that can be used to launch a match based on this Ruleset.
 	 **/
-	virtual FString GenerateURL(const FString& StartingMap, bool bAllowBots, int32 BotDifficulty);
+	virtual FString GenerateURL(const FString& StartingMap, bool bAllowBots, int32 BotDifficulty, bool bRequireFilled);
 };
 
 

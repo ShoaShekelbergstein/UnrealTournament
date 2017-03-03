@@ -108,7 +108,7 @@ protected:
 public:
 
 	bool IsReadyToPlay();
-	void SetBoxSkill(TSharedRef<SCompoundWidget> AllowBotsWidgets, TSharedRef<SHorizontalBox> BotSkillWidgets);
+	void SetBoxSkill(TSharedRef<SCompoundWidget> AllowBotsWidgets, TSharedRef<SHorizontalBox> BotSkillWidgets, TSharedRef<SCompoundWidget> RequireFilled);
 
 };
 

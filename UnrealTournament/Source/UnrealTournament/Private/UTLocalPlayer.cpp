@@ -6813,19 +6813,19 @@ void UUTLocalPlayer::UpdateCheck()
 #endif
 }
 
-void UUTLocalPlayer::CreateNewCustomMatch(ECreateInstanceTypes::Type InstanceType, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty)
+void UUTLocalPlayer::CreateNewCustomMatch(ECreateInstanceTypes::Type InstanceType, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled)
 {
 	AUTReplicatedGameRuleset* CustomRuleset = AUTBaseGameMode::CreateCustomReplicateGameRuleset(GetWorld(), GetWorld()->GetGameState<AUTGameState>(), GameMode, StartingMap, Description, GameOptions, DesiredPlayerCount, bTeamGame);
 
 	if (CustomRuleset != nullptr)
 	{
-		return CreateNewMatch(InstanceType, CustomRuleset, StartingMap, bRankLocked, bSpectatable, _bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty);
+		return CreateNewMatch(InstanceType, CustomRuleset, StartingMap, bRankLocked, bSpectatable, _bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);
 	}
 }
 
-void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty)
+void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled)
 {
-	FString URL = Ruleset->GenerateURL(StartingMap, bUseBots, BotDifficulty);
+	FString URL = Ruleset->GenerateURL(StartingMap, bUseBots, BotDifficulty, bRequireFilled);
 	
 	if (FUTAnalytics::IsAvailable())
 	{

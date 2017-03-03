@@ -906,16 +906,21 @@ EVisibility SUTCreateGamePanel::GetLockImageVis() const
 	return EVisibility::Collapsed;
 }
 
-void SUTCreateGamePanel::SetBoxSkill(TSharedRef<SCompoundWidget> AllowBotsWidgets, TSharedRef<SHorizontalBox> BotSkillWidgets)
+void SUTCreateGamePanel::SetBoxSkill(TSharedRef<SCompoundWidget> AllowBotsWidgets, TSharedRef<SHorizontalBox> BotSkillWidgets, TSharedRef<SCompoundWidget> RequireFilled)
 {
 	if (BotSkillBox.IsValid())
 	{
-		BotSkillBox->AddSlot()
+		BotSkillBox->AddSlot().AutoHeight()
+		[
+			RequireFilled
+		];
+
+		BotSkillBox->AddSlot().AutoHeight()
 		[
 			AllowBotsWidgets
 		];
 
-		BotSkillBox->AddSlot()
+		BotSkillBox->AddSlot().AutoHeight()
 		[
 			BotSkillWidgets
 		];
