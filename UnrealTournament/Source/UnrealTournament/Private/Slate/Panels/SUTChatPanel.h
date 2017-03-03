@@ -50,6 +50,7 @@ protected:
 
 	void ChatTextChanged(const FText& NewText);
 	void ChatTextCommited(const FText& NewText, ETextCommit::Type CommitType);
+	void ChatConsoleCommand(const FString& Destination, const FString& FinalText);
 	FReply ChatDestinationChanged();
 	FReply UserListToggle();
 	FText GetChatButtonText() const;

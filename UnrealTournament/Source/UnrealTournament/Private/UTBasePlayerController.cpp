@@ -18,6 +18,7 @@
 #include "UTHeartBeatManager.h"
 #include "BlueprintContextLibrary.h"
 #include "PartyContext.h"
+#include "SUTQuickChatWindow.h"
 
 AUTBasePlayerController::AUTBasePlayerController(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -949,10 +950,18 @@ void AUTBasePlayerController::UpdateInputMode()
 			return;
 		}
 
+		bool bSetWidgetFocus = true;
+		TSharedPtr<SWidget> WidgetToFocus = LocalPlayer->ViewportClient->GetGameViewportWidget();
+
 		//Menus default to UI
 		if (LocalPlayer->AreMenusOpen())
 		{
 			NewInputMode = EInputMode::EIM_UIOnly;
+
+			if (LocalPlayer->IsQuickChatOpen())
+			{
+				bSetWidgetFocus = false;
+			}
 		}
 		else
 		{
@@ -974,6 +983,7 @@ void AUTBasePlayerController::UpdateInputMode()
 		//Apply the new input if it needs to be changed
 		if (NewInputMode != InputMode && NewInputMode != EInputMode::EIM_None)
 		{
+			UE_LOG(UT, Warning, TEXT("Input Mode Changing!"));
 			InputMode = NewInputMode;
 			switch (NewInputMode)
 			{
@@ -981,10 +991,17 @@ void AUTBasePlayerController::UpdateInputMode()
 				Super::SetInputMode(FInputModeGameOnly());
 				break;
 			case EInputMode::EIM_GameAndUI:
-				Super::SetInputMode(FInputModeGameAndUI().SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture).SetWidgetToFocus(LocalPlayer->ViewportClient->GetGameViewportWidget()));
+				Super::SetInputMode(FInputModeGameAndUI().SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture).SetWidgetToFocus(WidgetToFocus));
 				break;
 			case EInputMode::EIM_UIOnly:
-				Super::SetInputMode(FInputModeUIOnly().SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture).SetWidgetToFocus(LocalPlayer->ViewportClient->GetGameViewportWidget()));
+				if (bSetWidgetFocus)
+				{
+					Super::SetInputMode(FInputModeUIOnly().SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture).SetWidgetToFocus(WidgetToFocus));
+				}
+				else
+				{
+					Super::SetInputMode(FInputModeUIOnly().SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture));
+				}
 				break;
 			}
 		}

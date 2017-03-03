@@ -1166,6 +1166,11 @@ public:
 	void ShowQuickChat(FName ChatDestination);
 	void CloseQuickChat();
 
+#if !UE_SERVER
+	bool IsQuickChatOpen() { return QuickChatWindow.IsValid(); }
+	TSharedPtr<SUTQuickChatWindow> GetQuickChatWidget();
+#endif
+
 	UPROPERTY()
 	bool bAutoRankLockWarningShown;
 

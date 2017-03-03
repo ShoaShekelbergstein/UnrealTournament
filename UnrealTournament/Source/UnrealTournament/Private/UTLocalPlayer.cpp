@@ -5767,6 +5767,7 @@ void UUTLocalPlayer::ShowQuickChat(FName ChatDestination)
 		{
 			OpenWindow(QuickChatWindow);
 			FSlateApplication::Get().SetAllUserFocus(QuickChatWindow.ToSharedRef(), EKeyboardFocusCause::SetDirectly);
+			FSlateApplication::Get().SetKeyboardFocus(QuickChatWindow);
 		}
 	}
 #endif
@@ -5782,6 +5783,13 @@ void UUTLocalPlayer::CloseQuickChat()
 	}
 #endif
 }
+
+#if !UE_SERVER
+TSharedPtr<SUTQuickChatWindow> UUTLocalPlayer::GetQuickChatWidget()
+{
+	return QuickChatWindow;
+}
+#endif
 
 void UUTLocalPlayer::OnPlayerTalkingStateChanged(TSharedRef<const FUniqueNetId> TalkerId, bool bIsTalking)
 {

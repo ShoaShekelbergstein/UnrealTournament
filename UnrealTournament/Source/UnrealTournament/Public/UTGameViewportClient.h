@@ -159,7 +159,9 @@ public:
 	virtual UWorld* GetWorld() const override;
 	void SetActiveWorldOverride(UWorld* WorldOverride);
 	void ClearActiveWorldOverride();
+	bool HasActiveWorldOverride() { return ActiveWorldOverride.IsValid(); }
 	const UWorld* GetActiveWorldOverride() const { return ActiveWorldOverride.Get(); }
+	UWorld* GetWorldNoActiveWorldOverride() const { return Super::GetWorld(); }
 
 	// When the player is kicked, the reason will be placed here before they are disconnected. 
 	FText KickReason;
