@@ -51,6 +51,11 @@ protected:
 	FReply ShowSummary();
 
 	TSharedPtr<SUTMessageBoxDialog> MessageDialog;
+	TSharedPtr<SUTButton> ChangeTeamButton;
+	TSharedPtr<SUTButton> MatchButton;
+
+	FSlateColor GetChangeTeamLabelColor() const;
+	FSlateColor GetMatchLabelColor() const;
 
 public:
 	virtual bool SkipWorldRender();

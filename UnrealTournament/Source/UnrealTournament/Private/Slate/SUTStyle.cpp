@@ -289,6 +289,16 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 		.SetPressedSound(ButtonPressSound)
 	);
 
+	Style.Set("UT.SimpleButton.SuperDark", FButtonStyle()
+		.SetNormal( FSlateColorBrush(FLinearColor::Black) )
+		.SetPressed( FSlateColorBrush(Pressed) )
+		.SetHovered( FSlateColorBrush(Hovered) )
+		.SetDisabled( FSlateColorBrush(Disabled) )
+		.SetHoveredSound(ButtonHoverSound)
+		.SetPressedSound(ButtonPressSound)
+	);
+
+
 	Style.Set("UT.SimpleButton.Medium", FButtonStyle()
 		.SetNormal( FSlateColorBrush(Medium) )
 		.SetHovered( FSlateColorBrush(Hovered) )

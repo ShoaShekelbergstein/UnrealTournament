@@ -170,10 +170,12 @@ protected:
 
 	TSharedRef<SWidget> BuildPlayerInfo();
 	const FSlateBrush* GetAvatarImage() const;
+	TSharedPtr<SOverlay> DesktopOverlay;
 	FSlateColor GetLabelColor() const;
 
 public:
 	virtual bool SkipWorldRender();
+	
 
 };
 #endif

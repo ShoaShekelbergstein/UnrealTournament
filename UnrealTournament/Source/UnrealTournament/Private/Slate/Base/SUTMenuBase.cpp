@@ -286,7 +286,7 @@ void SUTMenuBase::CreateDesktop()
 					.VAlign(VAlign_Fill)
 					.HAlign(HAlign_Fill)
 					[
-						SNew(SOverlay)
+						SAssignNew(DesktopOverlay, SOverlay)
 						+ SOverlay::Slot()
 						[
 							SAssignNew(Desktop, SOverlay)
