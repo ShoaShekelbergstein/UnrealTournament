@@ -28,6 +28,11 @@ UUTHUDWidget_CTFFlagStatus::UUTHUDWidget_CTFFlagStatus(const FObjectInitializer&
 	CurrentStatusScale[0] = 1.f;
 	CurrentStatusScale[1] = 1.f;
 	ScaleDownTime = 0.5f;
+
+	TopEdgePadding = 0.1f;
+	BottomEdgePadding = 0.18f;
+	LeftEdgePadding = 0.025f;
+	RightEdgePadding = 0.025f;
 }
 
 void UUTHUDWidget_CTFFlagStatus::InitializeWidget(AUTHUD* Hud)
@@ -406,23 +411,20 @@ void UUTHUDWidget_CTFFlagStatus::DrawStatusMessage(float DeltaTime)
 	}	
 }
 
-FVector UUTHUDWidget_CTFFlagStatus::GetAdjustedScreenPosition(const FVector& WorldPosition, const FVector& ViewPoint, const FVector& ViewDir, float Dist, float Edge, bool& bDrawEdgeArrow, int32 Team)
+FVector UUTHUDWidget_CTFFlagStatus::GetAdjustedScreenPosition(const FVector& WorldPosition, const FVector& ViewPoint, const FVector& ViewDir, float Dist, float IconSize, bool& bDrawEdgeArrow, int32 Team)
 {
 	FVector Cross = (ViewDir ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
-	FVector DrawScreenPosition;
-	float ExtraPadding = 0.05f * Canvas->ClipX;
-	DrawScreenPosition = GetCanvas()->Project(WorldPosition);
+	FVector DrawScreenPosition = GetCanvas()->Project(WorldPosition);
 	FVector FlagDir = (WorldPosition - ViewPoint).GetSafeNormal();
 	if ((ViewDir | FlagDir) < 0.f)
 	{
-		bool bWasLeft = (Team == 0) ? bRedWasLeft : bBlueWasLeft;
 		bDrawEdgeArrow = true;
 		FVector LeftDir = (ViewDir ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
 		bool bLeftOfScreen = (FlagDir | LeftDir) > 0.f;
 		DrawScreenPosition.X = bLeftOfScreen ? -0.5f*GetCanvas()->ClipX * (ViewDir | FlagDir) : GetCanvas()->ClipX * (1.f + 0.5f*(ViewDir | FlagDir));
-		DrawScreenPosition.Y = 0.9f*GetCanvas()->ClipY;
+		DrawScreenPosition.Y = (1.f - BottomEdgePadding)*GetCanvas()->ClipY - IconSize;
 		DrawScreenPosition.Z = 0.0f;
-		DrawScreenPosition.X = FMath::Clamp(DrawScreenPosition.X, Edge+ExtraPadding, GetCanvas()->ClipX - Edge-ExtraPadding);
+		DrawScreenPosition.X = FMath::Clamp(DrawScreenPosition.X, IconSize + LeftEdgePadding*GetCanvas()->ClipX, GetCanvas()->ClipX - IconSize - RightEdgePadding*GetCanvas()->ClipX);
 		return DrawScreenPosition;
 	}
 	else if ((DrawScreenPosition.X < 0.f) || (DrawScreenPosition.X > GetCanvas()->ClipX))
@@ -430,36 +432,20 @@ FVector UUTHUDWidget_CTFFlagStatus::GetAdjustedScreenPosition(const FVector& Wor
 		bool bLeftOfScreen = (DrawScreenPosition.X < 0.f);
 		float OffScreenDistance = bLeftOfScreen ? -1.f*DrawScreenPosition.X : DrawScreenPosition.X - GetCanvas()->ClipX;
 		bDrawEdgeArrow = true;
-		DrawScreenPosition.X = bLeftOfScreen ? Edge + ExtraPadding : GetCanvas()->ClipX - Edge - ExtraPadding;
+		DrawScreenPosition.X = bLeftOfScreen ? IconSize + LeftEdgePadding*GetCanvas()->ClipX : GetCanvas()->ClipX - IconSize - RightEdgePadding*GetCanvas()->ClipX;
 		//Y approaches 0.9*Canvas->ClipY as further off screen
 		float MaxOffscreenDistance = GetCanvas()->ClipX;
-		DrawScreenPosition.Y = 0.9f*GetCanvas()->ClipY + FMath::Clamp((MaxOffscreenDistance - OffScreenDistance)/ MaxOffscreenDistance, 0.f, 1.f) * (DrawScreenPosition.Y - 0.9f*GetCanvas()->ClipY);
+		DrawScreenPosition.Y = (1.f- BottomEdgePadding)*GetCanvas()->ClipY + FMath::Clamp((MaxOffscreenDistance - OffScreenDistance)/ MaxOffscreenDistance, 0.f, 1.f) * (DrawScreenPosition.Y - (1.f - BottomEdgePadding)*GetCanvas()->ClipY);
 		if (Team == 1)
 		{
 			DrawScreenPosition.Y += 0.05f*GetCanvas()->ClipY;
 		}
-		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, 0.25f*GetCanvas()->ClipY, 0.9f*GetCanvas()->ClipY);
-		if (Team == 0)
-		{
-			bRedWasLeft = bLeftOfScreen;
-		}
-		else
-		{
-			bBlueWasLeft = bLeftOfScreen;
-		}
+		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, IconSize + TopEdgePadding*GetCanvas()->ClipY, GetCanvas()->ClipY - IconSize - BottomEdgePadding*GetCanvas()->ClipY);
 	}
 	else
 	{
-		if (Team == 0)
-		{
-			bRedWasLeft = false;
-		}
-		else
-		{
-			bBlueWasLeft = false;
-		}
-		DrawScreenPosition.X = FMath::Clamp(DrawScreenPosition.X, Edge, GetCanvas()->ClipX - Edge);
-		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, Edge, GetCanvas()->ClipY - Edge);
+		DrawScreenPosition.X = FMath::Clamp(DrawScreenPosition.X, IconSize + LeftEdgePadding*GetCanvas()->ClipX, GetCanvas()->ClipX - IconSize - RightEdgePadding*GetCanvas()->ClipX);
+		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, IconSize + TopEdgePadding*GetCanvas()->ClipY, GetCanvas()->ClipY - IconSize - BottomEdgePadding*GetCanvas()->ClipY);
 		DrawScreenPosition.Z = 0.0f;
 	}
 	return DrawScreenPosition;
