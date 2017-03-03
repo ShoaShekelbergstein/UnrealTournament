@@ -439,7 +439,10 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 
 	/** Returns this character's position PredictionTime seconds ago. */
 	UFUNCTION(BlueprintCallable, Category = Pawn)
-	virtual FVector GetRewindLocation(float PredictionTime);
+	virtual FVector GetRewindLocation(float PredictionTime, bool bDebugDisplay=false);
+
+	UFUNCTION(Client, Unreliable)
+		void ClientDebugRewind(FVector_NetQuantize TargetLocation, FVector_NetQuantize RewindLocation, FVector_NetQuantize PrePosition, FVector_NetQuantize PostPosition, float TargetCapsuleHeight, float PredictionTime, float Percent, bool bTeleported);
 
 	/** Max time server will look back to found client synchronized shot position. */
 	UPROPERTY(EditAnyWhere, Category = "Weapon")

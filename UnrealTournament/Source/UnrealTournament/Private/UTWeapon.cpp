@@ -1363,8 +1363,8 @@ void AUTWeapon::FireShot()
 					{
 						AUTPlayerController* UTPC = UTOwner ? Cast<AUTPlayerController>(UTOwner->Controller) : NULL;
 						float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
-						FVector TargetLocation = ((PredictionTime > 0.f) && (Role == ROLE_Authority)) ? ReceivedHitScanHitChar->GetRewindLocation(PredictionTime) : ReceivedHitScanHitChar->GetActorLocation();
-						ClientMissedHitScan(HitScanStart, HitScanEnd, HitScanTime, HitScanIndex, ReceivedHitScanHitChar->GetActorLocation(), TargetLocation, ReceivedHitScanHitChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), PredictionTime);
+						ReceivedHitScanHitChar->GetRewindLocation(PredictionTime, true);
+						ClientMissedHitScan(HitScanStart, HitScanEnd, HitScanTime, HitScanIndex);
 					}
 					ReceivedHitScanHitChar = nullptr;
 				}
@@ -1391,18 +1391,14 @@ void AUTWeapon::ServerHitScanHit_Implementation(AUTCharacter* HitScanChar, uint8
 	ReceivedHitScanHitChar = HitScanChar;
 }
 
-void AUTWeapon::ClientMissedHitScan_Implementation(FVector_NetQuantize MissedHitScanStart, FVector_NetQuantize MissedHitScanEnd, float MissedHitScanTime, uint8 MissedHitScanIndex, FVector_NetQuantize TargetLocation, FVector_NetQuantize RewindLocation, float TargetCapsuleHeight, float PredictionTime)
+void AUTWeapon::ClientMissedHitScan_Implementation(FVector_NetQuantize MissedHitScanStart, FVector_NetQuantize MissedHitScanEnd, float MissedHitScanTime, uint8 MissedHitScanIndex)
 {
-	float CapsuleHeight = HitScanHitChar ? HitScanHitChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 108.f;
-	DrawDebugCapsule(GetWorld(), HitScanCharLoc, CapsuleHeight, 40.f, FQuat::Identity, FColor::Green, false, 8.f);
 	DrawDebugLine(GetWorld(), HitScanStart, HitScanEnd, FColor::Green, false, 8.f);
-	DrawDebugCapsule(GetWorld(), TargetLocation, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Red, false, 8.f);
-	DrawDebugCapsule(GetWorld(), RewindLocation, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Yellow, false, 8.f);
 	DrawDebugLine(GetWorld(), MissedHitScanStart, MissedHitScanEnd, FColor::Yellow, false, 8.f);
 	AUTPlayerController* PC = GetUTOwner() ? Cast<AUTPlayerController>(GetUTOwner()->GetController()) : nullptr;
 	if (PC)
 	{
-		PC->ClientSay(PC->UTPlayerState, FString::Printf(TEXT("HIT MISMATCH LOCAL index %d time %f prediction %f      SERVER index %d time %f prediction %f"), HitScanIndex, HitScanTime, PC->GetPredictionTime(), MissedHitScanIndex, MissedHitScanTime, PredictionTime), ChatDestinations::System);
+		PC->ClientSay(PC->UTPlayerState, FString::Printf(TEXT("HIT MISMATCH LOCAL index %d time %f      SERVER index %d time %f prediction %f"), HitScanIndex, HitScanTime, MissedHitScanIndex, MissedHitScanTime), ChatDestinations::System);
 	}
 }
 

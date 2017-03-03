@@ -1232,5 +1232,5 @@ public:
 		void ServerHitScanHit(AUTCharacter* HitScanChar, uint8 HitScanEventIndex);
 
 	UFUNCTION (Client, Unreliable)
-		void ClientMissedHitScan(FVector_NetQuantize MissedHitScanStart, FVector_NetQuantize MissedHitScanEnd, float MissedHitScanTime, uint8 MissedHitScanIndex, FVector_NetQuantize TargetLocation, FVector_NetQuantize RewindLocation, float TargetCapsuleHeight, float PredictionTime);
+		void ClientMissedHitScan(FVector_NetQuantize MissedHitScanStart, FVector_NetQuantize MissedHitScanEnd, float MissedHitScanTime, uint8 MissedHitScanIndex);
 };
