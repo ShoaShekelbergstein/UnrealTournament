@@ -1293,6 +1293,9 @@ public:
 	bool CanPerformRally() const;
 
 	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
+
+	UFUNCTION(Client, Unreliable)
+		void ClientDebugRewind(FVector_NetQuantize TargetLocation, FVector_NetQuantize RewindLocation, FVector_NetQuantize PrePosition, FVector_NetQuantize PostPosition, float TargetCapsuleHeight, float PredictionTime, float Percent, bool bTeleported);
 };
 
 

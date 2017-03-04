@@ -5381,3 +5381,12 @@ void AUTPlayerController::AddHUDImpulse(FVector2D NewImpulse)
 	}
 }
 
+void AUTPlayerController::ClientDebugRewind_Implementation(FVector_NetQuantize TargetLocation, FVector_NetQuantize RewindLocation, FVector_NetQuantize PrePosition, FVector_NetQuantize PostPosition, float TargetCapsuleHeight, float PredictionTime, float Percent, bool bTeleported)
+{
+	DrawDebugCapsule(GetWorld(), TargetLocation, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Red, false, 8.f);
+	DrawDebugCapsule(GetWorld(), RewindLocation, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Yellow, false, 8.f);
+	DrawDebugCapsule(GetWorld(), PrePosition, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Blue, false, 8.f);
+	DrawDebugCapsule(GetWorld(), PostPosition, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Orange, false, 8.f);
+	ClientSay(UTPlayerState, FString::Printf(TEXT("REWIND teleported %d time %f prediction time %f      SERVER prediction time %f percent %f"), bTeleported, GetPredictionTime(), PredictionTime, Percent), ChatDestinations::System);
+}
+

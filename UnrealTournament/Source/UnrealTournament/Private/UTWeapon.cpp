@@ -1363,7 +1363,7 @@ void AUTWeapon::FireShot()
 					{
 						AUTPlayerController* UTPC = UTOwner ? Cast<AUTPlayerController>(UTOwner->Controller) : NULL;
 						float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
-						ReceivedHitScanHitChar->GetRewindLocation(PredictionTime, true);
+						ReceivedHitScanHitChar->GetRewindLocation(PredictionTime, UTPC);
 						ClientMissedHitScan(HitScanStart, HitScanEnd, HitScanTime, HitScanIndex);
 					}
 					ReceivedHitScanHitChar = nullptr;

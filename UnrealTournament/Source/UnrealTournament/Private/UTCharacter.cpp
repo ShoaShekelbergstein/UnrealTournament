@@ -414,7 +414,7 @@ void AUTCharacter::PositionUpdated(bool bShotSpawned)
 	}
 }
 
-FVector AUTCharacter::GetRewindLocation(float PredictionTime, bool bDebugDisplay)
+FVector AUTCharacter::GetRewindLocation(float PredictionTime, AUTPlayerController* DebugViewer)
 {
 	FVector TargetLocation = GetActorLocation();
 	FVector PrePosition = GetActorLocation();
@@ -444,24 +444,11 @@ FVector AUTCharacter::GetRewindLocation(float PredictionTime, bool bDebugDisplay
 			}
 		}
 	}
-	if (bDebugDisplay)
+	if (DebugViewer)
 	{
-		ClientDebugRewind(GetActorLocation(), TargetLocation, PrePosition, PostPosition, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), PredictionTime, Percent, bTeleported);
+		DebugViewer->ClientDebugRewind(GetActorLocation(), TargetLocation, PrePosition, PostPosition, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), PredictionTime, Percent, bTeleported);
 	}
 	return TargetLocation;
-}
-
-void AUTCharacter::ClientDebugRewind_Implementation(FVector_NetQuantize TargetLocation, FVector_NetQuantize RewindLocation, FVector_NetQuantize PrePosition, FVector_NetQuantize PostPosition, float TargetCapsuleHeight, float PredictionTime, float Percent, bool bTeleported)
-{
-	DrawDebugCapsule(GetWorld(), TargetLocation, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Red, false, 8.f);
-	DrawDebugCapsule(GetWorld(), RewindLocation, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Yellow, false, 8.f);
-	DrawDebugCapsule(GetWorld(), PrePosition, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Blue, false, 8.f);
-	DrawDebugCapsule(GetWorld(), PostPosition, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Orange, false, 8.f);
-	AUTPlayerController* PC = Cast<AUTPlayerController>(GetController());
-	if (PC)
-	{
-		PC->ClientSay(PC->UTPlayerState, FString::Printf(TEXT("REWIND teleported %d time %f prediction time %f      SERVER prediction time %f percent %f"), bTeleported, PC->GetPredictionTime(), PredictionTime, Percent), ChatDestinations::System);
-	}
 }
 
 void AUTCharacter::GetSimplifiedSavedPositions(TArray<FSavedPosition>& OutPositions, bool bStopAtTeleport) const
