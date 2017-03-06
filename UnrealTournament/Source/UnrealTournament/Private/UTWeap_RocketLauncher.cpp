@@ -636,7 +636,76 @@ void AUTWeap_RocketLauncher::UpdateLock()
 	}
 
 	const FVector FireLoc = UTOwner->GetPawnViewLocation();
-	AActor* NewTarget = UUTGameplayStatics::ChooseBestAimTarget(UTOwner->Controller, FireLoc, GetBaseFireRotation().Vector(), LockAim, LockRange, LockOffset,AUTCharacter::StaticClass());
+	const FVector FireDir = GetBaseFireRotation().Vector();
+	AActor* NewTarget = nullptr;
+	
+	AUTCharacter* LockedPawn = Cast<AUTCharacter>(LockedTarget);
+	if (LockedPawn)
+	{
+		bool bKeepLock = false;
+		if (!LockedPawn->IsDead())
+		{
+			// prioritize keeping same lock
+			FVector AimDir = LockedPawn->GetActorLocation() - FireLoc;
+			float TestAim = FireDir | AimDir;
+			if (TestAim > 0.0f)
+			{
+				float FireDist = AimDir.SizeSquared();
+				if (FireDist < FMath::Square(LockRange))
+				{
+					FireDist = FMath::Sqrt(FireDist);
+					TestAim /= FireDist;
+					if ((TestAim < LockAim) && (FireDist < 2.f*LockOffset))
+					{
+						AimDir.Z += LockedPawn->BaseEyeHeight;
+						AimDir = AimDir.GetSafeNormal();
+						TestAim = (FireDir | AimDir);
+					}
+					if (TestAim >= LockAim)
+					{
+						float OffsetDist = FMath::PointDistToLine(LockedPawn->GetActorLocation(), FireDir, FireLoc);
+						if (OffsetDist < LockOffset)
+						{
+							// check visibility: try head, center, and actual fire line
+							FCollisionQueryParams TraceParams(FName(TEXT("ChooseBestAimTarget")), false);
+							bool bHit = GetWorld()->LineTraceTestByChannel(FireLoc, LockedPawn->GetActorLocation() + FVector(0.0f, 0.0f, LockedPawn->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()), COLLISION_TRACE_WEAPONNOCHARACTER, TraceParams);
+							if (bHit)
+							{
+								bHit = GetWorld()->LineTraceTestByChannel(FireLoc, LockedPawn->GetActorLocation(), COLLISION_TRACE_WEAPONNOCHARACTER, TraceParams);
+								if (bHit)
+								{
+									// try spot on capsule nearest to where shot is firing
+									FVector ClosestPoint = FMath::ClosestPointOnSegment(LockedPawn->GetActorLocation(), FireLoc, FireLoc + FireDir*(FireDist + 500.f));
+									FVector TestPoint = LockedPawn->GetActorLocation() + LockedPawn->GetCapsuleComponent()->GetUnscaledCapsuleRadius() * (ClosestPoint - LockedPawn->GetActorLocation()).GetSafeNormal();
+									float CharZ = LockedPawn->GetActorLocation().Z;
+									float CapsuleHeight = LockedPawn->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
+									TestPoint.Z = FMath::Clamp(ClosestPoint.Z, CharZ - CapsuleHeight, CharZ + CapsuleHeight);
+									bHit = GetWorld()->LineTraceTestByChannel(FireLoc, TestPoint, COLLISION_TRACE_WEAPONNOCHARACTER, TraceParams);
+								}
+							}
+							if (!bHit)
+							{
+								bKeepLock = true;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (!bKeepLock)
+		{
+			LockedPawn = nullptr;
+		}
+	}
+	
+	if (LockedPawn)
+	{
+		NewTarget = LockedPawn;
+	}
+	else
+	{
+		NewTarget = UUTGameplayStatics::ChooseBestAimTarget(UTOwner->Controller, FireLoc, FireDir, LockAim, LockRange, LockOffset, AUTCharacter::StaticClass());
+	}
 
 	//Have a target. Update the target lock
 	if (LockedTarget != NULL)
