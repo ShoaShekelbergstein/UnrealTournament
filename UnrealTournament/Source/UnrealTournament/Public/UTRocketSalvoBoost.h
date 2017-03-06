@@ -85,9 +85,14 @@ public:
 		for (int32 i = FMath::Clamp<int32>(Targets.Num(), MinRockets, MaxTargets) - 1; i >= 0; i--)
 		{
 			AUTProj_Rocket* Rocket = GetWorld()->SpawnActor<AUTProj_Rocket>(ProjClass, SpawnLoc + FMath::VRand() * (UTOwner->GetSimpleCollisionRadius() * 0.5f), UTOwner->GetActorRotation(), Params);
-			if (Rocket != nullptr)
+			if (Rocket != nullptr && i < Targets.Num())
 			{
-				Rocket->TargetActor = (i < Targets.Num()) ? Targets[i] : nullptr;
+				Rocket->TargetActor = Targets[i];
+				AUTBot* EnemyAI = (Targets[i] != nullptr) ? Cast<AUTBot>(Targets[i]->GetController()) : nullptr;
+				if (EnemyAI != NULL)
+				{
+					EnemyAI->ReceiveProjWarning(Rocket);
+				}
 			}
 		}
 	}
