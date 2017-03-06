@@ -6482,7 +6482,7 @@ bool UUTLocalPlayer::HasProgressionKey(FName RequiredKey)
 
 	if (RequiredKey == FName(TEXT("PROGRESSION_KEY_NoLongerANoob")))
 	{
-		return IsTutorialMaskCompleted(TUTORIAL_SkillMoves);
+		return IsTutorialMaskCompleted(TUTORIAL_Movement);
 	}
 
 	return false;

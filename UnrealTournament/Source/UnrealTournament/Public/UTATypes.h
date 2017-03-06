@@ -22,7 +22,7 @@ const uint16 UTDIALOG_BUTTON_APPLY = 0x2000;
 const uint16 TUTORIAL_Movement = 0x0001;
 const uint16 TUTOIRAL_Weapon = 0x0002;
 const uint16 TUTORIAL_Pickups = 0x0004;
-const uint16 TUTORIAL_SkillMoves = TUTORIAL_Movement;
+const uint16 TUTORIAL_SkillMoves = TUTORIAL_Movement | TUTOIRAL_Weapon | TUTORIAL_Pickups;
 
 const uint16 TUTORIAL_DM = 0x0008;
 const uint16 TUTORIAL_TDM = 0x0010;
