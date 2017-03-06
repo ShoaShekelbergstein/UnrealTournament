@@ -78,6 +78,8 @@ class UNREALTOURNAMENT_API UUTGameplayStatics : public UBlueprintFunctionLibrary
 #endif
 								);
 
+	static bool ComponentIsVisibleFrom(UPrimitiveComponent* VictimComp, FVector const& Origin, AActor const* IgnoredActor, FHitResult& OutHitResult, const TArray<FVector>* AltVisibilityOrigins);
+
 // DEPRECATED - use ChooseBestAimTarget()
 	UFUNCTION(meta=(DeprecatedFunction, DeprecationMessage = "Use ChooseBestAimTarget"),BlueprintCallable, BlueprintAuthorityOnly, Category = "Game|Targeting")
 	static APawn* PickBestAimTarget(AController* AskingC, FVector StartLoc, FVector FireDir, float MinAim, float MaxRange, TSubclassOf<APawn> TargetClass = NULL

@@ -20,6 +20,15 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
 		float FullPowerBonusDamage;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
+		float ChainDamage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
+		TSubclassOf<UUTDamageType> ChainDamageType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LinkGun)
+		float ChainRadius;
+
 	/** How fast charge increases to value of 1 (fully charged).  Scaling for time. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
 		float ChargeSpeed;
@@ -48,6 +57,8 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 
 	UFUNCTION()
 		void OnRepCharging();
+
+	virtual void ChainLightning(FHitResult Hit);
 
 	virtual bool CanHeadShot() override;
 	virtual int32 GetHitScanDamage() override;

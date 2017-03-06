@@ -12,6 +12,8 @@ AUTWeap_LightningRifle::AUTWeap_LightningRifle(const FObjectInitializer& ObjectI
 	FullPowerBonusDamage = 40.f;
 	HeadshotDamage = 125.f;
 	ChargeSpeed = 1.25f;
+	ChainDamage = 30.f;
+	ChainRadius = 800.f;
 }
 
 void AUTWeap_LightningRifle::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -247,7 +249,13 @@ void AUTWeap_LightningRifle::FireShot()
 			}
 			else
 			{
-				FireInstantHit();
+				FHitResult OutHit;
+				FireInstantHit(true, &OutHit);
+
+				if (Cast<AUTCharacter>(OutHit.Actor.Get()))
+				{
+					ChainLightning(OutHit);
+				}
 			}
 		}
 		//UE_LOG(UT, Warning, TEXT("FireShot"));
@@ -261,5 +269,55 @@ void AUTWeap_LightningRifle::FireShot()
 	FireZOffsetTime = 0.f;
 }
 
-//set fire interval appropriately
+void AUTWeap_LightningRifle::ChainLightning(FHitResult Hit)
+{
+	if (!UTOwner || !FireEffect.IsValidIndex(0) || !FireEffect[0])
+	{
+		return;
+	}
 
+	static FName NAME_HitLocation(TEXT("HitLocation"));
+	static FName NAME_LocalHitLocation(TEXT("LocalHitLocation"));
+	static FName NAME_ChainEffects = FName(TEXT("ChainEffects"));
+	FVector BeamHitLocation = UTOwner->FlashLocation;
+	FCollisionQueryParams SphereParams(NAME_ChainEffects, true, UTOwner);
+
+	// query scene to see what we hit
+	TArray<FOverlapResult> Overlaps;
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	GetWorld()->OverlapMultiByChannel(Overlaps, BeamHitLocation, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeSphere(ChainRadius), SphereParams);
+
+	// collate into per-actor list of hit components
+	TMap< AActor*, TArray<FHitResult> > OverlapComponentMap;
+	for (int32 Idx = 0; Idx < Overlaps.Num(); ++Idx)
+	{
+		FOverlapResult const& Overlap = Overlaps[Idx];
+		AUTCharacter* const OverlapChar = Cast<AUTCharacter>(Overlap.GetActor());
+
+		if (OverlapChar && !OverlapChar->IsDead() && !GS->OnSameTeam(UTOwner, OverlapChar) && Overlap.Component.IsValid())
+		{
+			FHitResult ChainHit(OverlapChar, Overlap.Component.Get(), OverlapChar->GetActorLocation(), FVector(0, 0, 1.f));
+			if (UUTGameplayStatics::ComponentIsVisibleFrom(Overlap.Component.Get(), BeamHitLocation, UTOwner, ChainHit, nullptr))
+			{
+				TArray<FHitResult>& HitList = OverlapComponentMap.FindOrAdd(OverlapChar);
+				HitList.Add(ChainHit);
+			}
+		}
+	}
+
+	for (TMap<AActor*, TArray<FHitResult> >::TIterator It(OverlapComponentMap); It; ++It)
+	{
+		AActor* const Victim = It.Key();
+		AUTCharacter* const VictimPawn = Cast<AUTCharacter>(Victim);
+		if (VictimPawn)
+		{
+			FUTPointDamageEvent DamageEvent(ChainDamage, Hit, FVector::ZeroVector, ChainDamageType);
+			VictimPawn->TakeDamage(ChainDamage, DamageEvent, UTOwner->GetController(), this);
+			FVector BeamSpawn = VictimPawn->GetActorLocation();
+			UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), FireEffect[0], BeamHitLocation, (BeamSpawn - BeamHitLocation).Rotation(), true);
+			PSC->SetVectorParameter(NAME_HitLocation, BeamSpawn);
+			PSC->SetVectorParameter(NAME_LocalHitLocation, PSC->ComponentToWorld.InverseTransformPosition(BeamSpawn));
+			PSC->CustomTimeDilation = 0.2f;
+		}
+	}
+}

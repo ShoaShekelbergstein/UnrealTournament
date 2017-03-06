@@ -12,10 +12,12 @@ class UNREALTOURNAMENT_API AUTWeapAttachment_LightningRifle : public AUTWeaponAt
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LinkGun)
 		UParticleSystemComponent* PoweredGlowComponent;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LinkGun)
+		float ChainRadius;
+
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void ModifyFireEffect_Implementation(class UParticleSystemComponent* Effect);
 
-	UFUNCTION(BlueprintImplementableEvent)
-		void ChainEffects();
+	virtual	void ChainEffects();
 };
