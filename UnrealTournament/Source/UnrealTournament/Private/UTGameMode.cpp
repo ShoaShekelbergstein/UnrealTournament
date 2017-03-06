@@ -309,7 +309,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	bRequireReady = (UGameplayStatics::GetIntOption(Options, TEXT("RequireReady"), bRequireReady) == 0) ? false : true;
 	bRequireFull = (UGameplayStatics::GetIntOption(Options, TEXT("RequireFull"), bRequireFull) == 0) ? false : true;
 
-	bTrackHitScanReplication = UGameplayStatics::HasOption(Options, TEXT("HitScanDebug"));
+	bDebugHitScanReplication = UGameplayStatics::HasOption(Options, TEXT("HitScanDebug"));
 
 	if (!UGameplayStatics::HasOption(Options, TEXT("MaxPlayers")))
 	{
@@ -577,7 +577,7 @@ void AUTGameMode::InitGameState()
 		UTGameState->bWeaponStay = bWeaponStayActive;
 		UTGameState->bPlayPlayerIntro = bPlayPlayerIntro;
 		UTGameState->bIsInstanceServer = IsGameInstanceServer();
-		UTGameState->bTrackHitScanReplication = bTrackHitScanReplication;
+		UTGameState->bDebugHitScanReplication = bDebugHitScanReplication;
 		if (bOfflineChallenge || bUseMatchmakingSession || bBasicTrainingGame)
 		{
 			UTGameState->bAllowTeamSwitches = false;

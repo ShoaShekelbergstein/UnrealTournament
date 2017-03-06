@@ -1362,12 +1362,14 @@ void AUTWeapon::FireShot()
 					else if ((Role == ROLE_Authority) && !HitScanHitChar && ReceivedHitScanHitChar)
 					{
 						// FIXMESTEVE here maybe count as hit - check index off by 1 or 0 and almost valid hit
-						if (GetWorld()->GetGameState<AUTGameState>() && GetWorld()->GetGameState<AUTGameState>()->bTrackHitScanReplication)
+						// first determine how far off from cylinder line passed by
+						// second make sure closest point on cylinder to line is visible to hitscan start
+						if (GetWorld()->GetGameState<AUTGameState>() && GetWorld()->GetGameState<AUTGameState>()->bDebugHitScanReplication)
 						{
 							AUTPlayerController* UTPC = UTOwner ? Cast<AUTPlayerController>(UTOwner->Controller) : NULL;
 							float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
-							ReceivedHitScanHitChar->GetRewindLocation(PredictionTime, UTPC);
-							ClientMissedHitScan(HitScanStart, HitScanEnd, HitScanTime, HitScanIndex);
+							FVector MissedLoc = ReceivedHitScanHitChar->GetRewindLocation(PredictionTime, UTPC);
+							ClientMissedHitScan(HitScanStart, HitScanEnd, MissedLoc, HitScanTime, HitScanIndex);
 						}
 					}
 					ReceivedHitScanHitChar = nullptr;
@@ -1396,7 +1398,7 @@ void AUTWeapon::ServerHitScanHit_Implementation(AUTCharacter* HitScanChar, uint8
 	ReceivedHitScanIndex = HitScanEventIndex;
 }
 
-void AUTWeapon::ClientMissedHitScan_Implementation(FVector_NetQuantize MissedHitScanStart, FVector_NetQuantize MissedHitScanEnd, float MissedHitScanTime, uint8 MissedHitScanIndex)
+void AUTWeapon::ClientMissedHitScan_Implementation(FVector_NetQuantize MissedHitScanStart, FVector_NetQuantize MissedHitScanEnd, FVector_NetQuantize MissedHitScanLoc, float MissedHitScanTime, uint8 MissedHitScanIndex)
 {
 	DrawDebugLine(GetWorld(), HitScanStart, HitScanEnd, FColor::Green, false, 8.f);
 	DrawDebugLine(GetWorld(), MissedHitScanStart, MissedHitScanEnd, FColor::Yellow, false, 8.f);
@@ -1404,7 +1406,7 @@ void AUTWeapon::ClientMissedHitScan_Implementation(FVector_NetQuantize MissedHit
 	AUTPlayerController* PC = GetUTOwner() ? Cast<AUTPlayerController>(GetUTOwner()->GetController()) : nullptr;
 	if (PC)
 	{
-		PC->ClientSay(PC->UTPlayerState, FString::Printf(TEXT("HIT MISMATCH LOCAL index %d time %f      SERVER index %d time %f prediction %f"), HitScanIndex, HitScanTime, MissedHitScanIndex, MissedHitScanTime), ChatDestinations::System);
+		PC->ClientSay(PC->UTPlayerState, FString::Printf(TEXT("HIT MISMATCH LOCAL index %d time %f      SERVER index %d time %f prediction %f error distance %f"), HitScanIndex, HitScanTime, MissedHitScanIndex, MissedHitScanTime, (HitScanCharLoc - MissedHitScanLoc).Size()), ChatDestinations::System);
 	}
 }
 

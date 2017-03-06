@@ -107,7 +107,7 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 
 	/** If true, hitscan replication debugging is enabled. */
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = GameState)
-		uint32 bTrackHitScanReplication : 1;
+		uint32 bDebugHitScanReplication : 1;
 
 	/** If a single player's (or team's) score hits this limited, the game is over */
 	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadOnly, Category = GameState)

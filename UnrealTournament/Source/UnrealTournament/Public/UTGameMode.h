@@ -1058,6 +1058,6 @@ public:
 	TArray<FStringClassReference> AssetsToPreloadOnClients;
 
 	UPROPERTY()
-		uint32 bTrackHitScanReplication : 1;
+		uint32 bDebugHitScanReplication : 1;
 };
 
