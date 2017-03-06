@@ -1370,7 +1370,12 @@ public:
 	 *	Request a new match be created.
 	 **/
 	virtual void CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled);
-
+	
+	/**
+	 *	until we get the new quest system online, push the challenge stars out to the MCP so that 
+	 *  the player card is updated.
+	 **/
+	virtual void PushChallengeStarsToMCP();
 
 };
 

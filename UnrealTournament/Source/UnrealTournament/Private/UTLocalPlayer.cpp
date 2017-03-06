@@ -4844,6 +4844,7 @@ void UUTLocalPlayer::ChallengeCompleted(FName ChallengeTag, int32 Stars)
 		}
 
 		SaveProgression();
+		PushChallengeStarsToMCP();
 
 		if (FUTAnalytics::IsAvailable())
 		{
@@ -6115,8 +6116,52 @@ void UUTLocalPlayer::SocialInitialized()
 	GetFriendsPopup();
 #endif
 
+	PushChallengeStarsToMCP();
 	LoginPhase = ELoginPhase::LoggedIn;
 }
+
+void UUTLocalPlayer::PushChallengeStarsToMCP()
+{
+	// Check to see if the star counts line up.
+
+#if WITH_PROFILE
+	UUtMcpProfile* Profile = GetMcpProfileManager()->GetMcpProfileAs<UUtMcpProfile>(EUtMcpProfile::Profile);
+	UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
+	if (Profile != NULL && UTEngine && UTEngine->GetChallengeManager().IsValid())
+	{
+
+		TWeakObjectPtr<UUTChallengeManager> ChallengeManager = UTEngine->GetChallengeManager();
+		TArray<const FUTChallengeInfo*> Challenges;
+
+		ChallengeManager->GetChallenges(Challenges, EChallengeFilterType::All, GetProgressionStorage());
+
+		int32 GoldStars = 0;
+		int32 BlueStars = 0;
+
+		for (int32 i = 0 ; i < Challenges.Num(); i++)
+		{
+			const FUTChallengeInfo* Challenge = Challenges[i];
+
+			// Track it's overall star count....
+
+			if (Challenge->RewardTag == NAME_REWARD_GoldStars)
+			{
+				GoldStars += GetChallengeStars(Challenge->Tag);
+			}
+			else if (Challenge->RewardTag == NAME_REWARD_BlueStars)
+			{
+				BlueStars += GetChallengeStars(Challenge->Tag);
+			}
+		}
+
+		if (Profile->GetChallengeStars( NAME_REWARD_GoldStars) != GoldStars || Profile->GetChallengeStars(NAME_REWARD_BlueStars) != BlueStars )
+		{
+			Profile->SetStars(GoldStars,BlueStars);
+		}
+	}
+#endif
+}
+
 
 bool UUTLocalPlayer::SkipTutorialCheck()
 {
