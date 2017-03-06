@@ -1594,6 +1594,7 @@ void AUTBot::UpdateControlRotation(float DeltaTime, bool bUpdatePawn)
 
 			FVector NewTrackedVelocity = (GetFocusActor() != NULL) ? GetFocusActor()->GetVelocity() : FVector::ZeroVector;
 			bLastCanAttackSuccess = false;
+			bStopSuppressiveWeapon = false;
 
 			// warning: assumption that if bot wants to shoot an enemy Pawn it always sets it as Enemy
 			if (Enemy != NULL && GetFocusActor() == Enemy)
@@ -1637,7 +1638,7 @@ void AUTBot::UpdateControlRotation(float DeltaTime, bool bUpdatePawn)
 							//DrawDebugSphere(GetWorld(), TargetLoc + TrackedVelocity*TrackingReactionTime, 40.f, 8, FColor::Yellow, false);
 							//DrawDebugSphere(GetWorld(), TargetLoc + TrackedVelocity*(TrackingReactionTime + TrackingPredictionError), 40.f, 8, FColor::Red, false);
 							TargetLoc = TargetLoc + TrackedVelocity * (TrackingReactionTime + TrackingPredictionError) + SideDir * (TrackingOffsetError * FMath::Min<float>(500.f, (TargetLoc - P->GetActorLocation()).Size()));
-							//DrawDebugSphere(GetWorld(), TargetLoc, 40.f, 8, FColor::Red, false); // FIXME THIS SEEMS TO SMALL AT SKILL 4
+							//DrawDebugSphere(GetWorld(), TargetLoc, 40.f, 8, FColor::Red, false); // FIXME THIS SEEMS TOO SMALL AT SKILL 4
 							if (EnemyUTC != NULL)
 							{
 								TargetLoc += EnemyUTC->GetLocationCenterOffset();
@@ -1648,6 +1649,21 @@ void AUTBot::UpdateControlRotation(float DeltaTime, bool bUpdatePawn)
 								bLastCanAttackSuccess = true;
 								bPickNewFireMode = false;
 								ApplyWeaponAimAdjust(TargetLoc, FocalPoint);
+							}
+							// if suppressive weapon spam last seen loc using current fire mode
+							else if (UTChar != nullptr && UTChar->GetWeapon() != nullptr && UTChar->GetWeapon()->bRecommendSuppressiveFire)
+							{
+								if (CanAttack(Enemy, GetEnemyInfo(Enemy, false)->LastSeenLoc, true, true))
+								{
+									// note: bLastCanAttackSuccess left at false so AI will give up on this after a short time (see CheckWeaponFiring())
+									FocalPoint = GetEnemyInfo(Enemy, false)->LastSeenLoc;
+									ApplyWeaponAimAdjust(FocalPoint, FocalPoint);
+								}
+								else
+								{
+									// we defer this to the next weapon update so it doesn't look so mechanical
+									bStopSuppressiveWeapon = true;
+								}
 							}
 							else
 							{
@@ -2298,7 +2314,7 @@ void AUTBot::CheckWeaponFiring(bool bFromWeapon)
 					}
 				}
 			}
-			else if (TestTarget == NULL || !bFromWeapon || !UTChar->GetWeapon()->bRecommendSuppressiveFire || GetWorld()->TimeSeconds - LastFireSuccessTime > 1.0f)
+			else if (TestTarget == NULL || !bFromWeapon || !UTChar->GetWeapon()->bRecommendSuppressiveFire || bStopSuppressiveWeapon || GetWorld()->TimeSeconds - LastFireSuccessTime > 1.0f)
 			{
 				UTChar->StopFiring();
 			}
@@ -4745,6 +4761,7 @@ void AUTBot::SetEnemy(APawn* NewEnemy)
 			}
 		}
 		LastEnemyChangeTime = GetWorld()->TimeSeconds;
+		LastFireSuccessTime = -100.0f; // this is so AI will abort suppressive fire immediately if new enemy is clearly behind a wall
 		if (Enemy != NULL)
 		{
 			UpdateTrackingError(true);

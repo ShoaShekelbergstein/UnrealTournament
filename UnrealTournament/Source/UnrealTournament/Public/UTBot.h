@@ -648,6 +648,8 @@ protected:
 	bool bPickNewFireMode;
 	/** set each frame in UpdateControlRotation() if desired target location can be attacked by current weapon (used by weapon refire logic) */
 	bool bLastCanAttackSuccess;
+	/** set each frame in UpdateControlRotation() when using a suppressive weapon; indicates AI should stop shooting immediately when bLastCanAttackSuccess == false instead of spamming old enemy location */
+	bool bStopSuppressiveWeapon;
 	/** last time we successfully fired a weapon from CheckWeaponFiring() */
 	float LastFireSuccessTime;
 	/** valid only when target is set to a class that supports position history; set in UpdateControlRotation() to target velocity being used by aiming logic (generally, its velocity from a short time in the past) */
