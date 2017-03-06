@@ -178,6 +178,13 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY()
 		float LastEnemyLocationReportTime;
 
+	UPROPERTY()
+		float LastRedSniperWarningTime;
+
+	UPROPERTY()
+		float LastBlueSniperWarningTime;
+
+
 	UPROPERTY(replicatedusing = OnUpdateFriendlyLocation)
 		uint8 FCFriendlyLocCount;
 

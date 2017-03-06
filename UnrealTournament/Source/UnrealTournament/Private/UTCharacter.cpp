@@ -420,7 +420,7 @@ FVector AUTCharacter::GetRewindLocation(float PredictionTime, AUTPlayerControlle
 	FVector PrePosition = GetActorLocation();
 	FVector PostPosition = GetActorLocation();
 	float TargetTime = GetWorld()->GetTimeSeconds() - PredictionTime;
-	float Percent = 1.f;
+	float Percent = 0.999f;
 	bool bTeleported = false;
 	if (PredictionTime > 0.f)
 	{
@@ -431,10 +431,18 @@ FVector AUTCharacter::GetRewindLocation(float PredictionTime, AUTPlayerControlle
 			{
 				if (!SavedPositions[i].bTeleported && (i<SavedPositions.Num()-1))
 				{
-					Percent = (SavedPositions[i + 1].Time == SavedPositions[i].Time) ? 1.f : (TargetTime - SavedPositions[i].Time) / (SavedPositions[i + 1].Time - SavedPositions[i].Time);
 					PrePosition = SavedPositions[i].Position;
 					PostPosition = SavedPositions[i + 1].Position;
-					TargetLocation = SavedPositions[i].Position + Percent * (SavedPositions[i + 1].Position - SavedPositions[i].Position);
+					if (SavedPositions[i + 1].Time == SavedPositions[i].Time)
+					{
+						Percent = 1.f;
+						TargetLocation = SavedPositions[i + 1].Position;
+					}
+					else
+					{
+						Percent = (TargetTime - SavedPositions[i].Time) / (SavedPositions[i + 1].Time - SavedPositions[i].Time);
+						TargetLocation = SavedPositions[i].Position + Percent * (SavedPositions[i + 1].Position - SavedPositions[i].Position);
+					}
 				}
 				else
 				{
@@ -1427,7 +1435,21 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 	if (TargeterChar && GS && GS->bPlayStatusAnnouncements && Cast<AUTPlayerController>(GetController()))
 	{
 		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(PlayerState);
-		if (UTPlayerState && UTPlayerState->Team && (GetWorld()->GetTimeSeconds() - UTPlayerState->LastBehindYouTime > 8.f))
+		bool bBlueTeamWarning = (UTPlayerState && UTPlayerState->Team && (UTPlayerState->Team->TeamIndex == 1));
+		float LastSniperWarningTime = bBlueTeamWarning ? GS->LastBlueSniperWarningTime : GS->LastRedSniperWarningTime;
+		if (UTPlayerState && TargeterChar->GetWeapon() && TargeterChar->GetWeapon()->bSniping && (GetWorld()->GetTimeSeconds() - LastSniperWarningTime > 10.f) && ((TargeterChar->GetActorLocation() - GetActorLocation()).Size() > 4000.f))
+		{
+			UTPlayerState->AnnounceStatus(StatusMessage::SniperSpotted);
+			if (bBlueTeamWarning)
+			{
+				GS->LastBlueSniperWarningTime = GetWorld()->GetTimeSeconds();
+			}
+			else
+			{
+				GS->LastRedSniperWarningTime = GetWorld()->GetTimeSeconds();
+			}
+		}
+		else if (UTPlayerState && UTPlayerState->Team && (GetWorld()->GetTimeSeconds() - UTPlayerState->LastBehindYouTime > 8.f))
 		{
 			// announce behind you if attacker is behind this player && teammate can see it
 			FVector ViewDir = GetActorRotation().Vector();

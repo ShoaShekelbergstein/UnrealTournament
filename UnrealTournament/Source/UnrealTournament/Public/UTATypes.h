@@ -223,6 +223,7 @@ namespace StatusMessage
 	const FName RedeemerSpotted = FName(TEXT("RedeemerSpotted"));
 	const FName GetTheFlag = FName(TEXT("GetTheFlag"));
 	const FName DoorRally = FName(TEXT("DoorRally"));
+	const FName SniperSpotted = FName(TEXT("SniperSpotted"));
 }
 
 namespace HighlightNames
