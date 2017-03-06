@@ -987,3 +987,48 @@ void UUTGameplayStatics::ExecuteDatabaseQuery(UObject* WorldContextObject, const
 		}
 	}
 }
+
+bool UUTGameplayStatics::GetModConfigString(const FString& ConfigSection, const FString& ConfigKey, FString& Value)
+{
+	return GConfig->GetString(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+bool UUTGameplayStatics::GetModConfigInt(const FString& ConfigSection, const FString& ConfigKey, int32& Value)
+{
+	return GConfig->GetInt(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+bool UUTGameplayStatics::GetModConfigFloat(const FString& ConfigSection, const FString& ConfigKey, float& Value)
+{
+	return GConfig->GetFloat(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+int32 UUTGameplayStatics::GetModConfigStringArray(const FString& ConfigSection, const FString& ConfigKey, TArray<FString>& Value)
+{
+	return GConfig->GetArray(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+void UUTGameplayStatics::SetModConfigString(const FString& ConfigSection, const FString& ConfigKey, const FString& Value)
+{
+	GConfig->SetString(*ConfigSection, *ConfigKey, *Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+void UUTGameplayStatics::SetModConfigStringArray(const FString& ConfigSection, const FString& ConfigKey, const TArray<FString>& Value)
+{
+	GConfig->SetArray(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+void UUTGameplayStatics::SetModConfigInt(const FString& ConfigSection, const FString& ConfigKey, int32 Value)
+{
+	GConfig->SetInt(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+void UUTGameplayStatics::SetModConfigFloat(const FString& ConfigSection, const FString& ConfigKey, float Value)
+{
+	GConfig->SetFloat(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+void UUTGameplayStatics::SaveModConfig()
+{
+	GConfig->Flush(false, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}

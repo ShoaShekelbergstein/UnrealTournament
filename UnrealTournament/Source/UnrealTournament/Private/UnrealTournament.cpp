@@ -69,6 +69,8 @@ void FUTModule::StartupModule()
 
 	// set up our handler for network versioning
 	FNetworkVersion::GetLocalNetworkVersionOverride.BindStatic(&UTGetNetworkVersion);
+
+	GConfig->LoadFile(FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
 }
 
 #else
