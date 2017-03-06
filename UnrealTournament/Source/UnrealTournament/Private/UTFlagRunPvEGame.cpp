@@ -345,6 +345,11 @@ bool AUTFlagRunPvEGame::ModifyDamage_Implementation(int32& Damage, FVector& Mome
 	{
 		Damage *= 0.4f + GameDifficulty * 0.12f;
 	}
+	// no self damage for monsters
+	if (Cast<AUTMonster>(Injured) != nullptr && Injured->GetController() == InstigatedBy)
+	{
+		Damage = 0;
+	}
 	Super::ModifyDamage_Implementation(Damage, Momentum, Injured, InstigatedBy, HitInfo, DamageCauser, DamageType);
 	if (Damage > 0 && InstigatedBy != nullptr && !UTGameState->OnSameTeam(InstigatedBy, Injured))
 	{
