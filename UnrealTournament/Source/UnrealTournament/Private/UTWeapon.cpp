@@ -1346,11 +1346,11 @@ void AUTWeapon::FireShot()
 			{
 				FHitResult OutHit;
 				FireInstantHit(true, &OutHit);
-				if (bTrackHitScanReplication && GetWorld()->GetGameState<AUTGameState>() && GetWorld()->GetGameState<AUTGameState>()->bTrackHitScanReplication)
+				if (bTrackHitScanReplication)
 				{
-					UE_LOG(UT, Warning, TEXT("FireShot %d"), FireEventIndex);
 					HitScanHitChar = Cast<AUTCharacter>(OutHit.Actor.Get());
 					HitScanCharLoc = HitScanHitChar ? HitScanHitChar->GetActorLocation() : FVector::ZeroVector;
+					HitScanHeight = HitScanHitChar ? HitScanHitChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 108.f;
 					HitScanStart = GetFireStartLoc();
 					HitScanEnd = OutHit.Location;
 					HitScanTime = GetUTOwner()->UTCharacterMovement ? GetUTOwner()->UTCharacterMovement->GetCurrentMovementTime() : 0.f;
@@ -1361,10 +1361,14 @@ void AUTWeapon::FireShot()
 					}
 					else if ((Role == ROLE_Authority) && !HitScanHitChar && ReceivedHitScanHitChar)
 					{
-						AUTPlayerController* UTPC = UTOwner ? Cast<AUTPlayerController>(UTOwner->Controller) : NULL;
-						float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
-						ReceivedHitScanHitChar->GetRewindLocation(PredictionTime, UTPC);
-						ClientMissedHitScan(HitScanStart, HitScanEnd, HitScanTime, HitScanIndex);
+						// FIXMESTEVE here maybe count as hit - check index off by 1 or 0 and almost valid hit
+						if (GetWorld()->GetGameState<AUTGameState>() && GetWorld()->GetGameState<AUTGameState>()->bTrackHitScanReplication)
+						{
+							AUTPlayerController* UTPC = UTOwner ? Cast<AUTPlayerController>(UTOwner->Controller) : NULL;
+							float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
+							ReceivedHitScanHitChar->GetRewindLocation(PredictionTime, UTPC);
+							ClientMissedHitScan(HitScanStart, HitScanEnd, HitScanTime, HitScanIndex);
+						}
 					}
 					ReceivedHitScanHitChar = nullptr;
 				}
@@ -1389,12 +1393,14 @@ void AUTWeapon::ServerHitScanHit_Implementation(AUTCharacter* HitScanChar, uint8
 {
 	UE_LOG(UT, Warning, TEXT("Received ServerHitScanHit %d"), HitScanEventIndex);
 	ReceivedHitScanHitChar = HitScanChar;
+	ReceivedHitScanIndex = HitScanEventIndex;
 }
 
 void AUTWeapon::ClientMissedHitScan_Implementation(FVector_NetQuantize MissedHitScanStart, FVector_NetQuantize MissedHitScanEnd, float MissedHitScanTime, uint8 MissedHitScanIndex)
 {
 	DrawDebugLine(GetWorld(), HitScanStart, HitScanEnd, FColor::Green, false, 8.f);
 	DrawDebugLine(GetWorld(), MissedHitScanStart, MissedHitScanEnd, FColor::Yellow, false, 8.f);
+	DrawDebugCapsule(GetWorld(), HitScanCharLoc, HitScanHeight, 40.f, FQuat::Identity, FColor::Green, false, 8.f);
 	AUTPlayerController* PC = GetUTOwner() ? Cast<AUTPlayerController>(GetUTOwner()->GetController()) : nullptr;
 	if (PC)
 	{

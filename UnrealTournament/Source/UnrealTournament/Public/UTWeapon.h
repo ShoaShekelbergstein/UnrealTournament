@@ -1220,6 +1220,10 @@ public:
 		FVector_NetQuantize HitScanEnd;
 
 	UPROPERTY()
+		float HitScanHeight;
+
+
+	UPROPERTY()
 		uint8 HitScanIndex;
 
 	UPROPERTY()
@@ -1227,6 +1231,9 @@ public:
 
 	UPROPERTY()
 		AUTCharacter* ReceivedHitScanHitChar;
+
+	UPROPERTY()
+		uint8 ReceivedHitScanIndex;
 
 	UFUNCTION(Server, Unreliable, WithValidation)
 		void ServerHitScanHit(AUTCharacter* HitScanChar, uint8 HitScanEventIndex);
