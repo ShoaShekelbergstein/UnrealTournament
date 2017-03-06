@@ -44,127 +44,105 @@ void SUTInGameMenu::BuildLeftMenuBar()
 		AUTPlayerState* PS = PlayerOwner->PlayerController ? Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState) : NULL;
 		bool bIsSpectator = PS && PS->bOnlySpectator;
 
-
 		TSharedPtr<SVerticalBox> ChangeTeamBox;
+
+		TSharedPtr<SVerticalBox> MatchBox;
+		TSharedPtr<SHorizontalBox> MatchButtonBox;
+
+		SAssignNew(MatchBox, SVerticalBox)
+		+SVerticalBox::Slot().AutoHeight()
+		[
+			SNew(SBox).HeightOverride(52.0f)
+			[
+				SAssignNew(MatchButtonBox, SHorizontalBox)
+			]
+		];
+
 
 		if (GS && GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches)
 		{
-			SAssignNew(ChangeTeamBox, SVerticalBox)
-			+SVerticalBox::Slot().AutoHeight()
+			MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
 			[
-				SNew(SBox).HeightOverride(52.0f)
+				SAssignNew(ChangeTeamButton, SUTButton)
+				.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton.SuperDark")
+				.OnClicked(this, &SUTInGameMenu::OnTeamChangeClick)
+				.Visibility(this, &SUTInGameMenu::GetChangeTeamVisibility)
+				.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
 				[
 					SNew(SHorizontalBox)
-					+SHorizontalBox::Slot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
+					+SHorizontalBox::Slot().AutoWidth()
+					.VAlign(VAlign_Center)
 					[
-						SAssignNew(ChangeTeamButton, SUTButton)
-						.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton.SuperDark")
-						.OnClicked(this, &SUTInGameMenu::OnTeamChangeClick)
-						.Visibility(this, &SUTInGameMenu::GetChangeTeamVisibility)
-						.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
-						[
-							SNew(SHorizontalBox)
-							+SHorizontalBox::Slot().AutoWidth()
-							.VAlign(VAlign_Center)
-							[
-								SNew(STextBlock)
-								.Text(NSLOCTEXT("SUTMenuBase","MenuBar_ChangeTeam","CHANGE TEAM"))
-								.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-								.ColorAndOpacity(this, &SUTInGameMenu::GetChangeTeamLabelColor)
-							]
-						]
+						SNew(STextBlock)
+						.Text(NSLOCTEXT("SUTMenuBase","MenuBar_ChangeTeam","CHANGE TEAM"))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+						.ColorAndOpacity(this, &SUTInGameMenu::GetChangeTeamLabelColor)
 					]
 				]
 			];
 		}			
 
-		TSharedPtr<SVerticalBox> MatchBox;
-
 		if (GS && (GS->GetMatchState() == MatchState::WaitingToStart))
 		{
 			if (GS->GetNetMode() == NM_Standalone)
 			{
-				SAssignNew(MatchBox, SVerticalBox)
-				+SVerticalBox::Slot().AutoHeight()
+				MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
 				[
-					SNew(SBox).HeightOverride(52.0f)
+					SAssignNew(MatchButton, SUTButton)
+					.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton.SuperDark")
+					.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
+					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
 					[
 						SNew(SHorizontalBox)
-						+SHorizontalBox::Slot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
+						+ SHorizontalBox::Slot().AutoWidth()
+						.VAlign(VAlign_Center)
 						[
-							SAssignNew(MatchButton, SUTButton)
-							.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton.SuperDark")
-							.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
-							.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
-							[
-								SNew(SHorizontalBox)
-								+ SHorizontalBox::Slot().AutoWidth()
-								.VAlign(VAlign_Center)
-								[
-									SNew(STextBlock)
-									.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_StartMatch", "START MATCH"))
-									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-									.ColorAndOpacity(this, &SUTInGameMenu::GetMatchLabelColor)
-								]
-							]
+							SNew(STextBlock)
+							.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_StartMatch", "START MATCH"))
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+							.ColorAndOpacity(this, &SUTInGameMenu::GetMatchLabelColor)
 						]
 					]
 				];
 			}
 			else if (PS && PS->bIsWarmingUp)
 			{
-				SAssignNew(MatchBox, SVerticalBox)
-				+SVerticalBox::Slot().AutoHeight()
+				MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
 				[
-					SNew(SBox).HeightOverride(52.0f)
+					SAssignNew(MatchButton, SUTButton)
+					.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton.SuperDark")
+					.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
+					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
 					[
 						SNew(SHorizontalBox)
-						+SHorizontalBox::Slot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
+						+ SHorizontalBox::Slot().AutoWidth()
+						.VAlign(VAlign_Center)
 						[
-							SAssignNew(MatchButton, SUTButton)
-							.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton.SuperDark")
-							.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
-							.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
-							[
-								SNew(SHorizontalBox)
-								+ SHorizontalBox::Slot().AutoWidth()
-								.VAlign(VAlign_Center)
-								[
-									SNew(STextBlock)
-									.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_LeaveWarmup", "LEAVE WARM UP"))
-									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-									.ColorAndOpacity(this, &SUTInGameMenu::GetMatchLabelColor)
-								]
-							]
+							SNew(STextBlock)
+							.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_LeaveWarmup", "LEAVE WARM UP"))
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+							.ColorAndOpacity(this, &SUTInGameMenu::GetMatchLabelColor)
 						]
 					]
 				];
 			}
 			else if (!bIsSpectator)
 			{
-				SAssignNew(MatchBox, SVerticalBox)
-				+SVerticalBox::Slot().AutoHeight()
+				MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
 				[
-					SNew(SBox).HeightOverride(52.0f)
+					SAssignNew(MatchButton, SUTButton)
+					.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton.SuperDark")
+					.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
+					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
 					[
 						SNew(SHorizontalBox)
-						+SHorizontalBox::Slot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
+						+ SHorizontalBox::Slot().AutoWidth()
+						.VAlign(VAlign_Center)
 						[
-							SAssignNew(MatchButton, SUTButton)
-							.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton.SuperDark")
-							.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
-							.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
-							[
-								SNew(SHorizontalBox)
-								+ SHorizontalBox::Slot().AutoWidth()
-								.VAlign(VAlign_Center)
-								[
-									SNew(STextBlock)
-									.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "WARM UP"))
-									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-									.ColorAndOpacity(this, &SUTInGameMenu::GetMatchLabelColor)
-								]
-							]
+							SNew(STextBlock)
+							.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "WARM UP"))
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+							.ColorAndOpacity(this, &SUTInGameMenu::GetMatchLabelColor)
 						]
 					]
 				];
