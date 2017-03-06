@@ -1032,3 +1032,8 @@ void UUTGameplayStatics::SaveModConfig()
 {
 	GConfig->Flush(false, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
 }
+
+void UUTGameplayStatics::ReloadModConfig()
+{
+	GConfig->Flush(true, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}

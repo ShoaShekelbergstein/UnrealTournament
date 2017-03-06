@@ -287,4 +287,7 @@ class UNREALTOURNAMENT_API UUTGameplayStatics : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintCallable, Category = "Config")
 	static void SaveModConfig();
+
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	static void ReloadModConfig();
 };
