@@ -154,11 +154,7 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 				}*/
 				if (bIsDefenderBase && !P->GetCarriedObject()->bWasInEnemyBase)
 				{
-					if (GetWorld()->GetTimeSeconds() - P->GetCarriedObject()->EnteredEnemyBaseTime > 2.f)
-					{
-						// play alarm
-						UUTGameplayStatics::UTPlaySound(GetWorld(), AlarmSound, P, SRT_All, false, FVector::ZeroVector, NULL, NULL, false);
-					}
+					P->GetCarriedObject()->PlayAlarm();
 					P->GetCarriedObject()->EnteredEnemyBaseTime = GetWorld()->GetTimeSeconds();
 				}
 

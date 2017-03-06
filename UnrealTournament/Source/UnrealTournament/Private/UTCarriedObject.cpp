@@ -494,11 +494,7 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 	AUTGameVolume* GV = Cast<AUTGameVolume>(HoldingPawn->GetPawnPhysicsVolume());
 	if (GV && GV->bIsDefenderBase)
 	{
-		// play alarm
-		if (GetWorld()->GetTimeSeconds() - EnteredEnemyBaseTime > 2.f)
-		{
-			UUTGameplayStatics::UTPlaySound(GetWorld(), GV->AlarmSound, HoldingPawn, SRT_All, false, FVector::ZeroVector, NULL, NULL, false);
-		}
+		PlayAlarm();
 		EnteredEnemyBaseTime = GetWorld()->GetTimeSeconds();
 	}
 
@@ -1135,4 +1131,15 @@ float AUTCarriedObject::GetGhostFlagTimerTime(AUTGhostFlag* Ghost)
 	AUTCTFRoundGameState* RCTFGameState = GetWorld()->GetGameState<AUTCTFRoundGameState>();
 	float ReturnTime = (RCTFGameState && (RCTFGameState->RemainingPickupDelay > 0.f)) ? RCTFGameState->RemainingPickupDelay : FlagReturnTime;
 	return AutoReturnTime > 0.f ? (1.0f - ReturnTime / 12.f) : 0.f;
+}
+
+void AUTCarriedObject::PlayAlarm()
+{
+	AUTGameVolume* GV = HoldingPawn ? Cast<AUTGameVolume>(HoldingPawn->GetPawnPhysicsVolume()) : nullptr;
+	if (GV && GV->bIsDefenderBase && GV->AlarmSound && (!GetWorld()->GetTimerManager().IsTimerActive(AlarmHandle) || (GetWorld()->GetTimerManager().GetTimerRemaining(AlarmHandle) < 1.f)))
+	{
+		// play alarm
+		UUTGameplayStatics::UTPlaySound(GetWorld(), GV->AlarmSound, HoldingPawn, SRT_All, false, FVector::ZeroVector, NULL, NULL, false);
+		GetWorld()->GetTimerManager().SetTimer(AlarmHandle, this, &AUTCarriedObject::PlayAlarm, 4.f, false);
+	}
 }

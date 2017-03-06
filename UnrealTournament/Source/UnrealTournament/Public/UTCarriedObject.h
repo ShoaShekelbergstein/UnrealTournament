@@ -494,4 +494,8 @@ public:
 
 	float GetGhostFlagTimerTime(AUTGhostFlag* Ghost);
 
+	UFUNCTION()
+		void PlayAlarm();
+
+	FTimerHandle AlarmHandle;
 };
