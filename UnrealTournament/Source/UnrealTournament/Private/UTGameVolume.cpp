@@ -98,9 +98,9 @@ int32 AUTGameVolume::DetermineEntryDirection(AUTCharacter* EnteringCharacter, AU
 
 void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 {
-	if ((Role == ROLE_Authority) && Cast<AUTCharacter>(Other))
+	AUTCharacter* P = Cast<AUTCharacter>(Other);
+	if ((Role == ROLE_Authority) && P)
 	{
-		AUTCharacter* P = ((AUTCharacter*)(Other));
 		P->LastGameVolume = this;
 		AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 		if (GS != nullptr && P->PlayerState != nullptr && !GS->IsMatchIntermission() && (GS->IsMatchInProgress() || (Cast<AUTPlayerState>(P->PlayerState) && ((AUTPlayerState*)(P->PlayerState))->bIsWarmingUp)))
@@ -247,18 +247,18 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 		}
 		bHasBeenEntered = true;
 	}
-
-	if (!VolumeName.IsEmpty())
+	else if ((Role != ROLE_Authority) && P && bIsTeamSafeVolume && !P->bHasLeftSafeVolume && P->GetController() && (TeamLockers.Num() > 0) && TeamLockers[0])
 	{
-		AUTCharacter* P = Cast<AUTCharacter>(Other);
-		if (P != nullptr)
+		TeamLockers[0]->ProcessTouch(P);
+	}
+
+	if (!VolumeName.IsEmpty() && P)
+	{
+		//P->LastKnownLocation = this;
+		AUTPlayerState* PS = Cast<AUTPlayerState>(P->PlayerState);
+		if (PS != nullptr)
 		{
-			//P->LastKnownLocation = this;
-			AUTPlayerState* PS = Cast<AUTPlayerState>(P->PlayerState);
-			if (PS != nullptr)
-			{
-				PS->LastKnownLocation = this;
-			}
+			PS->LastKnownLocation = this;
 		}
 	}
 }
