@@ -5,32 +5,6 @@
 #include "UTChallengeManager.h"
 #include "UTGameEngine.generated.h"
 
-USTRUCT()
-struct FBanInfo
-{
-	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY()
-	FString UserName;
-
-	UPROPERTY()
-		FString UniqueID;
-
-	FBanInfo()
-		: UserName(TEXT(""))
-		, UniqueID(TEXT(""))
-	{
-	}
-
-	FBanInfo(const FString& inUserName, const FString& inUniqueID)
-		: UserName(inUserName)
-		, UniqueID(inUniqueID)
-	{
-	}
-
-};
-
-
 
 UCLASS()
 class UNREALTOURNAMENT_API UUTGameEngine : public UGameEngine

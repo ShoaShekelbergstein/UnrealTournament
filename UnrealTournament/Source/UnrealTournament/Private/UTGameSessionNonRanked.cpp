@@ -522,3 +522,21 @@ void AUTGameSessionNonRanked::OnConnectionStatusChanged(EOnlineServerConnectionS
 		UnRegisterServer(true);
 	}
 }
+
+void AUTGameSessionNonRanked::UnbanPlayer(const FString& UIDStr)
+{
+	int32 i = 0 ;
+	while (i < BannedUsers.Num())
+	{
+		if (BannedUsers[i].UniqueID.Equals(UIDStr, ESearchCase::IgnoreCase))
+		{
+			BannedUsers.RemoveAt(i);		
+		}
+		else
+		{
+			i++;
+		}
+	}
+	SaveConfig();
+}
+

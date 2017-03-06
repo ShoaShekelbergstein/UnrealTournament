@@ -15,6 +15,7 @@
 #if !UE_SERVER
 
 struct FCompareRconPlayerByName	{FORCEINLINE bool operator()( const TSharedPtr< FRconPlayerData> A, const TSharedPtr< FRconPlayerData > B ) const {return ( A->PlayerName < B->PlayerName);}};
+struct FCompareBanPlayerByName	{FORCEINLINE bool operator()( const TSharedPtr< FBanInfo> A, const TSharedPtr< FBanInfo> B ) const {return ( A->UserName < B->UserName);}};
 
 
 void SUTAdminDialog::Construct(const FArguments& InArgs)
@@ -81,6 +82,7 @@ void SUTAdminDialog::Construct(const FArguments& InArgs)
 		{
 			AddMatchPanel(ButtonBox);
 		}
+		AddBanPanel(ButtonBox);
 	}
 }
 
@@ -96,19 +98,19 @@ void SUTAdminDialog::AddReferencedObjects(FReferenceCollector& Collector)
 
 void SUTAdminDialog::AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 {
-	TSharedPtr<SUTButton> TabButton;
+	TSharedPtr<SUTTabButton> TabButton;
 
 	bool bInLobby = GetPlayerOwner()->GetWorld()->GetGameState<AUTLobbyGameState>() != NULL;
 	ButtonBox->AddSlot()
 	.AutoWidth()
 	[
-		SAssignNew(TabButton, SUTButton)
+		SAssignNew(TabButton, SUTTabButton)
 		.IsToggleButton(true)
 		.WidgetTag(0)
-		.OnClicked(this, &SUTAdminDialog::ChangeTab, 0)
+		.OnClicked(this, &SUTAdminDialog::ChangeTab, ButtonList.Num())
 		.Text( NSLOCTEXT("SUTAdminDialog", "PlayerList","Player List"))
-		.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
 		.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
+		.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 	];
 
 	ButtonList.Add(TabButton);
@@ -135,6 +137,7 @@ void SUTAdminDialog::AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 					.Style(SUTStyle::Get(), "UT.List.Header")
 
 					+ SHeaderRow::Column("PlayerName")
+						.FillWidth(0.2f)
 						//.OnSort(this, &SUTServerBrowserPanel::OnSort)
 						.HeaderContent()
 						[
@@ -147,6 +150,7 @@ void SUTAdminDialog::AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 						]
 
 					+ SHeaderRow::Column("PlayerID")
+						.FillWidth(0.4f)
 						.HAlignCell(HAlign_Left)
 						//.OnSort(this, &SUTServerBrowserPanel::OnSort)
 						.HeaderContentPadding(FMargin(5.0))
@@ -161,6 +165,7 @@ void SUTAdminDialog::AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 						]
 
 					+ SHeaderRow::Column("PlayerIP")
+						.FillWidth(0.2f)
 						.HAlignCell(HAlign_Left)
 						//OnSort(this, &SUTServerBrowserPanel::OnSort)
 						.HeaderContent()
@@ -175,6 +180,7 @@ void SUTAdminDialog::AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 
 					+ SHeaderRow::Column("Rank")
 						.HAlignCell(HAlign_Left)
+						.FillWidth(0.1f)
 						//.OnSort(this, &SUTServerBrowserPanel::OnSort)
 						.HeaderContent()
 						[
@@ -189,6 +195,7 @@ void SUTAdminDialog::AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 					+ SHeaderRow::Column("InMatch")
 						.HAlignCell(HAlign_Left)
 						//.OnSort(this, &SUTServerBrowserPanel::OnSort)
+						.FillWidth(0.1f)
 						.HeaderContent()
 						[
 							SNew(SHorizontalBox)+SHorizontalBox::Slot().VAlign(VAlign_Center)
@@ -273,21 +280,21 @@ void SUTAdminDialog::AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 
 void SUTAdminDialog::AddMatchPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 {
-	TSharedPtr<SUTButton> TabButton;
+	TSharedPtr<SUTTabButton> TabButton;
 
 	bool bInLobby = GetPlayerOwner()->GetWorld()->GetGameState<AUTLobbyGameState>() != NULL;
 
 	ButtonBox->AddSlot()
 	.AutoWidth()
-	.Padding(FMargin(5.0,0.0,0.0,0.0))
+	.Padding(FMargin(20.0,0.0,0.0,0.0))
 	[
-		SAssignNew(TabButton, SUTButton)
+		SAssignNew(TabButton, SUTTabButton)
 		.IsToggleButton(true)
 		.WidgetTag(1)
-		.OnClicked(this, &SUTAdminDialog::ChangeTab, 1)
+		.OnClicked(this, &SUTAdminDialog::ChangeTab, ButtonList.Num())
 		.Text( NSLOCTEXT("SUTAdminDialog", "MatchList","Matches"))
-		.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
 		.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
+		.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 	];
 
 	ButtonList.Add(TabButton);
@@ -501,6 +508,18 @@ void SUTAdminDialog::Tick( const FGeometry& AllottedGeometry, const double InCur
 		}
 
 		if (bPlayersNeedUpdate) PlayerList->RequestListRefresh();
+
+
+		if (SortedBanList.Num() != AdminInfo->BanData.Num())
+		{
+			SortedBanList.Empty();
+			for (int32 i=0; i < AdminInfo->BanData.Num(); i++)
+			{
+				SortedBanList.Add( FBanInfo::Make(AdminInfo->BanData[i]));
+			}
+			BanList->RequestListRefresh();
+		}
+
 	}
 
 
@@ -599,7 +618,6 @@ TSharedRef<ITableRow> SUTAdminDialog::OnGenerateWidgetForMatchList( TSharedPtr<F
 {
 	return SNew( SAdminMatchRow, OwnerTable).MatchData( InItem ).Style(SUTStyle::Get(),"UT.List.Row");
 }
-
 
 FReply SUTAdminDialog::ChangeTab(int32 WidgetTag)
 {
@@ -974,6 +992,138 @@ FReply SUTAdminDialog::KillMatch()
 	{
 		PC->ServerRconKillMatch(MatchInfo);		
 	}
+	return FReply::Handled();
+}
+
+
+void SUTAdminDialog::AddBanPanel(TSharedPtr<SHorizontalBox> ButtonBox)
+{
+	if (!AdminInfo.IsValid()) return;
+
+	TSharedPtr<SUTTabButton> TabButton;
+
+	ButtonBox->AddSlot()
+	.Padding(FMargin(20.0,0.0,0.0,0.0))
+	.AutoWidth()
+	[
+		SAssignNew(TabButton, SUTTabButton)
+		.IsToggleButton(true)
+		.WidgetTag(2)
+		.OnClicked(this, &SUTAdminDialog::ChangeTab, ButtonList.Num())
+		.Text( NSLOCTEXT("SUTAdminDialog", "BanList","Ban List"))
+		.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
+		.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
+	];
+
+	ButtonList.Add(TabButton);
+
+	Switcher->AddSlot()
+	[
+		SNew(SOverlay)
+		+SOverlay::Slot()
+		[
+			SNew(SVerticalBox)
+			+SVerticalBox::Slot()
+			.FillHeight(1.0)
+			.HAlign(HAlign_Fill)
+			[
+				SAssignNew(BanList, SListView<TSharedPtr<FBanInfo>>)
+				.ItemHeight(24)
+				.ListItemsSource(&SortedBanList)
+				.OnGenerateRow(this, &SUTAdminDialog::OnGenerateWidgetForBanList)
+				.SelectionMode(ESelectionMode::Single)
+				.HeaderRow
+				(
+					SNew(SHeaderRow)
+					.Style(SUTStyle::Get(), "UT.List.Header")
+
+					+ SHeaderRow::Column("BanListPlayerName")
+						//.OnSort(this, &SUTServerBrowserPanel::OnSort)
+						.HeaderContent()
+						[
+							SNew(SHorizontalBox)+SHorizontalBox::Slot().VAlign(VAlign_Center)
+							[
+								SNew(STextBlock)
+								.Text(NSLOCTEXT("SUTAdminDialog", "PlayerName", "Player Name"))
+								.TextStyle(SUTStyle::Get(), "UT.Font.ServerBrowser.List.Header")
+							]
+						]
+
+					+ SHeaderRow::Column("BanListUniqueID")
+						.HAlignCell(HAlign_Left)
+						//.OnSort(this, &SUTServerBrowserPanel::OnSort)
+						.HeaderContentPadding(FMargin(5.0))
+						.HeaderContent()
+						[
+							SNew(SHorizontalBox)+SHorizontalBox::Slot().VAlign(VAlign_Center)
+							[
+								SNew(STextBlock)
+								.Text(NSLOCTEXT("SUTAdminDialog", "PlayerID", "Player ID"))
+								.TextStyle(SUTStyle::Get(), "UT.Font.ServerBrowser.List.Header")
+							]
+						]
+				)
+			]
+			+SVerticalBox::Slot()
+			.AutoHeight()
+			[
+				SNew(SBox).HeightOverride(42)
+				[
+					SNew(SVerticalBox)
+					+SVerticalBox::Slot()
+					.HAlign(HAlign_Fill)
+					[
+						SNew(SHorizontalBox)
+						+SHorizontalBox::Slot()
+						.Padding(FMargin(5.0f, 0.0f))
+						.AutoWidth()
+						[
+							SNew(SUTButton)
+							.OnClicked(this, &SUTAdminDialog::RemoveBanClicked)
+							.Text( NSLOCTEXT("SUTAdminDialog", "RemoveBan","REMOVE BAN"))
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
+							.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton")
+						]
+					]
+				]
+			]
+		
+		]
+	];
+}
+
+TSharedRef<ITableRow> SUTAdminDialog::OnGenerateWidgetForBanList( TSharedPtr<FBanInfo> InItem, const TSharedRef<STableViewBase>& OwnerTable )
+{
+	return SNew( SAdminBanRow, OwnerTable).BanData( InItem ).Style(SUTStyle::Get(),"UT.List.Row");
+}
+
+FReply SUTAdminDialog::RemoveBanClicked()
+{
+	AUTBasePlayerController* PC = Cast<AUTBasePlayerController>(GetPlayerOwner()->PlayerController);
+	if (PC != nullptr && BanList.IsValid() )
+	{
+		TArray<TSharedPtr<FBanInfo>> SelectedBans = BanList->GetSelectedItems();
+		if (SelectedBans.Num() > 0)
+		{
+			PC->RconUnban(SelectedBans[0]->UniqueID);
+			if (AdminInfo.IsValid())
+			{
+				for (int32 i=0; i < AdminInfo->BanData.Num(); i++)
+				{
+					if (AdminInfo->BanData[i].UniqueID.Equals(SelectedBans[0]->UniqueID, ESearchCase::IgnoreCase))
+					{
+						AdminInfo->BanData.RemoveAt(i);
+						break;
+					}
+				}
+			}
+
+			SortedBanList.Remove(SelectedBans[0]);
+		}
+		BanList->RebuildList();
+	}
+
+
 	return FReply::Handled();
 }
 

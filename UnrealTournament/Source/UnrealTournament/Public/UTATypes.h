@@ -2312,3 +2312,45 @@ namespace ECreateInstanceTypes
 	};
 }
 
+USTRUCT()
+struct FBanInfo 
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	FString UserName;
+
+	UPROPERTY()
+		FString UniqueID;
+
+	FBanInfo()
+		: UserName(TEXT(""))
+		, UniqueID(TEXT(""))
+	{
+	}
+
+	FBanInfo(const FString& inUserName, const FString& inUniqueID)
+		: UserName(inUserName)
+		, UniqueID(inUniqueID)
+	{
+	}
+
+	FText GetUserName() const
+	{
+		return FText::FromString(UserName);
+	}
+
+	FText GetUniqueID() const
+	{
+		return FText::FromString(UniqueID);
+	}
+
+	static TSharedRef<FBanInfo> Make(const FBanInfo& Original)
+	{
+		return MakeShareable( new FBanInfo(Original.UserName, Original.UniqueID));
+	}
+
+};
+
+
+

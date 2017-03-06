@@ -13,6 +13,9 @@ public:
 	UPROPERTY(Replicated)
 	TArray<FRconPlayerData> PlayerData;
 
+	UPROPERTY(Replicated)
+	TArray<FBanInfo> BanData;
+
 	virtual void BeginPlay();
 	virtual void NoLongerNeeded();
 

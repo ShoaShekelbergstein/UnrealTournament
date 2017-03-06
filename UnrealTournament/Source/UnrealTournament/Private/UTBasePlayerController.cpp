@@ -892,6 +892,31 @@ void AUTBasePlayerController::ServerRconKick_Implementation(const FString& NameO
 	}
 }
 
+void AUTBasePlayerController::RconUnban(const FString& UIDStr)
+{
+	ServerRconUnban(UIDStr);
+}
+
+bool AUTBasePlayerController::ServerRconUnban_Validate(const FString& UIDStr) { return true; }
+void AUTBasePlayerController::ServerRconUnban_Implementation(const FString& UIDStr)
+{
+	// Quick out if we haven't been authenticated.
+	if (UTPlayerState == nullptr || !UTPlayerState->bIsRconAdmin)
+	{
+		ClientSay(UTPlayerState, TEXT("Rcon not authenticated"), ChatDestinations::System);
+		return;
+	}
+
+	AUTBaseGameMode* GM = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
+	if (GM)
+	{
+		GM->RconUnban(UIDStr);
+	}
+
+}
+
+
+
 void AUTBasePlayerController::RconMessage(const FString& DestinationId, const FString &Message)
 {
 	ServerRconMessage(DestinationId, Message);

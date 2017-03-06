@@ -3,6 +3,7 @@
 #include "UnrealTournament.h"
 #include "UTRconAdminInfo.h"
 #include "Net/UnrealNetwork.h"
+#include "UTGameSessionNonRanked.h"
 
 
 AUTRconAdminInfo::AUTRconAdminInfo(const class FObjectInitializer& ObjectInitializer)
@@ -19,6 +20,7 @@ void AUTRconAdminInfo::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & 
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AUTRconAdminInfo, PlayerData);
+	DOREPLIFETIME(AUTRconAdminInfo, BanData);
 }
 
 void AUTRconAdminInfo::BeginPlay()
@@ -27,6 +29,17 @@ void AUTRconAdminInfo::BeginPlay()
 	{
 		UpdateList();
 		GetWorldTimerManager().SetTimer(UpdateTimerHandle, this, &AUTRconAdminInfo::UpdateList, 2.0, true);
+
+		AUTBaseGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
+		if (GameMode)
+		{
+			AUTGameSessionNonRanked* GameSession = Cast<AUTGameSessionNonRanked>(GameMode->GameSession);
+			if (GameSession)
+			{
+				BanData = GameSession->BannedUsers;			
+			}
+		}
+
 	}
 
 	if (GetWorld()->GetNetMode() == NM_Client)

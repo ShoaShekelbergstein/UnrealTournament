@@ -239,6 +239,12 @@ public:
 	virtual void ServerRconKick(const FString& NameOrUIDStr, bool bBan, const FString& Reason);
 
 	UFUNCTION(Exec)
+	virtual void RconUnban(const FString& UIDStr);
+
+	UFUNCTION(server, Reliable, WithValidation)
+	virtual void ServerRconUnban(const FString& UIDStr);
+
+	UFUNCTION(Exec)
 	virtual void RconMessage(const FString& DestinationId, const FString &Message);
 
 	UFUNCTION(Server, Reliable, WithValidation)

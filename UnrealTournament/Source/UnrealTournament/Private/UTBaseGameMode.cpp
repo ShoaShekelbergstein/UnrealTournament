@@ -515,6 +515,16 @@ void AUTBaseGameMode::RconKick(const FString& NameOrUIDStr, bool bBan, const FSt
 	}
 }
 
+void AUTBaseGameMode::RconUnban(const FString& UIDStr)
+{
+	AUTGameSession* GSession = Cast<AUTGameSession>(GameSession);
+	if (GSession)
+	{
+		GSession->UnbanPlayer(UIDStr);
+	}
+}
+
+
 void AUTBaseGameMode::RconAuth(AUTBasePlayerController* Admin, const FString& Password)
 {
 	if (Admin)

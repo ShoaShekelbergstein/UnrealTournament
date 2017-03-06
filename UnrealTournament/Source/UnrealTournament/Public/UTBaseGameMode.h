@@ -206,6 +206,7 @@ public:
 
 	// Kicks a player
 	virtual void RconKick(const FString& NameOrUIDStr, bool bBan, const FString& Reason);
+	virtual void RconUnban(const FString& UIDStr);
 	virtual void RconAuth(AUTBasePlayerController* Admin, const FString& Password);
 	virtual void RconNormal(AUTBasePlayerController* Admin);
 

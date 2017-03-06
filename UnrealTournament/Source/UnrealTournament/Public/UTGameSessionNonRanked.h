@@ -56,7 +56,11 @@ protected:
 	/** Beacon controlling access to this game */
 	UPROPERTY(Transient)
 	AUTServerBeaconHost* BeaconHost;
-	
+
+public:
 	UPROPERTY(Config)
 	TArray<FBanInfo> BannedUsers;
+
+	virtual void UnbanPlayer(const FString& UIDStr) override;
+
 };
