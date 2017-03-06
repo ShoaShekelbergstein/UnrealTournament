@@ -216,7 +216,7 @@ public:
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTDuelGame");
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=10?GoalScore=0"));
 			NewRuleset->bTeamGame = true;
-
+			NewRuleset->bCompetitiveMatch = true;
 			NewRuleset->MaxMapsInList=16;
 
 			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/WIP/DM-ASDF";
@@ -234,7 +234,7 @@ public:
 		{
 			NewRuleset->Categories.Empty(); 
 			NewRuleset->Categories.Add(TEXT("Competitive"));
-
+			NewRuleset->bCompetitiveMatch = true;
 			NewRuleset->Title = TEXT("1v1 Showdown");
 			NewRuleset->Tooltip = TEXT("New School one vs one test of deathmatch skill.");
 			NewRuleset->Description = TEXT("New School one vs one test of deathmatch skill.\n\n<UT.Hub.RulesText_Small>TimeLimit : %timelimit% minute rounds</>\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");

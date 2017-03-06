@@ -383,6 +383,11 @@ FReply SUTGameSetupDialog::OnRuleClick(int32 RuleIndex)
 			SelectedRuleset = RuleSubset[RuleIndex].Ruleset;
 			BuildMapList();
 		}
+
+		if (SelectedRuleset->bCompetitiveMatch)
+		{
+			cbRequireFull->SetIsChecked(ECheckBoxState::Checked);
+		}
 	}
 
 	return FReply::Handled();
