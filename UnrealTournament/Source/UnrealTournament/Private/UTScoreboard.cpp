@@ -67,6 +67,7 @@ UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) 
 	ReadyScale = 1.f;
 	bDrawMinimapInScoreboard = true;
 	MinimapPadding = 12.f;
+	bShouldKickBack = false;
 }
 
 void UUTScoreboard::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCanvas* InCanvas, FVector2D InCanvasCenter)
