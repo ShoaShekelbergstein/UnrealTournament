@@ -1352,6 +1352,9 @@ protected:
 	void ChatWidgetConsoleKeyPressed();
 	void SocialInitialized();
 
+	FTimerHandle BrowerCheckHandle;
+	void CheckIfBrowserisDone();
+
 public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
 	void CloseSavingWidget();

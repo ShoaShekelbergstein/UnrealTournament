@@ -3465,7 +3465,9 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 		// Use matchmaking for quickmatch
 		if (ServerBrowserWidget.IsValid() && ServerBrowserWidget->IsRefreshing())
 		{
-			MessageBox(NSLOCTEXT("Generic", "RequestInProgressTitle", "Busy"), NSLOCTEXT("Generic", "RequestInProgressText", "A server list request is already in progress.  Please wait for it to finish before attempting to quickplay."));
+			ShowMatchmakingDialog();
+			PendingQuickmatchType = QuickMatchType;
+			GetWorld()->GetTimerManager().SetTimer(BrowerCheckHandle, this, &UUTLocalPlayer::CheckIfBrowserisDone, 1.0f, true);
 			return;
 		}
 
@@ -3517,6 +3519,18 @@ void UUTLocalPlayer::CloseQuickMatch()
 }
 
 #endif
+
+void UUTLocalPlayer::CheckIfBrowserisDone()
+{
+#if !UE_SERVER
+	if (!ServerBrowserWidget.IsValid() || !ServerBrowserWidget->IsRefreshing())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(BrowerCheckHandle);	
+		StartQuickMatch(PendingQuickmatchType);
+	}
+#endif
+}
+
 
 void UUTLocalPlayer::ShowConnectingDialog()
 {
