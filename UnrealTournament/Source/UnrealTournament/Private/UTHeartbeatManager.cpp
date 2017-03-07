@@ -97,7 +97,7 @@ void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 				}
 							
 				FString PlayerConxtextLocation;
-				AUTGameState* UTGS = Cast<AUTGameState>(UTPS->GetWorld()->GetGameState());
+				AUTGameState* UTGS = Cast<AUTGameState>(UTPC->GetWorld()->GetGameState());
 				if (UTGS)
 				{
 					PlayerConxtextLocation = TEXT("Match");
@@ -117,20 +117,17 @@ void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 						PlayerConxtextLocation.Append(TEXT(" - HUB"));
 					}
 
-					if (GetWorld())
+					AUTGameMode* UTGM = Cast<AUTGameMode>(UTPC->GetWorld()->GetAuthGameMode());
+					if (UTGM && UTGM->bOfflineChallenge)
 					{
-						AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
-						if (UTGM && UTGM->bOfflineChallenge)
-						{
-							PlayerConxtextLocation.Append(TEXT(" - Offline Challenge"));
-						}
-						else if (GetWorld()->GetNetMode() != NM_Standalone)
-						{
-							PlayerConxtextLocation.Append(TEXT(" - Offline"));
-						}
+						PlayerConxtextLocation.Append(TEXT(" - Offline Challenge"));
+					}
+					else if (UTPC->GetWorld()->GetNetMode() == NM_Standalone)
+					{
+						PlayerConxtextLocation.Append(TEXT(" - Offline"));
 					}
 
-					AUTMenuGameMode* MenuGM = UTPS->GetWorld()->GetAuthGameMode<AUTMenuGameMode>();
+					AUTMenuGameMode* MenuGM = UTPC->GetWorld()->GetAuthGameMode<AUTMenuGameMode>();
 					if (MenuGM)
 					{
 						PlayerConxtextLocation = TEXT("Menu");
