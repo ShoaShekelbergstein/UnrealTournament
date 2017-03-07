@@ -1822,7 +1822,7 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 				if (bCheckOutsideHit)
 				{
 					FHitResult CheckHit;
-					FVector PointToCheck = ClosestCapsulePoint + CollisionRadius*(ClosestPoint - ClosestCapsulePoint).SafeNormal();
+					FVector PointToCheck = ClosestCapsulePoint + CollisionRadius*(ClosestPoint - ClosestCapsulePoint).GetSafeNormal();
 					bHitTarget = !GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, PointToCheck, TraceChannel, QueryParams);
 				}
 				if (bHitTarget && (!BestTarget || ((ClosestPoint - StartLocation).SizeSquared() - ExtraHitPadding < (BestPoint - StartLocation).SizeSquared())))
