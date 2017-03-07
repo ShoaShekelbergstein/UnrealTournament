@@ -41,7 +41,7 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	bBecomeDual = false;
 	bCanThrowWeapon = false;
 	bFireLeftSide = false;
-	bWasLastShotLeftSide = false;
+	bFireLeftSideImpact = false;
 	FOVOffset = FVector(0.7f, 1.f, 1.f);
 	MaxTracerDist = 2500.f;
 	bNoDropInTeamSafe = true;
@@ -141,6 +141,12 @@ void AUTWeap_Enforcer::StateChanged()
 	{
 		FireCount = 0;
 		ImpactCount = 0;
+	}
+
+	if (Cast<UUTWeaponStateActive>(CurrentState))
+	{
+		//resync these two in case we had a put down / reload
+		bFireLeftSideImpact = bFireLeftSide;
 	}
 
 	Super::StateChanged();
@@ -258,7 +264,6 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 			if (!BurstFireMode || (((BurstFireMode->CurrentShot + 1) / BurstFireMode->BurstSize) > 0))
 			{
 				bFireLeftSide = !bFireLeftSide;
-				bWasLastShotLeftSide = bFireLeftSide;
 			}
 		}
 	}
@@ -267,9 +272,10 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 void AUTWeap_Enforcer::PlayImpactEffects_Implementation(const FVector& TargetLoc, uint8 FireMode, const FVector& SpawnLocation, const FRotator& SpawnRotation)
 {
 	UUTWeaponStateFiringBurst* BurstFireMode = Cast<UUTWeaponStateFiringBurst>(FiringState[GetCurrentFireMode()]);
+	
 	if (GetNetMode() != NM_DedicatedServer)
 	{
-		if (bDualEnforcerMode && bWasLastShotLeftSide)
+		if (bDualEnforcerMode && bFireLeftSideImpact)
 		{
 			// fire effects
 			static FName NAME_HitLocation(TEXT("HitLocation"));
@@ -315,6 +321,12 @@ void AUTWeap_Enforcer::PlayImpactEffects_Implementation(const FVector& TargetLoc
 		}
 
 		ImpactCount++;
+
+		//Alternate every shot, or every volley in burst mode. Check to see if we are at the end of a burst, and if so switch weapon sides
+		if (bDualEnforcerMode && (!BurstFireMode || ((ImpactCount % BurstFireMode->BurstSize) == 0)))
+		{
+			bFireLeftSideImpact = !bFireLeftSideImpact;
+		}
 
 		if ((BurstFireMode && ImpactCount >= BurstFireMode->BurstSize * 2) || (!BurstFireMode && ImpactCount > 1))
 		{

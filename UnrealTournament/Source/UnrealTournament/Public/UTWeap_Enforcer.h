@@ -129,7 +129,7 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 
 	/**Track whether the last fired shot was from the left or right gun. Used to sync firing effects and impact effects **/
 	UPROPERTY()
-		bool bWasLastShotLeftSide;
+		bool bFireLeftSideImpact;
 
 	UPROPERTY()
 	int32 ImpactCount;
