@@ -11,7 +11,6 @@
 #include "SUTInGameHomePanel.h"
 #include "../Widgets/SUTBorder.h"
 #include "../Widgets/SUTButton.h"
-#include "SUTMatchSummaryPanel.h"
 #include "UTConsole.h"
 #include "SUTChatEditBox.h"
 
@@ -30,7 +29,6 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 	Tag = FName(TEXT("InGameHomePanel"));
 	bCloseOnSubmit = false;
 
-	bFocusSummaryInv = false;
 	bShowingContextMenu = false;
 	this->ChildSlot
 	.VAlign(VAlign_Fill)
@@ -71,30 +69,7 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 			// Allow children to place things over chat....
 			SAssignNew(ChatArea,SVerticalBox)
 		];
-		SubMenuOverlay->AddSlot(1)
-		.HAlign(HAlign_Fill)
-		.VAlign(VAlign_Fill)
-		[
-			SNew(SBox)
-			.Visibility(this, &SUTInGameHomePanel::GetSummaryVisibility)
-			[
-				SAssignNew(SummaryOverlay, SOverlay)
-			]
-		];
 	}
-}
-
-EVisibility SUTInGameHomePanel::GetSummaryVisibility() const
-{
-	if (PlayerOwner.IsValid() && SummaryPanel.IsValid())
-	{
-		AUTGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
-		if (GameState && (GameState->GetMatchState() == MatchState::PlayerIntro || GameState->GetMatchState() == MatchState::WaitingPostMatch || GameState->GetMatchState() == MatchState::MapVoteHappening))
-		{
-			return bFocusSummaryInv ? EVisibility::Hidden : EVisibility::Visible;
-		}
-	}
-	return EVisibility::Hidden;
 }
 
 void SUTInGameHomePanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
@@ -135,8 +110,6 @@ void SUTInGameHomePanel::OnHidePanel()
 			ReplayTimeSlider->BecomeNonInteractive();
 		}
 	}
-
-	HideMatchSummary();
 }
 
 // @Returns true if the mouse position is inside the viewport
@@ -553,67 +526,8 @@ FReply SUTInGameHomePanel::OnKeyDown(const FGeometry& MyGeometry, const FKeyEven
 
 }
 
-void SUTInGameHomePanel::ShowMatchSummary(bool bInitial)
-{
-	if (!SummaryPanel.IsValid())
-	{
-		if (SummaryOverlay.IsValid())
-		{
-			SummaryOverlay->AddSlot().HAlign(HAlign_Fill).VAlign(VAlign_Fill)
-			[
-				SAssignNew(SummaryPanel, SUTMatchSummaryPanel, PlayerOwner)
-				.GameState(PlayerOwner->GetWorld()->GetGameState<AUTGameState>())
-			];
-
-			if ( SummaryPanel.IsValid() )
-			{
-				SummaryPanel->ParentPanel = SharedThis(this);
-			}
-		}
-		else
-		{
-			return;
-		}
-	}
-
-	bFocusSummaryInv = false;
-	if (bInitial && SummaryPanel.IsValid())
-	{
-		SummaryPanel->SetInitialCams();
-//		PlayerOwner->GetSlateOperations() = FReply::Handled().ReleaseMouseCapture().SetUserFocus(SummaryPanel.ToSharedRef(), EFocusCause::SetDirectly);
-	}
-
-	if (PlayerOwner->HasChatText())
-	{
-		FSlateApplication::Get().SetKeyboardFocus(PlayerOwner->GetChatWidget(), EFocusCause::SetDirectly);
-	}
-	else
-	{
-		FSlateApplication::Get().SetKeyboardFocus(ChatArea, EFocusCause::SetDirectly);
-	}
-}
-
-void SUTInGameHomePanel::HideMatchSummary()
-{
-	bFocusSummaryInv = true;
-	if (SummaryOverlay.IsValid() && SummaryPanel.IsValid())
-	{
-		SummaryOverlay->RemoveSlot(SummaryPanel.ToSharedRef());
-	}
-	SummaryPanel.Reset();
-}
-
-TSharedPtr<SUTMatchSummaryPanel> SUTInGameHomePanel::GetSummaryPanel()
-{
-	return SummaryPanel;
-}
-
 TSharedPtr<SWidget> SUTInGameHomePanel::GetInitialFocus()
 {
-	if (SummaryPanel.IsValid())
-	{
-		return GetSummaryPanel();
-	}
 	if (PlayerOwner->HasChatText())
 	{
 		return PlayerOwner->GetChatWidget();

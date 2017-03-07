@@ -1170,9 +1170,6 @@ public:
 	UFUNCTION(exec)
 	virtual void TestCallstack();
 
-	UFUNCTION(exec)
-	virtual void OpenMatchSummary();
-
 	/**The last recieved XP breakdown from ClientReceiveXP()*/
 	UPROPERTY()
 	FXPBreakdown XPBreakdown;

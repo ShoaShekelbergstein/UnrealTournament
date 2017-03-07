@@ -134,6 +134,7 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 	MiniMapIconMuting = 0.8f;
 	MinimapScaleX = 1.f;
 	LastHoveredActorChangeTime = -1000.0f;
+	bDisplayMatchSummary = false;
 
 	static ConstructorHelpers::FObjectFinder<UTexture2D> ELOBadgeGreen(TEXT("Texture2D'/Game/RestrictedAssets/UI/RankBadges/UT_RankBadge_Beginner_48x48.UT_RankBadge_Beginner_48x48'"));
 	ELOBadges.Add(ELOBadgeGreen.Object);
@@ -588,7 +589,6 @@ void AUTHUD::ToggleScoreboard(bool bShow)
 
 void AUTHUD::NotifyMatchStateChange()
 {
-	// FIXMESTEVE - in playerintro mode, open match summary if not open (option for UTLP openmatchsummary)
 	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (UTLP && GS && !GS->IsPendingKillPending())
@@ -607,21 +607,9 @@ void AUTHUD::NotifyMatchStateChange()
 		}
 		else if (GS->GetMatchState() == MatchState::WaitingPostMatch)
 		{
-			if (GS->GameModeClass != nullptr)
-			{
-				const AUTGameMode* DefaultGame = Cast<AUTGameMode>(GS->GetDefaultGameMode());
-				if ( DefaultGame == nullptr || !DefaultGame->bShowMatchSummary )
-				{
-					return;
-				}
-
-				float MatchSummaryDelay = DefaultGame->EndScoreboardDelay + DefaultGame->MainScoreboardDisplayTime + DefaultGame->ScoringPlaysDisplayTime;
-				GetWorldTimerManager().SetTimer(MatchSummaryHandle, this, &AUTHUD::OpenMatchSummary, MatchSummaryDelay*GetActorTimeDilation(), false);
-			}
-		}
-		else if (GS->GetMatchState() == MatchState::WaitingToStart)
-		{
-			// GetWorldTimerManager().SetTimer(MatchSummaryHandle, this, &AUTHUD::OpenMatchSummary, 0.5f, false);
+			const AUTGameMode* DefaultGame = GS->GameModeClass ? Cast<AUTGameMode>(GS->GetDefaultGameMode()) : nullptr;
+			float MatchSummaryDelay = DefaultGame ? DefaultGame->EndScoreboardDelay + DefaultGame->MainScoreboardDisplayTime + DefaultGame->ScoringPlaysDisplayTime : 10.f;
+			GetWorldTimerManager().SetTimer(MatchSummaryHandle, this, &AUTHUD::OpenMatchSummary, MatchSummaryDelay*GetActorTimeDilation(), false);
 		}
 		else if (GS->GetMatchState() == MatchState::PlayerIntro)
 		{
@@ -657,17 +645,7 @@ void AUTHUD::NotifyMatchStateChange()
 
 void AUTHUD::OpenMatchSummary()
 {
-	if (Cast<AUTDemoRecSpectator>(UTPlayerOwner))
-	{
-		return;
-	}
-
-	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;
-	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (UTLP && GS && !GS->IsPendingKillPending())
-	{
-		UTLP->ShowMenu(TEXT("forcesummary"));
-	}
+	bDisplayMatchSummary = true;
 }
 
 void AUTHUD::PostRender()

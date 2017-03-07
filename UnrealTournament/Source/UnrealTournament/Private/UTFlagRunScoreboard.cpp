@@ -157,7 +157,6 @@ void UUTFlagRunScoreboard::DrawTeamPanel(float RenderDelta, float& YOffset)
 
 void UUTFlagRunScoreboard::NotifyMatchStateChange()
 {
-	// FIXMESTEVE - in playerintro mode, open match summary if not open (option for UTLP openmatchsummary)
 	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;
 	AUTGameState* GS = GetWorld() ? GetWorld()->GetGameState<AUTGameState>() : nullptr;
 	if (UTLP && GS && !GS->IsPendingKillPending())
@@ -227,16 +226,6 @@ void UUTFlagRunScoreboard::AnnounceRoundScore(AUTTeamInfo* InScoringTeam, APlaye
 			UTPlayerOwner->ClientReceiveLocalizedMessage(UUTShowdownGameMessage::StaticClass(), 3 + ScoringTeam->TeamIndex);
 		}
 	}
-}
-
-void UUTFlagRunScoreboard::DrawFramedBackground(float XOffset, float YOffset, float Width, float Height)
-{
-	float FrameWidth = 8.f * RenderScale;
-	Canvas->SetLinearDrawColor(FLinearColor::Black);
-	DrawTexture(UTHUDOwner->ScoreboardAtlas, XOffset - FrameWidth, YOffset - FrameWidth, Width + 2.f*FrameWidth, Height + 2.f*FrameWidth, 149, 138, 32, 32, 0.75f, FLinearColor::Black);
-	Canvas->SetLinearDrawColor(FLinearColor::White);
-	float BackAlpha = 0.3f;
-	DrawTexture(UTHUDOwner->ScoreboardAtlas, XOffset, YOffset, Width, Height, 149, 138, 32, 32, BackAlpha, FLinearColor::White);
 }
 
 float UUTFlagRunScoreboard::DrawWinAnnouncement(float DeltaTime, UFont* InFont)
@@ -662,7 +651,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 			DrawScoringPlays(RenderDelta, YPos, XOffset, 0.9f*ScoreWidth, PageBottom);
 		}
 	}
-	else if (GS && (GS->GetMatchState() != MatchState::CountdownToBegin) && (GS->GetMatchState() != MatchState::PlayerIntro))
+	else
 	{
 		Super::DrawMinimap(RenderDelta);
 	}

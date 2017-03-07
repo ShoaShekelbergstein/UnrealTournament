@@ -56,7 +56,6 @@
 #include "UTChallengeManager.h"
 #include "UTCharacterContent.h"
 #include "Runtime/JsonUtilities/Public/JsonUtilities.h"
-#include "SUTMatchSummaryPanel.h"
 #include "SUTInGameHomePanel.h"
 #include "UTMcpUtils.h"
 #include "UTPlayerState.h"
@@ -3575,50 +3574,19 @@ bool UUTLocalPlayer::IsInSession()
 	return (UserId.IsValid() && OnlineSessionInterface.IsValid() && OnlineSessionInterface->IsPlayerInSession(GameSessionName,*UserId));
 }
 
-#if !UE_SERVER
-TSharedPtr<SUTMatchSummaryPanel> UUTLocalPlayer::GetSummaryPanel()
-{
-	TSharedPtr<SUTMatchSummaryPanel> MatchSummary;
-	// If we have a menu open, have the menu try to show the player info.
-	if (DesktopSlateWidget.IsValid())
-	{
-		TSharedPtr<SUTPanelBase> ActivePanel = DesktopSlateWidget->GetActivePanel();
-		if (ActivePanel.IsValid() && ActivePanel->Tag == FName(TEXT("InGameHomePanel")))
-		{
-			TSharedPtr<SUTInGameHomePanel> HomePanel = StaticCastSharedPtr<SUTInGameHomePanel>(ActivePanel);
-			if (HomePanel.IsValid())
-			{
-				return HomePanel->GetSummaryPanel();
-			}
-		}
-	}
-
-	MatchSummary.Reset();
-	return MatchSummary;
-}
-#endif
-
 void UUTLocalPlayer::ShowPlayerInfo(const FString& TargetId, const FString PlayerName)
 {
 #if !UE_SERVER
-	TSharedPtr<SUTMatchSummaryPanel> MatchSummary = GetSummaryPanel();
-	if ( MatchSummary.IsValid() )
+	if (DesktopSlateWidget.IsValid() && !IsMenuGame() && GetWorld()->GetGameState<AUTLobbyGameState>() == nullptr && GetWorld()->GetNetMode() != NM_Standalone)
 	{
-		//MatchSummary->SelectPlayerState(Target.Get());
+		HideMenu();
 	}
-	else
-	{
-		if (DesktopSlateWidget.IsValid() && !IsMenuGame() && GetWorld()->GetGameState<AUTLobbyGameState>() == nullptr && GetWorld()->GetNetMode() != NM_Standalone)
-		{
-			HideMenu();
-		}
-		OpenDialog(
-				SNew(SUTPlayerInfoDialog)
-					.PlayerOwner(this)
-					.TargetUniqueId(TargetId)
-					.TargetName(PlayerName)
-		);
-	}
+	OpenDialog(
+			SNew(SUTPlayerInfoDialog)
+				.PlayerOwner(this)
+				.TargetUniqueId(TargetId)
+				.TargetName(PlayerName)
+	);
 #endif
 }
 
@@ -3674,28 +3642,6 @@ int32 UUTLocalPlayer::GetRecentPlayersList(TArray< FUTFriend >& OutRecentPlayers
 	}
 
 	return RetVal;
-}
-
-void UUTLocalPlayer::OnTauntPlayed(AUTPlayerState* PS, TSubclassOf<AUTTaunt> TauntToPlay, float EmoteSpeed)
-{
-#if !UE_SERVER
-	TSharedPtr<SUTMatchSummaryPanel> MatchSummary = GetSummaryPanel();
-	if (MatchSummary.IsValid())
-	{
-		MatchSummary->PlayTauntByClass(PS, TauntToPlay, EmoteSpeed);
-	}
-#endif
-}
-
-void UUTLocalPlayer::OnEmoteSpeedChanged(AUTPlayerState* PS, float EmoteSpeed)
-{
-#if !UE_SERVER
-	TSharedPtr<SUTMatchSummaryPanel> MatchSummary = GetSummaryPanel();
-	if (MatchSummary.IsValid())
-	{
-		MatchSummary->SetEmoteSpeed(PS, EmoteSpeed);
-	}
-#endif
 }
 
 void UUTLocalPlayer::RequestFriendship(TSharedPtr<const FUniqueNetId> FriendID)
@@ -4001,52 +3947,6 @@ void UUTLocalPlayer::CloseMapVote()
 		MapVoteMenu.Reset();
 	}
 #endif
-}
-
-void UUTLocalPlayer::OpenMatchSummary(AUTGameState* GameState)
-{
-	ShowMenu(TEXT(""));
-
-/*
-#if !UE_SERVER
-	PlayerController->DisableInput(PlayerController);
-	if (MatchSummaryWindow.IsValid())
-	{
-		CloseMatchSummary();
-	}
-	SAssignNew(MatchSummaryWindow, SUTMatchSummaryPanel, this).GameState(GameState);
-	
-	UUTGameViewportClient* UTGVC = Cast<UUTGameViewportClient>(GEngine->GameViewport);
-	if (MatchSummaryWindow.IsValid() && UTGVC != nullptr)
-	{
-		OpenWindow(MatchSummaryWindow);
-		FSlateApplication::Get().SetKeyboardFocus(MatchSummaryWindow.ToSharedRef(), EKeyboardFocusCause::Keyboard);
-	}
-#endif
-*/
-}
-void UUTLocalPlayer::CloseMatchSummary()
-{
-/*
-#if !UE_SERVER
-	UUTGameViewportClient* UTGVC = Cast<UUTGameViewportClient>(GEngine->GameViewport);
-	if (MatchSummaryWindow.IsValid() && UTGVC != nullptr)
-	{
-		CloseWindow(MatchSummaryWindow);
-		MatchSummaryWindow.Reset();
-		
-		//Since we use SUTInGameHomePanel for the time being for chat, we need to clear bForceScores
-		AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerController);
-		if (PC && PC->MyUTHUD)
-		{
-			PC->MyUTHUD->bForceScores = false;
-		}
-
-		PlayerController->FlushPressedKeys();
-		PlayerController->EnableInput(PlayerController);
-	}
-#endif
-*/	
 }
 
 void UUTLocalPlayer::OpenReplayWindow()
@@ -4594,7 +4494,6 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 	LoadoutMenu.Reset();
 	ReplayWindow.Reset();
 	
-	CloseMatchSummary();
 	CloseSpectatorWindow();
 	CloseQuickChat();
 	CloseWebMessage();
@@ -5070,10 +4969,6 @@ bool UUTLocalPlayer::SkipWorldRender()
 		return true;
 	}
 
-	if (GetSummaryPanel().IsValid())
-	{
-		return true;
-	}
 	for (auto& Dialog : OpenDialogs)
 	{
 		if (Dialog.IsValid() && Dialog.Get()->bSkipWorldRender)

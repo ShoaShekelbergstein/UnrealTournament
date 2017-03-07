@@ -10,6 +10,7 @@
 #include "UTWeap_ImpactHammer.h"
 #include "UTWeap_Translocator.h"
 #include "UTDemoRecSpectator.h"
+#include "UTLineupHelper.h"
 #include "UTBot.h"
 
 UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -108,7 +109,10 @@ void UUTScoreboard::Draw_Implementation(float RenderDelta)
 	float YOffset = 48.f*RenderScale;
 	DrawGamePanel(RenderDelta, YOffset);
 	DrawTeamPanel(RenderDelta, YOffset);
-	DrawScorePanel(RenderDelta, YOffset);
+	if ((UTGameState->GetMatchState() != MatchState::CountdownToBegin) && (UTGameState->GetMatchState() != MatchState::PlayerIntro))
+	{
+		DrawScorePanel(RenderDelta, YOffset);
+	}
 	if (ShouldDrawScoringStats())
 	{
 		DrawScoringStats(RenderDelta, YOffset);
@@ -118,12 +122,19 @@ void UUTScoreboard::Draw_Implementation(float RenderDelta)
 		DrawCurrentLifeStats(RenderDelta, YOffset);
 	}
 
-	DrawMinimap(RenderDelta);
+	if (UTHUDOwner && UTHUDOwner->bDisplayMatchSummary)
+	{
+		DrawMatchSummary(RenderDelta);
+	}
+	else
+	{
+		DrawMinimap(RenderDelta);
+	}
 }
 
 void UUTScoreboard::DrawMinimap(float RenderDelta)
 {
-	if (bDrawMinimapInScoreboard && UTGameState && UTHUDOwner && !UTHUDOwner->IsPendingKillPending())
+	if (bDrawMinimapInScoreboard && UTGameState && UTHUDOwner && !UTHUDOwner->IsPendingKillPending() && !UTGameState->HasMatchEnded() && (UTGameState->GetMatchState() != MatchState::CountdownToBegin) && (UTGameState->GetMatchState() != MatchState::PlayerIntro))
 	{
 		float MapScaleX = (UTHUDOwner->MinimapScaleX > 0.f) ? UTHUDOwner->MinimapScaleX : 1.f;
 		float MapSize = (UTGameState && UTGameState->bTeamGame)
@@ -139,6 +150,70 @@ void UUTScoreboard::DrawMinimap(float RenderDelta)
 		LeftCorner.X += MapSize * 0.5f * (1.f - MapScaleX);
 		UTHUDOwner->DrawMinimap(FColor(192, 192, 192, 220), MapSize, LeftCorner);
 	}
+}
+
+void UUTScoreboard::DrawMatchSummary(float RenderDelta)
+{
+	AUTPlayerState* ViewedPS = UTHUDOwner ? UTHUDOwner->GetScorerPlayerState() : nullptr;
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (ViewedPS)
+	{
+		int32 NumHighlights = 0;
+		for (int32 i = 0; i < 5; i++)
+		{
+			if (ViewedPS->MatchHighlights[i] != NAME_None)
+			{
+				NumHighlights++;
+			}
+		}
+		const float HighlightWidth = 240.f*RenderScale;
+		const float HighlightHeight = 0.25f * Canvas->ClipY;
+		const float HighlightY = 0.25f * Canvas->ClipY;
+		float HighlightPosX = 0.5f*(Canvas->ClipX - 1.5f*NumHighlights*HighlightWidth);
+		FLinearColor ShadowColor = FLinearColor::Black;
+		ShadowColor.A = 0.8f;
+		FLinearColor HighlightTextColor = FLinearColor::White;
+		HighlightTextColor.A = 0.8f;
+
+		for (int32 i = 0; i < 5; i++)
+		{
+			if (ViewedPS->MatchHighlights[i] != NAME_None)
+			{
+				DrawFramedBackground(HighlightPosX, HighlightY, HighlightWidth, HighlightHeight);
+
+				float TextXL, TextYL;
+				Canvas->TextSize(UTHUDOwner->LargeFont, GS->ShortPlayerHighlightText(ViewedPS, i).ToString(), TextXL, TextYL, 1.0f, 1.0f);
+				float TinyXL, TinyYL;
+				Canvas->TextSize(UTHUDOwner->MediumFont, GS->FormatPlayerHighlightText(ViewedPS, i).ToString(), TinyXL, TinyYL, 1.0f, 1.0f);
+
+				FUTCanvasTextItem ShortHighlightTextItem(FVector2D(HighlightPosX + 0.5f*HighlightWidth - 0.5f*TextXL*RenderScale, HighlightY + HighlightHeight - TextYL - TinyYL), GS->ShortPlayerHighlightText(ViewedPS, i), UTHUDOwner->LargeFont, HighlightTextColor, NULL);
+				ShortHighlightTextItem.Scale = FVector2D(RenderScale, RenderScale);
+				ShortHighlightTextItem.BlendMode = SE_BLEND_Translucent;
+				ShortHighlightTextItem.EnableShadow(ShadowColor);
+				ShortHighlightTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
+				Canvas->DrawItem(ShortHighlightTextItem);
+
+				FUTCanvasTextItem HighlightTextItem(FVector2D(HighlightPosX + 0.5f*HighlightWidth - 0.5f*TinyXL*RenderScale, HighlightY + HighlightHeight - TinyYL), GS->FormatPlayerHighlightText(ViewedPS, i), UTHUDOwner->MediumFont, HighlightTextColor, NULL);
+				HighlightTextItem.Scale = FVector2D(RenderScale, RenderScale);
+				HighlightTextItem.BlendMode = SE_BLEND_Translucent;
+				HighlightTextItem.EnableShadow(ShadowColor);
+				HighlightTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
+				Canvas->DrawItem(HighlightTextItem);
+
+				HighlightPosX += 1.5f * HighlightWidth;
+			}
+		}
+	}
+	
+	// also draw XP bar updates, next level goals and unlock
+
+	// better flag run end of match highlights (game wide)
+
+	// add highlight icons
+
+	// unique round highlights for flag run
+
+	// end of match highlights for flag run
 }
 
 void UUTScoreboard::GetTitleMessageArgs(FFormatNamedArguments& Args) const
@@ -257,7 +332,7 @@ void UUTScoreboard::DrawScorePanel(float RenderDelta, float& YOffset)
 		SelectionStack.Empty();
 	}
 	LastScorePanelYOffset = YOffset;
-	if (UTGameState)
+	if (UTGameState && (!UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive))
 	{
 		DrawScoreHeaders(RenderDelta, YOffset);
 		DrawPlayerScores(RenderDelta, YOffset);
@@ -827,4 +902,14 @@ void UUTScoreboard::GetContextMenuItems_Implementation(TArray<FScoreboardContext
 bool UUTScoreboard::HandleContextCommand_Implementation(uint8 ContextId, AUTPlayerState* InSelectedPlayer)
 {
 	return false;
+}
+
+void UUTScoreboard::DrawFramedBackground(float XOffset, float YOffset, float Width, float Height)
+{
+	float FrameWidth = 8.f * RenderScale;
+	Canvas->SetLinearDrawColor(FLinearColor::Black);
+	DrawTexture(UTHUDOwner->ScoreboardAtlas, XOffset - FrameWidth, YOffset - FrameWidth, Width + 2.f*FrameWidth, Height + 2.f*FrameWidth, 149, 138, 32, 32, 0.75f, FLinearColor::Black);
+	Canvas->SetLinearDrawColor(FLinearColor::White);
+	float BackAlpha = 0.3f;
+	DrawTexture(UTHUDOwner->ScoreboardAtlas, XOffset, YOffset, Width, Height, 149, 138, 32, 32, BackAlpha, FLinearColor::White);
 }

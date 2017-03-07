@@ -29,7 +29,6 @@ class SUTJoinInstanceWindow;
 class FServerData;
 class AUTRconAdminInfo;
 class SUTSpectatorWindow;
-class SUTMatchSummaryPanel;
 class SUTChatEditBox;
 class SUTQuickChatWindow;
 class UUTKillcamPlayback;
@@ -847,8 +846,6 @@ public:
 	int32 ServerPingBlockSize;
 
 	virtual void ShowPlayerInfo(const FString& TargetId, const FString PlayerName);
-	virtual void OnTauntPlayed(AUTPlayerState* PS, TSubclassOf<AUTTaunt> TauntToPlay, float EmoteSpeed);
-	virtual void OnEmoteSpeedChanged(AUTPlayerState* PS, float EmoteSpeed);
 
 	// Request someone be my friend...
 	UFUNCTION(BlueprintCallable, Category = Friends)
@@ -874,9 +871,6 @@ public:
 
 	virtual void OpenMapVote(AUTGameState* GameState);
 	virtual void CloseMapVote();
-
-	virtual void OpenMatchSummary(AUTGameState* GameState);
-	virtual void CloseMatchSummary();
 
 	// What is your role within the unreal community.
 	EUnrealRoles::Type CommunityRole;
@@ -1137,8 +1131,6 @@ protected:
 	/** Any shared accounts with associated profiles. */
 	UPROPERTY()
 	TArray<UObject*> SharedMcpProfileManager;
-
-	TSharedPtr<SUTMatchSummaryPanel> GetSummaryPanel();
 
 	// Check to see if this user should be using the Epic branded flag
 	void EpicFlagCheck();

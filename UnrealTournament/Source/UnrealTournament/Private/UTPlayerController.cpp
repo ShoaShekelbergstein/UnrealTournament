@@ -3351,7 +3351,7 @@ void AUTPlayerController::Tick(float DeltaTime)
 	if (GetNetMode() != NM_DedicatedServer)
 	{
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS && GS->bPlayPlayerIntro && GS->GetMatchState() == MatchState::WaitingToStart)
+		if (GS->GetMatchState() == MatchState::WaitingToStart)
 		{
 			for (TActorIterator<AUTPlayerState> It(GetWorld()); It; ++It)
 			{
@@ -4716,16 +4716,6 @@ void AUTPlayerController::GhostPlay()
 			}
 			UTC->GhostComponent->GhostStartPlaying();
 		}
-	}
-}
-
-void AUTPlayerController::OpenMatchSummary()
-{
-	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
-	AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
-	if (LocalPlayer != nullptr && UTGS != nullptr)
-	{
-		LocalPlayer->OpenMatchSummary(UTGS);
 	}
 }
 

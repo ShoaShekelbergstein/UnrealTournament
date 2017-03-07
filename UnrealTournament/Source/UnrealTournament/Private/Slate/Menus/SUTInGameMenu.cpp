@@ -201,27 +201,6 @@ void SUTInGameMenu::BuildLeftMenuBar()
 				]
 			]
 		];
-
-		LeftMenuBar->AddSlot()
-		.Padding(5.0f,0.0f,0.0f,0.0f)
-		.AutoWidth()
-		[
-			SNew(SUTButton)
-			.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
-			.OnClicked(this, &SUTInGameMenu::ShowSummary)
-			.Visibility(this, &SUTInGameMenu::GetMatchSummaryButtonVisibility)
-			.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
-			[
-				SNew(SHorizontalBox)
-				+SHorizontalBox::Slot()
-				.VAlign(VAlign_Center)
-				[
-					SNew(STextBlock)
-					.Text(NSLOCTEXT("SUTMenuBase","MenuBar_MatchSummary","MATCH SUMMARY"))
-					.TextStyle(SUTStyle::Get(), "UT.Font.MenuBarText")
-				]
-			]
-		];
 	}
 	
 	FSlateApplication::Get().PlaySound(SUTStyle::PauseSound,0);
@@ -618,46 +597,15 @@ EVisibility SUTInGameMenu::GetMapVoteVisibility() const
 	}
 }
 
-EVisibility SUTInGameMenu::GetMatchSummaryVisibility() const
-{
-	return StaticCastSharedPtr<SUTInGameHomePanel>(HomePanel)->GetSummaryVisibility();
-}
-
-EVisibility SUTInGameMenu::GetMatchSummaryButtonVisibility() const
-{
-	AUTGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
-	if (GameState && (GameState->GetMatchState() == MatchState::WaitingPostMatch || GameState->GetMatchState() == MatchState::MapVoteHappening) )
-	{
-		if ( GetMatchSummaryVisibility() == EVisibility::Hidden)
-		{
-			return EVisibility::Visible;
-		}
-	}
-	return EVisibility::Collapsed;
-}
-
-FReply SUTInGameMenu::ShowSummary()
-{
-	StaticCastSharedPtr<SUTInGameHomePanel>(HomePanel)->ShowMatchSummary(false);
-	return FReply::Handled();
-}
-
 void SUTInGameMenu::OnMenuOpened(const FString& Parameters)
 {
 	SUTMenuBase::OnMenuOpened(Parameters);
-	if (Parameters.Equals(TEXT("forcesummary"),ESearchCase::IgnoreCase))
-	{
-		StaticCastSharedPtr<SUTInGameHomePanel>(HomePanel)->ShowMatchSummary(true);
-	}
-	else
-	{
-		PlayerOwner->FocusWidget(PlayerOwner->GetChatWidget());
-	}
+	PlayerOwner->FocusWidget(PlayerOwner->GetChatWidget());
 }
 
 bool SUTInGameMenu::SkipWorldRender()
 {
-	return GetMatchSummaryVisibility() == EVisibility::Visible;
+	return false;
 }
 
 FReply SUTInGameMenu::OnKeyUp( const FGeometry& MyGeometry, const FKeyEvent& InKeyboardEvent )
@@ -690,7 +638,6 @@ FSlateColor SUTInGameMenu::GetChangeTeamLabelColor() const
 
 FSlateColor SUTInGameMenu::GetMatchLabelColor() const
 {
-
 	if (MatchButton.IsValid())
 	{
 		if (MatchButton->IsHovered())

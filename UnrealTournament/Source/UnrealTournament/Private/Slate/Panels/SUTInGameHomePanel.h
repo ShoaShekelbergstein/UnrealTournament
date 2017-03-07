@@ -19,11 +19,6 @@ public:
 	virtual void OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow);
 	virtual void OnHidePanel();
 
-	void ShowMatchSummary(bool bInitial);
-	void HideMatchSummary();
-	TSharedPtr<SUTMatchSummaryPanel> GetSummaryPanel();
-
-	EVisibility GetSummaryVisibility() const;
 
 	// If true, submitting text chat will close the menu
 	bool bCloseOnSubmit;
@@ -31,9 +26,6 @@ public:
 	virtual TSharedPtr<SWidget> GetInitialFocus();
 
 protected:
-
-	bool bFocusSummaryInv;
-
 
 	// This is the portion of the UI that contains the chat area
 	TSharedPtr<SUTChatBar> ChatBar;
@@ -44,7 +36,6 @@ protected:
 	TSharedPtr<SVerticalBox> MenuArea;
 
 	TSharedPtr<SOverlay> SummaryOverlay;
-	TSharedPtr<SUTMatchSummaryPanel> SummaryPanel;
 
 	virtual bool SupportsKeyboardFocus() const override
 	{

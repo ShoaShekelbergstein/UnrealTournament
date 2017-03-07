@@ -338,7 +338,6 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME(AUTGameState, MapVoteListCount);
 	DOREPLIFETIME(AUTGameState, VoteTimer);
 
-	DOREPLIFETIME_CONDITION(AUTGameState, bPlayPlayerIntro, COND_InitialOnly);
 	DOREPLIFETIME(AUTGameState, bForcedBalance);
 
 	DOREPLIFETIME(AUTGameState, SpawnPacks);
@@ -2237,20 +2236,20 @@ void AUTGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 	}
 }
 
-FText AUTGameState::ShortPlayerHighlightText(AUTPlayerState* PS)
+FText AUTGameState::ShortPlayerHighlightText(AUTPlayerState* PS, int32 Index)
 {
 	// return first highlight short version
 	if (PS->MatchHighlights[0] == NAME_None)
 	{
 		return FText::GetEmpty();
 	}
-	if (PS->FavoriteWeapon && ((PS->MatchHighlights[0] == HighlightNames::WeaponKills) || (PS->MatchHighlights[0] == HighlightNames::MostWeaponKills)))
+	if (PS->FavoriteWeapon && ((PS->MatchHighlights[Index] == HighlightNames::WeaponKills) || (PS->MatchHighlights[Index] == HighlightNames::MostWeaponKills)))
 	{
 		return PS->FavoriteWeapon->GetDefaultObject<AUTWeapon>()->HighlightText;
 	}
 	FText BestWeaponText = PS->FavoriteWeapon ? PS->FavoriteWeapon->GetDefaultObject<AUTWeapon>()->DisplayName : FText::GetEmpty();
-	FText HighlightText = !ShortHighlightMap.FindRef(PS->MatchHighlights[0]).IsEmpty() ? ShortHighlightMap.FindRef(PS->MatchHighlights[0]) : HighlightMap.FindRef(PS->MatchHighlights[0]);
-	return FText::Format(HighlightText, FText::AsNumber(PS->MatchHighlightData[0]), BestWeaponText);
+	FText HighlightText = !ShortHighlightMap.FindRef(PS->MatchHighlights[Index]).IsEmpty() ? ShortHighlightMap.FindRef(PS->MatchHighlights[Index]) : HighlightMap.FindRef(PS->MatchHighlights[Index]);
+	return FText::Format(HighlightText, FText::AsNumber(PS->MatchHighlightData[Index]), BestWeaponText);
 }
 
 FText AUTGameState::FormatPlayerHighlightText(AUTPlayerState* PS, int32 Index)
@@ -2354,7 +2353,6 @@ void AUTGameState::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject)
 	JsonObject->SetBoolField(TEXT("bAllowTeamSwitches"), bAllowTeamSwitches);
 	JsonObject->SetBoolField(TEXT("bStopGameClock"), bStopGameClock);
 	JsonObject->SetBoolField(TEXT("bForcedBalance"), bForcedBalance);
-	JsonObject->SetBoolField(TEXT("bPlayPlayerIntro"), bPlayPlayerIntro);
 
 	JsonObject->SetNumberField(TEXT("GoalScore"), GoalScore);
 	JsonObject->SetNumberField(TEXT("TimeLimit"), TimeLimit);

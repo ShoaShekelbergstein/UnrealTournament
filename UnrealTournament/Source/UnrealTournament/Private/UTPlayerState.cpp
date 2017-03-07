@@ -3614,13 +3614,6 @@ void AUTPlayerState::OnRepEmoteSpeed()
 	{
 		UTC->SetEmoteSpeed(EmoteSpeed);
 	}
-#if !UE_SERVER
-	UUTLocalPlayer* FirstPlayer = Cast<UUTLocalPlayer>(GEngine->GetLocalPlayerFromControllerId(GetWorld(), 0));
-	if (FirstPlayer != nullptr)
-	{
-		FirstPlayer->OnEmoteSpeedChanged(this, EmoteSpeed);
-	}
-#endif
 }
 
 void AUTPlayerState::OnRepTaunt()
@@ -3768,14 +3761,6 @@ void AUTPlayerState::PlayTauntByClass(TSubclassOf<AUTTaunt> TauntToPlay)
 		{
 			UTC->PlayTauntByClass(TauntToPlay, EmoteSpeed);
 		}
-		//Pass the taunt along to characters in the MatchSummary
-#if !UE_SERVER
-		UUTLocalPlayer* FirstPlayer = Cast<UUTLocalPlayer>(GEngine->GetLocalPlayerFromControllerId(GetWorld(), 0));
-		if (FirstPlayer != nullptr)
-		{
-			FirstPlayer->OnTauntPlayed(this, TauntToPlay, EmoteSpeed);
-		}
-#endif
 	}
 }
 

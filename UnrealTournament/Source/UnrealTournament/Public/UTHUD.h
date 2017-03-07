@@ -338,6 +338,9 @@ public:
 
 	virtual void OpenMatchSummary();
 
+	UPROPERTY()
+		bool bDisplayMatchSummary;
+
 	inline UUTScoreboard* GetScoreboard() const
 	{
 		return MyUTScoreboard;

@@ -151,8 +151,6 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 
 	bCasterControl = false;
 	bCasterReady = false;
-	bPlayPlayerIntro = true;
-	bShowMatchSummary = true;
 	bOfflineChallenge = false;
 	bBasicTrainingGame = false;
 
@@ -380,9 +378,6 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 		}
 	}
 
-	InOpt = UGameplayStatics::ParseOption(Options, TEXT("PlayPlayerIntro"));
-	bPlayPlayerIntro = EvalBoolOptions(InOpt, bPlayPlayerIntro);
-
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("Dev"));
 	bDevServer = EvalBoolOptions(InOpt, bDevServer) || (GetWorld()->WorldType == EWorldType::PIE);
 
@@ -575,7 +570,6 @@ void AUTGameMode::InitGameState()
 		UTGameState->bRankedSession = bRankedSession;
 		UTGameState->bIsQuickMatch = bIsQuickMatch;
 		UTGameState->bWeaponStay = bWeaponStayActive;
-		UTGameState->bPlayPlayerIntro = bPlayPlayerIntro;
 		UTGameState->bIsInstanceServer = IsGameInstanceServer();
 		UTGameState->bDebugHitScanReplication = bDebugHitScanReplication;
 		if (bOfflineChallenge || bUseMatchmakingSession || bBasicTrainingGame)
@@ -1871,7 +1865,7 @@ void AUTGameMode::StartMatch()
 	}
 	else
 	{
-		if (bPlayPlayerIntro && (NumPlayers+NumBots > 1))
+		if (NumPlayers+NumBots > 1)
 		{
 			SetMatchState(MatchState::PlayerIntro);
 		}
@@ -2536,7 +2530,7 @@ void AUTGameMode::PickMostCoolMoments(bool bClearCoolMoments, int32 CoolMomentsT
 float AUTGameMode::GetTravelDelay()
 {
 	UTGameState->NumWinnersToShow = 0;
-	float MatchSummaryTime = bShowMatchSummary ? PersonalSummaryDisplayTime + WinnerSummaryDisplayTime * UTGameState->NumWinnersToShow + TeamSummaryDisplayTime : 0.f;
+	float MatchSummaryTime = PersonalSummaryDisplayTime + WinnerSummaryDisplayTime * UTGameState->NumWinnersToShow + TeamSummaryDisplayTime;
 	return EndScoreboardDelay + MainScoreboardDisplayTime + ScoringPlaysDisplayTime + MatchSummaryTime;
 }
 

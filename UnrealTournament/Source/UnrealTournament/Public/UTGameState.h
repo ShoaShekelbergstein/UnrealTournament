@@ -92,10 +92,6 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	/**If true, had to force balance teams. */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
 	uint32 bForcedBalance : 1;
-	
-	/** If true, the intro cinematic will play just before the countdown to begin */
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
-	uint32 bPlayPlayerIntro : 1;
 
 	/** If true, teammates play status announcements */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
@@ -556,7 +552,7 @@ public:
 	virtual FText FormatPlayerHighlightText(AUTPlayerState* PS, int32 Index);
 
 	/** Return short version of top highlight for that player. */
-	virtual FText ShortPlayerHighlightText(AUTPlayerState* PS);
+	virtual FText ShortPlayerHighlightText(AUTPlayerState* PS, int32 Index=0);
 
 	/** Return a score value for the "impressiveness" of the Match highlights for PS. */
 	virtual float MatchHighlightScore(AUTPlayerState* PS);

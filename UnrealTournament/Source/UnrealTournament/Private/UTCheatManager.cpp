@@ -171,16 +171,6 @@ void UUTCheatManager::Spread(float Scaling)
 	}
 }
 
-void UUTCheatManager::Sum()
-{
-	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(GetOuterAPlayerController()->Player);
-	AUTGameState* GS = GetOuterAPlayerController()->GetWorld()->GetGameState<AUTGameState>();
-	if (LP && GS)
-	{
-		LP->OpenMatchSummary(GS);
-	}
-}
-
 void UUTCheatManager::AllAmmo()
 {
 	AUTCharacter* MyPawn = Cast<AUTCharacter>(GetOuterAPlayerController()->GetPawn());
