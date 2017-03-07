@@ -3673,7 +3673,7 @@ void AUTPlayerState::PlayTauntByIndex(int32 TauntIndex)
 	AUTCharacter* UTChar = GetUTCharacter();
 	if (UTChar == nullptr)
 	{
-		UE_LOG(UT,Warning,TEXT("Attempting to Taunt without a character"));
+		//UE_LOG(UT,Log,TEXT("Attempting to Taunt without a character"));
 		FTimerHandle TempHandle;
 		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTPlayerState::OnRepTaunt, 0.05f, false);
 		return;
