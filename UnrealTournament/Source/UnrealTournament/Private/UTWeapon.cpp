@@ -1353,27 +1353,21 @@ void AUTWeapon::FireShot()
 					HitScanHeight = HitScanHitChar ? HitScanHitChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 108.f;
 					HitScanStart = GetFireStartLoc();
 					HitScanEnd = OutHit.Location;
-					HitScanTime = GetUTOwner()->UTCharacterMovement ? GetUTOwner()->UTCharacterMovement->GetCurrentMovementTime() : 0.f;
+					HitScanTime = (GetUTOwner() && GetUTOwner()->UTCharacterMovement) ? GetUTOwner()->UTCharacterMovement->GetCurrentMovementTime() : 0.f;
 					HitScanIndex = FireEventIndex;
 					if ((Role < ROLE_Authority) && HitScanHitChar)
 					{
 						ServerHitScanHit(HitScanHitChar, FireEventIndex);
 					}
-					else if ((Role == ROLE_Authority) && !HitScanHitChar && ReceivedHitScanHitChar)
+					else if ((Role == ROLE_Authority) && !HitScanHitChar && ReceivedHitScanHitChar && GetWorld()->GetGameState<AUTGameState>() && GetWorld()->GetGameState<AUTGameState>()->bDebugHitScanReplication)
 					{
-						// FIXMESTEVE here maybe count as hit - check index off by 1 or 0 and almost valid hit
-						// first determine how far off from cylinder line passed by
-						// second make sure closest point on cylinder to line is visible to hitscan start
-						if (GetWorld()->GetGameState<AUTGameState>() && GetWorld()->GetGameState<AUTGameState>()->bDebugHitScanReplication)
-						{
-							AUTPlayerController* UTPC = UTOwner ? Cast<AUTPlayerController>(UTOwner->Controller) : NULL;
-							float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
-							FVector MissedLoc = ReceivedHitScanHitChar->GetRewindLocation(PredictionTime, UTPC);
-							ClientMissedHitScan(HitScanStart, HitScanEnd, MissedLoc, HitScanTime, HitScanIndex);
-						}
+						AUTPlayerController* UTPC = UTOwner ? Cast<AUTPlayerController>(UTOwner->Controller) : NULL;
+						float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
+						FVector MissedLoc = ReceivedHitScanHitChar->GetRewindLocation(PredictionTime, UTPC);
+						ClientMissedHitScan(HitScanStart, HitScanEnd, MissedLoc, HitScanTime, HitScanIndex);
 					}
-					ReceivedHitScanHitChar = nullptr;
 				}
+				ReceivedHitScanHitChar = nullptr;
 			}
 		}
 		//UE_LOG(UT, Warning, TEXT("FireShot"));
@@ -1406,7 +1400,7 @@ void AUTWeapon::ClientMissedHitScan_Implementation(FVector_NetQuantize MissedHit
 	AUTPlayerController* PC = GetUTOwner() ? Cast<AUTPlayerController>(GetUTOwner()->GetController()) : nullptr;
 	if (PC)
 	{
-		PC->ClientSay(PC->UTPlayerState, FString::Printf(TEXT("HIT MISMATCH LOCAL index %d time %f      SERVER index %d time %f prediction %f error distance %f"), HitScanIndex, HitScanTime, MissedHitScanIndex, MissedHitScanTime, (HitScanCharLoc - MissedHitScanLoc).Size()), ChatDestinations::System);
+		PC->ClientSay(PC->UTPlayerState, FString::Printf(TEXT("HIT MISMATCH LOCAL index %d time %f      SERVER index %d time %f error distance %f"), HitScanIndex, HitScanTime, MissedHitScanIndex, MissedHitScanTime, (HitScanCharLoc - MissedHitScanLoc).Size()), ChatDestinations::System);
 	}
 }
 
@@ -1777,6 +1771,7 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 	}
 	if (!(Hit.Location - StartLocation).IsNearlyZero())
 	{
+		AUTCharacter* ClientSideHitActor = (bTrackHitScanReplication && ReceivedHitScanHitChar && ((ReceivedHitScanIndex == FireEventIndex) || (ReceivedHitScanIndex == FireEventIndex - 1))) ? ReceivedHitScanHitChar : nullptr;
 		AUTCharacter* BestTarget = NULL;
 		FVector BestPoint(0.f);
 		FVector BestCapsulePoint(0.f);
@@ -1786,6 +1781,7 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 			AUTCharacter* Target = Cast<AUTCharacter>(*Iterator);
 			if (Target && (Target != UTOwner) && (bTeammatesBlockHitscan || !GS || !GS->OnSameTeam(UTOwner, Target)))
 			{
+				float ExtraHitPadding = (Target == ClientSideHitActor) ? 40.f : 0.f;
 				// find appropriate rewind position, and test against trace from StartLocation to Hit.Location
 				FVector TargetLocation = ((PredictionTime > 0.f) && (Role == ROLE_Authority)) ? Target->GetRewindLocation(PredictionTime) : Target->GetActorLocation();
 
@@ -1798,6 +1794,7 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 				}
 				float CollisionRadius = Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
 
+				bool bCheckOutsideHit = false;
 				bool bHitTarget = false;
 				FVector ClosestPoint(0.f);
 				FVector ClosestCapsulePoint = TargetLocation;
@@ -1805,14 +1802,30 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 				{
 					ClosestPoint = FMath::ClosestPointOnSegment(TargetLocation, StartLocation, Hit.Location);
 					bHitTarget = ((ClosestPoint - TargetLocation).SizeSquared() < FMath::Square(CollisionHeight + TraceRadius));
+					if (!bHitTarget && (ExtraHitPadding > 0.f))
+					{
+						bHitTarget = ((ClosestPoint - TargetLocation).SizeSquared() < FMath::Square(CollisionHeight + TraceRadius + ExtraHitPadding));
+						bCheckOutsideHit = true;
+					}
 				}
 				else
 				{
 					FVector CapsuleSegment = FVector(0.f, 0.f, CollisionHeight - CollisionRadius);
 					FMath::SegmentDistToSegmentSafe(StartLocation, Hit.Location, TargetLocation - CapsuleSegment, TargetLocation + CapsuleSegment, ClosestPoint, ClosestCapsulePoint);
 					bHitTarget = ((ClosestPoint - ClosestCapsulePoint).SizeSquared() < FMath::Square(CollisionRadius + TraceRadius));
+					if (!bHitTarget && (ExtraHitPadding > 0.f))
+					{
+						bHitTarget = ((ClosestPoint - ClosestCapsulePoint).SizeSquared() < FMath::Square(CollisionRadius + TraceRadius + ExtraHitPadding));
+						bCheckOutsideHit = true;
+					}
 				}
-				if (bHitTarget &&  (!BestTarget || ((ClosestPoint - StartLocation).SizeSquared() < (BestPoint - StartLocation).SizeSquared())))
+				if (bCheckOutsideHit)
+				{
+					FHitResult CheckHit;
+					FVector PointToCheck = ClosestCapsulePoint + CollisionRadius*(ClosestPoint - ClosestCapsulePoint).SafeNormal();
+					bHitTarget = !GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, PointToCheck, TraceChannel, QueryParams);
+				}
+				if (bHitTarget && (!BestTarget || ((ClosestPoint - StartLocation).SizeSquared() - ExtraHitPadding < (BestPoint - StartLocation).SizeSquared())))
 				{
 					BestTarget = Target;
 					BestPoint = ClosestPoint;
