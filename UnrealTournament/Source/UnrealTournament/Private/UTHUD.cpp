@@ -646,6 +646,7 @@ void AUTHUD::NotifyMatchStateChange()
 void AUTHUD::OpenMatchSummary()
 {
 	bDisplayMatchSummary = true;
+	MatchSummaryTime = GetWorld()->GetTimeSeconds();
 }
 
 void AUTHUD::PostRender()

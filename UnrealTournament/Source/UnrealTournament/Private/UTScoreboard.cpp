@@ -43,7 +43,7 @@ UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) 
 	ScoreColumn = 0.85f;
 	bHighlightStatsLineTopValue = false;
 
-	static ConstructorHelpers::FObjectFinder<USoundBase> OtherSpreeSoundFinder(TEXT("SoundWave'/Game/RestrictedAssets/Audio/UI/A_UI_SpecSwitch01.A_UI_SpecSwitch01'"));
+	static ConstructorHelpers::FObjectFinder<USoundBase> OtherSpreeSoundFinder(TEXT("SoundCue'/Game/RestrictedAssets/Audio/UI/ScoreUpdate_Cue.ScoreUpdate_Cue'"));
 	ScoreUpdateSound = OtherSpreeSoundFinder.Object;
 
 	GameMessageText = NSLOCTEXT("UTScoreboard", "ScoreboardHeader", "{GameName} in {MapName}");
@@ -156,8 +156,10 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 {
 	AUTPlayerState* ViewedPS = UTHUDOwner ? UTHUDOwner->GetScorerPlayerState() : nullptr;
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (ViewedPS)
+	if (ViewedPS && GS)
 	{
+		float SummaryTime = GetWorld()->GetTimeSeconds() - UTHUDOwner->MatchSummaryTime;
+		int32 NumHighlightsToShow = FMath::Min(5, int32(2.f * SummaryTime));
 		int32 NumHighlights = 0;
 		for (int32 i = 0; i < 5; i++)
 		{
@@ -174,8 +176,8 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 		ShadowColor.A = 0.8f;
 		FLinearColor HighlightTextColor = FLinearColor::White;
 		HighlightTextColor.A = 0.8f;
-
-		for (int32 i = 0; i < 5; i++)
+		NumHighlightsToShow = FMath::Min(NumHighlightsToShow, NumHighlights);
+		for (int32 i = 0; i < NumHighlightsToShow; i++)
 		{
 			if (ViewedPS->MatchHighlights[i] != NAME_None)
 			{
@@ -184,16 +186,16 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 				float TextXL, TextYL;
 				Canvas->TextSize(UTHUDOwner->LargeFont, GS->ShortPlayerHighlightText(ViewedPS, i).ToString(), TextXL, TextYL, 1.0f, 1.0f);
 				float TinyXL, TinyYL;
-				Canvas->TextSize(UTHUDOwner->MediumFont, GS->FormatPlayerHighlightText(ViewedPS, i).ToString(), TinyXL, TinyYL, 1.0f, 1.0f);
+				Canvas->TextSize(UTHUDOwner->SmallFont, GS->FormatPlayerHighlightText(ViewedPS, i).ToString(), TinyXL, TinyYL, 1.0f, 1.0f);
 
-				FUTCanvasTextItem ShortHighlightTextItem(FVector2D(HighlightPosX + 0.5f*HighlightWidth - 0.5f*TextXL*RenderScale, HighlightY + HighlightHeight - TextYL - TinyYL), GS->ShortPlayerHighlightText(ViewedPS, i), UTHUDOwner->LargeFont, HighlightTextColor, NULL);
+				FUTCanvasTextItem ShortHighlightTextItem(FVector2D(HighlightPosX + 0.5f*HighlightWidth - 0.5f*TextXL*RenderScale, HighlightY + HighlightHeight - TextYL*RenderScale - TinyYL*RenderScale), GS->ShortPlayerHighlightText(ViewedPS, i), UTHUDOwner->LargeFont, HighlightTextColor, NULL);
 				ShortHighlightTextItem.Scale = FVector2D(RenderScale, RenderScale);
 				ShortHighlightTextItem.BlendMode = SE_BLEND_Translucent;
 				ShortHighlightTextItem.EnableShadow(ShadowColor);
 				ShortHighlightTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
 				Canvas->DrawItem(ShortHighlightTextItem);
 
-				FUTCanvasTextItem HighlightTextItem(FVector2D(HighlightPosX + 0.5f*HighlightWidth - 0.5f*TinyXL*RenderScale, HighlightY + HighlightHeight - TinyYL), GS->FormatPlayerHighlightText(ViewedPS, i), UTHUDOwner->MediumFont, HighlightTextColor, NULL);
+				FUTCanvasTextItem HighlightTextItem(FVector2D(HighlightPosX + 0.5f*HighlightWidth - 0.5f*TinyXL*RenderScale, HighlightY + HighlightHeight - TinyYL*RenderScale), GS->FormatPlayerHighlightText(ViewedPS, i), UTHUDOwner->SmallFont, HighlightTextColor, NULL);
 				HighlightTextItem.Scale = FVector2D(RenderScale, RenderScale);
 				HighlightTextItem.BlendMode = SE_BLEND_Translucent;
 				HighlightTextItem.EnableShadow(ShadowColor);
@@ -201,6 +203,20 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 				Canvas->DrawItem(HighlightTextItem);
 
 				HighlightPosX += 1.5f * HighlightWidth;
+			}
+		}
+		if (NumHighlights > NumHighlightsToShow)
+		{
+			if (int32(2.f*SummaryTime) != int32(2.f*SummaryTime - RenderDelta))
+			{
+				UTHUDOwner->UTPlayerOwner->ClientPlaySound(ScoreUpdateSound);
+			}
+			// draw in box
+			float BoxScale = 2.f - (2.f*SummaryTime - int32(2.f*SummaryTime));
+			// FIXMESTEVE woosh at start
+			if (BoxScale < 1.8f)
+			{
+				DrawFramedBackground(HighlightPosX - 0.5f*(BoxScale - 1.f)*HighlightWidth, HighlightY - 0.5f*(BoxScale - 1.f)*HighlightHeight, BoxScale*HighlightWidth, BoxScale*HighlightHeight);
 			}
 		}
 	}

@@ -341,6 +341,9 @@ public:
 	UPROPERTY()
 		bool bDisplayMatchSummary;
 
+	UPROPERTY()
+		float MatchSummaryTime;
+
 	inline UUTScoreboard* GetScoreboard() const
 	{
 		return MyUTScoreboard;
