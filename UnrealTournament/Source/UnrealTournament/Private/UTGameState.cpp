@@ -1951,6 +1951,12 @@ void AUTGameState::UpdateMatchHighlights()
 	UpdateHighlights();
 }
 
+void AUTGameState::UpdateRoundHighlights()
+{
+	ClearHighlights();
+	UpdateHighlights();
+}
+
 void AUTGameState::UpdateHighlights_Implementation()
 {
 	// add highlights to each player in order of highlight priority, filling to 5 if possible

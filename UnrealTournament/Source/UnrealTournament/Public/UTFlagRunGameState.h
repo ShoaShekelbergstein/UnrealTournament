@@ -149,9 +149,9 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 
 	virtual FLinearColor GetGameStatusColor() override;
 
-	virtual void UpdateHighlights_Implementation() override;
+	virtual void UpdateRoundHighlights() override;
 
-	virtual void AddMinorHighlights_Implementation(AUTPlayerState* PS) override;
+	virtual void AddMinorRoundHighlights();
 
 	virtual int32 NumHighlightsNeeded() override;
 

@@ -870,7 +870,7 @@ void AUTFlagRunGame::HandleMatchIntermission()
 	AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(UTGameState);
 	if (GS && GS->GetScoringPlays().Num() > 0)
 	{
-		GS->UpdateMatchHighlights();
+		GS->UpdateRoundHighlights();
 	}
 	if ((GS == nullptr) || (GS->CTFRound < GS->NumRounds - 2))
 	{
