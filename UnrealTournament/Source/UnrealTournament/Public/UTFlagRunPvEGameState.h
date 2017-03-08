@@ -32,4 +32,8 @@ public:
 	{
 		// there's no point in a scoring play entry since there's only ever one score per PvE match
 	}
+	virtual void UpdateTimeMessage() override
+	{
+		// don't send star notifications
+	}
 };
