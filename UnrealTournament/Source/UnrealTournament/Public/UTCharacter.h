@@ -1961,7 +1961,7 @@ protected:
 		TSubclassOf<AUTWeaponAttachment> HolsteredWeaponAttachmentClass;
 
 public:
-	inline const AUTWeaponAttachment* GetWeaponAttachment() const
+	inline AUTWeaponAttachment* GetWeaponAttachment() const
 	{
 		return WeaponAttachment;
 	}
