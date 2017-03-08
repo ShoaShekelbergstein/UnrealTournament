@@ -144,6 +144,10 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 		float Edge = CircleTemplate.GetWidth()* WorldRenderScale;
 
 		AUTCharacter* Holder = (Flag->ObjectState == CarriedObjectState::Held) ? Cast<AUTCharacter>(Flag->GetAttachmentReplication().AttachParent) : nullptr;
+		if (!Holder && (Flag->ObjectState == CarriedObjectState::Held))
+		{
+			Holder = Flag->HoldingPawn;
+		}
 		FVector WorldPosition = (Holder != nullptr) ? Holder->GetMesh()->GetComponentLocation() + FVector(0.f, 0.f, Holder->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()) : Flag->GetActorLocation();
 		FVector DrawScreenPosition = GetAdjustedScreenPosition(WorldPosition, PlayerViewPoint, ViewDir, Dist, Edge, bDrawEdgeArrow, TeamNum);
 		
