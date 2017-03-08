@@ -6,6 +6,7 @@
 #include "ActiveSound.h"
 #include "AudioDevice.h"
 #include "UTPickupWeapon.h"
+#include "UTPickupToken.h"
 #include "UTAnnouncer.h"
 #include "UTPlayerInput.h"
 #include "UTPlayerCameraManager.h"
@@ -2427,6 +2428,12 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 			if (Pickup)
 			{
 				HideComponentTree(Pickup->Collision, HiddenComponents);
+			}
+
+			AUTPickupToken* PickupToken = Cast<AUTPickupToken>(*It);
+			if (PickupToken)
+			{
+				HideComponentTree(PickupToken->GetRootPrimitiveComponent(), HiddenComponents);
 			}
 		}
 	}
