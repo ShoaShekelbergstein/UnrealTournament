@@ -8,7 +8,7 @@
 
 #include "UTMonster.generated.h"
 
-UCLASS(Abstract)
+UCLASS(Abstract, ShowCategories = (CharacterData))
 class AUTMonster : public AUTCharacter
 {
 	GENERATED_BODY()

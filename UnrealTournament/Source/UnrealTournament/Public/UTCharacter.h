@@ -249,7 +249,7 @@ struct FPhysicalSoundResponse
 	USoundBase* SoundOwner;
 };
 
-UCLASS(config=Game, collapsecategories, hidecategories=(Clothing,Lighting,AutoExposure,LensFlares,AmbientOcclusion,DepthOfField,MotionBlur,Misc,ScreenSpaceReflections,Bloom,SceneColor,Film,AmbientCubemap,AgentPhysics,Attachment,Avoidance,PlanarMovement,AI,Replication,Input,Actor,Tags,GlobalIllumination))
+UCLASS(config=Game, collapsecategories, hidecategories=(Clothing,Lighting,AutoExposure,LensFlares,AmbientOcclusion,DepthOfField,MotionBlur,Misc,ScreenSpaceReflections,Bloom,SceneColor,Film,AmbientCubemap,AgentPhysics,Attachment,Avoidance,PlanarMovement,AI,Replication,Input,Actor,Tags,GlobalIllumination,CharacterData))
 class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInterface
 {
 	GENERATED_UCLASS_BODY()
@@ -1573,7 +1573,7 @@ public:
 	virtual void PlayerChangedTeam();
 	virtual void PlayerSuicide();
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = CharacterData)
 	TSubclassOf<class AUTCharacterContent> CharacterData;
 
 	UPROPERTY(BlueprintReadWrite, Category = FFA)
