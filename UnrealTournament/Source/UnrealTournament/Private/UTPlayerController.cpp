@@ -3351,7 +3351,7 @@ void AUTPlayerController::Tick(float DeltaTime)
 	if (GetNetMode() != NM_DedicatedServer)
 	{
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS->GetMatchState() == MatchState::WaitingToStart)
+		if (GS != nullptr && GS->GetMatchState() == MatchState::WaitingToStart)
 		{
 			for (TActorIterator<AUTPlayerState> It(GetWorld()); It; ++It)
 			{
