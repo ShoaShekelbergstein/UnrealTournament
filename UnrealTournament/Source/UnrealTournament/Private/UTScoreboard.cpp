@@ -168,10 +168,11 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 				NumHighlights++;
 			}
 		}
-		const float HighlightWidth = 240.f*RenderScale;
-		const float HighlightHeight = 0.25f * Canvas->ClipY;
+		const float HighlightWidth = 300.f*RenderScale;
+		const float HighlightSpace = 100.f*RenderScale;
+		const float HighlightHeight = 0.3f * Canvas->ClipY;
 		const float HighlightY = 0.25f * Canvas->ClipY;
-		float HighlightPosX = 0.5f*(Canvas->ClipX - 1.5f*NumHighlights*HighlightWidth);
+		float HighlightPosX = 0.5f*(Canvas->ClipX - NumHighlights*HighlightWidth - FMath::Max(0, NumHighlights-1) * HighlightSpace);
 		FLinearColor ShadowColor = FLinearColor::Black;
 		ShadowColor.A = 0.8f;
 		FLinearColor HighlightTextColor = FLinearColor::White;
@@ -188,21 +189,22 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 				float TinyXL, TinyYL;
 				Canvas->TextSize(UTHUDOwner->SmallFont, GS->FormatPlayerHighlightText(ViewedPS, i).ToString(), TinyXL, TinyYL, 1.0f, 1.0f);
 
-				FUTCanvasTextItem ShortHighlightTextItem(FVector2D(HighlightPosX + 0.5f*HighlightWidth - 0.5f*TextXL*RenderScale, HighlightY + HighlightHeight - TextYL*RenderScale - TinyYL*RenderScale), GS->ShortPlayerHighlightText(ViewedPS, i), UTHUDOwner->LargeFont, HighlightTextColor, NULL);
-				ShortHighlightTextItem.Scale = FVector2D(RenderScale, RenderScale);
+				float MaxTextWidth = 0.98f*HighlightWidth;
+				FUTCanvasTextItem ShortHighlightTextItem(FVector2D(HighlightPosX + 0.5f*HighlightWidth - 0.5f*FMath::Min(MaxTextWidth,TextXL*RenderScale), HighlightY + HighlightHeight - TextYL*RenderScale - TinyYL*RenderScale), GS->ShortPlayerHighlightText(ViewedPS, i), UTHUDOwner->LargeFont, HighlightTextColor, NULL);
+				ShortHighlightTextItem.Scale = FVector2D(RenderScale * FMath::Min(1.f, MaxTextWidth /FMath::Max(1.f, TextXL*RenderScale)), RenderScale);
 				ShortHighlightTextItem.BlendMode = SE_BLEND_Translucent;
 				ShortHighlightTextItem.EnableShadow(ShadowColor);
 				ShortHighlightTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
 				Canvas->DrawItem(ShortHighlightTextItem);
 
-				FUTCanvasTextItem HighlightTextItem(FVector2D(HighlightPosX + 0.5f*HighlightWidth - 0.5f*TinyXL*RenderScale, HighlightY + HighlightHeight - TinyYL*RenderScale), GS->FormatPlayerHighlightText(ViewedPS, i), UTHUDOwner->SmallFont, HighlightTextColor, NULL);
-				HighlightTextItem.Scale = FVector2D(RenderScale, RenderScale);
+				FUTCanvasTextItem HighlightTextItem(FVector2D(HighlightPosX + 0.5f*HighlightWidth - 0.5f*FMath::Min(MaxTextWidth, TinyXL*RenderScale), HighlightY + HighlightHeight - TinyYL*RenderScale), GS->FormatPlayerHighlightText(ViewedPS, i), UTHUDOwner->SmallFont, HighlightTextColor, NULL);
+				HighlightTextItem.Scale = FVector2D(RenderScale * FMath::Min(1.f, MaxTextWidth / FMath::Max(1.f, TinyXL*RenderScale)), RenderScale);
 				HighlightTextItem.BlendMode = SE_BLEND_Translucent;
 				HighlightTextItem.EnableShadow(ShadowColor);
 				HighlightTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
 				Canvas->DrawItem(HighlightTextItem);
 
-				HighlightPosX += 1.5f * HighlightWidth;
+				HighlightPosX += HighlightWidth + HighlightSpace;
 			}
 		}
 		if (NumHighlights > NumHighlightsToShow)

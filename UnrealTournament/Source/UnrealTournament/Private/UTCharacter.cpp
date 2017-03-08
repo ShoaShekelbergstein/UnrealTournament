@@ -5707,10 +5707,15 @@ void AUTCharacter::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector
 void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canvas, FVector CameraPosition, FVector CameraDir)
 {
 	AUTPlayerState* UTPS = Cast<AUTPlayerState>(PlayerState);
-	if (UTPS)
+	if (UTPS && PC)
 	{
+		AUTHUD* UTHUD = Cast<AUTHUD>(PC->MyHUD);
+		if (UTHUD && UTHUD->bDisplayMatchSummary)
+		{
+			return;
+		}
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		bool bDrawHighlight = (GS && (UTPS->MatchHighlights[0] != NAME_None));
+		bool bDrawHighlight = GS && (UTPS->MatchHighlights[0] != NAME_None);
 		float TextXL, TextYL;
 		UFont* SmallFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->SmallFont;
 		FLinearColor TeamColor = UTPS->Team ? UTPS->Team->TeamColor : FLinearColor::Black;
@@ -5782,7 +5787,6 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 		{
 			// Vary height of names to avoid overlaps
 			ScreenPosition.Y += TextYL - 1.75f*BarHeight;
-			AUTHUD* UTHUD = Cast<AUTHUD>(PC->MyHUD);
 			if (UTHUD && (UTHUD->ELOBadges.Num() > 0))
 			{
 				AUTGameMode* DefaultGame = GS && GS->GameModeClass ? GS->GameModeClass->GetDefaultObject<AUTGameMode>() : NULL;
