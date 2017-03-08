@@ -262,6 +262,7 @@ namespace HighlightNames
 	const FName FlagCap = FName(TEXT("FlagCap"));
 
 	const FName BadMF = FName(TEXT("BadMF"));
+	const FName BadAss = FName(TEXT("BadAss"));
 	const FName LikeABoss = FName(TEXT("LikeABoss"));
 	const FName DeathIncarnate = FName(TEXT("DeathIncarnate"));
 	const FName NaturalBornKiller = FName(TEXT("NaturalBornKiller"));
@@ -280,6 +281,12 @@ namespace HighlightNames
 	const FName AllOutOfBubbleGum = FName(TEXT("AllOutOfBubbleGum"));
 	const FName GameOver = FName(TEXT("GameOver"));
 	const FName LikeTheWind = FName(TEXT("LikeTheWind"));
+	const FName MoreThanAHandful = FName(TEXT("MoreThanAHandful"));
+	const FName ToughGuy = FName(TEXT("ToughGuy"));
+	const FName LargerThanLife = FName(TEXT("LargerThanLife"));
+	const FName AssKicker = FName(TEXT("AssKicker"));
+	const FName Destroyer = FName(TEXT("Destroyer"));
+	const FName LockedAndLoaded = FName(TEXT("LockedAndLoaded"));
 }
 
 namespace ArmorTypeName

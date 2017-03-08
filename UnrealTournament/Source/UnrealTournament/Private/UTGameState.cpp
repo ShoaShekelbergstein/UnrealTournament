@@ -185,12 +185,12 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	WeaponStats.Add(NAME_RedeemerHits);
 	WeaponStats.Add(NAME_InstagibHits);
 
-	HighlightMap.Add(HighlightNames::TopScorer, NSLOCTEXT("AUTGameMode", "HighlightTopScore", "Top Score overall with {0} points"));
-	HighlightMap.Add(HighlightNames::TopScorerRed, NSLOCTEXT("AUTGameMode", "HighlightTopScoreRed", "Red Team Top Score with {0} points"));
-	HighlightMap.Add(HighlightNames::TopScorerBlue, NSLOCTEXT("AUTGameMode", "HighlightTopScoreBlue", "Blue Team Top Score with {0} points"));
+	HighlightMap.Add(HighlightNames::TopScorer, NSLOCTEXT("AUTGameMode", "HighlightTopScore", "Top Score with {0} points"));
+	HighlightMap.Add(HighlightNames::TopScorerRed, NSLOCTEXT("AUTGameMode", "HighlightTopScoreRed", "Top Score with {0} points"));
+	HighlightMap.Add(HighlightNames::TopScorerBlue, NSLOCTEXT("AUTGameMode", "HighlightTopScoreBlue", "Top Score with {0} points"));
 	HighlightMap.Add(HighlightNames::MostKills, NSLOCTEXT("AUTGameMode", "MostKills", "Most Kills ({0})"));
 	HighlightMap.Add(HighlightNames::LeastDeaths, NSLOCTEXT("AUTGameMode", "LeastDeaths", "Least Deaths with {0}"));
-	HighlightMap.Add(HighlightNames::BestKD, NSLOCTEXT("AUTGameMode", "BestKD", "Best Kill/Death ratio {0}"));
+	HighlightMap.Add(HighlightNames::BestKD, NSLOCTEXT("AUTGameMode", "BestKD", "Kill/Death ratio {0}"));
 	HighlightMap.Add(HighlightNames::MostWeaponKills, NSLOCTEXT("AUTGameMode", "MostWeaponKills", "{0} kills with {1}"));
 	HighlightMap.Add(HighlightNames::BestCombo, NSLOCTEXT("AUTGameMode", "BestCombo", "Most Impressive Shock Combo"));
 	HighlightMap.Add(HighlightNames::MostHeadShots, NSLOCTEXT("AUTGameMode", "MostHeadShots", "Most Headshots ({0})"));
@@ -204,15 +204,15 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	HighlightMap.Add(NAME_AirRox, NSLOCTEXT("AUTGameMode", "AirRoxHL", "{0} Air Rocket Kills"));
 	HighlightMap.Add(NAME_FlakShreds, NSLOCTEXT("AUTGameMode", "FlakShredsHL", "{0} Flak Shred Kills"));
 	HighlightMap.Add(NAME_AirSnot, NSLOCTEXT("AUTGameMode", "AirSnotHL", "{0} Air Snot Kills"));
-	HighlightMap.Add(NAME_MultiKillLevel0, NSLOCTEXT("AUTGameMode", "MultiKillLevel0", "Double Kill ({0})"));
-	HighlightMap.Add(NAME_MultiKillLevel1, NSLOCTEXT("AUTGameMode", "MultiKillLevel1", "Multi Kill ({0})"));
-	HighlightMap.Add(NAME_MultiKillLevel2, NSLOCTEXT("AUTGameMode", "MultiKillLevel2", "Ultra Kill ({0})"));
-	HighlightMap.Add(NAME_MultiKillLevel3, NSLOCTEXT("AUTGameMode", "MultiKillLevel3", "Monster Kill ({0})"));
-	HighlightMap.Add(NAME_SpreeKillLevel0, NSLOCTEXT("AUTGameMode", "SpreeKillLevel0", "Killing Spree ({0})"));
-	HighlightMap.Add(NAME_SpreeKillLevel1, NSLOCTEXT("AUTGameMode", "SpreeKillLevel1", "Rampage ({0})"));
-	HighlightMap.Add(NAME_SpreeKillLevel2, NSLOCTEXT("AUTGameMode", "SpreeKillLevel2", "Dominating ({0})"));
-	HighlightMap.Add(NAME_SpreeKillLevel3, NSLOCTEXT("AUTGameMode", "SpreeKillLevel3", "Unstoppable ({0})"));
-	HighlightMap.Add(NAME_SpreeKillLevel4, NSLOCTEXT("AUTGameMode", "SpreeKillLevel4", "Godlike ({0})"));
+	HighlightMap.Add(NAME_MultiKillLevel0, NSLOCTEXT("AUTGameMode", "MultiKillLevel0", "Double Kill X{0}"));
+	HighlightMap.Add(NAME_MultiKillLevel1, NSLOCTEXT("AUTGameMode", "MultiKillLevel1", "Multi Kill X{0}"));
+	HighlightMap.Add(NAME_MultiKillLevel2, NSLOCTEXT("AUTGameMode", "MultiKillLevel2", "Ultra Kill X{0}"));
+	HighlightMap.Add(NAME_MultiKillLevel3, NSLOCTEXT("AUTGameMode", "MultiKillLevel3", "Monster Kill X{0}"));
+	HighlightMap.Add(NAME_SpreeKillLevel0, NSLOCTEXT("AUTGameMode", "SpreeKillLevel0", "Killing Spree X{0}"));
+	HighlightMap.Add(NAME_SpreeKillLevel1, NSLOCTEXT("AUTGameMode", "SpreeKillLevel1", "Rampage X{0}"));
+	HighlightMap.Add(NAME_SpreeKillLevel2, NSLOCTEXT("AUTGameMode", "SpreeKillLevel2", "Dominating X{0}"));
+	HighlightMap.Add(NAME_SpreeKillLevel3, NSLOCTEXT("AUTGameMode", "SpreeKillLevel3", "Unstoppable X{0}"));
+	HighlightMap.Add(NAME_SpreeKillLevel4, NSLOCTEXT("AUTGameMode", "SpreeKillLevel4", "Godlike X{0}"));
 
 	ShortHighlightMap.Add(HighlightNames::TopScorer, NSLOCTEXT("AUTGameMode", "ShortHighlightTopScore", "Top Score overall"));
 	ShortHighlightMap.Add(HighlightNames::TopScorerRed, NSLOCTEXT("AUTGameMode", "ShortHighlightTopScoreRed", "Red Team Top Score"));
@@ -240,8 +240,8 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	ShortHighlightMap.Add(NAME_SpreeKillLevel2, NSLOCTEXT("AUTGameMode", "ShortSpreeKillLevel2", "Dominating"));
 	ShortHighlightMap.Add(NAME_SpreeKillLevel3, NSLOCTEXT("AUTGameMode", "ShortSpreeKillLevel3", "Unstoppable"));
 	ShortHighlightMap.Add(NAME_SpreeKillLevel4, NSLOCTEXT("AUTGameMode", "ShortSpreeKillLevel4", "Godlike"));
-	ShortHighlightMap.Add(HighlightNames::KillsAward, NSLOCTEXT("AUTGameMode", "ShortKillsAward", "{0} Kills"));
-	ShortHighlightMap.Add(HighlightNames::DamageAward, NSLOCTEXT("AUTGameMode", "ShortDamageAward", "{0} Damage Done"));
+	ShortHighlightMap.Add(HighlightNames::KillsAward, NSLOCTEXT("AUTGameMode", "ShortKillsAward", "Kills"));
+	ShortHighlightMap.Add(HighlightNames::DamageAward, NSLOCTEXT("AUTGameMode", "ShortDamageAward", "Damage Done"));
 
 	HighlightPriority.Add(HighlightNames::TopScorer, 10.f);
 	HighlightPriority.Add(HighlightNames::TopScorerRed, 5.f);
@@ -2117,34 +2117,27 @@ void AUTGameState::UpdateHighlights_Implementation()
 				Index--;
 			}
 
-			if (PS->MatchHighlights[0] == NAME_None)
+			if (PS->MatchHighlights[1] == NAME_None)
 			{
+				int32 FirstIndex = (PS->MatchHighlights[0] == NAME_None) ? 0 : 1;
 				if (PS->Kills > 0)
 				{
-					PS->MatchHighlights[0] = HighlightNames::KillsAward;
-					PS->MatchHighlightData[0] = PS->Kills;
+					PS->MatchHighlights[FirstIndex] = HighlightNames::KillsAward;
+					PS->MatchHighlightData[FirstIndex] = PS->Kills;
 					if (PS->DamageDone > 0)
 					{
-						PS->MatchHighlights[1] = HighlightNames::DamageAward;
-						PS->MatchHighlightData[1] = PS->DamageDone;
+						PS->MatchHighlights[FirstIndex+1] = HighlightNames::DamageAward;
+						PS->MatchHighlightData[FirstIndex+1] = PS->DamageDone;
 					}
 				}
 				else if (PS->DamageDone > 0)
 				{
-					PS->MatchHighlights[0] = HighlightNames::DamageAward;
-					PS->MatchHighlightData[0] = PS->DamageDone;
+					PS->MatchHighlights[FirstIndex] = HighlightNames::DamageAward;
+					PS->MatchHighlightData[FirstIndex] = PS->DamageDone;
 				}
 				else
 				{
-					PS->MatchHighlights[0] = HighlightNames::ParticipationAward;
-				}
-			}
-			else if (PS->MatchHighlights[1] == NAME_None)
-			{
-				if (PS->Kills > 0)
-				{
-					PS->MatchHighlights[0] = HighlightNames::KillsAward;
-					PS->MatchHighlightData[0] = PS->Kills;
+					PS->MatchHighlights[FirstIndex] = HighlightNames::ParticipationAward;
 				}
 			}
 		}
@@ -2153,7 +2146,7 @@ void AUTGameState::UpdateHighlights_Implementation()
 
 int32 AUTGameState::NumHighlightsNeeded()
 {
-	return 3;
+	return 4;
 }
 
 void AUTGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
@@ -2171,10 +2164,6 @@ void AUTGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 		if (PS->GetStatsValue(SpreeStatsNames[i]) > 0)
 		{
 			PS->AddMatchHighlight(SpreeStatsNames[i], PS->GetStatsValue(SpreeStatsNames[i]));
-			if (PS->MatchHighlights[3] != NAME_None)
-			{
-				return;
-			}
 			break;
 		}
 	}
@@ -2199,10 +2188,6 @@ void AUTGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 			if (bIsBestOverall)
 			{
 				PS->AddMatchHighlight(HighlightNames::MostWeaponKills, WeaponKills);
-				if (PS->MatchHighlights[3] != NAME_None)
-				{
-					return;
-				}
 			}
 		}
 	}
@@ -2213,10 +2198,6 @@ void AUTGameState::AddMinorHighlights_Implementation(AUTPlayerState* PS)
 		if (PS->GetStatsValue(MultiKillsNames[i]) > 0)
 		{
 			PS->AddMatchHighlight(MultiKillsNames[i], PS->GetStatsValue(MultiKillsNames[i]));
-			if (PS->MatchHighlights[3] != NAME_None)
-			{
-				return;
-			}
 			break;
 		}
 	}
