@@ -334,11 +334,11 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 				{
 					float GlowTime = SummaryTime - XPUpdateStart;
 					float XPSize = XPBarWidth* float(NewXP) / float(LevelXP);
-					DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth, XPBarY + 2.f*RenderScale, XPSize, XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Yellow);
+					DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth, XPBarY + 2.f*RenderScale, FMath::Min(XPSize, XPBarWidth - CurrentXPWidth - 4.f*RenderScale), XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Yellow);
 
 					FLinearColor XPGlow = FLinearColor::Yellow;
 					XPGlow.A = 0.3f;
-					float GlowScale = (GlowTime < 0.1f) ? (1.f + 30.f*GlowTime) : FMath::Max(1.5f, 4.f - 5.f*(GlowTime - 0.1f));
+					float GlowScale = (GlowTime < 0.1f) ? (1.f + 30.f*GlowTime) : FMath::Max(1.f, 4.f - 5.f*(GlowTime - 0.1f));
 					DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth - 0.5f * XPSize * (GlowScale - 1.f), XPBarY + 2.f*RenderScale - 0.5f * XPBarHeight * (GlowScale - 1.f), XPSize * GlowScale, (XPBarHeight*GlowScale) - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 0.2f, XPGlow);
 				}
 
@@ -369,6 +369,7 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 
 			int32 RewardLevelNum = 0;
 			FText RewardText = FText::GetEmpty();
+			UTexture* RewardImage = nullptr;
 			if (Level < LevelUpRewards.Num() - 2)
 			{
 				for (int32 i = OldLevel + 1; i < LevelUpRewards.Num(); i++)
@@ -377,7 +378,11 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 					{
 						RewardLevelNum = i;
 						UUTProfileItem* ProfileItem = LoadObject<UUTProfileItem>(NULL, *LevelUpRewards[i], NULL, LOAD_NoWarn | LOAD_Quiet);
-						RewardText = ProfileItem ? ProfileItem->DisplayName : FText::FromString(LevelUpRewards[i]);
+						if (ProfileItem)
+						{
+							RewardText = ProfileItem->DisplayName;
+							RewardImage = ProfileItem->Image.Texture;
+						}
 						break;
 					}
 				}
@@ -391,20 +396,22 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 					{
 						RewardLevelText = FText::Format(NSLOCTEXT("UTScoreboard", "RewardAchieved", "You unlocked '{NextReward}'!"), Args);
 					}
-					FUTCanvasTextItem RewardLevelTextItem(FVector2D(XPBarX, XPBarY + 3.f*XPBarHeight), RewardLevelText, UTHUDOwner->MediumFont, FLinearColor::White, NULL);
+					FUTCanvasTextItem RewardLevelTextItem(FVector2D(XPBarX + 128.f*RenderScale, XPBarY + 3.f*XPBarHeight), RewardLevelText, UTHUDOwner->MediumFont, FLinearColor::White, NULL);
 					RewardLevelTextItem.Scale = FVector2D(RenderScale, RenderScale);
 					RewardLevelTextItem.BlendMode = SE_BLEND_Translucent;
 					RewardLevelTextItem.EnableShadow(ShadowColor);
 					RewardLevelTextItem.FontRenderInfo = XPTextItem.FontRenderInfo;
 					Canvas->DrawItem(RewardLevelTextItem);
+
+					if (RewardImage)
+					{ 
+						DrawTexture(RewardImage, XPBarX, XPBarY + 3.f*XPBarHeight, 128.f*RenderScale, 128.f*RenderScale, 0, 0, 128, 128, 1.f, FLinearColor::White);
+					}
 				}
 			}
 		}
 	}
 }
-/*
-display reward image - get Mikey to add
-}*/
 
 void UUTScoreboard::GetTitleMessageArgs(FFormatNamedArguments& Args) const
 {
