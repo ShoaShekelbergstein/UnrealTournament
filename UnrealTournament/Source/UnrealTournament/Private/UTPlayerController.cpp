@@ -2893,27 +2893,6 @@ void AUTPlayerController::ClientBackendNotify_Implementation(const FString& Type
 	}
 }
 
-/*void AUTPlayerController::ClientReceiveXP_Implementation(FXPBreakdown GainedXP)
-{
-	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
-	AUTGameMode* Game = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (LP != NULL && LP->IsEarningXP())
-	{
-		LP->AddOnlineXP(GainedXP.Total());
-		LP->SaveProfileSettings();
-
-		//Store the XPBreakdown for the SUTXPBar
-		XPBreakdown = GainedXP;
-	}
-}
-
-void AUTPlayerController::ClientReceiveLevelReward_Implementation(int32 Level, const UUTProfileItem* RewardItem)
-{
-	// Store the reward. The SUTXPBar will display the toast when it triggers a level up
-	LevelRewards.SetNumZeroed(FMath::Max<int32>(LevelRewards.Num(), Level + 1));
-	LevelRewards[Level] = RewardItem;
-}*/
-
 void AUTPlayerController::ShowMenu(const FString& Parameters)
 {
 	ToggleScoreboard(false);

@@ -224,7 +224,7 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 		else
 		{
 			UUTLocalPlayer* LP = UTHUDOwner->UTPlayerOwner ? Cast<UUTLocalPlayer>(UTHUDOwner->UTPlayerOwner->GetLocalPlayer()) : nullptr;
-			if (LP) // && LP->IsEarningXP()
+			if (LP) // && LP->IsEarningXP() FIXMESTEVE
 			{
 				float XPWidth = 0.6 * Canvas->ClipX;
 				float XPHeight = 0.3f * Canvas->ClipY;
@@ -251,20 +251,130 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 				int32 LevelXPEnd = GetXPForLevel(Level + 1);
 				int32 LevelXP = LevelXPEnd - LevelXPStart;
 				int32 DisplayedXP = CurrentXP - LevelXPStart;
-				DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale, XPBarY + 2.f*RenderScale, XPBarWidth*DisplayedXP/LevelXP - 4.f*RenderScale, XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Green);
+				float CurrentXPWidth = XPBarWidth*DisplayedXP / LevelXP - 4.f*RenderScale;
+				DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale, XPBarY + 2.f*RenderScale, CurrentXPWidth, XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Green);
 
-				FUTCanvasTextItem LevelTextItem(FVector2D(XPBarX, XPBarY+XPBarHeight), NSLOCTEXT("UTScoreboard", "Level", "Level {0}"), UTHUDOwner->LargeFont, HighlightTextColor, NULL);
+				FUTCanvasTextItem XPValueItem(FVector2D(XPBarX, XPBarY + 0.75f*XPBarHeight), FText::AsNumber(LevelXPStart), UTHUDOwner->TinyFont, HighlightTextColor, NULL);
+				XPValueItem.Scale = FVector2D(RenderScale, RenderScale);
+				XPValueItem.BlendMode = SE_BLEND_Translucent;
+				XPValueItem.EnableShadow(ShadowColor);
+				XPValueItem.FontRenderInfo = XPTextItem.FontRenderInfo;
+				Canvas->DrawItem(XPValueItem);
+
+				XPValueItem.Text = FText::AsNumber(LevelXPEnd);
+				XPValueItem.Position.X = XPBarX + XPBarWidth;
+				Canvas->DrawItem(XPValueItem);
+
+				FFormatNamedArguments Args;
+				Args.Add("LevelNum", FText::AsNumber(Level));
+				FText LevelText = FText::Format(NSLOCTEXT("UTScoreboard", "Level", "Level {LevelNum}"), Args);
+				FUTCanvasTextItem LevelTextItem(FVector2D(XPBarX, XPBarY+1.5f*XPBarHeight), LevelText, UTHUDOwner->MediumFont, HighlightTextColor, NULL);
 				LevelTextItem.Scale = FVector2D(RenderScale, RenderScale);
 				LevelTextItem.BlendMode = SE_BLEND_Translucent;
 				LevelTextItem.EnableShadow(ShadowColor);
-				LevelTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
+				LevelTextItem.FontRenderInfo = XPTextItem.FontRenderInfo;
 				Canvas->DrawItem(LevelTextItem);
 
+				FXPBreakdown XPBreakdown = UTHUDOwner->UTPlayerOwner->XPBreakdown;
+				int32 NewXP = 28; // XPBreakdown.Total();  FIXMESTEVE
+				DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth, XPBarY + 2.f*RenderScale, XPBarWidth*NewXP / LevelXP - 4.f*RenderScale, XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Yellow);
+
+				// FIXMESTEVE TEMP copied from UpdateBackendContentCommandlet
+				TArray<FString> LevelUpRewards;
+				LevelUpRewards.AddZeroed(51);
+				LevelUpRewards[2] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/BeanieBlack.BeanieBlack"));
+				LevelUpRewards[3] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/Sunglasses.Sunglasses"));
+				LevelUpRewards[4] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/HockeyMask.HockeyMask"));
+				LevelUpRewards[5] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/ThundercrashMale05.ThundercrashMale05"));
+				LevelUpRewards[7] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/NecrisMale01.NecrisMale01"));
+				LevelUpRewards[8] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/ThundercrashMale03.ThundercrashMale03"));
+				LevelUpRewards[10] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/NecrisHelm01.NecrisHelm01"));
+				LevelUpRewards[12] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/ThundercrashBeanieGreen.ThundercrashBeanieGreen"));
+				LevelUpRewards[14] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/HockeyMask02.HockeyMask02"));
+				LevelUpRewards[17] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/ThundercrashMale02.ThundercrashMale02"));
+				LevelUpRewards[20] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/NecrisFemale02.NecrisFemale02"));
+				LevelUpRewards[23] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/BeanieWhite.BeanieWhite"));
+				LevelUpRewards[26] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/NecrisHelm02.NecrisHelm02"));
+				LevelUpRewards[30] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/SkaarjMale01.SkaarjMale01"));
+				LevelUpRewards[34] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/BeanieGrey.BeanieGrey"));
+				LevelUpRewards[39] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/ThundercrashBeanieRed.ThundercrashBeanieRed"));
+				LevelUpRewards[40] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/SkaarjMale02.SkaarjMale02"));
+				LevelUpRewards[45] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/ThundercrashBeret.ThundercrashBeret"));
+				LevelUpRewards[50] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/NecrisMale04.NecrisMale04"));
+
+				int32 RewardLevelNum = 0;
+				FText RewardText = FText::GetEmpty();
+				if (Level < LevelUpRewards.Num() - 2)
+				{
+					for (int32 i = Level + 1; i < LevelUpRewards.Num(); i++)
+					{
+						if (!LevelUpRewards[i].IsEmpty())
+						{
+							RewardLevelNum = i;
+							UUTProfileItem* ProfileItem = LoadObject<UUTProfileItem>(NULL, *LevelUpRewards[i], NULL, LOAD_NoWarn | LOAD_Quiet);
+							RewardText = ProfileItem ? ProfileItem->DisplayName : FText::FromString(LevelUpRewards[i]);
+							break;
+						}
+					}
+
+					if (RewardLevelNum > 0)
+					{
+						FFormatNamedArguments Args;
+						Args.Add("RewardLevelNum", FText::AsNumber(RewardLevelNum));
+						Args.Add("NextReward", RewardText);
+						FText RewardLevelText = FText::Format(NSLOCTEXT("UTScoreboard", "RewardLevel", "Unlock '{NextReward}' when you reach Level {RewardLevelNum}"), Args);
+						FUTCanvasTextItem RewardLevelTextItem(FVector2D(XPBarX, XPBarY + 3.f*XPBarHeight), RewardLevelText, UTHUDOwner->MediumFont, FLinearColor::Yellow, NULL);
+						RewardLevelTextItem.Scale = FVector2D(RenderScale, RenderScale);
+						RewardLevelTextItem.BlendMode = SE_BLEND_Translucent;
+						RewardLevelTextItem.EnableShadow(ShadowColor);
+						RewardLevelTextItem.FontRenderInfo = XPTextItem.FontRenderInfo;
+						Canvas->DrawItem(RewardLevelTextItem);
+						
+					}
+				}
 			}
 		}
 	}
 }
+/*
+full timed with animated new XP, show xp number gained
+level up animation/sound and reward
+display image - get Mikey to add
+icons for highlights
 
+void SUTXPBar::OnLevelUp(int32 NewLevel)
+{
+if (PlayerOwner.IsValid())
+{
+LevelStartTime = PlayerOwner->GetWorld()->TimeSeconds;
+
+AUTPlayerController* UTPC = Cast<AUTPlayerController>(GetPlayerOwner()->PlayerController);
+if (UTPC != nullptr)
+{
+//Play the level up sound
+USoundBase* LevelUpSound = LoadObject<USoundBase>(NULL, TEXT("/Game/RestrictedAssets/Audio/Gameplay/A_Gameplay_CTF_CaptureSound02.A_Gameplay_CTF_CaptureSound02"), NULL, LOAD_NoWarn | LOAD_Quiet);
+if (LevelUpSound != nullptr)
+{
+UTPC->UTClientPlaySound(LevelUpSound);
+}
+
+if (!bItemUnlockToastsProcessed)
+{
+bItemUnlockToastsProcessed = true;
+
+for (int32 i = 0; i < UTPC->LevelRewards.Num(); i++ )
+{
+//show the toast
+if (UTPC->LevelRewards.IsValidIndex(i) && UTPC->LevelRewards[i] != nullptr && PlayerOwner->IsEarningXP())
+{
+PlayerOwner->ShowToast(FText::Format(NSLOCTEXT("UT", "ItemReward", "You earned {0} for reaching level {1}!"), UTPC->LevelRewards[i]->DisplayName, FText::AsNumber(NewLevel)));
+UTPC->LevelRewards[i] = nullptr;
+}
+}
+}
+}
+}
+}*/
 
 void UUTScoreboard::GetTitleMessageArgs(FFormatNamedArguments& Args) const
 {
