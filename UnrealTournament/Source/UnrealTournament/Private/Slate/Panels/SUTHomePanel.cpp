@@ -289,9 +289,7 @@ void SUTHomePanel::BuildAnnouncement()
 TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 {
 
-	FString BuildVersion = FApp::GetBuildVersion();
-	int32 Pos = -1;
-	if (BuildVersion.FindLastChar('-', Pos)) BuildVersion = BuildVersion.Right(BuildVersion.Len() - (Pos + 1));
+	FString BuildVersion = FString::FromInt(FNetworkVersion::GetLocalNetworkVersion());
 
 	TSharedPtr<SOverlay> Final;
 	TSharedPtr<SHorizontalBox> QuickPlayBox;
