@@ -10,7 +10,7 @@
 #include "UTWeap_ImpactHammer.h"
 #include "UTWeap_Translocator.h"
 #include "UTDemoRecSpectator.h"
-#include "UTLineupHelper.h"
+#include "UTLineUpHelper.h"
 #include "UTBot.h"
 
 UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
