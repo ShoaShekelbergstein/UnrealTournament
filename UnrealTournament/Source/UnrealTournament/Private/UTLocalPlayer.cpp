@@ -739,9 +739,9 @@ void UUTLocalPlayer::ShowGameAbandonedDialog()
 }
 #endif
 
-TSharedPtr<class SUTServerBrowserPanel> UUTLocalPlayer::GetServerBrowser()
+TSharedPtr<class SUTServerBrowserPanel> UUTLocalPlayer::GetServerBrowser(bool bCreate)
 {
-	if (!ServerBrowserWidget.IsValid())
+	if (!ServerBrowserWidget.IsValid() && bCreate)
 	{
 		SAssignNew(ServerBrowserWidget, SUTServerBrowserPanel, this);
 	}
@@ -4816,6 +4816,7 @@ void UUTLocalPlayer::OnEnumerateTitleFilesComplete(bool bWasSuccessful)
 		{
 			OnlineTitleFileInterface->ReadFile(GetMCPStorageFilename());
 			OnlineTitleFileInterface->ReadFile(GetOnlineSettingsFilename());
+			OnlineTitleFileInterface->ReadFile(GetMCPAnnouncementFilename());
 		}
 	}
 }
@@ -4896,6 +4897,22 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 		}
 
 		OnRankedPlaylistsChanged.Broadcast();
+	}
+	else if (Filename == GetMCPAnnouncementFilename())
+	{
+		if (bWasSuccessful)
+		{
+			FString JsonString = TEXT("");
+			TArray<uint8> FileContents;
+			OnlineTitleFileInterface->GetFileContents(GetMCPAnnouncementFilename(), FileContents);
+			FileContents.Add(0);
+			JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
+
+			if (JsonString != TEXT(""))
+			{
+				FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &MCPAnnouncements, 0, 0);
+			}
+		}
 	}
 }
 
@@ -6027,6 +6044,13 @@ void UUTLocalPlayer::SocialInitialized()
 
 	PushChallengeStarsToMCP();
 	LoginPhase = ELoginPhase::LoggedIn;
+
+	// If we are logged in and this is a menu game, try to preload the server browser
+	if (!ServerBrowserWidget.IsValid() && IsMenuGame())
+	{
+		GetServerBrowser();
+	}
+
 }
 
 void UUTLocalPlayer::PushChallengeStarsToMCP()

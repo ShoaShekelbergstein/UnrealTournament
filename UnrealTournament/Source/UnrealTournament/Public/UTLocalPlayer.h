@@ -249,7 +249,7 @@ public:
 	/** utilities for opening and closing dialogs */
 	virtual void OpenDialog(TSharedRef<class SUTDialogBase> Dialog, int32 ZOrder = 255);
 	virtual void CloseDialog(TSharedRef<class SUTDialogBase> Dialog);
-	TSharedPtr<class SUTServerBrowserPanel> GetServerBrowser();
+	TSharedPtr<class SUTServerBrowserPanel> GetServerBrowser(bool Create = true);
 	TSharedPtr<class SUTReplayBrowserPanel> GetReplayBrowser();
 	TSharedPtr<class SUTStatsViewerPanel> GetStatsViewer();
 	TSharedPtr<class SUTCreditsPanel> GetCreditsPanel();
@@ -1029,6 +1029,11 @@ public:
 		return MCPStorageFilename;
 	}
 
+	static const FString& GetMCPAnnouncementFilename()
+	{
+		const static FString MCPAnnouncementFilename = "UnrealTournmentMCPAnnouncement.json";
+		return MCPAnnouncementFilename;
+	}
 
 	static const FString& GetOnlineSettingsFilename()
 	{
@@ -1346,7 +1351,7 @@ protected:
 
 	FTimerHandle BrowerCheckHandle;
 	void CheckIfBrowserisDone();
-
+		
 public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
 	void CloseSavingWidget();
@@ -1371,6 +1376,9 @@ public:
 	 *  the player card is updated.
 	 **/
 	virtual void PushChallengeStarsToMCP();
+
+	// Holds a list of pending announcements from the MCP.
+	FMCPAnnouncementBlob MCPAnnouncements;
 
 };
 

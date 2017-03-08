@@ -649,6 +649,8 @@ public:
 
 	virtual void SetBrowserState(FName NewBrowserState);
 
+	virtual void RefreshServers();
+
 private:
 
 	virtual void ConstructPanel(FVector2D ViewportSize);	
@@ -713,7 +715,6 @@ protected:
 	TSharedRef<ITableRow> OnGenerateWidgetForHUBList(TSharedPtr<FServerData> InItem, const TSharedRef<STableViewBase>& OwnerTable );
 
 	virtual FReply OnRefreshClick();
-	virtual void RefreshServers();
 
 	void OnFindSessionsComplete(bool bWasSuccessful);
 	void OnFindLANSessionsComplete(bool bWasSuccessful);
@@ -723,7 +724,6 @@ protected:
 	virtual void OnListMouseButtonDoubleClick(TSharedPtr<FServerData> SelectedServer);
 	virtual void OnSort(EColumnSortPriority::Type, const FName&, EColumnSortMode::Type);
 	virtual FReply OnJoinClick(bool bSpectate);
-	virtual void ConnectTo(FServerData ServerData,bool bSpectate);
 
 	virtual void OnRuleSort(EColumnSortPriority::Type, const FName&, EColumnSortMode::Type);
 	virtual void OnPlayerSort(EColumnSortPriority::Type, const FName&, EColumnSortMode::Type);
@@ -873,7 +873,12 @@ protected:
 	void OnCancelComplete(bool bSuccessful);
 	FDelegateHandle OnCancelHandle;
 
+
+public:
 	void SearchForLanServers();
+	int32 GetLanServerList(TArray<TSharedPtr<FServerData>>* outServerList);
+	virtual void ConnectTo(FServerData ServerData,bool bSpectate);
+
 
 };
 

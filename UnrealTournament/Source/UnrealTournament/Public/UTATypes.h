@@ -2360,5 +2360,54 @@ struct FBanInfo
 
 };
 
+USTRUCT()
+struct FMCPAnnouncement
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	FString Title;
+
+
+	UPROPERTY()
+	FDateTime StartDate;
+	
+	UPROPERTY()
+	FDateTime EndDate;
+
+	UPROPERTY()
+	FString AnnouncementURL;
+
+	UPROPERTY()
+	float MinHeight;
+
+	FMCPAnnouncement()
+		: Title(TEXT(""))
+		, StartDate(FDateTime::Now())
+		, EndDate(FDateTime::Now())
+		, AnnouncementURL(TEXT(""))
+		, MinHeight(240)
+	{
+	}
+
+	FMCPAnnouncement(FDateTime inStartDate, FDateTime inEndDate, const FString& inURL)
+		:  Title(TEXT(""))
+		, StartDate(inStartDate)
+		, EndDate(inEndDate)
+		, AnnouncementURL(inURL)
+		, MinHeight(240)
+	{
+	}
+
+};
+
+USTRUCT()
+struct FMCPAnnouncementBlob
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	TArray<FMCPAnnouncement> Announcements;	
+};
 
 

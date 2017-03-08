@@ -1,4 +1,3 @@
-
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #include "UnrealTournament.h"
@@ -16,6 +15,7 @@
 #include "UTGameInstance.h"
 #include "BlueprintContextLibrary.h"
 #include "MatchmakingContext.h"
+#include "SUTServerBrowserPanel.h"
 
 
 #if !UE_SERVER
@@ -40,12 +40,14 @@ void SUTHomePanel::ConstructPanel(FVector2D ViewportSize)
 	];
 
 	AnnouncmentTimer = 3.0;
-
 }
 
 void SUTHomePanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
 {
 	SUTPanelBase::OnShowPanel(inParentWindow);
+
+	CheckForLanServers();
+	PlayerOwner->GetWorld()->GetTimerManager().SetTimer(LanTimerHandle, FTimerDelegate::CreateSP(this, &SUTHomePanel::CheckForLanServers), 30.0f, true);
 
 	if (AnimWidget.IsValid())
 	{
@@ -79,7 +81,132 @@ void SUTHomePanel::Tick( const FGeometry& AllottedGeometry, const double InCurre
 			NewChallengeImage->SetRenderTransform(FSlateRenderTransform(Scale));
 		}
 	}
+}
 
+void SUTHomePanel::CheckForLanServers()
+{
+	TSharedPtr<SUTServerBrowserPanel> Browser = PlayerOwner->GetServerBrowser();
+	if (Browser.IsValid())
+	{
+		TArray<TSharedPtr<FServerData>> LanServers;
+		if (Browser->GetLanServerList(&LanServers) != LanMatches.Num())
+		{
+			LanBox->ClearChildren();		
+			LanMatches.Empty();
+
+			for (int32 i = 0; i < LanServers.Num(); i++)
+			{
+				FText ServerName = LanServers[i]->GetBrowserName();
+				FText ServerInfo = FText::Format(NSLOCTEXT("SUTHomePanel","LanServerFormat","Game: {0}  Map: {1}   # Players: {2}   # Friends: {3}"),
+												 LanServers[i]->GetBrowserGameMode(),
+												 LanServers[i]->GetBrowserMapName(),
+												 LanServers[i]->GetBrowserNumPlayers(),
+												 LanServers[i]->GetBrowserNumFriends());
+				LanMatches.Add(LanServers[i]);
+				LanBox->AddSlot().AutoHeight()
+				[
+
+					SNew(SVerticalBox)
+					+SVerticalBox::Slot().AutoHeight().Padding(0.0f,10.0f,0.0f,0.0f)
+					[
+						SNew(SBorder)
+						.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.SuperDark"))
+						.ColorAndOpacity(this, &SUTHomePanel::GetFadeColor)
+						.BorderBackgroundColor(this, &SUTHomePanel::GetFadeBKColor)
+						.HAlign(HAlign_Right)
+						[
+							SNew(STextBlock)
+							.Text(NSLOCTEXT("SUTHomePanel","LanServerTitle","...Found a LAN Server"))
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tiny.Bold")
+							.ColorAndOpacity(FLinearColor::Yellow)
+						]
+					]
+					+SVerticalBox::Slot().AutoHeight()
+					[
+						SNew(SBorder)
+						.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Dark"))
+						.ColorAndOpacity(this, &SUTHomePanel::GetFadeColor)
+						.BorderBackgroundColor(this, &SUTHomePanel::GetFadeBKColor)
+						[
+							SNew(SHorizontalBox)
+							+SHorizontalBox::Slot().AutoWidth()
+							[
+								SNew(SBox).WidthOverride(940)
+								[
+									SNew(SHorizontalBox)
+									+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+									[
+										SNew(SVerticalBox)
+										+SVerticalBox::Slot().AutoHeight()
+										[
+											SNew(SUTImage)
+											.WidthOverride(90)
+											.HeightOverride(64)
+											.Image(SUTStyle::Get().GetBrush("UT.Icon.Lan.Big"))
+										]
+									]
+									+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+									[
+										SNew(SBox).WidthOverride(115).HeightOverride(86)
+										[
+											SNew(SUTButton)
+											.ButtonStyle(SUTStyle::Get(),"UT.ClearButton")
+											[
+												SNew(SVerticalBox)
+												+SVerticalBox::Slot()
+												.Padding(0.0,4.0,0.0,0.0)
+												.AutoHeight()
+												[
+													SNew(SUTButton)
+													.ButtonStyle(SUTStyle::Get(),"UT.SimpleButton.Medium")
+													.Text(NSLOCTEXT("SUTMatchPanel","JoinText","JOIN"))
+													.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
+													.CaptionHAlign(HAlign_Center)
+													.OnClicked(this, &SUTHomePanel::OnJoinLanClicked, LanServers[i])
+													//.IsEnabled(TAttribute<bool>::Create(TAttribute<bool>::FGetter::CreateSP(InItem.Get(), &FTrackedMatch::CanJoin, PlayerOwner)))
+												]
+												+SVerticalBox::Slot()
+												.Padding(0.0,10.0,0.0,0.0)
+												.AutoHeight()
+												[
+													SNew(SUTButton)
+													.ButtonStyle(SUTStyle::Get(),"UT.SimpleButton.Medium")
+													.Text(NSLOCTEXT("SUTMatchPanel","SpectateText","SPECTATE"))
+													.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
+													.CaptionHAlign(HAlign_Center)
+													.OnClicked(this, &SUTHomePanel::OnSpectateLanClicked, LanServers[i])
+													//.IsEnabled(TAttribute<bool>::Create(TAttribute<bool>::FGetter::CreateSP(InItem.Get(), &FTrackedMatch::CanSpectate, PlayerOwner)))
+												]
+											]
+										]
+									]
+									+SHorizontalBox::Slot().FillWidth(1.0)
+									[
+										SNew(SVerticalBox)
+										+SVerticalBox::Slot().AutoHeight()
+										[
+											SNew(STextBlock)
+											.Text(ServerName)
+											.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+											.ColorAndOpacity(FLinearColor(1.0f, 0.412f, 0.027f, 1.0f))
+										]
+										+SVerticalBox::Slot().AutoHeight()
+										[									
+											SNew(STextBlock)
+											.Text(ServerInfo)
+											.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tiny")
+										]
+									]
+
+								]
+							]
+						]
+					]
+				];
+			
+			}
+		}
+	}
 }
 
 FLinearColor SUTHomePanel::GetFadeColor() const
@@ -105,102 +232,59 @@ void SUTHomePanel::BuildAnnouncement()
 	int32 Year = 0;
 
 	FDateTime Now = FDateTime::UtcNow();
-	Now.GetDate(Year, Month, Day);
+	AnnouncmentFadeTimer = 0.8;
 
-	if (Year == 2015 && Month <= 9 && Day <= 19)
+	if (PlayerOwner->MCPAnnouncements.Announcements.Num() > 0)
 	{
-		AnnouncmentFadeTimer = 0.8;
-
-		AnnouncementBox->AddSlot().FillHeight(1.0)
-		[
-			SNew(SCanvas)
-		];
-
-		AnnouncementBox->AddSlot().AutoHeight()
-		[
-			SNew(SBorder)
-			.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Dark"))
-			.ColorAndOpacity(this, &SUTHomePanel::GetFadeColor)
-			.BorderBackgroundColor(this, &SUTHomePanel::GetFadeBKColor)
-			[
-				SAssignNew(SlotBox,SVerticalBox)
-				+SVerticalBox::Slot()
-				.Padding(5.0,5.0,5.0,5.0)
-				.AutoHeight()
-				[
-					SNew(SRichTextBlock)
-					.Text(NSLOCTEXT("CTFExhibition", "CTFExhibitionMessage", "Join us Saturday <UT.Font.Notice.Gold>September 19th</> for our <UT.Font.Notice.Gold>CTF Exhibition tournament</> featuring top players from around the world!  We will be streaming LIVE on Twitch and YouTube starting at <UT.Font.Notice.Gold>1 PM EST</>. Watch for a chance to <UT.Font.Notice.Gold>win fantastic prizes</> donated by NVIDIA, Corsair, Logitech and more!"))	
-					.TextStyle(SUTStyle::Get(), "UT.Font.Notice")
-					.DecoratorStyleSet(&SUTStyle::Get())
-					.AutoWrapText(true)
-				]
-			]
-		];
-
-		int32 Hour = Now.GetHour();
-		if (Year == 2015 && Month == 9 && Day == 19 && Hour >= 3 && Hour <= 21)
+		for (int32 i=0; i < PlayerOwner->MCPAnnouncements.Announcements.Num(); i++)
 		{
-			SlotBox->AddSlot()
-			.Padding(0.0,0.0,0.0,5.0)
-			.HAlign(HAlign_Right)
-			.AutoHeight()
-			[
-				SNew(SHorizontalBox)
 
-				+SHorizontalBox::Slot()
-				.AutoWidth()
-				.Padding(10.0,5.0,21.0,5.0)
-				.HAlign(HAlign_Right)
+			FDateTime Start = PlayerOwner->MCPAnnouncements.Announcements[i].StartDate;
+			FDateTime End = PlayerOwner->MCPAnnouncements.Announcements[i].EndDate;
+
+			if ( Now >= Start && Now <= End)
+			{
+				AnnouncementBox->AddSlot().AutoHeight().Padding(0.0f,10.0f,0.0f,0.0f)
 				[
-					SNew(SVerticalBox)
-					+SVerticalBox::Slot()
-					.VAlign(VAlign_Center)
-					.AutoHeight()
+					SNew(SBorder)
+					.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.SuperDark"))
+					.ColorAndOpacity(this, &SUTHomePanel::GetFadeColor)
+					.BorderBackgroundColor(this, &SUTHomePanel::GetFadeBKColor)
+					.HAlign(HAlign_Right)
 					[
-						SNew(SButton)
-						.ButtonStyle(SUTStyle::Get(),"UT.SimpleButton")
-						.OnClicked(this, &SUTHomePanel::ViewTournament,0)
-						.ContentPadding(FMargin(32.0,5.0,32.0,5.0))
+						SNew(STextBlock)
+						.Text(FText::FromString(PlayerOwner->MCPAnnouncements.Announcements[i].Title))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tiny.Bold")
+						.ColorAndOpacity(FLinearColor::Yellow)
+					]
+				];
+
+				AnnouncementBox->AddSlot().AutoHeight().Padding(0.0f,0.0f,0.0f,0.0f)
+				[
+					SNew(SBorder)
+					.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Dark"))
+					.ColorAndOpacity(this, &SUTHomePanel::GetFadeColor)
+					.BorderBackgroundColor(this, &SUTHomePanel::GetFadeBKColor)
+					[
+						SAssignNew(SlotBox,SVerticalBox)
+						+SVerticalBox::Slot()
+						.Padding(5.0,5.0,5.0,5.0)
+						.AutoHeight()
 						[
-							SNew(STextBlock)
-							.Text(NSLOCTEXT("CTFExhibition", "CTFExhibitionWatchOnYouTube", "Watch on Youtube"))
-							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
+							SNew(SBox).HeightOverride(PlayerOwner->MCPAnnouncements.Announcements[i].MinHeight)
+							[
+								SNew(SUTWebBrowserPanel, PlayerOwner)
+								.InitialURL(PlayerOwner->MCPAnnouncements.Announcements[i].AnnouncementURL)
+								.ShowControls(false)
+							]	
 						]
 					]
-				]
-				+SHorizontalBox::Slot()
-				.AutoWidth()
-				.Padding(10.0,5.0,21.0,5.0)
-				.HAlign(HAlign_Right)
-				[
-					SNew(SVerticalBox)
-					+SVerticalBox::Slot()
-					.VAlign(VAlign_Center)
-					.AutoHeight()
-					[
-						SNew(SButton) 
-						.ButtonStyle(SUTStyle::Get(),"UT.SimpleButton")
-						.OnClicked(this, &SUTHomePanel::ViewTournament,1)
-						.ContentPadding(FMargin(32.0,5.0,32.0,5.0))
-						[
-							SNew(STextBlock)
-							.Text(NSLOCTEXT("CTFExhibition", "CTFExhibitionWatchOnTwitch", "Watch on Twitch"))
-							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
-						]
-					]
-				]
-			];
+				];
+			}
 		}
 	}
 }
 
-FReply SUTHomePanel::ViewTournament(int32 Which)
-{
-	FString Error;
-	if (Which == 0) FPlatformProcess::LaunchURL(TEXT("https://gaming.youtube.com/unrealtournament"), NULL, &Error);
-	if (Which == 1) FPlatformProcess::LaunchURL(TEXT("http://www.twitch.tv/unrealtournament"), NULL, &Error);
-	return FReply::Handled();
-}
 
 TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 {
@@ -216,20 +300,35 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 
 		// Announcement box
 		+SOverlay::Slot()
-		.Padding(920.0,32.0,0.0,0.0)
+		.Padding(920.0,0.0,0.0,32.0)
+		.VAlign(VAlign_Bottom)
 		[
 			SNew(SVerticalBox)
 			+SVerticalBox::Slot()
-
 			.AutoHeight()
+			.VAlign(VAlign_Bottom)
 			[
 				SNew(SHorizontalBox)
 				+SHorizontalBox::Slot()
 				.AutoWidth()
 				[
-					SNew(SBox).WidthOverride(940).HeightOverride(940)
+					SNew(SBox).WidthOverride(940)
 					[
 						SAssignNew(AnnouncementBox, SVerticalBox)
+					]
+				]
+			]
+			+SVerticalBox::Slot().AutoHeight()
+			.AutoHeight()
+			.VAlign(VAlign_Bottom)
+			[
+				SNew(SHorizontalBox)
+				+SHorizontalBox::Slot()
+				.AutoWidth()
+				[
+					SNew(SBox).WidthOverride(940)
+					[
+						SAssignNew(LanBox, SVerticalBox)
 					]
 				]
 			]
@@ -651,6 +750,10 @@ FSlateColor SUTHomePanel::GetFragCenterWatchNowColorAndOpacity() const
 
 void SUTHomePanel::OnHidePanel()
 {
+
+	PlayerOwner->GetWorld()->GetTimerManager().ClearTimer(LanTimerHandle);
+
+
 	bClosing = true;
 	if (AnimWidget.IsValid())
 	{
@@ -826,6 +929,29 @@ FReply SUTHomePanel::OnStartRankedPlaylist(int32 PlaylistId)
 	return FReply::Handled();
 }
 
+
+FReply SUTHomePanel::OnJoinLanClicked(TSharedPtr<FServerData> Server)
+{
+	TSharedPtr<SUTServerBrowserPanel> Browser = PlayerOwner->GetServerBrowser(false);
+	if (Browser.IsValid() && Server.IsValid())
+	{
+		Browser->ConnectTo(*Server, false);	
+	}
+
+	return FReply::Handled();
+}
+
+FReply SUTHomePanel::OnSpectateLanClicked(TSharedPtr<FServerData> Server)
+{
+	TSharedPtr<SUTServerBrowserPanel> Browser = PlayerOwner->GetServerBrowser(false);
+	if (Browser.IsValid() && Server.IsValid())
+	{
+		Browser->ConnectTo(*Server, true);	
+	}
+
+	return FReply::Handled();
+
+}
 
 
 #endif
