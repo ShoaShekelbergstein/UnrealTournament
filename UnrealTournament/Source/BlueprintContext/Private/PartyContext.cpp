@@ -104,12 +104,6 @@ void UPartyContext::HandlePartyJoined(UPartyGameState* PartyState)
 				{
 					LocalPlayer->ReturnToMainMenu();
 				}
-				else if (LocalPlayer->GetWorld()->GetGameState() && 
-					     LocalPlayer->GetWorld()->GetGameState()->GameModeClass &&
-						 LocalPlayer->GetWorld()->GetGameState()->GameModeClass->IsChildOf(AUTLobbyGameMode::StaticClass()))
-				{
-					LocalPlayer->ReturnToMainMenu();
-				}
 			}
 		}
 	}
