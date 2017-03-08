@@ -694,22 +694,29 @@ public:
 	/**
 	 *	returns true if a given umg widget is active on the stack
 	 **/
-
-	bool IsUMGWidgetActive(TWeakObjectPtr<UUTUMGHudWidget> TestWidget);
+	UFUNCTION(BlueprintCallable, Category=UMG)
+	bool IsUMGWidgetActive(UUTUMGHudWidget* TestWidget);
 
 	/**
 	 *	Activate a UMG HUD widget and display it over the HUD
 	 **/
-	virtual TWeakObjectPtr<class UUTUMGHudWidget> ActivateUMGHudWidget(FString UMGHudWidgetClassName, bool bUnique = true);
-	virtual void ActivateActualUMGHudWidget(TWeakObjectPtr<UUTUMGHudWidget> WidgetToActivate);
+	UFUNCTION(BlueprintCallable, Category=UMG)
+	virtual UUTUMGHudWidget* ActivateUMGHudWidget(FString UMGHudWidgetClassName, bool bUnique = true);
+
+	UFUNCTION(BlueprintCallable, Category=UMG)
+	virtual void ActivateActualUMGHudWidget(UUTUMGHudWidget* WidgetToActivate);
 
 	/**
 	 *	Deactivates a UMG HUD widget that is already active
 	 **/
+	UFUNCTION(BlueprintCallable, Category=UMG)
 	virtual void DeactivateUMGHudWidget(FString UMGHudWidgetClassName);
-	virtual void DeactivateActualUMGHudWidget(TWeakObjectPtr<UUTUMGHudWidget> WidgetToDeactivate);
+
+	UFUNCTION(BlueprintCallable, Category=UMG)
+	virtual void DeactivateActualUMGHudWidget(UUTUMGHudWidget* WidgetToDeactivate);
 
 	/**/
+	UFUNCTION(BlueprintCallable, Category=UMG)
 	virtual void ClearAllUMGWidgets();
 
 	/**
@@ -729,13 +736,20 @@ public:
 	virtual void AddHUDImpulse(FVector2D NewImpulse);
 
 	UPROPERTY()
-		FVector2D TargetHUDImpulse;
+	FVector2D TargetHUDImpulse;
 
 	UPROPERTY()
-		FVector2D CurrentHUDImpulse;
+	FVector2D CurrentHUDImpulse;
+
 
 protected:
-	TArray<TWeakObjectPtr<UUTUMGHudWidget>> UMGHudWidgetStack;
+	// Called when the first frame is rendered
+	UFUNCTION(BlueprintNativeEvent, Category = UMG)
+	void BeforeFirstFrame();
+	
+	bool bFirstRender;
+
+	TArray<UUTUMGHudWidget*> UMGHudWidgetStack;
 
 	UFUNCTION()
 	virtual void ShowUTMenu();

@@ -194,6 +194,9 @@ bool AUTHUD::VerifyProfileSettings()
 
 void AUTHUD::BeginPlay()
 {
+
+	bFirstRender = true;
+
 	Super::BeginPlay();
 
 	// Parse the widgets found in the ini
@@ -708,8 +711,18 @@ bool AUTHUD::ScoreboardIsUp()
 	return bShowScores || bPreMatchScoreBoard || bForceScores || bShowScoresWhileDead;
 }
 
+void AUTHUD::BeforeFirstFrame_Implementation()
+{
+}
+
 void AUTHUD::DrawHUD()
 {
+	if (bFirstRender)
+	{
+		BeforeFirstFrame();
+		bFirstRender = false;
+	}
+
 	// FIXMESTEVE need to be reading animated values ASAP
 	float DeltaMag = RenderDelta * 4.f;
 	bool bTargetXWasGreater = (TargetHUDImpulse.X > CurrentHUDImpulse.X);
@@ -1987,10 +2000,9 @@ void AUTHUD::ToggleWeaponWheel(bool bShow)
 	}
 }
 
-TWeakObjectPtr<class UUTUMGHudWidget> AUTHUD::ActivateUMGHudWidget(FString UMGHudWidgetClassName, bool bUnique)
+UUTUMGHudWidget* AUTHUD::ActivateUMGHudWidget(FString UMGHudWidgetClassName, bool bUnique)
 {
-	TWeakObjectPtr<class UUTUMGHudWidget> FinalUMGWidget;
-	FinalUMGWidget.Reset();
+	UUTUMGHudWidget* FinalUMGWidget = nullptr;
 
 	if ( !UMGHudWidgetClassName.IsEmpty() ) 
 	{
@@ -2004,7 +2016,7 @@ TWeakObjectPtr<class UUTUMGHudWidget> AUTHUD::ActivateUMGHudWidget(FString UMGHu
 			{
 				for (int32 i=0; i < UMGHudWidgetStack.Num(); i++)
 				{
-					if (UMGHudWidgetStack[i].IsValid() && UMGHudWidgetStack[i]->GetClass() == UMGWidgetClass)
+					if (UMGHudWidgetStack[i] != nullptr && UMGHudWidgetStack[i]->GetClass() == UMGWidgetClass)
 					{
 						return FinalUMGWidget;
 					}
@@ -2012,7 +2024,7 @@ TWeakObjectPtr<class UUTUMGHudWidget> AUTHUD::ActivateUMGHudWidget(FString UMGHu
 			}
 
 			FinalUMGWidget = CreateWidget<UUTUMGHudWidget>(UTPlayerOwner, UMGWidgetClass);
-			if (FinalUMGWidget.IsValid())
+			if (FinalUMGWidget != nullptr)
 			{
 				ActivateActualUMGHudWidget(FinalUMGWidget);
 			}
@@ -2025,11 +2037,11 @@ TWeakObjectPtr<class UUTUMGHudWidget> AUTHUD::ActivateUMGHudWidget(FString UMGHu
 	return FinalUMGWidget;
 }
 
-bool AUTHUD::IsUMGWidgetActive(TWeakObjectPtr<UUTUMGHudWidget> TestWidget)
+bool AUTHUD::IsUMGWidgetActive(UUTUMGHudWidget* TestWidget)
 {
 	for (int i = 0; i < UMGHudWidgetStack.Num(); i++)
 	{
-		if (UMGHudWidgetStack[i].Get() == TestWidget.Get())
+		if (UMGHudWidgetStack[i] == TestWidget)
 		{
 			return true;
 		}
@@ -2038,14 +2050,14 @@ bool AUTHUD::IsUMGWidgetActive(TWeakObjectPtr<UUTUMGHudWidget> TestWidget)
 	return false;
 }
 
-void AUTHUD::ActivateActualUMGHudWidget(TWeakObjectPtr<UUTUMGHudWidget> WidgetToActivate)
+void AUTHUD::ActivateActualUMGHudWidget(UUTUMGHudWidget* WidgetToActivate)
 {
 	UMGHudWidgetStack.Add(WidgetToActivate);
 	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;	
 	if (UTLP != nullptr)
 	{
 		WidgetToActivate->AssociateHUD(this);
-		UTLP->OpenExistingUMGWidget(WidgetToActivate.Get());
+		UTLP->OpenExistingUMGWidget(WidgetToActivate);
 	}
 }
 
@@ -2058,7 +2070,7 @@ void AUTHUD::DeactivateUMGHudWidget(FString UMGHudWidgetClassName)
 		// Look to see if there is a widget in the stack that matches this class.  And if so then exit.
 		for (int32 i=0; i < UMGHudWidgetStack.Num(); i++)
 		{
-			if (UMGHudWidgetStack[i].IsValid() && UMGHudWidgetStack[i]->GetClass() == UMGWidgetClass)
+			if (UMGHudWidgetStack[i] != nullptr && UMGHudWidgetStack[i]->GetClass() == UMGWidgetClass)
 			{
 				DeactivateActualUMGHudWidget(UMGHudWidgetStack[i]);
 			}
@@ -2066,12 +2078,12 @@ void AUTHUD::DeactivateUMGHudWidget(FString UMGHudWidgetClassName)
 	}
 }
 
-void AUTHUD::DeactivateActualUMGHudWidget(TWeakObjectPtr<UUTUMGHudWidget> WidgetToDeactivate)
+void AUTHUD::DeactivateActualUMGHudWidget(UUTUMGHudWidget* WidgetToDeactivate)
 {
 	UUTLocalPlayer* UTLP = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;	
 	if (UTLP != nullptr)
 	{
-		UTLP->CloseUMGWidget(WidgetToDeactivate.Get());
+		UTLP->CloseUMGWidget(WidgetToDeactivate);
 	}
 	UMGHudWidgetStack.Remove(WidgetToDeactivate);
 }

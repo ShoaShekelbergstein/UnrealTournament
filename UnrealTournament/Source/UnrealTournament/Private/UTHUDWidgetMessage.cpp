@@ -95,7 +95,7 @@ void UUTHUDWidgetMessage::AgeMessages_Implementation(float DeltaTime)
 			// If this queue message has an UMG widget, clear it too
 			if (MessageQueue[QueueIndex].UMGWidget.IsValid())
 			{
-				UTHUDOwner->DeactivateActualUMGHudWidget(MessageQueue[QueueIndex].UMGWidget);
+				UTHUDOwner->DeactivateActualUMGHudWidget(MessageQueue[QueueIndex].UMGWidget.Get());
 				MessageQueue[QueueIndex].UMGWidget.Reset();
 			}
 				
@@ -274,7 +274,7 @@ void UUTHUDWidgetMessage::AddMessage(int32 QueueIndex, TSubclassOf<class UUTLoca
 	bool bHadToClear = false;
 	if (MessageQueue[QueueIndex].UMGWidget.IsValid())
 	{
-		UTHUDOwner->DeactivateActualUMGHudWidget(MessageQueue[QueueIndex].UMGWidget);
+		UTHUDOwner->DeactivateActualUMGHudWidget(MessageQueue[QueueIndex].UMGWidget.Get());
 		MessageQueue[QueueIndex].UMGWidget.Reset();
 		bHadToClear = true;
 	}
