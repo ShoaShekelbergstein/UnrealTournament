@@ -1139,7 +1139,11 @@ void AUTCarriedObject::PlayAlarm()
 	if (GV && GV->bIsDefenderBase && GV->AlarmSound && (!GetWorld()->GetTimerManager().IsTimerActive(AlarmHandle) || (GetWorld()->GetTimerManager().GetTimerRemaining(AlarmHandle) < 1.f)))
 	{
 		// play alarm
-		UUTGameplayStatics::UTPlaySound(GetWorld(), GV->AlarmSound, HoldingPawn, SRT_All, false, FVector::ZeroVector, NULL, NULL, false);
-		GetWorld()->GetTimerManager().SetTimer(AlarmHandle, this, &AUTCarriedObject::PlayAlarm, 4.f, false);
+		AUTCTFRoundGameState* RCTFGameState = GetWorld()->GetGameState<AUTCTFRoundGameState>();
+		if (RCTFGameState && !RCTFGameState->IsMatchIntermission() && RCTFGameState->IsMatchInProgress())
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), GV->AlarmSound, HoldingPawn, SRT_All, false, FVector::ZeroVector, NULL, NULL, false);
+			GetWorld()->GetTimerManager().SetTimer(AlarmHandle, this, &AUTCarriedObject::PlayAlarm, 4.f, false);
+		}
 	}
 }
