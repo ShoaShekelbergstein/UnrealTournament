@@ -14,36 +14,7 @@ AUTPickupToken::AUTPickupToken(const FObjectInitializer& ObjectInitializer) : Su
 	bIsPickedUp = false;
 }
 
-void AUTPickupToken::PostLoad()
-{
-	Super::PostLoad();
-
-	if (TokenUniqueID == NAME_None)
-	{
-		TokenUniqueID = FName(*FGuid::NewGuid().ToString());
-	}
-}
-
 #if WITH_EDITOR
-void AUTPickupToken::PostActorCreated()
-{
-	Super::PostActorCreated();
-
-	if (TokenUniqueID == NAME_None)
-	{
-		TokenUniqueID = FName(*FGuid::NewGuid().ToString());
-	}
-}
-
-void AUTPickupToken::PostDuplicate(bool bDuplicateForPIE)
-{
-	Super::PostDuplicate(bDuplicateForPIE);
-
-	if (!bDuplicateForPIE)
-	{
-		TokenUniqueID = FName(*FGuid::NewGuid().ToString());
-	}
-}
 
 void AUTPickupToken::CheckForErrors()
 {

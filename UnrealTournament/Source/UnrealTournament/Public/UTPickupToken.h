@@ -7,12 +7,8 @@ UCLASS(Blueprintable, Abstract)
 class UNREALTOURNAMENT_API AUTPickupToken : public AActor
 {
 	GENERATED_UCLASS_BODY()
-
-	virtual void PostLoad() override;
-
+		
 #if WITH_EDITOR
-	virtual void PostActorCreated() override;
-	virtual void PostDuplicate(bool bDuplicateForPIE) override;
 	virtual void CheckForErrors() override;
 #endif
 
