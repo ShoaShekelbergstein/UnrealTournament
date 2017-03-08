@@ -102,6 +102,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Scoreboard")
 		USoundBase* ScoreUpdateSound;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Scoreboard")
+		USoundBase* XPGainedSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Scoreboard")
+		USoundBase* LevelUpSound;
+
 	UPROPERTY()
 		float ScaledEdgeSize;
 
