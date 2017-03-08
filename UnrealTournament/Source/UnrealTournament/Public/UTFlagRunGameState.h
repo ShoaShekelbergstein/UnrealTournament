@@ -151,7 +151,7 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 
 	virtual void UpdateRoundHighlights() override;
 
-	virtual void AddMinorRoundHighlights();
+	virtual void AddMinorRoundHighlights(AUTPlayerState* PS);
 
 	virtual int32 NumHighlightsNeeded() override;
 

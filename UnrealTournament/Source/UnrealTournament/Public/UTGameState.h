@@ -534,7 +534,7 @@ public:
 		virtual bool PreventWeaponFire();
 
 	virtual void UpdateMatchHighlights();
-	virtual void UpdateRoundhHighlights();
+	virtual void UpdateRoundHighlights();
 
 	/** On server side - generate a list of highlights for each player.  Every UTPlayerStates' MatchHighlights array will have been cleared when this is called. */
 	UFUNCTION(BlueprintNativeEvent, Category = "Game")
