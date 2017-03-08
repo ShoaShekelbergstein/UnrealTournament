@@ -12,6 +12,7 @@
 #include "UTDemoRecSpectator.h"
 #include "UTLineUpHelper.h"
 #include "UTBot.h"
+#include "UTLocalPlayer.h"
 
 UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -215,24 +216,55 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 			}
 			// draw in box
 			float BoxScale = 2.f - (2.f*SummaryTime - int32(2.f*SummaryTime));
-			// FIXMESTEVE woosh at start
 			if (BoxScale < 1.8f)
 			{
 				DrawFramedBackground(HighlightPosX - 0.5f*(BoxScale - 1.f)*HighlightWidth, HighlightY - 0.5f*(BoxScale - 1.f)*HighlightHeight, BoxScale*HighlightWidth, BoxScale*HighlightHeight);
 			}
 		}
+		else
+		{
+			UUTLocalPlayer* LP = UTHUDOwner->UTPlayerOwner ? Cast<UUTLocalPlayer>(UTHUDOwner->UTPlayerOwner->GetLocalPlayer()) : nullptr;
+			if (LP) // && LP->IsEarningXP()
+			{
+				float XPWidth = 0.6 * Canvas->ClipX;
+				float XPHeight = 0.3f * Canvas->ClipY;
+				float XPBoxX = 0.5f * (Canvas->ClipX - XPWidth);
+				float XPBoxY = 0.6f*Canvas->ClipY;
+				DrawFramedBackground(XPBoxX, XPBoxY, XPWidth, XPHeight);
+
+				FUTCanvasTextItem XPTextItem(FVector2D(XPBoxX + 0.1f*Canvas->ClipX, XPBoxY + 0.01f*Canvas->ClipY), NSLOCTEXT("UTScoreboard", "XP", "XP"), UTHUDOwner->LargeFont, HighlightTextColor, NULL);
+				XPTextItem.Scale = FVector2D(RenderScale, RenderScale);
+				XPTextItem.BlendMode = SE_BLEND_Translucent;
+				XPTextItem.EnableShadow(ShadowColor);
+				XPTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
+				Canvas->DrawItem(XPTextItem);
+
+				float XPBarWidth = 0.8f * XPWidth;
+				float XPBarX = XPBoxX + 0.5f*(XPWidth - XPBarWidth);
+				float XPBarY = XPBoxY + 0.3f * XPHeight;
+				float XPBarHeight = 0.1f * XPHeight;
+				DrawTexture(UTHUDOwner->HUDAtlas, XPBarX, XPBarY, XPBarWidth, XPBarHeight, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Black);
+
+				int32 CurrentXP = LP->GetOnlineXP();
+				int32 Level = GetLevelForXP(CurrentXP);
+				int32 LevelXPStart = GetXPForLevel(Level);
+				int32 LevelXPEnd = GetXPForLevel(Level + 1);
+				int32 LevelXP = LevelXPEnd - LevelXPStart;
+				int32 DisplayedXP = CurrentXP - LevelXPStart;
+				DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale, XPBarY + 2.f*RenderScale, XPBarWidth*DisplayedXP/LevelXP - 4.f*RenderScale, XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Green);
+
+				FUTCanvasTextItem LevelTextItem(FVector2D(XPBarX, XPBarY+XPBarHeight), NSLOCTEXT("UTScoreboard", "Level", "Level {0}"), UTHUDOwner->LargeFont, HighlightTextColor, NULL);
+				LevelTextItem.Scale = FVector2D(RenderScale, RenderScale);
+				LevelTextItem.BlendMode = SE_BLEND_Translucent;
+				LevelTextItem.EnableShadow(ShadowColor);
+				LevelTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
+				Canvas->DrawItem(LevelTextItem);
+
+			}
+		}
 	}
-	
-	// also draw XP bar updates, next level goals and unlock
-
-	// better flag run end of match highlights (game wide)
-
-	// add highlight icons
-
-	// unique round highlights for flag run
-
-	// end of match highlights for flag run
 }
+
 
 void UUTScoreboard::GetTitleMessageArgs(FFormatNamedArguments& Args) const
 {

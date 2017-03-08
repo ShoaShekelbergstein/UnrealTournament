@@ -55,6 +55,9 @@ class UNREALTOURNAMENT_API UUTCheatManager : public UCheatManager
 	virtual void Ann(int32 Switch);
 
 	UFUNCTION(exec)
+		virtual void HL();
+
+	UFUNCTION(exec)
 	virtual void Teleport();
 
 	virtual void BugItWorker(FVector TheLocation, FRotator TheRotation) override;
