@@ -7,6 +7,7 @@ void AUTFlagRunPvEGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(AUTFlagRunPvEGameState, EndingElapsedTime);
 	DOREPLIFETIME(AUTFlagRunPvEGameState, KillsUntilExtraLife);
 	DOREPLIFETIME(AUTFlagRunPvEGameState, NextStarTime);
 	DOREPLIFETIME_CONDITION(AUTFlagRunPvEGameState, GameDifficulty, COND_InitialOnly);
