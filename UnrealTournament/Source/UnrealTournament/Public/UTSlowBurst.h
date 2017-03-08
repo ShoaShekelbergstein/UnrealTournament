@@ -78,7 +78,7 @@ public:
 			}
 			for (TActorIterator<AUTProjectile> It(GetWorld()); It; ++It)
 			{
-				if (Instigator == nullptr || GS == nullptr || !GS->OnSameTeam(*It, Instigator) && (It->GetActorLocation() - GetActorLocation()).Size() < Radius)
+				if ((Instigator == nullptr || GS == nullptr || !GS->OnSameTeam(*It, Instigator)) && (It->GetActorLocation() - GetActorLocation()).Size() < Radius)
 				{
 					It->CustomTimeDilation = TargetTimeDilation;
 					AffectedProjs.Add(*It);
