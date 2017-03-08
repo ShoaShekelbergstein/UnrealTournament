@@ -201,6 +201,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 	UTexture2D* FlagAtlas;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
+		UTexture2D* HighlightIcon;
+
 	virtual bool ShouldDraw_Implementation(bool bShowScores)
 	{
 		return bShowScores;

@@ -53,6 +53,9 @@ UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) 
 	static ConstructorHelpers::FObjectFinder<USoundBase> LevelUpSoundFinder(TEXT("/Game/RestrictedAssets/Audio/Gameplay/A_Gameplay_CTF_CaptureSound02.A_Gameplay_CTF_CaptureSound02"));
 	LevelUpSound = LevelUpSoundFinder.Object;
 
+	static ConstructorHelpers::FObjectFinder<UTexture2D> HighlightIconFinder(TEXT("/Game/RestrictedAssets/UI/RankBadges/UT_RankedPlatinum_128x128.UT_RankedPlatinum_128x128"));
+	HighlightIcon = HighlightIconFinder.Object;
+
 	GameMessageText = NSLOCTEXT("UTScoreboard", "ScoreboardHeader", "{GameName} in {MapName}");
 	CH_PlayerName = NSLOCTEXT("UTScoreboard", "ColumnHeader_PlayerName", "Player");
 	CH_Score = NSLOCTEXT("UTScoreboard", "ColumnHeader_PlayerScore", "Score");
@@ -215,6 +218,7 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 				HighlightTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
 				Canvas->DrawItem(HighlightTextItem);
 
+				DrawTexture(HighlightIcon, HighlightPosX + 0.5f*(HighlightWidth - 128.f*RenderScale), HighlightY + 48.f*RenderScale, 128.f*RenderScale, 128.f*RenderScale, 0, 0, 128, 128, 1.f, FLinearColor::White);
 				HighlightPosX += HighlightWidth + HighlightSpace;
 			}
 		}
@@ -231,6 +235,9 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 		UUTLocalPlayer* LP = UTHUDOwner->UTPlayerOwner ? Cast<UUTLocalPlayer>(UTHUDOwner->UTPlayerOwner->GetLocalPlayer()) : nullptr;
 		if (LP && LP->IsEarningXP()) // FIXMESTEVE
 		{
+			float XPUpdateStart = 1.5f + 0.5f*NumHighlights;
+			float LevelUpdateStart = XPUpdateStart + 2.f;
+			bool bGiveReward = (SummaryTime > LevelUpdateStart);
 			float XPWidth = 0.6 * Canvas->ClipX;
 			float XPHeight = 0.3f * Canvas->ClipY;
 			float XPBoxX = 0.5f * (Canvas->ClipX - XPWidth);
@@ -241,7 +248,7 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 			XPTextItem.Scale = FVector2D(RenderScale, RenderScale);
 			XPTextItem.BlendMode = SE_BLEND_Translucent;
 			XPTextItem.EnableShadow(ShadowColor);
-			XPTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, false);
+			XPTextItem.FontRenderInfo = Canvas->CreateFontRenderInfo(true, true);
 			Canvas->DrawItem(XPTextItem);
 
 			float XPBarWidth = 0.8f * XPWidth;
@@ -251,12 +258,18 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 			DrawTexture(UTHUDOwner->HUDAtlas, XPBarX, XPBarY, XPBarWidth, XPBarHeight, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Black);
 
 			int32 CurrentXP = LP->GetOnlineXP();
+			FXPBreakdown XPBreakdown = UTHUDOwner->UTPlayerOwner->XPBreakdown;
+			int32 NewXP = XPBreakdown.Total();  //28 FIXMESTEVE
+			if (bGiveReward)
+			{
+				CurrentXP += NewXP;
+			}
 			int32 Level = GetLevelForXP(CurrentXP);
 			int32 LevelXPStart = GetXPForLevel(Level);
 			int32 LevelXPEnd = GetXPForLevel(Level + 1);
 			int32 LevelXP = LevelXPEnd - LevelXPStart;
 			int32 DisplayedXP = CurrentXP - LevelXPStart;
-			float CurrentXPWidth = XPBarWidth*DisplayedXP / LevelXP - 4.f*RenderScale;
+			float CurrentXPWidth = XPBarWidth*FMath::Min(1.f, float(DisplayedXP) / float(LevelXP)) - 4.f*RenderScale;
 			DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale, XPBarY + 2.f*RenderScale, CurrentXPWidth, XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Green);
 
 			FUTCanvasTextItem XPValueItem(FVector2D(XPBarX, XPBarY + 0.75f*XPBarHeight), FText::AsNumber(LevelXPStart), UTHUDOwner->TinyFont, HighlightTextColor, NULL);
@@ -303,11 +316,62 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 			LevelUpRewards[45] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/ThundercrashBeret.ThundercrashBeret"));
 			LevelUpRewards[50] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/NecrisMale04.NecrisMale04"));
 
+			int32 OldLevel = Level;
+			if (SummaryTime > XPUpdateStart)
+			{
+				if (SummaryTime - RenderDelta <= XPUpdateStart)
+				{
+					UTHUDOwner->UTPlayerOwner->ClientPlaySound(XPGainedSound);
+				}
+
+				Args.Add("XPGained", FText::AsNumber(NewXP));
+				XPValueItem.Text = FText::Format(NSLOCTEXT("UTScoreboard", "XPGained", "+{XPGained}"), Args);
+				XPValueItem.SetColor(FLinearColor::Yellow);
+				XPValueItem.Position.X = XPBarX + CurrentXPWidth;
+				Canvas->DrawItem(XPValueItem);
+
+				if (!bGiveReward)
+				{
+					float GlowTime = SummaryTime - XPUpdateStart;
+					float XPSize = XPBarWidth* float(NewXP) / float(LevelXP);
+					DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth, XPBarY + 2.f*RenderScale, XPSize, XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Yellow);
+
+					FLinearColor XPGlow = FLinearColor::Yellow;
+					XPGlow.A = 0.3f;
+					float GlowScale = (GlowTime < 0.1f) ? (1.f + 30.f*GlowTime) : FMath::Max(1.5f, 4.f - 5.f*(GlowTime - 0.1f));
+					DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth - 0.5f * XPSize * (GlowScale - 1.f), XPBarY + 2.f*RenderScale - 0.5f * XPBarHeight * (GlowScale - 1.f), XPSize * GlowScale, (XPBarHeight*GlowScale) - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 0.2f, XPGlow);
+				}
+
+				float LevelUpdateStart = XPUpdateStart + 2.f;
+				OldLevel = GetLevelForXP(CurrentXP - NewXP);
+				if (bGiveReward && (Level != OldLevel))
+				{
+					if (SummaryTime - RenderDelta <= LevelUpdateStart)
+					{
+						UTHUDOwner->UTPlayerOwner->ClientPlaySound(LevelUpSound);
+					}
+
+					// draw level up with Scale in
+					FText LevelUpText = NSLOCTEXT("UTScoreboard", "LEVELUP", "LEVEL UP!");
+					float LevelUpXL, LevelUpYL;
+					Canvas->TextSize(UTHUDOwner->LargeFont, LevelUpText.ToString(), LevelUpXL, LevelUpYL, 1.0f, 1.0f);
+					float UpScale = FMath::Max(1.f, 3.f - 6.f * (SummaryTime - LevelUpdateStart));
+					FLinearColor UpColor = FLinearColor::Yellow;
+					UpColor.A = FMath::Min(1.f, 6.f*(SummaryTime - LevelUpdateStart));
+					FUTCanvasTextItem LevelUpTextItem(FVector2D(XPBoxX + 0.5f * (XPWidth - LevelUpXL*UpScale*RenderScale), XPBoxY + 0.01f*Canvas->ClipY), LevelUpText, UTHUDOwner->LargeFont, UpColor, NULL);
+					LevelUpTextItem.Scale = FVector2D(RenderScale*UpScale, RenderScale*UpScale);
+					LevelUpTextItem.BlendMode = SE_BLEND_Translucent;
+					LevelUpTextItem.EnableShadow(ShadowColor);
+					LevelUpTextItem.FontRenderInfo = XPTextItem.FontRenderInfo;
+					Canvas->DrawItem(LevelUpTextItem);
+				}
+			}
+
 			int32 RewardLevelNum = 0;
 			FText RewardText = FText::GetEmpty();
 			if (Level < LevelUpRewards.Num() - 2)
 			{
-				for (int32 i = Level + 1; i < LevelUpRewards.Num(); i++)
+				for (int32 i = OldLevel + 1; i < LevelUpRewards.Num(); i++)
 				{
 					if (!LevelUpRewards[i].IsEmpty())
 					{
@@ -323,6 +387,10 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 					Args.Add("RewardLevelNum", FText::AsNumber(RewardLevelNum));
 					Args.Add("NextReward", RewardText);
 					FText RewardLevelText = FText::Format(NSLOCTEXT("UTScoreboard", "RewardLevel", "Unlock '{NextReward}' when you reach Level {RewardLevelNum}"), Args);
+					if (bGiveReward && (RewardLevelNum <= Level))
+					{
+						RewardLevelText = FText::Format(NSLOCTEXT("UTScoreboard", "RewardAchieved", "You unlocked '{NextReward}'!"), Args);
+					}
 					FUTCanvasTextItem RewardLevelTextItem(FVector2D(XPBarX, XPBarY + 3.f*XPBarHeight), RewardLevelText, UTHUDOwner->MediumFont, FLinearColor::White, NULL);
 					RewardLevelTextItem.Scale = FVector2D(RenderScale, RenderScale);
 					RewardLevelTextItem.BlendMode = SE_BLEND_Translucent;
@@ -331,50 +399,11 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 					Canvas->DrawItem(RewardLevelTextItem);
 				}
 			}
-
-			float XPUpdateStart = 1.5f + 0.5f*NumHighlights;
-			if (SummaryTime > XPUpdateStart)
-			{
-				if (SummaryTime - RenderDelta <= XPUpdateStart)
-				{
-					UTHUDOwner->UTPlayerOwner->ClientPlaySound(XPGainedSound);
-				}
-				FXPBreakdown XPBreakdown = UTHUDOwner->UTPlayerOwner->XPBreakdown;
-				int32 NewXP = XPBreakdown.Total();  //28 FIXMESTEVE
-
-				Args.Add("XPGained", FText::AsNumber(NewXP));
-				XPValueItem.Text = FText::Format(NSLOCTEXT("UTScoreboard", "XPGained", "+{XPGained}"), Args);
-				XPValueItem.SetColor(FLinearColor::Yellow);
-				XPValueItem.Position.X = XPBarX + CurrentXPWidth;
-				Canvas->DrawItem(XPValueItem);
-
-				float GlowTime = SummaryTime - XPUpdateStart;
-				float XPSize = XPBarWidth*NewXP / LevelXP;
-				DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth, XPBarY + 2.f*RenderScale, XPSize, XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Yellow);
-
-				FLinearColor XPGlow = FLinearColor::Yellow;
-				XPGlow.A = 0.3f;
-				float GlowScale = (GlowTime < 0.1f) ? (1.f + 30.f*GlowTime) : FMath::Max(1.5f, 4.f - 5.f*(GlowTime - 0.1f));
-				DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth - 0.5f * XPSize * (GlowScale - 1.f), XPBarY + 2.f*RenderScale - 0.5f * XPBarHeight * (GlowScale - 1.f), XPSize * GlowScale, (XPBarHeight*GlowScale) - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 0.2f, XPGlow);
-			}
 		}
 	}
 }
 /*
-level up animation/sound and reward  LevelUpSound
 display reward image - get Mikey to add
-icons for highlights
-
-if (!bItemUnlockToastsProcessed)
-{
-bItemUnlockToastsProcessed = true;
-
-for (int32 i = 0; i < UTPC->LevelRewards.Num(); i++ )
-{
-//show the toast
-if (UTPC->LevelRewards.IsValidIndex(i) && UTPC->LevelRewards[i] != nullptr && PlayerOwner->IsEarningXP())
-{
-PlayerOwner->ShowToast(FText::Format(NSLOCTEXT("UT", "ItemReward", "You earned {0} for reaching level {1}!"), UTPC->LevelRewards[i]->DisplayName, FText::AsNumber(NewLevel)));
 }*/
 
 void UUTScoreboard::GetTitleMessageArgs(FFormatNamedArguments& Args) const
