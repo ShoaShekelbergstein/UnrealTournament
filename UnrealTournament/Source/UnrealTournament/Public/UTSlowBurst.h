@@ -10,7 +10,7 @@
 
 #include "UTSlowBurst.generated.h"
 
-UCLASS(Blueprintable, Abstract)
+UCLASS(Blueprintable)
 class AUTSlowBurst : public AActor
 {
 	GENERATED_BODY()
@@ -24,7 +24,13 @@ public:
 		PrimaryActorTick.bCanEverTick = true;
 		PrimaryActorTick.bStartWithTickEnabled = true;
 		SetReplicates(true);
+
+		SceneRoot = OI.CreateDefaultSubobject<USceneComponent>(this, TEXT("SceneComponent"));
+		RootComponent = SceneRoot;
 	}
+
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* SceneRoot;
 
 	/** Radius of effect */
 	UPROPERTY(EditDefaultsOnly)
@@ -32,10 +38,15 @@ public:
 	/** value to set to targets' CustomTimeDilation */
 	UPROPERTY(EditDefaultsOnly)
 	float TargetTimeDilation;
+	/** effect attached to affected pawns */
+	UPROPERTY(EditDefaultsOnly)
+	UParticleSystem* SlowedEffect;
 
 	/** Pawns that were hit by the blast */
 	UPROPERTY(BlueprintReadOnly)
 	TArray<AUTCharacter*> AffectedPawns;
+	UPROPERTY(BlueprintReadOnly)
+	TArray<UParticleSystemComponent*> AffectedPawnPSCs;
 	/** inventory items owned by AffectedPawns that are affected */
 	UPROPERTY(BlueprintReadOnly)
 	TArray<AUTInventory*> AffectedItems;
@@ -60,6 +71,7 @@ public:
 					if (C != nullptr && C != Instigator && (GS == nullptr || !GS->OnSameTeam(C, Instigator)) && (C->GetActorLocation() - GetActorLocation()).Size() < Radius)
 					{
 						AffectedPawns.Add(C);
+						AffectedPawnPSCs.Add(UGameplayStatics::SpawnEmitterAttached(SlowedEffect, C->GetMesh(), NAME_None));
 						// we'll apply the time dilation in Tick() since we need to keep updating it for new weapon pickups and the like
 					}
 				}
@@ -92,6 +104,22 @@ public:
 			}
 		}
 		AffectedPawns.Empty();
+		for (UParticleSystemComponent* PSC : AffectedPawnPSCs)
+		{
+			if (PSC != nullptr)
+			{
+				if (!PSC->bIsActive)
+				{
+					PSC->DestroyComponent();
+				}
+				else
+				{
+					PSC->bAutoDestroy = true;
+					PSC->DeactivateSystem();
+				}
+			}
+		}
+		AffectedPawnPSCs.Empty();
 		for (AUTInventory* Item : AffectedItems)
 		{
 			if (Item != nullptr)
