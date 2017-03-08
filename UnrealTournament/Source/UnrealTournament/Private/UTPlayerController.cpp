@@ -2433,7 +2433,7 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 			AUTPickupToken* PickupToken = Cast<AUTPickupToken>(*It);
 			if (PickupToken)
 			{
-				HideComponentTree(PickupToken->GetRootPrimitiveComponent(), HiddenComponents);
+				HideComponentTree(Cast<UPrimitiveComponent>(PickupToken->GetRootComponent()), HiddenComponents);
 			}
 		}
 	}
