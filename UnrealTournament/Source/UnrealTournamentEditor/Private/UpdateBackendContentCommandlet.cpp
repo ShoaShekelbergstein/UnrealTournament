@@ -343,8 +343,8 @@ protected:
 bool UUpdateBackendContentCommandlet::ExportTemplates(const FString& ExportDir)
 {
 #if WITH_PROFILE
-	FJsonExporter Exporter;
-	return Exporter.Export(ExportDir);
+	TSharedPtr<FJsonExporter> Exporter = MakeShareable(new FJsonExporter());
+	return Exporter->Export(ExportDir);
 #else
 	return false;
 #endif
