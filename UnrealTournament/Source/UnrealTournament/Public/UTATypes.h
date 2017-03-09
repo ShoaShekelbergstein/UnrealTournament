@@ -2384,9 +2384,9 @@ struct FMCPAnnouncement
 	bool bHasAudio;
 
 	FMCPAnnouncement()
-		: StartDate(FDateTime::Now())
+		: Title(TEXT(""))
+		, StartDate(FDateTime::Now())
 		, EndDate(FDateTime::Now())
-		, Title(TEXT(""))
 		, AnnouncementURL(TEXT(""))
 		, MinHeight(240)
 		, bHasAudio(false)
@@ -2394,9 +2394,9 @@ struct FMCPAnnouncement
 	}
 
 	FMCPAnnouncement(FDateTime inStartDate, FDateTime inEndDate, const FString& inTitle, const FString& inURL, float inMinHeight=240, bool inbHasAudio=false)
-		: StartDate(inStartDate)
+		: Title(inTitle)
+		, StartDate(inStartDate)
 		, EndDate(inEndDate)
-		, Title(inTitle)
 		, AnnouncementURL(inURL)
 		, MinHeight(inMinHeight)
 		, bHasAudio(inbHasAudio)
