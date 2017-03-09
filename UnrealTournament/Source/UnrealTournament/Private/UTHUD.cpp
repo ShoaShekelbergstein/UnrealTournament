@@ -2109,18 +2109,18 @@ UUTCrosshair* AUTHUD::GetCrosshairForWeapon(FName WeaponCustomizationTag, FWeapo
 	return nullptr;
 }
 
-float AUTHUD::DrawWinConditions(UFont* InFont, float XPos, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage, bool bSkipDrawing)
+float AUTHUD::DrawWinConditions(UCanvas* InCanvas, UFont* InFont, float XPos, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage, bool bSkipDrawing)
 {
 	if (!bSkipDrawing)
 	{
 		FFontRenderInfo TextRenderInfo;
 		TextRenderInfo.bEnableShadow = true;
 		TextRenderInfo.bClipText = true;
-		Canvas->SetLinearDrawColor(FLinearColor::White);
-		Canvas->DrawText(InFont, ScoreMessageText, XPos, YPos, RenderScale, RenderScale, TextRenderInfo);
+		InCanvas->SetLinearDrawColor(FLinearColor::White);
+		InCanvas->DrawText(InFont, ScoreMessageText, XPos, YPos, RenderScale, RenderScale, TextRenderInfo);
 	}
 	float XL, YL;
-	Canvas->StrLen(InFont, ScoreMessageText.ToString(), XL, YL);
+	InCanvas->StrLen(InFont, ScoreMessageText.ToString(), XL, YL);
 	return RenderScale * XL;
 }
 

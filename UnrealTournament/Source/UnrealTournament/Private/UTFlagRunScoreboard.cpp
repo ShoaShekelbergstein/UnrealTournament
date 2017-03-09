@@ -924,7 +924,7 @@ void UUTFlagRunScoreboard::DrawScoringSummary(float DeltaTime, float& YPos, floa
 	Canvas->StrLen(UTHUDOwner->MediumFont, FormattedTitle.ToString(), TitleX, TitleY);
 
 	AUTFlagRunHUD* FRHUD = Cast<AUTFlagRunHUD>(UTHUDOwner);
-	float WinConditionWidth = FRHUD ? FRHUD->DrawWinConditions(UTHUDOwner->MediumFont, 0.f, YPos, Canvas->ClipX, RenderScale, true, true) : 0.f;
+	float WinConditionWidth = FRHUD ? FRHUD->DrawWinConditions(Canvas, UTHUDOwner->MediumFont, 0.f, YPos, Canvas->ClipX, RenderScale, true, true) : 0.f;
 
 	FLinearColor DrawColor = FLinearColor::White;
 	float CurrentScoreHeight = (WinConditionWidth > 0.f) ? 2.f*TitleY : TitleY;
@@ -937,7 +937,7 @@ void UUTFlagRunScoreboard::DrawScoringSummary(float DeltaTime, float& YPos, floa
 
 	if (FRHUD)
 	{
-		FRHUD->DrawWinConditions(UTHUDOwner->MediumFont, 0.f, YPos, Canvas->ClipX, RenderScale, true);
+		FRHUD->DrawWinConditions(Canvas, UTHUDOwner->MediumFont, 0.f, YPos, Canvas->ClipX, RenderScale, true);
 	}
 }
 

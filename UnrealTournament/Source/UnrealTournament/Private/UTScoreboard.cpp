@@ -444,7 +444,7 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 	}
 	else
 	{
-		MessageX = UTHUDOwner->DrawWinConditions(UTHUDOwner->MediumFont, 220.f*RenderScale, YOffset + 2.f*RenderScale, Canvas->ClipX, RenderScale, true, true);
+		MessageX = UTHUDOwner->DrawWinConditions(Canvas, UTHUDOwner->MediumFont, 220.f*RenderScale, YOffset + 2.f*RenderScale, Canvas->ClipX, RenderScale, true, true);
 		float NameX;
 		Canvas->StrLen(UTHUDOwner->MediumFont, TEXT("TEST"), NameX, MessageY);
 	}
@@ -463,7 +463,7 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 	}
 	else
 	{
-		UTHUDOwner->DrawWinConditions(UTHUDOwner->MediumFont, LeftEdge, YOffset - 0.24f*MessageY*RenderScale, Canvas->ClipX, RenderScale, false);
+		UTHUDOwner->DrawWinConditions(Canvas, UTHUDOwner->MediumFont, LeftEdge, YOffset - 0.24f*MessageY*RenderScale, Canvas->ClipX, RenderScale, false);
 	}
 
 	DrawGameOptions(RenderDelta, YOffset, LeftEdge + Width);

@@ -133,7 +133,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		FText ScoreMessageText;
 
-	virtual float DrawWinConditions(UFont* InFont, float XPos, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage, bool bSkipDrawing = false);
+	virtual float DrawWinConditions(UCanvas* InCanvas, UFont* InFont, float XPos, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage, bool bSkipDrawing = false);
 
 	// The Global Opacity for Hud Widgets
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
