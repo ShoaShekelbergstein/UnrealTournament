@@ -384,10 +384,7 @@ FReply SUTGameSetupDialog::OnRuleClick(int32 RuleIndex)
 			BuildMapList();
 		}
 
-		if (SelectedRuleset->bCompetitiveMatch)
-		{
-			cbRequireFull->SetIsChecked(ECheckBoxState::Checked);
-		}
+		cbRequireFull->SetIsChecked(SelectedRuleset->bCompetitiveMatch ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
 	}
 
 	return FReply::Handled();
