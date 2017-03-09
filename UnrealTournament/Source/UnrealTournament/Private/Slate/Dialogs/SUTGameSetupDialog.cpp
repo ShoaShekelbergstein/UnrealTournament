@@ -229,7 +229,7 @@ void SUTGameSetupDialog::BuildRuleList(FName Category)
 	{
 		CustomBox->AddSlot().AutoHeight()
 		[
-			SNew(SBox).HeightOverride(760)
+			SNew(SBox).HeightOverride(920)
 			[
 				SAssignNew(CustomPanel, SUTCreateGamePanel, GetPlayerOwner())
 			]
