@@ -128,6 +128,8 @@ private:
 	/** True if the movie player has been initialized */
 	bool bInitialized;
 
+	int32 FlushInputFrameCount;
+
 private:
 	/** Singleton handle */
 	static TSharedPtr<FDefaultGameMoviePlayer> MoviePlayer;

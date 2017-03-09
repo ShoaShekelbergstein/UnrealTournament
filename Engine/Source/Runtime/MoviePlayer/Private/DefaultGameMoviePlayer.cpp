@@ -269,6 +269,8 @@ bool FDefaultGameMoviePlayer::PlayMovie()
 {
 	bool bBeganPlaying = false;
 
+	FlushInputFrameCount = 0;
+
 	// Allow systems to hook onto the movie player and provide loading screen data on demand 
 	// if it has not been setup explicitly by the user.
 	if ( !LoadingScreenIsPrepared() )
@@ -361,6 +363,8 @@ void FDefaultGameMoviePlayer::WaitForMovieToFinish()
 		// Continue to wait until the user calls finish (if enabled) or when loading completes or the minimum enforced time (if any) has been reached.
 		while ( (bWaitForManualStop && !bUserCalledFinish) || (!bUserCalledFinish && ((!bEnforceMinimumTime && !IsMovieStreamingFinished() && !bAutoCompleteWhenLoadingCompletes) || (bEnforceMinimumTime && (FPlatformTime::Seconds() - LastPlayTime) < LoadingScreenAttributes.MinimumLoadingScreenDisplayTime))))
 		{
+			FlushInputFrameCount++;
+
 			// If we are in a loading loop, and this is the last movie in the playlist.. assume you can break out.
 			if (MovieStreamer.IsValid() && LoadingScreenAttributes.PlaybackType == MT_LoadingLoop && MovieStreamer->IsLastMovieInPlaylist())
 			{
@@ -462,6 +466,7 @@ bool FDefaultGameMoviePlayer::IsMovieStreamingFinished() const
 void FDefaultGameMoviePlayer::Tick( float DeltaTime )
 {
 	check(IsInRenderingThread());
+
 	if (LoadingScreenWindowPtr.IsValid() && RendererPtr.IsValid() && !IsLoadingFinished())
 	{
 		FScopeLock SyncMechanismLock(&SyncMechanismCriticalSection);
@@ -614,21 +619,25 @@ FReply FDefaultGameMoviePlayer::OnAnyDown()
 {
 	if (IsLoadingFinished())
 	{
-		if (LoadingScreenAttributes.bMoviesAreSkippable)
+		if ( FlushInputFrameCount > 3)
 		{
-			MovieStreamingIsDone.Set(1);
-			if (MovieStreamer.IsValid())
+			if (LoadingScreenAttributes.bMoviesAreSkippable)
 			{
-				MovieStreamer->ForceCompletion();
+				MovieStreamingIsDone.Set(1);
+				if (MovieStreamer.IsValid())
+				{
+					MovieStreamer->ForceCompletion();
+				}
+			}
+
+			if (IsMovieStreamingFinished())
+			{
+				bUserCalledFinish = true;
+				return FReply::Handled();
 			}
 		}
-
-		if (IsMovieStreamingFinished())
-		{
-			bUserCalledFinish = true;
-		}
 	}
-
+	FlushInputFrameCount = 0;
 	return FReply::Handled();
 }
 
