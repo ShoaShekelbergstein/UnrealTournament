@@ -6045,13 +6045,6 @@ void UUTLocalPlayer::SocialInitialized()
 	PushChallengeStarsToMCP();
 	LoginPhase = ELoginPhase::LoggedIn;
 
-#if !UE_SERVER
-	// If we are logged in and this is a menu game, try to preload the server browser
-	if (!ServerBrowserWidget.IsValid() && IsMenuGame())
-	{
-		GetServerBrowser();
-	}
-#endif
 }
 
 void UUTLocalPlayer::PushChallengeStarsToMCP()

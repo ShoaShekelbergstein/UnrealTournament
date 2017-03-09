@@ -113,8 +113,6 @@ const int SUTServerBrowserPanel::MAXCHARCOUNTFORSERVERFILTER = 150;
 
 SUTServerBrowserPanel::~SUTServerBrowserPanel()
 {
-	PlayerOwner->GetWorld()->GetTimerManager().ClearTimer(RefreshTimerHandle);
-
 	if (PlayerOwner.IsValid())
 	{
 		PlayerOwner->RemovePlayerOnlineStatusChangedDelegate(PlayerOnlineStatusChangedDelegate);
@@ -450,8 +448,6 @@ void SUTServerBrowserPanel::ConstructPanel(FVector2D ViewportSize)
 
 	BrowserTypeChanged(0);
 	AddGameFilters();
-
-	PlayerOwner->GetWorld()->GetTimerManager().SetTimer(RefreshTimerHandle, FTimerDelegate::CreateSP(this, &SUTServerBrowserPanel::RefreshSelectedServer), 30.f, true);
 }
 
 TSharedRef<SWidget> SUTServerBrowserPanel::BuildPlayerList()
@@ -1100,20 +1096,6 @@ FReply SUTServerBrowserPanel::OnRefreshClick()
 
 void SUTServerBrowserPanel::RefreshServers()
 {
-	if (BrowserState == EBrowserState::NotLoggedIn)
-	{
-		SearchForLanServers();
-		return;
-	}
-
-	if (BrowserState != EBrowserState::BrowserIdle)
-	{
-		bNeedsRefresh = true;
-		return;
-	}
-
-	bNeedsRefresh = false;
-
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 	IOnlineSessionPtr OnlineSessionInterface;
 	if (OnlineSubsystem) OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
@@ -1138,6 +1120,7 @@ void SUTServerBrowserPanel::OnCancelComplete(bool bSuccessful)
 	if (PlayerOwner->IsLoggedIn() && OnlineSessionInterface.IsValid() && BrowserState == EBrowserState::BrowserIdle)
 	{
 		SetBrowserState(EBrowserState::RefreshInProgress);
+		bNeedsRefresh = false;
 		CleanupQoS();
 		SearchSettings = MakeShareable(new FUTOnlineGameSearchBase(false));
 		SearchSettings->MaxSearchResults = 10000;
@@ -1159,12 +1142,10 @@ void SUTServerBrowserPanel::OnCancelComplete(bool bSuccessful)
 		SearchForLanServers();
 		CleanupQoS();
 	}
-
 }
 
-void SUTServerBrowserPanel::FoundServer(FOnlineSessionSearchResult& Result)
+TSharedPtr<FServerData> SUTServerBrowserPanel::CreateNewServerData(FOnlineSessionSearchResult& Result)
 {
-
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 	IOnlineSessionPtr OnlineSessionInterface;
 	if (OnlineSubsystem) OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
@@ -1242,8 +1223,14 @@ void SUTServerBrowserPanel::FoundServer(FOnlineSessionSearchResult& Result)
 
 	TSharedRef<FServerData> NewServer = FServerData::Make( ServerName, ServerIP, BeaconIP, ServerGamePath, ServerGameName, ServerMap, ServerNoPlayers, ServerNoSpecs, ServerMaxPlayers, ServerMaxSpectators, ServerNumMatches, ServerMinRank, ServerMaxRank, ServerVer, ServerPing, ServerFlags,ServerTrustLevel);
 	NewServer->SearchResult = Result;
+	
+	return NewServer;
+}
 
-	if (PingList.Num() == 0 || ServerGamePath != LOBBY_GAME_PATH )
+void SUTServerBrowserPanel::FoundServer(FOnlineSessionSearchResult& Result)
+{
+	TSharedPtr<FServerData> NewServer = CreateNewServerData(Result);
+	if (PingList.Num() == 0 || NewServer->GameModePath != LOBBY_GAME_PATH )
 	{
 		PingList.Add( NewServer );
 	}
@@ -1252,7 +1239,7 @@ void SUTServerBrowserPanel::FoundServer(FOnlineSessionSearchResult& Result)
 		PingList.Insert(NewServer,0);
 	}
 
-	TotalPlayersPlaying += ServerNoPlayers + ServerNoSpecs;
+	TotalPlayersPlaying += NewServer->NumPlayers + NewServer->NumSpectators;
 
 }
 
@@ -1387,10 +1374,6 @@ void SUTServerBrowserPanel::OnFindLANSessionsComplete(bool bWasSuccessful)
 	}
 
 	SetBrowserState(EBrowserState::BrowserIdle);
-	if (bNeedsRefresh)
-	{
-		RefreshServers();
-	}
 }
 
 
@@ -2466,6 +2449,7 @@ void SUTServerBrowserPanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
 	{
 		RefreshServers();
 	}
+	PlayerOwner->GetWorld()->GetTimerManager().SetTimer(RefreshTimerHandle, FTimerDelegate::CreateSP(this, &SUTServerBrowserPanel::RefreshSelectedServer), 30.f, true);
 }
 
 void SUTServerBrowserPanel::OnHidePanel()
@@ -2479,6 +2463,8 @@ void SUTServerBrowserPanel::OnHidePanel()
 	{
 		SUTPanelBase::OnHidePanel();
 	}
+
+	PlayerOwner->GetWorld()->GetTimerManager().ClearTimer(RefreshTimerHandle);
 }
 
 void SUTServerBrowserPanel::RefreshSelectedServer()
@@ -2487,12 +2473,6 @@ void SUTServerBrowserPanel::RefreshSelectedServer()
 	if (SelectedItems.Num() > 0)
 	{
 		PingServer(SelectedItems[0]);
-	}
-
-	if (BrowserState == EBrowserState::BrowserIdle)
-	{
-		SetBrowserState(EBrowserState::RefreshInProgress);
-		SearchForLanServers();
 	}
 }
 
@@ -2730,27 +2710,5 @@ FReply SUTServerBrowserPanel::OnKeyDown(const FGeometry& MyGeometry, const FKeyE
 	}
 	return FReply::Unhandled();
 }
-
-int32 SUTServerBrowserPanel::GetLanServerList(TArray<TSharedPtr<FServerData>>* outServerList)
-{
-	for (int32 i=0; i < AllInternetServers.Num(); i++)
-	{
-		if (AllInternetServers[i].IsValid() && AllInternetServers[i]->SearchResult.Session.SessionSettings.bIsLANMatch)
-		{
-			outServerList->Add(AllInternetServers[i]);
-		}
-	}
-
-	for (int32 i=0; i < AllHubServers.Num(); i++)
-	{
-		if (AllHubServers[i].IsValid() && AllHubServers[i]->SearchResult.Session.SessionSettings.bIsLANMatch)
-		{
-			outServerList->Add(AllHubServers[i]);
-		}
-	}
-
-	return outServerList->Num();
-}
-
 
 #endif

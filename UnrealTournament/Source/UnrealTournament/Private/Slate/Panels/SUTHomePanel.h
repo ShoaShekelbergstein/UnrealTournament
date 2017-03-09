@@ -76,6 +76,9 @@ protected:
 
 	virtual FReply OnJoinLanClicked(TSharedPtr<FServerData> Server);
 	virtual FReply OnSpectateLanClicked(TSharedPtr<FServerData> Server);
+	FDelegateHandle OnFindLanSessionCompleteDelegate;
+	TSharedPtr<class FUTOnlineGameSearchBase> LanSearchSettings;
+	void OnFindLANSessionsComplete(bool bWasSuccessful);
 
 };
 

@@ -648,8 +648,7 @@ public:
 	}
 
 	virtual void SetBrowserState(FName NewBrowserState);
-
-	virtual void RefreshServers();
+	virtual void ConnectTo(FServerData ServerData,bool bSpectate);
 
 private:
 
@@ -715,6 +714,7 @@ protected:
 	TSharedRef<ITableRow> OnGenerateWidgetForHUBList(TSharedPtr<FServerData> InItem, const TSharedRef<STableViewBase>& OwnerTable );
 
 	virtual FReply OnRefreshClick();
+	virtual void RefreshServers();
 
 	void OnFindSessionsComplete(bool bWasSuccessful);
 	void OnFindLANSessionsComplete(bool bWasSuccessful);
@@ -846,6 +846,7 @@ protected:
 
 	int32 TotalPlayersPlaying;
 
+
 	void FoundServer(FOnlineSessionSearchResult& Result);
 	void JoinQuickInstance(const FString& InstanceGuid, bool bAsSpectator);
 	void RestrictedWarning();
@@ -873,12 +874,10 @@ protected:
 	void OnCancelComplete(bool bSuccessful);
 	FDelegateHandle OnCancelHandle;
 
+	void SearchForLanServers();
 
 public:
-	void SearchForLanServers();
-	int32 GetLanServerList(TArray<TSharedPtr<FServerData>>* outServerList);
-	virtual void ConnectTo(FServerData ServerData,bool bSpectate);
-
+	static TSharedPtr<FServerData> CreateNewServerData(FOnlineSessionSearchResult& Result);
 
 };
 

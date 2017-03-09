@@ -46,13 +46,12 @@ void SUTHomePanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
 {
 	SUTPanelBase::OnShowPanel(inParentWindow);
 
-	CheckForLanServers();
 	PlayerOwner->GetWorld()->GetTimerManager().SetTimer(LanTimerHandle, FTimerDelegate::CreateSP(this, &SUTHomePanel::CheckForLanServers), 30.0f, true);
-
 	if (AnimWidget.IsValid())
 	{
 		AnimWidget->Animate(FVector2D(100.0f, 0.0f), FVector2D(0.0f, 0.0f), 0.0f, 1.0f, 0.3f);
 	}
+	CheckForLanServers();
 }
 
 
@@ -85,24 +84,71 @@ void SUTHomePanel::Tick( const FGeometry& AllottedGeometry, const double InCurre
 
 void SUTHomePanel::CheckForLanServers()
 {
-	TSharedPtr<SUTServerBrowserPanel> Browser = PlayerOwner->GetServerBrowser();
-	if (Browser.IsValid())
+	TSharedPtr<SUTServerBrowserPanel> Browser = PlayerOwner->GetServerBrowser(false);
+	if (Browser.IsValid() && Browser->GetBrowserState() == EBrowserState::RefreshInProgress)
 	{
-		TArray<TSharedPtr<FServerData>> LanServers;
-		if (Browser->GetLanServerList(&LanServers) != LanMatches.Num())
-		{
-			LanBox->ClearChildren();		
-			LanMatches.Empty();
+		return;
+	}
 
-			for (int32 i = 0; i < LanServers.Num(); i++)
+	// Search for LAN Servers
+
+	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+	
+	IOnlineSessionPtr OnlineSessionInterface;
+	if (OnlineSubsystem) OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
+
+	if (OnlineSessionInterface.IsValid())
+	{
+		OnlineSessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(OnFindLanSessionCompleteDelegate);
+	}
+
+	LanSearchSettings = MakeShareable(new FUTOnlineGameSearchBase(false));
+	LanSearchSettings->MaxSearchResults = 10000;
+	LanSearchSettings->bIsLanQuery = true;
+	LanSearchSettings->TimeoutInSeconds = 2.0;
+	LanSearchSettings->QuerySettings.Set(SETTING_GAMEINSTANCE, 1, EOnlineComparisonOp::NotEquals);												// Must not be a Hub server instance
+	LanSearchSettings->QuerySettings.Set(SETTING_RANKED, 1, EOnlineComparisonOp::NotEquals);
+
+	TSharedRef<FUTOnlineGameSearchBase> LanSearchSettingsRef = LanSearchSettings.ToSharedRef();
+	FOnFindSessionsCompleteDelegate Delegate;
+	Delegate.BindSP(this, &SUTHomePanel::OnFindLANSessionsComplete);
+	if (OnlineSessionInterface.IsValid())
+	{
+		OnFindLanSessionCompleteDelegate = OnlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(Delegate);
+		OnlineSessionInterface->FindSessions(0, LanSearchSettingsRef);
+	}
+}
+
+
+void SUTHomePanel::OnFindLANSessionsComplete(bool bWasSuccessful)
+{
+	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+	
+	IOnlineSessionPtr OnlineSessionInterface;
+	if (OnlineSubsystem) OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
+
+	if (OnlineSessionInterface.IsValid())
+	{
+		OnlineSessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(OnFindLanSessionCompleteDelegate);
+	}
+
+	LanBox->ClearChildren();		
+	LanMatches.Empty();
+
+	if (bWasSuccessful)
+	{
+		for (int32 ServerIndex = 0; ServerIndex < LanSearchSettings->SearchResults.Num(); ServerIndex++)
+		{
+			TSharedPtr<FServerData> NewServer = SUTServerBrowserPanel::CreateNewServerData(LanSearchSettings->SearchResults[ServerIndex]);
+			if (NewServer.IsValid())
 			{
-				FText ServerName = LanServers[i]->GetBrowserName();
+				FText ServerName = NewServer->GetBrowserName();
 				FText ServerInfo = FText::Format(NSLOCTEXT("SUTHomePanel","LanServerFormat","Game: {0}  Map: {1}   # Players: {2}   # Friends: {3}"),
-												 LanServers[i]->GetBrowserGameMode(),
-												 LanServers[i]->GetBrowserMapName(),
-												 LanServers[i]->GetBrowserNumPlayers(),
-												 LanServers[i]->GetBrowserNumFriends());
-				LanMatches.Add(LanServers[i]);
+													NewServer->GetBrowserGameMode(),
+													NewServer->GetBrowserMapName(),
+													NewServer->GetBrowserNumPlayers(),
+													NewServer->GetBrowserNumFriends());
+				LanMatches.Add(NewServer);
 				LanBox->AddSlot().AutoHeight()
 				[
 
@@ -162,7 +208,7 @@ void SUTHomePanel::CheckForLanServers()
 													.Text(NSLOCTEXT("SUTMatchPanel","JoinText","JOIN"))
 													.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
 													.CaptionHAlign(HAlign_Center)
-													.OnClicked(this, &SUTHomePanel::OnJoinLanClicked, LanServers[i])
+													.OnClicked(this, &SUTHomePanel::OnJoinLanClicked, NewServer)
 													//.IsEnabled(TAttribute<bool>::Create(TAttribute<bool>::FGetter::CreateSP(InItem.Get(), &FTrackedMatch::CanJoin, PlayerOwner)))
 												]
 												+SVerticalBox::Slot()
@@ -174,7 +220,7 @@ void SUTHomePanel::CheckForLanServers()
 													.Text(NSLOCTEXT("SUTMatchPanel","SpectateText","SPECTATE"))
 													.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
 													.CaptionHAlign(HAlign_Center)
-													.OnClicked(this, &SUTHomePanel::OnSpectateLanClicked, LanServers[i])
+													.OnClicked(this, &SUTHomePanel::OnSpectateLanClicked, NewServer)
 													//.IsEnabled(TAttribute<bool>::Create(TAttribute<bool>::FGetter::CreateSP(InItem.Get(), &FTrackedMatch::CanSpectate, PlayerOwner)))
 												]
 											]
@@ -203,11 +249,12 @@ void SUTHomePanel::CheckForLanServers()
 						]
 					]
 				];
-			
 			}
 		}
 	}
 }
+
+
 
 FLinearColor SUTHomePanel::GetFadeColor() const
 {
@@ -930,7 +977,7 @@ FReply SUTHomePanel::OnStartRankedPlaylist(int32 PlaylistId)
 
 FReply SUTHomePanel::OnJoinLanClicked(TSharedPtr<FServerData> Server)
 {
-	TSharedPtr<SUTServerBrowserPanel> Browser = PlayerOwner->GetServerBrowser(false);
+	TSharedPtr<SUTServerBrowserPanel> Browser = PlayerOwner->GetServerBrowser(true);
 	if (Browser.IsValid() && Server.IsValid())
 	{
 		Browser->ConnectTo(*Server, false);	
@@ -941,7 +988,7 @@ FReply SUTHomePanel::OnJoinLanClicked(TSharedPtr<FServerData> Server)
 
 FReply SUTHomePanel::OnSpectateLanClicked(TSharedPtr<FServerData> Server)
 {
-	TSharedPtr<SUTServerBrowserPanel> Browser = PlayerOwner->GetServerBrowser(false);
+	TSharedPtr<SUTServerBrowserPanel> Browser = PlayerOwner->GetServerBrowser(true);
 	if (Browser.IsValid() && Server.IsValid())
 	{
 		Browser->ConnectTo(*Server, true);	
