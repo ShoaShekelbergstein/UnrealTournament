@@ -867,7 +867,7 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 			SAssignNew(cbRequireFull, SCheckBox)
 			.IsChecked(ECheckBoxState::Unchecked)
 			.Style(SUTStyle::Get(), "UT.CheckBox")
-			.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","RequireFullTT","Mulitplayer only!  If checked, the game will not start until all of the available slots in the match have been filled.")))
+			.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","RequireFullTT","Multiplayer only!  If checked, the game will not start until all of the available slots in the match have been filled.")))
 			.OnCheckStateChanged(this, &SUTGameSetupDialog::RequireFullChanged)
 
 			.Content()
