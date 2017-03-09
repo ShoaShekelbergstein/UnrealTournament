@@ -342,7 +342,6 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 					DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth - 0.5f * XPSize * (GlowScale - 1.f), XPBarY + 2.f*RenderScale - 0.5f * XPBarHeight * (GlowScale - 1.f), XPSize * GlowScale, (XPBarHeight*GlowScale) - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 0.2f, XPGlow);
 				}
 
-				float LevelUpdateStart = XPUpdateStart + 2.f;
 				OldLevel = GetLevelForXP(CurrentXP - NewXP);
 				if (bGiveReward && (Level != OldLevel))
 				{
