@@ -29,6 +29,14 @@ void SUTWebBrowserPanel::Construct(const FArguments& InArgs, TWeakObjectPtr<UUTL
 	SUTPanelBase::Construct(SUTPanelBase::FArguments(), InPlayerOwner);
 }
 
+SUTWebBrowserPanel::~SUTWebBrowserPanel()
+{
+	if (WebBrowserPanel.IsValid())
+	{
+		WebBrowserPanel.Reset();
+	}
+}
+
 void SUTWebBrowserPanel::ConstructPanel(FVector2D ViewportSize)
 {
 	bShowWarning = false;

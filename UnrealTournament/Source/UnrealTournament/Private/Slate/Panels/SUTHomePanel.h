@@ -24,6 +24,8 @@ class UNREALTOURNAMENT_API SUTHomePanel : public SUTPanelBase
 	{
 		return false;
 	}
+	virtual void PanelClosed();
+
 
 protected:
 
@@ -79,6 +81,8 @@ protected:
 	FDelegateHandle OnFindLanSessionCompleteDelegate;
 	TSharedPtr<class FUTOnlineGameSearchBase> LanSearchSettings;
 	void OnFindLANSessionsComplete(bool bWasSuccessful);
+
+	TArray<TSharedPtr<SUTWebBrowserPanel>> AnnouncementBrowserList;
 
 };
 

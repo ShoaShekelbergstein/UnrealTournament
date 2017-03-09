@@ -16,6 +16,7 @@
 #include "BlueprintContextLibrary.h"
 #include "MatchmakingContext.h"
 #include "SUTServerBrowserPanel.h"
+#include "UTWorldSettings.h"
 
 
 #if !UE_SERVER
@@ -39,12 +40,13 @@ void SUTHomePanel::ConstructPanel(FVector2D ViewportSize)
 		]
 	];
 
-	AnnouncmentTimer = 3.0;
 }
 
 void SUTHomePanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
 {
 	SUTPanelBase::OnShowPanel(inParentWindow);
+
+	AnnouncmentTimer = 3.0;
 
 	PlayerOwner->GetWorld()->GetTimerManager().SetTimer(LanTimerHandle, FTimerDelegate::CreateSP(this, &SUTHomePanel::CheckForLanServers), 30.0f, true);
 	if (AnimWidget.IsValid())
@@ -281,6 +283,9 @@ void SUTHomePanel::BuildAnnouncement()
 	FDateTime Now = FDateTime::UtcNow();
 	AnnouncmentFadeTimer = 0.8;
 
+	// DEBUG Announcement.. 
+	// PlayerOwner->MCPAnnouncements.Announcements.Add(FMCPAnnouncement(Now, Now , TEXT("Told you not to uncomment!"), TEXT("https://www.epicgames.com/unrealtournament/flag-run"), 400.0f, true));
+
 	if (PlayerOwner->MCPAnnouncements.Announcements.Num() > 0)
 	{
 		for (int32 i=0; i < PlayerOwner->MCPAnnouncements.Announcements.Num(); i++)
@@ -288,6 +293,16 @@ void SUTHomePanel::BuildAnnouncement()
 
 			FDateTime Start = PlayerOwner->MCPAnnouncements.Announcements[i].StartDate;
 			FDateTime End = PlayerOwner->MCPAnnouncements.Announcements[i].EndDate;
+
+			if (PlayerOwner->MCPAnnouncements.Announcements[i].bHasAudio)
+			{
+				// Temporarily change audio level
+				UUTAudioSettings* AudioSettings = UUTAudioSettings::StaticClass()->GetDefaultObject<UUTAudioSettings>();
+				if (AudioSettings)
+				{
+					AudioSettings->SetSoundClassVolume(EUTSoundClass::Music,0.0f);
+				}
+			}
 
 			if ( Now >= Start && Now <= End)
 			{
@@ -306,6 +321,8 @@ void SUTHomePanel::BuildAnnouncement()
 					]
 				];
 
+				TSharedPtr<SUTWebBrowserPanel> Browser;
+
 				AnnouncementBox->AddSlot().AutoHeight().Padding(0.0f,0.0f,0.0f,0.0f)
 				[
 					SNew(SBorder)
@@ -320,13 +337,16 @@ void SUTHomePanel::BuildAnnouncement()
 						[
 							SNew(SBox).HeightOverride(PlayerOwner->MCPAnnouncements.Announcements[i].MinHeight)
 							[
-								SNew(SUTWebBrowserPanel, PlayerOwner)
+								SAssignNew(Browser,SUTWebBrowserPanel, PlayerOwner)
 								.InitialURL(PlayerOwner->MCPAnnouncements.Announcements[i].AnnouncementURL)
 								.ShowControls(false)
 							]	
 						]
 					]
 				];
+
+				AnnouncementBrowserList.Add(Browser);
+
 			}
 		}
 	}
@@ -795,9 +815,20 @@ FSlateColor SUTHomePanel::GetFragCenterWatchNowColorAndOpacity() const
 
 void SUTHomePanel::OnHidePanel()
 {
-
 	PlayerOwner->GetWorld()->GetTimerManager().ClearTimer(LanTimerHandle);
 
+	AnnouncementBox->ClearChildren();
+	for (int32 i=0; i < AnnouncementBrowserList.Num(); i++)
+	{
+		if (AnnouncementBrowserList[i].IsValid())
+		{
+			AnnouncementBrowserList[i]->Browse(TEXT(""));
+		}
+	}
+	AnnouncementBrowserList.Empty();
+
+	UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
+	UserSettings->SetSoundClassVolume(EUTSoundClass::Music, UserSettings->GetSoundClassVolume(EUTSoundClass::Music));
 
 	bClosing = true;
 	if (AnimWidget.IsValid())
@@ -809,6 +840,22 @@ void SUTHomePanel::OnHidePanel()
 		SUTPanelBase::OnHidePanel();
 	}
 }
+
+void SUTHomePanel::PanelClosed()
+{
+	for (int32 i=0; i < AnnouncementBrowserList.Num(); i++)
+	{
+		if (AnnouncementBrowserList[i].IsValid())
+		{
+			AnnouncementBrowserList[i]->Browse(TEXT("about:blank"));
+		}
+	}
+	AnnouncementBrowserList.Empty();
+
+	bClosing = true;
+	AnimEnd();
+}
+
 
 
 void SUTHomePanel::AnimEnd()

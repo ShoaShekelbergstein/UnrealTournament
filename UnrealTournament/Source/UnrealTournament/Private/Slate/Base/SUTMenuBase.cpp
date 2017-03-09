@@ -65,7 +65,7 @@ void SUTMenuBase::OnMenuClosed()
 
 	if (ActivePanel.IsValid())
 	{
-		DeactivatePanel(ActivePanel);
+		ActivePanel->PanelClosed();
 	}
 
 	FSlateApplication::Get().ClearUserFocus(0);

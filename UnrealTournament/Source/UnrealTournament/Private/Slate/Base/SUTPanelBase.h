@@ -57,6 +57,12 @@ public:
 
 	virtual TSharedPtr<SWidget> GetInitialFocus();
 
+	// Will be called when the menu contain this panel is closed for good.
+	virtual void PanelClosed()
+	{
+		OnHidePanel();
+	}
+
 protected:
 
 	// Will be true if this panel is closing

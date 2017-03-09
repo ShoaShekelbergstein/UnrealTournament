@@ -6878,6 +6878,7 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 			}
 		}
 
+		CloseAllUI();
 		ConsoleCommand(TEXT("Start ") + URL);
 	}
 }

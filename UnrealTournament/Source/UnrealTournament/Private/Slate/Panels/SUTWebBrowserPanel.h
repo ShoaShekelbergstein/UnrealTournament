@@ -30,11 +30,11 @@ class UNREALTOURNAMENT_API SUTWebBrowserPanel : public SUTPanelBase
 	SLATE_EVENT(FSimpleDelegate, OnLoadCompleted)
 	SLATE_EVENT(FSimpleDelegate, OnLoadError)
 
-
 	SLATE_END_ARGS()
 	
 public:
 	void Construct(const FArguments& InArgs, TWeakObjectPtr<UUTLocalPlayer> InPlayerOwner);
+	~SUTWebBrowserPanel();
 
 	virtual void ConstructPanel(FVector2D ViewportSize);
 	virtual void Browse(FString URL);

@@ -43,6 +43,7 @@ void SUTMainMenu::CreateDesktop()
 
 SUTMainMenu::~SUTMainMenu()
 {
+	HomePanel.Reset();
 }
 
 TSharedRef<SWidget> SUTMainMenu::BuildBackground()

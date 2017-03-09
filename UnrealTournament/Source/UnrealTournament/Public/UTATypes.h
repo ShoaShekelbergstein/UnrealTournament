@@ -2368,7 +2368,6 @@ struct FMCPAnnouncement
 	UPROPERTY()
 	FString Title;
 
-
 	UPROPERTY()
 	FDateTime StartDate;
 	
@@ -2381,21 +2380,26 @@ struct FMCPAnnouncement
 	UPROPERTY()
 	float MinHeight;
 
+	UPROPERTY()
+	bool bHasAudio;
+
 	FMCPAnnouncement()
-		: Title(TEXT(""))
-		, StartDate(FDateTime::Now())
+		: StartDate(FDateTime::Now())
 		, EndDate(FDateTime::Now())
+		, Title(TEXT(""))
 		, AnnouncementURL(TEXT(""))
 		, MinHeight(240)
+		, bHasAudio(false)
 	{
 	}
 
-	FMCPAnnouncement(FDateTime inStartDate, FDateTime inEndDate, const FString& inURL)
-		:  Title(TEXT(""))
-		, StartDate(inStartDate)
+	FMCPAnnouncement(FDateTime inStartDate, FDateTime inEndDate, const FString& inTitle, const FString& inURL, float inMinHeight=240, bool inbHasAudio=false)
+		: StartDate(inStartDate)
 		, EndDate(inEndDate)
+		, Title(inTitle)
 		, AnnouncementURL(inURL)
-		, MinHeight(240)
+		, MinHeight(inMinHeight)
+		, bHasAudio(inbHasAudio)
 	{
 	}
 
