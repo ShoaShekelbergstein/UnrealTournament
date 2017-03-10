@@ -1349,18 +1349,18 @@ void AUTWeapon::FireShot()
 				if (bTrackHitScanReplication)
 				{
 					HitScanHitChar = Cast<AUTCharacter>(OutHit.Actor.Get());
-					HitScanCharLoc = HitScanHitChar ? HitScanHitChar->GetActorLocation() : FVector::ZeroVector;
-					HitScanHeight = HitScanHitChar ? HitScanHitChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 108.f;
-					HitScanStart = GetFireStartLoc();
-					HitScanEnd = OutHit.Location;
-					HitScanTime = (GetUTOwner() && GetUTOwner()->UTCharacterMovement) ? GetUTOwner()->UTCharacterMovement->GetCurrentMovementTime() : 0.f;
-					HitScanIndex = FireEventIndex;
 					if ((Role < ROLE_Authority) && HitScanHitChar)
 					{
 						ServerHitScanHit(HitScanHitChar, FireEventIndex);
 					}
 					else if ((Role == ROLE_Authority) && !HitScanHitChar && ReceivedHitScanHitChar && GetWorld()->GetGameState<AUTGameState>() && GetWorld()->GetGameState<AUTGameState>()->bDebugHitScanReplication)
 					{
+						HitScanIndex = FireEventIndex;
+						HitScanTime = (GetUTOwner() && GetUTOwner()->UTCharacterMovement) ? GetUTOwner()->UTCharacterMovement->GetCurrentMovementTime() : 0.f;
+						HitScanCharLoc = HitScanHitChar ? HitScanHitChar->GetActorLocation() : FVector::ZeroVector;
+						HitScanHeight = HitScanHitChar ? HitScanHitChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 108.f;
+						HitScanStart = GetFireStartLoc();
+						HitScanEnd = OutHit.Location;
 						AUTPlayerController* UTPC = UTOwner ? Cast<AUTPlayerController>(UTOwner->Controller) : NULL;
 						float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
 						FVector MissedLoc = ReceivedHitScanHitChar->GetRewindLocation(PredictionTime, UTPC);
