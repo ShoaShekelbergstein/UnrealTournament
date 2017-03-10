@@ -233,7 +233,7 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 		}
 
 		UUTLocalPlayer* LP = UTHUDOwner->UTPlayerOwner ? Cast<UUTLocalPlayer>(UTHUDOwner->UTPlayerOwner->GetLocalPlayer()) : nullptr;
-		if (LP && LP->IsEarningXP()) // FIXMESTEVE
+		if (LP && LP->IsEarningXP()) 
 		{
 			float XPUpdateStart = 1.5f + 0.5f*NumHighlights;
 			float LevelUpdateStart = XPUpdateStart + 2.f;
@@ -266,7 +266,7 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 			}
 			int32 Level = GetLevelForXP(CurrentXP);
 			int32 LevelXPStart = GetXPForLevel(Level);
-			int32 LevelXPEnd = GetXPForLevel(Level + 1);
+			int32 LevelXPEnd = FMath::Max(GetXPForLevel(Level + 1), LevelXPStart+1);
 			int32 LevelXP = LevelXPEnd - LevelXPStart;
 			int32 DisplayedXP = CurrentXP - LevelXPStart;
 			float CurrentXPWidth = XPBarWidth*FMath::Min(1.f, float(DisplayedXP) / float(LevelXP)) - 4.f*RenderScale;
