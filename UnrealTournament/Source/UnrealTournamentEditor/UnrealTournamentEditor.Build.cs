@@ -44,10 +44,20 @@ public class UnrealTournamentEditor : ModuleRules
 			        "McpProfileSys",
 			        "GameSubCatalog",
 			        "GameSubCatalogEditor",
-			        "LootTables",
+                    "UTMcpProfile",
+                    "LootTables",
                 }
             );
         }
-	}
+        else
+        {
+            PublicDependencyModuleNames.AddRange(
+                    new string[]
+                    {
+                    "GithubStubs",
+                    }
+                );
+        }
+    }
 
 }

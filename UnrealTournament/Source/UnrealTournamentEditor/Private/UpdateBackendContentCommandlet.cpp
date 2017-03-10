@@ -8,9 +8,17 @@
 #include "CatalogDefinition.h"
 #include "MultiLocHelper.h"
 #include "LootTables.h"
+#include "UtMcpDefinition.h"
 #endif
 
 DEFINE_LOG_CATEGORY(LogTemplates);
+
+enum class EValidatorAction
+{
+	Reject,
+	Accept,
+	ManualJson,
+};
 
 int32 UUpdateBackendContentCommandlet::Main(const FString& FullCommandLine)
 {
@@ -63,6 +71,8 @@ struct FJsonExporter : public TSharedFromThis<FJsonExporter>
 			//bSuccess = WriteCatalogJson() && bSuccess;
 			bSuccess = ExportProfileItems() && bSuccess;
 			bSuccess = ExportXPTable() && bSuccess;
+			bSuccess = WriteSimpleItemAssetJson(EUtItemType::CardPack, TEXT("ItemTemplates/CardPack.json")) && bSuccess;
+			bSuccess = WriteSimpleItemAssetJson(EUtItemType::Token, TEXT("ItemTemplates/Token.json")) && bSuccess;
 
 			UE_LOG(LogTemplates, Log, TEXT("Export Complete"));
 			return bSuccess;
@@ -281,6 +291,65 @@ protected:
 		}
 		Json->WriteArrayEnd();
 		return EndJson();
+	}
+
+	bool WriteSimpleItemAssetJson(EUtItemType ItemType, const TCHAR* FileName, TFunction<EValidatorAction(UUtMcpDefinition*)>&& Validator = [](UUtMcpDefinition* ItemDef) { return EValidatorAction::Accept; })
+	{
+		bool bSuccess = true;
+		
+		TArray<FAssetData> Assets;
+		GetAllAssetData(UUtMcpDefinition::StaticClass(), Assets, false);
+
+		BeginJson(FileName);
+		Json->WriteArrayStart();
+
+		// Add all item templates.  Assumption that the writer has already opened an array.
+
+		for (const FAssetData& Asset : Assets)
+		{
+			UUtMcpDefinition* ItemDef = Cast<UUtMcpDefinition>(Asset.GetAsset());
+
+			if (ItemDef != nullptr)
+			{
+				if (ItemDef->ItemType == ItemType)
+				{
+					if (ItemDef->IsExportAllowed())
+					{
+						EValidatorAction Action = Validator(ItemDef);
+						if (Action == EValidatorAction::Accept)
+						{
+							auto JsonRef = Json.ToSharedRef();
+							if (!ItemDef->WriteJsonTemplate(JsonRef))
+							{
+								UE_LOG(LogTemplates, Error, TEXT("%s JSON construction failed"), *ItemDef->GetFullName());
+								bSuccess = false;
+								continue;
+							}
+
+							ExportedTemplates.Add(ItemDef->GetPersistentName());
+						}
+						else if (Action == EValidatorAction::Reject)
+						{
+							UE_LOG(LogTemplates, Error, TEXT("%s failed export validation"), *ItemDef->GetFullName());
+							bSuccess = false;
+						}
+						else if (Action == EValidatorAction::ManualJson)
+						{
+							// add it as a valid template, but don't write Json
+							ExportedTemplates.Add(ItemDef->GetPersistentName());
+						}
+					}
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemplates, Error, TEXT("%s failed to find Item definition"), *Asset.GetFullName());
+				bSuccess = false;
+			}
+		}
+
+		Json->WriteArrayEnd();
+		return EndJson() && bSuccess;
 	}
 
 	bool ExportXPTable()
