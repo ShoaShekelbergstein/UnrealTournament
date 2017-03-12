@@ -23,7 +23,7 @@ bool UUTHUDWidget_Spectator::ShouldDraw_Implementation(bool bShowScores)
 		return true;
 	}
 
-	if (UTHUDOwner && UTHUDOwner->UTPlayerOwner)
+	if (UTHUDOwner && UTHUDOwner->UTPlayerOwner && UTGameState)
 	{
 
 		UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(UTHUDOwner->UTPlayerOwner->Player);
@@ -32,7 +32,7 @@ bool UUTHUDWidget_Spectator::ShouldDraw_Implementation(bool bShowScores)
 			return false;
 		}
 
-		if (UTHUDOwner->UTPlayerOwner->UTPlayerState && UTGameState && (UTGameState->GetMatchState() != MatchState::PlayerIntro))
+		if (UTHUDOwner->UTPlayerOwner->UTPlayerState && (UTGameState->GetMatchState() != MatchState::PlayerIntro))
 		{
 			AUTPlayerState* PS = UTHUDOwner->UTPlayerOwner->UTPlayerState;
 			if (UTGameState->IsMatchIntermission() || UTGameState->HasMatchEnded() || !UTGameState->HasMatchStarted())
