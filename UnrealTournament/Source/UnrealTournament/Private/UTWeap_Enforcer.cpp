@@ -168,6 +168,11 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 			else if (ShouldPlay1PVisuals())
 			{
 				UTOwner->TargetEyeOffset.X = FiringViewKickback;
+				AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
+				if (PC != NULL)
+				{
+					PC->AddHUDImpulse(HUDViewKickback);
+				}
 				// muzzle flash
 				if (MuzzleFlash.IsValidIndex(CurrentFireMode) && MuzzleFlash[CurrentFireMode] != NULL && MuzzleFlash[CurrentFireMode]->Template != NULL)
 				{
@@ -195,6 +200,11 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 				UAnimInstance* HandAnimInstance = UTOwner->FirstPersonMesh ? UTOwner->FirstPersonMesh->GetAnimInstance() : nullptr;
 
 				UTOwner->TargetEyeOffset.X = FiringViewKickback;
+				AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
+				if (PC != NULL)
+				{
+					PC->AddHUDImpulse(HUDViewKickback);
+				}
 				// left muzzle flash
 				if (bFireLeftSide)
 				{
