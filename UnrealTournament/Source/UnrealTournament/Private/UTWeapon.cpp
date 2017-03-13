@@ -1350,7 +1350,7 @@ void AUTWeapon::FireShot()
 			{
 				FHitResult OutHit;
 				FireInstantHit(true, &OutHit);
-				if (bTrackHitScanReplication)
+				if (bTrackHitScanReplication && (UTOwner == nullptr || !UTOwner->IsLocallyControlled() || Cast<APlayerController>(UTOwner->GetController()) != nullptr))
 				{
 					HitScanHitChar = Cast<AUTCharacter>(OutHit.Actor.Get());
 					if ((Role < ROLE_Authority) && HitScanHitChar)
@@ -2010,7 +2010,7 @@ float AUTWeapon::GetImpartedMomentumMag(AActor* HitActor)
 
 void AUTWeapon::K2_FireInstantHit(bool bDealDamage, FHitResult& OutHit)
 {
-	if (bTrackHitScanReplication)
+	if (bTrackHitScanReplication && (UTOwner == nullptr || !UTOwner->IsLocallyControlled() || Cast<APlayerController>(UTOwner->GetController()) != nullptr))
 	{
 		FFrame::KismetExecutionMessage(*FString::Printf(TEXT("%s::FireInstantHit(): from script!"), *GetName()), ELogVerbosity::Warning);
 	}
