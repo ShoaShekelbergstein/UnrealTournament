@@ -1084,6 +1084,13 @@ void AUTBot::SetMoveTarget(const FRouteCacheItem& NewMoveTarget, const TArray<FC
 	TranslocTarget = FVector::ZeroVector;
 	// default movement code will generate points and set MoveTimer, this just makes sure we don't abort before even getting there
 	MoveTimer = FMath::Max<float>(MoveTimer, 1.0f);
+
+	// if previous focus was MoveTarget, update
+	if (PrevMoveTarget.Actor.IsValid() && GetFocusActorForPriority(EAIFocusPriority::Gameplay) == PrevMoveTarget.Actor.Get())
+	{
+		// note: if new target is NULL (a point instead of an Actor) this will fall back to EAIFocusPriority::Move
+		SetFocus(NewMoveTarget.Actor.Get(), EAIFocusPriority::Gameplay);
+	}
 }
 
 void AUTBot::UpdateMovementOptions(bool bNewPath)
