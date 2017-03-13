@@ -4916,8 +4916,9 @@ void AUTGameMode::HandleMapVote()
  **/
 void AUTGameMode::CullMapVotes()
 {
+	TArray<AUTReplicatedMapInfo*> FinalList;
 	TArray<AUTReplicatedMapInfo*> Sorted;
-	TArray<AUTReplicatedMapInfo*> DeleteList;
+
 	for (int32 i=0; i< UTGameState->MapVoteList.Num(); i++)
 	{
 		int32 InsertIndex = 0;
@@ -4929,76 +4930,50 @@ void AUTGameMode::CullMapVotes()
 		Sorted.Insert(UTGameState->MapVoteList[i], InsertIndex);
 	}
 
-	// If noone has voted, then randomly pick 6 maps
-
-	int32 ForcedSize = 3;
 	if (Sorted.Num() > 0)
 	{
 		if (Sorted[0]->VoteCount == 0)	// Top map has 0 votes so no one has voted
 		{
-			ForcedSize = 6;
-			while (Sorted.Num() > 0)
+			// Randomly pick up to 3 maps from the list and add them to the final
+
+			for (int32 i = 0; i < 3; i++)
 			{
-				DeleteList.Add(Sorted[Sorted.Num()-1]);
-				Sorted.RemoveAt(Sorted.Num()-1,1);
+				if ( Sorted.Num() > 0 )
+				{
+					int32 RandIdx = FMath::RandRange(0, Sorted.Num()-1);
+					FinalList.Add(Sorted[RandIdx]);
+					Sorted.RemoveAt(RandIdx,1);
+				}
+				else
+				{
+					break;
+				}
 			}
 		}
 		else 
 		{
-			// Remove any maps with 0 votes.
-			int32 ZeroIndex = Sorted.Num()-1;
-			while (ZeroIndex > 0)
+			for (int32 i=0; i < 3; i++)
 			{
-				if (Sorted[ZeroIndex]->VoteCount == 0)
+				if (Sorted.IsValidIndex(i))
 				{
-					DeleteList.Add(Sorted[ZeroIndex]);
-					Sorted.RemoveAt(ZeroIndex,1);
-				}
-				ZeroIndex--;
-			}
-
-			// If we have more than 6 maps left to vote on, then find the # of votes of map 6 and cull anything with less votes.
-			if (Sorted.Num() > 6)
-			{
-				int32 Idx = 5;
-				while (Idx < Sorted.Num() && Sorted[Idx+1]->VoteCount == Sorted[Idx]->VoteCount)
-				{
-					Idx++;
-				}
-
-				while (Sorted.Num() > Idx)
-				{
-					DeleteList.Add(Sorted[Idx]);
-					Sorted.RemoveAt(Idx,1);
+					FinalList.Add(Sorted[i]);
+					Sorted.RemoveAt(i,1);
 				}
 			}
 		}
 	}
-
-	if (Sorted.Num() < ForcedSize)
-	{
-		// We want at least 3 maps to choose from.. so add a few back
-		while (Sorted.Num() < ForcedSize && DeleteList.Num() > 0)
-		{
-			int32 RandIdx = FMath::RandRange(0, DeleteList.Num()-1);
-			Sorted.Add(DeleteList[RandIdx]);
-			DeleteList.RemoveAt(RandIdx,1);
-		}
-	}
-
-	UE_LOG(UT,Log, TEXT("Culling Votes: %i %i"), Sorted.Num(), DeleteList.Num());
 
 	UTGameState->MapVoteList.Empty();
-	for (int32 i=0; i < Sorted.Num(); i++)
+	for (int32 i=0; i < FinalList.Num(); i++)
 	{
-		UTGameState->MapVoteList.Add(Sorted[i]);
+		UTGameState->MapVoteList.Add(FinalList[i]);
 	}
-	UTGameState->MapVoteListCount = UTGameState->MapVoteList.Num();
+	UTGameState->MapVoteListCount = FinalList.Num();
 
-	for (int32 i=0; i<DeleteList.Num(); i++)
+	for (int32 i=0; i<Sorted.Num(); i++)
 	{
 		// Kill the actor
-		DeleteList[i]->Destroy();
+		Sorted[i]->Destroy();
 	}
 }
 
