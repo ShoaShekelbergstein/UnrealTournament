@@ -6867,12 +6867,12 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 		if (DedicatedServerProcessHandle.IsValid())
 		{
 			GEngine->SetClientTravel(PlayerController->GetWorld(), TEXT("127.0.0.1"), TRAVEL_Absolute);
-
+#if !UE_SERVER
 			TSharedPtr<SUTWaitingForListenServerDialog> Dialog;
 			SAssignNew(Dialog, SUTWaitingForListenServerDialog).PlayerOwner(this).OnDialogResult(FDialogResultDelegate::CreateUObject(this, &UUTLocalPlayer::WaitingForListenServerDialogClosed));
 
 			OpenDialog(Dialog.ToSharedRef(),20000);
-
+#endif
 		}
 	}
 	else if (InstanceType == ECreateInstanceTypes::Standalone)
