@@ -112,7 +112,6 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 			PS->ModifyStatsValue(ShotsStatsName, 1);
 		}
 
-		UTOwner->SetFlashLocation(Hit.Location, CurrentFireMode);
 		// warn bot target, if any
 		if (UTPC != NULL)
 		{
@@ -200,11 +199,18 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 	if (Role == ROLE_Authority)
 	{
 		SetFlashExtra(Hit.Actor.Get());
+		UTOwner->SetFlashLocation(Hit.Location, CurrentFireMode);
 	}
 	if (OutHit != NULL)
 	{
 		*OutHit = Hit;
 	}
+}
+
+void AUTWeap_Sniper::PlayPredictedImpactEffects(FVector ImpactLoc)
+{
+	SetFlashExtra(nullptr);
+	Super::PlayPredictedImpactEffects(ImpactLoc);
 }
 
 int32 AUTWeap_Sniper::GetHitScanDamage()

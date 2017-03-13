@@ -17,6 +17,8 @@ class UNREALTOURNAMENT_API AUTWeapAttachment_LightningRifle : public AUTWeaponAt
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void PlayFiringEffects() override;
+
 	virtual void ModifyFireEffect_Implementation(class UParticleSystemComponent* Effect);
 
 	virtual	void ChainEffects();

@@ -37,7 +37,18 @@ void AUTWeapAttachment_LightningRifle::Tick(float DeltaSeconds)
 		PoweredGlowComponent->SetActive(UTOwner->FlashExtra == 4);
 	}
 	Super::Tick(DeltaSeconds);
-}	
+}
+
+void AUTWeapAttachment_LightningRifle::PlayFiringEffects()
+{
+	uint8 RealFireMode = UTOwner->FireMode;
+	if (UTOwner->FlashExtra != 0)
+	{
+		UTOwner->FireMode = 1;
+	}
+	Super::PlayFiringEffects();
+	UTOwner->FireMode = RealFireMode;
+}
 
 void AUTWeapAttachment_LightningRifle::ModifyFireEffect_Implementation(class UParticleSystemComponent* Effect)
 {

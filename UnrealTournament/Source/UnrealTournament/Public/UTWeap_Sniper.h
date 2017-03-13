@@ -41,6 +41,7 @@ class UNREALTOURNAMENT_API AUTWeap_Sniper : public AUTWeapon
 
 	virtual AUTProjectile* FireProjectile();
 	virtual void FireInstantHit(bool bDealDamage = true, FHitResult* OutHit = NULL);
+	virtual void PlayPredictedImpactEffects(FVector ImpactLoc) override;
 
 	virtual float GetAISelectRating_Implementation() override;
 
