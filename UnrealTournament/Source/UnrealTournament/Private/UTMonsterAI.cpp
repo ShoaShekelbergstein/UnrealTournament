@@ -18,3 +18,22 @@ void AUTMonsterAI::CheckWeaponFiring(bool bFromWeapon)
 		Super::CheckWeaponFiring(bFromWeapon);
 	}
 }
+
+void AUTMonsterAI::UpdateControlRotation(float DeltaTime, bool bUpdatePawn)
+{
+	TGuardValue<FRotator> RotationRateGuard(RotationRate, (GetUTChar() != nullptr && GetUTChar()->GetWeapon() != nullptr && GetUTChar()->GetWeapon()->IsFiring()) ? (RotationRate * FiringRotationRateMult) : RotationRate);
+	Super::UpdateControlRotation(DeltaTime, bUpdatePawn);
+}
+
+bool AUTMonsterAI::NeedToTurn(const FVector& TargetLoc, bool bForcePrecise)
+{
+	// if we intentionally made the AI unable to keep up with players strafing around them then don't stop firing because it happened
+	if (!bForcePrecise && FiringRotationRateMult < 1.0f && GetUTChar() != nullptr && GetUTChar()->GetWeapon() != nullptr && GetUTChar()->GetWeapon()->IsFiring())
+	{
+		return false;
+	}
+	else
+	{
+		return Super::NeedToTurn(TargetLoc, bForcePrecise);
+	}
+}
