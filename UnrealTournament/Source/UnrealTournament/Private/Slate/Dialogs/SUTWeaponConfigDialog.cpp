@@ -1527,6 +1527,13 @@ FText SUTWeaponConfigDialog::GetVarientText() const
 				return WeaponSkin->DisplayName;
 			}
 		}
+		else
+		{
+			return (AllWeapons.IsValidIndex(CurrentWeaponIndex) && AllWeapons[CurrentWeaponIndex].WeaponDefaultObject != nullptr) 
+					? AllWeapons[CurrentWeaponIndex].WeaponDefaultObject->DisplayName 
+					: FText::GetEmpty();
+
+		}
 	}
 	return NSLOCTEXT("SUTWeaponConfigDialog","DefaultWeaponSkinDesc","Epic Special");
 }
