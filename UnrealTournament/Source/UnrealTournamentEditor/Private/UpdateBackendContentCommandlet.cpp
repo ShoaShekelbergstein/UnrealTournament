@@ -58,6 +58,8 @@ struct FJsonExporter : public TSharedFromThis<FJsonExporter>
 	{
 	}
 
+	TArray<UUtMcpDefinition*> CachedMcpDefintions;
+
 	bool Export(const FString& ExportDirectory)
 	{
 		if (Initialize(ExportDirectory))
@@ -65,14 +67,25 @@ struct FJsonExporter : public TSharedFromThis<FJsonExporter>
 			// write everything
 			bool bSuccess = true;
 			
-			// TODO:
-			bSuccess = ExportLootTables() && bSuccess;
-			// TODO:
+			// Force load all mcp definitions
+			TArray<FAssetData> Assets;
+			GetAllAssetData(UUtMcpDefinition::StaticClass(), Assets, false);
+			for (const FAssetData& Asset : Assets)
+			{
+				UUtMcpDefinition* Item = Cast<UUtMcpDefinition>(Asset.GetAsset());
+				if (Item)
+				{
+					CachedMcpDefintions.Add(Item);
+				}
+			}
+
 			//bSuccess = WriteCatalogJson() && bSuccess;
 			bSuccess = ExportProfileItems() && bSuccess;
 			bSuccess = ExportXPTable() && bSuccess;
 			bSuccess = WriteSimpleItemAssetJson(EUtItemType::CardPack, TEXT("ItemTemplates/CardPack.json")) && bSuccess;
 			bSuccess = WriteSimpleItemAssetJson(EUtItemType::Token, TEXT("ItemTemplates/Token.json")) && bSuccess;
+
+			bSuccess = ExportLootTables() && bSuccess;
 
 			UE_LOG(LogTemplates, Log, TEXT("Export Complete"));
 			return bSuccess;
@@ -231,6 +244,27 @@ protected:
 		return IsValidTemplateId(TemplateIdOrPath);
 	}
 
+	bool ConvertItemDefToId(FString& ItemPathInOut)
+	{
+		UUtMcpDefinition* ItemDef = nullptr;
+		if (ItemPathInOut.StartsWith(TEXT("/")))
+		{
+			ItemDef = LoadObject<UUtMcpDefinition>(nullptr, *ItemPathInOut);
+		}
+		else
+		{
+			//ItemDef = UOrionGlobals::Get().FindItemInAssetLists(ItemPathInOut);
+		}
+
+		if (ItemDef == nullptr)
+		{
+			UE_LOG(LogTemplates, Error, TEXT("%s is not a valid UUtMcpDefinition"), *ItemPathInOut);
+			return false;
+		}
+		ItemPathInOut = ItemDef->GetPersistentName();
+		return true;
+	}
+
 	bool ExportLootTables()
 	{
 		UE_LOG(LogTemplates, Display, TEXT("BEGIN EXPORT - LootTables"));
@@ -246,6 +280,7 @@ protected:
 
 		// bind the template ID check function
 		LootTables->OnIsValidTemplateId.BindSP(AsShared(), &FJsonExporter::IsValidTemplateIdOrPath);
+		LootTables->OnConvertItemDefToId.BindSP(AsShared(), &FJsonExporter::ConvertItemDefToId);
 
 		// export
 		BeginJson(TEXT("DataTemplates/LootTables.json"));
@@ -318,6 +353,8 @@ protected:
 						EValidatorAction Action = Validator(ItemDef);
 						if (Action == EValidatorAction::Accept)
 						{
+							ItemDef->LoadDependenciesForExport();
+
 							auto JsonRef = Json.ToSharedRef();
 							if (!ItemDef->WriteJsonTemplate(JsonRef))
 							{
