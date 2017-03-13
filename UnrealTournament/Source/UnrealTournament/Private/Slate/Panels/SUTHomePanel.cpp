@@ -137,6 +137,7 @@ void SUTHomePanel::OnFindLANSessionsComplete(bool bWasSuccessful)
 	LanBox->ClearChildren();		
 	LanMatches.Empty();
 
+
 	if (bWasSuccessful)
 	{
 		for (int32 ServerIndex = 0; ServerIndex < LanSearchSettings->SearchResults.Num(); ServerIndex++)
@@ -391,9 +392,14 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 				+SHorizontalBox::Slot()
 				.AutoWidth()
 				[
-					SNew(SBox).WidthOverride(940)
+					SNew(SBox).WidthOverride(940).MaxDesiredHeight(400)
 					[
-						SAssignNew(LanBox, SVerticalBox)
+						SNew(SScrollBox)
+						.Orientation(EOrientation::Orient_Vertical)
+						+SScrollBox::Slot()
+						[
+							SAssignNew(LanBox, SVerticalBox)
+						]
 					]
 				]
 			]
