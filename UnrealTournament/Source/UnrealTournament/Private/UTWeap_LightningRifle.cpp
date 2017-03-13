@@ -272,13 +272,11 @@ void AUTWeap_LightningRifle::FireShot()
 
 void AUTWeap_LightningRifle::PlayImpactEffects_Implementation(const FVector& TargetLoc, uint8 FireMode, const FVector& SpawnLocation, const FRotator& SpawnRotation)
 {
-	UE_LOG(UT, Warning, TEXT("Play Impact Effects extra %d "), UTOwner->FlashExtra);
 	UParticleSystem* RealFireEffect = (FireEffect.Num() > 1) ? FireEffect[0] : nullptr;
 	if (UTOwner && (UTOwner->FlashExtra > 1))
 	{
 		if (FireEffect.Num() > 2)
 		{
-			UE_LOG(UT, Warning, TEXT("CHANGE EFFECT from %s  to %s"), *FireEffect[0]->GetName(), *FireEffect[2]->GetName());
 			FireEffect[0] = FireEffect[2];
 		}
 	}

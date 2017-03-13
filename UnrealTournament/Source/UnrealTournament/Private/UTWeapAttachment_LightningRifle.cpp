@@ -48,7 +48,7 @@ void AUTWeapAttachment_LightningRifle::PlayFiringEffects()
 		UTOwner->FireMode = 1;
 		if ((UTOwner->FlashExtra > 1) && (FireEffect.Num() > 2))
 		{
-			FireEffect[1] = FireEffect[2];
+			FireEffect[1] = (UTOwner->FlashExtra == 4) ? nullptr : FireEffect[2];
 		}
 	}
 	Super::PlayFiringEffects();
