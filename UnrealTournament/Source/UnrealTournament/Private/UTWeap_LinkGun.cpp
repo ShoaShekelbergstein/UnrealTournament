@@ -206,7 +206,7 @@ void AUTWeap_LinkGun::Tick(float DeltaTime)
 				}
 			}
 		}
-		else if (UTOwner && OverheatSound)
+		else if (UTOwner && OverheatSound && (!IsFiring() || !FireLoopingSound.IsValidIndex(CurrentFireMode) || !FireLoopingSound[CurrentFireMode]))
 		{
 			UTOwner->SetAmbientSound(OverheatSound, false);
 			UTOwner->ChangeAmbientSoundPitch(OverheatSound, 0.5f + OverheatFactor);
