@@ -251,6 +251,9 @@ public:
 
 	//=========================================
 	// DODGING
+	/** whether dodging is allowed at all */
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
+	bool bCanDodge;
 	/** Dodge impulse in XY plane */
 	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Impulse - Horizontal"))
 	float DodgeImpulseHorizontal;
@@ -485,6 +488,9 @@ public:
 
 	/** Flag to synchronize tap slide */
 	bool bPressedSlide;
+
+	/** return true if weapon is preventing controlled movement */
+	bool IsRootedByWeapon() const;
 
 	/** Return true if character can dodge. */
 	virtual bool CanDodge();

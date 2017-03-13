@@ -329,6 +329,13 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Weapon")
 	bool bCanThrowWeapon;
 
+	/** if true, user has no voluntary movement while IsFiring() returns true
+	 * and cannot start firing while in the air
+	 * does not affect movement caused by outside control (knockback, jumppad, etc)
+	 */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Weapon")
+	bool bRootWhileFiring;
+
 	/** if true, don't display in menus like the weapon priority menu (generally because the weapon's use is outside the user's control, e.g. instagib) */
 	UPROPERTY(EditDefaultsOnly, Category = UI)
 	bool bHideInMenus;

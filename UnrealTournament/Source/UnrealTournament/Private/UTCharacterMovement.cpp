@@ -31,6 +31,7 @@ UUTCharacterMovement::UUTCharacterMovement(const class FObjectInitializer& Objec
 	bAllowJumpMultijumps = true;
 	bIsDoubleJumpAvailableForFlagCarrier = true;
 	MultiJumpImpulse = 600.f;
+	bCanDodge = true;
 	DodgeJumpImpulse = 600.f;
 	DodgeLandingSpeedFactor = 1.f;
 	DodgeJumpLandingSpeedFactor = 1.f;
@@ -736,6 +737,12 @@ FVector UUTCharacterMovement::GetImpartedMovementBaseVelocity() const
 	return Result;
 }
 
+bool UUTCharacterMovement::IsRootedByWeapon() const
+{
+	AUTCharacter* UTOwner = Cast<AUTCharacter>(CharacterOwner);
+	return (UTOwner != nullptr && UTOwner->GetWeapon() != nullptr && UTOwner->GetWeapon()->bRootWhileFiring && UTOwner->GetWeapon()->IsFiring());
+}
+
 bool UUTCharacterMovement::CanDodge()
 {
 /*	if (GetCurrentMovementTime() < DodgeResetTime)
@@ -747,12 +754,12 @@ bool UUTCharacterMovement::CanDodge()
 		UE_LOG(UTNet, Warning, TEXT("SUCCEEDED candodge current move time %f dodge reset time %f"), GetCurrentMovementTime(), DodgeResetTime);
 	}
 */
-	return !bIsFloorSliding && CanEverJump() && (GetCurrentMovementTime() > DodgeResetTime);
+	return !bIsFloorSliding && bCanDodge && CanEverJump() && (GetCurrentMovementTime() > DodgeResetTime) && !IsRootedByWeapon();
 }
 
 bool UUTCharacterMovement::CanJump()
 {
-	return (IsMovingOnGround() || CanMultiJump()) && CanEverJump() && !bIsFloorSliding;
+	return (IsMovingOnGround() || CanMultiJump()) && CanEverJump() && !bIsFloorSliding && !IsRootedByWeapon();
 }
 
 bool UUTCharacterMovement::IsCarryingFlag() const
@@ -1193,7 +1200,7 @@ float UUTCharacterMovement::GetMaxSpeed() const
 		// small non-zero number used to avoid divide by zero issues
 		FinalMaxSpeed = 0.01f;
 	}
-	else if (bIsTaunting)
+	else if (bIsTaunting || IsRootedByWeapon())
 	{
 		FinalMaxSpeed = 0.01f;
 	}

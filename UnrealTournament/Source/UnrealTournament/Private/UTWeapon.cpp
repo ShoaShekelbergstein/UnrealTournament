@@ -440,6 +440,10 @@ void AUTWeapon::StartFire(uint8 FireModeNum)
 	{
 		return;
 	}
+	if (bRootWhileFiring && UTOwner != nullptr && UTOwner->GetCharacterMovement() != nullptr && UTOwner->GetCharacterMovement()->MovementMode == MOVE_Falling)
+	{
+		return;
+	}
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (GS && GS->PreventWeaponFire())
 	{
@@ -2539,7 +2543,7 @@ void AUTWeapon::Destroyed()
 
 bool AUTWeapon::CanFireAgain()
 {
-	return (GetUTOwner() && (GetUTOwner()->GetPendingWeapon() == NULL) && HasAmmo(GetCurrentFireMode()));
+	return (GetUTOwner() && (GetUTOwner()->GetPendingWeapon() == NULL) && HasAmmo(GetCurrentFireMode()) && (!bRootWhileFiring || UTOwner->GetCharacterMovement() == nullptr || UTOwner->GetCharacterMovement()->MovementMode == MOVE_Falling));
 }
 
 bool AUTWeapon::HandleContinuedFiring()
