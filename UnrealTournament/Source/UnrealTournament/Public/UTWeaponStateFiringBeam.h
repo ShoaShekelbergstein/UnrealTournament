@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include "UTWeaponStateFiring.h"
+#include "UTWeaponStateFiring_LoopingFire.h"
 
 #include "UTWeaponStateFiringBeam.generated.h"
 
 UCLASS()
-class UNREALTOURNAMENT_API UUTWeaponStateFiringBeam : public UUTWeaponStateFiring
+class UNREALTOURNAMENT_API UUTWeaponStateFiringBeam : public UUTWeaponStateFiring_LoopingFire
 {
 	GENERATED_UCLASS_BODY()
 
@@ -18,14 +18,6 @@ class UNREALTOURNAMENT_API UUTWeaponStateFiringBeam : public UUTWeaponStateFirin
 	/** current damage fraction (<= MinDamage) */
 	UPROPERTY(BlueprintReadWrite, Category = Damage)
 	float Accumulator;
-
-	UPROPERTY(EditDefaultsOnly, Category = Effects)
-	UAnimMontage* FiringLoopAnim;
-	UPROPERTY(EditDefaultsOnly, Category = Effects)
-	UAnimMontage* FiringLoopAnimHands;
-	/** jump loop anim to this section when stopping fire (if not specified, anim is hard stopped) */
-	UPROPERTY(EditDefaultsOnly, Category = Effects)
-	FName EndAnimSection;
 
 	virtual void EndState() override;
 	virtual void FireShot() override;

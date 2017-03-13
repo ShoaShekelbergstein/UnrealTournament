@@ -22,14 +22,52 @@ void UUTWeaponStateFiring_LoopingFire::BeginState(const UUTWeaponState* PrevStat
 		const float BeginFireTimerTime = BeginFireAnim_Weapon ? BeginFireAnim_Weapon->GetPlayLength() : BeginFireAnim_Hands->GetPlayLength();
 	
 		PlayBeginFireAnims();
-		GetWorld()->GetTimerManager().SetTimer(BeginFireFinishedHandle, this, &UUTWeaponStateFiring_LoopingFire::BeginFireFinished, BeginFireTimerTime, false);
+		TransitionBeginToLoopBind();
+	}
+}
+
+void UUTWeaponStateFiring_LoopingFire::TransitionBeginToLoopBind()
+{
+	FOnMontageEnded EndDelegate;
+	EndDelegate.BindUObject(this, &UUTWeaponStateFiring_LoopingFire::TransitionBeginToLoopExecute);
+
+	FOnMontageBlendingOutStarted BlendDelegate;
+	BlendDelegate.BindUObject(this, &UUTWeaponStateFiring_LoopingFire::TransitionBeginToLoopExecute);
+
+	UAnimInstance* AnimInstance_Weapon = GetOuterAUTWeapon()->GetMesh()->GetAnimInstance();
+	if (BeginFireAnim_Weapon && AnimInstance_Weapon)
+	{
+		AnimInstance_Weapon->Montage_SetEndDelegate(EndDelegate, BeginFireAnim_Weapon);
+		AnimInstance_Weapon->Montage_SetBlendingOutDelegate(BlendDelegate, BeginFireAnim_Weapon);
+	}
+	else if (BeginFireAnim_Hands)
+	{
+		UAnimInstance* AnimInstance_Hands = GetUTOwner()->FirstPersonMesh->GetAnimInstance();
+		if (AnimInstance_Hands)
+		{
+			AnimInstance_Hands->Montage_SetEndDelegate(EndDelegate, BeginFireAnim_Hands);
+			AnimInstance_Weapon->Montage_SetBlendingOutDelegate(BlendDelegate, BeginFireAnim_Hands);
+		}
+	}
+}
+
+void UUTWeaponStateFiring_LoopingFire::TransitionBeginToLoopExecute(UAnimMontage* AnimMontage, bool bWasAnimInterupted)
+{
+	//Don't start looping Anims if we are already in cooldown or if another anim started playing
+	if (!bIsInCooldown && !bWasAnimInterupted)
+	{
+		PlayLoopingFireAnims();
+
+		if (AnimMontage == BeginFireAnim_Weapon)
+		{
+			GetOuterAUTWeapon()->GetMesh()->GetAnimInstance()->Montage_SetPosition(AnimMontage, 0.001f);
+		}
 	}
 }
 
 void UUTWeaponStateFiring_LoopingFire::EndState()
 {
 	Super::EndState();
-	GetWorld()->GetTimerManager().ClearTimer(BeginFireFinishedHandle);
 }
 
 void UUTWeaponStateFiring_LoopingFire::PlayBeginFireAnims()
@@ -50,15 +88,6 @@ void UUTWeaponStateFiring_LoopingFire::PlayBeginFireAnims()
 		{
 			AnimInstance_Hands->Montage_Play(BeginFireAnim_Hands, 1.f);
 		}
-	}
-}
-
-void UUTWeaponStateFiring_LoopingFire::BeginFireFinished()
-{
-	//Don't start looping Anims if we are already in cooldown
-	if (!bIsInCooldown)
-	{
-		PlayLoopingFireAnims();
 	}
 }
 

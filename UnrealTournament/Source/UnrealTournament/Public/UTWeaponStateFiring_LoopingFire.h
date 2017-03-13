@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "UTWeaponStateFiring.h"
+
 #include "UTWeaponStateFiring_LoopingFire.generated.h"
 
 UCLASS()
@@ -46,11 +48,11 @@ protected:
 	virtual void PlayEndFireAnims();
 	virtual void PlayCoolDownAnims();
 
-	FTimerHandle BeginFireFinishedHandle;
-	
 	UFUNCTION()
-	virtual void BeginFireFinished();
+	virtual void TransitionBeginToLoopBind();
 
+	UFUNCTION()
+	virtual void TransitionBeginToLoopExecute(UAnimMontage* AnimMontage, bool bWasAnimInterupted);
 public:
 	virtual bool CanContinueLoopingFire() const;
 

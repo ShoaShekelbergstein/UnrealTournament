@@ -14,10 +14,10 @@ class UNREALTOURNAMENT_API UUTWeaponStateFiringLinkBeam : public UUTWeaponStateF
 	float AccumulatedFiringTime;
 
 	UPROPERTY()
-		bool bPendingEndFire;
+	bool bPendingEndFire; 
 
 	UPROPERTY()
-		bool bPendingStartFire;
+	bool bPendingStartFire;
 
 	virtual void BeginState(const UUTWeaponState* PrevState) override;
 	virtual void RefireCheckTimer() override;
