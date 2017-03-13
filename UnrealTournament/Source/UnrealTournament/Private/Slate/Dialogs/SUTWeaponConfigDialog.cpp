@@ -885,7 +885,7 @@ void SUTWeaponConfigDialog::GenerateWeaponList(UClass* DesiredSelectedWeaponClas
 		GroupBoxes[Group].NoButtons++;
 		TSharedPtr<SUTButton> Button;
 
-		if (AllWeapons[i].WeaponDefaultObject.IsValid())
+		if (AllWeapons[i].WeaponDefaultObject.IsValid() && AllWeapons[i].WeaponIconBrush != nullptr)
 		{
 			ButtonBox->AddSlot(Col, Row).Padding(5.0f, 5.0f, 5.0f, 5.0f)
 			[
