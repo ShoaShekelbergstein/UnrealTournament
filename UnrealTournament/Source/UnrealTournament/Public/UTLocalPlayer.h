@@ -1351,7 +1351,9 @@ protected:
 
 	FTimerHandle BrowerCheckHandle;
 	void CheckIfBrowserisDone();
-		
+
+	void WaitingForListenServerDialogClosed(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
+
 public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
 	void CloseSavingWidget();

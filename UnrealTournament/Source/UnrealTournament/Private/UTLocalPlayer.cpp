@@ -26,6 +26,7 @@
 #include "SUTLoginDialog.h"
 #include "SUTPlayerSettingsDialog.h"
 #include "SUTPlayerInfoDialog.h"
+#include "SUTWaitingForListenServerDialog.h"
 #include "SUTHUDSettingsDialog.h"
 #include "SUTQuickChatWindow.h"
 #include "SUTWebMessage.h"
@@ -6838,7 +6839,14 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 		}
 
 		URL += TEXT("?MaxPlayerWait=180");
+
+
 		FString ExecPath = TEXT("..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Shipping.exe");
+		if ( FParse::Param(FCommandLine::Get(), TEXT("localserver")))
+		{
+			ExecPath = FPaths::EngineDir() + TEXT("\\Binaries\\Win64\\UE4Editor.exe");
+		}
+
 		FString Options = FString::Printf(TEXT("unrealtournament %s -log -server -LAN -AUTH_PASSWORD="), *URL);
 
 		if (OnlineIdentityInterface.IsValid())
@@ -6856,11 +6864,16 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 			Options += FString::Printf(TEXT(" -EPICAPP=%s"), *AppName);
 		}
 
-		DedicatedServerProcessHandle = FPlatformProcess::CreateProc(*ExecPath, *(Options + FString::Printf(TEXT(" -ClientProcID=%u"), FPlatformProcess::GetCurrentProcessId())), true, false, false, NULL, 0, NULL, NULL);
+		DedicatedServerProcessHandle = FPlatformProcess::CreateProc(*ExecPath, *(Options + FString::Printf(TEXT(" -ClientProcID=%u"), FPlatformProcess::GetCurrentProcessId())), true, true, false, NULL, 0, NULL, NULL);
 		if (DedicatedServerProcessHandle.IsValid())
 		{
 			GEngine->SetClientTravel(PlayerController->GetWorld(), TEXT("127.0.0.1"), TRAVEL_Absolute);
-			HideMenu();
+
+			TSharedPtr<SUTWaitingForListenServerDialog> Dialog;
+			SAssignNew(Dialog, SUTWaitingForListenServerDialog).PlayerOwner(this).OnDialogResult(FDialogResultDelegate::CreateUObject(this, &UUTLocalPlayer::WaitingForListenServerDialogClosed));
+
+			OpenDialog(Dialog.ToSharedRef(),20000);
+
 		}
 	}
 	else if (InstanceType == ECreateInstanceTypes::Standalone)
@@ -6883,4 +6896,11 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 	}
 }
 
-
+void UUTLocalPlayer::WaitingForListenServerDialogClosed(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID)
+{
+	// Terminate the dedicated server if we started one
+	if (DedicatedServerProcessHandle.IsValid() && FPlatformProcess::IsProcRunning(DedicatedServerProcessHandle))
+	{
+		FPlatformProcess::TerminateProc(DedicatedServerProcessHandle);
+	}
+}

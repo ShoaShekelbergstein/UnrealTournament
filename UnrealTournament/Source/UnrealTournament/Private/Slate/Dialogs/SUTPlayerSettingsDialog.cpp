@@ -1011,7 +1011,7 @@ void SUTPlayerSettingsDialog::OnFOVChange(float NewValue)
 void SUTPlayerSettingsDialog::OnNameTextChanged(const FText& NewText)
 {
 	FString AdjustedText = NewText.ToString();
-	FString InvalidNameChars = FString(INVALID_NAME_CHARACTERS);
+	FString InvalidNameChars = FString(INVALID_NAME_CHARACTERS) + FString("?#");
 	for (int32 i = AdjustedText.Len() - 1; i >= 0; i--)
 	{
 		if (InvalidNameChars.GetCharArray().Contains(AdjustedText.GetCharArray()[i]))
