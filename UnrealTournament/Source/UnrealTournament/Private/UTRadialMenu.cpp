@@ -44,7 +44,7 @@ UUTRadialMenu::UUTRadialMenu(const class FObjectInitializer& ObjectInitializer) 
 
 	BounceTimer = 0.0f;
 	BounceRate = 5.0f; // 1/20 of a second
-
+	bShouldKickBack = false;
 }
 
 void UUTRadialMenu::AutoLayout(int32 NumberOfSegments)
