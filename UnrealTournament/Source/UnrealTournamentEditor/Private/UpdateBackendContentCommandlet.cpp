@@ -84,6 +84,7 @@ struct FJsonExporter : public TSharedFromThis<FJsonExporter>
 			bSuccess = ExportXPTable() && bSuccess;
 			bSuccess = WriteSimpleItemAssetJson(EUtItemType::CardPack, TEXT("ItemTemplates/CardPack.json")) && bSuccess;
 			bSuccess = WriteSimpleItemAssetJson(EUtItemType::Token, TEXT("ItemTemplates/Token.json")) && bSuccess;
+			bSuccess = WriteSimpleItemAssetJson(EUtItemType::Boost, TEXT("ItemTemplates/Boost.json")) && bSuccess;
 
 			bSuccess = ExportLootTables() && bSuccess;
 

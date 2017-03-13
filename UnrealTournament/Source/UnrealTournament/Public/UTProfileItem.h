@@ -4,6 +4,7 @@
 #include "EngineBuildSettings.h"
 #include "UTCharacterContent.h"
 #include "UTCosmetic.h"
+#include "UtMcpDefinition.h"
 
 #include "UTProfileItem.generated.h"
 
@@ -46,7 +47,7 @@ struct FCosmeticEntry
 
 /** collectable/consumable item that a player owns in their profile, such as a hat */
 UCLASS()
-class UNREALTOURNAMENT_API UUTProfileItem : public UDataAsset
+class UNREALTOURNAMENT_API UUTProfileItem : public UUtMcpDefinition
 {
 	GENERATED_BODY()
 public:
@@ -55,6 +56,7 @@ public:
 	: Super(OI)
 	{
 		bTradable = true;
+		ItemType = EUtItemType::Item;
 	}
 
 	/** whether this item can be traded to others */
