@@ -9,6 +9,7 @@
 #include "UTWeaponStateFiring.h"
 #include "Animation/AnimInstance.h"
 #include "UTRewardMessage.h"
+#include "UTWeaponStateFiring_LoopingFire.h"
 
 AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 : Super(OI)
@@ -279,6 +280,19 @@ void AUTWeap_LinkGun::Tick(float DeltaTime)
 	else if (UTOwner != nullptr)
 	{
 		UTOwner->PulseTarget = nullptr;
+	}
+
+	UUTWeaponStateFiring_LoopingFire* LoopingState = Cast<UUTWeaponStateFiring_LoopingFire>(GetCurrentState());
+	if (LoopingState)
+	{
+		if (bIsInCoolDown)
+		{
+			LoopingState->EnterCooldown();
+		}
+		else
+		{
+			LoopingState->ExitCooldown();
+		}
 	}
 }
 
