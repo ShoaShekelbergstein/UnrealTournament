@@ -118,7 +118,7 @@ FText SUTMatchmakingDialog::GetRegionText() const
 
 				if (PartyState->GetPartyProgression() == EUTPartyState::QuickMatching)
 				{
-					return FText::Format(NSLOCTEXT("Generic", "QuickMatching", "Quick Matching in Region: {0}"), FText::FromString(MatchMakingRegion));
+					return FText::Format(NSLOCTEXT("Generic", "QuickMatching", "Searching for a match in Region: {0}"), FText::FromString(MatchMakingRegion));
 				}
 				else
 				{
@@ -128,7 +128,7 @@ FText SUTMatchmakingDialog::GetRegionText() const
 		}
 	}
 
-	return NSLOCTEXT("Generic", "LeaderMatchmaking", "Leader Is Matchmaking");
+	return NSLOCTEXT("Generic", "LeaderMatchmaking", "Leader is Matchmaking");
 }
 
 FText SUTMatchmakingDialog::GetMatchmakingText() const
@@ -146,7 +146,7 @@ FText SUTMatchmakingDialog::GetMatchmakingText() const
 				switch (PartyState->GetPartyProgression())
 				{
 				case EUTPartyState::PostMatchmaking:
-					return NSLOCTEXT("Generic", "JoiningServer", "Server Found. Joining shortly...");
+					return NSLOCTEXT("Generic", "JoiningServer", "Match Found! Joining...");
 				}
 			}
 		}
@@ -222,7 +222,7 @@ FText SUTMatchmakingDialog::GetMatchmakingTimeElapsedText() const
 				{
 					int32 ElapsedTime = PlayerOwner->GetWorld()->RealTimeSeconds - TimeDialogOpened;
 					FTimespan TimeSpan(0, 0, ElapsedTime);
-					return FText::Format(NSLOCTEXT("Generic", "ElapsedMatchMakingTime", "You Have Been Matchmaking For {0}"), FText::AsTimespan(TimeSpan));
+					return FText::Format(NSLOCTEXT("Generic", "ElapsedMatchMakingTime", "Elapsed: {0}"), FText::AsTimespan(TimeSpan));
 				}
 			}
 		}
@@ -251,7 +251,7 @@ FText SUTMatchmakingDialog::GetMatchmakingEstimatedTimeText() const
 						if (EstimatedWaitTime > 0 && EstimatedWaitTime < 60*10)
 						{
 							FTimespan TimeSpan(0, 0, EstimatedWaitTime);
-							return FText::Format(NSLOCTEXT("Generic", "EstimateMatchMakingTime", "Estimated Wait Time {0}"), FText::AsTimespan(TimeSpan));
+							return FText::Format(NSLOCTEXT("Generic", "EstimateMatchMakingTime", "Estimated Wait {0}"), FText::AsTimespan(TimeSpan));
 						}
 					}
 				}

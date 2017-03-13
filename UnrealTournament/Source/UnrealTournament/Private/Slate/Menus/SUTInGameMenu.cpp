@@ -140,7 +140,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 						.VAlign(VAlign_Center)
 						[
 							SNew(STextBlock)
-							.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "WARM UP"))
+							.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "JOIN WARM UP"))
 							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
 							.ColorAndOpacity(this, &SUTInGameMenu::GetMatchLabelColor)
 						]

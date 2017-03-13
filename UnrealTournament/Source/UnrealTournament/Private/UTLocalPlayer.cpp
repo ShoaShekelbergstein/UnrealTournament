@@ -5547,7 +5547,7 @@ void UUTLocalPlayer::ShowMatchmakingDialog()
 		.PlayerOwner(this)
 		.DialogSize(FVector2D(0.6f, 0.4f))
 		.DialogPosition(FVector2D(0.5f, 0.5f))
-		.DialogTitle(NSLOCTEXT("UUTLocalPlayer", "MatchmakingSearch", "Searching For Match"))
+		.DialogTitle(NSLOCTEXT("UUTLocalPlayer", "MatchmakingSearch", "Matchmaking"))
 		.ButtonMask(UTDIALOG_BUTTON_CANCEL)
 		.OnDialogResult(FDialogResultDelegate::CreateUObject(this, &UUTLocalPlayer::MatchmakingResult))
 		);

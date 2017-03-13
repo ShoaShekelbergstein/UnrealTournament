@@ -221,7 +221,7 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 			{
 				SpectatorMessage = (UTHUDOwner->GetNetMode() == NM_Standalone) 
 					? NSLOCTEXT("UUTHUDWidget_Spectator", "StartMatchFromMenu", "Click on START MATCH to begin.")
-					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayersMenu", "Click on WARM UP to warm up.");
+					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayersMenu", "Click on JOIN WARM UP to join warm up.");
 			}
 			else
 			{
