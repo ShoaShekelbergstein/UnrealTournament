@@ -1088,6 +1088,7 @@ void AUTBasePlayerController::ReceivedPlayer()
 	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(Player);
 	if (UTLocalPlayer)
 	{
+		ServerChangeClanName(UTLocalPlayer->GetClanName());
 		ServerSetAvatar(UTLocalPlayer->GetAvatar());
 		UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(UTLocalPlayer->GetGameInstance());
 		if (UTGameInstance)

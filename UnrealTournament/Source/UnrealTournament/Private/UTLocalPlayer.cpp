@@ -275,7 +275,6 @@ FString UUTLocalPlayer::SetClanName(FString NewClanName)
 		Cast<AUTBasePlayerController>(PlayerController)->ServerChangeClanName(ClanName);
 	}
 	CurrentProfileSettings->ClanName = ClanName;
-	SetDefaultURLOption(TEXT("Clan"), ClanName);
 	return ClanName;
 }
 
