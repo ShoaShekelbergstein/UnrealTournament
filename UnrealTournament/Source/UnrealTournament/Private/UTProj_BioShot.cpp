@@ -199,6 +199,7 @@ void AUTProj_BioShot::Landed(UPrimitiveComponent* HitComp, const FVector& HitLoc
 {
 	if (!bLanded)
 	{
+		InitialVisualOffset = FinalVisualOffset;
 		bCanTrack = (TrackingRange > 0.0f);
 		bLanded = true;
 		bCanHitInstigator = true;
@@ -412,6 +413,7 @@ void AUTProj_BioShot::ProcessHit_Implementation(AActor* OtherActor, UPrimitiveCo
 		return;
 	}
 
+	InitialVisualOffset = FinalVisualOffset;
 	APhysicsVolume* WaterVolume = Cast<APhysicsVolume>(OtherActor);
 	if (WaterVolume && WaterVolume->bWaterVolume)
 	{
