@@ -42,11 +42,20 @@ void AUTWeapAttachment_LightningRifle::Tick(float DeltaSeconds)
 void AUTWeapAttachment_LightningRifle::PlayFiringEffects()
 {
 	uint8 RealFireMode = UTOwner->FireMode;
-	if (UTOwner->FlashExtra != 0)
+	UParticleSystem* RealFireEffect = (FireEffect.Num() > 1) ? FireEffect[1] : nullptr;
+	if ((UTOwner->FlashExtra != 0))
 	{
 		UTOwner->FireMode = 1;
+		if ((UTOwner->FlashExtra > 1) && (FireEffect.Num() > 2))
+		{
+			FireEffect[1] = FireEffect[2];
+		}
 	}
 	Super::PlayFiringEffects();
+	if (FireEffect.Num() > 1)
+	{
+		FireEffect[1] = RealFireEffect;
+	}
 	UTOwner->FireMode = RealFireMode;
 }
 
@@ -56,12 +65,10 @@ void AUTWeapAttachment_LightningRifle::ModifyFireEffect_Implementation(class UPa
 	{
 		if (UTOwner->FlashExtra == 1)
 		{
-			Effect->SetWorldScale3D(FVector(1.f, 1.f, 1.f));
 			CustomTimeDilation = 0.5f;
 		}
 		else
 		{
-			Effect->SetWorldScale3D(FVector(4.f, 4.f, 4.f));
 			CustomTimeDilation = 0.25f;
 			if (UTOwner->FlashExtra == 3)
 			{

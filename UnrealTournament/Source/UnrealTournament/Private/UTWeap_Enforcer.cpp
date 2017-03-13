@@ -186,16 +186,8 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 		}
 		else
 		{
-			if (FPFireSound.IsValidIndex(CurrentFireMode) && FPFireSound[CurrentFireMode] != NULL && Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
-			{
-				UUTGameplayStatics::UTPlaySound(GetWorld(), FPFireSound[CurrentFireMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
-			}
-			else
-			{
-				UUTGameplayStatics::UTPlaySound(GetWorld(), FireSound[CurrentFireMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
-			}
-
-			if (UTOwner && ShouldPlay1PVisuals())
+			PlayFiringSound(CurrentFireMode);
+			if (ShouldPlay1PVisuals())
 			{
 				UAnimInstance* HandAnimInstance = UTOwner->FirstPersonMesh ? UTOwner->FirstPersonMesh->GetAnimInstance() : nullptr;
 
