@@ -89,7 +89,7 @@ public:
 	{
 		Super::DiscardAllInventory();
 
-		if (!bProcessedDrops && IsDead() && GetNetMode() != NM_Client)
+		if (!bProcessedDrops && bTearOff && GetNetMode() != NM_Client)
 		{
 			bProcessedDrops = true;
 			if (ExtraDropType != nullptr && FMath::FRand() < DropChance)
