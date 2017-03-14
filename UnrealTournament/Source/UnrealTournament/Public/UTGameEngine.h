@@ -221,6 +221,9 @@ public:
 	UPROPERTY()
 	TArray<FBanInfo> InstanceBannedUsers;
 
+	// Holds a list of the unique ids of the non-idle players in the last match
+	UPROPERTY()
+	TArray<FString> PlayerReservations;
 
 };
 

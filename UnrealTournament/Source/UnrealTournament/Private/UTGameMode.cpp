@@ -58,6 +58,7 @@
 DEFINE_LOG_CATEGORY(LogUTGame);
 
 const float IDLE_TIMEOUT_TIME = 120.0f;
+const float RETURNING_PLAYER_GRACE_PERIOD = 10.0f;
 
 UUTResetInterface::UUTResetInterface(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -229,6 +230,8 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 
 	UE_LOG(UT,Log,TEXT("==============="));
 	UE_LOG(UT,Log,TEXT("  Init Game Option: %s"), *Options);
+
+	ReturningPlayerGraceCutoff = GetWorld()->GetRealTimeSeconds() + RETURNING_PLAYER_GRACE_PERIOD;
 
 	if (IOnlineSubsystem::Get() != NULL)
 	{
@@ -1150,6 +1153,16 @@ void AUTGameMode::DefaultTimer()
 	if (GetWorld()->WorldType == EWorldType::EditorPreview)
 	{
 		return;
+	}
+
+	if (!bGameEnded && GetWorld()->GetRealTimeSeconds() > ReturningPlayerGraceCutoff)
+	{
+		ReturningPlayerGraceCutoff = 0.0f;
+		UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
+		if (UTGameEngine && UTGameEngine->PlayerReservations.Num() > 0)
+		{
+			UTGameEngine->PlayerReservations.Empty();
+		}
 	}
 
 	if (MatchState == MatchState::MapVoteHappening)
@@ -2619,7 +2632,7 @@ void AUTGameMode::TravelToNextMap_Implementation()
 	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 	{
 		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-		if (!bIgnoreIdlePlayers && UTPlayerState != nullptr && IsPlayerIdle(UTPlayerState))
+		if (!bIgnoreIdlePlayers && UTPlayerState != nullptr && IsPlayerIdle(UTPlayerState) && !UTPlayerState->bIsABot)
 		{
 			AUTPlayerController* Controller = Cast<AUTPlayerController>(UTPlayerState->GetOwner());
 			if (Controller)
@@ -2632,6 +2645,15 @@ void AUTGameMode::TravelToNextMap_Implementation()
 				{
 					GameSession->KickPlayer(Controller, NSLOCTEXT("General", "IdleKick", "You were kicked for being idle."));
 				}
+			}
+		}
+		else if (UTPlayerState != nullptr && !UTPlayerState->bIsABot)
+		{
+			// Collect non-idle players for the next round
+			UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
+			if (UTGameEngine)
+			{
+				UTGameEngine->PlayerReservations.Add(UTPlayerState->UniqueId.ToString());
 			}
 		}
 	}
@@ -5434,6 +5456,29 @@ void AUTGameMode::PreLogin(const FString& Options, const FString& Address, const
 				UE_LOG(UT,Warning,TEXT("Rejecting Preloging for a client already in game."));
 				return;
 			}
+		}
+	}
+
+	int32 SpectatorOnly = 0;
+	SpectatorOnly = UGameplayStatics::GetIntOption(Options, TEXT("SpectatorOnly"), SpectatorOnly);
+
+	UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
+	if ( !SpectatorOnly && UTGameEngine && GameSession && GetWorld()->GetRealTimeSeconds() <= ReturningPlayerGraceCutoff )
+	{
+		// Look to see if this player is returning...
+		if (UTGameEngine->PlayerReservations.Find(UniqueId.ToString()) == INDEX_NONE)
+		{
+			// Player isn't in the list... so look to see if there is room...
+			
+			if (UTGameEngine->PlayerReservations.Num() + 1 > GameSession->MaxPlayers )
+			{
+				// No room, return server is full
+				ErrorMessage = TEXT("Server full.");
+				return;
+			}
+
+			// Add this player to the reservation list.
+			UTGameEngine->PlayerReservations.Add(UniqueId.ToString());
 		}
 	}
 

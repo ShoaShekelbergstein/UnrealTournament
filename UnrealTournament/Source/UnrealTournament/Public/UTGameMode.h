@@ -1054,6 +1054,10 @@ public:
 	TArray<FStringClassReference> AssetsToPreloadOnClients;
 
 	UPROPERTY()
-		uint32 bDebugHitScanReplication : 1;
+	uint32 bDebugHitScanReplication : 1;
+
+	// Holds the game time at which returning players are no longer guarenteed a spot.
+	UPROPERTY()
+	float ReturningPlayerGraceCutoff;
 };
 
