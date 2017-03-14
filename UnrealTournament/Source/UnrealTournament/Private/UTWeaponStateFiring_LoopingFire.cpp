@@ -162,6 +162,17 @@ void UUTWeaponStateFiring_LoopingFire::RefireCheckTimer()
 			CurrentShot++;
 		}
 	}
+	else if (bAllowOtherFireModesDuringCooldown)
+	{
+		// check for any other fire modes pending fire, if so go to active so it can handle swapping modes
+		for (uint8 i = 0; i < GetOuterAUTWeapon()->GetNumFireModes(); i++)
+		{
+			if ((GetOuterAUTWeapon()->GetCurrentFireMode() != i) && (GetOuterAUTWeapon()->GetUTOwner()->IsPendingFire(i)))
+			{
+				GetOuterAUTWeapon()->GotoActiveState();
+			}
+		}
+	}
 }
 
 bool UUTWeaponStateFiring_LoopingFire::IsFiring() const

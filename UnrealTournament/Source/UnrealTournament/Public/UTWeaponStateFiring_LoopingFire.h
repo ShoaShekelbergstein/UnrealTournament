@@ -14,6 +14,9 @@ class UNREALTOURNAMENT_API UUTWeaponStateFiring_LoopingFire : public UUTWeaponSt
 	UPROPERTY(BlueprintReadWrite, Category = LoopingFire)
 	bool bIsInCooldown;
 
+	UPROPERTY(EditDefaultsOnly, Category = LoopingFire)
+	bool bAllowOtherFireModesDuringCooldown;
+
 	UPROPERTY(EditDefaultsOnly, Category = Animation)
 	UAnimMontage* BeginFireAnim_Weapon;
 
