@@ -510,8 +510,8 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 
 
 		BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.TeamShowdownBadge"), NSLOCTEXT("SUTHomePanel", "QP_FlagRunVSAI", "FLAG RUN COOP VS AI"), EMenuCommand::MC_QuickPlayShowdown);
-		BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.CTFBadge"), NSLOCTEXT("SUTHomePanel", "QP_FlagRun", "FLAG RUN"), EMenuCommand::MC_QuickPlayFlagrun);
-	BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.DMBadge"), NSLOCTEXT("SUTHomePanel","QP_DM","DEATHMATCH"), EMenuCommand::MC_QuickPlayDM, 25.0f);
+		BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.CTFBadge"), NSLOCTEXT("SUTHomePanel", "QP_FlagRun", "FLAG RUN"), EMenuCommand::MC_QuickPlayFlagrun, 25.0f);
+	BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.DMBadge"), NSLOCTEXT("SUTHomePanel","QP_DM","DEATHMATCH"), EMenuCommand::MC_QuickPlayDM);
 
 	return Final.ToSharedRef();
 }

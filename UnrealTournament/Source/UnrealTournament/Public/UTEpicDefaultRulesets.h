@@ -500,8 +500,8 @@ public:
 			NewRuleset->Categories.Empty();
 			NewRuleset->Categories.Add(TEXT("Featured"));
 
-			NewRuleset->Title = TEXT("FlagRun Coop vs AI");
-			NewRuleset->Tooltip = TEXT("Attackers must deliver their flag to the enemy base.");
+			NewRuleset->Title = TEXT("FlagRun vs AI");
+			NewRuleset->Tooltip = TEXT("Co-op vs AI.  Attackers must deliver their flag to the enemy base.");
 			NewRuleset->Description = TEXT("Flag Run Coop vs AI.\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
 			NewRuleset->MaxPlayers = 10;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
@@ -528,7 +528,7 @@ public:
 			NewRuleset->Categories.Add(TEXT("Featured"));
 
 			NewRuleset->Title = TEXT("Siege");
-			NewRuleset->Tooltip = TEXT("Coop vs AI.  Defend your base against hordes of incoming enemies trying to deliver their flag.");
+			NewRuleset->Tooltip = TEXT("Co-op vs AI.  Defend your base against hordes of incoming enemies trying to deliver their flag.");
 			NewRuleset->Description = TEXT("PROTOTYPE Coop vs AI.  Defend your base against hordes of incoming enemies trying to deliver their flag..\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
 			NewRuleset->MaxPlayers = 5;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
