@@ -3435,6 +3435,7 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 		if (QuickMatchType == EEpicDefaultRuleTags::Deathmatch) DesiredTutorial = ETutorialTags::TUTTAG_DM;
 		if (QuickMatchType == EEpicDefaultRuleTags::TDM) DesiredTutorial = ETutorialTags::TUTTAG_TDM;
 		if (QuickMatchType == EEpicDefaultRuleTags::FlagRun) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
+		if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAI) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
 		if (QuickMatchType == EEpicDefaultRuleTags::CTF) DesiredTutorial = ETutorialTags::TUTTAG_CTF;
 		if (QuickMatchType == EEpicDefaultRuleTags::TEAMSHOWDOWN) DesiredTutorial = ETutorialTags::TUTTAG_Showdown;
 		if (QuickMatchType == EEpicDefaultRuleTags::DUEL) DesiredTutorial = ETutorialTags::TUTTAG_Duel;
@@ -3486,6 +3487,10 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRun)
 		{
 			NewPlaylistId = 14;
+		}
+		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAI)
+		{
+			NewPlaylistId = 15;
 		}
 		else
 		{
@@ -6169,7 +6174,7 @@ bool UUTLocalPlayer::IsMenuOptionLocked(FName MenuCommand) const
 		}
 		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	
 		{
-			return !IsTutorialMaskCompleted(TUTORIAL_Showdown);
+			return !IsTutorialMaskCompleted(TUTORIAL_FlagRun);
 		}
 		else if (MenuCommand == EMenuCommand::MC_Challenges)		
 		{
@@ -6197,8 +6202,8 @@ FText UUTLocalPlayer::GetMenuCommandTooltipText(FName MenuCommand) const
 	{
 		if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			return NSLOCTEXT("SUTHomePanel", "QuickPlayDMLocked","Before you can play Deathmatch online, you need to complete the Deathmatch training in Basic Training.");
 		else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTFLocked","Before you can play Capture the Flag online, you need to complete the CTF training in Basic Training.");
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayShowdownLocked","Before you can play Showdown online, you need to complete the Showdown training in Basic Training.");
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrunLocked","Before you can play Flag Run online, you need to complete the flag run training in Basic Training.");
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrunLocked","Before you can play Flag Run online, you need to complete the Flag Run training in Basic Training.");
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrunLocked","Before you can play Flag Run online, you need to complete the Flag Run training in Basic Training.");
 		else if (MenuCommand == EMenuCommand::MC_Challenges)		return NSLOCTEXT("SUTHomePanel", "QuickPlayChallengesLocked","Challenges are not yet available.  Please complete the movement, weapons and pickup training in Basic Training.");
 		else if (MenuCommand == EMenuCommand::MC_FindAMatch)		return NSLOCTEXT("SUTHomePanel", "QuickPlayFindAMatchLocked","Online play is unavailable until you complete the movement, weapons and pickup and one game mode training in Basic Training.");
 	}
@@ -6207,7 +6212,7 @@ FText UUTLocalPlayer::GetMenuCommandTooltipText(FName MenuCommand) const
 		if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			return NSLOCTEXT("SUTHomePanel", "QuickPlayDM","Quickly find and join an online deathmatch game against players close to your skill level.");
 		else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTF","Quickly find and join an online capture the flag game against players close to your skill level");
 		else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrun","Quickly find and join an online FlagRun game against players close to your skill level.");
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayShowdown","Quickly find and join a 3v3 Showdown against players close to your skill level.");
+		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrunPVE","Quickly find and join an online coop FlagRun game against AI opponents.");
 		else if (MenuCommand == EMenuCommand::MC_Challenges)		return NSLOCTEXT("SUTHomePanel", "QuickPlayChallenges","Test your skills offline against our world class AI.");
 		else if (MenuCommand == EMenuCommand::MC_FindAMatch)		return NSLOCTEXT("SUTHomePanel", "QuickPlayFindAMatch","Head online and find games to play.");
 	}

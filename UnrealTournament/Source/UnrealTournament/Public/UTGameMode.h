@@ -179,6 +179,10 @@ public:
 	UPROPERTY()
 		uint32 bIsQuickMatch : 1;
 
+	/** If true, all players are on blue team in team games. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = TeamGame)
+		uint32 bIsVSAI : 1; 
+
 	/** If TRUE, force dead players to respawn immediately. Can be overridden with ForceRespawn=x on the url */
 	UPROPERTY(EditDefaultsOnly, Category = Game)
 	bool bForceRespawn;

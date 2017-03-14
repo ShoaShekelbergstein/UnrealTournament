@@ -332,6 +332,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	{
 		BotFillCount = 0;
 	}
+	bIsVSAI = (UGameplayStatics::GetIntOption(Options, TEXT("VSAI"), bIsVSAI) == 0) ? false : true;
 	bAutoAdjustBotSkill = bBasicTrainingGame || bIsQuickMatch;
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("CasterControl"));
 	bCasterControl = EvalBoolOptions(InOpt, bCasterControl);
@@ -572,7 +573,7 @@ void AUTGameMode::InitGameState()
 		UTGameState->bWeaponStay = bWeaponStayActive;
 		UTGameState->bIsInstanceServer = IsGameInstanceServer();
 		UTGameState->bDebugHitScanReplication = bDebugHitScanReplication;
-		if (bOfflineChallenge || bUseMatchmakingSession || bBasicTrainingGame)
+		if (bOfflineChallenge || bUseMatchmakingSession || bBasicTrainingGame || bIsVSAI)
 		{
 			UTGameState->bAllowTeamSwitches = false;
 		}

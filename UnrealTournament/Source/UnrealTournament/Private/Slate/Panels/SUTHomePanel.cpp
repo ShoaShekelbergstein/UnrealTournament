@@ -509,9 +509,9 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 		];
 
 
-	BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.CTFBadge"), NSLOCTEXT("SUTHomePanel","QP_FlagRun","FLAG RUN"), EMenuCommand::MC_QuickPlayFlagrun);
+		BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.TeamShowdownBadge"), NSLOCTEXT("SUTHomePanel", "QP_FlagRunVSAI", "FLAG RUN COOP VS AI"), EMenuCommand::MC_QuickPlayShowdown);
+		BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.CTFBadge"), NSLOCTEXT("SUTHomePanel", "QP_FlagRun", "FLAG RUN"), EMenuCommand::MC_QuickPlayFlagrun);
 	BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.DMBadge"), NSLOCTEXT("SUTHomePanel","QP_DM","DEATHMATCH"), EMenuCommand::MC_QuickPlayDM, 25.0f);
-	BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.TeamShowdownBadge"), NSLOCTEXT("SUTHomePanel","QP_Showdown","SHOWDOWN"), EMenuCommand::MC_QuickPlayShowdown);
 
 	return Final.ToSharedRef();
 }
@@ -724,7 +724,7 @@ FReply SUTHomePanel::QuickPlayClick(FName QuickMatchType)
 	{
 		if (QuickMatchType == EMenuCommand::MC_QuickPlayDM) MainMenu->QuickPlay(EEpicDefaultRuleTags::Deathmatch);
 		else if (QuickMatchType == EMenuCommand::MC_QuickPlayFlagrun) MainMenu->QuickPlay(EEpicDefaultRuleTags::FlagRun);
-		else if (QuickMatchType == EMenuCommand::MC_QuickPlayShowdown) MainMenu->QuickPlay(EEpicDefaultRuleTags::TEAMSHOWDOWN);
+		else if (QuickMatchType == EMenuCommand::MC_QuickPlayShowdown) MainMenu->QuickPlay(EEpicDefaultRuleTags::FlagRunVSAI);
 	}
 
 	return FReply::Handled();

@@ -1235,6 +1235,7 @@ namespace EEpicDefaultRuleTags
 	const FString iCTF = TEXT("iCTF");
 	const FString iCTFT = TEXT("iCTF+T");
 	const FString FlagRun = TEXT("FlagRun");
+	const FString FlagRunVSAI = TEXT("FlagRunVSAI");
 }
 
 namespace EPlayerListContentCommand

@@ -219,7 +219,11 @@ bool AUTTeamGameMode::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroad
 			}
 
 			bool bForceTeam = false;
-			if (!Teams.IsValidIndex(NewTeam))
+			if (bIsVSAI && Cast<AUTPlayerController>(Player))
+			{
+				NewTeam = 1;
+			}
+			else if (!Teams.IsValidIndex(NewTeam))
 			{
 				bForceTeam = true;
 			}

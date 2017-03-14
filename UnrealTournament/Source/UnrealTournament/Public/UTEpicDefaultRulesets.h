@@ -43,6 +43,7 @@ public:
 	static void GetEpicRulesets(TArray<FString>& Rules)
 	{
 		Rules.Add(EEpicDefaultRuleTags::FlagRun);
+		Rules.Add(EEpicDefaultRuleTags::FlagRunVSAI);
 		Rules.Add(EEpicDefaultRuleTags::Deathmatch);
 		Rules.Add(EEpicDefaultRuleTags::CTF);
 		Rules.Add(EEpicDefaultRuleTags::TDM);
@@ -110,7 +111,7 @@ public:
 			NewRuleset->Title = TEXT("Big Deathmatch");
 			NewRuleset->Tooltip = TEXT("Deathmatch with large player counts on big maps.");
 			NewRuleset->Description = TEXT("Deathmatch with large player counts on big maps.\n\n<UT.Hub.RulesText_Small>TimeLimit : %timelimit% minutes</>\n<UT.Hub.RulesText_Small>Maximum players: %maxplayers%</>");
-			NewRuleset->MaxPlayers = 16;
+			NewRuleset->MaxPlayers = 12;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_LargeDM.GB_LargeDM'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTDMGameMode");
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=10?GoalScore=0"));
@@ -172,7 +173,7 @@ public:
 		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::TEAMSHOWDOWN, ESearchCase::IgnoreCase))
 		{
 			NewRuleset->Categories.Empty();
-			NewRuleset->Categories.Add(TEXT("Featured"));
+			NewRuleset->Categories.Add(TEXT("Competitive"));
 
 			NewRuleset->Title = TEXT("Showdown");
 			NewRuleset->Tooltip = TEXT("Red versus blue team showdown.");
@@ -321,7 +322,7 @@ public:
 			NewRuleset->MaxPlayers = 10;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
-			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?NoJIP=1?RequireReady=1?MercyScore=0"));
+			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?RequireReady=1?MercyScore=0"));
 			NewRuleset->bCompetitiveMatch = true;
 			NewRuleset->bTeamGame = true;
 			NewRuleset->MaxMapsInList = 16;
@@ -493,6 +494,34 @@ public:
 			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Loh"));
 			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Blackstone"));
 		}
+		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::FlagRunVSAI, ESearchCase::IgnoreCase))
+		{
+			NewRuleset->Categories.Empty();
+			NewRuleset->Categories.Add(TEXT("Featured"));
+
+			NewRuleset->Title = TEXT("Flag Run Coop vs. AI");
+			NewRuleset->Tooltip = TEXT("Attackers must deliver their flag to the enemy base.");
+			NewRuleset->Description = TEXT("Flag Run Coop vs AI.\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
+			NewRuleset->MaxPlayers = 10;
+			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
+			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTFlagRunGame");
+			NewRuleset->GameOptions = FString(TEXT("?VSAI=1"));
+			NewRuleset->bTeamGame = true;
+			NewRuleset->MaxMapsInList = 16;
+
+			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/WIP/FR-Fort";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-MeltDown";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-Loh";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-BlackStone";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-Heist";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-HighRoad";
+
+			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Fort"));
+			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Meltdown"));
+			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Loh"));
+			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Blackstone"));
+		}
+
 	}
 };
 
