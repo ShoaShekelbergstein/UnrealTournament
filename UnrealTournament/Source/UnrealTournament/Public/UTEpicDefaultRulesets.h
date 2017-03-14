@@ -45,6 +45,7 @@ public:
 		Rules.Add(EEpicDefaultRuleTags::FlagRun);
 		Rules.Add(EEpicDefaultRuleTags::FlagRunVSAI);
 		Rules.Add(EEpicDefaultRuleTags::Deathmatch);
+		Rules.Add(EEpicDefaultRuleTags::Siege);
 		Rules.Add(EEpicDefaultRuleTags::CTF);
 		Rules.Add(EEpicDefaultRuleTags::TDM);
 		Rules.Add(EEpicDefaultRuleTags::BIGCTF);
@@ -499,7 +500,7 @@ public:
 			NewRuleset->Categories.Empty();
 			NewRuleset->Categories.Add(TEXT("Featured"));
 
-			NewRuleset->Title = TEXT("Flag Run Coop vs. AI");
+			NewRuleset->Title = TEXT("FlagRun Coop vs AI");
 			NewRuleset->Tooltip = TEXT("Attackers must deliver their flag to the enemy base.");
 			NewRuleset->Description = TEXT("Flag Run Coop vs AI.\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
 			NewRuleset->MaxPlayers = 10;
@@ -521,7 +522,33 @@ public:
 			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Loh"));
 			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Blackstone"));
 		}
+		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::Siege, ESearchCase::IgnoreCase))
+		{
+			NewRuleset->Categories.Empty();
+			NewRuleset->Categories.Add(TEXT("Featured"));
 
+			NewRuleset->Title = TEXT("Siege");
+			NewRuleset->Tooltip = TEXT("Coop vs AI.  Defend your base against hordes of incoming enemies trying to deliver their flag.");
+			NewRuleset->Description = TEXT("PROTOTYPE Coop vs AI.  Defend your base against hordes of incoming enemies trying to deliver their flag..\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
+			NewRuleset->MaxPlayers = 5;
+			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
+			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTFlagRunPvEGame");
+			NewRuleset->GameOptions = FString(TEXT(""));
+			NewRuleset->bTeamGame = true;
+			NewRuleset->MaxMapsInList = 16;
+
+			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/WIP/FR-Fort";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-MeltDown";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-Loh";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-BlackStone";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-Heist";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-HighRoad";
+
+			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Fort"));
+			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Meltdown"));
+			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Loh"));
+			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Blackstone"));
+		}
 	}
 };
 
