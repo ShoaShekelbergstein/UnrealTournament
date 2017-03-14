@@ -57,7 +57,7 @@ void UUTWeaponStateFiring_LoopingFire::TransitionBeginToLoopBind()
 void UUTWeaponStateFiring_LoopingFire::TransitionBeginToLoopExecute(UAnimMontage* AnimMontage, bool bWasAnimInterupted)
 {
 	//Don't start looping Anims if we are already in cooldown or if another anim started playing
-	if (!bIsInCooldown && !bWasAnimInterupted)
+	if (!bIsInCooldown && !bWasAnimInterupted && (GetOuterAUTWeapon()->GetCurrentState() == this))
 	{
 		PlayLoopingFireAnims();
 	}
@@ -112,7 +112,7 @@ void UUTWeaponStateFiring_LoopingFire::PlayLoopingFireAnims()
 
 void UUTWeaponStateFiring_LoopingFire::PlayEndFireAnims()
 {
-	if (CurrentShot <= ShortFireThreshold && (EndFireShort_Weapon || EndFireShort_Hands))
+	if (CurrentShot < ShortFireThreshold && (EndFireShort_Weapon || EndFireShort_Hands))
 	{
 		if (EndFireShort_Weapon)
 		{

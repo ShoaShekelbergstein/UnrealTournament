@@ -47,7 +47,7 @@ class UNREALTOURNAMENT_API UUTWeaponStateFiring_LoopingFire : public UUTWeaponSt
 	UPROPERTY(EditDefaultsOnly, Category = Animation)
 	UAnimMontage* EndFireShort_Hands;
 
-	/** Used to determine if EndFireShort or EndFire is played when the weapon is exiting fire. Short plays if number of shots fired is <= this**/
+	/** Used to determine if EndFireShort or EndFire is played when the weapon is exiting fire. Short plays if number of shots fired is < this **/
 	UPROPERTY(EditDefaultsOnly, Category = Animation)
 	int8 ShortFireThreshold;
 
