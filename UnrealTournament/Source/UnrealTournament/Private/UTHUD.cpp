@@ -629,7 +629,6 @@ void AUTHUD::NotifyMatchStateChange()
 		else if (GS->GetMatchState() != MatchState::MapVoteHappening)
 		{
 			ToggleScoreboard(false);
-			UTLP->HideMenu();
 
 			if (GS->GetMatchState() != MatchState::InProgress)
 			{
@@ -637,6 +636,10 @@ void AUTHUD::NotifyMatchStateChange()
 				{
 					UTLP->ShowQuickChat(UTPlayerOwner->UTPlayerState->ChatDestination);
 				}
+			}
+			else
+			{
+				UTLP->HideMenu();
 			}
 		}
 		if (MyUTScoreboard)

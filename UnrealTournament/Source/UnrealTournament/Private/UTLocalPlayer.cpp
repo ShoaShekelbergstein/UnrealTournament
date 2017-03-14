@@ -6908,3 +6908,9 @@ void UUTLocalPlayer::WaitingForListenServerDialogClosed(TSharedPtr<SCompoundWidg
 		FPlatformProcess::TerminateProc(DedicatedServerProcessHandle);
 	}
 }
+
+bool UUTLocalPlayer::IsKillcamReplayActive()
+{
+	return (KillcamPlayback != nullptr && KillcamPlayback->IsEnabled());
+}
+

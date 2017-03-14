@@ -1382,5 +1382,11 @@ public:
 	// Holds a list of pending announcements from the MCP.
 	FMCPAnnouncementBlob MCPAnnouncements;
 
+	/**
+	 * Returns true if a killcam playback is active
+	 **/
+	UFUNCTION(BlueprintCallable, Category = Game)
+	bool IsKillcamReplayActive();
+
 };
 
