@@ -503,7 +503,7 @@ public:
 			NewRuleset->Title = TEXT("FlagRun vs AI");
 			NewRuleset->Tooltip = TEXT("Co-op vs AI.  Attackers must deliver their flag to the enemy base.");
 			NewRuleset->Description = TEXT("Flag Run Coop vs AI.\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
-			NewRuleset->MaxPlayers = 10;
+			NewRuleset->MaxPlayers = 5;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTFlagRunGame");
 			NewRuleset->GameOptions = FString(TEXT("?VSAI=1"));

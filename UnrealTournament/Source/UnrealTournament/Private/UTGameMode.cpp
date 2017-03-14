@@ -335,11 +335,12 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 		}
 	}
 	bForceNoBots = (UGameplayStatics::GetIntOption(Options, TEXT("ForceNoBots"), bForceNoBots) == 0) ? false : true;
+	bIsVSAI = (UGameplayStatics::GetIntOption(Options, TEXT("VSAI"), bIsVSAI) == 0) ? false : true;
+	bForceNoBots = bForceNoBots && !bIsVSAI;
 	if (bForceNoBots)
 	{
 		BotFillCount = 0;
 	}
-	bIsVSAI = (UGameplayStatics::GetIntOption(Options, TEXT("VSAI"), bIsVSAI) == 0) ? false : true;
 	bAutoAdjustBotSkill = bBasicTrainingGame || bIsQuickMatch;
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("CasterControl"));
 	bCasterControl = EvalBoolOptions(InOpt, bCasterControl);
