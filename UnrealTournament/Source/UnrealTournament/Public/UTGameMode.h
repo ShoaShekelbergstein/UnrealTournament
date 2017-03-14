@@ -407,6 +407,9 @@ public:
 	/** How long has the server been empty */
 	int32 EmptyServerTime;
 
+	/** How many bots to fill in if game needs more players. */
+	virtual int32 AdjustedBotFillCount();
+
 	/** Whether player is allowed to suicide. */
 	virtual bool AllowSuicideBy(AUTPlayerController* PC);
 
