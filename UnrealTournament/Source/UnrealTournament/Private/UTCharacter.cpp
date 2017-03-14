@@ -3667,6 +3667,8 @@ APlayerCameraManager* AUTCharacter::GetPlayerCameraManager()
 
 USoundBase* AUTCharacter::GetFootstepSoundForSurfaceType(EPhysicalSurface SurfaceType, bool bLocalPlayer)
 {
+	return nullptr;
+
 	USoundBase** SoundPtr = nullptr;
 
 	if (bLocalPlayer)
