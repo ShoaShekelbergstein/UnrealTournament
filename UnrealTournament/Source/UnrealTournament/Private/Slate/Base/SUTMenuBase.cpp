@@ -43,6 +43,15 @@ void SUTMenuBase::Construct(const FArguments& InArgs)
 
 void SUTMenuBase::OnMenuOpened(const FString& Parameters)
 {
+	if (!SlateParentWindowPtr.IsValid())
+	{
+		SlateParentWindowPtr = FSlateApplication::Get().FindWidgetWindow(SharedThis(this));
+	}
+
+	if (SlateParentWindowPtr.IsValid())
+	{
+		OnActivateHandle = SlateParentWindowPtr.Pin()->GetOnWindowActivatedEvent().AddSP(this, &SUTMenuBase::HandleWindowActivated);
+	}
 
 	AUTGameState* UTGameState = (PlayerOwner.IsValid() && PlayerOwner->GetWorld() != nullptr) ? PlayerOwner->GetWorld()->GetGameState<AUTGameState>() : nullptr;
 	if (UTGameState != nullptr) UTGameState->bLocalMenusAreActive = true;
@@ -58,6 +67,11 @@ void SUTMenuBase::OnMenuOpened(const FString& Parameters)
 
 void SUTMenuBase::OnMenuClosed()
 {
+	if (SlateParentWindowPtr.IsValid())
+	{
+		SlateParentWindowPtr.Pin()->GetOnWindowActivatedEvent().Remove(OnActivateHandle);
+	}
+
 	AUTGameState* UTGameState = ( PlayerOwner.IsValid() && PlayerOwner->GetWorld() != nullptr) ? PlayerOwner->GetWorld()->GetGameState<AUTGameState>() : nullptr;
 	if (UTGameState != nullptr) UTGameState->bLocalMenusAreActive = false;
 
@@ -1155,5 +1169,13 @@ FSlateColor SUTMenuBase::GetLabelColor() const
 {
 	return PlayerButton.IsValid() ? PlayerButton->GetLabelColor() : FSlateColor(FLinearColor::White);
 }
+
+
+void SUTMenuBase::HandleWindowActivated()
+{
+	FSlateApplication::Get().SetAllUserFocus(SharedThis(this), EFocusCause::WindowActivate);
+	UE_LOG(UT,Verbose,TEXT("Menu has been activated."));
+}
+
 
 #endif

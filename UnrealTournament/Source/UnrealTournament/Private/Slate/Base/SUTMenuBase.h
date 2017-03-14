@@ -173,6 +173,9 @@ protected:
 	TSharedPtr<SOverlay> DesktopOverlay;
 	FSlateColor GetLabelColor() const;
 
+	TWeakPtr<SWindow> SlateParentWindowPtr;
+	void HandleWindowActivated();
+	FDelegateHandle OnActivateHandle;
 public:
 	virtual bool SkipWorldRender();
 	
