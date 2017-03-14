@@ -301,9 +301,9 @@ void FUTAnalytics::LoginStatusChanged(FString NewAccountID)
 
 void FUTAnalytics::PrivateSetUserID(const FString& AccountID, EAccountSource AccountSource)
 {
-	// Set the UserID to "LoginID|AccountID|OSID|AccountIDSource".
+	// Set the UserID to "LoginID|AccountID|OSID|DeviceID|AccountIDSource".
 	const TCHAR* AccountSourceStr = AccountSource == EAccountSource::EFromRegistry ? TEXT("Reg") : TEXT("OSS");
-	Analytics->SetUserID(FString::Printf(TEXT("%s|%s|%s|%s"), *FPlatformMisc::GetLoginId(), *AccountID, *FPlatformMisc::GetOperatingSystemId(), AccountSourceStr));
+	Analytics->SetUserID(FString::Printf(TEXT("%s|%s|%s|%s|%s"), *FPlatformMisc::GetLoginId(), *AccountID, *FPlatformMisc::GetOperatingSystemId(), *FPlatformMisc::GetDeviceId(), AccountSourceStr));
 	// remember the current value so we don't spuriously restart the session if the user logs in later with the same ID.
 	CurrentAccountID = AccountID;
 	CurrentAccountSource = AccountSource;
