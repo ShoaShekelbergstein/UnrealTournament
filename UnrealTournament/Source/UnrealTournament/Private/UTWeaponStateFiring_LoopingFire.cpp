@@ -9,11 +9,14 @@ UUTWeaponStateFiring_LoopingFire::UUTWeaponStateFiring_LoopingFire(const FObject
 	: Super(ObjectInitializer)
 {
 	bIsInCooldown = false;
+	ShortFireThreshold = 0;
 }
 
 void UUTWeaponStateFiring_LoopingFire::BeginState(const UUTWeaponState* PrevState)
 {
 	Super::BeginState(PrevState);
+
+	CurrentShot = 0;
 
 	bIsInCooldown = false;
 
@@ -57,11 +60,6 @@ void UUTWeaponStateFiring_LoopingFire::TransitionBeginToLoopExecute(UAnimMontage
 	if (!bIsInCooldown && !bWasAnimInterupted)
 	{
 		PlayLoopingFireAnims();
-
-		if (AnimMontage == BeginFireAnim_Weapon)
-		{
-			GetOuterAUTWeapon()->GetMesh()->GetAnimInstance()->Montage_SetPosition(AnimMontage, 0.001f);
-		}
 	}
 }
 
@@ -113,22 +111,45 @@ void UUTWeaponStateFiring_LoopingFire::PlayLoopingFireAnims()
 }
 
 void UUTWeaponStateFiring_LoopingFire::PlayEndFireAnims()
-{ 
-	if (EndFireAnim_Weapon)
+{
+	if (CurrentShot <= ShortFireThreshold && (EndFireShort_Weapon || EndFireShort_Hands))
 	{
-		UAnimInstance* AnimInstance_Weapon = GetOuterAUTWeapon()->GetMesh()->GetAnimInstance();
-		if (AnimInstance_Weapon != NULL)
+		if (EndFireShort_Weapon)
 		{
-			AnimInstance_Weapon->Montage_Play(EndFireAnim_Weapon, 1.f);
+			UAnimInstance* AnimInstance_Weapon = GetOuterAUTWeapon()->GetMesh()->GetAnimInstance();
+			if (AnimInstance_Weapon != NULL)
+			{
+				AnimInstance_Weapon->Montage_Play(EndFireShort_Weapon, 1.f);
+			}
+		}
+
+		if (EndFireShort_Hands && GetUTOwner())
+		{
+			UAnimInstance* AnimInstance_Hands = GetUTOwner()->FirstPersonMesh->GetAnimInstance();
+			if (AnimInstance_Hands)
+			{
+				AnimInstance_Hands->Montage_Play(EndFireShort_Hands, 1.f);
+			}
 		}
 	}
-
-	if (EndFireAnim_Hands && GetUTOwner())
+	else
 	{
-		UAnimInstance* AnimInstance_Hands = GetUTOwner()->FirstPersonMesh->GetAnimInstance();
-		if (AnimInstance_Hands)
+		if (EndFireAnim_Weapon)
 		{
-			AnimInstance_Hands->Montage_Play(EndFireAnim_Hands, 1.f);
+			UAnimInstance* AnimInstance_Weapon = GetOuterAUTWeapon()->GetMesh()->GetAnimInstance();
+			if (AnimInstance_Weapon != NULL)
+			{
+				AnimInstance_Weapon->Montage_Play(EndFireAnim_Weapon, 1.f);
+			}
+		}
+
+		if (EndFireAnim_Hands && GetUTOwner())
+		{
+			UAnimInstance* AnimInstance_Hands = GetUTOwner()->FirstPersonMesh->GetAnimInstance();
+			if (AnimInstance_Hands)
+			{
+				AnimInstance_Hands->Montage_Play(EndFireAnim_Hands, 1.f);
+			}
 		}
 	}
 }
