@@ -78,6 +78,19 @@ void AUTDroppedPickup::SetInventory(AUTInventory* NewInventory)
 void AUTDroppedPickup::InventoryTypeUpdated_Implementation()
 {
 	AUTPickupInventory::CreatePickupMesh(this, Mesh, InventoryType, 0.0f, FRotator::ZeroRotator, false);
+
+	if (Mesh)
+	{
+		for (int i = 0; i < Mesh->GetNumMaterials(); i++)
+		{
+			UMaterialInstanceDynamic* MID = Mesh->CreateAndSetMaterialInstanceDynamic(i);
+			if (MID)
+			{
+				static FName PickupSheen = TEXT("PickupSheen");
+				MID->SetScalarParameterValue(PickupSheen, 1.0f);
+			}
+		}
+	}
 }
 
 void AUTDroppedPickup::PhysicsStopped(const FHitResult& ImpactResult)

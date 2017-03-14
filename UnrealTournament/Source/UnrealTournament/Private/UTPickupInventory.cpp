@@ -311,6 +311,16 @@ void AUTPickupInventory::InventoryTypeUpdated_Implementation()
 	if (Mesh)
 	{
 		Mesh->bShouldUpdatePhysicsVolume = false;
+
+		for (int i = 0; i < Mesh->GetNumMaterials(); i++)
+		{
+			UMaterialInstanceDynamic* MID = Mesh->CreateAndSetMaterialInstanceDynamic(i);
+			if (MID)
+			{
+				static FName PickupSheen = TEXT("PickupSheen");
+				MID->SetScalarParameterValue(PickupSheen, 1.0f);
+			}
+		}
 	}
 	if (GhostMeshMaterial != NULL)
 	{
