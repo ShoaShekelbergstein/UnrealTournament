@@ -646,6 +646,18 @@ public:
 	virtual void ServerPlayGroupTaunt();
 
 	UFUNCTION(Exec)
+	void SetMouseAccel(float NewAccel);
+
+	UFUNCTION(Exec)
+	void SetMouseAccelPower(float NewAccelPower);
+
+	UFUNCTION(Exec)
+	void SetMouseAccelMax(float NewAccelMax);
+
+	UFUNCTION(Exec)
+	void SetMouseAccelOffset(float NewAccelOffset);
+
+	UFUNCTION(Exec)
 	virtual void SetMouseSensitivityUT(float NewSensitivity);
 
 	/** Set gamepad sensitivity on the left stick and save config files */

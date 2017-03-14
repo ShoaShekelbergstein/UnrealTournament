@@ -5366,3 +5366,38 @@ void AUTPlayerController::ClientDebugRewind_Implementation(FVector_NetQuantize T
 	ClientSay(UTPlayerState, FString::Printf(TEXT("REWIND teleported %d prediction time %f      SERVER prediction time %f percent %f"), bTeleported, GetPredictionTime(), PredictionTime, Percent), ChatDestinations::System);
 }
 
+void AUTPlayerController::SetMouseAccel(float NewAccel)
+{
+	UUTPlayerInput* Input = Cast<UUTPlayerInput>(PlayerInput);
+	if (Input)
+	{
+		Input->Acceleration = NewAccel;
+	}
+}
+
+void AUTPlayerController::SetMouseAccelPower(float NewAccelPower)
+{
+	UUTPlayerInput* Input = Cast<UUTPlayerInput>(PlayerInput);
+	if (Input)
+	{
+		Input->AccelerationPower = NewAccelPower;
+	}
+}
+
+void AUTPlayerController::SetMouseAccelMax(float NewAccelMax)
+{
+	UUTPlayerInput* Input = Cast<UUTPlayerInput>(PlayerInput);
+	if (Input)
+	{
+		Input->AccelerationMax = NewAccelMax;
+	}
+}
+
+void AUTPlayerController::SetMouseAccelOffset(float NewAccelOffset)
+{
+	UUTPlayerInput* Input = Cast<UUTPlayerInput>(PlayerInput);
+	if (Input)
+	{
+		Input->AccelerationOffset = NewAccelOffset;
+	}
+}
