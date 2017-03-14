@@ -60,7 +60,7 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		QuickStatsBackgroundAlpha = 0.15;
 		QuickStatsForegroundAlpha = 1.0f;
 		bQuickStatsHidden = true;
-		bQuickInfoHidden = false;
+		bQuickInfoHidden = true;
 		bHealthArcShown = false;
 		QuickStatsScaleOverride = 0.75f;
 		HealthArcRadius = 60;
