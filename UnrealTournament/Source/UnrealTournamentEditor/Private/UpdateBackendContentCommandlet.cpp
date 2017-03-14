@@ -87,6 +87,7 @@ struct FJsonExporter : public TSharedFromThis<FJsonExporter>
 			bSuccess = WriteSimpleItemAssetJson(EUtItemType::Boost, TEXT("ItemTemplates/Boost.json")) && bSuccess;
 
 			bSuccess = ExportLootTables() && bSuccess;
+			bSuccess = ExportLoginRewards() && bSuccess;
 
 			UE_LOG(LogTemplates, Log, TEXT("Export Complete"));
 			return bSuccess;
@@ -264,6 +265,92 @@ protected:
 		}
 		ItemPathInOut = ItemDef->GetPersistentName();
 		return true;
+	}
+
+	bool IsValidLootTable(const FString& LootTable)
+	{
+		return ValidLootTables.Contains(LootTable);
+	}
+
+	bool ExportLoginRewards()
+	{
+		UE_LOG(LogTemplates, Display, TEXT("BEGIN EXPORT - LoginRewards"));
+
+		bool bSuccess = true;
+
+		// get the loot tables root object
+		static const TCHAR* LOGIN_REWARDS_PATH = TEXT("/Game/EpicInternal/Loot/LoginRewards.LoginRewards");
+		UDataTable* DataTable = LoadObject<UDataTable>(nullptr, LOGIN_REWARDS_PATH);
+		if (DataTable == nullptr)
+		{
+			UE_LOG(LogTemplates, Error, TEXT("Unable to find LoginRewards object at %s"), LOGIN_REWARDS_PATH);
+			return false;
+		}
+
+		BeginJson(TEXT("DataTemplates/LoginRewards.json"));
+		Json->WriteObjectStart();
+			Json->WriteValue(TEXT("templateId"), TEXT("Data.LoginRewards"));
+			Json->WriteObjectStart(TEXT("attributes"));
+			{
+				if (!DataTable || !DataTable->RowStruct || !DataTable->RowStruct->IsChildOf(FLoginRewardData::StaticStruct()))
+				{
+					UE_LOG(LogTemplates, Error, TEXT("Unable to export FLoginRewardData"));
+					bSuccess = false;
+				}
+				else
+				{
+					const FString Context = TEXT("exporting daily login rewards");
+
+					Json->WriteArrayStart(TEXT("reward_table"));
+					for (int32 i = 0; i < DataTable->RowMap.Num(); ++i)
+					{
+						FName RowName = FName(*FString::Printf(TEXT("%d"), i));
+						FLoginRewardData* Reward = DataTable->FindRow<FLoginRewardData>(RowName, Context);
+						if (Reward == nullptr)
+						{
+							Json->WriteNull();
+							UE_LOG(LogTemplates, Error, TEXT("Missing LoginRewards for day %d"), i + 1);
+							bSuccess = false;
+						}
+						//TODO - validate TierGroup in loot table
+						else if ((Reward->SpecificItem == NULL) && (Reward->LootTierGroup.Len() == 0))
+						{
+							Json->WriteNull();
+							UE_LOG(LogTemplates, Error, TEXT("Missing LoginRewards item for day %d"), i + 1);
+							bSuccess = false;
+						}
+						else
+						{
+							Json->WriteObjectStart();
+							Json->WriteValue(TEXT("quantity"), Reward->Quantity);
+							if (Reward->SpecificItem)
+							{
+								Json->WriteValue(TEXT("specificItem"), Reward->SpecificItem->GetPersistentName());
+								if (!Reward->LootTierGroup.IsEmpty())
+								{
+									UE_LOG(LogTemplates, Warning, TEXT("Both specificItem and lootTierGroup specified for login reward table"));
+								}
+							}
+							else
+							{
+								Json->WriteValue(TEXT("lootTierGroup"), Reward->LootTierGroup);
+								if (!(Reward->LootTierGroup.IsEmpty() || IsValidLootTable(Reward->LootTierGroup)))
+								{
+									UE_LOG(LogTemplates, Error, TEXT("Daily Reward table references invalid loot tier group: %s"), *Reward->LootTierGroup);
+									bSuccess = false;
+								}
+							}
+							Json->WriteObjectEnd();
+						}
+					}
+					Json->WriteArrayEnd();
+				}
+			}
+			Json->WriteObjectEnd();
+		Json->WriteObjectEnd();
+		
+
+		return EndJson() && bSuccess;
 	}
 
 	bool ExportLootTables()
