@@ -1373,16 +1373,17 @@ void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, con
 		if (KillerPlayerState->bIsABot)
 		{
 			// decrease skill level for bot team
+			float MinSkill = bBasicTrainingGame ? 0.f : 1.f;
 			if (bKillerOnBlue)
 			{
 				// if more deaths still, less reduction
 				float Adjust = (BlueTeamDeaths > BlueTeamKills) ? 0.5f : 1.f;
-				BlueTeamSkill = FMath::Max(1.f, BlueTeamSkill - Adjust / FMath::Min(5.f, float(BlueTeamKills + BlueTeamDeaths)));
+				BlueTeamSkill = FMath::Max(MinSkill, BlueTeamSkill - Adjust / FMath::Min(5.f, float(BlueTeamKills + BlueTeamDeaths)));
 			}
 			else
 			{
 				float Adjust = (RedTeamDeaths > RedTeamKills) ? 0.5f : 1.f;
-				RedTeamSkill = FMath::Max(1.f, RedTeamSkill - Adjust / FMath::Min(5.f, float(RedTeamKills + RedTeamDeaths)));
+				RedTeamSkill = FMath::Max(MinSkill, RedTeamSkill - Adjust / FMath::Min(5.f, float(RedTeamKills + RedTeamDeaths)));
 			}
 			AUTBot* Bot = Cast<AUTBot>(KillerPlayerState->GetOwner());
 			if (Bot)
@@ -1393,7 +1394,7 @@ void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, con
 		else
 		{
 			// increase skill level for bot team capped
-			float MaxSkill = bBasicTrainingGame ? 4.5f : 6.f;
+			float MaxSkill = bBasicTrainingGame ? 4.f : 6.f;
 			if (bKillerOnBlue || !bTeamGame)
 			{
 				float Adjust = (RedTeamKills > RedTeamDeaths) ? 0.5f : 1.f;
