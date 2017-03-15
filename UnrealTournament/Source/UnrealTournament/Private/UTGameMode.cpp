@@ -341,7 +341,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	{
 		BotFillCount = 0;
 	}
-	bAutoAdjustBotSkill = bBasicTrainingGame || bIsQuickMatch;
+	bAutoAdjustBotSkill = (bBasicTrainingGame || bIsQuickMatch) && !bIsVSAI;
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("CasterControl"));
 	bCasterControl = EvalBoolOptions(InOpt, bCasterControl);
 
@@ -4069,7 +4069,7 @@ void AUTGameMode::GetGameURLOptions(const TArray<TSharedPtr<TAttributePropertyBa
 int32 AUTGameMode::AdjustedBotFillCount()
 {
 	int32 AdjustedBotFillCount = bTeamGame ? DefaultMaxPlayers : 5;
-	return bIsVSAI? AdjustedBotFillCount : FMath::Min(GameSession->MaxPlayers, AdjustedBotFillCount);
+	return (bIsVSAI || !GameSession) ? AdjustedBotFillCount : FMath::Min(GameSession->MaxPlayers, AdjustedBotFillCount);
 }
 
 void AUTGameMode::CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps)
