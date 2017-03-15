@@ -711,7 +711,7 @@ bool AUTHUD::ScoreboardIsUp()
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	bool bPreMatchScoreBoard = (GS && !GS->HasMatchStarted() && !GS->IsMatchInCountdown()) && (!UTPlayerOwner || !UTPlayerOwner->UTPlayerState || !UTPlayerOwner->UTPlayerState->bIsWarmingUp);
 	bShowScoresWhileDead = bShowScoresWhileDead && GS && GS->IsMatchInProgress() && !GS->IsMatchIntermission() && UTPlayerOwner && !UTPlayerOwner->GetPawn() && !UTPlayerOwner->IsInState(NAME_Spectating);
-	return bShowScores || bPreMatchScoreBoard || bForceScores || bShowScoresWhileDead;
+	return bShowScores || bPreMatchScoreBoard || bForceScores || bShowScoresWhileDead || bDisplayMatchSummary;
 }
 
 void AUTHUD::BeforeFirstFrame_Implementation()

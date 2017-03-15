@@ -132,7 +132,7 @@ void UUTScoreboard::Draw_Implementation(float RenderDelta)
 		DrawCurrentLifeStats(RenderDelta, YOffset);
 	}
 
-	if (UTHUDOwner && UTHUDOwner->bDisplayMatchSummary)
+	if (UTHUDOwner && UTHUDOwner->bDisplayMatchSummary && !bIsInteractive)
 	{
 		DrawMatchSummary(RenderDelta);
 	}
@@ -528,7 +528,7 @@ void UUTScoreboard::DrawScorePanel(float RenderDelta, float& YOffset)
 		SelectionStack.Empty();
 	}
 	LastScorePanelYOffset = YOffset;
-	if (UTGameState && (!UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive))
+	if (UTGameState && (!UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive || (UTHUDOwner && UTHUDOwner->bDisplayMatchSummary && bIsInteractive)))
 	{
 		DrawScoreHeaders(RenderDelta, YOffset);
 		DrawPlayerScores(RenderDelta, YOffset);
