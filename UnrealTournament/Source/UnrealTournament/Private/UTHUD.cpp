@@ -587,7 +587,23 @@ void AUTHUD::ReceiveLocalMessage(TSubclassOf<class UUTLocalMessage> MessageClass
 
 void AUTHUD::ToggleScoreboard(bool bShow)
 {
+	bool Old = bShowScores;
 	bShowScores = bShow;
+
+	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
+	UUTLocalPlayer* UTLocalPlayer = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;
+	if (UTGameState && UTLocalPlayer && bShow && bShowScores != Old)
+	{
+		// Refresh the friends state of everyone on the scoreboard.
+		for (int32 i=0; i < UTGameState->PlayerArray.Num(); i++)
+		{
+			if (UTGameState->PlayerArray[i] != UTPlayerOwner->PlayerState)
+			{
+				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				UTPlayerState->bIsFriend = UTLocalPlayer->IsAFriend(UTPlayerState->UniqueId);
+			}
+		}
+	}
 }
 
 void AUTHUD::NotifyMatchStateChange()
