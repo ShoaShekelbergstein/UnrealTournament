@@ -323,7 +323,6 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bAllowBots, int32 BotDifficulty, bool b
 
 		// build all of the data needed to launch the map.
 		FString GameURL = CurrentRuleset->GenerateURL(InitialMap, bAllowBots, BotDifficulty, bRequireFilled);
-		GameURL += CurrentRuleset->GameOptions;
 
 		if (!bSpectatable) GameURL += TEXT("?MaxSpectators=0");
 		if (!bJoinAnytime && GameURL.Find(TEXT("NoJIP"), ESearchCase::IgnoreCase) == INDEX_NONE) GameURL += TEXT("?NoJIP");
