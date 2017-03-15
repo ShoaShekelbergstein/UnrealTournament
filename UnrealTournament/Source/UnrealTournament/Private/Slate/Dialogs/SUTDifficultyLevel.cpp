@@ -71,7 +71,7 @@ void SUTDifficultyLevel::Construct(const FArguments& InArgs)
 								+SVerticalBox::Slot().HAlign(HAlign_Center).AutoHeight().Padding(0.0f,20.0f,0.0f,0.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(TEXT("EASY")))
+									.Text(FText::FromString(TEXT("NORMAL")))
 									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 
 								]
@@ -111,7 +111,7 @@ void SUTDifficultyLevel::Construct(const FArguments& InArgs)
 								+SVerticalBox::Slot().HAlign(HAlign_Center).AutoHeight().Padding(0.0f,20.0f,0.0f,0.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(TEXT("NORMAL")))
+									.Text(FText::FromString(TEXT("HARD")))
 									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 
 								]
@@ -159,7 +159,7 @@ void SUTDifficultyLevel::Construct(const FArguments& InArgs)
 								+SVerticalBox::Slot().HAlign(HAlign_Center).AutoHeight().Padding(0.0f,20.0f,0.0f,0.0f)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(TEXT("HARD")))
+									.Text(FText::FromString(TEXT("INHUMAN")))
 									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 
 								]
