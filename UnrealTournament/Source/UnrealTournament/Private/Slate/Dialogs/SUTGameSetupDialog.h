@@ -292,6 +292,11 @@ protected:
 	void AllowBotsChanged(ECheckBoxState NewState);
 	void RequireFullChanged(ECheckBoxState NewState);
 
+	
+	EVisibility GetAllowBotsVis() const;
+	EVisibility GetBotSkillVis() const;
+	EVisibility GetRequireFullVis() const;
+
 public:
 	FString GetSelectedMap();
 	bool bGameNameChanged;

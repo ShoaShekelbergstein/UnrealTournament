@@ -66,6 +66,9 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
 	uint32 bCompetitiveMatch : 1;
 
+	UPROPERTY(Replicated)
+	uint16 OptionFlags;
+
 	// Not displayed, this wholes the game type that will be passed to the server via the URL.  
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
 	FString GameMode;

@@ -17,6 +17,9 @@ AUTReplicatedGameRuleset::AUTReplicatedGameRuleset(const class FObjectInitialize
 	bAlwaysRelevant = true;
 	bReplicateMovement = false;
 	bNetLoadOnClient = false;
+
+	OptionFlags = GAME_OPTION_FLAGS_All;
+
 }
 
 void AUTReplicatedGameRuleset::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
@@ -37,6 +40,7 @@ void AUTReplicatedGameRuleset::GetLifetimeReplicatedProps(TArray< FLifetimePrope
 	DOREPLIFETIME(AUTReplicatedGameRuleset, GameMode);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, bTeamGame);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, bCompetitiveMatch);
+	DOREPLIFETIME(AUTReplicatedGameRuleset, OptionFlags);
 }
 
 int32 AUTReplicatedGameRuleset::AddMapAssetToMapList(const FAssetData& Asset)
@@ -63,6 +67,7 @@ void AUTReplicatedGameRuleset::SetRules(UUTGameRuleset* NewRules, const TArray<F
 	QuickPlayMaps		= NewRules->QuickPlayMaps;
 	bCompetitiveMatch	= NewRules->bCompetitiveMatch;
 	MaxMapsInList		= NewRules->MaxMapsInList;
+	OptionFlags			= NewRules->OptionFlags;
 
 	// First add the Epic maps.
 	if (!NewRules->EpicMaps.IsEmpty())

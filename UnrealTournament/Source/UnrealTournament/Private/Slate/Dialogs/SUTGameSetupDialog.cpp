@@ -866,7 +866,7 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 			.Style(SUTStyle::Get(), "UT.CheckBox")
 			.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","RequireFullTT","Multiplayer only!  If checked, the game will not start until all of the available slots in the match have been filled.")))
 			.OnCheckStateChanged(this, &SUTGameSetupDialog::RequireFullChanged)
-
+			.Visibility(this, &SUTGameSetupDialog::GetRequireFullVis)
 			.Content()
 			[
 				SNew(STextBlock)
@@ -885,6 +885,7 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 				.Style(SUTStyle::Get(), "UT.CheckBox")
 				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","AllowBotsTT","If checked, bots will be added to this match.")))
 				.OnCheckStateChanged(this, &SUTGameSetupDialog::AllowBotsChanged)
+				.Visibility(this, &SUTGameSetupDialog::GetAllowBotsVis)
 				.Content()
 				[
 					SNew(STextBlock)
@@ -901,6 +902,7 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 					SNew(STextBlock)
 					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 					.Text(NSLOCTEXT("SUTGameSetupDialog","BotSkillCaption","Bot Skill Level:"))
+					.Visibility(this, &SUTGameSetupDialog::GetBotSkillVis)
 				]
 				+SHorizontalBox::Slot().AutoWidth().Padding(10.0f,0.0f,10.0f,0.0f)
 				[
@@ -911,6 +913,7 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 						.IndentHandle(false)
 						.InitialSnap(DefaultBotSkillLevel)
 						.Style(SUTStyle::Get(), "UT.Slider")
+						.Visibility(this, &SUTGameSetupDialog::GetBotSkillVis)
 					]
 				]
 				+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
@@ -919,6 +922,7 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
 					.Text(this, &SUTGameSetupDialog::GetBotSkillText)
 					.ColorAndOpacity(this, &SUTGameSetupDialog::GetBotSkillColor)
+					.Visibility(this, &SUTGameSetupDialog::GetBotSkillVis)
 				]
 			]
 		];
@@ -926,6 +930,22 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 
 	return Final.ToSharedRef();
 }
+
+EVisibility SUTGameSetupDialog::GetAllowBotsVis() const
+{
+	return (!SelectedRuleset.IsValid() || CurrentCategory == FName(TEXT("Custom")) || (SelectedRuleset->OptionFlags & GAME_OPTION_FLAGS_AllowBots) > 0) ? EVisibility::Visible : EVisibility::Collapsed;
+}
+
+EVisibility SUTGameSetupDialog::GetBotSkillVis() const
+{
+	return (!SelectedRuleset.IsValid() || CurrentCategory == FName(TEXT("Custom")) || (SelectedRuleset->OptionFlags & GAME_OPTION_FLAGS_BotSkill) > 0) ? EVisibility::Visible : EVisibility::Collapsed;
+}
+
+EVisibility SUTGameSetupDialog::GetRequireFullVis() const
+{
+	return (!SelectedRuleset.IsValid() || CurrentCategory == FName(TEXT("Custom")) || (SelectedRuleset->OptionFlags & GAME_OPTION_FLAGS_RequireFull) > 0) ? EVisibility::Visible : EVisibility::Collapsed;
+}
+
 
 bool SUTGameSetupDialog::GetBotSkillEnabled() const
 {

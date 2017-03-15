@@ -50,6 +50,11 @@ const FLinearColor GOLDCOLOR = FLinearColor(1.f, 0.9f, 0.15f);
 const FLinearColor SILVERCOLOR = FLinearColor(0.5f, 0.5f, 0.75f);
 const FLinearColor BRONZECOLOR = FLinearColor(0.48f, 0.25f, 0.18f);
 
+const uint16 GAME_OPTION_FLAGS_All = 0xFFFF;
+const uint16 GAME_OPTION_FLAGS_RequireFull = 0x0001;
+const uint16 GAME_OPTION_FLAGS_AllowBots = 0x0002;
+const uint16 GAME_OPTION_FLAGS_BotSkill = 0x0004;
+
 UENUM()
 namespace EGameStage
 {

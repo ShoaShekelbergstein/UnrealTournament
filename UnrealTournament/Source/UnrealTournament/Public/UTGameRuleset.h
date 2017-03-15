@@ -79,6 +79,10 @@ public:
 	/** If competitive, no join in progress allowed, and all players must ready up for match to start. */
 	UPROPERTY(Config)
 		uint32 bCompetitiveMatch : 1;
+
+	UPROPERTY(Config)
+	uint16 OptionFlags;
+
 };
 
 

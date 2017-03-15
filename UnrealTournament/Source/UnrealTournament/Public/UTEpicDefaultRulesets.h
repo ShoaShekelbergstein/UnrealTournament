@@ -77,6 +77,8 @@ public:
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTDMGameMode");
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=10?GoalScore=0"));
 			NewRuleset->bTeamGame = false;
+						
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
 
 			NewRuleset->MaxMapsInList=16;
 
@@ -118,6 +120,8 @@ public:
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=10?GoalScore=0"));
 			NewRuleset->bTeamGame = false;
 
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
+
 			NewRuleset->MaxMapsInList=16;
 
 			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/DM-Outpost23";
@@ -146,6 +150,8 @@ public:
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTTeamDMGameMode");
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0"));
 			NewRuleset->bTeamGame = true;
+
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
 
 			NewRuleset->MaxMapsInList=16;
 
@@ -185,6 +191,8 @@ public:
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=2?GoalScore=5"));
 			NewRuleset->bTeamGame = true;
 
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
+
 			NewRuleset->MaxMapsInList = 16;
 
 			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/DM-Chill";
@@ -221,6 +229,8 @@ public:
 			NewRuleset->bCompetitiveMatch = true;
 			NewRuleset->MaxMapsInList=16;
 
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
+
 			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/WIP/DM-ASDF";
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/DM-Underland";
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Lea/DM-Lea";
@@ -245,6 +255,8 @@ public:
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTShowdownGame");
 			NewRuleset->GameOptions = FString(TEXT("?Timelimit=2?GoalScore=5?RequireFull=1"));
 			NewRuleset->bTeamGame = true;
+
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
 
 			NewRuleset->MaxMapsInList=16;
 
@@ -273,6 +285,8 @@ public:
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0"));
 			NewRuleset->bTeamGame = true;
+
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
 
 			NewRuleset->MaxMapsInList=16;
 
@@ -303,6 +317,8 @@ public:
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0"));
 			NewRuleset->bTeamGame = true;
 
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
+
 			NewRuleset->MaxMapsInList=16;
 
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/CTF-Face";
@@ -327,6 +343,8 @@ public:
 			NewRuleset->bCompetitiveMatch = true;
 			NewRuleset->bTeamGame = true;
 			NewRuleset->MaxMapsInList = 16;
+
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
 
 			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/CTF-TitanPass";
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/CTF-Face";
@@ -353,6 +371,8 @@ public:
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTDMGameMode");
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=10?GoalScore=0?Mutator=Instagib"));
 			NewRuleset->bTeamGame = false;
+
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
 
 			NewRuleset->MaxMapsInList=16;
 
@@ -390,6 +410,8 @@ public:
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?Mutator=Instagib"));
 			NewRuleset->bTeamGame = true;
 
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
+
 			NewRuleset->MaxMapsInList=16;
 
 			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/DM-Outpost23";
@@ -426,6 +448,8 @@ public:
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?Mutator=Instagib"));
 			NewRuleset->bTeamGame = true;
 
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
+
 			NewRuleset->MaxMapsInList=16;
 
 			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/CTF-TitanPass";
@@ -453,6 +477,8 @@ public:
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?Mutator=Instagib,AddTrans"));
 			NewRuleset->bTeamGame = true;
+
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
 
 			NewRuleset->MaxMapsInList=16;
 
@@ -483,6 +509,8 @@ public:
 			NewRuleset->bTeamGame = true;
 			NewRuleset->MaxMapsInList = 16;
 
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
+
 			NewRuleset->EpicMaps ="/Game/RestrictedAssets/Maps/WIP/FR-Fort";
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-MeltDown";
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-Loh";
@@ -510,6 +538,8 @@ public:
 			NewRuleset->bTeamGame = true;
 			NewRuleset->MaxMapsInList = 16;
 
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_BotSkill;
+
 			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/WIP/FR-Fort";
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-MeltDown";
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-Loh";
@@ -536,6 +566,8 @@ public:
 			NewRuleset->GameOptions = FString(TEXT(""));
 			NewRuleset->bTeamGame = true;
 			NewRuleset->MaxMapsInList = 16;
+
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_BotSkill + GAME_OPTION_FLAGS_RequireFull;
 
 			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/WIP/FR-Fort";
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-MeltDown";
