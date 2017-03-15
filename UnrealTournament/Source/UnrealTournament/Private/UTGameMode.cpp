@@ -3615,6 +3615,22 @@ void AUTGameMode::EndPlayerIntro()
 			}
 		}
 	}
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		AUTPlayerController* PC = Cast<AUTPlayerController>(It->Get());
+		if (PC && PC->UTPlayerState)
+		{
+			PC->UTPlayerState->bIsWarmingUp = false;
+			if (bHasRespawnChoices && !PC->UTPlayerState->bIsSpectator && (!PC->UTPlayerState->RespawnChoiceA || !PC->UTPlayerState->RespawnChoiceB))
+			{
+				PC->UTPlayerState->RespawnChoiceA = nullptr;
+				PC->UTPlayerState->RespawnChoiceB = nullptr;
+				PC->UTPlayerState->RespawnChoiceA = Cast<APlayerStart>(ChoosePlayerStart(PC));
+				PC->UTPlayerState->RespawnChoiceB = Cast<APlayerStart>(ChoosePlayerStart(PC));
+				PC->UTPlayerState->bChosePrimaryRespawnChoice = true;
+			}
+		}
+	}
 
 	SetMatchState(MatchState::CountdownToBegin);
 }
