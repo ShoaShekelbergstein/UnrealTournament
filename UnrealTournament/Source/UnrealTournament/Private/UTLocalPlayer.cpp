@@ -3312,7 +3312,7 @@ void UUTLocalPlayer::HandleFriendsActionNotification(TSharedRef<FFriendsAndChatM
 		FriendsAndChatMessage->GetMessageType() == EMessageType::FriendInvite ||
 		(FriendsAndChatMessage->GetMessageType() == EMessageType::ChatMessage && !bShowingFriendsMenu))
 	{
-		bShowSocialNotification = true;
+		bShowSocialNotification = FriendsAndChatMessage->GetMessageType() != EMessageType::FriendAccepted;
 		ShowToast(FText::FromString(FriendsAndChatMessage->GetMessage()));
 	}
 
