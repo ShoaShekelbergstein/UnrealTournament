@@ -950,15 +950,6 @@ bool UUTGameplayStatics::IsPlayInEditor(UObject* WorldContextObject)
 	}
 }
 
-void UUTGameplayStatics::RecordEvent_UTTutorialStarted(AUTPlayerController* UTPC, FString TutorialMap)
-{
-	if (FUTAnalytics::IsAvailable())
-	{
-		FUTAnalytics::FireEvent_UTTutorialStarted(UTPC,TutorialMap);
-	}
-}
-
-
 void UUTGameplayStatics::RecordEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap)
 {
 	if (FUTAnalytics::IsAvailable())

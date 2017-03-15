@@ -78,11 +78,16 @@ namespace EGenericAnalyticParam
 
 		UTEnterMatch,
 		EnterMethod,
-		UTStartRankedMatch,
-		UTEndRankedMatch,
-		UTStartQuickplayMatch,
-		UTEndQuickplayMatch,
+		UTStartMatch,
+		UTInitContext,
+		UTInitMatch,
+		UTEndMatch,
 		ELOPlayerInfo,
+
+		bIsMenu,
+		bIsOnline,
+		bIsRanked,
+		bIsQuickMatch,
 
 		UTTutorialPickupToken,
 		TokenID,

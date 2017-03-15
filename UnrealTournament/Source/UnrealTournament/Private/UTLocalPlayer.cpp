@@ -6267,7 +6267,6 @@ void UUTLocalPlayer::LaunchTutorial(FName TutorialName, const FString& DesiredQu
 
 			FString URL = TutorialData[i].Map + TutorialData[i].LaunchArgs + FString::Printf(TEXT("?TutorialMask=%i"),TutorialData[i].Mask);
 			GetWorld()->ServerTravel(URL,true,false);
-			FUTAnalytics::FireEvent_UTTutorialStarted(Cast<AUTPlayerController>(PlayerController), TutorialName.ToString());
 			return;
 		}
 	}

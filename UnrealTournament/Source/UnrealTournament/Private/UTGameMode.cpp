@@ -623,6 +623,11 @@ void AUTGameMode::InitGameState()
 		UE_LOG(UT,Error, TEXT("UTGameState is NULL %s"), *GameStateClass->GetFullName());
 	}
 
+	if (FUTAnalytics::IsAvailable())
+	{
+		FUTAnalytics::FireEvent_UTInitMatch(this);
+	}
+
 	RegisterServerWithSession();
 }
 
@@ -1879,6 +1884,18 @@ void AUTGameMode::StartMatch()
 		// Already started
 		return;
 	}
+
+	//Fire new match analytics
+	if (FUTAnalytics::IsAvailable())
+	{
+		if (GetWorld() && (TutorialMask != 0))
+		{
+			FUTAnalytics::FireEvent_UTTutorialStarted(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), GetWorld()->GetMapName());
+		}
+
+		FUTAnalytics::FireEvent_UTStartMatch(this);
+	}
+
 	if (GetWorld()->IsPlayInEditor() || !bDelayedStart)
 	{
 		SetMatchState(MatchState::InProgress);
@@ -2087,6 +2104,16 @@ void AUTGameMode::BeginGame()
 void AUTGameMode::EndMatch()
 {
 	Super::EndMatch();
+
+	if (FUTAnalytics::IsAvailable())
+	{
+		FUTAnalytics::FireEvent_UTEndMatch(this);
+	
+		if (GetWorld() && (TutorialMask != 0))
+		{
+			FUTAnalytics::FireEvent_UTTutorialCompleted(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), GetWorld()->GetMapName());
+		}
+	}
 
 	APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
 	UUTLocalPlayer* LP = LocalPC ? Cast<UUTLocalPlayer>(LocalPC->Player) : NULL;
@@ -3566,12 +3593,6 @@ void AUTGameMode::CallMatchStateChangeNotify()
 void AUTGameMode::HandleMatchHasEnded()
 {
 	Super::HandleMatchHasEnded();
-
-	AUTPlayerController* UTPC = Cast<AUTPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
-	if (UTPC && bBasicTrainingGame)
-	{
-		FUTAnalytics::FireEvent_UTTutorialCompleted(UTPC, DisplayName.ToString());
-	}
 
 	// save AI data only after completed matches
 	AUTRecastNavMesh* NavData = GetUTNavData(GetWorld());

@@ -9,6 +9,7 @@
 #include "UTDemoRecSpectator.h"
 #include "UTGameMessage.h"
 #include "UTReplicatedGameRuleset.h"
+#include "UTAnalytics.h"
 #if WITH_PROFILE
 #include "UtMcpProfileManager.h"
 #endif
@@ -143,6 +144,12 @@ void AUTBaseGameMode::InitGameState()
 		{
 			GS->ServerName = TEXT("UT Server");
 		}
+	}
+
+	//Context is actually init inside of InitGame, but we want the gamestate populated so we can get data
+	if (FUTAnalytics::IsAvailable())
+	{
+		FUTAnalytics::FireEvent_UTInitContext(this);
 	}
 }
 

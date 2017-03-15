@@ -231,9 +231,6 @@ class UNREALTOURNAMENT_API UUTGameplayStatics : public UBlueprintFunctionLibrary
 	static bool IsPlayInEditor(UObject* WorldContextObject);
 
 	UFUNCTION(BlueprintCallable, Category = "UTAnalytics")
-	static void RecordEvent_UTTutorialStarted(AUTPlayerController* UTPC, FString TutorialMap);
-
-	UFUNCTION(BlueprintCallable, Category = "UTAnalytics")
 	static void RecordEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap);
 
 	UFUNCTION(BlueprintCallable, Category = "UTAnalytics")

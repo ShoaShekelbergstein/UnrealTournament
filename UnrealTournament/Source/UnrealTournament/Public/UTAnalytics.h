@@ -45,10 +45,10 @@ public:
 	static void FireEvent_PlayerContextLocationPerMinute(AUTBasePlayerController* UTPC, FString& PlayerContextLocation, const int32 NumSocialPartyMembers);
 	static void FireEvent_UTServerFPSCharts(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& InParamArray);
 	static void FireEvent_UTServerWeaponKills(AUTGameMode* UTGM, TMap<TSubclassOf<UDamageType>, int32>* KillsArray);
-	static void FireEvent_UTStartRankedMatch(AUTGameMode* UTGM);
-	static void FireEvent_UTEndRankedMatch(AUTGameMode* UTGM);
-	static void FireEvent_UTStartQuickplayMatch(AUTGameMode* UTGM);
-	static void FireEvent_UTEndQuickplayMatch(AUTGameMode* UTGM);
+	static void FireEvent_UTInitContext(const AUTBaseGameMode* UTGM);
+	static void FireEvent_UTInitMatch(AUTGameMode* UTGM);
+	static void FireEvent_UTStartMatch(AUTGameMode* UTGM);
+	static void FireEvent_UTEndMatch(AUTGameMode* UTGM);
 	static void FireEvent_UTServerPlayerJoin(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	static void FireEvent_UTServerPlayerDisconnect(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	
