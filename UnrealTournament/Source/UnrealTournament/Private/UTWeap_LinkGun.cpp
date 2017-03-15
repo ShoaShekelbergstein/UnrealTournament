@@ -141,6 +141,16 @@ void AUTWeap_LinkGun::Removed()
 	Super::Removed();
 }
 
+void AUTWeap_LinkGun::ClientRemoved()
+{
+	if (UTOwner)
+	{
+		UTOwner->SetAmbientSound(OverheatSound, true);
+	}
+	Super::ClientRemoved();
+}
+
+
 void AUTWeap_LinkGun::FireShot()
 {
 	if (!bIsInCoolDown)

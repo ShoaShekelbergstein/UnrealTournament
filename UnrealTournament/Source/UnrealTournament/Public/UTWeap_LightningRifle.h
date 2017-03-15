@@ -58,6 +58,8 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 	UFUNCTION()
 		void OnRepCharging();
 
+	virtual void ClearForRemoval();
+
 	virtual void ChainLightning(FHitResult Hit);
 
 	virtual bool CanHeadShot() override;
@@ -71,5 +73,6 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 	virtual void OnStoppedFiring_Implementation() override;
 	virtual void OnRep_ZoomState_Implementation() override;
 	virtual void Removed() override;
+	virtual void ClientRemoved() override;
 	virtual void PlayImpactEffects_Implementation(const FVector& TargetLoc, uint8 FireMode, const FVector& SpawnLocation, const FRotator& SpawnRotation) override;
 };

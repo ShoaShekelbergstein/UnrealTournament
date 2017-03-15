@@ -48,15 +48,29 @@ void AUTWeap_LightningRifle::OnStoppedFiring_Implementation()
 	}
 }
 
-void AUTWeap_LightningRifle::Removed()
+void AUTWeap_LightningRifle::ClearForRemoval()
 {
 	bZoomHeld = false;
 	bIsFullyPowered = false;
+	ChargePct = 0.0f;
+	bIsCharging = false;
 	if (UTOwner)
 	{
+		UTOwner->SetFlashExtra(0, CurrentFireMode);
 		UTOwner->SetAmbientSound(ChargeSound, true);
 	}
+}
+
+void AUTWeap_LightningRifle::Removed()
+{
+	ClearForRemoval();
 	Super::Removed();
+}
+
+void AUTWeap_LightningRifle::ClientRemoved()
+{
+	ClearForRemoval();
+	Super::ClientRemoved();
 }
 
 void AUTWeap_LightningRifle::OnRep_ZoomState_Implementation()
