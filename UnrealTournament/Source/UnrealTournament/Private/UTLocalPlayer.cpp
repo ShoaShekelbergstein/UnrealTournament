@@ -3422,7 +3422,7 @@ void UUTLocalPlayer::SetCountryFlagAndAvatar(FName NewFlag, FName NewAvatar)
 }
 
 #if !UE_SERVER
-void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType, int32 Difficulty)
+void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 {
 	bQuickmatchOnLevelChange = false;
 	PendingQuickmatchType = TEXT("");
@@ -3435,7 +3435,9 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType, int32 Difficulty)
 		if (QuickMatchType == EEpicDefaultRuleTags::Deathmatch) DesiredTutorial = ETutorialTags::TUTTAG_DM;
 		if (QuickMatchType == EEpicDefaultRuleTags::TDM) DesiredTutorial = ETutorialTags::TUTTAG_TDM;
 		if (QuickMatchType == EEpicDefaultRuleTags::FlagRun) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
-		if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAI) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
+		if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIEasy ||
+			QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAINormal ||
+			QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIHard) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
 		if (QuickMatchType == EEpicDefaultRuleTags::CTF) DesiredTutorial = ETutorialTags::TUTTAG_CTF;
 		if (QuickMatchType == EEpicDefaultRuleTags::TEAMSHOWDOWN) DesiredTutorial = ETutorialTags::TUTTAG_Showdown;
 		if (QuickMatchType == EEpicDefaultRuleTags::DUEL) DesiredTutorial = ETutorialTags::TUTTAG_Duel;
@@ -3488,9 +3490,17 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType, int32 Difficulty)
 		{
 			NewPlaylistId = 14;
 		}
-		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAI)
+		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIEasy)
 		{
 			NewPlaylistId = 15;
+		}
+		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAINormal)
+		{
+			NewPlaylistId = 16;
+		}
+		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIHard)
+		{
+			NewPlaylistId = 17;
 		}
 		else
 		{

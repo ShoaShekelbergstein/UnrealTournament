@@ -617,6 +617,13 @@ void AUTHUD::NotifyMatchStateChange()
 			bShowScores = false;
 			bForceScores = false;
 		}
+		else if (GS->GetMatchState() == MatchState::CountdownToBegin)
+		{
+			if (UTLP)
+			{
+				UTLP->HideMenu();
+			}
+		}
 		else if (GS->GetMatchState() == MatchState::WaitingToStart)
 		{
 			// We have to give a short delay before bringing up this menu because in most cases, we
@@ -645,17 +652,9 @@ void AUTHUD::NotifyMatchStateChange()
 		else if (GS->GetMatchState() != MatchState::MapVoteHappening)
 		{
 			ToggleScoreboard(false);
-
-			if (GS->GetMatchState() != MatchState::InProgress)
+			if (UTLP->HasChatText() && UTPlayerOwner && UTPlayerOwner->UTPlayerState)
 			{
-				if (UTLP->HasChatText() && UTPlayerOwner && UTPlayerOwner->UTPlayerState)
-				{
-					UTLP->ShowQuickChat(UTPlayerOwner->UTPlayerState->ChatDestination);
-				}
-			}
-			else
-			{
-				UTLP->HideMenu();
+				UTLP->ShowQuickChat(UTPlayerOwner->UTPlayerState->ChatDestination);
 			}
 		}
 		if (MyUTScoreboard)

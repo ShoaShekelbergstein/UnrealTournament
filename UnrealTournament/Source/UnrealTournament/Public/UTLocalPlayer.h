@@ -256,7 +256,7 @@ public:
 	
 	FString CurrentQuickMatchType;
 
-	void StartQuickMatch(FString QuickMatchType, int32 Difficulty = 0);
+	void StartQuickMatch(FString QuickMatchType);
 	void CloseQuickMatch();
 
 	TSharedPtr<class SUTMenuBase> GetCurrentMenu()

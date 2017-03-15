@@ -463,7 +463,23 @@ void SUTMainMenu::DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16 Bu
 {
 	if (ButtonID != UTDIALOG_BUTTON_CANCEL && DifficultyLevelDialog.IsValid())
 	{
-		PlayerOwner->StartQuickMatch(EEpicDefaultRuleTags::FlagRunVSAI, DifficultyLevelDialog->GetDifficulty());
+		FString QuickMatchType = TEXT("");
+		switch (DifficultyLevelDialog->GetDifficulty())
+		{
+			case 1 : 
+				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAINormal; 
+				break;
+
+			case 2: 
+				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIHard; 
+				break;
+
+			default: 
+				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIEasy; 
+				break;
+
+		}
+		PlayerOwner->StartQuickMatch(QuickMatchType);
 		DifficultyLevelDialog.Reset();
 	}
 }
