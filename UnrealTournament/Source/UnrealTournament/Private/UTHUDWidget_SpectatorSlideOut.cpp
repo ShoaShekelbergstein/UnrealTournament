@@ -94,9 +94,6 @@ bool UUTHUDWidget_SpectatorSlideOut::ShouldDraw_Implementation(bool bShowScores)
 		{
 			bShouldDraw = true;
 		}
-
-		UE_LOG(UT,Warning,TEXT("%s %s %i %i %i %i %i"),*UTHUDOwner->UTPlayerOwner->GetName(), *UTGameState->GetMatchState().ToString(),UTGameState->HasMatchEnded(),UTGameState->HasMatchStarted(),
-				UTGameState->IsMatchIntermission(),LP->bRecordingReplay,LP->IsKillcamReplayActive(), bShouldDraw);
 	}
 	else
 	{
