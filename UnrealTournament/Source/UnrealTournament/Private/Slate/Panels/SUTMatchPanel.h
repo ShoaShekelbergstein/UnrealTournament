@@ -142,7 +142,8 @@ public:
 		{
 			Final = Final + (Final.IsEmpty() ? TEXT("") : TEXT(" -- ")) + TEXT("Private");
 		}
-		else if ((Flags & MATCH_FLAG_Ranked) == MATCH_FLAG_Ranked)
+
+		if ((Flags & MATCH_FLAG_Ranked) == MATCH_FLAG_Ranked)
 		{
 			int32 MatchRankCheck = MatchInfo.IsValid() ? MatchInfo->RankCheck : (MatchData.IsValid() ? MatchData->RankCheck: DEFAULT_RANK_CHECK);
 			int32 PlayerRankCheck = PlayerState->GetRankCheck(BaseGameMode);
@@ -483,6 +484,10 @@ protected:
 
 	EVisibility GetMatchButtonVis() const;
 	TSharedPtr<SButton> StartMatchButton;
+
+	bool bShowPrivateHub;
+	EVisibility GetPrivateHubVis() const;
+
 };
 
 #endif

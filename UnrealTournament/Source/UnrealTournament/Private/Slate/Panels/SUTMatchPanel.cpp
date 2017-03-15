@@ -167,8 +167,21 @@ void SUTMatchPanel::Construct(const FArguments& InArgs)
 				.SelectionMode(ESelectionMode::Single)
 				.OnMouseButtonDoubleClick(this, &SUTMatchPanel::OnListMouseButtonDoubleClick)
 			]
+			+SOverlay::Slot()
+			[
+				SNew(STextBlock)
+				.Text(NSLOCTEXT("SUTMatchPanel","PrivateServer","This server is private so the match data is unavailalble."))
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Medium.Bold")
+				.AutoWrapText(true)
+				.Visibility(this, &SUTMatchPanel::GetPrivateHubVis)
+			]
 		]
 	];
+}
+
+EVisibility SUTMatchPanel::GetPrivateHubVis() const
+{
+	return (bShowPrivateHub) ? EVisibility::Visible : EVisibility::Collapsed;
 }
 
 bool SUTMatchPanel::ShouldUseLiveData()
@@ -1124,6 +1137,8 @@ FReply SUTMatchPanel::SpectateMatchButtonClicked(TSharedPtr<FTrackedMatch> InIte
 void SUTMatchPanel::SetServerData(TSharedPtr<FServerData> inServerData)
 {
 	TrackedMatches.Empty();
+
+	bShowPrivateHub = (inServerData->Flags & SERVERFLAG_RequiresPassword) > 0;
 
 	// Update the friends.
 	TArray<FUTFriend> FriendsList;
