@@ -73,7 +73,6 @@ public:
 
 	/** called after the refire delay to see what we should do next (generally, fire or go back to active state) */
 	virtual void RefireCheckTimer();
-	virtual bool IsFiring() const override;
 	
 	virtual void EnterCooldown();
 	virtual void ExitCooldown();

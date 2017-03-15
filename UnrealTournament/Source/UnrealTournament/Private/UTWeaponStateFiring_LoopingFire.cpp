@@ -196,11 +196,6 @@ void UUTWeaponStateFiring_LoopingFire::RefireCheckTimer()
 	}
 }
 
-bool UUTWeaponStateFiring_LoopingFire::IsFiring() const
-{
-	return !bIsInCooldown;
-}
-
 void UUTWeaponStateFiring_LoopingFire::PlayCoolDownAnims()
 {
 	if (CoolDownAnim_Weapon)
