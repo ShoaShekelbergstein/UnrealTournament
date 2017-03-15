@@ -3425,7 +3425,7 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 				if (!bRankedSession && !bOfflineChallenge && (RemainingStartDelay < 2) && !bForceNoBots && !bDevServer && (GetWorld()->WorldType != EWorldType::PIE))
 				{
 					// if not competitive match, fill with bots if have waited long enough
-					BotFillCount = FMath::Max(BotFillCount, FMath::Min(GameSession->MaxPlayers, AdjustedBotFillCount()));
+					BotFillCount = FMath::Max(BotFillCount, AdjustedBotFillCount());
 					CheckBotCount();
 				}
 			}
@@ -4068,7 +4068,8 @@ void AUTGameMode::GetGameURLOptions(const TArray<TSharedPtr<TAttributePropertyBa
 
 int32 AUTGameMode::AdjustedBotFillCount()
 {
-	return bTeamGame ? DefaultMaxPlayers : 5;
+	int32 AdjustedBotFillCount = bTeamGame ? DefaultMaxPlayers : 5;
+	return bIsVSAI? AdjustedBotFillCount : FMath::Min(GameSession->MaxPlayers, AdjustedBotFillCount);
 }
 
 void AUTGameMode::CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps)
