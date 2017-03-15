@@ -567,38 +567,42 @@ void AUTWeap_Enforcer::AttachLeftMesh()
 			LeftMesh->bRecentlyRendered = true;
 		}
 
-		if (Dual_BringUpLeftWeaponFirstAttach != NULL)
+		if (UTOwner != NULL && UTOwner->GetWeapon() == this)
 		{
-			UAnimInstance* LeftWeaponAnimInstance = LeftMesh->GetAnimInstance();
-			if (LeftWeaponAnimInstance != NULL)
+			if (Dual_BringUpLeftWeaponFirstAttach != NULL)
 			{
-				LeftWeaponAnimInstance->Montage_Play(Dual_BringUpLeftWeaponFirstAttach, Dual_BringUpLeftWeaponFirstAttach->SequenceLength / EnforcerEquippingState->EquipTime);
+				UAnimInstance* LeftWeaponAnimInstance = LeftMesh->GetAnimInstance();
+				if (LeftWeaponAnimInstance != NULL)
+				{
+					LeftWeaponAnimInstance->Montage_Play(Dual_BringUpLeftWeaponFirstAttach, Dual_BringUpLeftWeaponFirstAttach->SequenceLength / EnforcerEquippingState->EquipTime);
+				}
 			}
-		}
 
-		if ((Dual_BringUpLeftHandFirstAttach != NULL) && UTOwner && UTOwner->FirstPersonMesh)
-		{
-			UAnimInstance* HandAnimInstance = UTOwner->FirstPersonMesh->GetAnimInstance();
-			if (HandAnimInstance != NULL)
+			if ((Dual_BringUpLeftHandFirstAttach != NULL) && UTOwner && UTOwner->FirstPersonMesh)
 			{
-				HandAnimInstance->Montage_Play(Dual_BringUpLeftHandFirstAttach, Dual_BringUpLeftHandFirstAttach->SequenceLength / EnforcerEquippingState->EquipTime);
+				UAnimInstance* HandAnimInstance = UTOwner->FirstPersonMesh->GetAnimInstance();
+				if (HandAnimInstance != NULL)
+				{
+					HandAnimInstance->Montage_Play(Dual_BringUpLeftHandFirstAttach, Dual_BringUpLeftHandFirstAttach->SequenceLength / EnforcerEquippingState->EquipTime);
+				}
 			}
-		}
 
-		if (UTOwner != NULL && UTOwner->GetWeapon() == this && GetNetMode() != NM_DedicatedServer)
-		{
-			UpdateOverlays();
-		}
-		if (ShouldPlay1PVisuals())
-		{
-			LeftMesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPose; // needed for anims to be ticked even if weapon is not currently displayed, e.g. sniper zoom
-			LeftMesh->LastRenderTime = GetWorld()->TimeSeconds;
-			LeftMesh->bRecentlyRendered = true;
-			if (LeftOverlayMesh != NULL)
+			if (GetNetMode() != NM_DedicatedServer)
 			{
-				LeftOverlayMesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPose;
-				LeftOverlayMesh->LastRenderTime = GetWorld()->TimeSeconds;
-				LeftOverlayMesh->bRecentlyRendered = true;
+				UpdateOverlays();
+			}
+
+			if (ShouldPlay1PVisuals())
+			{
+				LeftMesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPose; // needed for anims to be ticked even if weapon is not currently displayed, e.g. sniper zoom
+				LeftMesh->LastRenderTime = GetWorld()->TimeSeconds;
+				LeftMesh->bRecentlyRendered = true;
+				if (LeftOverlayMesh != NULL)
+				{
+					LeftOverlayMesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPose;
+					LeftOverlayMesh->LastRenderTime = GetWorld()->TimeSeconds;
+					LeftOverlayMesh->bRecentlyRendered = true;
+				}
 			}
 		}
 	}
