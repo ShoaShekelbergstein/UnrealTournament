@@ -14,6 +14,7 @@
 #include "../Dialogs/SUTMessageBoxDialog.h"
 #include "../Dialogs/SUTGameSetupDialog.h"
 #include "../Widgets/SUTScaleBox.h"
+#include "../Dialogs/SUTDifficultyLevel.h"
 #include "UTGameEngine.h"
 #include "../Panels/SUTServerBrowserPanel.h"
 #include "../Panels/SUTReplayBrowserPanel.h"
@@ -444,8 +445,27 @@ void SUTMainMenu::QuickPlay(const FString& QuickMatchType)
 		return;
 	}
 
+	if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAI)
+	{
+		DifficultyLevelDialog = SNew(SUTDifficultyLevel).PlayerOwner(PlayerOwner).OnDialogResult(FDialogResultDelegate::CreateSP(this, &SUTMainMenu::DifficultyResult));
+		if (DifficultyLevelDialog.IsValid())
+		{
+			PlayerOwner->OpenDialog(DifficultyLevelDialog.ToSharedRef());
+			return;
+		}
+	}
+
 	UE_LOG(UT,Log,TEXT("QuickMatch: %s"),*QuickMatchType);
 	PlayerOwner->StartQuickMatch(QuickMatchType);
+}
+
+void SUTMainMenu::DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID)
+{
+	if (ButtonID != UTDIALOG_BUTTON_CANCEL && DifficultyLevelDialog.IsValid())
+	{
+		PlayerOwner->StartQuickMatch(EEpicDefaultRuleTags::FlagRunVSAI, DifficultyLevelDialog->GetDifficulty());
+		DifficultyLevelDialog.Reset();
+	}
 }
 
 FReply SUTMainMenu::OnBootCampClick()

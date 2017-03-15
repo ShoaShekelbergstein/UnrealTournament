@@ -3422,7 +3422,7 @@ void UUTLocalPlayer::SetCountryFlagAndAvatar(FName NewFlag, FName NewAvatar)
 }
 
 #if !UE_SERVER
-void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
+void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType, int32 Difficulty)
 {
 	bQuickmatchOnLevelChange = false;
 	PendingQuickmatchType = TEXT("");
