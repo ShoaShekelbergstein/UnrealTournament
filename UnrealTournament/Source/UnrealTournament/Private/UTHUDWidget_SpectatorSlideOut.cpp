@@ -167,7 +167,7 @@ void UUTHUDWidget_SpectatorSlideOut::Draw_Implementation(float DeltaTime)
 		for (APlayerState* PS : UTGameState->PlayerArray)
 		{
 			AUTPlayerState* UTPS = Cast<AUTPlayerState>(PS);
-			if (UTPS != NULL && !UTPS->bOnlySpectator)
+			if (UTPS != NULL && !UTPS->bOnlySpectator && UTGameState->CanSpectate(UTPlayerOwner, UTPS))
 			{
 				if (!UTGameState->bTeamGame)
 				{

@@ -56,4 +56,10 @@ public:
 	{
 		// don't send star notifications
 	}
+
+	virtual bool CanSpectate(APlayerController* Viewer, APlayerState* ViewTarget) override
+	{
+		AUTPlayerState* PS = Cast<AUTPlayerState>(ViewTarget);
+		return (PS == nullptr || PS->GetTeamNum() != 0) && Super::CanSpectate(Viewer, ViewTarget);
+	}
 };
