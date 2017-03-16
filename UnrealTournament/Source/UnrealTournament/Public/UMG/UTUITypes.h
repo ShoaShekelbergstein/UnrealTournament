@@ -4,6 +4,9 @@
 
 #include "UTUITypes.generated.h"
 
+DECLARE_DYNAMIC_DELEGATE_OneParam(FOnItemClicked, UUserWidget*, Widget);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnItemSelected, UUserWidget*, Widget, bool, Selected);
+
 /** Types of currency */
 UENUM(BlueprintType)
 enum class EUTCurrencyType : uint8

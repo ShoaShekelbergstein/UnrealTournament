@@ -4,15 +4,14 @@
 
 #include "UMG.h"
 #include "Widgets/Views/SListView.h"
-#include "CommonListView.h"
 #include "DataProvider.h"
 #include "SObjectTableRow.h"
 #include "WidgetFactory.h"
-#include "CommonUITypes.h"
 
 #include "UTListView.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FListViewEvent, UObject*, Item);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnListViewItemSelected, UObject*, Item, bool, bIsSelected);
 
 UCLASS(DisplayName = "UT List View")
 class UNREALTOURNAMENT_API UUTListView : public UWidget

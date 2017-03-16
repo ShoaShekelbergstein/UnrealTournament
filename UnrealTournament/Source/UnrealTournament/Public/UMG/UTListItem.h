@@ -3,7 +3,6 @@
 #pragma once
 
 #include "UTUITypes.h"
-#include "CommonUITypes.h"
 
 #include "UTListItem.generated.h"
 
