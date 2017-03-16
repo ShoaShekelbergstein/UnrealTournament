@@ -195,6 +195,7 @@ bool AUTHUD::VerifyProfileSettings()
 void AUTHUD::BeginPlay()
 {
 
+	bFirstPlay = true;
 	bFirstRender = true;
 
 	Super::BeginPlay();
@@ -616,6 +617,16 @@ void AUTHUD::NotifyMatchStateChange()
 		{
 			bShowScores = false;
 			bForceScores = false;
+
+			if (bFirstPlay)
+			{
+				if (UTLP)
+				{
+					UTLP->HideMenu();
+				}
+				bFirstPlay = false;
+			}
+
 		}
 		else if (GS->GetMatchState() == MatchState::CountdownToBegin)
 		{
@@ -656,6 +667,16 @@ void AUTHUD::NotifyMatchStateChange()
 			{
 				UTLP->ShowQuickChat(UTPlayerOwner->UTPlayerState->ChatDestination);
 			}
+
+			if (GS->GetMatchState() == MatchState::MatchIntermission && bFirstPlay)
+			{
+				if (UTLP)
+				{
+					UTLP->HideMenu();
+				}
+				bFirstPlay = false;
+			}
+
 		}
 		if (MyUTScoreboard)
 		{

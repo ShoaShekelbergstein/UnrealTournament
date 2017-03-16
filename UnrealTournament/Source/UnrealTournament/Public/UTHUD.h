@@ -753,5 +753,8 @@ protected:
 
 	UFUNCTION()
 	virtual void ShowUTMenu();
+
+	bool bFirstPlay;
+
 };
 
