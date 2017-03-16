@@ -403,6 +403,18 @@ public:
 	bool IsEmpty() const;
 
 	bool IsEmptyOrWhitespace() const;
+	
+	/**
+	 * Transforms the text to lowercase in a culture correct way.
+	 * @note The returned instance is linked to the original and will be rebuilt if the active culture is changed.
+	 */
+	FText ToLower() const;
+
+	/**
+	 * Transforms the text to uppercase in a culture correct way.
+	 * @note The returned instance is linked to the original and will be rebuilt if the active culture is changed.
+	 */
+	FText ToUpper() const;
 
 	/**
 	 * Removes whitespace characters from the front of the string.

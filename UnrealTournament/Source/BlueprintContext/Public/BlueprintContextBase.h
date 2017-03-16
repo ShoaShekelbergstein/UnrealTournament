@@ -5,6 +5,7 @@
 #include "BlueprintContextTypes.h"
 #include "Engine/GameInstance.h"
 #include "Engine/LocalPlayer.h"
+#include "GameFramework/GameState.h"
 #include "ModuleManager.h"
 
 #include "BlueprintContextBase.generated.h"

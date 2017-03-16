@@ -4,6 +4,7 @@
 #include "AssetRegistryModule.h"
 #include "Runtime/JsonUtilities/Public/JsonUtilities.h"
 #include "UpdateBackendContentCommandlet.h"
+#include "UTRewards.h"
 #if WITH_PROFILE
 #include "CatalogDefinition.h"
 #include "MultiLocHelper.h"
