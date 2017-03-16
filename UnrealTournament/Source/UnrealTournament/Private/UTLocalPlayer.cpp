@@ -3796,8 +3796,12 @@ void UUTLocalPlayer::ContentAcceptResult(TSharedPtr<SCompoundWidget> Widget, uin
 		if (UTGameViewport && UTGameViewport->IsDownloadInProgress())
 		{
 			UTGameViewport->CancelAllRedirectDownloads();		
-			CloseAllUI();
-			ReturnToMainMenu();
+
+			AUTLobbyPC* PC = Cast<AUTLobbyPC>(PlayerController);
+			if (PC)
+			{
+				PC->ResetAllRedirects();
+			}
 		}
 	}
 }

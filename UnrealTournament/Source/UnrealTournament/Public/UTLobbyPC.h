@@ -86,7 +86,7 @@ public:
 	
 	bool bReceivedServerContentList;
 	TArray<FPackageRedirectReference> AllRedirects;
-
+	void ResetAllRedirects();
 
 };
 
