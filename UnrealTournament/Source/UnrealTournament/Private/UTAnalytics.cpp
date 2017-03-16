@@ -201,6 +201,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 
 	AddGenericParamName(UTEnterMatch);
 	AddGenericParamName(EnterMethod);
+	AddGenericParamName(UTInitContext);
 	AddGenericParamName(UTInitMatch);
 	AddGenericParamName(UTStartMatch);
 	AddGenericParamName(UTEndMatch);
