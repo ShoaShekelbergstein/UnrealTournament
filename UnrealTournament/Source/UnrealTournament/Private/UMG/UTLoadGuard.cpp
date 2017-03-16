@@ -15,8 +15,9 @@ UUTLoadGuard::UUTLoadGuard(const FObjectInitializer& Initializer)
 	, TextColorType(EUTTextColor::Light)
 	, bIsLoading(false)
 {
-	static ConstructorHelpers::FClassFinder<UUTTextStyle> BaseTextStyleClassFinder(TEXT("/Game/UI/Text/TextStyle-Body"));
-	TextStyle = BaseTextStyleClassFinder.Class;
+	// todo PLK - setup text styles
+	//static ConstructorHelpers::FClassFinder<UUTTextStyle> BaseTextStyleClassFinder(TEXT("/Game/UI/Text/TextStyle-Body"));
+	//TextStyle = BaseTextStyleClassFinder.Class;
 
 	Visibility = ESlateVisibility::SelfHitTestInvisible;
 
