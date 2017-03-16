@@ -1139,6 +1139,7 @@ void SUTMatchPanel::SetServerData(TSharedPtr<FServerData> inServerData)
 	TrackedMatches.Empty();
 
 	bShowPrivateHub = (inServerData->Flags & SERVERFLAG_RequiresPassword) > 0;
+	if (bShowPrivateHub) return;
 
 	// Update the friends.
 	TArray<FUTFriend> FriendsList;
