@@ -28,6 +28,7 @@ AUTWeap_Sniper::AUTWeap_Sniper(const FObjectInitializer& ObjectInitializer)
 	FiringViewKickback = -50.f;
 	FiringViewKickbackY = 0.f;
 	BlockedHeadshotDamage = 45;
+	bSniping = true;
 	HUDViewKickback = FVector2D(0.f, 0.2f);
 
 	KillStatsName = NAME_SniperKills;

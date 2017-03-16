@@ -14,6 +14,7 @@ AUTWeap_LightningRifle::AUTWeap_LightningRifle(const FObjectInitializer& ObjectI
 	ChargeSpeed = 1.25f;
 	ChainDamage = 30.f;
 	ChainRadius = 800.f;
+	bSniping = true;
 }
 
 void AUTWeap_LightningRifle::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
