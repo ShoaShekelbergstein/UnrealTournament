@@ -87,7 +87,7 @@ void SUTHomePanel::Tick( const FGeometry& AllottedGeometry, const double InCurre
 void SUTHomePanel::CheckForLanServers()
 {
 	TSharedPtr<SUTServerBrowserPanel> Browser = PlayerOwner->GetServerBrowser(false);
-	if (Browser.IsValid() && Browser->GetBrowserState() == EBrowserState::RefreshInProgress || !PlayerOwner->LastRankedMatchSessionId.IsEmpty())
+	if (Browser.IsValid() && (Browser->GetBrowserState() == EBrowserState::RefreshInProgress || !PlayerOwner->LastRankedMatchSessionId.IsEmpty()))
 	{
 		return;
 	}
