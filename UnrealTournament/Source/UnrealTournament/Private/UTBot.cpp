@@ -1852,6 +1852,17 @@ void AUTBot::NotifyMoveBlocked(const FHitResult& Impact)
 					SetAdjustLoc(NewAdjustLoc);
 				}
 			}
+			else if (HitPawn != NULL && GetMoveTarget().Actor == HitPawn)
+			{
+				if (Skill + Personality.MovementAbility >= 4.0f)
+				{
+					DoTacticalMove();
+				}
+				else
+				{
+					DoRangedAttackOn(HitPawn);
+				}
+			}
 			// crouch if path says we should
 			// FIXME: what if going for detour in the middle of crouch path? (dropped pickup, etc)
 			else if ((CurrentPath.IsSet() && CurrentPath.CollisionHeight < FMath::TruncToInt(GetCharacter()->GetSimpleCollisionHalfHeight())) || (!CurrentPath.IsSet() && MoveTarget.Node != nullptr && MoveTarget.Node->MinPolyEdgeSize.Height < FMath::TruncToInt(GetCharacter()->GetSimpleCollisionHalfHeight())))
