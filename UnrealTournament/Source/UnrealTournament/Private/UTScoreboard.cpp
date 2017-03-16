@@ -119,7 +119,7 @@ void UUTScoreboard::Draw_Implementation(float RenderDelta)
 	float YOffset = 48.f*RenderScale;
 	DrawGamePanel(RenderDelta, YOffset);
 	DrawTeamPanel(RenderDelta, YOffset);
-	if ((UTGameState->GetMatchState() != MatchState::CountdownToBegin) && (UTGameState->GetMatchState() != MatchState::PlayerIntro))
+	if (UTGameState != nullptr && UTGameState->GetMatchState() != MatchState::CountdownToBegin && UTGameState->GetMatchState() != MatchState::PlayerIntro)
 	{
 		DrawScorePanel(RenderDelta, YOffset);
 	}
