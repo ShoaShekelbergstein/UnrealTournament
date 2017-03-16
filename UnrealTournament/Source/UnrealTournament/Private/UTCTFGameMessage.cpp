@@ -34,7 +34,7 @@ UUTCTFGameMessage::UUTCTFGameMessage(const FObjectInitializer& ObjectInitializer
 
 bool UUTCTFGameMessage::ShouldStillPlay(class AUTGameState* GS, const FAnnouncementInfo AnnouncementInfo) const
 {
-	if ((AnnouncementInfo.Switch > 7) || (AnnouncementInfo.Switch == 2) || (AnnouncementInfo.Switch == 3))
+	if ((AnnouncementInfo.Switch > 7) || (AnnouncementInfo.Switch == 2) || (AnnouncementInfo.Switch == 5))
 	{
 		return true;
 	}
