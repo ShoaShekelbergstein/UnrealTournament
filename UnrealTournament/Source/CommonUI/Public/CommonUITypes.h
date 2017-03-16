@@ -3,6 +3,7 @@
 #pragma once
 
 #include "IBlueprintContextModule.h"
+#include "BlueprintContextLibrary.h"
 #include "Engine/DataTable.h"
 #include "Blueprint/UserWidget.h"
 #include "CommonUITypes.generated.h"
