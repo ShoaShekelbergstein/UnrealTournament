@@ -473,6 +473,13 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 				}
 				else if (FFASpawns.Num() > FFAIndex)
 				{
+					//If we are in a team game mode and its intermission or post match, still only show winners even in FFA spawns.
+					if (UTGM && UTGM->bTeamGame && (LineUpType == LineUpTypes::PostMatch || LineUpType == LineUpTypes::Intermission) && (PreviewChar->GetTeamNum() != RedOrWinningTeamNumber))
+					{
+						PreviewsMarkedForDestroy.Add(PreviewChar);
+						continue;
+					}
+
 					SpawnTransform = FFASpawns[FFAIndex] * SpawnTransform;
 					++FFAIndex;
 				}
@@ -480,6 +487,7 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 				else
 				{
 					PreviewsMarkedForDestroy.Add(PreviewChar);
+					continue;
 				}
 
 				PreviewChar->bIsTranslocating = true; // Hack to get rid of teleport effect
