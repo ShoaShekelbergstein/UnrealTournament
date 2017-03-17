@@ -576,6 +576,10 @@ FString FUTAnalytics::GetGameModeName(AUTBasePlayerController* UTPC)
 				GameModeName = UTGM->DisplayName.ToString();
 			}
 		}
+		else
+		{
+			GameModeName = UTPC->GetWorld()->URL.GetOption(TEXT("Game"), TEXT(""));
+		}
 	}
 
 	return GameModeName;
