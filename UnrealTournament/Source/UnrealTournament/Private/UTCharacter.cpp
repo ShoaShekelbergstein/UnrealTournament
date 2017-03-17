@@ -4460,6 +4460,13 @@ void AUTCharacter::UpdateSkin()
 			FirstPersonMesh->SetMaterial(i, GetClass()->GetDefaultObject<AUTCharacter>()->FirstPersonMesh->GetMaterial(i));
 		}
 	}
+
+	FirstPersonMeshMIDs.Empty();
+	for (int32 i = 0; i < FirstPersonMesh->GetNumMaterials(); i++)
+	{
+		FirstPersonMeshMIDs.Add(FirstPersonMesh->CreateAndSetMaterialInstanceDynamic(i));
+	}
+
 	if (Weapon != NULL)
 	{
 		Weapon->SetSkin((ReplicatedBodyMaterial1P != NULL) ? ReplicatedBodyMaterial1P : ReplicatedBodyMaterial);

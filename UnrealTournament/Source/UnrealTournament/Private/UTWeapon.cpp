@@ -99,6 +99,10 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	AnimLagMultiplier = -4.f;;
 	AnimLagSpeedReturn = 2.f;
 
+	Panini_d = 1.0f;
+	Panini_PushMax = -100.0f;
+	Panini_PushMin = 0;
+
 	// default icon texture
 	static ConstructorHelpers::FObjectFinder<UTexture> WeaponTexture(TEXT("Texture2D'/Game/RestrictedAssets/Proto/UI/HUD/Elements/UI_HUD_BaseB.UI_HUD_BaseB'"));
 	HUDIcon.Texture = WeaponTexture.Object;
@@ -242,6 +246,14 @@ void AUTWeapon::BeginPlay()
 	if (GetMesh() && Settings->bUseCapsuleDirectShadowsForCharacter)
 	{
 		GetMesh()->bCastCapsuleDirectShadow = true;
+	}
+
+	if (GetMesh())
+	{
+		for (int i = 0; i < GetMesh()->GetNumMaterials(); i++)
+		{
+			MeshMIDs.Add(GetMesh()->CreateAndSetMaterialInstanceDynamic(i));
+		}
 	}
 }
 
@@ -911,6 +923,28 @@ void AUTWeapon::AttachToOwner_Implementation()
 				OverlayMesh->bRecentlyRendered = true;
 			}
 			UpdateViewBob(0.0f);
+		}
+
+		static FName FNamePanini_d = TEXT("d");
+		static FName FNamePanini_PushMax = TEXT("Push Max");
+		static FName FNamePanini_PushMin = TEXT("Push Min");
+		for (int i = 0; i < MeshMIDs.Num(); i++)
+		{
+			if (MeshMIDs[i])
+			{
+				MeshMIDs[i]->SetScalarParameterValue(FNamePanini_d, Panini_d);
+				MeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMax, Panini_PushMax);
+				MeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMin, Panini_PushMin);
+			}
+		}
+		for (int i = 0; i < UTOwner->FirstPersonMeshMIDs.Num(); i++)
+		{
+			if (UTOwner->FirstPersonMeshMIDs[i])
+			{
+				UTOwner->FirstPersonMeshMIDs[i]->SetScalarParameterValue(FNamePanini_d, Panini_d);
+				UTOwner->FirstPersonMeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMax, Panini_PushMax);
+				UTOwner->FirstPersonMeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMin, Panini_PushMin);
+			}
 		}
 	}
 	// register components now

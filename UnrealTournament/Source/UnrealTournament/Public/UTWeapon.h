@@ -352,6 +352,18 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	FVector FOVOffset;
 
 	UPROPERTY()
+	TArray<UMaterialInstanceDynamic*> MeshMIDs;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Panini")
+	float Panini_d;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Panini")
+	float Panini_PushMax;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Panini")
+	float Panini_PushMin;
+
+	UPROPERTY()
 	UUTWeaponSkin* WeaponSkin;
 
 	UFUNCTION()
