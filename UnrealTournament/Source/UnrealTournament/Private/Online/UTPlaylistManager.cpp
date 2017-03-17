@@ -47,6 +47,20 @@ bool UUTPlaylistManager::IsPlaylistRanked(int32 PlaylistId)
 	return false;
 }
 
+
+bool UUTPlaylistManager::ShouldPlaylistSkipElo(int32 PlaylistId)
+{
+	for (const FPlaylistItem& PlaylistEntry : Playlist)
+	{
+		if (PlaylistEntry.PlaylistId == PlaylistId)
+		{
+			return PlaylistEntry.bSkipEloChecks;
+		}
+	}
+
+	return false;
+}
+
 bool UUTPlaylistManager::GetTeamEloRatingForPlaylist(int32 PlaylistId, FString& TeamEloRating)
 {
 	for (const FPlaylistItem& PlaylistEntry : Playlist)

@@ -928,6 +928,21 @@ bool UUTMatchmaking::IsRankedMatchmaking()
 	return false;
 }
 
+bool UUTMatchmaking::IsSkipEloChecksForMatchmaking()
+{
+	if (Matchmaking)
+	{
+		return Matchmaking->GetMatchmakingParams().bSkipEloChecks;
+	}
+
+	if (CachedMatchmakingSearchParams.IsValid())
+	{
+		return CachedMatchmakingSearchParams.GetMatchmakingParams().bSkipEloChecks;
+	}
+
+	return false;
+}
+
 void UUTMatchmaking::TravelToServer()
 {
 	bool bWillTravel = false;

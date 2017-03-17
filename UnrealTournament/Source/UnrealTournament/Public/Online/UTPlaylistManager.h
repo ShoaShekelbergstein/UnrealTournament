@@ -16,6 +16,8 @@ struct FPlaylistItem
 	UPROPERTY()
 	bool bRanked;
 	UPROPERTY()
+	bool bSkipEloChecks;
+	UPROPERTY()
 	int32 MaxTeamCount;
 	UPROPERTY()
 	int32 MaxTeamSize;
@@ -73,4 +75,5 @@ public:
 	bool GetGameModeForPlaylist(int32 PlaylistId, FString& GameMode);
 
 	bool IsPlaylistRanked(int32 PlaylistId);
+	bool ShouldPlaylistSkipElo(int32 PlaylistId);
 };

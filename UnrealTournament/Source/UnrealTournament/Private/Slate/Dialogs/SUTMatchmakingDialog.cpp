@@ -154,7 +154,7 @@ FText SUTMatchmakingDialog::GetMatchmakingText() const
 		// Only party leader has the correct team elo
 		if (PlayerOwner->IsPartyLeader())
 		{
-			if (Matchmaking)
+			if (Matchmaking && Matchmaking->IsMatchmaking() && !Matchmaking->IsSkipEloChecksForMatchmaking())
 			{
 				int32 MatchmakingTeamElo = Matchmaking->GetMatchmakingTeamElo();
 				if (MatchmakingTeamElo > 0)
@@ -193,7 +193,7 @@ FText SUTMatchmakingDialog::GetMatchmakingText2() const
 		}
 
 		UUTMatchmaking* Matchmaking = GameInstance->GetMatchmaking();
-		if (Matchmaking)
+		if (Matchmaking && Matchmaking->IsMatchmaking() && !Matchmaking->IsSkipEloChecksForMatchmaking())
 		{
 			int32 MatchmakingTeamElo = Matchmaking->GetMatchmakingTeamElo();
 			int32 MatchmakingEloRange = Matchmaking->GetMatchmakingEloRange();

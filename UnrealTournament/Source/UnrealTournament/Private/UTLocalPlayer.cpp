@@ -5416,10 +5416,14 @@ void UUTLocalPlayer::StartMatchmaking(int32 PlaylistId)
 						PersistentParty->SetPlayersNeeded((TeamSize * TeamCount) - PersistentParty->GetPartySize());
 						PersistentParty->SetPartyMaxSize(MaxPartySize);
 					}
-
-					MatchmakingParams.bRanked = UTGameInstance->GetPlaylistManager()->IsPlaylistRanked(PlaylistId);
 				}
 			}
+		}
+
+		if (UTGameInstance && UTGameInstance->GetPlaylistManager())
+		{
+			MatchmakingParams.bRanked = UTGameInstance->GetPlaylistManager()->IsPlaylistRanked(PlaylistId);
+			MatchmakingParams.bSkipEloChecks = UTGameInstance->GetPlaylistManager()->ShouldPlaylistSkipElo(PlaylistId);
 		}
 
 		if (MatchmakingParams.bRanked)
