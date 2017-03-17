@@ -768,6 +768,7 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 		AUTPlayerState* PS = Cast<AUTPlayerState>(Result->PlayerState);
 		if (PS != NULL)
 		{
+			PS->NotIdle();
 			FString InOpt = UGameplayStatics::ParseOption(Options, TEXT("Character"));
 			if (InOpt.Len() > 0)
 			{
