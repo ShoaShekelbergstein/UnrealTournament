@@ -356,7 +356,23 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 		if (FUTAnalytics::IsAvailable())
 		{
 			const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
-			FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true);
+			int WinningTeamNum = 0;
+			if (ScoringTeam)
+			{
+				WinningTeamNum = ScoringTeam->GetTeamNum();
+			}
+			else
+			{
+				for (int TeamNumIndex = 0; TeamNumIndex < Teams.Num(); ++TeamNumIndex)
+				{
+					if (IsTeamOnDefense(Teams.Num()))
+					{
+						WinningTeamNum = Teams[TeamNumIndex]->GetTeamNum();
+					}
+				}
+			}
+
+			FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true, WinningTeamNum);
 		}
 		return true;
 	}
@@ -375,7 +391,22 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 			if (FUTAnalytics::IsAvailable())
 			{
 				const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
-				FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true);
+				int WinningTeamNum = 0;
+				if (ScoringTeam)
+				{
+					WinningTeamNum = ScoringTeam->GetTeamNum();
+				}
+				else
+				{
+					for (int TeamNumIndex = 0; TeamNumIndex < Teams.Num(); ++TeamNumIndex)
+					{
+						if (IsTeamOnDefense(Teams.Num()))
+						{
+							WinningTeamNum = Teams[TeamNumIndex]->GetTeamNum();
+						}
+					}
+				}
+				FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true, WinningTeamNum);
 			}
 			return true;
 		}
@@ -391,7 +422,22 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 					if (FUTAnalytics::IsAvailable())
 					{
 						const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
-						FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true);
+						int WinningTeamNum = 0;
+						if (ScoringTeam)
+						{
+							WinningTeamNum = ScoringTeam->GetTeamNum();
+						}
+						else
+						{
+							for (int TeamNumIndex = 0; TeamNumIndex < Teams.Num(); ++TeamNumIndex)
+							{
+								if (IsTeamOnDefense(Teams.Num()))
+								{
+									WinningTeamNum = Teams[TeamNumIndex]->GetTeamNum();
+								}
+							}
+						}
+						FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true, WinningTeamNum);
 					}
 					return true;
 				}
@@ -402,7 +448,22 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 					if (FUTAnalytics::IsAvailable())
 					{
 						const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
-						FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true);
+						int WinningTeamNum = 0;
+						if (ScoringTeam)
+						{
+							WinningTeamNum = ScoringTeam->GetTeamNum();
+						}
+						else
+						{
+							for (int TeamNumIndex = 0; TeamNumIndex < Teams.Num(); ++TeamNumIndex)
+							{
+								if (IsTeamOnDefense(Teams.Num()))
+								{
+									WinningTeamNum = Teams[TeamNumIndex]->GetTeamNum();
+								}
+							}
+						}
+						FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true, WinningTeamNum);
 					}
 					return true;
 				}
@@ -417,7 +478,22 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 					if (FUTAnalytics::IsAvailable())
 					{
 						const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
-						FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true);
+						int WinningTeamNum = 0;
+						if (ScoringTeam)
+						{
+							WinningTeamNum = ScoringTeam->GetTeamNum();
+						}
+						else
+						{
+							for (int TeamNumIndex = 0; TeamNumIndex < Teams.Num(); ++TeamNumIndex)
+							{
+								if (IsTeamOnDefense(Teams.Num()))
+								{
+									WinningTeamNum = Teams[TeamNumIndex]->GetTeamNum();
+								}
+							}
+						}
+						FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true, WinningTeamNum);
 					}
 					return true;
 				}
@@ -428,7 +504,22 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 					if (FUTAnalytics::IsAvailable())
 					{
 						const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
-						FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true);
+						int WinningTeamNum = 0;
+						if (ScoringTeam)
+						{
+							WinningTeamNum = ScoringTeam->GetTeamNum();
+						}
+						else
+						{
+							for (int TeamNumIndex = 0; TeamNumIndex < Teams.Num(); ++TeamNumIndex)
+							{
+								if (IsTeamOnDefense(Teams.Num()))
+								{
+									WinningTeamNum = Teams[TeamNumIndex]->GetTeamNum();
+								}
+							}
+						}
+						FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true, WinningTeamNum);
 					}
 					return true;
 				}

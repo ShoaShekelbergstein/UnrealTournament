@@ -198,6 +198,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(EndedInTieBreaker);
 	AddGenericParamName(RedTeamBonusTime);
 	AddGenericParamName(BlueTeamBonusTime);
+	AddGenericParamName(WinningTeamNum);
 
 	AddGenericParamName(UTEnterMatch);
 	AddGenericParamName(EnterMethod);
@@ -1069,7 +1070,7 @@ void FUTAnalytics::FireEvent_UTMatchMakingFailed(AUTBasePlayerController* UTPC, 
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDefenseRoundWin, bool bIsFinalRound)
+void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDefenseRoundWin, bool bIsFinalRound, int WinningTeamNum)
 {
 	if (UTGame)
 	{
@@ -1128,6 +1129,11 @@ void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDef
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::EndedInTieBreaker), bEndedInTie));
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RedTeamBonusTime), RedTeamBonusTime));
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::BlueTeamBonusTime), BlueTeamBonusTime));
+
+				if (bIsFinalRound)
+				{
+					ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::WinningTeamNum), WinningTeamNum));
+				}
 
 				AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::FlagRunRoundEnd), ParamArray);
 			}

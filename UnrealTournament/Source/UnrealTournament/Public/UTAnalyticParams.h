@@ -75,6 +75,7 @@ namespace EGenericAnalyticParam
 		EndedInTieBreaker,
 		RedTeamBonusTime,
 		BlueTeamBonusTime,
+		WinningTeamNum,
 
 		UTEnterMatch,
 		EnterMethod,
