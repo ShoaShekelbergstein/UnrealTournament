@@ -886,7 +886,7 @@ void UUTGameInstance::EndLevelLoading()
 
 #if !UE_SERVER
 
-	if (GIsRunning && !GIsRequestingExit)
+	if (!GIsRequestingExit)
 	{
 		if (GetMoviePlayer().IsValid() && GetMoviePlayer()->IsMovieCurrentlyPlaying())
 		{
