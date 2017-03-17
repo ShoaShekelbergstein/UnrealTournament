@@ -3893,7 +3893,7 @@ void AUTGameMode::SwitchToCastingGuide(AUTPlayerController* NewCaster)
 */
 void AUTGameMode::SendLogoutAnalytics(AUTPlayerState* PS)
 {
-	if ((PS != nullptr) && !PS->bSentLogoutAnalytics && FUTAnalytics::IsAvailable() && (Cast<AUTPlayerController>(PS->GetOwner()) != nullptr))
+	if ((PS != nullptr) && !PS->bSentLogoutAnalytics && FUTAnalytics::IsAvailable() && (Cast<AUTPlayerController>(PS->GetOwner()) != nullptr) && (Cast<AUTDemoRecSpectator>(PS->GetOwner()) == nullptr))
 	{
 		PS->bSentLogoutAnalytics = true;
 		float TotalTimeOnline = UTGameState->ElapsedTime - PS->StartTime;
