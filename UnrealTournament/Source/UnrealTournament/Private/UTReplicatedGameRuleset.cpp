@@ -347,7 +347,10 @@ FString AUTReplicatedGameRuleset::GenerateURL(const FString& StartingMap, bool b
 	URL += FString::Printf(TEXT("?Game=%s"), *GameMode);
 	URL += FString::Printf(TEXT("?MaxPlayers=%i"), MaxPlayers);
 	URL += GameOptions;
-	URL += bAllowBots ? FString::Printf(TEXT("?Difficulty=%i"), FMath::Clamp<int32>(BotDifficulty,0,7)) : TEXT("?ForceNoBots=1");
+	if (!UGameplayStatics::HasOption(URL, TEXT("Difficulty")))
+	{
+		URL += bAllowBots ? FString::Printf(TEXT("?Difficulty=%i"), FMath::Clamp<int32>(BotDifficulty, 0, 7)) : TEXT("?ForceNoBots=1");
+	}
 
 	if (bRequireFilled) URL += TEXT("?RequireFull=1");
 	if (bCompetitiveMatch) URL += TEXT("?NoJIP");
