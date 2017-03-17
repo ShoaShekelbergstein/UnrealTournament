@@ -544,6 +544,11 @@ void AUTWeap_Enforcer::SetSkin(UMaterialInterface* NewSkin)
 				LeftMesh->SetMaterial(i, GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->GetMaterial(i));
 			}
 		}
+
+		for (int i = 0; i < LeftMesh->GetNumMaterials(); i++)
+		{
+			LeftMeshMIDs.Add(LeftMesh->CreateAndSetMaterialInstanceDynamic(i));
+		}
 	}
 
 	Super::SetSkin(NewSkin);
@@ -565,6 +570,19 @@ void AUTWeap_Enforcer::AttachLeftMesh()
 		{
 			LeftMesh->LastRenderTime = GetWorld()->TimeSeconds;
 			LeftMesh->bRecentlyRendered = true;
+		}
+
+		static FName FNamePanini_d = TEXT("d");
+		static FName FNamePanini_PushMax = TEXT("Push Max");
+		static FName FNamePanini_PushMin = TEXT("Push Min");
+		for (int i = 0; i < LeftMeshMIDs.Num(); i++)
+		{
+			if (LeftMeshMIDs[i])
+			{
+				LeftMeshMIDs[i]->SetScalarParameterValue(FNamePanini_d, Panini_d);
+				LeftMeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMax, Panini_PushMax);
+				LeftMeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMin, Panini_PushMin);
+			}
 		}
 
 		if (UTOwner != NULL && UTOwner->GetWeapon() == this)

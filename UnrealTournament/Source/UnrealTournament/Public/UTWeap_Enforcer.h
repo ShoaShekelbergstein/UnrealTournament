@@ -18,6 +18,9 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	USkeletalMeshComponent* LeftMesh;
 
+	UPROPERTY()
+	TArray<UMaterialInstanceDynamic*> LeftMeshMIDs;
+
 	UPROPERTY(Instanced, BlueprintReadOnly, Category = "States")
 	UUTWeaponStateEquipping* EnforcerEquippingState;
 
