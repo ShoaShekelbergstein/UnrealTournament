@@ -476,18 +476,17 @@ void AUTLineUpZone::DefaultCreateForTeamIntro()
 	RedStartLocations.SetNum(5);
 	BlueStartLocations.SetNum(5);
 
-	BlueStartLocations[0] = FVector(-150.f, 275.f, 113.f);
-	BlueStartLocations[1] = FVector(-50.f, 250.f, 113.f);
-	BlueStartLocations[2] = FVector(50.f, 200.f, 113.f);
-	BlueStartLocations[3] = FVector(150.f, 150.f, 113.f);
-	BlueStartLocations[4] = FVector(250.f, 100.f, 113.f);
-	
-	RedStartLocations[0] = FVector(-150.f, -275.f, 113.f);
-	RedStartLocations[1] = FVector(-50.f, -250.f, 113.f);
-	RedStartLocations[2] = FVector(50.f, -200.f, 113.f);
-	RedStartLocations[3] = FVector(150.f, -150.f, 113.f);
-	RedStartLocations[4] = FVector(250.f, -100.f, 113.f);
+	RedStartLocations[0] = FVector(-150.f, -275.f, 0.0f);
+	RedStartLocations[1] = FVector(-50.f, -250.f, 0.0f);
+	RedStartLocations[2] = FVector(50.f, -200.f, 0.0f);
+	RedStartLocations[3] = FVector(150.f, -150.f, 0.0f);
+	RedStartLocations[4] = FVector(250.f, -100.f, 0.0f);
 
+	BlueStartLocations[0] = FVector(-150.f, 275.f, 0.0f);
+	BlueStartLocations[1] = FVector(-50.f, 250.f, 0.0f);
+	BlueStartLocations[2] = FVector(50.f, 200.f, 0.0f);
+	BlueStartLocations[3] = FVector(150.f, 150.f, 0.0f);
+	BlueStartLocations[4] = FVector(250.f, 100.f, 0.0f);
 
 	RedAndWinningTeamSpawnLocations.Empty();
 	BlueAndLosingTeamSpawnLocations.Empty();
@@ -522,8 +521,6 @@ void AUTLineUpZone::DefaultCreateForTeamIntro()
 	DeleteAllMeshVisualizations();
 	InitializeMeshVisualizations();
 
-	FTransform CameraTransform;
-	CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
 	Camera->SetFieldOfView(60.f);
 	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
@@ -533,7 +530,7 @@ void AUTLineUpZone::DefaultCreateForTeamIntro()
 	DefaultCameraRotation.Yaw = 0.f;
 	
 	FTransform DefaultCameraTransform;
-	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
+	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 72.5f));
 	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
 
 	Camera->SetRelativeTransform(DefaultCameraTransform);
@@ -545,17 +542,14 @@ void AUTLineUpZone::DefaultCreateForFFAIntro()
 
 	FFAStartLocations.SetNum(10);
 
-	FFAStartLocations[0] = FVector(-100,275 , 113.f);
-	FFAStartLocations[1] = FVector(-175.f,150.f, 113.f);
-	FFAStartLocations[2] = FVector(-50.f, 75.f, 113.f);
-	FFAStartLocations[3] = FVector(-100.f,-75.f, 113.f);
-	FFAStartLocations[4] = FVector(-25.f,-250.f, 113.f);
-
-	FFAStartLocations[5] = FVector(-150.f,-275.f, 113.f);
-	FFAStartLocations[6] = FVector(375.f,200.f, 113.f);
-	FFAStartLocations[7] = FVector(250.f,0.f, 113.f);
-	FFAStartLocations[8] = FVector(375.f,-200.f, 113.f);
-	FFAStartLocations[9] = FVector(450.f,-300.f, 113.f);
+	FFAStartLocations[0] = FVector(50.0f,50.0f, 0.0f);
+	FFAStartLocations[1] = FVector(50.0,-50.0f, 0.0f);
+	FFAStartLocations[2] = FVector(25.0f, 150.0f, 0.0f);
+	FFAStartLocations[3] = FVector(25.0f,-150.0f, 0.0f);
+	FFAStartLocations[4] = FVector(0.0f, 250.0f, 0.0f);
+	FFAStartLocations[5] = FVector(0.0f,-250.0f, 0.0f);
+	FFAStartLocations[6] = FVector(-25.0f,350.0f, 0.0f);
+	FFAStartLocations[7] = FVector(-25.0f,-350.0f, 0.0f);
 
 
 	RedAndWinningTeamSpawnLocations.Empty();
@@ -579,8 +573,6 @@ void AUTLineUpZone::DefaultCreateForFFAIntro()
 	DeleteAllMeshVisualizations();
 	InitializeMeshVisualizations();
 
-	FTransform CameraTransform;
-	CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
 	Camera->SetFieldOfView(60.f);
 	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
@@ -590,7 +582,7 @@ void AUTLineUpZone::DefaultCreateForFFAIntro()
 	DefaultCameraRotation.Yaw = 0.f;
 
 	FTransform DefaultCameraTransform;
-	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
+	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 72.5f));
 	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
 
 	Camera->SetRelativeTransform(DefaultCameraTransform);
@@ -604,27 +596,27 @@ void AUTLineUpZone::DefaultCreateForTeamIntermission()
 	WinningTeamStartLocations.SetNum(5);
 	WinningTeamRotations.SetNum(5);
 
-	WinningTeamStartLocations[0] = FVector(0.f, 0.f, 113.f);
+	WinningTeamStartLocations[0] = FVector(-50.f, 0.f, 0.0f);
 	WinningTeamRotations[0].Pitch = 0.f;
 	WinningTeamRotations[0].Roll = 0.f;
 	WinningTeamRotations[0].Yaw = -179.99f;
 
-	WinningTeamStartLocations[1] = FVector(-50.f, 150.f, 113.f);
+	WinningTeamStartLocations[1] = FVector(-75.f, 150.f, 0.0f);
 	WinningTeamRotations[1].Pitch = 0.f;
 	WinningTeamRotations[1].Roll = 0.f;
 	WinningTeamRotations[1].Yaw = -168.75f;
 
-	WinningTeamStartLocations[2] = FVector(-50.f, -150.f, 113.f);
+	WinningTeamStartLocations[2] = FVector(-75.f, -150.f, 0.0f);
 	WinningTeamRotations[2].Pitch = 0.f;
 	WinningTeamRotations[2].Roll = 0.f;
 	WinningTeamRotations[2].Yaw = 168.75f;
 
-	WinningTeamStartLocations[3] = FVector(-150.f, 250.f, 113.f);
+	WinningTeamStartLocations[3] = FVector(-150.f, 250.f, 0.0f);
 	WinningTeamRotations[3].Pitch = 0.f;
 	WinningTeamRotations[3].Roll = 0.f;
 	WinningTeamRotations[3].Yaw = -157.49f;
 
-	WinningTeamStartLocations[4] = FVector(-150.f, -250.f, 113.f);
+	WinningTeamStartLocations[4] = FVector(-150.f, -250.f, 0.0f);
 	WinningTeamRotations[4].Pitch = 0.f;
 	WinningTeamRotations[4].Roll = 0.f;
 	WinningTeamRotations[4].Yaw = 157.49f;
@@ -645,8 +637,6 @@ void AUTLineUpZone::DefaultCreateForTeamIntermission()
 	DeleteAllMeshVisualizations();
 	InitializeMeshVisualizations();
 
-	FTransform CameraTransform;
-	CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
 	Camera->SetFieldOfView(60.f);
 	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
@@ -656,7 +646,7 @@ void AUTLineUpZone::DefaultCreateForTeamIntermission()
 	DefaultCameraRotation.Yaw = 0.f;
 
 	FTransform DefaultCameraTransform;
-	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
+	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 72.5f));
 	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
 
 	Camera->SetRelativeTransform(DefaultCameraTransform);
@@ -670,159 +660,27 @@ void AUTLineUpZone::DefaultCreateForFFAIntermission()
 	FFAStartLocations.SetNum(5);
 	FFARotations.SetNum(5);
 
-	FFAStartLocations[0] = FVector(0.f, 0.f, 113.f);
+	FFAStartLocations[0] = FVector(-50.f, 0.f, 0.0f);
 	FFARotations[0].Pitch = 0.f;
 	FFARotations[0].Roll = 0.f;
 	FFARotations[0].Yaw = -179.99f;
 
-	FFAStartLocations[1] = FVector(-50.f, 150.f, 113.f);
+	FFAStartLocations[1] = FVector(-75.f, 150.f, 0.0f);
 	FFARotations[1].Pitch = 0.f;
 	FFARotations[1].Roll = 0.f;
 	FFARotations[1].Yaw = -168.75f;
 
-	FFAStartLocations[2] = FVector(-50.f, -150.f, 113.f);
+	FFAStartLocations[2] = FVector(-75.f, -150.f, 0.0f);
 	FFARotations[2].Pitch = 0.f;
 	FFARotations[2].Roll = 0.f;
 	FFARotations[2].Yaw = 168.75f;
 
-	FFAStartLocations[3] = FVector(-150.f, 250.f, 113.f);
-	FFARotations[3].Pitch = 0.f;
-	FFARotations[3].Roll = 0.f;
-	FFARotations[3].Yaw = -157.49f;
-
-	FFAStartLocations[4] = FVector(-150.f, -250.f, 113.f);
-	FFARotations[4].Pitch = 0.f;
-	FFARotations[4].Roll = 0.f;
-	FFARotations[4].Yaw = 157.49f;
-
-	RedAndWinningTeamSpawnLocations.Empty();
-	BlueAndLosingTeamSpawnLocations.Empty();
-	FFATeamSpawnLocations.Empty();
-
-	FFATeamSpawnLocations.SetNum(5);
-
-	for (int WinIndex = 0; WinIndex < 5; ++WinIndex)
-	{
-		FFATeamSpawnLocations[WinIndex].SetTranslation(FFAStartLocations[WinIndex]);
-		FFATeamSpawnLocations[WinIndex].SetRotation(FFARotations[WinIndex].Quaternion());
-	}
-
-	SnapToFloor();
-	DeleteAllMeshVisualizations();
-	InitializeMeshVisualizations();
-
-	FTransform CameraTransform;
-	CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
-	Camera->SetFieldOfView(60.f);
-	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
-
-	FRotator DefaultCameraRotation;
-	DefaultCameraRotation.Roll = 0.f;
-	DefaultCameraRotation.Pitch = 0.f;
-	DefaultCameraRotation.Yaw = 0.f;
-
-	FTransform DefaultCameraTransform;
-	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
-	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
-
-	Camera->SetRelativeTransform(DefaultCameraTransform);
-}
-
-void AUTLineUpZone::DefaultCreateForTeamEndMatch()
-{
-	TArray<FVector> WinningStartLocations;
-	TArray<FRotator> WinningRotations;
-
-	WinningStartLocations.SetNum(5);
-	WinningRotations.SetNum(5);
-
-	WinningStartLocations[0] = FVector(-150.f, 0.f, 113.f);
-	WinningRotations[0].Pitch = 0.f;
-	WinningRotations[0].Roll = 0.f;
-	WinningRotations[0].Yaw = -179.99f;
-
-	WinningStartLocations[1] = FVector(-50.f, 150.f, 113.f);
-	WinningRotations[1].Pitch = 0.f;
-	WinningRotations[1].Roll = 0.f;
-	WinningRotations[1].Yaw = 179.99f;
-
-	WinningStartLocations[2] = FVector(-50.f, -150.f, 113.f);
-	WinningRotations[2].Pitch = 0.f;
-	WinningRotations[2].Roll = 0.f;
-	WinningRotations[2].Yaw = -179.99f;
-
-	WinningStartLocations[3] = FVector(50.f, 300.f, 113.f);
-	WinningRotations[3].Pitch = 0.f;
-	WinningRotations[3].Roll = 0.f;
-	WinningRotations[3].Yaw = -179.99f;
-
-	WinningStartLocations[4] = FVector(50.f, -300.f, 113.f);
-	WinningRotations[4].Pitch = 0.f;
-	WinningRotations[4].Roll = 0.f;
-	WinningRotations[4].Yaw = -179.99f;
-
-	RedAndWinningTeamSpawnLocations.Empty();
-	BlueAndLosingTeamSpawnLocations.Empty();
-	FFATeamSpawnLocations.Empty();
-
-	RedAndWinningTeamSpawnLocations.SetNum(5);
-
-	for (int WinIndex = 0; WinIndex < 5; ++WinIndex)
-	{
-		RedAndWinningTeamSpawnLocations[WinIndex].SetTranslation(WinningStartLocations[WinIndex]);
-		RedAndWinningTeamSpawnLocations[WinIndex].SetRotation(WinningRotations[WinIndex].Quaternion());
-	}
-
-	SnapToFloor();
-	DeleteAllMeshVisualizations();
-	InitializeMeshVisualizations();
-
-	FTransform CameraTransform;
-	CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
-	Camera->SetFieldOfView(60.f);
-	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
-
-	FRotator DefaultCameraRotation;
-	DefaultCameraRotation.Roll = 0.f;
-	DefaultCameraRotation.Pitch = 0.f;
-	DefaultCameraRotation.Yaw = 0.f;
-
-	FTransform DefaultCameraTransform;
-	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
-	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
-
-	Camera->SetRelativeTransform(DefaultCameraTransform);
-}
-
-void AUTLineUpZone::DefaultCreateForFFAEndMatch()
-{
-	TArray<FVector> FFAStartLocations;
-	TArray<FRotator> FFARotations;
-
-	FFAStartLocations.SetNum(5);
-	FFARotations.SetNum(5);
-
-	FFAStartLocations[0] = FVector(-150.f, 0.f, 113.f);
-	FFARotations[0].Pitch = 0.f;
-	FFARotations[0].Roll = 0.f;
-	FFARotations[0].Yaw = -179.99f;
-
-	FFAStartLocations[1] = FVector(-50.f, 150.f, 113.f);
-	FFARotations[1].Pitch = 0.f;
-	FFARotations[1].Roll = 0.f;
-	FFARotations[1].Yaw = 179.99f;
-
-	FFAStartLocations[2] = FVector(-50.f, -150.f, 113.f);
-	FFARotations[2].Pitch = 0.f;
-	FFARotations[2].Roll = 0.f;
-	FFARotations[2].Yaw = -179.99f;
-
-	FFAStartLocations[3] = FVector(50.f, 300.f, 113.f);
+	FFAStartLocations[3] = FVector(-150.f, 250.f, 0.0f);
 	FFARotations[3].Pitch = 0.f;
 	FFARotations[3].Roll = 0.f;
 	FFARotations[3].Yaw = -179.99f;
 
-	FFAStartLocations[4] = FVector(50.f, -300.f, 113.f);
+	FFAStartLocations[4] = FVector(-150.f, -250.f, 0.0f);
 	FFARotations[4].Pitch = 0.f;
 	FFARotations[4].Roll = 0.f;
 	FFARotations[4].Yaw = -179.99f;
@@ -843,8 +701,6 @@ void AUTLineUpZone::DefaultCreateForFFAEndMatch()
 	DeleteAllMeshVisualizations();
 	InitializeMeshVisualizations();
 
-	FTransform CameraTransform;
-	CameraTransform.SetTranslation(FVector(-200.f, 0.f, 30.f));
 	Camera->SetFieldOfView(60.f);
 	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 
@@ -854,7 +710,135 @@ void AUTLineUpZone::DefaultCreateForFFAEndMatch()
 	DefaultCameraRotation.Yaw = 0.f;
 
 	FTransform DefaultCameraTransform;
-	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 47.5f));
+	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 72.5f));
+	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
+
+	Camera->SetRelativeTransform(DefaultCameraTransform);
+}
+
+void AUTLineUpZone::DefaultCreateForTeamEndMatch()
+{
+	TArray<FVector> WinningStartLocations;
+	TArray<FRotator> WinningRotations;
+
+	WinningStartLocations.SetNum(5);
+	WinningRotations.SetNum(5);
+
+	WinningStartLocations[0] = FVector(-150.f, 0.f, 0.0f);
+	WinningRotations[0].Pitch = 0.f;
+	WinningRotations[0].Roll = 0.f;
+	WinningRotations[0].Yaw = -179.99f;
+
+	WinningStartLocations[1] = FVector(-100.f, 150.f, 0.0f);
+	WinningRotations[1].Pitch = 0.f;
+	WinningRotations[1].Roll = 0.f;
+	WinningRotations[1].Yaw = 179.99f;
+
+	WinningStartLocations[2] = FVector(-100.f, -150.f, 0.0f);
+	WinningRotations[2].Pitch = 0.f;
+	WinningRotations[2].Roll = 0.f;
+	WinningRotations[2].Yaw = -179.99f;
+
+	WinningStartLocations[3] = FVector(-50.f, 300.f, 0.0f);
+	WinningRotations[3].Pitch = 0.f;
+	WinningRotations[3].Roll = 0.f;
+	WinningRotations[3].Yaw = -179.99f;
+
+	WinningStartLocations[4] = FVector(-50.f, -300.f, 0.0f);
+	WinningRotations[4].Pitch = 0.f;
+	WinningRotations[4].Roll = 0.f;
+	WinningRotations[4].Yaw = -179.99f;
+
+	RedAndWinningTeamSpawnLocations.Empty();
+	BlueAndLosingTeamSpawnLocations.Empty();
+	FFATeamSpawnLocations.Empty();
+
+	RedAndWinningTeamSpawnLocations.SetNum(5);
+
+	for (int WinIndex = 0; WinIndex < 5; ++WinIndex)
+	{
+		RedAndWinningTeamSpawnLocations[WinIndex].SetTranslation(WinningStartLocations[WinIndex]);
+		RedAndWinningTeamSpawnLocations[WinIndex].SetRotation(WinningRotations[WinIndex].Quaternion());
+	}
+
+	SnapToFloor();
+	DeleteAllMeshVisualizations();
+	InitializeMeshVisualizations();
+
+	Camera->SetFieldOfView(60.f);
+	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
+
+	FRotator DefaultCameraRotation;
+	DefaultCameraRotation.Roll = 0.f;
+	DefaultCameraRotation.Pitch = 0.f;
+	DefaultCameraRotation.Yaw = 0.f;
+
+	FTransform DefaultCameraTransform;
+	DefaultCameraTransform.SetTranslation(FVector(-750.f, 0.f, 72.5f));
+	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
+
+	Camera->SetRelativeTransform(DefaultCameraTransform);
+}
+
+void AUTLineUpZone::DefaultCreateForFFAEndMatch()
+{
+	TArray<FVector> FFAStartLocations;
+	TArray<FRotator> FFARotations;
+
+	FFAStartLocations.SetNum(5);
+	FFARotations.SetNum(5);
+
+	FFAStartLocations[0] = FVector(-150.f, 0.f, 0.0f);
+	FFARotations[0].Pitch = 0.f;
+	FFARotations[0].Roll = 0.f;
+	FFARotations[0].Yaw = -180.f;
+
+	FFAStartLocations[1] = FVector(-100.f, 150.f, 0.0f);
+	FFARotations[1].Pitch = 0.f;
+	FFARotations[1].Roll = 0.f;
+	FFARotations[1].Yaw = -180.f;
+
+	FFAStartLocations[2] = FVector(-100.f, -150.f, 0.0f);
+	FFARotations[2].Pitch = 0.f;
+	FFARotations[2].Roll = 0.f;
+	FFARotations[2].Yaw = -180.f;
+
+	FFAStartLocations[3] = FVector(-50.f, 300.f, 0.0f);
+	FFARotations[3].Pitch = 0.f;
+	FFARotations[3].Roll = 0.f;
+	FFARotations[3].Yaw = -180.f;
+
+	FFAStartLocations[4] = FVector(-50.f, -300.f, 0.0f);
+	FFARotations[4].Pitch = 0.f;
+	FFARotations[4].Roll = 0.f;
+	FFARotations[4].Yaw = -180.f;
+
+	RedAndWinningTeamSpawnLocations.Empty();
+	BlueAndLosingTeamSpawnLocations.Empty();
+	FFATeamSpawnLocations.Empty();
+
+	FFATeamSpawnLocations.SetNum(5);
+
+	for (int WinIndex = 0; WinIndex < 5; ++WinIndex)
+	{
+		FFATeamSpawnLocations[WinIndex].SetTranslation(FFAStartLocations[WinIndex]);
+		FFATeamSpawnLocations[WinIndex].SetRotation(FFARotations[WinIndex].Quaternion());
+	}
+
+	SnapToFloor();
+	DeleteAllMeshVisualizations();
+	InitializeMeshVisualizations();
+
+	Camera->SetFieldOfView(60.f);
+	Camera->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
+
+	FRotator DefaultCameraRotation;
+	DefaultCameraRotation.Roll = 0.f;
+	DefaultCameraRotation.Pitch = 0.f;
+	DefaultCameraRotation.Yaw = 0.f;
+
+	FTransform DefaultCameraTransform;
+	DefaultCameraTransform.SetTranslation(FVector(-750.0f, 0.f, 72.5f));
 	DefaultCameraTransform.SetRotation(DefaultCameraRotation.Quaternion());
 
 	Camera->SetRelativeTransform(DefaultCameraTransform);
@@ -894,7 +878,7 @@ void AUTLineUpZone::DefaultCreateForOnly1Character()
 	FRotator DefaultCameraRotation;
 	DefaultCameraRotation.Roll = 0.f;
 	DefaultCameraRotation.Pitch = 0.f;
-	DefaultCameraRotation.Yaw = -179.f;
+	DefaultCameraRotation.Yaw = -180.f;
 
 	FTransform DefaultCameraTransform;
 	DefaultCameraTransform.SetTranslation(FVector(750.f, 0.f, 47.5f));
