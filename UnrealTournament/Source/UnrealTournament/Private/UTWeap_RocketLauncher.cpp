@@ -104,7 +104,7 @@ void AUTWeap_RocketLauncher::BeginLoadRocket()
 		{
 			GetMesh()->GetAnimInstance()->Montage_Play(PickedAnimation, PickedAnimation->SequenceLength / GetLoadTime(NumLoadedBarrels));
 		}
-		if (PickedHandHanim != nullptr)
+		if (GetUTOwner() && GetUTOwner()->FirstPersonMesh && PickedHandHanim != nullptr)
 		{
 			GetUTOwner()->FirstPersonMesh->GetAnimInstance()->Montage_Play(PickedHandHanim, PickedHandHanim->SequenceLength / GetLoadTime(NumLoadedBarrels));
 		}
@@ -208,7 +208,8 @@ void AUTWeap_RocketLauncher::ClientAbortLoad_Implementation()
 		{
 			AnimInstance->Montage_SetPlayRate(LoadingAnimation[NumLoadedRockets], 0.0f);
 		}
-		UAnimInstance* AnimInstanceHands = GetUTOwner()->FirstPersonMesh->GetAnimInstance();
+
+		UAnimInstance* AnimInstanceHands = (GetUTOwner() && GetUTOwner()->FirstPersonMesh) ? GetUTOwner()->FirstPersonMesh->GetAnimInstance() : nullptr;
 		if (AnimInstanceHands != NULL && LoadingAnimationHands.IsValidIndex(NumLoadedRockets) && LoadingAnimationHands[NumLoadedRockets] != NULL)
 		{
 			AnimInstanceHands->Montage_SetPlayRate(LoadingAnimationHands[NumLoadedRockets], 0.0f);
@@ -423,7 +424,7 @@ void AUTWeap_RocketLauncher::PlayFiringEffects()
 			// try and play a firing animation for hands if specified
 			if (FiringAnimationHands.IsValidIndex(NumLoadedRockets) && FiringAnimationHands[NumLoadedRockets] != NULL)
 			{
-				UAnimInstance* AnimInstanceHands = GetUTOwner()->FirstPersonMesh->GetAnimInstance();
+				UAnimInstance* AnimInstanceHands = (GetUTOwner() && GetUTOwner()->FirstPersonMesh) ? GetUTOwner()->FirstPersonMesh->GetAnimInstance() : nullptr;
 				if (AnimInstanceHands != NULL)
 				{
 					AnimInstanceHands->Montage_Play(FiringAnimationHands[NumLoadedRockets], 1.f);
@@ -1052,7 +1053,7 @@ void AUTWeap_RocketLauncher::FiringExtraUpdated_Implementation(uint8 NewFlashExt
 					AnimInstance->Montage_Play(LoadingAnimation[NumLoadedRockets - 1], LoadingAnimation[NumLoadedRockets - 1]->SequenceLength / GetLoadTime(NumLoadedRockets - 1));
 				}
 
-				UAnimInstance* AnimInstanceHands = GetUTOwner()->FirstPersonMesh->GetAnimInstance();
+				UAnimInstance* AnimInstanceHands = (GetUTOwner() && GetUTOwner()->FirstPersonMesh) ? GetUTOwner()->FirstPersonMesh->GetAnimInstance() : nullptr;
 				if (AnimInstanceHands != NULL && LoadingAnimationHands.IsValidIndex(NumLoadedRockets - 1) && LoadingAnimationHands[NumLoadedRockets - 1] != NULL)
 				{
 					AnimInstanceHands->Montage_Play(LoadingAnimationHands[NumLoadedRockets - 1], LoadingAnimationHands[NumLoadedRockets - 1]->SequenceLength / GetLoadTime(NumLoadedRockets - 1));
