@@ -30,7 +30,7 @@ AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 	HUDClass = AUTFlagRunPvEHUD::StaticClass();
 	SquadType = AUTFlagRunPvESquadAI::StaticClass();
 	GameStateClass = AUTFlagRunPvEGameState::StaticClass();
-	DisplayName = NSLOCTEXT("UTGameMode", "FRPVE", "Flag Invasion");
+	DisplayName = NSLOCTEXT("UTGameMode", "FRPVE", "Siege");
 	DefaultMaxPlayers = 5;
 
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/BronzeTaye.BronzeTaye_C")));

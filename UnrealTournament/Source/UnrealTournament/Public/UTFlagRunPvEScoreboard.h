@@ -7,6 +7,7 @@
 #include "UTLineUpHelper.h"
 #include "StatNames.h"
 #include "UTGameEngine.h"
+#include "UTHUD.h"
 
 #include "UTFlagRunPvEScoreboard.generated.h"
 
@@ -19,7 +20,7 @@ public:
 		: Super(OI)
 	{
 		GameMessageText = NSLOCTEXT("UTPvEScoreboard", "ScoreboardHeader", "{Difficulty} {GameName} in {MapName}");
-		DefendTitle = NSLOCTEXT("UTScoreboard", "Defending", "FLAG INVASION - {Difficulty}");
+		DefendTitle = NSLOCTEXT("UTScoreboard", "Defending", "SIEGE - {Difficulty}");
 		
 		DefendLines.Empty();
 		DefendLines.Add(NSLOCTEXT("UTPvEScoreboard", "DefenseLine1", "* You are defending.  Your goal is to keep the enemy from bringing"));
@@ -242,7 +243,7 @@ public:
 	virtual bool ShowScoringInfo() override
 	{
 		AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-		return GS != nullptr && (GS->IsMatchIntermission() || GS->HasMatchEnded()) && !IsBeforeFirstRound();
+		return GS != nullptr && (GS->IsMatchIntermission() || GS->HasMatchEnded()) && !IsBeforeFirstRound() && (!UTHUDOwner || !UTHUDOwner->bDisplayMatchSummary);
 	}
 
 	virtual void DrawScoreAnnouncement(float DeltaTime) override
