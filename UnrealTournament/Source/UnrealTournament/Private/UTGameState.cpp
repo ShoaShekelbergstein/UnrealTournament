@@ -2367,7 +2367,7 @@ AUTLineUpZone* AUTGameState::GetAppropriateSpawnList(LineUpTypes ZoneType)
 			if (It->ZoneType == ZoneType)
 			{
 				//Found a perfect match, so return it right away. Perfect match because this is a team spawn point in a team game
-				if (It->bIsTeamSpawnList && TeamGM &&  TeamGM->Teams.Num() > 2)
+				if (It->bIsTeamSpawnList && TeamGM &&  TeamGM->Teams.Num() >= 2)
 				{
 					return *It;
 				}
