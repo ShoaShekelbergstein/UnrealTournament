@@ -155,9 +155,17 @@ void AUTProj_Grenade_Sticky::OnStop(const FHitResult& Hit)
 
 	CollisionComp->SetCollisionObjectType(COLLISION_PROJECTILE_SHOOTABLE);
 
-	if (Hit.Actor.IsValid() && Cast<AUTLift>(Hit.Actor.Get()) == nullptr)
+	if (Hit.Actor.IsValid())
 	{
-		AttachToComponent(Hit.Actor->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+		AUTLift* Lift = Cast<AUTLift>(Hit.Actor.Get());
+		if (Lift && Lift->GetEncroachComponent())
+		{
+			AttachToComponent(Lift->GetEncroachComponent(), FAttachmentTransformRules::KeepWorldTransform);
+		}
+		else 
+		{
+			AttachToComponent(Hit.Actor->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+		}
 	}
 }
 
