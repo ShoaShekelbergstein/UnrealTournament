@@ -50,9 +50,17 @@ class UNREALTOURNAMENT_API AUTWeap_RocketLauncher : public AUTWeapon
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
 	TArray<UAnimMontage*> LoadingAnimation;
 
+	/**The loading animations for hands per NumLoadedRockets*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
+	TArray<UAnimMontage*> LoadingAnimationHands;
+
 	/**Empty loading animations per NumLoadedRockets (RL running out of ammo)*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
 		TArray<UAnimMontage*> EmptyLoadingAnimation;
+
+	/**Empty loading animations for hands per NumLoadedRockets (RL running out of ammo)*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
+		TArray<UAnimMontage*> EmptyLoadingAnimationHands;
 
 	/**The sounds to play when loading each rocket*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
@@ -69,6 +77,10 @@ class UNREALTOURNAMENT_API AUTWeap_RocketLauncher : public AUTWeapon
 	/**The firing animations per NumLoadedRockets*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
 	TArray<UAnimMontage*> FiringAnimation;
+
+	/**The firing animations for hands per NumLoadedRockets*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
+		TArray<UAnimMontage*> FiringAnimationHands;
 
 	/**The textures used for drawing the HUD*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)

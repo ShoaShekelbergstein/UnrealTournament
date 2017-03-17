@@ -87,18 +87,26 @@ void AUTWeap_RocketLauncher::BeginLoadRocket()
 	if ((GetNetMode() != NM_DedicatedServer) && (GetMesh()->GetAnimInstance() != nullptr))
 	{
 		UAnimMontage* PickedAnimation = nullptr;
+		UAnimMontage* PickedHandHanim = nullptr;
 		if (Ammo > 0)
 		{
 			PickedAnimation = (LoadingAnimation.IsValidIndex(NumLoadedBarrels) && LoadingAnimation[NumLoadedBarrels] != NULL) ? LoadingAnimation[NumLoadedBarrels] : nullptr;
+			PickedHandHanim = (LoadingAnimationHands.IsValidIndex(NumLoadedBarrels) && LoadingAnimationHands[NumLoadedBarrels] != NULL) ? LoadingAnimationHands[NumLoadedBarrels] : nullptr;
+
 		}
 		else
 		{
 			PickedAnimation = (EmptyLoadingAnimation.IsValidIndex(NumLoadedBarrels) && EmptyLoadingAnimation[NumLoadedBarrels] != NULL) ? EmptyLoadingAnimation[NumLoadedBarrels] : nullptr;
+			PickedHandHanim = (EmptyLoadingAnimationHands.IsValidIndex(NumLoadedBarrels) && EmptyLoadingAnimationHands[NumLoadedBarrels] != NULL) ? EmptyLoadingAnimationHands[NumLoadedBarrels] : nullptr;
 		}
 
 		if (PickedAnimation != nullptr)
 		{
 			GetMesh()->GetAnimInstance()->Montage_Play(PickedAnimation, PickedAnimation->SequenceLength / GetLoadTime(NumLoadedBarrels));
+		}
+		if (PickedHandHanim != nullptr)
+		{
+			GetUTOwner()->FirstPersonMesh->GetAnimInstance()->Montage_Play(PickedHandHanim, PickedHandHanim->SequenceLength / GetLoadTime(NumLoadedBarrels));
 		}
 	}
 
@@ -199,6 +207,11 @@ void AUTWeap_RocketLauncher::ClientAbortLoad_Implementation()
 		if (AnimInstance != NULL && LoadingAnimation.IsValidIndex(NumLoadedRockets) && LoadingAnimation[NumLoadedRockets] != NULL)
 		{
 			AnimInstance->Montage_SetPlayRate(LoadingAnimation[NumLoadedRockets], 0.0f);
+		}
+		UAnimInstance* AnimInstanceHands = GetUTOwner()->FirstPersonMesh->GetAnimInstance();
+		if (AnimInstanceHands != NULL && LoadingAnimationHands.IsValidIndex(NumLoadedRockets) && LoadingAnimationHands[NumLoadedRockets] != NULL)
+		{
+			AnimInstanceHands->Montage_SetPlayRate(LoadingAnimationHands[NumLoadedRockets], 0.0f);
 		}
 		// set grace timer
 		float AdjustedGraceTime = GracePeriod;
@@ -404,6 +417,16 @@ void AUTWeap_RocketLauncher::PlayFiringEffects()
 				if (AnimInstance != NULL)
 				{
 					AnimInstance->Montage_Play(FiringAnimation[NumLoadedRockets], 1.f);
+				}
+			}
+
+			// try and play a firing animation for hands if specified
+			if (FiringAnimationHands.IsValidIndex(NumLoadedRockets) && FiringAnimationHands[NumLoadedRockets] != NULL)
+			{
+				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+				if (AnimInstance != NULL)
+				{
+					AnimInstance->Montage_Play(FiringAnimationHands[NumLoadedRockets], 1.f);
 				}
 			}
 
@@ -1027,6 +1050,12 @@ void AUTWeap_RocketLauncher::FiringExtraUpdated_Implementation(uint8 NewFlashExt
 				if (AnimInstance != NULL && LoadingAnimation.IsValidIndex(NumLoadedRockets - 1) && LoadingAnimation[NumLoadedRockets - 1] != NULL)
 				{
 					AnimInstance->Montage_Play(LoadingAnimation[NumLoadedRockets - 1], LoadingAnimation[NumLoadedRockets - 1]->SequenceLength / GetLoadTime(NumLoadedRockets - 1));
+				}
+
+				UAnimInstance* AnimInstanceHands = GetUTOwner()->FirstPersonMesh->GetAnimInstance();
+				if (AnimInstanceHands != NULL && LoadingAnimationHands.IsValidIndex(NumLoadedRockets - 1) && LoadingAnimationHands[NumLoadedRockets - 1] != NULL)
+				{
+					AnimInstanceHands->Montage_Play(LoadingAnimationHands[NumLoadedRockets - 1], LoadingAnimationHands[NumLoadedRockets - 1]->SequenceLength / GetLoadTime(NumLoadedRockets - 1));
 				}
 			}
 		}
