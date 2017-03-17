@@ -886,15 +886,18 @@ void UUTGameInstance::EndLevelLoading()
 
 #if !UE_SERVER
 
-	if ( GetMoviePlayer().IsValid() && GetMoviePlayer()->IsMovieCurrentlyPlaying() )
+	if (GIsRunning && !GIsRequestingExit)
 	{
-		GetMoviePlayer()->OnMoviePlaybackFinished().Clear();
-		GetMoviePlayer()->OnMoviePlaybackFinished().AddUObject(this, &UUTGameInstance::OnMoviePlaybackFinished);
-
-		IUnrealTournamentFullScreenMovieModule* const FullScreenMovieModule = FModuleManager::LoadModulePtr<IUnrealTournamentFullScreenMovieModule>("UnrealTournamentFullScreenMovie");
-		if (FullScreenMovieModule != nullptr)
+		if (GetMoviePlayer().IsValid() && GetMoviePlayer()->IsMovieCurrentlyPlaying())
 		{
-			FullScreenMovieModule->WaitForMovieToFinished();
+			GetMoviePlayer()->OnMoviePlaybackFinished().Clear();
+			GetMoviePlayer()->OnMoviePlaybackFinished().AddUObject(this, &UUTGameInstance::OnMoviePlaybackFinished);
+
+			IUnrealTournamentFullScreenMovieModule* const FullScreenMovieModule = FModuleManager::LoadModulePtr<IUnrealTournamentFullScreenMovieModule>("UnrealTournamentFullScreenMovie");
+			if (FullScreenMovieModule != nullptr)
+			{
+				FullScreenMovieModule->WaitForMovieToFinished();
+			}
 		}
 	}
 #endif
