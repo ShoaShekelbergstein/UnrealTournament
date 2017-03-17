@@ -2360,19 +2360,17 @@ AUTLineUpZone* AUTGameState::GetAppropriateSpawnList(LineUpTypes ZoneType)
 
 	if (GetWorld() && ZoneType != LineUpTypes::Invalid)
 	{
-		AUTTeamGameMode* TeamGM = Cast<AUTTeamGameMode>(GetWorld()->GetAuthGameMode());
-		
 		for (TActorIterator<AUTLineUpZone> It(GetWorld()); It; ++It)
 		{
 			if (It->ZoneType == ZoneType)
 			{
 				//Found a perfect match, so return it right away. Perfect match because this is a team spawn point in a team game
-				if (It->bIsTeamSpawnList && TeamGM &&  TeamGM->Teams.Num() >= 2)
+				if (It->bIsTeamSpawnList && bTeamGame)
 				{
 					return *It;
 				}
 				//Found a perfect match, so return it right away. Perfect match because this is not a team spawn point in a non-team game
-				else if (!It->bIsTeamSpawnList && (TeamGM == nullptr))
+				else if (!It->bIsTeamSpawnList && (!bTeamGame))
 				{
 					return *It;
 				}
