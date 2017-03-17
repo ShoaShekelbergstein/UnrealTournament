@@ -36,12 +36,15 @@ UUTBlurWidget::UUTBlurWidget(const FObjectInitializer& Initializer)
 	: Super(Initializer)
 	, ColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 1.f))
 {
+	// todo PLK - add default blur brush
+	/*
 	// Set the default fallback brush
 	static ConstructorHelpers::FObjectFinder<USlateBrushAsset> DefaultFallbackBrushFinder(TEXT("/Game/RestrictedAssets/UI/Textures/BlurFrame_Default_LowBrush"));
 	if (DefaultFallbackBrushFinder.Succeeded())
 	{
 		LowQualityFallbackBrush = DefaultFallbackBrushFinder.Object->Brush;
 	}
+	*/
 }
 
 void UUTBlurWidget::ReleaseSlateResources(bool bReleaseChildren)
