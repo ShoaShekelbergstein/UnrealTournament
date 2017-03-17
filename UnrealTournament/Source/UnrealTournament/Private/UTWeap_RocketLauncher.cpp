@@ -423,10 +423,10 @@ void AUTWeap_RocketLauncher::PlayFiringEffects()
 			// try and play a firing animation for hands if specified
 			if (FiringAnimationHands.IsValidIndex(NumLoadedRockets) && FiringAnimationHands[NumLoadedRockets] != NULL)
 			{
-				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-				if (AnimInstance != NULL)
+				UAnimInstance* AnimInstanceHands = GetUTOwner()->FirstPersonMesh->GetAnimInstance();
+				if (AnimInstanceHands != NULL)
 				{
-					AnimInstance->Montage_Play(FiringAnimationHands[NumLoadedRockets], 1.f);
+					AnimInstanceHands->Montage_Play(FiringAnimationHands[NumLoadedRockets], 1.f);
 				}
 			}
 
