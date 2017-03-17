@@ -15,6 +15,9 @@ class UNREALTOURNAMENT_API AUTWeapAttachment_LightningRifle : public AUTWeaponAt
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LinkGun)
 		float ChainRadius;
 
+	UPROPERTY()
+		UParticleSystem* RealFireEffect;
+
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void PlayFiringEffects() override;

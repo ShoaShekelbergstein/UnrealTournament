@@ -42,7 +42,7 @@ void AUTWeapAttachment_LightningRifle::Tick(float DeltaSeconds)
 void AUTWeapAttachment_LightningRifle::PlayFiringEffects()
 {
 	uint8 RealFireMode = UTOwner->FireMode;
-	UParticleSystem* RealFireEffect = (FireEffect.Num() > 1) ? FireEffect[1] : nullptr;
+	RealFireEffect = (FireEffect.Num() > 1) ? FireEffect[1] : nullptr;
 	if ((UTOwner->FlashExtra != 0))
 	{
 		UTOwner->FireMode = 1;
@@ -80,7 +80,7 @@ void AUTWeapAttachment_LightningRifle::ModifyFireEffect_Implementation(class UPa
 
 void AUTWeapAttachment_LightningRifle::ChainEffects()
 {
-	if (!UTOwner || !FireEffect.IsValidIndex(0) || !FireEffect[0])
+	if (!UTOwner || !RealFireEffect)
 	{
 		return;
 	}
@@ -119,7 +119,7 @@ void AUTWeapAttachment_LightningRifle::ChainEffects()
 		AActor* const Victim = It.Key();
 		AUTCharacter* const VictimPawn = Cast<AUTCharacter>(Victim);
 		FVector BeamSpawn = VictimPawn->GetActorLocation();
-		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), FireEffect[0], BeamHitLocation, (BeamSpawn - BeamHitLocation).Rotation(), true);
+		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), RealFireEffect, BeamHitLocation, (BeamSpawn - BeamHitLocation).Rotation(), true);
 		PSC->SetVectorParameter(NAME_HitLocation, BeamSpawn);
 		PSC->SetVectorParameter(NAME_LocalHitLocation, PSC->ComponentToWorld.InverseTransformPosition(BeamSpawn));
 		PSC->CustomTimeDilation = 0.2f;

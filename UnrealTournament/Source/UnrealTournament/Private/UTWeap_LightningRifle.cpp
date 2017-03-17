@@ -312,9 +312,9 @@ void AUTWeap_LightningRifle::ChainLightning(FHitResult Hit)
 	static FName NAME_HitLocation(TEXT("HitLocation"));
 	static FName NAME_LocalHitLocation(TEXT("LocalHitLocation"));
 	static FName NAME_ChainEffects = FName(TEXT("ChainEffects"));
-	FVector BeamHitLocation = UTOwner->FlashLocation;
+	FVector BeamHitLocation = Hit.Location;
 	FCollisionQueryParams SphereParams(NAME_ChainEffects, true, UTOwner);
-
+	
 	// query scene to see what we hit
 	TArray<FOverlapResult> Overlaps;
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
@@ -326,8 +326,7 @@ void AUTWeap_LightningRifle::ChainLightning(FHitResult Hit)
 	{
 		FOverlapResult const& Overlap = Overlaps[Idx];
 		AUTCharacter* const OverlapChar = Cast<AUTCharacter>(Overlap.GetActor());
-
-		if (OverlapChar && !OverlapChar->IsDead() && !GS->OnSameTeam(UTOwner, OverlapChar) && Overlap.Component.IsValid())
+		if (OverlapChar && !OverlapChar->IsDead() && (OverlapChar != Hit.Actor.Get()) && !GS->OnSameTeam(UTOwner, OverlapChar) && Overlap.Component.IsValid())
 		{
 			FHitResult ChainHit(OverlapChar, Overlap.Component.Get(), OverlapChar->GetActorLocation(), FVector(0, 0, 1.f));
 			if (UUTGameplayStatics::ComponentIsVisibleFrom(Overlap.Component.Get(), BeamHitLocation, UTOwner, ChainHit, nullptr))
