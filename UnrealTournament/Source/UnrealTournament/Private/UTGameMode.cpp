@@ -4105,7 +4105,8 @@ void AUTGameMode::GetGameURLOptions(const TArray<TSharedPtr<TAttributePropertyBa
 
 int32 AUTGameMode::AdjustedBotFillCount()
 {
-	int32 AdjustedBotFillCount = bTeamGame ? DefaultMaxPlayers : 5;
+	int32 DMFillCount = (GameSession && (GetNetMode() == NM_Standalone)) ? GameSession->MaxPlayers : FMath::Max(BotFillCount, 5);
+	int32 AdjustedBotFillCount = bTeamGame ? DefaultMaxPlayers : DMFillCount;
 	return (bIsVSAI || !GameSession) ? AdjustedBotFillCount : FMath::Min(GameSession->MaxPlayers, AdjustedBotFillCount);
 }
 
