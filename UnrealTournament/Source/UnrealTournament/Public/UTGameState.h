@@ -105,6 +105,10 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = GameState)
 		uint32 bDebugHitScanReplication : 1;
 
+	/** Replicated only for vs AI matches, 0 means not vs AI. */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
+		uint8 AIDifficulty;
+
 	/** If a single player's (or team's) score hits this limited, the game is over */
 	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadOnly, Category = GameState)
 	int32 GoalScore;

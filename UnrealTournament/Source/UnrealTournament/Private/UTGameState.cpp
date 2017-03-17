@@ -296,6 +296,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	bDebugHitScanReplication = false;
 
 	MapVoteListCount = -1;
+	AIDifficulty = 0;
 }
 
 void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const
@@ -315,7 +316,8 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME_CONDITION(AUTGameState, bIsQuickMatch, COND_InitialOnly);
 	DOREPLIFETIME(AUTGameState, TeamSwapSidesOffset);
 	DOREPLIFETIME_CONDITION(AUTGameState, bIsInstanceServer, COND_InitialOnly);
-	DOREPLIFETIME(AUTGameState, PlayersNeeded);  
+	DOREPLIFETIME_CONDITION(AUTGameState, AIDifficulty, COND_InitialOnly);
+	DOREPLIFETIME(AUTGameState, PlayersNeeded);
 	DOREPLIFETIME(AUTGameState, AvailableLoadout);
 	DOREPLIFETIME(AUTGameState, HubGuid);
 

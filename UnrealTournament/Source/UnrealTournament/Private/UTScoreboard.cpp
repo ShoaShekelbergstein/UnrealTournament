@@ -56,7 +56,7 @@ UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) 
 	static ConstructorHelpers::FObjectFinder<UTexture2D> HighlightIconFinder(TEXT("/Game/RestrictedAssets/UI/RankBadges/UT_RankedPlatinum_128x128.UT_RankedPlatinum_128x128"));
 	HighlightIcon = HighlightIconFinder.Object;
 
-	GameMessageText = NSLOCTEXT("UTScoreboard", "ScoreboardHeader", "{GameName} in {MapName}");
+	GameMessageText = NSLOCTEXT("UTScoreboard", "ScoreboardHeader", "{GameName}{Difficulty} in {MapName}");
 	CH_PlayerName = NSLOCTEXT("UTScoreboard", "ColumnHeader_PlayerName", "Player");
 	CH_Score = NSLOCTEXT("UTScoreboard", "ColumnHeader_PlayerScore", "Score");
 	CH_Kills = NSLOCTEXT("UTScoreboard", "ColumnHeader_PlayerKills", "K");
@@ -73,6 +73,9 @@ UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) 
 	NotReadyText = NSLOCTEXT("UTScoreboard", "NOTREADY", "");
 	WarmupText = NSLOCTEXT("UTScoreboard", "WARMUP", "WARMUP");
 	InteractiveText = NSLOCTEXT("UTScoreboard", "InteractiveText", "Press [ESC] to switch to interactive scoreboard.");
+	DifficultyText[0] = NSLOCTEXT("UTScoreboard", "Normal", " vs. Normal AI");
+	DifficultyText[1] = NSLOCTEXT("UTScoreboard", "Hard", " vs. Hard AI");
+	DifficultyText[2] = NSLOCTEXT("UTScoreboard", "Inhuman", " vs. Inhuman AI");
 
 	ReadyColor = FLinearColor::White;
 	ReadyScale = 1.f;
@@ -416,6 +419,7 @@ void UUTScoreboard::GetTitleMessageArgs(FFormatNamedArguments& Args) const
 {
 	FText MapName = UTHUDOwner ? FText::FromString(UTHUDOwner->GetWorld()->GetMapName().ToUpper()) : FText::GetEmpty();
 	FText GameName = FText::GetEmpty();
+	FText AIText = FText::GetEmpty();
 	if (UTGameState && UTGameState->GameModeClass)
 	{
 		AUTGameMode* DefaultGame = UTGameState->GameModeClass->GetDefaultObject<AUTGameMode>();
@@ -423,9 +427,15 @@ void UUTScoreboard::GetTitleMessageArgs(FFormatNamedArguments& Args) const
 		{
 			GameName = FText::FromString(DefaultGame->DisplayName.ToString().ToUpper());
 		}
+		if (UTGameState->AIDifficulty > 0)
+		{
+			int32 ClampedIndex = FMath::Clamp(int32(UTGameState->AIDifficulty-1), 0, 2);
+			AIText = DifficultyText[ClampedIndex];
+		}
 	}
 	Args.Add("GameName", FText::AsCultureInvariant(GameName));
 	Args.Add("MapName", FText::AsCultureInvariant(MapName));
+	Args.Add("Difficulty", FText::AsCultureInvariant(AIText));
 }
 
 void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)

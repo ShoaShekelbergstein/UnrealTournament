@@ -585,6 +585,14 @@ void AUTGameMode::InitGameState()
 		{
 			UTGameState->bAllowTeamSwitches = false;
 		}
+		if (bIsVSAI)
+		{
+			UTGameState->AIDifficulty = 1;
+			if (GameDifficulty > 2.f)
+			{
+				UTGameState->AIDifficulty = (GameDifficulty > 4.f) ? 3 : 2;
+			}
+		}
 		
 		// Setup the loadout replication
 		for (int32 i=0; i < AvailableLoadout.Num(); i++)
