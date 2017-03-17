@@ -448,6 +448,12 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	{
 		FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), FString::Printf(TEXT("Console - %s"), *DisplayName.ToString()));
 	}
+
+	if ((GetNetMode() == NM_Standalone) && (BotFillCount == 0) && !bRankedSession && !bOfflineChallenge && !bForceNoBots && !bDevServer && (GetWorld()->WorldType != EWorldType::PIE))
+	{
+		// if not competitive match, fill standalone match with bots
+		BotFillCount = FMath::Max(BotFillCount, AdjustedBotFillCount());
+	}
 }
 
 void AUTGameMode::AddMutator(const FString& MutatorPath)
