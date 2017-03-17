@@ -2546,7 +2546,7 @@ void AUTGameState::PrepareForIntermission()
 	for (FObjectIterator It(UParticleSystemComponent::StaticClass()); It; ++It)
 	{
 		UParticleSystemComponent* PSC = (UParticleSystemComponent*)*It;
-		if (PSC && PSC->GetOwner() && (PSC->GetOwner()->GetWorld() == GetWorld()) && !Cast<AUTWeapon>(PSC->GetOwner()))
+		if (PSC && !PSC->IsTemplate() && PSC->GetOwner() && (PSC->GetOwner()->GetWorld() == GetWorld()) && !Cast<AUTWeapon>(PSC->GetOwner()))
 		{
 			PSC->CustomTimeDilation = 0.001f;
 		}
