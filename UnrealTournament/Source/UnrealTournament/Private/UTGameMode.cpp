@@ -2007,14 +2007,6 @@ void AUTGameMode::RemoveAllPawns()
 		{
 			AUTPlayerState* NewPlayerState = PC->UTPlayerState;
 			NewPlayerState->bIsWarmingUp = false;
-			if (bHasRespawnChoices && !NewPlayerState->bIsSpectator && (!NewPlayerState->RespawnChoiceA || !NewPlayerState->RespawnChoiceB))
-			{
-				NewPlayerState->RespawnChoiceA = nullptr;
-				NewPlayerState->RespawnChoiceB = nullptr;
-				NewPlayerState->RespawnChoiceA = Cast<APlayerStart>(ChoosePlayerStart(PC));
-				NewPlayerState->RespawnChoiceB = Cast<APlayerStart>(ChoosePlayerStart(PC));
-				NewPlayerState->bChosePrimaryRespawnChoice = true;
-			}
 		}
 		if (Controller->GetPawn() != NULL)
 		{
@@ -3117,11 +3109,13 @@ FString AUTGameMode::InitNewPlayer(APlayerController* NewPlayerController, const
 	AUTPlayerState* NewPlayerState = Cast<AUTPlayerState>(NewPlayerController->PlayerState);
 	if (bHasRespawnChoices && NewPlayerState && !NewPlayerState->bIsSpectator)
 	{
+		bCheckAgainstPotentialStarts = true;
 		NewPlayerState->RespawnChoiceA = nullptr;
 		NewPlayerState->RespawnChoiceB = nullptr;
 		NewPlayerState->RespawnChoiceA = Cast<APlayerStart>(ChoosePlayerStart(NewPlayerController));
 		NewPlayerState->RespawnChoiceB = Cast<APlayerStart>(ChoosePlayerStart(NewPlayerController));
 		NewPlayerState->bChosePrimaryRespawnChoice = true;
+		bCheckAgainstPotentialStarts = false;
 	}
 
 	return ErrorMessage;
@@ -3263,7 +3257,7 @@ float AUTGameMode::RatePlayerStart(APlayerStart* P, AController* Player)
 			AController* OtherController = Iterator->Get();
 			ACharacter* OtherCharacter = Cast<ACharacter>( OtherController->GetPawn());
 
-			if ( OtherCharacter && OtherCharacter->PlayerState )
+			if ( OtherCharacter && OtherCharacter->PlayerState && (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive) )
 			{
 				if (FMath::Abs(StartLoc.Z - OtherCharacter->GetActorLocation().Z) < P->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + OtherCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()
 					&& (StartLoc - OtherCharacter->GetActorLocation()).Size2D() < P->GetCapsuleComponent()->GetScaledCapsuleRadius() + OtherCharacter->GetCapsuleComponent()->GetScaledCapsuleRadius())
@@ -3273,7 +3267,7 @@ float AUTGameMode::RatePlayerStart(APlayerStart* P, AController* Player)
 				}
 				Score += AdjustNearbyPlayerStartScore(Player, OtherController, OtherCharacter, StartLoc, P);
 			}
-			else if (bHasRespawnChoices && OtherController->PlayerState && !OtherController->GetPawn() && !OtherController->PlayerState->bOnlySpectator)
+			if (bHasRespawnChoices && bCheckAgainstPotentialStarts && OtherController->PlayerState && !OtherController->GetPawn() && !OtherController->PlayerState->bOnlySpectator)
 			{
 				// make sure no one else has this start as a pending choice
 				AUTPlayerState* OtherUTPS = Cast<AUTPlayerState>(OtherController->PlayerState);
@@ -3634,6 +3628,16 @@ void AUTGameMode::HandlePlayerIntro()
 	{
 		RemoveAllPawns();
 	}
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		AUTPlayerController* PC = Cast<AUTPlayerController>(It->Get());
+		if (PC && PC->UTPlayerState)
+		{
+			PC->UTPlayerState->bIsWarmingUp = false;
+			PC->UTPlayerState->RespawnChoiceA = nullptr;
+			PC->UTPlayerState->RespawnChoiceB = nullptr;
+		}
+	}
 
 	FTimerHandle TempHandle;
 	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::EndPlayerIntro, 7.5f*GetActorTimeDilation(), false);
@@ -3652,13 +3656,14 @@ void AUTGameMode::EndPlayerIntro()
 			}
 		}
 	}
+	bCheckAgainstPotentialStarts = true;
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		AUTPlayerController* PC = Cast<AUTPlayerController>(It->Get());
 		if (PC && PC->UTPlayerState)
 		{
 			PC->UTPlayerState->bIsWarmingUp = false;
-			if (bHasRespawnChoices && !PC->UTPlayerState->bIsSpectator && (!PC->UTPlayerState->RespawnChoiceA || !PC->UTPlayerState->RespawnChoiceB))
+			if (bHasRespawnChoices && !PC->UTPlayerState->bIsSpectator)
 			{
 				PC->UTPlayerState->RespawnChoiceA = nullptr;
 				PC->UTPlayerState->RespawnChoiceB = nullptr;
@@ -3668,7 +3673,7 @@ void AUTGameMode::EndPlayerIntro()
 			}
 		}
 	}
-
+	bCheckAgainstPotentialStarts = false;
 	SetMatchState(MatchState::CountdownToBegin);
 }
 

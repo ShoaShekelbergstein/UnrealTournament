@@ -190,6 +190,10 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	bool bHasRespawnChoices;
 
+	/** If true, when rating player starts also rate against potential starts (if bHasRespawnChoices is true).  Used before match to keep player start choices apart. */
+	UPROPERTY(BlueprintReadWrite, Category = Game)
+		bool bCheckAgainstPotentialStarts;
+
 	/** If true, allow announcements for pickup spawn. */
 	UPROPERTY(EditDefaultsOnly, Category=Game)
 		bool bAllowPickupAnnouncements;
