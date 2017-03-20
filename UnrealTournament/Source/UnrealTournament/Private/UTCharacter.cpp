@@ -1432,12 +1432,12 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 	}
 
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-	if (TargeterChar && GS && GS->bPlayStatusAnnouncements && Cast<AUTPlayerController>(GetController()))
+	if (TargeterChar && GS && GS->bPlayStatusAnnouncements)
 	{
 		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(PlayerState);
 		bool bBlueTeamWarning = (UTPlayerState && UTPlayerState->Team && (UTPlayerState->Team->TeamIndex == 1));
 		float LastSniperWarningTime = bBlueTeamWarning ? GS->LastBlueSniperWarningTime : GS->LastRedSniperWarningTime;
-		if (UTPlayerState && TargeterChar->GetWeapon() && TargeterChar->GetWeapon()->bSniping && (GetWorld()->GetTimeSeconds() - LastSniperWarningTime > 10.f) && ((TargeterChar->GetActorLocation() - GetActorLocation()).Size() > 4000.f))
+		if (UTPlayerState && TargeterChar->GetWeapon() && TargeterChar->GetWeapon()->bSniping && (GetWorld()->GetTimeSeconds() - LastSniperWarningTime > 10.f) && ((TargeterChar->GetActorLocation() - GetActorLocation()).Size() > 2000.f))
 		{
 			UTPlayerState->AnnounceStatus(StatusMessage::SniperSpotted);
 			if (bBlueTeamWarning)
@@ -1449,7 +1449,7 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 				GS->LastRedSniperWarningTime = GetWorld()->GetTimeSeconds();
 			}
 		}
-		else if (UTPlayerState && UTPlayerState->Team && (GetWorld()->GetTimeSeconds() - UTPlayerState->LastBehindYouTime > 8.f))
+		else if (UTPlayerState && UTPlayerState->Team && (GetWorld()->GetTimeSeconds() - UTPlayerState->LastBehindYouTime > 8.f) && Cast<AUTPlayerController>(GetController()))
 		{
 			// announce behind you if attacker is behind this player && teammate can see it
 			FVector ViewDir = GetActorRotation().Vector();
@@ -2596,6 +2596,7 @@ void AUTCharacter::SetFlashLocation(const FVector& InFlashLoc, uint8 InFireMode)
 		FlashLocation.Z += 1.1f;
 	}
 	FireMode = InFireMode;
+	UE_LOG(UT, Warning, TEXT("SetFlashLocation %f %f %f"), FlashLocation.X, FlashLocation.Y, FlashLocation.Z);
 	FiringInfoUpdated();
 }
 void AUTCharacter::IncrementFlashCount(uint8 InFireMode)
