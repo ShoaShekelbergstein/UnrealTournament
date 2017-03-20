@@ -1961,7 +1961,7 @@ void AUTGameMode::StartMatch()
 			UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
 			if (UTEngine)
 			{
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("CustomContent"), UTEngine->LocalContentChecksums.Num()));
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("CustomContent"), UTEngine->LocalContentChecksums.Num() + UTEngine->MountedDownloadedContentChecksums.Num()));
 			}
 			else
 			{
@@ -1987,7 +1987,7 @@ void AUTGameMode::StartMatch()
 			if (UTEngine && UTEngine->LocalContentChecksums.Num() > 0)
 			{
 				TArray<FAnalyticsEventAttribute> ParamArray;
-				ParamArray.Add(FAnalyticsEventAttribute(TEXT("CustomContent"), UTEngine->LocalContentChecksums.Num()));
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("CustomContent"), UTEngine->LocalContentChecksums.Num() + UTEngine->MountedDownloadedContentChecksums.Num()));
 				FUTAnalytics::SetMatchInitialParameters(this, ParamArray, false);
 				FUTAnalytics::GetProvider().RecordEvent(TEXT("MatchWithCustomContent"), ParamArray);
 			}
