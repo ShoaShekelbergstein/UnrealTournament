@@ -1246,13 +1246,19 @@ void UUTLocalPlayer::OnLoginStatusChanged(int32 LocalUserNum, ELoginStatus::Type
 void UUTLocalPlayer::ShowRankedReconnectDialog(const FString& UniqueID)
 {
 #if !UE_SERVER
-	if (UniqueID == LastRankedMatchPlayerId && !LastRankedMatchSessionId.IsEmpty())
+	if (!UniqueID.IsEmpty() && !LastRankedMatchPlayerId.IsEmpty() && !LastRankedMatchSessionId.IsEmpty() && UniqueID == LastRankedMatchPlayerId)
 	{
 		FDateTime LastRankedMatchTime;
-		if ( FDateTime::Parse(LastRankedMatchTimeString, LastRankedMatchTime) )
+		if ( !LastRankedMatchTimeString.IsEmpty() && FDateTime::Parse(LastRankedMatchTimeString, LastRankedMatchTime) )
 		{
 			if ((FDateTime::Now() - LastRankedMatchTime).GetMinutes() < 5.0f)
 			{
+				UE_LOG(UT,Warning,TEXT(""));
+				UE_LOG(UT,Warning,TEXT("RECONNECT DEBUG: id Check = '%s' vs '%s'"), *UniqueID, *LastRankedMatchPlayerId);
+				UE_LOG(UT,Warning,TEXT("RECONNECT DEBUG: SessionId Check = '%s'"), *LastRankedMatchSessionId);
+				UE_LOG(UT,Warning,TEXT("RECONNECT DEBUG: Date Check = '%s' vs '%s' = %f"), *FDateTime::Now().ToString(), *LastRankedMatchTime.ToString(),(FDateTime::Now() - LastRankedMatchTime).GetMinutes());
+				UE_LOG(UT,Warning,TEXT(""));
+
 				// Ask player if they want to try to rejoin last ranked game
 				ShowMessage(NSLOCTEXT("UTLocalPlayer", "RankedReconnectTitle", "Reconnect To Last Match?"),
 					NSLOCTEXT("UTLocalPlayer", "RankedReconnect", "Would you like to reconnect to the last match?"),
