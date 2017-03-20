@@ -289,10 +289,6 @@ protected:
 
 	TSharedPtr<SBox> BotSkillBox;
 
-	void AllowBotsChanged(ECheckBoxState NewState);
-	void RequireFullChanged(ECheckBoxState NewState);
-
-	
 	EVisibility GetAllowBotsVis() const;
 	EVisibility GetBotSkillVis() const;
 	EVisibility GetRequireFullVis() const;

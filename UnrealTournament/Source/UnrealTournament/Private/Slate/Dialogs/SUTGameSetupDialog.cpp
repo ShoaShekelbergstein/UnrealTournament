@@ -865,7 +865,6 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 			.IsChecked(ECheckBoxState::Unchecked)
 			.Style(SUTStyle::Get(), "UT.CheckBox")
 			.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","RequireFullTT","Multiplayer only!  If checked, the game will not start until all of the available slots in the match have been filled.")))
-			.OnCheckStateChanged(this, &SUTGameSetupDialog::RequireFullChanged)
 			.Visibility(this, &SUTGameSetupDialog::GetRequireFullVis)
 			.Content()
 			[
@@ -884,7 +883,6 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 				.IsChecked(ECheckBoxState::Checked)
 				.Style(SUTStyle::Get(), "UT.CheckBox")
 				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","AllowBotsTT","If checked, bots will be added to this match.")))
-				.OnCheckStateChanged(this, &SUTGameSetupDialog::AllowBotsChanged)
 				.Visibility(this, &SUTGameSetupDialog::GetAllowBotsVis)
 				.Content()
 				[
@@ -1103,16 +1101,6 @@ FText SUTGameSetupDialog::GetGameNameText() const
 void SUTGameSetupDialog::OnGameNameTextCommited(const FText &NewText,ETextCommit::Type CommitType)
 {
 	GameName = NewText;
-}
-
-void SUTGameSetupDialog::AllowBotsChanged(ECheckBoxState NewState)
-{
-	if (cbUseBots.IsValid() && cbUseBots->IsChecked()) cbRequireFull->SetIsChecked(ECheckBoxState::Unchecked);
-}
-
-void SUTGameSetupDialog::RequireFullChanged(ECheckBoxState NewState)
-{
-	if (cbRequireFull.IsValid() && cbRequireFull->IsChecked()) cbUseBots->SetIsChecked(ECheckBoxState::Unchecked);
 }
 
 
