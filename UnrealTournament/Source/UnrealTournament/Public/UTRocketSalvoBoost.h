@@ -78,13 +78,14 @@ public:
 	UFUNCTION()
 	virtual void FireSalvo()
 	{
-		TArray<APawn*> Targets = GatherTargets(UTOwner);
+		AUTCharacter* SavedUTOwner = UTOwner; // rocket launch can cause Owner to die
+		TArray<APawn*> Targets = GatherTargets(SavedUTOwner);
 		FActorSpawnParameters Params;
-		Params.Instigator = UTOwner;
-		const FVector SpawnLoc = UTOwner->GetActorLocation() + UTOwner->GetActorRotation().Vector() * UTOwner->GetSimpleCollisionRadius() + FVector(0.0f, 0.0f, UTOwner->GetSimpleCollisionHalfHeight() * 0.9f);
+		Params.Instigator = SavedUTOwner;
+		const FVector SpawnLoc = SavedUTOwner->GetActorLocation() + SavedUTOwner->GetActorRotation().Vector() * SavedUTOwner->GetSimpleCollisionRadius() + FVector(0.0f, 0.0f, SavedUTOwner->GetSimpleCollisionHalfHeight() * 0.9f);
 		for (int32 i = FMath::Clamp<int32>(Targets.Num(), MinRockets, MaxTargets) - 1; i >= 0; i--)
 		{
-			AUTProj_Rocket* Rocket = GetWorld()->SpawnActor<AUTProj_Rocket>(ProjClass, SpawnLoc + FMath::VRand() * (UTOwner->GetSimpleCollisionRadius() * 0.5f), UTOwner->GetActorRotation(), Params);
+			AUTProj_Rocket* Rocket = GetWorld()->SpawnActor<AUTProj_Rocket>(ProjClass, SpawnLoc + FMath::VRand() * (SavedUTOwner->GetSimpleCollisionRadius() * 0.5f), SavedUTOwner->GetActorRotation(), Params);
 			if (Rocket != nullptr && i < Targets.Num())
 			{
 				Rocket->TargetActor = Targets[i];
