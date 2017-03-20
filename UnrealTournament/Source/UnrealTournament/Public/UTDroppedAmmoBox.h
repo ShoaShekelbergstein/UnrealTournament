@@ -109,7 +109,7 @@ public:
 				for (UClass* AmmoType : AmmoClasses)
 				{
 					AUTWeapon* Weap = UTC->FindInventoryType(AmmoType->GetDefaultObject<AUTPickupAmmo>()->Ammo.Type, true);
-					if (Weap != nullptr)
+					if (Weap != nullptr && Weap->bWeaponStay)
 					{
 						bool bFound = false;
 						for (FStoredAmmo& AmmoItem : FinalAmmoAmounts)
