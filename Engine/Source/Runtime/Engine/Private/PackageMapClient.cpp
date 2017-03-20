@@ -20,6 +20,7 @@
 #include "Net/RepLayout.h"
 #include "ProfilingDebugging/ScopedTimers.h"
 #include "GameFramework/GameStateBase.h"
+#include "Engine/DemoNetDriver.h"
 
 // ( OutPacketId == GUID_PACKET_NOT_ACKED ) == NAK'd		(this GUID is not acked, and is not pending either, so sort of waiting)
 // ( OutPacketId == GUID_PACKET_ACKED )		== FULLY ACK'd	(this GUID is fully acked, and we no longer need to send full path)
@@ -2179,7 +2180,15 @@ void FNetGUIDCache::AsyncPackageCallback(const FName& PackageName, UPackage * Pa
 	//plk @debug
 	UE_LOG(LogNetPackageMap, Warning, TEXT("AsyncPackageCallback: Package loaded. Path: %s, NetGUID: %s"), *PackageName.ToString(), *NetGUID.ToString());
 
-	if (CacheObject->Object.IsValid() && CacheObject->Object->GetWorld())
+	// We assume that games never want to GC async loaded things during demo playback or gameplay
+	UDemoNetDriver* DemoNetDriver = Cast<UDemoNetDriver>(Driver);
+	if (DemoNetDriver)
+	{
+		TArray<UObject*> ObjectsToCache;
+		GetObjectsWithOuter(Package, ObjectsToCache, true);
+		DemoNetDriver->AsyncLoadedObjects.Append(ObjectsToCache);
+	}
+	else if (CacheObject->Object.IsValid() && CacheObject->Object->GetWorld())
 	{
 		AGameStateBase* GS = CacheObject->Object->GetWorld()->GetGameState();
 		if (GS)
