@@ -183,5 +183,26 @@ public:
 				AffectedItems.RemoveAt(i);
 			}
 		}
+		// expire slow effects on dead characters
+		for (int32 i = AffectedPawnPSCs.Num() - 1; i >= 0; i--)
+		{
+			if (AffectedPawnPSCs[i] == nullptr || AffectedPawnPSCs[i]->IsPendingKill())
+			{
+				AffectedPawnPSCs.RemoveAt(i);
+			}
+			else if (AffectedPawnPSCs[i]->GetOwner()->bTearOff || AffectedPawnPSCs[i]->GetOwner()->IsPendingKillPending())
+			{
+				if (AffectedPawnPSCs[i]->bIsActive)
+				{
+					AffectedPawnPSCs[i]->bAutoDestroy = true;
+					AffectedPawnPSCs[i]->DeactivateSystem();
+				}
+				else
+				{
+					AffectedPawnPSCs[i]->DestroyComponent();
+				}
+				AffectedPawnPSCs.RemoveAt(i);
+			}
+		}
 	}
 };
