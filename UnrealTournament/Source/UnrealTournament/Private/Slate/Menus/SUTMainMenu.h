@@ -16,7 +16,6 @@ class SUTFragCenterPanel;
 class SUTHomePanel;
 class SUTChallengePanel;
 class SUTUMGPanel;
-class SUTDifficultyLevel;
 
 #if !UE_SERVER
 class UNREALTOURNAMENT_API SUTMainMenu : public SUTMenuBase
@@ -67,7 +66,6 @@ protected:
 	TSharedPtr<SUTChallengePanel> ChallengePanel;
 	TSharedPtr<SUTUMGPanel> TutorialPanel;
 
-	TSharedPtr<SUTDifficultyLevel> DifficultyLevelDialog;
 
 public:
 	virtual ~SUTMainMenu();
@@ -85,8 +83,5 @@ public:
 	virtual void DeactivatePanel(TSharedPtr<class SUTPanelBase> PanelToDeactivate);
 
 	virtual void OnMenuOpened(const FString& Parameters);
-	void DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
-
-
 };
 #endif

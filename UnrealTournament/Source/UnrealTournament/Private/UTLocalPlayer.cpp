@@ -85,6 +85,7 @@
 #include "UTWorldSettings.h"
 #include "UTSpectatorCamera.h"
 #include "UTReplicatedGameRuleset.h"
+#include "SUTDifficultyLevel.h"
 
 #if WITH_SOCIAL
 #include "Social.h"
@@ -3431,48 +3432,59 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 	{
 		// Look to see if the player has played this tutorial before.
 
-		FName DesiredTutorial;
+		FName DesiredTutorial = NAME_None;
 		if (QuickMatchType == EEpicDefaultRuleTags::Deathmatch) DesiredTutorial = ETutorialTags::TUTTAG_DM;
 		if (QuickMatchType == EEpicDefaultRuleTags::TDM) DesiredTutorial = ETutorialTags::TUTTAG_TDM;
-		if (QuickMatchType == EEpicDefaultRuleTags::FlagRun) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
-		if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIEasy ||
-			QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAINormal ||
-			QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIHard ||
-			QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIHard3v5) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
+		if (QuickMatchType == EEpicDefaultRuleTags::FlagRun ||
+			QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAI) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
 		if (QuickMatchType == EEpicDefaultRuleTags::CTF) DesiredTutorial = ETutorialTags::TUTTAG_CTF;
 		if (QuickMatchType == EEpicDefaultRuleTags::TEAMSHOWDOWN) DesiredTutorial = ETutorialTags::TUTTAG_Showdown;
 		if (QuickMatchType == EEpicDefaultRuleTags::DUEL) DesiredTutorial = ETutorialTags::TUTTAG_Duel;
 
-
-		int32 DesiredTutorialMask = 0;
-		// Create a quick lookup table.
-		for (int32 i=0; i < TutorialData.Num(); i++)
+		// If there is a required Tutorial, look to see if we should play it first
+		if (DesiredTutorial != NAME_None)
 		{
-			if (TutorialData[i].Tag == DesiredTutorial)
+			int32 DesiredTutorialMask = 0;
+			// Create a quick lookup table.
+			for (int32 i=0; i < TutorialData.Num(); i++)
 			{
-				DesiredTutorialMask = TutorialData[i].Mask;
-				break;
+				if (TutorialData[i].Tag == DesiredTutorial)
+				{
+					DesiredTutorialMask = TutorialData[i].Mask;
+					break;
+				}
 			}
-		}
 
-		if (!FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")))
-		{
-			if ( !IsInAnActiveParty() && DesiredTutorialMask != 0 && !IsTutorialMaskCompleted(DesiredTutorialMask) )
+			if (!FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")))
 			{
-				// We need to play this tutorial instead.
-				LaunchTutorial(DesiredTutorial, QuickMatchType);
+				if ( !IsInAnActiveParty() && DesiredTutorialMask != 0 && !IsTutorialMaskCompleted(DesiredTutorialMask) )
+				{
+					// We need to play this tutorial instead.
+					LaunchTutorial(DesiredTutorial, QuickMatchType);
+					return;
+				}
+			}
+
+			// Use matchmaking for quickmatch
+			if (ServerBrowserWidget.IsValid() && ServerBrowserWidget->IsRefreshing())
+			{
+				ShowMatchmakingDialog();
+				PendingQuickmatchType = QuickMatchType;
+				GetWorld()->GetTimerManager().SetTimer(BrowerCheckHandle, this, &UUTLocalPlayer::CheckIfBrowserisDone, 1.0f, true);
 				return;
 			}
 		}
 
-		// Use matchmaking for quickmatch
-		if (ServerBrowserWidget.IsValid() && ServerBrowserWidget->IsRefreshing())
+		if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAI)
 		{
-			ShowMatchmakingDialog();
-			PendingQuickmatchType = QuickMatchType;
-			GetWorld()->GetTimerManager().SetTimer(BrowerCheckHandle, this, &UUTLocalPlayer::CheckIfBrowserisDone, 1.0f, true);
-			return;
+			DifficultyLevelDialog = SNew(SUTDifficultyLevel).PlayerOwner(this).OnDialogResult(FDialogResultDelegate::CreateUObject(this, &UUTLocalPlayer::DifficultyResult));
+			if (DifficultyLevelDialog.IsValid())
+			{
+				OpenDialog(DifficultyLevelDialog.ToSharedRef());
+				return;
+			}
 		}
+
 
 		int32 NewPlaylistId = 0;
 		if (QuickMatchType == EEpicDefaultRuleTags::Deathmatch)
@@ -3529,6 +3541,36 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 		MessageBox(NSLOCTEXT("Generic","LoginNeededTitle","Login Needed"), NSLOCTEXT("Generic","LoginNeededMessage","You need to login before you can do that."));
 	}
 }
+
+void UUTLocalPlayer::DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID)
+{
+	if (ButtonID != UTDIALOG_BUTTON_CANCEL && DifficultyLevelDialog.IsValid())
+	{
+		FString QuickMatchType = TEXT("");
+		switch (DifficultyLevelDialog->GetDifficulty())
+		{
+			case 1 : 
+				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAINormal; 
+				break;
+
+			case 2: 
+				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIHard; 
+				break;
+
+			case 3:
+				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIHard3v5;
+				break;
+
+			default: 
+				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIEasy; 
+				break;
+
+		}
+		StartQuickMatch(QuickMatchType);
+		DifficultyLevelDialog.Reset();
+	}
+}
+
 void UUTLocalPlayer::CloseQuickMatch()
 {
 	if (MatchmakingDialog.IsValid())

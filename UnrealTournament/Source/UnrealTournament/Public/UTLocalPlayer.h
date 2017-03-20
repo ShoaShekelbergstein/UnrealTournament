@@ -37,6 +37,7 @@ class SUTReportUserDialog;
 class UUTUMGWidget;
 class UUTUMGWidget_Toast;
 class AUTReplicatedGameRuleset;
+class SUTDifficultyLevel;
 
 enum class EMatchmakingCompleteResult : uint8;
 
@@ -1354,6 +1355,9 @@ protected:
 
 	void WaitingForListenServerDialogClosed(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 
+	TSharedPtr<SUTDifficultyLevel> DifficultyLevelDialog;
+	void DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
+
 public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
 	void CloseSavingWidget();
@@ -1387,6 +1391,8 @@ public:
 	 **/
 	UFUNCTION(BlueprintCallable, Category = Game)
 	bool IsKillcamReplayActive();
+
+
 
 };
 

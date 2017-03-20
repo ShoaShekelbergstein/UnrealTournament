@@ -446,48 +446,10 @@ void SUTMainMenu::QuickPlay(const FString& QuickMatchType)
 		return;
 	}
 
-	if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAI)
-	{
-		DifficultyLevelDialog = SNew(SUTDifficultyLevel).PlayerOwner(PlayerOwner).OnDialogResult(FDialogResultDelegate::CreateSP(this, &SUTMainMenu::DifficultyResult));
-		if (DifficultyLevelDialog.IsValid())
-		{
-			PlayerOwner->OpenDialog(DifficultyLevelDialog.ToSharedRef());
-			return;
-		}
-	}
-
 	UE_LOG(UT,Log,TEXT("QuickMatch: %s"),*QuickMatchType);
 	PlayerOwner->StartQuickMatch(QuickMatchType);
 }
 
-void SUTMainMenu::DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID)
-{
-	if (ButtonID != UTDIALOG_BUTTON_CANCEL && DifficultyLevelDialog.IsValid())
-	{
-		FString QuickMatchType = TEXT("");
-		switch (DifficultyLevelDialog->GetDifficulty())
-		{
-			case 1 : 
-				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAINormal; 
-				break;
-
-			case 2: 
-				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIHard; 
-				break;
-
-			case 3:
-				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIHard3v5;
-				break;
-
-			default: 
-				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIEasy; 
-				break;
-
-		}
-		PlayerOwner->StartQuickMatch(QuickMatchType);
-		DifficultyLevelDialog.Reset();
-	}
-}
 
 FReply SUTMainMenu::OnBootCampClick()
 {
