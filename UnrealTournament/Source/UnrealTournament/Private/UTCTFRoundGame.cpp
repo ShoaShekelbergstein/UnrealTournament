@@ -241,6 +241,11 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 				PC->SetViewTarget(IntermissionFocus);
 			}
 		}
+
+		if (UTGameState->LineUpHelper)
+		{
+			UTGameState->LineUpHelper->HandleLineUp(LineUpTypes::Intermission);
+		}
 	}
 
 	if (CTFGameState)
@@ -594,6 +599,11 @@ void AUTCTFRoundGame::HandleExitingIntermission()
 	CTFGameState->bIsAtIntermission = false;
 	CTFGameState->SetTimeLimit(TimeLimit);		// Reset the GameClock for the second time.
 	SetMatchState(MatchState::InProgress);
+
+	if (UTGameState->LineUpHelper)
+	{
+		UTGameState->LineUpHelper->CleanUp();
+	}
 }
 
 void AUTCTFRoundGame::InitFlagForRound(AUTCarriedObject* Flag)

@@ -20,6 +20,7 @@
 #include "UTSpectatorCamera.h"
 #include "UTPickupAmmo.h"
 #include "UTPlayerStart.h"
+#include "UTLineUpHelper.h"
 
 AUTShowdownGame::AUTShowdownGame(const FObjectInitializer& OI)
 : Super(OI)
@@ -471,9 +472,9 @@ void AUTShowdownGame::StartIntermission()
 
 void AUTShowdownGame::RestartPlayer(AController* aPlayer)
 {
-	if (GetMatchState() == MatchState::WaitingToStart)
+	if (GetMatchState() == MatchState::WaitingToStart || (UTGameState && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive))
 	{
-		// warmup
+		// warmup or line-up
 		Super::RestartPlayer(aPlayer);
 	}
 	else

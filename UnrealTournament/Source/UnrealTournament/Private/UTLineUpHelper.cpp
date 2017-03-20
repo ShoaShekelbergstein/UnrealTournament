@@ -525,43 +525,6 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 	}
 }
 
-LineUpTypes AUTLineUpHelper::GetLineUpTypeToPlay(UWorld* World)
-{
-	LineUpTypes ReturnZoneType = LineUpTypes::Invalid;
-
-	AUTGameState* UTGS = Cast<AUTGameState>(World->GetGameState());
-	if (UTGS == nullptr)
-	{
-		return ReturnZoneType;
-	}
-
-	AUTCTFGameState* UTCTFGS = Cast<AUTCTFGameState>(UTGS);
-	AUTCTFRoundGameState* UTCTFRoundGameGS = Cast<AUTCTFRoundGameState>(UTGS);
-
-	AUTCTFRoundGame* CTFGM = Cast<AUTCTFRoundGame>(World->GetAuthGameMode());
-
-	//The first intermission of CTF Round Game is actually an intro
-	if ((UTGS->GetMatchState() == MatchState::CountdownToBegin) || (UTGS->GetMatchState() == MatchState::PlayerIntro) || ((UTGS->GetMatchState() == MatchState::MatchIntermission) && UTCTFRoundGameGS && (UTCTFRoundGameGS->CTFRound == 1) && (!UTCTFRoundGameGS || UTCTFRoundGameGS->GetScoringPlays().Num() == 0)))
-	{
-		ReturnZoneType = LineUpTypes::Intro;
-	}
-
-	else if (UTGS->GetMatchState() == MatchState::MatchIntermission)
-	{
-		ReturnZoneType = LineUpTypes::Intermission;
-	}
-
-	else if (UTGS->GetMatchState() == MatchState::WaitingPostMatch)
-	{
-		ReturnZoneType = LineUpTypes::PostMatch;
-	}
-
-	return ReturnZoneType;
-}
-
-
-static int32 WeaponIndex = 0;
-
 void AUTLineUpHelper::HandleEndMatchSummary(LineUpTypes SummaryType)
 {
 	MovePlayersDelayed(SummaryType, MatchSummaryHandle, TimerDelayForEndMatch);

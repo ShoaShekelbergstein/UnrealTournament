@@ -2077,6 +2077,12 @@ void AUTGameMode::HandleMatchHasStarted()
 	UTGameState->SetTimeLimit(TimeLimit);
 	bFirstBloodOccurred = false;
 	AnnounceMatchStart();
+
+	//Make sure we aren't still in a line up.
+	if (UTGameState->LineUpHelper)
+	{
+		UTGameState->LineUpHelper->CleanUp();
+	}
 }
 
 void AUTGameMode::AnnounceMatchStart()
@@ -3529,21 +3535,6 @@ void AUTGameMode::SetMatchState(FName NewState)
 		UTGameState->SetMatchState(NewState);
 	}
 
-	if (UTGameState && UTGameState->LineUpHelper)
-	{
-		LineUpTypes PlayType = UTGameState->LineUpHelper->GetLineUpTypeToPlay(GetWorld());
-
-		if (PlayType != UTGameState->LineUpHelper->LastActiveType)
-		{
-			UTGameState->LineUpHelper->CleanUp();
-		}
-
-		if (!UTGameState->LineUpHelper->bIsActive)
-		{
-			UTGameState->LineUpHelper->HandleLineUp(PlayType);
-		}
-	}
-
 	CallMatchStateChangeNotify();
 	K2_OnSetMatchState(NewState);
 
@@ -3609,6 +3600,11 @@ void AUTGameMode::HandleMatchHasEnded()
 	{
 		NavData->SaveMapLearningData();
 	}
+
+	if (UTGameState->LineUpHelper)
+	{
+		UTGameState->LineUpHelper->HandleLineUp(LineUpTypes::PostMatch);
+	}
 }
 
 void AUTGameMode::HandleEnteringOvertime()
@@ -3637,6 +3633,12 @@ void AUTGameMode::HandlePlayerIntro()
 			PC->UTPlayerState->RespawnChoiceA = nullptr;
 			PC->UTPlayerState->RespawnChoiceB = nullptr;
 		}
+	}
+
+
+	if (UTGameState && UTGameState->LineUpHelper)
+	{
+		UTGameState->LineUpHelper->HandleLineUp(LineUpTypes::Intro);
 	}
 
 	FTimerHandle TempHandle;
@@ -3673,6 +3675,13 @@ void AUTGameMode::EndPlayerIntro()
 			}
 		}
 	}
+
+	//Make sure we aren't still in a line up.
+	if (UTGameState->LineUpHelper)
+	{
+		UTGameState->LineUpHelper->CleanUp();
+	}
+
 	bCheckAgainstPotentialStarts = false;
 	SetMatchState(MatchState::CountdownToBegin);
 }

@@ -540,7 +540,7 @@ void AUTLineUpZone::DefaultCreateForFFAIntro()
 {
 	TArray<FVector> FFAStartLocations;
 
-	FFAStartLocations.SetNum(10);
+	FFAStartLocations.SetNum(8);
 
 	FFAStartLocations[0] = FVector(50.0f,50.0f, 0.0f);
 	FFAStartLocations[1] = FVector(50.0,-50.0f, 0.0f);
@@ -556,14 +556,14 @@ void AUTLineUpZone::DefaultCreateForFFAIntro()
 	BlueAndLosingTeamSpawnLocations.Empty();
 	FFATeamSpawnLocations.Empty();
 
-	FFATeamSpawnLocations.SetNum(10);
+	FFATeamSpawnLocations.SetNum(FFAStartLocations.Num());
 
 	FRotator Rotation;
 	Rotation.Pitch = 0.f;
 	Rotation.Roll = 0.f;
 	Rotation.Yaw = -180.f;
 
-	for (int FFAIndex = 0; FFAIndex < 10; ++FFAIndex)
+	for (int FFAIndex = 0; FFAIndex < FFAStartLocations.Num(); ++FFAIndex)
 	{
 		FFATeamSpawnLocations[FFAIndex].SetTranslation(FFAStartLocations[FFAIndex]);
 		FFATeamSpawnLocations[FFAIndex].SetRotation(Rotation.Quaternion());
