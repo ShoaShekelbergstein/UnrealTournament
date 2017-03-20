@@ -1437,16 +1437,34 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(PlayerState);
 		bool bBlueTeamWarning = (UTPlayerState && UTPlayerState->Team && (UTPlayerState->Team->TeamIndex == 1));
 		float LastSniperWarningTime = bBlueTeamWarning ? GS->LastBlueSniperWarningTime : GS->LastRedSniperWarningTime;
-		if (UTPlayerState && TargeterChar->GetWeapon() && TargeterChar->GetWeapon()->bSniping && (GetWorld()->GetTimeSeconds() - LastSniperWarningTime > 10.f) && ((TargeterChar->GetActorLocation() - GetActorLocation()).Size() > 2000.f))
+		if (UTPlayerState && TargeterChar->GetWeapon() && TargeterChar->GetController() && TargeterChar->GetWeapon()->bSniping && (GetWorld()->GetTimeSeconds() - LastSniperWarningTime > 10.f) && ((TargeterChar->GetActorLocation() - GetActorLocation()).Size() > 2000.f))
 		{
 			UTPlayerState->AnnounceStatus(StatusMessage::SniperSpotted);
-			if (bBlueTeamWarning)
+
+			UTPlayerState->GetCharacterVoiceClass();
+			if (UTPlayerState->CharacterVoice != NULL)
 			{
-				GS->LastBlueSniperWarningTime = GetWorld()->GetTimeSeconds();
-			}
-			else
-			{
-				GS->LastRedSniperWarningTime = GetWorld()->GetTimeSeconds();
+				// send to same team with LOS to sniper only
+				int32 Switch = UTPlayerState->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::SniperSpotted);
+				if (Switch >= 0)
+				{
+					for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+					{
+						AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+						if (PC && PC->GetPawn() && GS->OnSameTeam(this, PC) && TargeterChar->GetController()->LineOfSightTo(PC->GetPawn()))
+						{
+							PC->ClientReceiveLocalizedMessage(UTPlayerState->CharacterVoice, Switch, UTPlayerState, PC->PlayerState, NULL);
+						}
+					}
+				}
+				if (bBlueTeamWarning)
+				{
+					GS->LastBlueSniperWarningTime = GetWorld()->GetTimeSeconds();
+				}
+				else
+				{
+					GS->LastRedSniperWarningTime = GetWorld()->GetTimeSeconds();
+				}
 			}
 		}
 		else if (UTPlayerState && UTPlayerState->Team && (GetWorld()->GetTimeSeconds() - UTPlayerState->LastBehindYouTime > 8.f) && Cast<AUTPlayerController>(GetController()))
