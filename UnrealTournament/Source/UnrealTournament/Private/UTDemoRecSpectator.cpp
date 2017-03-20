@@ -410,7 +410,8 @@ void AUTDemoRecSpectator::SetPlayer(UPlayer* InPlayer)
 		SpawnInfo.Instigator = Instigator;
 		SpawnInfo.ObjectFlags |= RF_Transient;	// We never want to save HUDs into a map
 
-		MyHUD = GetWorld()->SpawnActor<AHUD>(AUTHUD_InstantReplay::StaticClass(), SpawnInfo);		
+		MyHUD = GetWorld()->SpawnActor<AHUD>(AUTHUD_InstantReplay::StaticClass(), SpawnInfo);
+		MyUTHUD = Cast<AUTHUD>(MyHUD);
 	}
 }
 
@@ -549,6 +550,8 @@ void AUTDemoRecSpectator::ClientReceiveLocalizedMessage_Implementation(TSubclass
 			}
 		}
 	}
+
+	//UE_LOG(UT, Warning, TEXT("%s %d"), *Message->GetName(), Switch);
 
 	Super::ClientReceiveLocalizedMessage_Implementation(Message, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
 }
