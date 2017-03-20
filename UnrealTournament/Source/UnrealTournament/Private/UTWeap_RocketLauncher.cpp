@@ -104,7 +104,7 @@ void AUTWeap_RocketLauncher::BeginLoadRocket()
 		{
 			GetMesh()->GetAnimInstance()->Montage_Play(PickedAnimation, PickedAnimation->SequenceLength / GetLoadTime(NumLoadedBarrels));
 		}
-		if (GetUTOwner() && GetUTOwner()->FirstPersonMesh && PickedHandHanim != nullptr)
+		if (GetUTOwner() != nullptr && GetUTOwner()->FirstPersonMesh != nullptr && GetUTOwner()->FirstPersonMesh->GetAnimInstance() != nullptr && PickedHandHanim != nullptr)
 		{
 			GetUTOwner()->FirstPersonMesh->GetAnimInstance()->Montage_Play(PickedHandHanim, PickedHandHanim->SequenceLength / GetLoadTime(NumLoadedBarrels));
 		}
