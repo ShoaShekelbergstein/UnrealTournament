@@ -26,12 +26,16 @@ int32 UUTResetLineUpDefaultsCommandlet::Main(const FString& Params)
 	ParseCommandLine(*Params, Tokens, Switches, SwitchParams);
 
 	bool bRestrictedOnly = false;
-	bool bBloomOnly = false;
+	bool bForceSnapToFloor = false;
 	for (auto It = Switches.CreateConstIterator(); It; ++It)
 	{
 		if (*It == TEXT("RestrictedOnly"))
 		{
 			bRestrictedOnly = true;
+		}
+		if (*It == TEXT("SnapToFloor"))
+		{
+			bForceSnapToFloor = true;
 		}
 	}
 
@@ -99,6 +103,12 @@ int32 UUTResetLineUpDefaultsCommandlet::Main(const FString& Params)
 			// iterate through all the post process volumes
 			for (TActorIterator<AUTLineUpZone> It(World, AUTLineUpZone::StaticClass()); It; ++It)
 			{
+				bool bOriginalSnapSetting = It->bSnapToFloor;
+				if (bForceSnapToFloor)
+				{
+					It->bSnapToFloor = true;
+				}
+
 				if (It->bIsTeamSpawnList)
 				{
 					if (It->ZoneType == LineUpTypes::Intro)
@@ -130,6 +140,11 @@ int32 UUTResetLineUpDefaultsCommandlet::Main(const FString& Params)
 					}
 				}
 
+				if (bForceSnapToFloor)
+				{
+					It->bSnapToFloor = bOriginalSnapSetting;
+				}
+				
 				Package->MarkPackageDirty();
 				bIsDirty = true;
 			}
