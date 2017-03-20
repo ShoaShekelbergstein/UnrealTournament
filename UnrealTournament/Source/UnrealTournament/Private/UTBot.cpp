@@ -347,6 +347,7 @@ void AUTBot::InitializeSkill(float NewBaseSkill)
 		PS->DMMatchesPlayed = 255;
 		PS->ShowdownMatchesPlayed = 255;
 		PS->FlagRunMatchesPlayed = 255;
+		PS->Ping = (90 - 10 * Skill) / 4;
 	}
 
 	float AimingSkill = Skill + Personality.Accuracy;
