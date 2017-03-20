@@ -2596,7 +2596,6 @@ void AUTCharacter::SetFlashLocation(const FVector& InFlashLoc, uint8 InFireMode)
 		FlashLocation.Z += 1.1f;
 	}
 	FireMode = InFireMode;
-	UE_LOG(UT, Warning, TEXT("SetFlashLocation %f %f %f"), FlashLocation.X, FlashLocation.Y, FlashLocation.Z);
 	FiringInfoUpdated();
 }
 void AUTCharacter::IncrementFlashCount(uint8 InFireMode)
