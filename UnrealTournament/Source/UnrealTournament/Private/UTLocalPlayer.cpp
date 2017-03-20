@@ -136,9 +136,9 @@ UUTLocalPlayer::UUTLocalPlayer(const class FObjectInitializer& ObjectInitializer
 	QMMinEloRangeBeforeHosting = 300;
 	QMMinEloSearchStep = 100;
 
-	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Movement, TUTORIAL_Movement,TEXT("/Game/RestrictedAssets/Tutorials/TUT-MovementTraining"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTutorialGameMode.UTTutorialGameMode_C?timelimit=0"), TEXT(""), TEXT("Movement Tutorial")));
-	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Weapons, TUTOIRAL_Weapon,TEXT("/Game/RestrictedAssets/Tutorials/TUT-WeaponTraining"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTutorialGameMode.UTTutorialGameMode_C?timelimit=0"), TEXT(""), TEXT("Weapons Tutorial")));
-	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Pickups, TUTORIAL_Pickups,TEXT("/Game/RestrictedAssets/Tutorials/TUT-PickUpTraining"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTutorialGameMode.UTTutorialGameMode_C?timelimit=0"), TEXT(""), TEXT("Pickups Tutorial")));
+	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Movement, TUTORIAL_Movement,TEXT("/Game/RestrictedAssets/Tutorials/TUT-MovementTraining"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTutorialGameMode.UTTutorialGameMode_C?timelimit=0?botfill=1"), TEXT(""), TEXT("Movement Tutorial")));
+	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Weapons, TUTOIRAL_Weapon,TEXT("/Game/RestrictedAssets/Tutorials/TUT-WeaponTraining"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTutorialGameMode.UTTutorialGameMode_C?timelimit=0?botfill=1"), TEXT(""), TEXT("Weapons Tutorial")));
+	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Pickups, TUTORIAL_Pickups,TEXT("/Game/RestrictedAssets/Tutorials/TUT-PickUpTraining"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTutorialGameMode.UTTutorialGameMode_C?timelimit=0?botfill=1"), TEXT(""), TEXT("Pickups Tutorial")));
 
 	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_DM, TUTORIAL_DM,TEXT("/Game/RestrictedAssets/Maps/DM-Underland"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTDMGameMode_Tut.UTDMGameMode_Tut_C?timelimit=10?GoalScore=0?botfill=4?Difficulty=2"), TEXT("TutorialMovies/dm-tutorial"), TEXT("Deathmatch Tutorial")));
 	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Flagrun, TUTORIAL_FlagRun,TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Fort"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTFlagrunGame_Tut.UTFlagrunGame_Tut_C?GoalScore=0?botfill=10?Difficulty=3"), TEXT("TutorialMovies/flagrun-tutorial"), TEXT("Flagrun Tutorial")));
@@ -3437,7 +3437,8 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 		if (QuickMatchType == EEpicDefaultRuleTags::FlagRun) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
 		if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIEasy ||
 			QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAINormal ||
-			QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIHard) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
+			QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIHard ||
+			QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIHard3v5) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
 		if (QuickMatchType == EEpicDefaultRuleTags::CTF) DesiredTutorial = ETutorialTags::TUTTAG_CTF;
 		if (QuickMatchType == EEpicDefaultRuleTags::TEAMSHOWDOWN) DesiredTutorial = ETutorialTags::TUTTAG_Showdown;
 		if (QuickMatchType == EEpicDefaultRuleTags::DUEL) DesiredTutorial = ETutorialTags::TUTTAG_Duel;
