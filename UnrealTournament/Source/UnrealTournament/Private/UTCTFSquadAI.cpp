@@ -35,11 +35,33 @@ void AUTCTFSquadAI::Initialize(AUTTeamInfo* InTeam, FName InOrders)
 	}
 }
 
+FName AUTCTFSquadAI::GetCurrentOrders(AUTBot* B)
+{
+	// if defense bot got the flag, flip attack/defense orders so we maintain proper allocations
+	bool bFlipOrders = false;
+	if (EnemyBase != nullptr && EnemyBase->GetCarriedObjectHolder() != nullptr)
+	{
+		AUTBot* CarrierB = Cast<AUTBot>(EnemyBase->GetCarriedObjectHolder()->GetOwner());
+		if (CarrierB != nullptr && CarrierB->GetSquad() != nullptr && CarrierB->GetSquad()->Orders == NAME_Defend)
+		{
+			bFlipOrders = true;
+		}
+	}
+	if (bFlipOrders && (Orders == NAME_Attack || Orders == NAME_Defend))
+	{
+		return (Orders == NAME_Attack) ? NAME_Defend : NAME_Attack;
+	}
+	else
+	{
+		return Super::GetCurrentOrders(B);
+	}
+}
+
 bool AUTCTFSquadAI::MustKeepEnemy(AUTBot* B, APawn* TheEnemy)
 {
-	// must keep enemy flag holder
+	// must keep enemy flag holder, unless we're supposed to escort our FC ('attack' orders)
 	AUTCharacter* UTC = Cast<AUTCharacter>(TheEnemy);
-	return (UTC != NULL && UTC->GetCarriedObject() != NULL && UTC->GetCarriedObject()->GetTeamNum() == GetTeamNum());
+	return (UTC != NULL && UTC->GetCarriedObject() != NULL && UTC->GetCarriedObject()->GetTeamNum() == GetTeamNum() && (EnemyBase == nullptr || EnemyBase->GetCarriedObjectState() != CarriedObjectState::Held || GetCurrentOrders(B) != NAME_Attack));
 }
 
 bool AUTCTFSquadAI::ShouldUseTranslocator(AUTBot* B)
