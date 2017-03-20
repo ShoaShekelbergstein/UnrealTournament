@@ -532,13 +532,23 @@ void SUTInGameMenu::ShowHomePanel()
 		{
 			if (PlayerOwner->GetWorld()->GetGameState<AUTLobbyGameState>())
 			{
-				Msg = NSLOCTEXT("SUTInGameMenu", "SUTInGameMenuBack", "Are you sure you want to leave the hub and return to the main menu? If you are in a party, you will leave your current party.");
+				Msg = NSLOCTEXT("SUTInGameMenu", "SUTInGameMenuBack", "Are you sure you want to leave the hub and return to the main menu?");
 			}
 			else
 			{
-				Msg = NSLOCTEXT("SUTInGameMenu", "SUTInGameMenuBackDefault", "Are you sure you want to leave the game and return to the main menu? If you are in a party, you will leave your current party.");
+				Msg = NSLOCTEXT("SUTInGameMenu", "SUTInGameMenuBackDefault", "Are you sure you want to leave the game and return to the main menu?");
 			}
 		}
+
+		if (PlayerOwner->IsPartyLeader())
+		{
+			Msg = FText::Format(NSLOCTEXT("SUTInGameMenu","LeaderFormat","You are the leader of your party.  If you leave now, your party will follow.  {0}"), Msg);	
+		}
+		else if (PlayerOwner->IsInAnActiveParty())
+		{
+			Msg = FText::Format(NSLOCTEXT("SUTInGameMenu","FollowerFormat","You are in a party. If you leave, you will leave your current party.  {0}"), Msg);	
+		}
+
 
 		SAssignNew(MessageDialog, SUTMessageBoxDialog)
 			.PlayerOwner(PlayerOwner)
