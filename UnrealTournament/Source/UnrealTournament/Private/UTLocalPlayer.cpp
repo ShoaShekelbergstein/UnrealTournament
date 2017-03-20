@@ -6984,3 +6984,12 @@ bool UUTLocalPlayer::IsKillcamReplayActive()
 	return (KillcamPlayback != nullptr && KillcamPlayback->IsEnabled());
 }
 
+void UUTLocalPlayer::RegainFocus()
+{
+#if !UE_SERVER
+	if (DesktopSlateWidget.IsValid())
+	{
+		DesktopSlateWidget->HandleWindowActivated();
+	}
+#endif
+}

@@ -1393,6 +1393,8 @@ public:
 	bool IsKillcamReplayActive();
 
 
+	void RegainFocus();
+
 
 };
 

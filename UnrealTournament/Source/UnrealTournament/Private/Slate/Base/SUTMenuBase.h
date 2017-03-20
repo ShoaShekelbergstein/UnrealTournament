@@ -174,9 +174,9 @@ protected:
 	FSlateColor GetLabelColor() const;
 
 	TWeakPtr<SWindow> SlateParentWindowPtr;
-	void HandleWindowActivated();
 	FDelegateHandle OnActivateHandle;
 public:
+	void HandleWindowActivated();
 	virtual bool SkipWorldRender();
 	
 

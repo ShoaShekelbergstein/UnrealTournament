@@ -344,6 +344,22 @@ void UUTGameEngine::Tick(float DeltaSeconds, bool bIdleMode)
 	{
 		FPlatformMisc::RequestExit(false);
 	}
+
+#if !UE_SERVER
+	if (GWorld->GetNetMode() != NM_DedicatedServer)
+	{
+		TSharedPtr<SWidget> Widget = FSlateApplication::Get().GetUserFocusedWidget(0);
+		TSharedPtr<SViewport> Viewport = FSlateApplication::Get().GetGameViewport();
+		if (Widget.IsValid() && Viewport.IsValid() && Widget->GetType() == Viewport->GetType())
+		{
+			UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(GetLocalPlayerFromControllerId(GWorld,0));
+			if (UTLocalPlayer != NULL)
+			{
+				UTLocalPlayer->RegainFocus();
+			}
+		}
+	}
+#endif
 }
 
 EBrowseReturnVal::Type UUTGameEngine::Browse( FWorldContext& WorldContext, FURL URL, FString& Error )

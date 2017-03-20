@@ -1174,7 +1174,6 @@ FSlateColor SUTMenuBase::GetLabelColor() const
 void SUTMenuBase::HandleWindowActivated()
 {
 	FSlateApplication::Get().SetAllUserFocus(SharedThis(this), EFocusCause::WindowActivate);
-	UE_LOG(UT,Verbose,TEXT("Menu has been activated."));
 }
 
 
