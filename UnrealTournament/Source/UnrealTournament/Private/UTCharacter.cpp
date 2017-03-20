@@ -2713,6 +2713,8 @@ void AUTCharacter::FiringInfoUpdated()
 			WeaponAttachment->StopFiringEffects();
 		}
 	}
+
+	K2_FiringInfoUpdated();
 }
 
 void AUTCharacter::FiringExtraUpdated()
@@ -4458,13 +4460,22 @@ void AUTCharacter::UpdateSkin()
 {
 	if (ReplicatedBodyMaterial != NULL)
 	{
+		if (OverrideBodyMaterialMID == nullptr || OverrideBodyMaterialMID->Parent != ReplicatedBodyMaterial)
+		{
+			OverrideBodyMaterialMID = UMaterialInstanceDynamic::Create(ReplicatedBodyMaterial, this);
+		}
 		for (int32 i = 0; i < GetMesh()->GetNumMaterials(); i++)
 		{
-			GetMesh()->SetMaterial(i, ReplicatedBodyMaterial);
+			GetMesh()->SetMaterial(i, OverrideBodyMaterialMID);
+		}
+		UMaterialInterface* Skin1P = (ReplicatedBodyMaterial1P != NULL) ? ReplicatedBodyMaterial1P : ReplicatedBodyMaterial;
+		if (OverrideBodyMaterial1PMID == nullptr || OverrideBodyMaterial1PMID->Parent != Skin1P)
+		{
+			OverrideBodyMaterial1PMID = UMaterialInstanceDynamic::Create(Skin1P, this);
 		}
 		for (int32 i = 0; i < FirstPersonMesh->GetNumMaterials(); i++)
 		{
-			FirstPersonMesh->SetMaterial(i, (ReplicatedBodyMaterial1P != NULL) ? ReplicatedBodyMaterial1P : ReplicatedBodyMaterial);
+			FirstPersonMesh->SetMaterial(i, OverrideBodyMaterial1PMID);
 		}
 	}
 	else

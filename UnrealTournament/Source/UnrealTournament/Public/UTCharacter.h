@@ -725,6 +725,9 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 
 	/** called when firing variables are updated to trigger/stop effects */
 	virtual void FiringInfoUpdated();
+	/** blueprint hook into FiringInfoUpdated() - called AFTER normal weapon effects */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon", meta = (DisplayName = "Firing Info Updated"))
+	void K2_FiringInfoUpdated();
 	/** called when FlashExtra is updated; routes call to weapon attachment */
 	UFUNCTION()
 	virtual void FiringExtraUpdated();
@@ -2133,6 +2136,10 @@ protected:
 	UMaterialInterface* ReplicatedBodyMaterial;
 	UPROPERTY(Replicated, ReplicatedUsing = UpdateSkin)
 	UMaterialInterface* ReplicatedBodyMaterial1P;
+	UPROPERTY(BlueprintReadOnly)
+	UMaterialInstanceDynamic* OverrideBodyMaterialMID;
+	UPROPERTY(BlueprintReadOnly)
+	UMaterialInstanceDynamic* OverrideBodyMaterial1PMID;
 
 	/** runtime material instance for setting body material parameters (team color, etc) */
 	UPROPERTY(BlueprintReadOnly, Category = Pawn)
