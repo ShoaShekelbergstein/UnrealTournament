@@ -47,6 +47,7 @@ AUTTeamGameMode::AUTTeamGameMode(const FObjectInitializer& ObjectInitializer)
 	bAnnounceTeam = true;
 	bHighScorerPerTeamBasis = true;
 	ScoringPlaysDisplayTime = 6.f;
+	BotTeamSize = 5;
 }
 
 void AUTTeamGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -60,6 +61,7 @@ void AUTTeamGameMode::InitGame(const FString& MapName, const FString& Options, F
 		NumTeams = UGameplayStatics::GetIntOption(Options, TEXT("NumTeams"), NumTeams);
 	}
 	NumTeams = FMath::Max<uint8>(NumTeams, 2);
+	BotTeamSize = UGameplayStatics::GetIntOption(Options, TEXT("BotTeam"), BotTeamSize);
 
 	if (TeamClass == NULL)
 	{
@@ -90,6 +92,18 @@ void AUTTeamGameMode::InitGameState()
 {
 	Super::InitGameState();
 	Cast<AUTGameState>(GameState)->Teams = Teams;
+}
+
+int32 AUTTeamGameMode::AdjustedBotFillCount()
+{
+	if (bIsVSAI)
+	{
+		return GameSession ? GameSession->MaxPlayers + BotTeamSize : DefaultMaxPlayers;
+	}
+	else
+	{
+		return Super::AdjustedBotFillCount();
+	}
 }
 
 void AUTTeamGameMode::AnnounceMatchStart()
@@ -222,6 +236,10 @@ bool AUTTeamGameMode::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroad
 			if (bIsVSAI && Cast<AUTPlayerController>(Player))
 			{
 				NewTeam = 1;
+			}
+			else if (bIsVSAI && Teams.IsValidIndex(1) && GameSession && (int32(Teams[1]->GetSize()) >= GameSession->MaxPlayers))
+			{
+				NewTeam = 0;
 			}
 			else if (!Teams.IsValidIndex(NewTeam))
 			{
@@ -652,35 +670,55 @@ UUTBotCharacter* AUTTeamGameMode::ChooseRandomCharacter(uint8 TeamNum)
 	}
 }
 
+bool AUTTeamGameMode::FoundBotToRemove(AUTTeamInfo* Team)
+{
+	bool bFound = false;
+	TArray<AController*> Members = Team->GetTeamMembers();
+	for (AController* C : Members)
+	{
+		AUTBotPlayer* B = Cast<AUTBotPlayer>(C);
+		if (B != NULL)
+		{
+			if (AllowRemovingBot(B))
+			{
+				B->Destroy();
+			}
+			// note that we break from the loop on finding a bot even if we can't remove it yet, as it's still the best choice when it becomes available to remove (dies, etc)
+			bFound = true;
+			break;
+		}
+	}
+	return bFound;
+}
+
 void AUTTeamGameMode::CheckBotCount()
 {
 	if (NumPlayers + NumBots > BotFillCount)
 	{
-		TArray<AUTTeamInfo*> SortedTeams = UTGameState->Teams;
-		SortedTeams.Sort([](AUTTeamInfo& A, AUTTeamInfo& B) { return A.GetSize() > B.GetSize(); });
-
-		// try to remove bots from team with the most players
-		for (AUTTeamInfo* Team : SortedTeams)
+		if (bIsVSAI)
 		{
-			bool bFound = false;
-			TArray<AController*> Members = Team->GetTeamMembers();
-			for (AController* C : Members)
+			if (Teams.IsValidIndex(1) && GameSession && (int32(Teams[1]->GetSize()) > GameSession->MaxPlayers) && FoundBotToRemove(Teams[1]))
 			{
-				AUTBotPlayer* B = Cast<AUTBotPlayer>(C);
-				if (B != NULL)
+				return;
+			}
+			else if (Teams.IsValidIndex(0) && (int32(Teams[0]->GetSize()) > BotTeamSize) && FoundBotToRemove(Teams[0]))
+			{
+				return; 
+			}
+		}
+		else
+		{
+			TArray<AUTTeamInfo*> SortedTeams = UTGameState->Teams;
+			SortedTeams.Sort([](AUTTeamInfo& A, AUTTeamInfo& B) { return A.GetSize() > B.GetSize(); });
+
+			// try to remove bots from team with the most players
+			for (AUTTeamInfo* Team : SortedTeams)
+			{
+				bool bFound = FoundBotToRemove(Team);
+				if (bFound)
 				{
-					if (AllowRemovingBot(B))
-					{
-						B->Destroy();
-					}
-					// note that we break from the loop on finding a bot even if we can't remove it yet, as it's still the best choice when it becomes available to remove (dies, etc)
-					bFound = true;
 					break;
 				}
-			}
-			if (bFound)
-			{
-				break;
 			}
 		}
 	}
@@ -703,21 +741,40 @@ void AUTTeamGameMode::CheckBotTeams()
 	// check if bots should switch teams for balancing
 	if (bBalanceTeams && NumBots > 0)
 	{
-		TArray<AUTTeamInfo*> SortedTeams = UTGameState->Teams;
-		SortedTeams.Sort([](AUTTeamInfo& A, AUTTeamInfo& B) { return A.GetSize() > B.GetSize(); });
-
-		for (int32 i = 1; i < SortedTeams.Num(); i++)
+		if (bIsVSAI)
 		{
-			if (SortedTeams[i - 1]->GetSize() > SortedTeams[i]->GetSize() + 1)
+			if (Teams.IsValidIndex(1) && GameSession && (int32(Teams[1]->GetSize()) > GameSession->MaxPlayers))
 			{
-				TArray<AController*> Members = SortedTeams[i - 1]->GetTeamMembers();
+				TArray<AController*> Members = Teams[1]->GetTeamMembers();
 				for (AController* C : Members)
 				{
 					AUTBot* B = Cast<AUTBot>(C);
 					if (B != NULL && ((B->GetPawn() == NULL) || !HasMatchStarted() || UTGameState->IsMatchIntermission()))
 					{
-						ChangeTeam(B, SortedTeams[i]->GetTeamNum(), true);
+						ChangeTeam(B, 0, true);
 						break;
+					}
+				}
+			}
+		}
+		else
+		{
+			TArray<AUTTeamInfo*> SortedTeams = UTGameState->Teams;
+			SortedTeams.Sort([](AUTTeamInfo& A, AUTTeamInfo& B) { return A.GetSize() > B.GetSize(); });
+
+			for (int32 i = 1; i < SortedTeams.Num(); i++)
+			{
+				if (SortedTeams[i - 1]->GetSize() > SortedTeams[i]->GetSize() + 1)
+				{
+					TArray<AController*> Members = SortedTeams[i - 1]->GetTeamMembers();
+					for (AController* C : Members)
+					{
+						AUTBot* B = Cast<AUTBot>(C);
+						if (B != NULL && ((B->GetPawn() == NULL) || !HasMatchStarted() || UTGameState->IsMatchIntermission()))
+						{
+							ChangeTeam(B, SortedTeams[i]->GetTeamNum(), true);
+							break;
+						}
 					}
 				}
 			}

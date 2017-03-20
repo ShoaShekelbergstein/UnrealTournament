@@ -3502,6 +3502,10 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 		{
 			NewPlaylistId = 17;
 		}
+		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIHard3v5)
+		{
+			NewPlaylistId = 18;
+		}
 		else
 		{
 			UE_LOG(UT, Warning, TEXT("QuickMatch playlist not assigned for %s"), *QuickMatchType);

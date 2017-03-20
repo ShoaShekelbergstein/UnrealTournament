@@ -53,7 +53,6 @@ void SUTDifficultyLevel::Construct(const FArguments& InArgs)
 				SNew(SHorizontalBox)
 
 				// Easy
-
 				+SHorizontalBox::Slot().AutoWidth().Padding(10.0f,0.0f,10.0f,0.0f)
 				[
 					SNew(SBox).WidthOverride(250).HeightOverride(250).VAlign(VAlign_Fill).HAlign(HAlign_Fill)
@@ -83,8 +82,8 @@ void SUTDifficultyLevel::Construct(const FArguments& InArgs)
 									[
 										SNew(SUTImage)
 										.Image(SUTStyle::Get().GetBrush("UT.Icon.Skull.128x128"))
-										.WidthOverride(80)
-										.HeightOverride(80)
+										.WidthOverride(60)
+										.HeightOverride(60)
 									]
 								]
 							]
@@ -93,7 +92,6 @@ void SUTDifficultyLevel::Construct(const FArguments& InArgs)
 				]
 
 				// Normal
-
 				+SHorizontalBox::Slot().AutoWidth().Padding(5.0f,0.0f,5.0f,0.0f)
 				[
 					SNew(SBox).WidthOverride(250).HeightOverride(250).VAlign(VAlign_Fill).HAlign(HAlign_Fill)
@@ -123,16 +121,16 @@ void SUTDifficultyLevel::Construct(const FArguments& InArgs)
 									[
 										SNew(SUTImage)
 										.Image(SUTStyle::Get().GetBrush("UT.Icon.Skull.128x128"))
-										.WidthOverride(80)
-										.HeightOverride(80)
+										.WidthOverride(60)
+										.HeightOverride(60)
 									]
 									+SHorizontalBox::Slot()
 									.AutoWidth()
 									[
 										SNew(SUTImage)
 										.Image(SUTStyle::Get().GetBrush("UT.Icon.Skull.128x128"))
-										.WidthOverride(80)
-										.HeightOverride(80)
+										.WidthOverride(60)
+										.HeightOverride(60)
 									]
 								]
 							]
@@ -141,7 +139,6 @@ void SUTDifficultyLevel::Construct(const FArguments& InArgs)
 				]
 
 				// Hard
-
 				+SHorizontalBox::Slot().AutoWidth().Padding(10.0f,0.0f,10.0f,0.0f)
 				[
 					SNew(SBox).WidthOverride(250).HeightOverride(250).VAlign(VAlign_Fill).HAlign(HAlign_Fill)
@@ -171,28 +168,92 @@ void SUTDifficultyLevel::Construct(const FArguments& InArgs)
 									[
 										SNew(SUTImage)
 										.Image(SUTStyle::Get().GetBrush("UT.Icon.Skull.128x128"))
-										.WidthOverride(80)
-										.HeightOverride(80)
+										.WidthOverride(60)
+										.HeightOverride(60)
 									]
 									+SHorizontalBox::Slot()
 									.AutoWidth()
 									[
 										SNew(SUTImage)
 										.Image(SUTStyle::Get().GetBrush("UT.Icon.Skull.128x128"))
-										.WidthOverride(80)
-										.HeightOverride(80)
+										.WidthOverride(60)
+										.HeightOverride(60)
 									]
 									+SHorizontalBox::Slot()
 									.AutoWidth()
 									[
 										SNew(SUTImage)
 										.Image(SUTStyle::Get().GetBrush("UT.Icon.Skull.128x128"))
-										.WidthOverride(80)
-										.HeightOverride(80)
+										.WidthOverride(60)
+										.HeightOverride(60)
 									]
 								]
 							]
 						]
+					]
+				]
+
+
+				// Hard 3v5
+				+SHorizontalBox::Slot().AutoWidth().Padding(10.0f, 0.0f, 10.0f, 0.0f)
+					[
+						SNew(SBox).WidthOverride(250).HeightOverride(250).VAlign(VAlign_Fill).HAlign(HAlign_Fill)
+						[
+							SNew(SUTButton)
+							.ButtonStyle(SUTStyle::Get(), "UT.HomePanel.Button")
+							.bSpringButton(true)
+							.OnClicked(this, &SUTDifficultyLevel::PickDifficulty, 3)
+							.ContentPadding(FMargin(2.0f, 2.0f, 2.0f, 2.0f))
+							[
+								SNew(SBorder)
+								.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Dark"))
+							[
+								SNew(SVerticalBox)
+								+ SVerticalBox::Slot().HAlign(HAlign_Center).AutoHeight().Padding(0.0f, 20.0f, 0.0f, 0.0f)
+							[
+								SNew(STextBlock)
+								.Text(FText::FromString(TEXT("INHUMAN 3v5")))
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
+
+							]
+						+ SVerticalBox::Slot().HAlign(HAlign_Center).AutoHeight().Padding(0.0f, 20.0f, 0.0f, 0.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+							.AutoWidth()
+							[
+								SNew(SUTImage)
+								.Image(SUTStyle::Get().GetBrush("UT.Icon.Skull.128x128"))
+							.WidthOverride(60)
+							.HeightOverride(60)
+							]
+						+ SHorizontalBox::Slot()
+							.AutoWidth()
+							[
+								SNew(SUTImage)
+								.Image(SUTStyle::Get().GetBrush("UT.Icon.Skull.128x128"))
+							.WidthOverride(60)
+							.HeightOverride(60)
+							]
+						+ SHorizontalBox::Slot()
+							.AutoWidth()
+							[
+								SNew(SUTImage)
+								.Image(SUTStyle::Get().GetBrush("UT.Icon.Skull.128x128"))
+							.WidthOverride(60)
+							.HeightOverride(60)
+							]
+						+ SHorizontalBox::Slot()
+							.AutoWidth()
+							[
+								SNew(SUTImage)
+								.Image(SUTStyle::Get().GetBrush("UT.Icon.Skull.128x128"))
+							.WidthOverride(60)
+							.HeightOverride(60)
+							]
+						]
+					]
+					]
 					]
 				]
 			]

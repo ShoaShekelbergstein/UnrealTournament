@@ -22,6 +22,10 @@ class UNREALTOURNAMENT_API AUTTeamGameMode : public AUTGameMode
 	UPROPERTY(EditDefaultsOnly, Category = TeamGame)
 	uint8 NumTeams;
 
+	/* Used when bIsVsAI. */
+	UPROPERTY()
+		int32 BotTeamSize;
+
 	/** class of TeamInfo to spawn */
 	UPROPERTY(EditDefaultsOnly, Category = TeamGame)
 	TSubclassOf<AUTTeamInfo> TeamClass;
@@ -77,9 +81,14 @@ class UNREALTOURNAMENT_API AUTTeamGameMode : public AUTGameMode
 
 	virtual void CheckBotCount() override;
 	virtual void DefaultTimer() override;
+	virtual int32 AdjustedBotFillCount() override;
 
 	/** Balance teams bots are on if necessary and desired. */
 	virtual void CheckBotTeams();
+
+	/** Returns true if found a bot to remove on Team.  Will remove bot if it can be removed (dead, etc.) */
+	virtual bool FoundBotToRemove(AUTTeamInfo* Team);
+
 
 	/** whether we should force teams to be balanced right now
 	 * @param bInitialTeam - if true, request comes from a player requesting its initial team (not a team switch)

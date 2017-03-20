@@ -1244,6 +1244,7 @@ namespace EEpicDefaultRuleTags
 	const FString FlagRunVSAIEasy = TEXT("FlagRunVSAIEasy");
 	const FString FlagRunVSAINormal = TEXT("FlagRunVSAINormal");
 	const FString FlagRunVSAIHard = TEXT("FlagRunVSAIHard");
+	const FString FlagRunVSAIHard3v5 = TEXT("FlagRunVSAIHard3v5");
 	const FString Siege = TEXT("Siege");
 }
 

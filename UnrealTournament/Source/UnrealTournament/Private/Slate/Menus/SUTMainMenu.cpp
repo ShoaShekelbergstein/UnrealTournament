@@ -475,6 +475,10 @@ void SUTMainMenu::DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16 Bu
 				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIHard; 
 				break;
 
+			case 3:
+				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIHard3v5;
+				break;
+
 			default: 
 				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIEasy; 
 				break;
