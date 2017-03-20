@@ -663,6 +663,10 @@ void AUTPlayerController::ClientRestart_Implementation(APawn* NewPawn)
 
 	SetCameraMode("Default");
 	DeathCamFocus = nullptr;
+	if (GetPawn())
+	{
+		ClientSetRotation(GetPawn()->GetActorRotation());
+	}
 
 	//There is an out of order chance during the initial connection that:
 	// The new players character will be spawned and possessed. Replicating the characters PlayerState.
