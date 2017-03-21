@@ -1591,7 +1591,7 @@ void FUTAnalytics::FireEvent_UTInitMatch(AUTGameMode* UTGM)
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 
-		SetMatchInitialParameters(UTGM, ParamArray, false, true);
+		SetMatchInitialParameters(UTGM, ParamArray, false, (UTGM->UTGameState) ? UTGM->UTGameState->bRankedSession : false);
 
 		if (UTGM->UTGameState)
 		{
@@ -1623,7 +1623,7 @@ void FUTAnalytics::FireEvent_UTStartMatch(AUTGameMode* UTGM)
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 
-		SetMatchInitialParameters(UTGM, ParamArray, false, true);
+		SetMatchInitialParameters(UTGM, ParamArray, true, (UTGM->UTGameState) ? UTGM->UTGameState->bRankedSession : false);
 
 		if (UTGM->UTGameState)
 		{
@@ -1656,7 +1656,7 @@ void FUTAnalytics::FireEvent_UTEndMatch(AUTGameMode* UTGM)
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 		
-		SetMatchInitialParameters(UTGM, ParamArray, false, true);
+		SetMatchInitialParameters(UTGM, ParamArray, true, (UTGM->UTGameState) ? UTGM->UTGameState->bRankedSession : false);
 
 		if (UTGM->UTGameState)
 		{
