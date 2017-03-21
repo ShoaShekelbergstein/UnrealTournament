@@ -131,8 +131,8 @@ AUTPlayerController::AUTPlayerController(const class FObjectInitializer& ObjectI
 	LastBuyMenuOpenTime = 0.0f;
 	BuyMenuToggleDelay = 0.25f;
 
-	FootStepAmp.OwnVolumeMultiplier = 0.3f;
-	FootStepAmp.OwnPitchMultiplier = 0.5f;
+	FootStepAmp.OwnVolumeMultiplier = 0.1f;
+	FootStepAmp.OwnPitchMultiplier = 0.2f;
 	FootStepAmp.TeammateVolumeMultiplier = 0.5f;
 	PainSoundAmp.InstigatorVolumeMultiplier = 2.5f;
 	PainSoundAmp.TargetVolumeMultiplier = 2.5f;
