@@ -181,7 +181,7 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 		{
 			// AI chooses zoom or not from here
 			AUTBot* B = Cast<AUTBot>(UTOwner->GetController());
-			if (B != nullptr)
+			if (B && B->GetPawn())
 			{
 				bool bWantZoom = false;
 				if (B->GetEnemy() != nullptr && B->GetFocusActor() == B->GetEnemy())
