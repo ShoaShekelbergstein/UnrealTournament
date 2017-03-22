@@ -3437,7 +3437,7 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 	if (IsLoggedIn() && OnlineSessionInterface.IsValid())
 	{
 		// Look to see if the player has played this tutorial before.
-
+/*
 		FName DesiredTutorial = NAME_None;
 		if (QuickMatchType == EEpicDefaultRuleTags::Deathmatch) DesiredTutorial = ETutorialTags::TUTTAG_DM;
 		if (QuickMatchType == EEpicDefaultRuleTags::TDM) DesiredTutorial = ETutorialTags::TUTTAG_TDM;
@@ -3465,12 +3465,22 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 			{
 				if ( !IsInAnActiveParty() && DesiredTutorialMask != 0 && !IsTutorialMaskCompleted(DesiredTutorialMask) )
 				{
-					// We need to play this tutorial instead.
-					LaunchTutorial(DesiredTutorial, QuickMatchType);
-					return;
+
+					for (int32 i = 0; i < TutorialData.Num(); i++)
+					{
+						if (TutorialData[i].Tag == DesiredTutorial)
+						{
+							UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
+							if (GI)
+							{
+								GI->LoadingMovieToPlay = TutorialData[i].LoadingMovie;
+								//GI->LevelLoadText = FText::FromString(TutorialData[i].LoadingText);
+								//GI->bSuppressLoadingText = true;
+							}
+						}
+					}
 				}
 			}
-
 			// Use matchmaking for quickmatch
 			if (ServerBrowserWidget.IsValid() && ServerBrowserWidget->IsRefreshing())
 			{
@@ -3480,6 +3490,7 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 				return;
 			}
 		}
+*/
 
 		if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAI)
 		{
@@ -6229,30 +6240,6 @@ bool UUTLocalPlayer::IsInAnActiveParty() const
 
 bool UUTLocalPlayer::IsMenuOptionLocked(FName MenuCommand) const
 {
-	if (CurrentProfileSettings != nullptr)
-	{
-		if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			
-		{
-			return !IsTutorialMaskCompleted(TUTORIAL_DM);
-		}
-		if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)			
-		{
-			return !IsTutorialMaskCompleted(TUTORIAL_FlagRun);
-		}
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		
-		{
-			return !IsTutorialMaskCompleted(TUTORIAL_CTF);
-		}
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	
-		{
-			return !IsTutorialMaskCompleted(TUTORIAL_FlagRun);
-		}
-		else if (MenuCommand == EMenuCommand::MC_Challenges)		
-		{
-			return false;
-		}
-	}
-
 	return false;
 }
 
@@ -6269,24 +6256,12 @@ bool UUTLocalPlayer::IsMenuOptionEnabled(FName MenuCommand) const
 
 FText UUTLocalPlayer::GetMenuCommandTooltipText(FName MenuCommand) const 
 {
-	if ( !IsInAnActiveParty() && IsMenuOptionLocked(MenuCommand) )
-	{
-		if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			return NSLOCTEXT("SUTHomePanel", "QuickPlayDMLocked","Before you can play Deathmatch online, you need to complete the Deathmatch training in Basic Training.");
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTFLocked","Before you can play Capture the Flag online, you need to complete the CTF training in Basic Training.");
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrunLocked","Before you can play Flag Run online, you need to complete the Flag Run training in Basic Training.");
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrunLocked","Before you can play Flag Run online, you need to complete the Flag Run training in Basic Training.");
-		else if (MenuCommand == EMenuCommand::MC_Challenges)		return NSLOCTEXT("SUTHomePanel", "QuickPlayChallengesLocked","Challenges are not yet available.  Please complete the movement, weapons and pickup training in Basic Training.");
-		else if (MenuCommand == EMenuCommand::MC_FindAMatch)		return NSLOCTEXT("SUTHomePanel", "QuickPlayFindAMatchLocked","Online play is unavailable until you complete the movement, weapons and pickup and one game mode training in Basic Training.");
-	}
-	else
-	{
-		if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			return NSLOCTEXT("SUTHomePanel", "QuickPlayDM","Quickly find and join an online deathmatch game against players close to your skill level.");
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTF","Quickly find and join an online capture the flag game against players close to your skill level");
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrun","Quickly find and join an online FlagRun game against players close to your skill level.");
-		else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrunPVE","Quickly find and join an online coop FlagRun game against AI opponents.");
-		else if (MenuCommand == EMenuCommand::MC_Challenges)		return NSLOCTEXT("SUTHomePanel", "QuickPlayChallenges","Test your skills offline against our world class AI.");
-		else if (MenuCommand == EMenuCommand::MC_FindAMatch)		return NSLOCTEXT("SUTHomePanel", "QuickPlayFindAMatch","Head online and find games to play.");
-	}
+	if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			return NSLOCTEXT("SUTHomePanel", "QuickPlayDM","Quickly find and join an online deathmatch game against players close to your skill level.");
+	else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTF","Quickly find and join an online capture the flag game against players close to your skill level");
+	else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrun","Quickly find and join an online FlagRun game against players close to your skill level.");
+	else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrunPVE","Quickly find and join an online coop FlagRun game against AI opponents.");
+	else if (MenuCommand == EMenuCommand::MC_Challenges)		return NSLOCTEXT("SUTHomePanel", "QuickPlayChallenges","Test your skills offline against our world class AI.");
+	else if (MenuCommand == EMenuCommand::MC_FindAMatch)		return NSLOCTEXT("SUTHomePanel", "QuickPlayFindAMatch","Head online and find games to play.");
 	return FText::GetEmpty();
 }
 
