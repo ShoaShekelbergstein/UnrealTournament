@@ -2080,26 +2080,11 @@ protected:
 	virtual void UpdateOutline();
 
 public:
+	UPROPERTY(BlueprintReadWrite)
+		bool bForceNoOutline;
+
 	UFUNCTION(BlueprintCallable, Category = UTCharacter, BlueprintPure)
-	bool IsOutlined(uint8 TestTeam = 255) const
-	{
-		if (IsDead())
-		{
-			return false;
-		}
-		else if (bLocalOutline)
-		{
-			return true;
-		}
-		else if (bServerOutline)
-		{
-			return (TestTeam > 7 || ServerOutlineTeamMask == 0 || (ServerOutlineTeamMask & (1 << TestTeam)));
-		}
-		else
-		{
-			return false;
-		}
-	}
+		bool IsOutlined(uint8 TestTeam = 255) const;
 	inline bool GetOutlineWhenUnoccluded() const
 	{
 		return bOutlineWhenUnoccluded;

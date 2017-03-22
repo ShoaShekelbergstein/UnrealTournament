@@ -109,6 +109,18 @@ void UUTCheatManager::Ann(int32 Switch)
 */
 }
 
+void UUTCheatManager::NoOutline()
+{
+	for (FConstPawnIterator It = GetOuterAPlayerController()->GetWorld()->GetPawnIterator(); It; ++It)
+	{
+		AUTCharacter* Char = Cast<AUTCharacter>(*It);
+		if (Char)
+		{
+			Char->bForceNoOutline = true;
+		}
+	}
+}
+
 void UUTCheatManager::HL()
 {
 	AUTHUD* HLHUD = Cast<AUTHUD>(GetOuterAPlayerController()->MyHUD);

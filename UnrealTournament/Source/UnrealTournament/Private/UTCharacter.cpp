@@ -195,6 +195,7 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 
 	GhostComponent = ObjectInitializer.CreateDefaultSubobject<UUTGhostComponent>(this, TEXT("GhostComp"));
 	FFAColor = 0;
+	bForceNoOutline = false;
 
 	MaxSpeedPctModifier = 1.0f;
 	MinNetUpdateFrequency = 100.0f;
@@ -4380,6 +4381,26 @@ void AUTCharacter::SetOutlineLocal(bool bNowOutlined, bool bWhenUnoccluded)
 		bOutlineWhenUnoccluded = bWhenUnoccluded;
 
 		UpdateOutline();
+	}
+}
+
+bool AUTCharacter::IsOutlined(uint8 TestTeam) const
+{
+	if (IsDead() || bForceNoOutline || (GetWorld()->GetGameState<AUTGameState>() && GetWorld()->GetGameState<AUTGameState>()->IsMatchIntermission()))
+	{
+		return false;
+	}
+	else if (bLocalOutline)
+	{
+		return true;
+	}
+	else if (bServerOutline)
+	{
+		return (TestTeam > 7 || ServerOutlineTeamMask == 0 || (ServerOutlineTeamMask & (1 << TestTeam)));
+	}
+	else
+	{
+		return false;
 	}
 }
 

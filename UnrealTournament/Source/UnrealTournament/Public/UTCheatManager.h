@@ -55,6 +55,9 @@ class UNREALTOURNAMENT_API UUTCheatManager : public UCheatManager
 	virtual void Ann(int32 Switch);
 
 	UFUNCTION(exec)
+		virtual void NoOutline();
+
+	UFUNCTION(exec)
 		virtual void HL();
 
 	UFUNCTION(exec)
