@@ -234,7 +234,7 @@ void AUTWeap_LinkGun::Tick(float DeltaTime)
 		ScreenTexture->FastUpdateResource();
 	}
 
-	if ((UTOwner->GetWeapon() == this) && MuzzleFlash.IsValidIndex(1) && MuzzleFlash[1] != NULL)
+	if (UTOwner && (UTOwner->GetWeapon() == this) && MuzzleFlash.IsValidIndex(1) && MuzzleFlash[1] != NULL)
 	{
 		static FName NAME_PulseScale(TEXT("PulseScale"));
 		float NewScale = 1.0f + FMath::Max<float>(0.0f, 1.0f - (GetWorld()->TimeSeconds - LastBeamPulseTime) / 0.35f);
