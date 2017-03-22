@@ -386,11 +386,43 @@ void AUTLineUpHelper::SpawnPlayerWeapon(AUTCharacter* UTChar)
 
 void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
 {
-	if (UTChar && UTChar->GetMesh())
+	if (UTChar)
 	{
-		//Want to still update the animations and bones even though we have turned off the Pawn, so re-enable those.
-		UTChar->GetMesh()->bPauseAnims = false;
-		UTChar->GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
+		if (UTChar->GetMesh())
+		{
+			//Want to still update the animations and bones even though we have turned off the Pawn, so re-enable those.
+			UTChar->GetMesh()->bPauseAnims = false;
+			UTChar->GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
+
+			//Turn off local physics sim and collisions during line-ups
+			UTChar->GetMesh()->SetSimulatePhysics(false);
+			UTChar->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+
+		// Teleport non-local players up to better align them with the local player.
+		if (UTChar->GetWorld())
+		{
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(UTChar->GetWorld()->GetFirstPlayerController());
+			if (UTPC)
+			{
+				if (UTChar != Cast<AUTCharacter>(UTPC->GetPawn()))
+				{
+					FVector Offset(0.0f, 0.0f, 5.0f);
+					FVector TeleportLoc = UTChar->GetActorLocation() + Offset;
+					UTChar->TeleportTo(TeleportLoc, UTChar->GetActorRotation(), false, true);
+				}
+			}
+		}
+
+		UUTCharacterMovement* UTCM = Cast<UUTCharacterMovement>(UTChar->GetMovementComponent());
+		if (UTCM)
+		{
+			UTCM->OnLineUp();
+
+			//Avoid falling anims if we are in the air with our line-up spawn point
+			UTCM->SetMovementMode(MOVE_Walking);
+		}
+		
 	}
 }
 

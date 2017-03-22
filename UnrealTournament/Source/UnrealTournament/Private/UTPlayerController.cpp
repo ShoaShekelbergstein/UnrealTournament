@@ -5228,22 +5228,12 @@ void AUTPlayerController::ClientSetActiveLineUp_Implementation()
 			{
 				ToggleScoreboard(false);
 
-				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+				for (FActorIterator It(GetWorld()); It; ++It)
 				{
-					const AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
-					if (UTPC)
+					AUTCharacter* UTChar = Cast<AUTCharacter>(*It);
+					if (UTChar)
 					{
-						AUTCharacter* UTChar = Cast<AUTCharacter>(UTPC->GetCharacter());
-						if (UTChar)
-						{
-							UTGS->LineUpHelper->ForceCharacterAnimResetForLineUp(UTChar);
-
-							UUTCharacterMovement* UTCM = Cast<UUTCharacterMovement>(UTChar->GetMovementComponent());
-							if (UTCM)
-							{
-								UTCM->OnLineUp();
-							}
-						}
+						UTGS->LineUpHelper->ForceCharacterAnimResetForLineUp(UTChar);
 					}
 				}
 			}
