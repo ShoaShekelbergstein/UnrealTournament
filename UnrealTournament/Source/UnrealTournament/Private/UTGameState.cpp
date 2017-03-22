@@ -2428,39 +2428,52 @@ void AUTGameState::SpawnDefaultLineUpZones()
 {
 	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
 	const bool bIsTeamGame = (Teams.Num() > 0) ? true : false;
+	bool bIsTutorialGame = false;
 
-	APlayerStart* PlayerStartToSpawnOn = nullptr;
-	
-	for (TActorIterator<AUTTeamPlayerStart> It(GetWorld()); It; ++It)
+	if ((GetNetMode() == NM_Standalone) && GetWorld())
 	{
-		PlayerStartToSpawnOn = *It;
-		break;
+		AUTGameMode* UTGM = GetWorld()->GetAuthGameMode<AUTGameMode>();
+		if (UTGM)
+		{
+			bIsTutorialGame = (UTGM->TutorialMask != 0);
+		}
 	}
-	
-	if (!bIsTeamGame || (PlayerStartToSpawnOn == nullptr))
+
+	if (!bIsTutorialGame)
 	{
-		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		APlayerStart* PlayerStartToSpawnOn = nullptr;
+
+		for (TActorIterator<AUTTeamPlayerStart> It(GetWorld()); It; ++It)
 		{
 			PlayerStartToSpawnOn = *It;
 			break;
 		}
-	}
 
-	if (PlayerStartToSpawnOn)
-	{
-		if (GetAppropriateSpawnList(LineUpTypes::Intro) == nullptr)
+		if (!bIsTeamGame || (PlayerStartToSpawnOn == nullptr))
 		{
-			AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::Intro, PlayerStartToSpawnOn);
+			for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+			{
+				PlayerStartToSpawnOn = *It;
+				break;
+			}
 		}
 
-		if (GetAppropriateSpawnList(LineUpTypes::Intermission) == nullptr)
+		if (PlayerStartToSpawnOn)
 		{
-			AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::Intermission, PlayerStartToSpawnOn);
-		}
+			if (GetAppropriateSpawnList(LineUpTypes::Intro) == nullptr)
+			{
+				AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::Intro, PlayerStartToSpawnOn);
+			}
 
-		if (GetAppropriateSpawnList(LineUpTypes::PostMatch) == nullptr)
-		{
-			AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::PostMatch, PlayerStartToSpawnOn);
+			if (GetAppropriateSpawnList(LineUpTypes::Intermission) == nullptr)
+			{
+				AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::Intermission, PlayerStartToSpawnOn);
+			}
+
+			if (GetAppropriateSpawnList(LineUpTypes::PostMatch) == nullptr)
+			{
+				AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::PostMatch, PlayerStartToSpawnOn);
+			}
 		}
 	}
 }
