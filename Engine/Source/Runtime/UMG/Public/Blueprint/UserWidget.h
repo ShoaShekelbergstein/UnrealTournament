@@ -963,6 +963,9 @@ protected:
 	//native SObjectWidget methods
 	friend class SObjectWidget;
 
+	// stub until 4.16
+	virtual void NativePreConstruct() {}
+
 	virtual void NativeConstruct();
 	virtual void NativeDestruct();
 
