@@ -4,6 +4,8 @@
 
 #include "UTUITypes.h"
 #include "UTRewardDisplayData.h"
+#include "UTRichTextStyleData.h"
+#include "UTInputDisplayData.h"
 #include "UTGameUIData.generated.h"
 
 /** 
@@ -18,8 +20,10 @@ UCLASS(config=Game)
 class UNREALTOURNAMENT_API UUTGameUIData : public UDataAsset
 {
 	GENERATED_UCLASS_BODY()
-
+		
+	const UUTInputDisplayData& GetInputDisplayData() const { return *InputDisplayData; }
 	const UUTRewardDisplayData& GetRewardDisplayData() const { return *RewardDisplayData; }
+	const UUTRichTextStyleData& GetRichTextStyleData() const { return *RichTextStyleData; }
 
 public:
 	static UUTGameUIData& Get();
@@ -33,6 +37,12 @@ public:
 	FSlateBrush LoadingSpinner;
 
 private:
+
+	UPROPERTY(EditDefaultsOnly, Category = DisplayData)
+	UUTInputDisplayData* InputDisplayData;
+
+	UPROPERTY(EditDefaultsOnly, Category = Styles)
+	UUTRichTextStyleData* RichTextStyleData;
 
 	UPROPERTY(EditDefaultsOnly, Category = DisplayData)
 	UUTRewardDisplayData* RewardDisplayData;

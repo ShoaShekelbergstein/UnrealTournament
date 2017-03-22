@@ -7,6 +7,62 @@
 DECLARE_DYNAMIC_DELEGATE_OneParam(FOnItemClicked, UUserWidget*, Widget);
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnItemSelected, UUserWidget*, Widget, bool, Selected);
 
+USTRUCT()
+struct FUTPlayerInput_ActionMapping
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
+
+	enum Type
+	{
+		TYPE_PRESS = 0,
+		TYPE_HOLD,
+		TYPE_CHORD
+	};
+
+	FUTPlayerInput_ActionMapping::Type GetType() const;
+
+	bool IsType(FUTPlayerInput_ActionMapping::Type ActionType) const { return GetType() == ActionType; }
+
+	FKey GetSecondKeyForChord(FKey Key) const;
+
+public:
+
+	// Action to execute with key event.
+	UPROPERTY(EditAnywhere)
+	FName Action;
+
+	// Key mapped to this action.
+	UPROPERTY(EditAnywhere)
+	FKey Key;
+
+	// Advanced option: Second key needed to execute this action.
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "!bSkipAdvanced"))
+	FKey ChordKey;
+
+	// Advanced option: Action will only execute when modifier key is pressed.
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "!bSkipAdvanced"))
+	bool bRequiresModifier;
+
+	// Advanced option: Action will only execute after key has been held for this duration.
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "!bSkipAdvanced"))
+	float HoldTime;
+
+	// If true this action will always execute with the key event, even if other advanced actions (chorded,modified,held,etc..) map to this key.
+	// Setting this will bypass all the advanced option.
+	UPROPERTY(EditAnywhere)
+	bool bSkipAdvanced;
+};
+
+UENUM(BlueprintType)
+enum class EUTInputType : uint8
+{
+	Mouse_Keyboard UMETA(DisplayName = "Mouse & Keyboard"),
+	DualShock4 UMETA(DisplayName = "Dual Shock 4"),
+	MAX UMETA(Hidden),
+};
+
 /** Types of currency */
 UENUM(BlueprintType)
 enum class EUTCurrencyType : uint8
