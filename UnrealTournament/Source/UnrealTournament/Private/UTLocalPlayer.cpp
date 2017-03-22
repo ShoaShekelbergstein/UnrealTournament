@@ -2020,7 +2020,7 @@ void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueN
 			LastProfileCloudWriteTime = GetClass()->GetDefaultObject<UUTLocalPlayer>()->LastProfileCloudWriteTime;
 	#if !UE_SERVER
 			// Should give a warning here if it fails.
-			ShowMessage(NSLOCTEXT("MCPMessages", "ProfileSaveErrorTitle", "An error has occured"), NSLOCTEXT("MCPMessages", "ProfileSaveErrorText", "UT could not save your profile with the MCP.  Your settings may be lost."), UTDIALOG_BUTTON_OK, NULL);
+			ShowToast(NSLOCTEXT("MCPMessages", "ProfileSaveErrorText", "UT could not save your profile with the MCP.  Your settings may be lost."), 3.0f);
 	#endif
 		}
 	}
@@ -2036,7 +2036,7 @@ void UUTLocalPlayer::OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueN
 		{
 	#if !UE_SERVER
 			// Should give a warning here if it fails.
-			ShowMessage(NSLOCTEXT("MCPMessages", "ProgressionSaveErrorTitle", "An error has occured"), NSLOCTEXT("MCPMessages", "ProgressionSaveErrorText", "UT could not save your progression with the MCP.  Your progress may be lost."), UTDIALOG_BUTTON_OK, NULL);
+			ShowToast(NSLOCTEXT("MCPMessages", "ProgressionSaveErrorText", "UT could not save your progression with the MCP.  Your progress may be lost."), 3.0f);
 	#endif
 		}
 	}
