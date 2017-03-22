@@ -2435,7 +2435,7 @@ void AUTGameState::SpawnDefaultLineUpZones()
 		AUTGameMode* UTGM = GetWorld()->GetAuthGameMode<AUTGameMode>();
 		if (UTGM)
 		{
-			bIsTutorialGame = (UTGM->TutorialMask != 0);
+			bIsTutorialGame = UTGM->bBasicTrainingGame;
 		}
 	}
 
