@@ -186,7 +186,10 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 		}
 		else
 		{
-			PlayFiringSound(CurrentFireMode);
+			if (!BurstFireMode || BurstFireMode->CurrentShot == 0)
+			{
+				PlayFiringSound(CurrentFireMode);
+			}
 			if (ShouldPlay1PVisuals())
 			{
 				UAnimInstance* HandAnimInstance = UTOwner->FirstPersonMesh ? UTOwner->FirstPersonMesh->GetAnimInstance() : nullptr;
