@@ -1400,7 +1400,7 @@ void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, con
 				float Adjust = (BlueTeamDeaths > BlueTeamKills) ? 0.5f : 1.f;
 				if (bBasicTrainingGame)
 				{
-					Adjust *= 1.2f;
+					Adjust *= 1.4f;
 				}
 				BlueTeamSkill = FMath::Max(MinSkill, BlueTeamSkill - Adjust / FMath::Min(5.f, float(BlueTeamKills + BlueTeamDeaths)));
 			}
@@ -1409,7 +1409,7 @@ void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, con
 				float Adjust = (RedTeamDeaths > RedTeamKills) ? 0.5f : 1.f;
 				if (bBasicTrainingGame)
 				{
-					Adjust *= 1.2f;
+					Adjust *= 1.4f;
 				}
 				RedTeamSkill = FMath::Max(MinSkill, RedTeamSkill - Adjust / FMath::Min(5.f, float(RedTeamKills + RedTeamDeaths)));
 			}
