@@ -179,30 +179,33 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 	{
 		if (Role == ROLE_Authority)
 		{
-			// AI chooses zoom or not from here
-			AUTBot* B = Cast<AUTBot>(UTOwner->GetController());
-			if (B && B->GetPawn())
+			if (UTOwner->GetWeapon() == this)
 			{
-				bool bWantZoom = false;
-				if (B->GetEnemy() != nullptr && B->GetFocusActor() == B->GetEnemy())
+				// AI chooses zoom or not from here
+				AUTBot* B = Cast<AUTBot>(UTOwner->GetController());
+				if (B && B->GetPawn())
 				{
-					const float EnemyDist = (B->GetEnemyLocation(B->GetEnemy(), false) - B->GetPawn()->GetActorLocation()).Size();
-					if (EnemyDist > 1000.0f && (B->IsStopped() || B->IsSniping()))
+					bool bWantZoom = false;
+					if (B->GetEnemy() != nullptr && B->GetFocusActor() == B->GetEnemy())
 					{
-						bWantZoom = true;
+						const float EnemyDist = (B->GetEnemyLocation(B->GetEnemy(), false) - B->GetPawn()->GetActorLocation()).Size();
+						if (EnemyDist > 1000.0f && (B->IsStopped() || B->IsSniping()))
+						{
+							bWantZoom = true;
+						}
+						else if (B->Skill > 4.5f && EnemyDist > 4000.0f)
+						{
+							bWantZoom = B->Skill + B->Personality.MovementAbility + B->Personality.Accuracy >= 6.0f || GetWorld()->TimeSeconds - B->LastUnderFireTime > 3.0f;
+						}
 					}
-					else if (B->Skill > 4.5f && EnemyDist > 4000.0f)
+					if (bWantZoom != (ZoomState == EZoomState::EZS_Zoomed || ZoomState == EZoomState::EZS_ZoomingIn))
 					{
-						bWantZoom = B->Skill + B->Personality.MovementAbility + B->Personality.Accuracy >= 6.0f || GetWorld()->TimeSeconds - B->LastUnderFireTime > 3.0f;
-					}
-				}
-				if (bWantZoom != (ZoomState == EZoomState::EZS_Zoomed || ZoomState == EZoomState::EZS_ZoomingIn))
-				{
-					// we don't really care about zoom depth for the AI so just do the minimum
-					UTOwner->StartFire(1);
-					if (UTOwner)
-					{
-						UTOwner->StopFire(1);
+						// we don't really care about zoom depth for the AI so just do the minimum
+						UTOwner->StartFire(1);
+						if (UTOwner)
+						{
+							UTOwner->StopFire(1);
+						}
 					}
 				}
 			}
