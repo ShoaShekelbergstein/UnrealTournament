@@ -215,10 +215,13 @@ void SUTPartyInviteWidget::HandlePartyJoined()
 
 SUTPartyInviteWidget::~SUTPartyInviteWidget()
 {
-	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(Ctx.GetWorld(), UPartyContext::StaticClass()));
-	if (PartyContext)
+	if (Ctx.IsValid())
 	{
-		PartyContext->OnPartyJoined.Remove(PartyJoinedDelegateHandle);
+		UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(Ctx.GetWorld(), UPartyContext::StaticClass()));
+		if (PartyContext)
+		{
+			PartyContext->OnPartyJoined.Remove(PartyJoinedDelegateHandle);
+		}
 	}
 }
 
