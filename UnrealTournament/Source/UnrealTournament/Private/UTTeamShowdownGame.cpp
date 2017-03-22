@@ -37,6 +37,7 @@ void AUTTeamShowdownGame::InitGame(const FString& MapName, const FString& Option
 	int32 SavedBotFillCount = BotFillCount;
 
 	Super::InitGame(MapName, Options, ErrorMessage);
+	bBalanceTeams = !bOfflineChallenge;
 
 	// skip Duel overrides we don't want
 	if (bOfflineChallenge)

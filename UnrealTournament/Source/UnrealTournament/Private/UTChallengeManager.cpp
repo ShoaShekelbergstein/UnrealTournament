@@ -109,13 +109,13 @@ UUTChallengeManager::UUTChallengeManager(const FObjectInitializer& ObjectInitial
 		FUTChallengeInfo(NAME_ChallengeUnderlandFFA, TEXT("Deathmatch in Underland"), TEXT("/Game/RestrictedAssets/Maps/DM-Underland"),
 			TEXT("?Game=DM"),
 			TEXT("Prove your worth in a deathmatch in Underland."),
-			0, 2, NAME_EasyFFATeam, NAME_MediumFFATeam, NAME_HardFFATeam, NAME_ChallengeSlateBadgeName_Underland_FFA, NAME_REWARD_GoldStars));
+			0, 5, NAME_EasyFFATeam, NAME_MediumFFATeam, NAME_HardFFATeam, NAME_ChallengeSlateBadgeName_Underland_FFA, NAME_REWARD_GoldStars));
 
 	Challenges.Add(NAME_ChallengeChillFFA,
 		FUTChallengeInfo(NAME_ChallengeChillFFA, TEXT("Deathmatch in Chill"), TEXT("/Game/RestrictedAssets/Maps/DM-Chill"),
 			TEXT("?Game=DM"),
 			TEXT("Prove your worth in a deathmatch in Chill."),
-			0, 2, NAME_EasyFFATeam, NAME_MediumFFATeam, NAME_HardFFATeam, NAME_ChallengeSlateBadgeName_Chill_FFA, NAME_REWARD_GoldStars));
+			0, 5, NAME_EasyFFATeam, NAME_MediumFFATeam, NAME_HardFFATeam, NAME_ChallengeSlateBadgeName_Chill_FFA, NAME_REWARD_GoldStars));
 
 	Challenges.Add(NAME_ChallengeDMFFA,
 		FUTChallengeInfo(NAME_ChallengeDMFFA, TEXT("Deathmatch in Outpost 23"), TEXT("/Game/RestrictedAssets/Maps/DM-Outpost23"),
