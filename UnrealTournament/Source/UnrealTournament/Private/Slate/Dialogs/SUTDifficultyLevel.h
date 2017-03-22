@@ -9,7 +9,7 @@
 class UNREALTOURNAMENT_API SUTDifficultyLevel : public SUTDialogBase
 {
 	SLATE_BEGIN_ARGS(SUTDifficultyLevel)
-	: _DialogSize(FVector2D(1120,500))
+	: _DialogSize(FVector2D(850,500))
 	, _bDialogSizeIsRelative(false)
 	, _DialogPosition(FVector2D(0.5f,0.5f))
 	, _DialogAnchorPoint(FVector2D(0.5f,0.5f))
