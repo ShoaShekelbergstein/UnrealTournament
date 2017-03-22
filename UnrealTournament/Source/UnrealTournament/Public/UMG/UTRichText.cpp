@@ -397,10 +397,10 @@ UUTRichText::UUTRichText(const FObjectInitializer& ObjectInitializer)
 	, ColorType(EUTTextColor::Light)
 	, InlineIconColorType(EUTTextColor::Light)
 {
-	static ConstructorHelpers::FClassFinder<UUTTextStyle> BodyTextStyleClassFinder(TEXT("/Game/UI/Text/TextStyle-Body"));
+	static ConstructorHelpers::FClassFinder<UUTTextStyle> BodyTextStyleClassFinder(TEXT("/Game/RestrictedAssets/UI/Text/TextStyle-Body"));
 	NormalTextStyle = BodyTextStyleClassFinder.Class;
 
-	static ConstructorHelpers::FClassFinder<UUTTextStyle> KeywordTextStyleClassFinder(TEXT("/Game/UI/Text/TextStyle-Body"));
+	static ConstructorHelpers::FClassFinder<UUTTextStyle> KeywordTextStyleClassFinder(TEXT("/Game/RestrictedAssets/UI/Text/TextStyle-Body"));
 	InlineIconTextStyle = KeywordTextStyleClassFinder.Class;
 
 	Visiblity_DEPRECATED = Visibility = ESlateVisibility::SelfHitTestInvisible;
