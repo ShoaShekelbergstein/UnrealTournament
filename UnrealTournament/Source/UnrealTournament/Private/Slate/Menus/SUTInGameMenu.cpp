@@ -540,13 +540,16 @@ void SUTInGameMenu::ShowHomePanel()
 			}
 		}
 
-		if (PlayerOwner->IsPartyLeader())
+		if (PlayerOwner->GetWorld()->GetNetMode() != NM_Standalone && PlayerOwner->IsInAnActiveParty())
 		{
-			Msg = FText::Format(NSLOCTEXT("SUTInGameMenu","LeaderFormat","You are the leader of your party.  If you leave now, your party will follow.  {0}"), Msg);	
-		}
-		else if (PlayerOwner->IsInAnActiveParty())
-		{
-			Msg = FText::Format(NSLOCTEXT("SUTInGameMenu","FollowerFormat","You are in a party. If you leave, you will leave your current party.  {0}"), Msg);	
+			if (PlayerOwner->IsPartyLeader())
+			{
+				Msg = FText::Format(NSLOCTEXT("SUTInGameMenu","LeaderFormat","You are the leader of your party.  If you leave now, your party will follow.  {0}"), Msg);	
+			}
+			else if (PlayerOwner->IsInAnActiveParty())
+			{
+				Msg = FText::Format(NSLOCTEXT("SUTInGameMenu","FollowerFormat","You are in a party. If you leave, you will leave your current party.  {0}"), Msg);	
+			}
 		}
 
 
