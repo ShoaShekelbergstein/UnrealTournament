@@ -498,12 +498,14 @@ void AUTPlayerController::SetupInputComponent()
 	InputComponent->BindAction("ShowBuyMenu", IE_Pressed, this, &AUTPlayerController::ShowBuyMenu);
 
 	InputComponent->BindAction("DropCarriedObject", IE_Pressed, this, &AUTPlayerController::DropCarriedObject);
+	InputComponent->BindAction("DropCarriedObject", IE_Released, this, &AUTPlayerController::StopDropCarriedObject);
 
 	InputComponent->BindAction("ToggleComMenu", IE_Pressed, this, &AUTPlayerController::ShowComsMenu);
 	InputComponent->BindAction("ToggleComMenu", IE_Released, this, &AUTPlayerController::HideComsMenu);
 
 	InputComponent->BindAction("ToggleWeaponWheel", IE_Pressed, this, &AUTPlayerController::ShowWeaponWheel);
 	InputComponent->BindAction("ToggleWeaponWheel", IE_Released, this, &AUTPlayerController::HideWeaponWheel);
+		
 
 	InputComponent->BindAction("ActivateSpecial", IE_Pressed, this, &AUTPlayerController::ActivateSpecial);
 
@@ -4513,9 +4515,40 @@ void AUTPlayerController::DropCarriedObject()
 {
 	if (UTCharacter && !UTCharacter->IsFiringDisabled())
 	{
-		UTCharacter->DropCarriedObject();
+		if (MyUTHUD != nullptr)
+		{
+			DropStartTime = GetWorld()->GetRealTimeSeconds();
+			GetWorld()->GetTimerManager().SetTimer(DropTimerHandle, this, &AUTPlayerController::ShowDropMenu, 0.2f, false);
+		}
 	}
 }
+
+void AUTPlayerController::ShowDropMenu()
+{
+	if (UTCharacter && !UTCharacter->IsFiringDisabled())
+	{
+		if (MyUTHUD != nullptr)
+		{
+			MyUTHUD->ToggleDropMenu(true);
+		}
+	}
+}
+
+void AUTPlayerController::StopDropCarriedObject()
+{
+	GWorld->GetTimerManager().ClearTimer(DropTimerHandle);
+	if (UTCharacter && !UTCharacter->IsFiringDisabled())
+	{
+		if (MyUTHUD == nullptr || !MyUTHUD->bShowDropMenu)
+		{
+			UTCharacter->DropCarriedObject();
+			return;
+		}
+	}
+
+	if (MyUTHUD != nullptr) MyUTHUD->ToggleDropMenu(false);
+}
+
 
 void AUTPlayerController::SetViewedScorePS(AUTPlayerState* NewViewedPS, uint8 NewStatsPage)
 {

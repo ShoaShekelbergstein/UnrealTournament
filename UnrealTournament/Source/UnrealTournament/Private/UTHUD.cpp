@@ -27,6 +27,7 @@
 #include "UTRadialMenu.h"
 #include "UTRadialMenu_Coms.h"
 #include "UTRadialMenu_WeaponWheel.h"
+#include "UTRadialMenu_DropInventory.h"
 #include "OnlineSubsystemTypes.h"
 #include "OnlineSubsystemUtils.h"
 #include "UTUMGHudWidget.h"
@@ -239,8 +240,11 @@ void AUTHUD::BeginPlay()
 	// Add the Coms Menu
 	ComsMenu = Cast<UUTRadialMenu_Coms>(AddHudWidget(UUTRadialMenu_Coms::StaticClass()));
 	WeaponWheel = Cast<UUTRadialMenu_WeaponWheel>(AddHudWidget(UUTRadialMenu_WeaponWheel::StaticClass()));
+	DropMenu = Cast<UUTRadialMenu_DropInventory>(AddHudWidget(UUTRadialMenu_DropInventory::StaticClass()));
+
 	RadialMenus.Add(ComsMenu);
 	RadialMenus.Add(WeaponWheel);
+	RadialMenus.Add(DropMenu);
 
 	if (DamageScreenMat != nullptr)
 	{
@@ -2037,6 +2041,28 @@ void AUTHUD::ToggleWeaponWheel(bool bShow)
 	{
 		WeaponWheel->BecomeNonInteractive();
 	}
+}
+
+void AUTHUD::ToggleDropMenu(bool bShow)
+{
+	if (DropMenu != nullptr)
+	{
+		bShowDropMenu = bShow;
+		AUTCharacter* UTCharacter = UTPlayerOwner ? UTPlayerOwner->GetUTCharacter() : nullptr;
+		if (bShow && UTCharacter && !UTCharacter->IsDead())
+		{
+			DropMenu->BecomeInteractive();
+		}
+		else
+		{
+			DropMenu->BecomeNonInteractive();
+		}
+	}
+}
+
+AUTInventory* AUTHUD::GetDropItem()
+{
+	return nullptr;
 }
 
 UUTUMGHudWidget* AUTHUD::ActivateUMGHudWidget(FString UMGHudWidgetClassName, bool bUnique)

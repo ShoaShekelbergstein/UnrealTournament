@@ -72,6 +72,7 @@ struct FEnemyDamageNumber
 class UUTRadialMenu;
 class UUTRadialMenu_Coms;
 class UUTRadialMenu_WeaponWheel;
+class UUTRadialMenu_DropInventory;
 
 class UUTUMGHudWidget;
 
@@ -678,6 +679,15 @@ public:
 	bool bShowWeaponWheel;
 	virtual void ToggleWeaponWheel(bool bShow);
 
+	bool bShowDropMenu;
+	virtual void ToggleDropMenu(bool bShow);
+
+	/** 
+	 * returns the item that the drop menu wants you to drop or
+	 * nullptr to cancel 
+	 **/
+	virtual AUTInventory* GetDropItem();
+
 	bool bShowVoiceDebug;
 
 protected:
@@ -688,6 +698,9 @@ protected:
 	UUTRadialMenu_Coms* ComsMenu;
 	UPROPERTY()
 	UUTRadialMenu_WeaponWheel* WeaponWheel;
+	UPROPERTY()
+	UUTRadialMenu_DropInventory* DropMenu;
+
 
 public:
 

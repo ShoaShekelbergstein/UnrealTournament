@@ -12,6 +12,9 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCharacterDiedSignature, class AController*, Killer, const class UDamageType*, DamageType);
 
+class AUTDroppedHealth;
+class AUTDroppedArmor;
+
 /** Replicated movement data of our RootComponent.
 * More efficient than engine's FRepMovement
 */
@@ -2229,8 +2232,28 @@ public:
 	virtual void TriggerBoostPower();
 	virtual void TeamNotifyBoostPowerUse();
 
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerDropHealth();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerDropArmor();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerDropPowerup(AUTTimedPowerup* Powerup);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerDropBoots();
+
+	virtual void SetArmorAmount(class AUTArmor* inArmorType, int32 Amount);
+
+
 private:
 	FTimerHandle SpeedBoostTimerHandle;
+
+protected:
+	TSubclassOf<AUTDroppedHealth> HealthDropType;
+		
 };
 
 inline bool AUTCharacter::IsDead() const

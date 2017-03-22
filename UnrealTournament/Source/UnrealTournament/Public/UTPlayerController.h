@@ -880,6 +880,9 @@ public:
 	UFUNCTION(Exec)
 	virtual void SwitchWeaponGroup(int32 Group);
 
+	UFUNCTION(Reliable, Server, WithValidation)
+	virtual void ServerThrowWeapon();
+
 protected:
 	UPROPERTY(BluePrintReadOnly, Category = Dodging)
 	float LastTapLeftTime;
@@ -921,9 +924,7 @@ protected:
 
 	UFUNCTION(exec)
 	void SelectTranslocator();
-		
-	UFUNCTION(Reliable, Server, WithValidation)
-	virtual void ServerThrowWeapon();
+	
 
 	int32 PreviousWeaponGroup;
 
@@ -1072,6 +1073,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float BuyMenuToggleDelay;
 
+	// The time when a drop began.  If the drop ends before a short period, then
+	// it just uses the default code.
+	float DropStartTime;
+
 public:
 	FUniqueNetIdRepl GetGameAccountId() const;
 
@@ -1093,6 +1098,14 @@ public:
 
 	UFUNCTION(Exec)
 	void DropCarriedObject();
+
+	UFUNCTION()
+	void ShowDropMenu();
+
+	UFUNCTION(Exec)
+	void StopDropCarriedObject();
+
+	FTimerHandle DropTimerHandle;
 
 	/** send localized message to this PC's client and to spectators of this PC's pawn. */
 	virtual void SendPersonalMessage(TSubclassOf<ULocalMessage> Message, int32 Switch = 0, class APlayerState* RelatedPlayerState_1 = NULL, class APlayerState* RelatedPlayerState_2 = NULL, class UObject* OptionalObject = NULL);

@@ -46,6 +46,9 @@
 #include "Engine/DemoNetDriver.h"
 #include "UTPowerupUseMessage.h"
 #include "UTPlaceablePowerup.h"
+#include "UTDroppedHealth.h"
+#include "UTDroppedArmor.h"
+#include "UTJumpBoots.h"
 
 static FName NAME_HatSocket(TEXT("HatSocket"));
 
@@ -63,6 +66,9 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 {
 	static ConstructorHelpers::FObjectFinder<UClass> DefaultCharContentRef(TEXT("Class'/Game/RestrictedAssets/Character/Malcom_New/Malcolm_New.Malcolm_New_C'"));
 	CharacterData = DefaultCharContentRef.Object;
+
+	static ConstructorHelpers::FObjectFinder<UClass> DefaultHealthDropRef(TEXT("Class'/Game/RestrictedAssets/Monsters/MonsterHealthDropMedium.MonsterHealthDropMedium_C'"));
+	HealthDropType = DefaultHealthDropRef.Object;
 
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(40.f, 108.0f);
@@ -5345,11 +5351,17 @@ void AUTCharacter::GiveArmor(AUTArmor* ArmorClass)
 		}
 	}
 
-	ArmorType = ArmorClass;
-	ArmorAmount = FMath::Max(FMath::Max(ArmorAmount, ArmorClass->ArmorAmount), FMath::Min(100, ArmorAmount + ArmorClass->ArmorAmount));
+	SetArmorAmount(ArmorClass, FMath::Max(FMath::Max(ArmorAmount, ArmorClass->ArmorAmount), FMath::Min(100, ArmorAmount + ArmorClass->ArmorAmount)) );
+}
+
+void AUTCharacter::SetArmorAmount(class AUTArmor* inArmorType, int32 Amount)
+{
+	ArmorType = inArmorType;
+	ArmorAmount = Amount;
 	ArmorRemovalAssists.Empty();
 	OnArmorUpdated();
 }
+
 
 void AUTCharacter::RemoveArmor(int32 Amount)
 {
@@ -7246,3 +7258,58 @@ void AUTCharacter::PrepareForIntermission()
 	SetStatusAmbientSound(NULL);
 	TurnOff();
 }
+
+bool AUTCharacter::ServerDropHealth_Validate() { return true; }
+void AUTCharacter::ServerDropHealth_Implementation()
+{
+	if (Health >= 50.0f)
+	{
+		FVector Loc = GetActorLocation() + GetActorRotation().Vector() * (GetSimpleCollisionCylinderExtent().X * 3.0f);
+		FVector Vel = GetVelocity() + GetActorRotation().RotateVector(FVector(300.0f, 0.0f, 150.0f));
+		AUTDroppedHealth* DroppedHealth = GetWorld()->SpawnActor<AUTDroppedHealth>(HealthDropType, Loc, GetActorRotation());
+		if (DroppedHealth != nullptr )
+		{
+			DroppedHealth->Movement->Velocity = Vel;
+			Health -= DroppedHealth->HealAmount;
+		}
+	}
+}
+bool AUTCharacter::ServerDropArmor_Validate(){ return true; }
+void AUTCharacter::ServerDropArmor_Implementation()
+{
+	if ( ArmorAmount > 0 )
+	{
+		FVector Loc = GetActorLocation() + GetActorRotation().Vector() * (GetSimpleCollisionCylinderExtent().X * 3.0f);
+		FVector Vel = GetVelocity() + GetActorRotation().RotateVector(FVector(300.0f, 0.0f, 150.0f));
+		AUTDroppedArmor* DroppedArmor = GetWorld()->SpawnActor<AUTDroppedArmor>(AUTDroppedArmor::StaticClass(), Loc, GetActorRotation());
+		if (DroppedArmor != nullptr )
+		{
+			DroppedArmor->Movement->Velocity = Vel;
+			DroppedArmor->SetArmorAmount(ArmorType, ArmorAmount);
+		
+			ArmorAmount = 0;
+			ArmorType = nullptr;
+		}
+	}
+}
+bool AUTCharacter::ServerDropPowerup_Validate(AUTTimedPowerup* Powerup){ return true; }
+void AUTCharacter::ServerDropPowerup_Implementation(AUTTimedPowerup* Powerup)
+{
+	TossInventory(Powerup);
+}
+
+bool AUTCharacter::ServerDropBoots_Validate(){ return true; }
+void AUTCharacter::ServerDropBoots_Implementation()
+{
+	for (TInventoryIterator<> It(this); It; ++It)
+	{
+		AUTJumpBoots* Boots = Cast<AUTJumpBoots>(*It);
+		if (Boots != nullptr)
+		{
+			TossInventory(Boots);
+			return;
+		}
+	}
+}
+
+
