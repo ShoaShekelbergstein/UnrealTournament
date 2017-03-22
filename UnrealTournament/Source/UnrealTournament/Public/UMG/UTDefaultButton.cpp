@@ -18,8 +18,9 @@ UUTDefaultButton::UUTDefaultButton( const FObjectInitializer& Initializer )
 	, ContentAlignment(HAlign_Fill)
 	, bIconOnRight(true)
 {
-	static ConstructorHelpers::FClassFinder<UUTButtonStyle> DefaultStyleClassFinder(TEXT("/Game/UI/Button/Styles/ButtonStyle-Outline"));
-	Style = DefaultStyleClassFinder.Class;
+	// todo PLK - hook up when button styles come online
+	//static ConstructorHelpers::FClassFinder<UUTButtonStyle> DefaultStyleClassFinder(TEXT("/Game/UI/Button/Styles/ButtonStyle-Outline"));
+	//Style = DefaultStyleClassFinder.Class;
 
 	IconSizes[EUTWidgetStyleSize::Small] = 48.f;
 	IconSizes[EUTWidgetStyleSize::Medium] = 60.f;
