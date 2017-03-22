@@ -1992,7 +1992,7 @@ void AUTGameMode::StartMatch()
 		else
 		{
 			UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
-			if (UTEngine && UTEngine->LocalContentChecksums.Num() > 0)
+			if (UTEngine && ((UTEngine->LocalContentChecksums.Num() + UTEngine->MountedDownloadedContentChecksums.Num()) > 0))
 			{
 				TArray<FAnalyticsEventAttribute> ParamArray;
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("CustomContent"), UTEngine->LocalContentChecksums.Num() + UTEngine->MountedDownloadedContentChecksums.Num()));
