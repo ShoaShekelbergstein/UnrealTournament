@@ -200,7 +200,10 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 				{
 					// we don't really care about zoom depth for the AI so just do the minimum
 					UTOwner->StartFire(1);
-					UTOwner->StopFire(1);
+					if (UTOwner)
+					{
+						UTOwner->StopFire(1);
+					}
 				}
 			}
 
