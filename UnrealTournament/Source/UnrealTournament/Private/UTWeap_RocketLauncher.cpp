@@ -386,7 +386,7 @@ AUTProjectile* AUTWeap_RocketLauncher::FireProjectile()
 
 void AUTWeap_RocketLauncher::PlayDelayedFireSound()
 {
-	if (RocketFireModes.IsValidIndex(0) && RocketFireModes[0].FireSound != NULL)
+	if (UTOwner && RocketFireModes.IsValidIndex(0) && RocketFireModes[0].FireSound != NULL)
 	{
 		if (RocketFireModes[0].FPFireSound != NULL && Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
 		{
