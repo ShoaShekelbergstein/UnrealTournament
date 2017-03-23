@@ -181,6 +181,8 @@ class UNREALTOURNAMENT_API AUTWeap_RocketLauncher : public AUTWeapon
 	virtual void PlayFiringEffects() override;
 	virtual void OnMultiPress_Implementation(uint8 OtherFireMode) override;
 	
+	virtual void PlayDelayedFireSound();
+
 	/**HUD*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
 	UFont* RocketModeFont;

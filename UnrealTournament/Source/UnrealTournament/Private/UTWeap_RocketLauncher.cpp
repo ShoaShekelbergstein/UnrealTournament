@@ -50,7 +50,7 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	BarrelRadius = 9.0f;
 
 	GracePeriod = 0.6f;
-	BurstInterval = 0.06f;
+	BurstInterval = 0.f;
 	GrenadeBurstInterval = 0.1f;
 	FullLoadSpread = 5.f;
 	SeekingLoadSpread = 12.f;
@@ -384,6 +384,21 @@ AUTProjectile* AUTWeap_RocketLauncher::FireProjectile()
 	}
 }
 
+void AUTWeap_RocketLauncher::PlayDelayedFireSound()
+{
+	if (RocketFireModes.IsValidIndex(0) && RocketFireModes[0].FireSound != NULL)
+	{
+		if (RocketFireModes[0].FPFireSound != NULL && Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), RocketFireModes[0].FPFireSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
+		}
+		else
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), RocketFireModes[0].FireSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
+		}
+	}
+}
+
 void AUTWeap_RocketLauncher::PlayFiringEffects()
 {
 	if (CurrentFireMode == 1 && UTOwner != NULL)
@@ -397,16 +412,14 @@ void AUTWeap_RocketLauncher::PlayFiringEffects()
 		}
 
 		// try and play the sound if specified
-		if (RocketFireModes.IsValidIndex(CurrentRocketFireMode) && RocketFireModes[CurrentRocketFireMode].FireSound != NULL)
+		if (NumLoadedRockets > 0)
 		{
-			if (RocketFireModes[CurrentRocketFireMode].FPFireSound != NULL && Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
-			{
-				UUTGameplayStatics::UTPlaySound(GetWorld(), RocketFireModes[CurrentRocketFireMode].FPFireSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
-			}
-			else
-			{
-				UUTGameplayStatics::UTPlaySound(GetWorld(), RocketFireModes[CurrentRocketFireMode].FireSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
-			}
+			FTimerHandle TempHandle;
+			GetWorld()->GetTimerManager().SetTimer(TempHandle, this, &AUTWeap_RocketLauncher::PlayDelayedFireSound, 0.1f * NumLoadedRockets);
+		}
+		else
+		{
+			PlayDelayedFireSound();
 		}
 
 		if (ShouldPlay1PVisuals())

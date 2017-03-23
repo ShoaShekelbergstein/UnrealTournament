@@ -160,6 +160,14 @@ class UNREALTOURNAMENT_API UUTWeaponStateFiringChargedRocket : public UUTWeaponS
 		if (RocketLauncher->NumLoadedRockets > 0)
 		{
 			FireShot();
+			if ((RocketLauncher->NumLoadedRockets > 0) && (RocketLauncher->BurstInterval <= 0.f))
+			{
+				// fire all remaining rockets
+				while (RocketLauncher->NumLoadedRockets > 0)
+				{
+					FireShot();
+				}
+			}
 		}
 		if (RocketLauncher->NumLoadedRockets > 0)
 		{
