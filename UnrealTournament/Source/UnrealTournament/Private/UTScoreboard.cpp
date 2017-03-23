@@ -1119,3 +1119,14 @@ void UUTScoreboard::DrawFramedBackground(float XOffset, float YOffset, float Wid
 	float BackAlpha = 0.3f;
 	DrawTexture(UTHUDOwner->ScoreboardAtlas, XOffset, YOffset, Width, Height, 149, 138, 32, 32, BackAlpha, FLinearColor::White);
 }
+
+bool UUTScoreboard::ShouldDraw_Implementation(bool bShowScores)
+{
+	if (UTGameState && UTGameState->GetMatchState() == MatchState::MapVoteHappening && GetWorld()->GetNetMode() == NM_Standalone)
+	{
+		return false;
+	}
+
+	return bShowScores;
+
+}

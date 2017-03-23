@@ -27,6 +27,7 @@
 #include "UTHUD_CastingGuide.h"
 #include "UTBotCharacter.h"
 #include "UTReplicatedMapInfo.h"
+#include "UTReplicatedGameRuleset.h"
 #include "StatNames.h"
 #include "UTWeap_ImpactHammer.h"
 #include "UTWeap_Translocator.h"
@@ -454,6 +455,10 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 		// if not competitive match, fill standalone match with bots
 		BotFillCount = FMath::Max(BotFillCount, AdjustedBotFillCount());
 	}
+
+	// Handle any associated ruleset
+	InOpt = UGameplayStatics::ParseOption(Options, TEXT("ART"));
+	if (!InOpt.IsEmpty()) ActiveRuleTag = InOpt;
 }
 
 void AUTGameMode::AddMutator(const FString& MutatorPath)
@@ -642,6 +647,7 @@ void AUTGameMode::InitGameState()
 		FUTAnalytics::FireEvent_UTInitMatch(this);
 	}
 
+	ActiveRuleset = CreateGameRuleset(ActiveRuleTag);
 	RegisterServerWithSession();
 }
 
@@ -1190,15 +1196,6 @@ void AUTGameMode::DefaultTimer()
 		}
 	}
 
-	if (MatchState == MatchState::MapVoteHappening)
-	{
-		UTGameState->VoteTimer--;
-		if (UTGameState->VoteTimer<0)
-		{
-			UTGameState->VoteTimer = 0;
-		}
-	}
-
  	if (LobbyBeacon && LobbyBeacon->GetNetConnection()->State == EConnectionState::USOCK_Closed)
 	{
 		// if the server is empty and would be asking the hub to kill it, just kill ourselves rather than waiting for reconnection
@@ -1251,18 +1248,14 @@ void AUTGameMode::DefaultTimer()
 			{
 				if (GetWorld()->GetRealTimeSeconds() > LobbyInitialTimeoutTime && CurrentNumPlayers <= 0 && (GetNetDriver() == NULL || GetNetDriver()->ClientConnections.Num() == 0))
 				{
-					// Catch all...
-					SendEveryoneBackToLobby();
-					LobbyBeacon->Empty();			
+					ShutdownGameInstance();
 				}
 			}
 			else 
 			{
 				if (CurrentNumPlayers <= 0)
 				{
-					// Catch all...
-					SendEveryoneBackToLobby();
-					LobbyBeacon->Empty();
+					ShutdownGameInstance();
 				}
 			}
 
@@ -1282,9 +1275,7 @@ void AUTGameMode::DefaultTimer()
 
 				if (bAllPlayersAreIdle)
 				{
-					// Catch all...
-					SendEveryoneBackToLobby();
-					LobbyBeacon->Empty();			
+					ShutdownGameInstance();
 				}
 			}
 		}
@@ -1306,11 +1297,18 @@ void AUTGameMode::DefaultTimer()
 		}
 	}
 
-	if (MatchState == MatchState::MapVoteHappening)
+	if (MatchState == MatchState::MapVoteHappening )
 	{
+		if (GetWorld()->GetNetMode() != NM_Standalone)
+		{
+			UTGameState->VoteTimer--;
+			if (UTGameState->VoteTimer<=0)
+			{
+				UTGameState->VoteTimer = 0;
+			}
+		}
+		
 		// Scan the maps and see if we have 
-
-
 		TArray<AUTReplicatedMapInfo*> Best;
 		for (int32 i=0; i< UTGameState->MapVoteList.Num(); i++)
 		{
@@ -1342,6 +1340,12 @@ void AUTGameMode::DefaultTimer()
 			UTGameState->ReplayID = DemoNetDriver->ReplayStreamer->GetReplayID();
 		}
 	}
+}
+
+void AUTGameMode::ShutdownGameInstance()
+{
+	SendEveryoneBackToLobby();
+	LobbyBeacon->Empty();			
 }
 
 void AUTGameMode::ForceLobbyUpdate()
@@ -2632,21 +2636,23 @@ bool AUTGameMode::UTIsHandlingReplays()
  **/
 void AUTGameMode::TravelToNextMap_Implementation()
 {
+	// Handle tutorial games first.
 
 	if (GetWorld()->GetNetMode() == NM_Standalone)
 	{
-		// Look to see if we need to launch a quick match first
 		APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
 		UUTLocalPlayer* LP = LocalPC ? Cast<UUTLocalPlayer>(LocalPC->Player) : NULL;
 		if (LP)
 		{
+			// If the player has a pending quickmatch, then it will be triggered here.
 			if ( LP->LaunchPendingQuickmatch() )
 			{
 				return;
 			}
+
+			// Otherwise, display the tutorial finished screen so that the user can determine his destination
 			else if (TutorialMask > 0)
 			{
-
 				UClass* UMGWidgetClass = LoadClass<UUserWidget>(NULL, TEXT("/Game/RestrictedAssets/Tutorials/Blueprints/TutFinishScreenWidget.TutFinishScreenWidget_C"), NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
 				if (UMGWidgetClass)
 				{
@@ -2661,7 +2667,7 @@ void AUTGameMode::TravelToNextMap_Implementation()
 		}	
 	}
 
-
+	// Next check for off line challenges.
 	FString CurrentMapName = GetWorld()->GetMapName();
 	if (bOfflineChallenge)
 	{
@@ -2681,8 +2687,92 @@ void AUTGameMode::TravelToNextMap_Implementation()
 			return;
 		}
 	}
+
 	UE_LOG(UT,Log,TEXT("TravelToNextMap: %i %i"),bDedicatedInstance,IsGameInstanceServer());
 
+	KickIdlePlayers();
+
+
+	// Let all remaining players know this game has ended so that they can clear
+	// their reconnect data.
+	if (bUseMatchmakingSession)
+	{
+		GetWorldTimerManager().ClearTimer(ServerRestartTimerHandle);
+
+		// Make sure no one tried to reconnect to this matchmaking session
+		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+		{
+			AUTPlayerController* Controller = Cast<AUTPlayerController>(*Iterator);
+			if (Controller)
+			{
+				Controller->ClientMatchmakingGameComplete();
+			}
+		}
+	}
+
+	// This is a ranked session, so restart the matchmaking server to it's empty state
+	if (bRankedSession)
+	{
+		SendEveryoneBackToLobby();
+
+		AUTGameSessionRanked* RankedGameSession = Cast<AUTGameSessionRanked>(GameSession);
+		if (RankedGameSession)
+		{
+			RankedGameSession->Restart();
+		}
+	}
+	// This is a quickmatch session.  If there is noone left in the session, then return to matchmaking server to it's empty state
+	else if (bUseMatchmakingSession && NumPlayers == 0)
+	{
+		// Everyone left this quick match
+		AUTGameSessionRanked* RankedGameSession = Cast<AUTGameSessionRanked>(GameSession);
+		if (RankedGameSession)
+		{
+			RankedGameSession->Restart();
+		}
+	}
+	// This is a dedicated server.  Everyone left, just restart game per JIRA UT-7376
+	else if (NumPlayers == 0)
+	{
+		// If we are an instance server, notify the hub we are done.
+		if (IsGameInstanceServer())
+		{
+			ShutdownGameInstance();		
+		}
+		else
+		{
+			RestartGame();
+		}
+	}
+	else
+	{
+		// Handle the rcon next map command
+		if (!RconNextMapName.IsEmpty())
+		{
+			FString TravelMapName = RconNextMapName;
+			if ( FPackageName::IsShortPackageName(RconNextMapName) )
+			{
+				FPackageName::SearchForPackageOnDisk(RconNextMapName, &TravelMapName); 
+			}
+
+			GetWorld()->ServerTravel(TravelMapName + TEXT("?NextMap=1"), false);
+			return;
+		}
+
+		if ( PrepareMapVote() )
+		{
+			SetMatchState(MatchState::MapVoteHappening);
+		}
+		else
+		{
+			SendEveryoneBackToLobby();
+			RestartGame();
+		}
+	}
+}
+
+void AUTGameMode::KickIdlePlayers()
+{
 	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 	{
 		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
@@ -2701,7 +2791,7 @@ void AUTGameMode::TravelToNextMap_Implementation()
 				}
 			}
 		}
-		else if (UTPlayerState != nullptr && !UTPlayerState->bIsABot)
+		else if (UTPlayerState != nullptr && !UTPlayerState->bIsABot && bGameEnded)
 		{
 			// Collect non-idle players for the next round
 			UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
@@ -2711,28 +2801,30 @@ void AUTGameMode::TravelToNextMap_Implementation()
 			}
 		}
 	}
+}
 
-	if (!bRankedSession && (!IsGameInstanceServer() || bDedicatedInstance) && !bDisableMapVote && GetWorld()->GetNetMode() != NM_Standalone)
+bool AUTGameMode::PrepareMapVote()
+{
+	// First, we need a list of possible maps to vote from.  
+	
+	TArray<FString> MapPrefixList;
+	TArray<FAssetData> AllMaps;
+	TArray<FString> MapList;	
+
+	MapPrefixList.Add(MapPrefix);
+	UTGameState->ScanForMaps(MapPrefixList, AllMaps);
+
+	// If there is an active ruleset, then get a list of allowed maps
+	if (ActiveRuleset != nullptr)
 	{
-		// gather maps for map vote
-		TArray<FString> MapPrefixList;
-		TArray<FAssetData> MapList;
+		ActiveRuleset->GetCompleteMapList(MapList);
 
-		MapPrefixList.Add(MapPrefix);
-		UTGameState->ScanForMaps(MapPrefixList, MapList);
-
-		// Add the user maps in to the map rotation list
-		for (FString& UserMap : UserMapRotation)
-		{
-			MapRotation.Add(UserMap);
-		}
-
-		// First, fixup the MapRotation array so it only has long names...
-		for (FString& Map : MapRotation)
+		// Now, ensure full names
+		for (FString& Map : MapList)
 		{
 			if (FPackageName::IsShortPackageName(Map))
 			{
-				for (const FAssetData& MapAsset : MapList)
+				for (const FAssetData& MapAsset : AllMaps)
 				{
 					FString PackageName = MapAsset.PackageName.ToString();
 					PackageName = PackageName.Right(PackageName.Len() - PackageName.Find(TEXT("/") - 1, ESearchCase::IgnoreCase, ESearchDir::FromEnd));
@@ -2744,116 +2836,29 @@ void AUTGameMode::TravelToNextMap_Implementation()
 				}
 			}
 		}
-
-		for (int32 i = 0; i < MapList.Num(); i++)
-		{
-			FString PackageName = MapList[i].PackageName.ToString();
-			for (int32 j = 0; j < MapRotation.Num(); j++)
-			{
-				if (PackageName.Equals(MapRotation[j], ESearchCase::IgnoreCase))
-				{
-					const FString* Title = MapList[i].TagsAndValues.Find(NAME_MapInfo_Title);
-					const FString* Screenshot = MapList[i].TagsAndValues.Find(NAME_MapInfo_ScreenshotReference);
-					UTGameState->CreateMapVoteInfo(PackageName, (Title != NULL && !Title->IsEmpty()) ? *Title : *MapList[i].AssetName.ToString(), *Screenshot);
-				}
-			}
-		}
-	}
-
-	if (bUseMatchmakingSession)
-	{
-		GetWorldTimerManager().ClearTimer(ServerRestartTimerHandle);
-
-		// Make sure no one tried to reconnect to this matchmaking session
-		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
-		{
-			AUTPlayerController* Controller = Cast<AUTPlayerController>(*Iterator);
-			if (Controller)
-			{
-				Controller->ClientMatchmakingGameComplete();
-			}
-		}
-	}
-
-	if (bRankedSession)
-	{
-		SendEveryoneBackToLobby();
-
-		AUTGameSessionRanked* RankedGameSession = Cast<AUTGameSessionRanked>(GameSession);
-		if (RankedGameSession)
-		{
-			RankedGameSession->Restart();
-		}
-	}
-	else if (bUseMatchmakingSession && NumPlayers == 0)
-	{
-		// Everyone left this quick match
-		AUTGameSessionRanked* RankedGameSession = Cast<AUTGameSessionRanked>(GameSession);
-		if (RankedGameSession)
-		{
-			RankedGameSession->Restart();
-		}
-	}
-	else if (NumPlayers == 0)
-	{
-		// Everyone left, just restart game per JIRA UT-7376
-		RestartGame();
-	}
-	else if (GetWorld()->GetNetMode() != ENetMode::NM_Standalone && (IsGameInstanceServer() || (!bDisableMapVote && UTGameState->MapVoteList.Num() > 0)))
-	{
-		if (UTGameState->MapVoteList.Num() > 0)
-		{
-			SetMatchState(MatchState::MapVoteHappening);
-		}
-		else
-		{
-			SendEveryoneBackToLobby();
-		}
 	}
 	else
 	{
-		if (!RconNextMapName.IsEmpty())
+		// Just add all of the maps to the list
+		for (const FAssetData& MapAsset : AllMaps)
 		{
-
-			FString TravelMapName = RconNextMapName;
-			if ( FPackageName::IsShortPackageName(RconNextMapName) )
-			{
-				FPackageName::SearchForPackageOnDisk(RconNextMapName, &TravelMapName); 
-			}
-
-			GetWorld()->ServerTravel(TravelMapName + TEXT("?NextMap=1"), false);
-			return;
+			MapList.Add(MapAsset.PackageName.ToString());
 		}
-
-		int32 MapIndex = -1;
-		for (int32 i=0;i<MapRotation.Num();i++)
-		{
-			if (MapRotation[i].EndsWith(CurrentMapName))
-			{
-				MapIndex = i;
-				break;
-			}
-		}
-
-		if (MapRotation.Num() > 0)
-		{
-			MapIndex = (MapIndex + 1) % MapRotation.Num();
-			if (MapIndex >=0 && MapIndex < MapRotation.Num())
-			{
-
-				FString TravelMapName = MapRotation[MapIndex];
-				if ( FPackageName::IsShortPackageName(MapRotation[MapIndex]) )
-				{
-					FPackageName::SearchForPackageOnDisk(MapRotation[MapIndex], &TravelMapName); 
-				}
-		
-				GetWorld()->ServerTravel(TravelMapName + TEXT("?NextMap=1"), false);
-				return;
-			}
-		}
-
-		RestartGame();	
 	}
+
+	// Now, go through all of the maps and 
+	for (const FAssetData& MapAsset : AllMaps)
+	{
+		FString PackageName = MapAsset.PackageName.ToString();
+		if (MapList.Find(PackageName) != INDEX_NONE)
+		{
+			const FString* Title = MapAsset.TagsAndValues.Find(NAME_MapInfo_Title);
+			const FString* Screenshot = MapAsset.TagsAndValues.Find(NAME_MapInfo_ScreenshotReference);
+			UTGameState->CreateMapVoteInfo(PackageName, (Title != NULL && !Title->IsEmpty()) ? *Title : *MapAsset.AssetName.ToString(), Screenshot != nullptr ? *Screenshot : TEXT(""));
+		}
+	}
+
+	return (UTGameState->MapVoteList.Num() > 0);
 }
 
 void AUTGameMode::ShowFinalScoreboard()
@@ -5005,11 +5010,16 @@ void AUTGameMode::HandleMapVote()
 	MapVoteTime = FMath::Max(MapVoteTime, 20) * GetActorTimeDilation();
 
 	UTGameState->MapVoteListCount = UTGameState->MapVoteList.Num();
-	UTGameState->VoteTimer = MapVoteTime;
-	FTimerHandle TempHandle;
-	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::TallyMapVotes, MapVoteTime + GetActorTimeDilation());
-	FTimerHandle TempHandle2;
-	GetWorldTimerManager().SetTimer(TempHandle2, this, &AUTGameMode::CullMapVotes, MapVoteTime - 10 * GetActorTimeDilation());
+
+	// In stand alone, we don't time out on map voting
+	if (GetWorld()->GetNetMode() != NM_Standalone)
+	{
+		UTGameState->VoteTimer = MapVoteTime;
+		FTimerHandle TempHandle;
+		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::TallyMapVotes, MapVoteTime + GetActorTimeDilation());
+		FTimerHandle TempHandle2;
+		GetWorldTimerManager().SetTimer(TempHandle2, this, &AUTGameMode::CullMapVotes, MapVoteTime - 10 * GetActorTimeDilation());
+	}
 
 	for( FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator )
 	{
@@ -5591,3 +5601,4 @@ void AUTGameMode::HandleDefaultLineupSpawns(LineUpTypes LineUpType, TArray<AUTCh
 	
 	}
 }
+

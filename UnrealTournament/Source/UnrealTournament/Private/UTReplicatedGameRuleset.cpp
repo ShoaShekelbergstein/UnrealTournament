@@ -355,5 +355,7 @@ FString AUTReplicatedGameRuleset::GenerateURL(const FString& StartingMap, bool b
 	if (bRequireFilled) URL += TEXT("?RequireFull=1");
 	if (bCompetitiveMatch) URL += TEXT("?NoJIP");
 
+	// Let the game know what ruleset this is.
+	URL += FString::Printf(TEXT("?ART=%s"), *UniqueTag );
 	return URL;
 }

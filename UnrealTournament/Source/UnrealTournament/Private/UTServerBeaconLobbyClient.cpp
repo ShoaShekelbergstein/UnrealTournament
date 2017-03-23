@@ -40,7 +40,7 @@ void AUTServerBeaconLobbyClient::OnConnected()
 
 	if (UTGameMode)
 	{
-		Lobby_PrimeMapList(GameInstanceID);
+		Lobby_RequestFirstBanFromServer(GameInstanceID);
 
 		// Try to notify that we are ready.
 		AUTGameSession* UTGameSession = Cast<AUTGameSession>(UTGameMode->GameSession);
@@ -173,104 +173,6 @@ void AUTServerBeaconLobbyClient::AuthorizeDedicatedInstance_Implementation(FGuid
 		GameInstanceID = InstanceID;
 		CurrentGameMode->BecomeDedicatedInstance(HubGuid, InstanceID);
 	}
-}
-
-bool AUTServerBeaconLobbyClient::Lobby_PrimeMapList_Validate(int32 InstanceID) { return true; }
-void AUTServerBeaconLobbyClient::Lobby_PrimeMapList_Implementation(int32 InstanceID)
-{
-	UE_LOG(UT,Verbose, TEXT("[Hub] Lobby_PrimeMapList - Searching for maps"));
-	AUTLobbyGameState* LobbyGameState = GetWorld()->GetGameState<AUTLobbyGameState>();
-	if (LobbyGameState)
-	{
-		AUTLobbyMatchInfo* MatchInfo = NULL;
-		
-		for (int32 i=0; i < LobbyGameState->GameInstances.Num(); i++)
-		{
-			if ( LobbyGameState->GameInstances[i].MatchInfo->GameInstanceID == InstanceID )
-			{
-				MatchInfo = LobbyGameState->GameInstances[i].MatchInfo;
-				break;
-			}
-		}
-
-			if (MatchInfo && MatchInfo->CurrentRuleset.IsValid())
-		{
-			AllowedMaps.Empty();
-			if (MatchInfo->CurrentRuleset->bCustomRuleset)
-			{
-				AUTGameMode* GameMode = MatchInfo->CurrentRuleset->GetDefaultGameModeObject();
-				if (GameMode)
-				{
-					TArray<FString> Prefixes;
-					Prefixes.Add( GameMode->GetMapPrefix() );
-					UE_LOG(UT,Verbose, TEXT(" Getting Map List for %i prefixes"), Prefixes.Num());
-					if (Prefixes.Num() > 0)
-					{
-						UE_LOG(UT,Verbose, TEXT("    -- First Prefiox: %s"), *Prefixes[0]);
-					}
-
-					LobbyGameState->GetMapList(Prefixes, AllowedMaps, true);
-				}
-				else
-				{
-					UE_LOG(UT,Verbose, TEXT("    Using Initial Map"));
-					AllowedMaps.Add(MatchInfo->InitialMapInfo.Get());
-				}
-			}
-			else
-			{
-				UE_LOG(UT,Verbose, TEXT("Using the Rulesets %i"), MatchInfo->CurrentRuleset->MapList.Num());
-				AllowedMaps = MatchInfo->CurrentRuleset->MapList;
-			}
-		}
-
-		
-		// Grab the allowed maps
-		
-
-		UE_LOG(UT,Verbose, TEXT("[Hub] Lobby_PrimeMapList - GameState returned %i maps"),AllowedMaps.Num());
-
-		if (AllowedMaps.Num() > 0)
-		{
-			Instance_ReceiveMap(AllowedMaps[0]->MapPackageName, AllowedMaps[0]->Title, AllowedMaps[0]->MapScreenshotReference,0);
-		}
-		else
-		{
-			// Immediately send the ban list
-			Lobby_RequestFirstBanFromServer(InstanceID);
-		}
-	}
-
-}
-
-void AUTServerBeaconLobbyClient::Instance_ReceiveMap_Implementation(const FString& MapPackageName, const FString& MapTitle, const FString& MapScreenshotReference, int32 Index)
-{
-	UE_LOG(UT,Verbose,TEXT("[Instance] ReceiveMap %s [%s] %s %i"), *MapPackageName, *MapTitle, *MapScreenshotReference, Index);
-	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-	if (UTGameState)
-	{
-		UTGameState->CreateMapVoteInfo(MapPackageName, MapTitle, MapScreenshotReference);
-	}
-
-	Lobby_SendNextMap(GameInstanceID, Index);
-}
-
-bool AUTServerBeaconLobbyClient::Lobby_SendNextMap_Validate(int32 InstanceID, int32 LastIndex) { return true; }
-void AUTServerBeaconLobbyClient::Lobby_SendNextMap_Implementation(int32 InstanceID, int32 LastIndex)
-{
-	UE_LOG(UT,Verbose,TEXT("[Hub] SendNextMap %i"), LastIndex);
-
-	LastIndex++;
-	if (AllowedMaps.Num() > LastIndex)
-	{
-		Instance_ReceiveMap(AllowedMaps[LastIndex]->MapPackageName, AllowedMaps[LastIndex]->Title, AllowedMaps[LastIndex]->MapScreenshotReference,LastIndex);
-	}
-	else
-	{
-		// Send the ban list
-		Lobby_RequestFirstBanFromServer(InstanceID);
-	}
-
 }
 
 void AUTServerBeaconLobbyClient::Instance_ReceiveHubID_Implementation(FGuid HubGuid)

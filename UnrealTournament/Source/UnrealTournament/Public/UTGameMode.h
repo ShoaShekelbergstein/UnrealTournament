@@ -71,6 +71,7 @@ struct FLoadoutInfo
 
 class AUTReplicatedLoadoutInfo;
 class AUTPlayerController;
+class UUTGameRuleset;
 
 USTRUCT()
 struct FLoadoutPack
@@ -393,13 +394,6 @@ public:
 	/** last starting map selected in the UI */
 	UPROPERTY(Config)
 	FString UILastStartingMap;
-
-	UPROPERTY(Config)
-	TArray<FString> MapRotation;
-
-	// These maps will be added to the map rotation list.  This is to get around ini parser limitations
-	UPROPERTY(Config)
-	TArray<FString> UserMapRotation;
 
 	UPROPERTY()
 	FString RconNextMapName;
@@ -809,11 +803,6 @@ public:
 
 protected:
 
-
-	/** map prefix for valid maps (not including the dash); you can create more broad handling by overriding SupportsMap() */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Game)
-	FString MapPrefix;
-
 	/** checks whether the mutator is allowed in this gametype and doesn't conflict with any existing mutators */
 	virtual bool AllowMutator(TSubclassOf<AUTMutator> MutClass);
 
@@ -1066,5 +1055,31 @@ public:
 	// Holds the game time at which returning players are no longer guarenteed a spot.
 	UPROPERTY()
 	float ReturningPlayerGraceCutoff;
+
+	/**
+	 *	Kick any players who have been idle from the match
+	 **/
+	UFUNCTION(BlueprintCallable, Category = Game)
+	void KickIdlePlayers();
+
+	/**
+	 *	Creates all of the replicated data needed for map voting
+	 **/
+	virtual bool PrepareMapVote();
+
+	/**
+	 *	Shuts down a game instance
+	 **/
+	virtual void ShutdownGameInstance();
+
+public:
+	// If this is a single player game, or an instance server, this will hold the unique tag of the ruleset being used if relevant
+	UPROPERTY(BlueprintReadOnly,Category = Game)
+	FString ActiveRuleTag;
+
+	// Hold a local copy of the ruleset being used.
+	UPROPERTY(BlueprintReadOnly, Category = Game)
+	UUTGameRuleset* ActiveRuleset;
+
 };
 

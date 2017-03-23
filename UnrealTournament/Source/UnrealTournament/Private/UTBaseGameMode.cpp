@@ -9,6 +9,7 @@
 #include "UTDemoRecSpectator.h"
 #include "UTGameMessage.h"
 #include "UTReplicatedGameRuleset.h"
+#include "UTEpicDefaultRulesets.h"
 #include "UTAnalytics.h"
 #if WITH_PROFILE
 #include "UtMcpProfileManager.h"
@@ -800,3 +801,19 @@ AUTReplicatedGameRuleset* AUTBaseGameMode::CreateCustomReplicateGameRuleset(UWor
 	return NewReplicatedRuleset;
 }
 
+UUTGameRuleset* AUTBaseGameMode::CreateGameRuleset(const FString& RuleTag)
+{
+	AUTGameState* UTGameState = Cast<AUTGameState>(GameState);
+	if (UTGameState != nullptr && !RuleTag.IsEmpty())
+	{
+		FName RuleName = FName(*RuleTag);
+		UUTGameRuleset* NewRuleset = NewObject<UUTGameRuleset>(GetTransientPackage(), RuleName, RF_Transient);
+		if (NewRuleset)
+		{
+			NewRuleset->UniqueTag = RuleTag;
+			UUTEpicDefaultRulesets::InsureEpicDefaults(NewRuleset);
+			return NewRuleset;
+		}
+	}
+	return nullptr;
+}

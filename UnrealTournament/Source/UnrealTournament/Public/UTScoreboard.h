@@ -207,11 +207,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		UTexture2D* HighlightIcon;
 
-	virtual bool ShouldDraw_Implementation(bool bShowScores)
-	{
-		return bShowScores;
-	}
-
 	virtual void GetTitleMessageArgs(FFormatNamedArguments& Args) const;
 	virtual void DrawGamePanel(float RenderDelta, float& YOffset);
 
@@ -339,5 +334,8 @@ public:
 	virtual void DrawMatchSummary(float RenderDelta);
 
 	virtual void DrawFramedBackground(float XOffset, float YOffset, float Width, float Height);
+
+	bool ShouldDraw_Implementation(bool bShowScores);
+
 };
 

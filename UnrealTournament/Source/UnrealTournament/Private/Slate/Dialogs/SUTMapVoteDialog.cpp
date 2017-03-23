@@ -20,16 +20,23 @@ void SUTMapVoteDialog::Construct(const FArguments& InArgs)
 	DefaultLevelScreenshot = new FSlateDynamicImageBrush(Cast<UUTGameEngine>(GEngine)->DefaultLevelScreenshot, FVector2D(256.0, 128.0), NAME_None);
 	GameState = InArgs._GameState;
 
+	FVector2D Size = InArgs._DialogSize;
+
+	if (InArgs._PlayerOwner->GetWorld()->GetNetMode() == NM_Standalone)
+	{
+		Size.X -= 900;
+	}
+
 	SUTDialogBase::Construct(SUTDialogBase::FArguments()
 							.PlayerOwner(InArgs._PlayerOwner)
 							.DialogTitle(InArgs._DialogTitle)
-							.DialogSize(InArgs._DialogSize)
+							.DialogSize(Size)
 							.bDialogSizeIsRelative(InArgs._bDialogSizeIsRelative)
 							.DialogPosition(InArgs._DialogPosition)
 							.IsScrollable(false)
 							.DialogAnchorPoint(InArgs._DialogAnchorPoint)
 							.ContentPadding(InArgs._ContentPadding)
-							.ButtonMask(InArgs._ButtonMask)
+							.ButtonMask(0x000)
 							.OnDialogResult(InArgs._OnDialogResult)
 						);
 
@@ -165,44 +172,52 @@ void SUTMapVoteDialog::Construct(const FArguments& InArgs)
 
 	}
 	BuildMapList();
+
+	if (PlayerOwner->GetWorld()->GetNetMode() == NM_Standalone && TopPanel.IsValid())
+	{
+		RightPanel->SetVisibility(EVisibility::Collapsed);
+	}
 }
 
 void SUTMapVoteDialog::BuildMapList()
 {
-	if (MapBox.IsValid() && GameState.IsValid() && GameState->VoteTimer > 0)
+	if (MapBox.IsValid() && GameState.IsValid() && GameState->GetMatchState() == MatchState::MapVoteHappening)
 	{
 		if (GameState->IsMapVoteListReplicationCompleted())
 		{
 			GameState->SortVotes();
 			// Store the current # of votes so we can check later to see if additional maps have been replicated or removed.
 			NumMapInfos = GameState->MapVoteList.Num();
-
 			MapBox->ClearChildren();
-			if ( GameState->VoteTimer > 0 && GameState->VoteTimer <= 10 )
+
+			if (PlayerOwner->GetWorld()->GetNetMode() == NM_Standalone && TopPanel.IsValid())
 			{
-				MapBox->AddSlot()
-				[
-					SNew(SVerticalBox)
-					+SVerticalBox::Slot().HAlign(HAlign_Center)
+				if ( GameState->VoteTimer > 0 && GameState->VoteTimer <= 10 )
+				{
+					MapBox->AddSlot()
 					[
-						SNew(STextBlock)
-						.Text(NSLOCTEXT("SUTMapVoteDialog","Finalists","Choose from the finalists:"))
-						.TextStyle(SUWindowsStyle::Get(),"UT.Dialog.BodyTextStyle")
-					]
-				];
-			}
-			else
-			{
-				MapBox->AddSlot()
-				[
-					SNew(SVerticalBox)
-					+SVerticalBox::Slot().HAlign(HAlign_Center)
+						SNew(SVerticalBox)
+						+SVerticalBox::Slot().HAlign(HAlign_Center)
+						[
+							SNew(STextBlock)
+							.Text(NSLOCTEXT("SUTMapVoteDialog","Finalists","Choose from the finalists:"))
+							.TextStyle(SUWindowsStyle::Get(),"UT.Dialog.BodyTextStyle")
+						]
+					];
+				}
+				else
+				{
+					MapBox->AddSlot()
 					[
-						SNew(STextBlock)
-						.Text(NSLOCTEXT("SUTMapVoteDialog","Lead","Maps with the most votes:"))
-						.TextStyle(SUWindowsStyle::Get(),"UT.Dialog.BodyTextStyle")
-					]
-				];
+						SNew(SVerticalBox)
+						+SVerticalBox::Slot().HAlign(HAlign_Center)
+						[
+							SNew(STextBlock)
+							.Text(NSLOCTEXT("SUTMapVoteDialog","Lead","Maps with the most votes:"))
+							.TextStyle(SUWindowsStyle::Get(),"UT.Dialog.BodyTextStyle")
+						]
+					];
+				}
 			}
 
 			MapBox->AddSlot()
@@ -227,7 +242,7 @@ void SUTMapVoteDialog::BuildMapList()
 		else
 		{
 			MapBox->ClearChildren();
-			if ( GameState->VoteTimer > 0 && GameState->VoteTimer <= 10 )
+			if ( !GameState->IsMapVoteListReplicationCompleted())
 			{
 				MapBox->AddSlot()
 				[
@@ -242,6 +257,11 @@ void SUTMapVoteDialog::BuildMapList()
 			}
 		
 		}
+	}
+
+	if (PlayerOwner->GetWorld()->GetNetMode() == NM_Standalone && TopPanel.IsValid())
+	{
+		TopPanel->SetVisibility(EVisibility::Collapsed);
 	}
 
 }
@@ -484,7 +504,7 @@ void SUTMapVoteDialog::BuildAllVotes()
 	MapPanel->ClearChildren();
 
 	// We only draw the full list if we have > 10 seconds left in map voting.
-	if (GameState->VoteTimer > 10)
+	if (PlayerOwner->GetWorld()->GetNetMode() == NM_Standalone || GameState->VoteTimer > 10)
 	{
 		// We need 2 lists.. one sorted by votes (use the main one in the GameState) and one that is sorted alphabetically.
 		// We will build that one here.
@@ -553,6 +573,7 @@ void SUTMapVoteDialog::BuildAllVotes()
 						}
 					}
 
+					TSharedPtr<SVerticalBox> VoteCountBox;
 					MapPanel->AddSlot(Col, Row).Padding(5.0,5.0,5.0,5.0)
 					[
 						SNew(SBox)
@@ -583,7 +604,7 @@ void SUTMapVoteDialog::BuildAllVotes()
 										]
 										+SOverlay::Slot()
 										[
-											SNew(SVerticalBox)
+											SAssignNew(VoteCountBox, SVerticalBox)
 											+SVerticalBox::Slot().FillHeight(1.0)
 											.Padding(5.0,5.0,0.0,0.0)
 											[
@@ -631,6 +652,10 @@ void SUTMapVoteDialog::BuildAllVotes()
 						]
 					];
 
+					if (PlayerOwner->GetWorld()->GetNetMode() == NM_Standalone)
+					{
+						VoteCountBox->SetVisibility(EVisibility::Collapsed);
+					}
 					VoteButtons.Add( FVoteButton(NULL, MapVoteInfo, VoteButton, ImageWidget, MapTitle, VoteCountText, BorderWidget) );
 				}
 			}
@@ -804,33 +829,59 @@ void SUTMapVoteDialog::Tick( const FGeometry& AllottedGeometry, const double InC
 	}
 }
 
-TSharedRef<class SWidget> SUTMapVoteDialog::BuildCustomButtonBar()
+void SUTMapVoteDialog::AddButtonsToLeftOfButtonBar(uint32& ButtonCount)
 {
-	return SNew(SHorizontalBox)
-		+SHorizontalBox::Slot().Padding(20.0,0.0,0.0,0.0)
+	if (GameState.IsValid() && PlayerOwner->GetWorld()->GetNetMode() == NM_Standalone)
+	{
+		ButtonBar->AddSlot(ButtonCount++, 0)
+		.VAlign(VAlign_Center)
 		[
-			SNew(STextBlock)
-			.Text(this, &SUTMapVoteDialog::GetClockTime)
+			SNew(SButton)
+			.HAlign(HAlign_Center)
+			.ButtonStyle(SUWindowsStyle::Get(), "UT.BottomMenu.Button")
+			.ContentPadding(FMargin(5.0f, 5.0f, 5.0f, 5.0f))
+			.Text(NSLOCTEXT("SUTInGameMenu", "MenuBar_ReturnToMainMenu", "Return to Main Menu"))
 			.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.SmallTextStyle")
-			.ColorAndOpacity(FLinearColor::Yellow)
+			.OnClicked(this, &SUTMapVoteDialog::ReturnToMainMenu)
 		];
+	}
 }
 
+TSharedRef<class SWidget> SUTMapVoteDialog::BuildCustomButtonBar()
+{
+	if (GameState.IsValid() && PlayerOwner->GetWorld()->GetNetMode() != NM_Standalone)
+	{
+		return SNew(SHorizontalBox)
+			+SHorizontalBox::Slot().Padding(20.0,0.0,0.0,0.0)
+			[
+				SNew(STextBlock)
+				.Text(this, &SUTMapVoteDialog::GetClockTime)
+				.TextStyle(SUWindowsStyle::Get(), "UT.TopMenu.Button.SmallTextStyle")
+				.ColorAndOpacity(FLinearColor::Yellow)
+			];
+	}
+
+	return SNullWidget::NullWidget;
+
+}
+
+FReply SUTMapVoteDialog::ReturnToMainMenu()
+{
+	PlayerOwner->CloseMapVote();
+	PlayerOwner->ReturnToMainMenu();
+	return FReply::Handled();
+}
 
 FText SUTMapVoteDialog::GetClockTime() const
 {
-	if (GameState.IsValid())
+	if (GameState->VoteTimer > 10)
 	{
-		if (GameState->VoteTimer > 10)
-		{
-			return FText::Format(NSLOCTEXT("SUTMapVoteDialog","ClockFormat","Voting ends in {0} seconds..."),  FText::AsNumber(GameState->VoteTimer));
-		}
-		else
-		{
-			return FText::Format(NSLOCTEXT("SUTMapVoteDialog","ClockFormat2","Hurry, final voting ends in {0} seconds..."),  FText::AsNumber(GameState->VoteTimer));
-		}
+		return FText::Format(NSLOCTEXT("SUTMapVoteDialog","ClockFormat","Voting ends in {0} seconds..."),  FText::AsNumber(GameState->VoteTimer));
 	}
-	return FText::GetEmpty();
+	else
+	{
+		return FText::Format(NSLOCTEXT("SUTMapVoteDialog","ClockFormat2","Hurry, final voting ends in {0} seconds..."),  FText::AsNumber(GameState->VoteTimer));
+	}
 }
 
 void SUTMapVoteDialog::OnDialogOpened()
@@ -857,5 +908,16 @@ FReply SUTMapVoteDialog::OnButtonClick(uint16 ButtonID)
 	GetPlayerOwner()->CloseMapVote();
 	return FReply::Handled();
 }
+
+FReply SUTMapVoteDialog::OnKeyUp(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
+{
+	if (PlayerOwner->GetWorld()->GetNetMode() != NM_Standalone && InKeyEvent.GetKey() == EKeys::Escape)
+	{
+		OnButtonClick(UTDIALOG_BUTTON_CANCEL);
+	}
+
+	return FReply::Unhandled();
+}
+
 
 #endif

@@ -83,6 +83,9 @@ public:
 	UPROPERTY(Config)
 	uint16 OptionFlags;
 
+	UFUNCTION()
+	void GetCompleteMapList(TArray<FString>& OutMapList, bool bInsureNew = false);
+
 };
 
 
