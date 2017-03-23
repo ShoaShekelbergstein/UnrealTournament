@@ -665,7 +665,7 @@ public:
 			return HUDIcon;
 		}
 
-		if (SelectedCharacter.GetDefaultObject() != nullptr)
+		if (SelectedCharacter.Get() != nullptr)
 		{
 			return SelectedCharacter.GetDefaultObject()->DefaultCharacterPortrait;
 		}
