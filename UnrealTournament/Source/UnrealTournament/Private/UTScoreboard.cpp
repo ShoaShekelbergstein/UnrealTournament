@@ -757,7 +757,7 @@ void UUTScoreboard::DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float R
 	}
 	if (UTGameState && UTGameState->HasMatchStarted())
 	{
-		if (PlayerState->bPendingTeamSwitch)
+		if (PlayerState->bPendingTeamSwitch && !PlayerState->bIsABot)
 		{
 			DrawText(TeamSwapText, XOffset + (ScaledCellWidth * ColumnHeaderScoreX), YOffset + ColumnY, UTHUDOwner->SmallFont, RenderScale, 1.0f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
 		}
