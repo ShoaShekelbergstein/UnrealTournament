@@ -179,6 +179,7 @@ void UUTWeaponStateFiring_LoopingFire::RefireCheckTimer()
 		}
 		else
 		{
+			GetOuterAUTWeapon()->OnContinuedFiring();
 			FireShot();
 			CurrentShot++;
 		}
