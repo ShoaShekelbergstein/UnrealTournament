@@ -660,7 +660,17 @@ public:
 
 	inline const FCanvasIcon& GetHUDIcon() const
 	{
-		return HUDIcon.Texture != nullptr ? HUDIcon : SelectedCharacter.GetDefaultObject()->DefaultCharacterPortrait;
+		if (HUDIcon.Texture != nullptr)
+		{
+			return HUDIcon;
+		}
+
+		if (SelectedCharacter.GetDefaultObject() != nullptr)
+		{
+			return SelectedCharacter.GetDefaultObject()->DefaultCharacterPortrait;
+		}
+
+		return HUDIcon;
 	}
 
 protected:
