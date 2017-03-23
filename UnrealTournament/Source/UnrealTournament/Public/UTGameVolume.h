@@ -25,7 +25,7 @@ class UNREALTOURNAMENT_API AUTGameVolume : public APhysicsVolume, public IUTTeam
 		FVector2D MinimapOffset;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Gameplay")
-		TArray<class AUTWeaponLocker*> TeamLockers;
+		TArray<class AUTSupplyChest*> TeamLockers;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Gameplay")
 		TArray<class AUTRallyPoint*> RallyPoints;

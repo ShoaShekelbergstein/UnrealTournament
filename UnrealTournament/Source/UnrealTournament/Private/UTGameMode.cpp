@@ -48,7 +48,7 @@
 #include "SUTSpawnWindow.h"
 #include "AnalyticsEventAttribute.h"
 #include "IAnalyticsProvider.h"
-#include "UTWeaponLocker.h"
+#include "UTSupplyChest.h"
 #include "UTCTFRoundGameState.h"
 #include "UTGameVolume.h"
 #include "UTArmor.h"
@@ -1782,45 +1782,48 @@ void AUTGameMode::DiscardInventory(APawn* Other, AController* Killer)
 	AUTCharacter* UTC = Cast<AUTCharacter>(Other);
 	if (UTC != NULL)
 	{
-		// toss weapon
-		if (UTC->GetWeapon() != NULL)
+		if (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive)
 		{
-			if (UTC->GetWeapon()->ShouldDropOnDeath())
+			// toss weapon
+			if (UTC->GetWeapon() != NULL)
 			{
-				AUTWeapon* OldWeapon = UTC->GetWeapon();
-				UTC->TossInventory(UTC->GetWeapon());
-				if (OldWeapon && !OldWeapon->IsPendingKillPending() && OldWeapon->bShouldAnnounceDrops && (OldWeapon->Ammo > 0) && (OldWeapon->PickupAnnouncementName != NAME_None) && bAllowPickupAnnouncements && IsMatchInProgress())
+				if (UTC->GetWeapon()->ShouldDropOnDeath())
 				{
-					AUTPlayerState* UTPS = Cast<AUTPlayerState>(Other->PlayerState);
-					if (UTPS)
+					AUTWeapon* OldWeapon = UTC->GetWeapon();
+					UTC->TossInventory(UTC->GetWeapon());
+					if (OldWeapon && !OldWeapon->IsPendingKillPending() && OldWeapon->bShouldAnnounceDrops && (OldWeapon->Ammo > 0) && (OldWeapon->PickupAnnouncementName != NAME_None) && bAllowPickupAnnouncements && IsMatchInProgress())
 					{
-						UTPS->AnnounceStatus(OldWeapon->PickupAnnouncementName, 2);
+						AUTPlayerState* UTPS = Cast<AUTPlayerState>(Other->PlayerState);
+						if (UTPS)
+						{
+							UTPS->AnnounceStatus(OldWeapon->PickupAnnouncementName, 2);
+						}
+					}
+				}
+				else
+				{
+					// drop default weapon instead @TODO FIXMESTEVE - this should go through default items array
+					AUTWeapon* Enforcer = UTC->FindInventoryType<AUTWeapon>(AUTWeap_Enforcer::StaticClass());
+					if (Enforcer && !Enforcer->IsPendingKillPending())
+					{
+						UTC->TossInventory(Enforcer);
 					}
 				}
 			}
-			else
+			// toss all powerups
+			for (TInventoryIterator<> It(UTC); It; ++It)
 			{
-				// drop default weapon instead @TODO FIXMESTEVE - this should go through default items array
-				AUTWeapon* Enforcer = UTC->FindInventoryType<AUTWeapon>(AUTWeap_Enforcer::StaticClass());
-				if (Enforcer && !Enforcer->IsPendingKillPending())
+				if (It->bAlwaysDropOnDeath)
 				{
-					UTC->TossInventory(Enforcer);
-				}
-			}
-		}
-		// toss all powerups
-		for (TInventoryIterator<> It(UTC); It; ++It)
-		{
-			if (It->bAlwaysDropOnDeath)
-			{
-				UTC->TossInventory(*It, FVector(FMath::FRandRange(0.0f, 200.0f), FMath::FRandRange(-400.0f, 400.0f), FMath::FRandRange(0.0f, 200.0f)));
-				if (It->bShouldAnnounceDrops && (It->PickupAnnouncementName != NAME_None) && bAllowPickupAnnouncements && IsMatchInProgress())
-				{
-					AUTPlayerState* UTPS = Cast<AUTPlayerState>(Other->PlayerState);
-					AUTWeapon* Weap = Cast<AUTWeapon>(*It);
-					if (UTPS && (!Weap || Weap->Ammo > 0))
+					UTC->TossInventory(*It, FVector(FMath::FRandRange(0.0f, 200.0f), FMath::FRandRange(-400.0f, 400.0f), FMath::FRandRange(0.0f, 200.0f)));
+					if (It->bShouldAnnounceDrops && (It->PickupAnnouncementName != NAME_None) && bAllowPickupAnnouncements && IsMatchInProgress())
 					{
-						UTPS->AnnounceStatus(It->PickupAnnouncementName, 2);
+						AUTPlayerState* UTPS = Cast<AUTPlayerState>(Other->PlayerState);
+						AUTWeapon* Weap = Cast<AUTWeapon>(*It);
+						if (UTPS && (!Weap || Weap->Ammo > 0))
+						{
+							UTPS->AnnounceStatus(It->PickupAnnouncementName, 2);
+						}
 					}
 				}
 			}
@@ -2091,7 +2094,7 @@ void AUTGameMode::HandleMatchHasStarted()
 	AnnounceMatchStart();
 
 	//Make sure we aren't still in a line up.
-	if (UTGameState->LineUpHelper)
+	if (UTGameState && UTGameState->LineUpHelper)
 	{
 		UTGameState->LineUpHelper->CleanUp();
 	}
@@ -2186,14 +2189,14 @@ void AUTGameMode::EndMatch()
 		}
 		else
 		{
-			AUTWeaponLocker* Locker = Cast<AUTWeaponLocker>(*It);
+			AUTSupplyChest* Locker = Cast<AUTSupplyChest>(*It);
 			if (Locker)
 			{
-				for (int32 i = 0; i < Locker->WeaponList.Num(); i++)
+				for (int32 i = 0; i < Locker->Weapons.Num(); i++)
 				{
-					if (Locker->WeaponList[i].WeaponType)
+					if (Locker->Weapons[i])
 					{
-						StatsWeapons.AddUnique(Locker->WeaponList[i].WeaponType->GetDefaultObject<AUTWeapon>());
+						StatsWeapons.AddUnique(Locker->Weapons[i]->GetDefaultObject<AUTWeapon>());
 					}
 				}
 			}
@@ -3063,7 +3066,7 @@ void AUTGameMode::GiveDefaultInventory(APawn* PlayerPawn)
 		{
 			if ((GV->TeamLockers.Num() > 0) && GV->TeamLockers[0])
 			{
-				GV->TeamLockers[0]->ProcessTouch(UTCharacter);
+				GV->TeamLockers[0]->GiveAmmo(UTCharacter);
 			}
 		}
 	}
@@ -3085,16 +3088,6 @@ void AUTGameMode::SetPlayerDefaults(APawn* PlayerPawn)
 	if (bSetPlayerDefaultsNewSpawn)
 	{
 		GiveDefaultInventory(PlayerPawn);
-		AUTPlayerStart* UTStart = Cast<AUTPlayerStart>(LastStartSpot);
-		if (UTStart != NULL)
-		{
-			AUTWeaponLocker* Locker = Cast<AUTWeaponLocker>(UTStart->AssociatedPickup);
-			if (Locker != NULL)
-			{
-				Locker->ProcessTouch(PlayerPawn);
-			}
-		}
-
 		NotifyPlayerDefaultsSet(PlayerPawn);
 	}
 }

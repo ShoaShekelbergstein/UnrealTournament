@@ -3,7 +3,7 @@
 #include "UTGameVolume.h"
 #include "UTDmgType_Suicide.h"
 #include "UTGameState.h"
-#include "UTWeaponLocker.h"
+#include "UTSupplyChest.h"
 #include "UTPlayerState.h"
 #include "UTTeleporter.h"
 #include "UTFlagRunGameState.h"
@@ -245,7 +245,7 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 	}
 	else if ((Role != ROLE_Authority) && P && bIsTeamSafeVolume && !P->bHasLeftSafeVolume && P->GetController() && (TeamLockers.Num() > 0) && TeamLockers[0])
 	{
-		TeamLockers[0]->ProcessTouch(P);
+		TeamLockers[0]->GiveAmmo(P);
 	}
 
 	if (!VolumeName.IsEmpty() && P)

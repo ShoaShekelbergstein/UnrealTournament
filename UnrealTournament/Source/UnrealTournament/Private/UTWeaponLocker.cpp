@@ -65,37 +65,6 @@ void AUTWeaponLocker::BeginPlay()
 	{
 		WeaponListUpdated();
 	}
-
-	// associate as team locker with team volume I am in
-	TArray<UPrimitiveComponent*> OverlappingComponents;
-	Collision->GetOverlappingComponents(OverlappingComponents);
-	MyGameVolume = nullptr;
-	int32 BestPriority = -1.f;
-
-	for (auto CompIt = OverlappingComponents.CreateIterator(); CompIt; ++CompIt)
-	{
-		UPrimitiveComponent* OtherComponent = *CompIt;
-		if (OtherComponent && OtherComponent->bGenerateOverlapEvents)
-		{
-			AUTGameVolume* V = Cast<AUTGameVolume>(OtherComponent->GetOwner());
-			if (V && V->Priority > BestPriority)
-			{
-				if (V->IsOverlapInVolume(*Collision))
-				{
-					BestPriority = V->Priority;
-					MyGameVolume = V;
-				}
-			}
-		}
-	}
-	if (MyGameVolume && MyGameVolume->bIsTeamSafeVolume)
-	{
-		MyGameVolume->TeamLockers.AddUnique(this);
-	}
-	else
-	{
-		MyGameVolume = nullptr;
-	}
 }
 
 void AUTWeaponLocker::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -220,18 +189,6 @@ void AUTWeaponLocker::ProcessTouch_Implementation(APawn* TouchedBy)
 			DisabledByTouchBy(TouchedBy);
 			PlayTakenEffects(false);
 			UUTGameplayStatics::UTPlaySound(GetWorld(), TakenSound, TouchedBy, SRT_IfSourceNotReplicated, false, FVector::ZeroVector, NULL, NULL, false);
-			if (MyGameVolume)
-			{
-				// also notify/disable linked pickups
-				for (int32 i = 0; i < MyGameVolume->TeamLockers.Num(); i++)
-				{
-					AUTWeaponLocker* Locker = MyGameVolume->TeamLockers[i];
-					if (Locker && !Locker->IsTaken(TouchedBy))
-					{
-						Locker->DisabledByTouchBy(TouchedBy);
-					}
-				}
-			}
 		}
 	}
 }

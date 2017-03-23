@@ -34,9 +34,6 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	TArray<UMeshComponent*> WeaponMeshes;
 
-	UPROPERTY(BlueprintReadOnly)
-		class AUTGameVolume* MyGameVolume;
-
 	UFUNCTION(BlueprintCallable, Category = WeaponLocker)
 	void SetWeaponList(TArray<FWeaponLockerItem> InList);
 
