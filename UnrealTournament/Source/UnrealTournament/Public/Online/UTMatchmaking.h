@@ -146,6 +146,9 @@ public:
 	bool IsRankedMatchmaking();
 	bool IsSkipEloChecksForMatchmaking();
 
+	/** Gets the current Matchmaking Playlist ID, or the cached one if a current only is unavailable. Return INDEX_NONE if none found **/
+	int32 GetPlaylistID();
+
 private:
 
 	/**

@@ -893,10 +893,11 @@ void FUTAnalytics::FireEvent_UTServerWeaponKills(AUTGameMode* UTGM, TMap<TSubcla
 * @EventParam Location string The context location of the player
 * @EventParam SocialPartyCount int32 The number of people in a players social party (counts the player as a party member)
 * @EventParam RegionId the region reported by the user (automatic from ping, or self selected in settings)
+* @EventParam PlaylistId int32 The playlist ID that the user is currently in a game for. This only exists when the player is in a Quickplay or Ranked match.
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_PlayerContextLocationPerMinute(AUTBasePlayerController* UTPC, FString& PlayerContextLocation, const int32 NumSocialPartyMembers)
+void FUTAnalytics::FireEvent_PlayerContextLocationPerMinute(AUTBasePlayerController* UTPC, FString& PlayerContextLocation, const int32 NumSocialPartyMembers, int32 PlaylistID)
 {
 	if (UTPC)
 	{
@@ -928,6 +929,11 @@ void FUTAnalytics::FireEvent_PlayerContextLocationPerMinute(AUTBasePlayerControl
 			else
 			{
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RegionId), FQosInterface::Get()->GetRegionId()));
+			}
+
+			if (PlaylistID != INDEX_NONE)
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlaylistId), PlaylistID));
 			}
 
 			AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::PlayerContextLocationPerMinute), ParamArray);

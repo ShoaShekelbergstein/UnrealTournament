@@ -943,6 +943,20 @@ bool UUTMatchmaking::IsSkipEloChecksForMatchmaking()
 	return false;
 }
 
+int32 UUTMatchmaking::GetPlaylistID()
+{
+	if (Matchmaking && (Matchmaking->GetMatchmakingParams().PlaylistId != INDEX_NONE))
+	{
+		return Matchmaking->GetMatchmakingParams().PlaylistId;
+	}
+	else if (CachedMatchmakingSearchParams.IsValid())
+	{
+		return CachedMatchmakingSearchParams.GetMatchmakingParams().PlaylistId;
+	}
+
+	return INDEX_NONE;
+}
+
 void UUTMatchmaking::TravelToServer()
 {
 	bool bWillTravel = false;
