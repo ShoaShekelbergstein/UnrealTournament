@@ -5126,7 +5126,7 @@ bool AUTPlayerController::ServerSendComsMessage_Validate(AUTPlayerState* Target,
 void AUTPlayerController::ServerSendComsMessage_Implementation(AUTPlayerState* Target, int32 Switch)
 {
 	// Spam protection
-	if (GetWorld()->GetRealTimeSeconds() - LastComMessageTime < (Switch == LastComMessageSwitch ? 5.0f : 1.5f))
+	if (GetWorld()->GetRealTimeSeconds() - LastComMessageTime < (Switch == LastComMessageSwitch ? 5.0f : 1.5f) && (Target == nullptr || Cast<AUTBot>(Target->GetOwner()) == nullptr))
 	{
 		return;
 	}

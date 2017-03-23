@@ -7158,7 +7158,7 @@ AActor* AUTCharacter::GetCurrentAimContext()
 
 	float PickupAim = 0.f;
 	float PickupDist = 0.f;
-	AUTPickup* BestPickup = Cast<AUTPickup>(UUTGameplayStatics::GetCurrentAimContext(this, 0.9f, MaxRange, AUTPickup::StaticClass(), &PickupAim, &PickupAim));
+	AUTPickup* BestPickup = Cast<AUTPickup>(UUTGameplayStatics::GetCurrentAimContext(this, 0.9f, MaxRange, AUTPickup::StaticClass(), &PickupAim, &PickupDist));
 	
 	if (BestPickup == nullptr || PawnAim > PickupAim || PawnDist < PickupDist) 
 	{

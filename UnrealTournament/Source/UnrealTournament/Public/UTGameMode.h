@@ -1036,6 +1036,8 @@ public:
 	 **/
 	virtual void SendComsMessage( AUTPlayerController* Sender, AUTPlayerState* Target, int32 Switch = 0);
 
+	virtual void SendBotVoiceOrder(AUTPlayerController* Sender, AUTBot* Target, int32 Switch = 0);
+
 	/** Holds the tutorial mask to set when this game completes.  */
 	UPROPERTY(BlueprintReadOnly, Category=Onboarding)
 	int32 TutorialMask;

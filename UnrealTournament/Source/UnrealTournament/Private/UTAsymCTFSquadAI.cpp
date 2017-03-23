@@ -351,6 +351,11 @@ bool AUTAsymCTFSquadAI::CheckSquadObjectives(AUTBot* B)
 		{
 			if (Flag->HoldingPawn == NULL)
 			{
+				if (Team->BotIgnoreFlagUntil > GetWorld()->TimeSeconds)
+				{
+					return false;
+				}
+
 				// amortize generation of alternate routes during delay before flag can be picked up
 				if (!Flag->bFriendlyCanPickup && SquadRoutes.Num() < MaxSquadRoutes && (GetLeader() == B || Cast<APlayerController>(GetLeader()) != nullptr))
 				{
@@ -426,7 +431,7 @@ bool AUTAsymCTFSquadAI::CheckSquadObjectives(AUTBot* B)
 				B->StartWaitForMove();
 				return true;
 			}
-			else if (Flag->bFriendlyCanPickup && Flag->HoldingPawn == nullptr && (B->UTLineOfSightTo(Flag) || (Flag->GetActorLocation() - B->GetPawn()->GetActorLocation()).Size() < 2500.0f))
+			else if (Flag->bFriendlyCanPickup && Flag->HoldingPawn == nullptr && Team->BotIgnoreFlagUntil <= GetWorld()->TimeSeconds && (B->UTLineOfSightTo(Flag) || (Flag->GetActorLocation() - B->GetPawn()->GetActorLocation()).Size() < 2500.0f))
 			{
 				return B->TryPathToward(Flag, true, false, "Get flag because near");
 			}

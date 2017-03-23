@@ -479,7 +479,7 @@ bool AUTCTFSquadAI::CheckSquadObjectives(AUTBot* B)
 			}
 			else
 			{
-				return B->TryPathToward(GameObjective->GetCarriedObject(), false, false, "Go pickup flag");
+				return Team->BotIgnoreFlagUntil <= GetWorld()->TimeSeconds && B->TryPathToward(GameObjective->GetCarriedObject(), false, false, "Go pickup flag");
 			}
 		}
 		// prioritize grabbing some powerups just after respawning, less likely to do so after engaging enemy base

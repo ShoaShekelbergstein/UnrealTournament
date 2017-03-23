@@ -1757,6 +1757,7 @@ namespace CommandTags
 	const FName Defend = FName(TEXT("Defend"));
 	const FName Distress = FName(TEXT("Distress"));
 	const FName Attack = FName(TEXT("Attack"));
+	const FName DropFlag = FName(TEXT("DropFlag"));
 	const FName Yes = FName(TEXT("Yes"));
 	const FName No = FName(TEXT("No"));
 }
@@ -1793,6 +1794,7 @@ public:
 	FComMenuCommand Attack;
 	FComMenuCommand Defend;
 	FComMenuCommand Distress;
+	FComMenuCommand DropFlag;
 };
 
 USTRUCT()

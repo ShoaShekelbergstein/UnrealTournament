@@ -5508,7 +5508,18 @@ void AUTGameMode::SendComsMessage( AUTPlayerController* Sender, AUTPlayerState* 
 		{
 			// This is a targeting com message.  Send it only to the sender and the target
 			AUTPlayerController* TargetPC = Cast<AUTPlayerController>(Target->GetOwner());
-			if (TargetPC != nullptr) TargetPC->ClientReceiveLocalizedMessage(UTPlayerState->GetCharacterVoiceClass(), Switch, UTPlayerState, nullptr, UTPlayerState->LastKnownLocation);
+			if (TargetPC != nullptr)
+			{
+				TargetPC->ClientReceiveLocalizedMessage(UTPlayerState->GetCharacterVoiceClass(), Switch, UTPlayerState, nullptr, UTPlayerState->LastKnownLocation);
+			}
+			else
+			{
+				AUTBotPlayer* Bot = Cast<AUTBotPlayer>(Target->GetOwner());
+				if (Bot != nullptr)
+				{
+					SendBotVoiceOrder(Sender, Bot, Switch);
+				}
+			}
 
 			Sender->ClientReceiveLocalizedMessage(UTPlayerState->GetCharacterVoiceClass(), Switch, UTPlayerState, nullptr, UTPlayerState->LastKnownLocation);
 		}
@@ -5521,11 +5532,44 @@ void AUTGameMode::SendComsMessage( AUTPlayerController* Sender, AUTPlayerState* 
 				{
 					UTPlayerController->ClientReceiveLocalizedMessage(UTPlayerState->GetCharacterVoiceClass(), Switch, UTPlayerState, nullptr, UTPlayerState->LastKnownLocation);
 				}
+				else
+				{
+					AUTBotPlayer* Bot = Cast<AUTBotPlayer>(Target->GetOwner());
+					if (Bot != nullptr)
+					{
+						SendBotVoiceOrder(Sender, Bot, Switch);
+					}
+				}
 			}
 		}
 	}
 }
-
+void AUTGameMode::SendBotVoiceOrder(AUTPlayerController* Sender, AUTBot* Target, int32 Switch)
+{
+	AUTPlayerState* BotPS = Cast<AUTPlayerState>(Target->PlayerState);
+	if (BotPS != nullptr && BotPS->Team != nullptr)
+	{
+		switch (Switch)
+		{
+			case ATTACK_THEIR_BASE_SWITCH_INDEX:
+			case DEFEND_FLAG_CARRIER_SWITCH_INDEX:
+				BotPS->Team->AssignToSquad(Target, NAME_Attack);
+				break;
+			case DEFEND_FLAG_SWITCH_INDEX:
+				BotPS->Team->AssignToSquad(Target, NAME_Defend);
+				break;
+			case DROP_FLAG_SWITCH_INDEX:
+				if (Target->GetUTChar() != nullptr && Target->GetUTChar()->GetCarriedObject() != nullptr)
+				{
+					Target->GetUTChar()->DropFlag();
+					BotPS->Team->BotIgnoreFlagUntil = GetWorld()->TimeSeconds + 5.0f;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+}
 
 int32 AUTGameMode::GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPlayerController* InInstigator, UWorld* World)
 {

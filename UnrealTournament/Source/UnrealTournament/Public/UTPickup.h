@@ -189,6 +189,10 @@ class UNREALTOURNAMENT_API AUTPickup : public AActor, public IUTResetInterface, 
 	{
 		return PickupMessageString;
 	}
+	virtual FString GetHumanReadableName() const
+	{
+		return GetDisplayName().ToString();
+	}
 
 	virtual void Reset_Implementation() override;
 

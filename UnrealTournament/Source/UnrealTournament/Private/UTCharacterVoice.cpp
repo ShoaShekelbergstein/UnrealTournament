@@ -127,14 +127,27 @@ int32 UUTCharacterVoice::GetDestinationIndex(int32 MessageIndex) const
 
 FText UUTCharacterVoice::GetText(int32 Switch, bool bTargetsPlayerState1, class APlayerState* RelatedPlayerState_1, class APlayerState* RelatedPlayerState_2, class UObject* OptionalObject) const
 {
-	// @TOOD FIXMESTEVE option to turn these on
-	return FText::GetEmpty();
+	// hack for comms menu
+	if (Switch < 0)
+	{
+		Switch = -Switch;
+	}
+	else
+	{
+		// @TOOD FIXMESTEVE option to turn these on
+		return FText::GetEmpty();
+	}
 
 	FFormatNamedArguments Args;
 	if (!RelatedPlayerState_1)
 	{
 		UE_LOG(UT, Warning, TEXT("Character voice w/ no playerstate index %d"), Switch);
 		return FText::GetEmpty();
+	}
+
+	if (Switch == DROP_FLAG_SWITCH_INDEX)
+	{
+		return NSLOCTEXT("CharacterVoice", "DropFlag", "Drop the flag!");
 	}
 
 	UUTGameUserSettings* GS = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());

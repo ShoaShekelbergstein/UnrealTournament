@@ -56,8 +56,6 @@ public:
 	virtual void CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, bool bCreateReadOnly, TArray< TSharedPtr<TAttributePropertyBase> >& ConfigProps, int32 MinimumPlayers);
 #endif
 	
-	virtual int32 GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPlayerController* Instigator, UWorld* World);
-
 	virtual void HandleDefaultLineupSpawns(LineUpTypes LineUpType, TArray<AUTCharacter*>& PlayersSpawned, TArray<AUTCharacter*>& PlayersNotSpawned) override;
 };
 
