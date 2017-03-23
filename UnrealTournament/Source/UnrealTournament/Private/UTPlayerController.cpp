@@ -3521,14 +3521,14 @@ void AUTPlayerController::ClientNotifyTakeHit_Implementation(bool bFriendlyFire,
 	}
 }
 
-void AUTPlayerController::ClientNotifyCausedHit_Implementation(APawn* HitPawn, uint8 Damage, bool bArmorDamage)
+void AUTPlayerController::ClientNotifyCausedHit_Implementation(AActor* HitActor, uint8 Damage, bool bArmorDamage)
 {
 	// by default we only show HUD hitconfirms for hits that the player could conceivably see (i.e. target is in LOS)
-	if (HitPawn != NULL && HitPawn->GetRootComponent() != NULL && GetPawn() != NULL && MyUTHUD != NULL)
+	if (HitActor != NULL && HitActor->GetRootComponent() != NULL && GetPawn() != NULL && MyUTHUD != NULL)
 	{
 		float VictimLastRenderTime = -1.0f;
 		TArray<USceneComponent*> Components;
-		HitPawn->GetRootComponent()->GetChildrenComponents(true, Components);
+		HitActor->GetRootComponent()->GetChildrenComponents(true, Components);
 		for (int32 i = 0; i < Components.Num(); i++)
 		{
 			UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Components[i]);
@@ -3539,7 +3539,7 @@ void AUTPlayerController::ClientNotifyCausedHit_Implementation(APawn* HitPawn, u
 		}
 		if (GetWorld()->TimeSeconds - VictimLastRenderTime < 0.15f)
 		{
-			MyUTHUD->CausedDamage(HitPawn, Damage, bArmorDamage);
+			MyUTHUD->CausedDamage(HitActor, Damage, bArmorDamage);
 		}
 	}
 }

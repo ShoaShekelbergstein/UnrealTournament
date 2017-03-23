@@ -118,6 +118,12 @@ void AUTProj_Redeemer::ApplyDamage(float Damage, AController* EventInstigator)
 			RedeemerDenied(EventInstigator);
 		}
 	}
+
+	AUTPlayerController* InstigatedByPC = Cast<AUTPlayerController>(EventInstigator);
+	if (InstigatedByPC != NULL)
+	{
+		InstigatedByPC->ClientNotifyCausedHit(this, 30, false); 
+	}
 }
 
 void AUTProj_Redeemer::NotifyClientSideHit(AUTPlayerController* InstigatedBy, FVector HitLocation, AActor* DamageCauser, int32 Damage)

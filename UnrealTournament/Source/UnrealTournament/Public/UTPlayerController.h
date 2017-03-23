@@ -489,7 +489,7 @@ public:
 	 * note that HitPawn may be NULL if it is not currently relevant to the client
 	 */
 	UFUNCTION(Client, Unreliable)
-	void ClientNotifyCausedHit(APawn* HitPawn, uint8 Damage, bool bArmorDamage);
+	void ClientNotifyCausedHit(AActor* HitActor, uint8 Damage, bool bArmorDamage);
 
 	/** blueprint hook */
 	UFUNCTION(BlueprintCallable, Category = Message)

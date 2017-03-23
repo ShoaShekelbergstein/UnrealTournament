@@ -314,7 +314,7 @@ public:
 	virtual void DrawDamageIndicators();
 
 	/** called when PlayerOwner caused damage to HitPawn */
-	virtual void CausedDamage(APawn* HitPawn, int32 Damage, bool bArmorDamage);
+	virtual void CausedDamage(AActor *HitActor, int32 Damage, bool bArmorDamage);
 
 	virtual class UFont* GetFontFromSizeIndex(int32 FontSize) const;
 
