@@ -558,8 +558,8 @@ public:
 			NewRuleset->Categories.Add(TEXT("Featured"));
 
 			NewRuleset->Title = TEXT("Siege");
-			NewRuleset->Tooltip = TEXT("Co-op vs AI.  Defend your base against hordes of incoming enemies trying to deliver their flag.");
-			NewRuleset->Description = TEXT("PROTOTYPE Coop vs AI.  Defend your base against hordes of incoming enemies trying to deliver their flag..\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
+			NewRuleset->Tooltip = TEXT("Prototype PVE mode.  Defend your base against hordes of incoming enemies trying to deliver their flag.");
+			NewRuleset->Description = TEXT("PROTOTYPE PVE mode.  Defend your base against hordes of incoming enemies trying to deliver their flag..\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
 			NewRuleset->MaxPlayers = 5;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTFlagRunPvEGame");
