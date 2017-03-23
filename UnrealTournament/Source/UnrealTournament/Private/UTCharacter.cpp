@@ -1957,33 +1957,43 @@ void AUTCharacter::PlayDying()
 	TimeOfDeath = GetWorld()->TimeSeconds;
 
 	SetOutlineLocal(false);
-	SpawnBloodDecal(GetActorLocation() - FVector(0.0f, 0.0f, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()), FVector(0.0f, 0.0f, -1.0f));
-	LastDeathDecalTime = GetWorld()->TimeSeconds;
 
-	// Set the hair back to normal because hats are being removed
-	if (GetMesh())
+	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+	bool bIsInLineUp = UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive;
+	if (bIsInLineUp)
 	{
-		GetMesh()->SetMorphTarget(FName(TEXT("HatHair")), 0.0f);
-	}
+		SpawnBloodDecal(GetActorLocation() - FVector(0.0f, 0.0f, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()), FVector(0.0f, 0.0f, -1.0f));
+		LastDeathDecalTime = GetWorld()->TimeSeconds;
 
-	if (LeaderHat && LeaderHat->GetAttachParentActor())
-	{
-		LeaderHat->OnWearerDeath(LastTakeHitInfo.DamageType);
-	}
-	else if (Hat && Hat->GetAttachParentActor())
-	{
-		Hat->OnWearerDeath(LastTakeHitInfo.DamageType);
-	}
+		// Set the hair back to normal because hats are being removed
+		if (GetMesh())
+		{
+			GetMesh()->SetMorphTarget(FName(TEXT("HatHair")), 0.0f);
+		}
 
-	if (Eyewear && Eyewear->GetAttachParentActor())
-	{
-		Eyewear->OnWearerDeath(LastTakeHitInfo.DamageType);
+		if (LeaderHat && LeaderHat->GetAttachParentActor())
+		{
+			LeaderHat->OnWearerDeath(LastTakeHitInfo.DamageType);
+		}
+		else if (Hat && Hat->GetAttachParentActor())
+		{
+			Hat->OnWearerDeath(LastTakeHitInfo.DamageType);
+		}
+
+		if (Eyewear && Eyewear->GetAttachParentActor())
+		{
+			Eyewear->OnWearerDeath(LastTakeHitInfo.DamageType);
+		}
 	}
 
 	if (GetNetMode() != NM_DedicatedServer && !IsPendingKillPending() && (GetWorld()->TimeSeconds - GetLastRenderTime() < 3.0f || IsLocallyViewed()))
 	{
 		TSubclassOf<UUTDamageType> UTDmg(*LastTakeHitInfo.DamageType);
-		if (UTDmg != NULL && UTDmg.GetDefaultObject()->ShouldGib(this))
+		if (bIsInLineUp)
+		{
+			Destroy();
+		}
+		else if (UTDmg != NULL && UTDmg.GetDefaultObject()->ShouldGib(this))
 		{
 			GibExplosion();
 		}
@@ -2047,7 +2057,7 @@ void AUTCharacter::PlayDying()
 	{
 		Hat->DetachRootComponentFromParent(true);
 
-		if (Hat->bDontDropOnDeath)
+		if (bIsInLineUp || Hat->bDontDropOnDeath)
 		{
 			Hat->Destroy();
 		}
@@ -2061,7 +2071,7 @@ void AUTCharacter::PlayDying()
 	{
 		LeaderHat->DetachRootComponentFromParent(true);
 
-		if (LeaderHat->bDontDropOnDeath)
+		if (bIsInLineUp || LeaderHat->bDontDropOnDeath)
 		{
 			LeaderHat->Destroy();
 		}
@@ -2074,6 +2084,10 @@ void AUTCharacter::PlayDying()
 	if (Eyewear && Eyewear->GetAttachParentActor())
 	{
 		Eyewear->DetachRootComponentFromParent(true);
+		if (bIsInLineUp)
+		{
+			Eyewear->Destroy();
+		}
 	}
 }
 
@@ -5316,7 +5330,11 @@ void AUTCharacter::PlayerSuicide()
 	{
 		FHitResult FakeHit(this, NULL, GetActorLocation(), GetActorRotation().Vector());
 		FUTPointDamageEvent FakeDamageEvent(0, FakeHit, FVector(0, 0, 0), UUTDmgType_Suicide::StaticClass());
-		UUTGameplayStatics::UTPlaySound(GetWorld(), CharacterData.GetDefaultObject()->PainSound, this, SRT_All, false, FVector::ZeroVector, Cast<AUTPlayerController>(Controller), NULL, false, SAT_PainSound);
+		AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+		if (!UTGS || !UTGS->LineUpHelper || !UTGS->LineUpHelper->bIsActive)
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), CharacterData.GetDefaultObject()->PainSound, this, SRT_All, false, FVector::ZeroVector, Cast<AUTPlayerController>(Controller), NULL, false, SAT_PainSound);
+		}
 		Died(NULL, FakeDamageEvent);
 	}
 }
