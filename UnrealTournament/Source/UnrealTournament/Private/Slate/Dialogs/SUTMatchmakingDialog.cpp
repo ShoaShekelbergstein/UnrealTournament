@@ -179,16 +179,7 @@ FText SUTMatchmakingDialog::GetMatchmakingText2() const
 			UUTPartyGameState* PartyState = Party->GetUTPersistentParty();
 			if (PartyState && PartyState->GetPartyProgression() == EUTPartyState::PostMatchmaking)
 			{
-				if (PlayerOwner->IsPartyLeader())
-				{
-					FNumberFormattingOptions NumberFormattingOptions;
-					NumberFormattingOptions.MaximumFractionalDigits = 0;
-					return FText::Format(NSLOCTEXT("Generic", "ResearchingTime", "Will Restart Search In {0} Seconds"), FText::AsNumber(RetryCountdown, &NumberFormattingOptions));
-				}
-				else
-				{
-					return FText::GetEmpty();
-				}
+				return FText::GetEmpty();
 			}
 		}
 
