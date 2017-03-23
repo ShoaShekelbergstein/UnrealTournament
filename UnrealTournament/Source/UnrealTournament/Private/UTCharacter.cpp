@@ -1687,10 +1687,10 @@ bool AUTCharacter::Died(AController* EventInstigator, const FDamageEvent& Damage
 				LastTakeHitInfo.Count = 8;
 			}
 
+			AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
 			GetWorld()->GetAuthGameMode<AUTGameMode>()->Killed(EventInstigator, ControllerKilled, this, DamageEvent.DamageTypeClass);
 
 			// Drop any carried objects when you die.
-			AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
 			if (PS != NULL && PS->CarriedObject != NULL)
 			{
 				PS->CarriedObject->Drop(EventInstigator);
