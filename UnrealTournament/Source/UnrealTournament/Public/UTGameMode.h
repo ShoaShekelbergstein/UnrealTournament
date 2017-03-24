@@ -673,8 +673,6 @@ protected:
 	 */
 	virtual bool AllowRemovingBot(AUTBotPlayer* B);
 
-	/** give bot a unique name based on the possible names in the given BotData */
-	virtual void SetUniqueBotName(AUTBotPlayer* B, const class UUTBotCharacter* BotData);
 public:
 	/** adds a bot to the game, ignoring game settings */
 	UFUNCTION(Exec, BlueprintCallable, Category = AI)

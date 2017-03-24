@@ -254,7 +254,7 @@ class UNREALTOURNAMENT_API AUTBot : public AAIController, public IUTTeamInterfac
 	const class UUTBotCharacter* CharacterData;
 
 	/** Sets up bots character data. */
-	virtual void InitializeCharacter(class UUTBotCharacter* NewCharacterData);
+	virtual void InitializeCharacter(class UUTBotCharacter* NewCharacterData, class AUTGameMode* Game);
 
 	UPROPERTY(BlueprintReadWrite, Category = Personality)
 	FBotPersonality Personality;

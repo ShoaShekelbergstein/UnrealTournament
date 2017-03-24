@@ -146,7 +146,7 @@ AUTBot::AUTBot(const FObjectInitializer& ObjectInitializer)
 	CampAction = ObjectInitializer.CreateDefaultSubobject<UUTAIAction_Camp>(this, FName(TEXT("Camp")));
 }
 
-void AUTBot::InitializeCharacter(UUTBotCharacter* NewCharacterData)
+void AUTBot::InitializeCharacter(UUTBotCharacter* NewCharacterData, AUTGameMode* Game)
 {
 	CharacterData = NewCharacterData;
 	Personality = CharacterData->Personality;
@@ -183,7 +183,7 @@ void AUTBot::InitializeCharacter(UUTBotCharacter* NewCharacterData)
 		}
 	}
 
-	InitializeSkill(CharacterData->Skill);
+	InitializeSkill(Game->GameDifficulty + CharacterData->SkillAdjust);
 }
 
 float FBestInventoryEval::Eval(APawn* Asker, const FNavAgentProperties& AgentProps, AController* RequestOwner, const UUTPathNode* Node, const FVector& EntryLoc, int32 TotalDistance)

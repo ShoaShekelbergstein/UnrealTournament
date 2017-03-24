@@ -76,7 +76,6 @@ namespace MatchState
 	const FName MatchExitingIntermission = FName(TEXT("MatchExitingIntermission"));
 	const FName MatchRankedAbandon = FName(TEXT("MatchRankedAbandon"));
 	const FName WaitingTravel = FName(TEXT("WaitingTravel"));
-
 }
 
 AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
@@ -919,13 +918,8 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 
 		if (SelectedCharacter != NULL)
 		{
-			NewBot->InitializeCharacter(SelectedCharacter);
-			const float AdjustedSkill = FMath::Clamp(NewBot->Skill, GameDifficulty - 1.f, GameDifficulty + 1.5f);
-			if (AdjustedSkill != NewBot->Skill)
-			{
-				NewBot->InitializeSkill(AdjustedSkill);
-			}
-			SetUniqueBotName(NewBot, SelectedCharacter);
+			NewBot->InitializeCharacter(SelectedCharacter, this);
+			NewBot->PlayerState->SetPlayerName(SelectedCharacter->GetName());
 			if (bOfflineChallenge && (TeamNum != 1) && (TotalStars < 6) && (ChallengeDifficulty == 0))
 			{
 				// make easy bots extra easy till earn 5 stars
@@ -978,8 +972,8 @@ AUTBotPlayer* AUTGameMode::AddNamedBot(const FString& BotName, uint8 TeamNum)
 		AUTBotPlayer* NewBot = GetWorld()->SpawnActor<AUTBotPlayer>(BotClass);
 		if (NewBot != NULL)
 		{
-			NewBot->InitializeCharacter(BotData);
-			SetUniqueBotName(NewBot, BotData);
+			NewBot->InitializeCharacter(BotData, this);
+			NewBot->PlayerState->SetPlayerName(BotData->GetName());
 			NumBots++;
 			ChangeTeam(NewBot, TeamNum);
 			GenericPlayerInitialization(NewBot);
@@ -997,43 +991,14 @@ AUTBotPlayer* AUTGameMode::AddAssetBot(const FStringAssetReference& BotAssetPath
 		NewBot = GetWorld()->SpawnActor<AUTBotPlayer>(BotClass);
 		if (NewBot != NULL)
 		{
-			NewBot->InitializeCharacter(BotData);
-			SetUniqueBotName(NewBot, BotData);
+			NewBot->InitializeCharacter(BotData, this);
+			NewBot->PlayerState->SetPlayerName(BotData->GetName());
 			NumBots++;
 			ChangeTeam(NewBot, TeamNum);
 			GenericPlayerInitialization(NewBot);
 		}
 	}
 	return NewBot;
-}
-
-void AUTGameMode::SetUniqueBotName(AUTBotPlayer* B, const UUTBotCharacter* BotData)
-{
-	TArray<FString> PossibleNames;
-	PossibleNames.Add(BotData->GetName());
-	PossibleNames += BotData->AltNames;
-
-	for (int32 i = 1; true; i++)
-	{
-		for (const FString& TestName : PossibleNames)
-		{
-			FString FinalName = (i == 1) ? TestName : FString::Printf(TEXT("%s-%i"), *TestName, i);
-			bool bTaken = false;
-			for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
-			{
-				if (It->IsValid() && It->Get()->PlayerState != NULL && It->Get()->PlayerState->PlayerName == FinalName)
-				{
-					bTaken = true;
-					break;
-				}
-			}
-			if (!bTaken)
-			{
-				B->PlayerState->SetPlayerName(FinalName);
-				return;
-			}
-		}
-	}
 }
 
 AUTBotPlayer* AUTGameMode::ForceAddBot(uint8 TeamNum)
