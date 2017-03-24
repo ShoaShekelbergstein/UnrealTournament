@@ -2813,12 +2813,26 @@ void AUTWeapon::UpdateOverlaysShared(AActor* WeaponActor, AUTCharacter* InOwner,
 					PSC->RegisterComponent();
 				}
 				PSC->AttachToComponent(InOverlayMesh, FAttachmentTransformRules::KeepRelativeTransform, TopOverlay.ParticleAttachPoint);
-				PSC->SetTemplate(TopOverlay.Particles);
-				PSC->InstanceParameters = InOverlayEffectParams;
-				static FName NAME_Weapon(TEXT("Weapon"));
-				static FName NAME_1PWeapon(TEXT("1PWeapon"));
-				PSC->SetActorParameter(NAME_Weapon, WeaponActor);
-				PSC->SetActorParameter(NAME_1PWeapon, WeaponActor);
+
+				UParticleSystem* OverrideParticles = nullptr;
+				if (true) // fixmesteve only for Udamage
+				{
+					OverrideParticles = Cast<AUTWeaponAttachment>(WeaponActor) ? UDamageOverrideEffect3P : UDamageOverrideEffect1P;
+				}
+				if (OverrideParticles != nullptr)
+				{
+					PSC->SetTemplate(OverrideParticles);
+					PSC->InstanceParameters = InOverlayEffectParams;
+				}
+				else
+				{
+					PSC->SetTemplate(TopOverlay.Particles);
+					PSC->InstanceParameters = InOverlayEffectParams;
+					static FName NAME_Weapon(TEXT("Weapon"));
+					static FName NAME_1PWeapon(TEXT("1PWeapon"));
+					PSC->SetActorParameter(NAME_Weapon, WeaponActor);
+					PSC->SetActorParameter(NAME_1PWeapon, WeaponActor);
+				}
 			}
 			else
 			{

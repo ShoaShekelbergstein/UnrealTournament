@@ -916,6 +916,12 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
 	TArray<struct FParticleSysParam> OverlayEffectParams;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+		UParticleSystem* UDamageOverrideEffect1P;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+		UParticleSystem* UDamageOverrideEffect3P;
+
 	/** helper for shared overlay code between UTWeapon and UTWeaponAttachment
 	 * NOTE: can called on default object!
 	 */
