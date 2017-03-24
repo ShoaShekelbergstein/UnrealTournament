@@ -1086,6 +1086,8 @@ private:
 	uint32 NumSignificantEmitters;
 	/** Time in ms since a tick was last performed; used with MinTimeBetweenTicks (on UParticleSystem) to control tick rate */
 	uint32 TimeSinceLastTick;
+	/** If true, it means deactivate was delayed due to async work still being active */
+	bool bDeactiveSystemOnFinalize;
 
 public:
 

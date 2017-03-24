@@ -4881,7 +4881,12 @@ void UParticleSystemComponent::FinalizeTickComponent()
 	{
 		Super::MarkRenderDynamicDataDirty();
 	}
-
+	
+	if (bDeactiveSystemOnFinalize)
+	{
+		DeactivateSystem();
+		bDeactiveSystemOnFinalize = false;
+	}
 }
 
 void UParticleSystemComponent::WaitForAsyncAndFinalize(EForceAsyncWorkCompletion Behavior, bool bDefinitelyGameThread) const
@@ -5446,6 +5451,17 @@ void UParticleSystemComponent::DeactivateSystem()
 	{
 		return;
 	}
+
+	if (AsyncWork.GetReference() && !AsyncWork->IsComplete())
+	{
+		UE_LOG(LogParticles, Verbose,
+			TEXT("DeactivateSystem delayed due to async work outstanding @ %fs %s"), GetWorld()->TimeSeconds,
+			Template != NULL ? *Template->GetName() : TEXT("NULL"));
+
+		bDeactiveSystemOnFinalize = true;
+		return;
+	}
+
 	ForceAsyncWorkCompletion(STALL);
 
 	check(GetWorld());
