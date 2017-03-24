@@ -856,18 +856,13 @@ UUTBotCharacter* AUTGameMode::ChooseRandomCharacter(uint8 TeamNum)
 	UUTBotCharacter* ChosenCharacter = NULL;
 	if (EligibleBots.Num() > 0)
 	{
-		int32 BestMatch = 0;
-		for (int32 i = 0; i < EligibleBots.Num(); i++)
+		int32 BestMatch = FMath::RandHelper(EligibleBots.Num() - 1);
+		if (EligibleBots[BestMatch]->MinimumSkill > GameDifficulty + EligibleBots[BestMatch]->SkillAdjust)
 		{
-			if (EligibleBots[i]->Skill >= GameDifficulty)
-			{
-				BestMatch = i;
-				break;
-			}
+			BestMatch = BestMatch = FMath::RandHelper(BestMatch - 1);
 		}
-		int32 Index = FMath::Clamp(BestMatch + FMath::RandHelper(5) - 2, 0, EligibleBots.Num() - 1);
-		ChosenCharacter = EligibleBots[Index];
-		EligibleBots.RemoveAt(Index);
+		ChosenCharacter = EligibleBots[BestMatch];
+		EligibleBots.RemoveAt(BestMatch);
 	}
 	return ChosenCharacter;
 }
@@ -894,7 +889,7 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 
 			EligibleBots.Sort([](const UUTBotCharacter& A, const UUTBotCharacter& B) -> bool
 			{
-				return A.Skill < B.Skill;
+				return A.SkillAdjust < B.SkillAdjust;
 			});
 		}
 		UUTBotCharacter* SelectedCharacter = NULL;
@@ -918,12 +913,16 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 
 		if (SelectedCharacter != NULL)
 		{
-			NewBot->InitializeCharacter(SelectedCharacter, this);
+			NewBot->InitializeCharacter(SelectedCharacter);
 			NewBot->PlayerState->SetPlayerName(SelectedCharacter->GetName());
 			if (bOfflineChallenge && (TeamNum != 1) && (TotalStars < 6) && (ChallengeDifficulty == 0))
 			{
 				// make easy bots extra easy till earn 5 stars
-				NewBot->InitializeSkill(0.1f * int32(10.f * (0.2f + 0.125f * TotalStars) * SelectedCharacter->Skill));
+				NewBot->InitializeSkill(0.125f * TotalStars);
+			}
+			else
+			{
+				NewBot->InitializeSkill(GameDifficulty + SelectedCharacter->SkillAdjust);
 			}
 		}
 		else
@@ -972,7 +971,8 @@ AUTBotPlayer* AUTGameMode::AddNamedBot(const FString& BotName, uint8 TeamNum)
 		AUTBotPlayer* NewBot = GetWorld()->SpawnActor<AUTBotPlayer>(BotClass);
 		if (NewBot != NULL)
 		{
-			NewBot->InitializeCharacter(BotData, this);
+			NewBot->InitializeCharacter(BotData);
+			NewBot->InitializeSkill(GameDifficulty + BotData->SkillAdjust);
 			NewBot->PlayerState->SetPlayerName(BotData->GetName());
 			NumBots++;
 			ChangeTeam(NewBot, TeamNum);
@@ -991,7 +991,8 @@ AUTBotPlayer* AUTGameMode::AddAssetBot(const FStringAssetReference& BotAssetPath
 		NewBot = GetWorld()->SpawnActor<AUTBotPlayer>(BotClass);
 		if (NewBot != NULL)
 		{
-			NewBot->InitializeCharacter(BotData, this);
+			NewBot->InitializeCharacter(BotData);
+			NewBot->InitializeSkill(GameDifficulty + BotData->SkillAdjust);
 			NewBot->PlayerState->SetPlayerName(BotData->GetName());
 			NumBots++;
 			ChangeTeam(NewBot, TeamNum);

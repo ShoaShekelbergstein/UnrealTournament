@@ -639,27 +639,23 @@ UUTBotCharacter* AUTTeamGameMode::ChooseRandomCharacter(uint8 TeamNum)
 			}
 		}
 
-		int32 BestMatch = 0;
-		for (int32 i = 0; i < EligibleBots.Num(); i++)
+		int32 BestMatch = FMath::RandHelper(EligibleBots.Num() - 1);
+		if (EligibleBots[BestMatch]->MinimumSkill > GameDifficulty + EligibleBots[BestMatch]->SkillAdjust)
 		{
-			if (EligibleBots[i]->Skill >= GameDifficulty)
-			{
-				BestMatch = i;
-				break;
-			}
+			BestMatch = BestMatch = FMath::RandHelper(BestMatch - 1);
 		}
-		int32 Index = FMath::Clamp(BestMatch + FMath::RandHelper(5) - 2, 0, EligibleBots.Num() - 1);
+		int32 Index = BestMatch;
 		// shift to bot with different skill to balance this team's average against the other teams
 		if (ClosestSkillDiff < 0.0f)
 		{
-			while (Index > 0 && EligibleBots[Index]->Skill > TeamAvgSkill[TeamNum])
+			while (Index > 0 && (GameDifficulty + EligibleBots[Index]->SkillAdjust > TeamAvgSkill[TeamNum]))
 			{
 				Index--;
 			}
 		}
 		else
 		{
-			while (Index < EligibleBots.Num() - 1 && EligibleBots[Index]->Skill < TeamAvgSkill[TeamNum])
+			while (Index < EligibleBots.Num() - 1 && (GameDifficulty + EligibleBots[Index]->SkillAdjust < TeamAvgSkill[TeamNum]))
 			{
 				Index++;
 			}
