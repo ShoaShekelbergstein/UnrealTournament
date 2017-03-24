@@ -79,6 +79,26 @@ bool AUTSupplyChest::GiveAmmo(AUTCharacter* Char)
 		}
 	}
 
+	for (int32 i = 0; i < Char->DefaultCharacterInventory.Num(); i++)
+	{
+		AUTWeapon* Existing = Cast<AUTWeapon>(Char->FindInventoryType(Char->DefaultCharacterInventory[i], true));
+		if (Existing)
+		{
+			Existing->StackLockerPickup(nullptr);
+		}
+	}
+	AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
+	if (GM)
+	{
+		for (int32 i = 0; i < GM->DefaultInventory.Num(); i++)
+		{
+			AUTWeapon* Existing = Cast<AUTWeapon>(Char->FindInventoryType(GM->DefaultInventory[i], true));
+			if (Existing)
+			{
+				Existing->StackLockerPickup(nullptr);
+			}
+		}
+	}
 	return bResult;
 }
 
