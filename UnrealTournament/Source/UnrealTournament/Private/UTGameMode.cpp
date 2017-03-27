@@ -914,9 +914,9 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 		UUTBotCharacter* SelectedCharacter = NULL;
 		int32 TotalStars = 0;
 
-		if (Cast<UUTGameEngine>(GEngine))
+		if (UTEngine)
 		{
-			TWeakObjectPtr<UUTChallengeManager> ChallengeManager = Cast<UUTGameEngine>(GEngine)->GetChallengeManager();
+			TWeakObjectPtr<UUTChallengeManager> ChallengeManager = UTEngine->GetChallengeManager();
 			if (bOfflineChallenge && ChallengeManager.IsValid())
 			{
 				APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
@@ -951,7 +951,6 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 		if (SelectedCharacter != NULL)
 		{
 			NewBot->InitializeCharacter(SelectedCharacter);
-			NewBot->PlayerState->SetPlayerName(SelectedCharacter->GetName());
 			if (bOfflineChallenge && (TeamNum != 1) && (TotalStars < 6) && (ChallengeDifficulty == 0))
 			{
 				// make easy bots extra easy till earn 5 stars
@@ -994,7 +993,6 @@ AUTBotPlayer* AUTGameMode::AddNamedBot(const FString& BotName, uint8 TeamNum)
 		{
 			NewBot->InitializeCharacter(BotData);
 			NewBot->InitializeSkill(GameDifficulty + BotData->SkillAdjust);
-			NewBot->PlayerState->SetPlayerName(BotData->GetName());
 			NumBots++;
 			ChangeTeam(NewBot, TeamNum);
 			GenericPlayerInitialization(NewBot);
@@ -1014,7 +1012,6 @@ AUTBotPlayer* AUTGameMode::AddAssetBot(const FStringAssetReference& BotAssetPath
 		{
 			NewBot->InitializeCharacter(BotData);
 			NewBot->InitializeSkill(GameDifficulty + BotData->SkillAdjust);
-			NewBot->PlayerState->SetPlayerName(BotData->GetName());
 			NumBots++;
 			ChangeTeam(NewBot, TeamNum);
 			GenericPlayerInitialization(NewBot);

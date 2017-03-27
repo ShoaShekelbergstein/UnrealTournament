@@ -1457,6 +1457,11 @@ void AUTPlayerState::SetPlayerCard(const FString& CardName)
 
 void AUTPlayerState::OnPlayerCardUpdated()
 {
+	AUTCharacter* UTChar = GetUTCharacter();
+	if (UTChar)
+	{
+		UTChar->PlayerCardUpdated();
+	}
 }
 
 void AUTPlayerState::SetCharacter(const FString& CharacterPath)

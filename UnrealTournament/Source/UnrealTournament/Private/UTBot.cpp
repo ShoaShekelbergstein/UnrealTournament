@@ -156,6 +156,9 @@ void AUTBot::InitializeCharacter(UUTBotCharacter* NewCharacterData)
 	{
 		PS->SetCharacterVoice(CharacterData->CharacterVoice.ToString());
 		PS->SetCharacter(CharacterData->Character.ToString());
+		PS->SetPlayerName(CharacterData->GetName());
+		PS->PlayerCard = NewCharacterData;
+		PS->OnPlayerCardUpdated();
 		if (!CharacterData->HatType.ToString().IsEmpty())
 		{
 			PS->ServerReceiveHatClass(CharacterData->HatType.ToString());

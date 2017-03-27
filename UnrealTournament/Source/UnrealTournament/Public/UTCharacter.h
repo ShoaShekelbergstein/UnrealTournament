@@ -990,6 +990,9 @@ public:
 	virtual void UnPossessed() override;
 	virtual void Restart() override;
 
+	/** Called when PlayerCard is updated */
+	virtual void PlayerCardUpdated();
+
 	virtual bool ShouldTakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) const override
 	{
 		// we want to allow zero damage (momentum only) hits so never pass 0 to super call

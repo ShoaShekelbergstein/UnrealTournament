@@ -5112,6 +5112,7 @@ void AUTCharacter::PossessedBy(AController* NewController)
 
 	Super::PossessedBy(NewController);
 	NotifyTeamChanged();
+	PlayerCardUpdated();
 	NewController->ClientSetRotation(GetActorRotation());
 	if (UTCharacterMovement)
 	{
@@ -5175,10 +5176,16 @@ void AUTCharacter::OnRep_PlayerState()
 	if (PlayerState != NULL)
 	{
 		NotifyTeamChanged();
+		PlayerCardUpdated();
 		OldPlayerState = Cast<AUTPlayerState>(PlayerState);
 	}
 
 	SetCosmeticsFromPlayerState();
+}
+
+void AUTCharacter::PlayerCardUpdated()
+{
+	
 }
 
 void AUTCharacter::SetCosmeticsFromPlayerState()
