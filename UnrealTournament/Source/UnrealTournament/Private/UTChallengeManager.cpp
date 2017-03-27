@@ -3,11 +3,6 @@
 #include "UTChallengeManager.h"
 #include "UTBotCharacter.h"
 #include "UTProgressionStorage.h"
-/*
-rename Kryss (too close to Cryss) - new Solace
-remove Lauren
-Get rid of UTBotConfig ini
-*/
 
 UUTChallengeManager::UUTChallengeManager(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)

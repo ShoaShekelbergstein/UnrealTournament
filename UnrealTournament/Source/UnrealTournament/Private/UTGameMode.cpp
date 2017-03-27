@@ -410,6 +410,9 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 		}
 	}
 
+	InOpt = UGameplayStatics::ParseOption(Options, TEXT("Proto"));
+	bUseProtoTeams = EvalBoolOptions(InOpt, bUseProtoTeams);
+
 	PostInitGame(Options);
 
 	UE_LOG(UT, Log, TEXT("LobbyInstanceID: %i"), LobbyInstanceID);
@@ -906,6 +909,19 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 				SelectedCharacter = ChallengeManager->ChooseBotCharacter(this, TeamNum, TotalStars);
 			}
 		}
+		if (bUseProtoTeams)
+		{
+			if ((BlueProtoIndex < RedProtoIndex) && (BlueProtoIndex < ProtoBlue.Num()))
+			{
+				SelectedCharacter = FindBotAsset(ProtoBlue[BlueProtoIndex]);
+				BlueProtoIndex++;
+			}
+			else if (RedProtoIndex < ProtoRed.Num())
+			{
+				SelectedCharacter = FindBotAsset(ProtoRed[RedProtoIndex]);
+				RedProtoIndex++;
+			}
+		}
 		if (SelectedCharacter == NULL)
 		{
 			SelectedCharacter = ChooseRandomCharacter(TeamNum);
@@ -941,7 +957,7 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 	return NewBot;
 }
 
-AUTBotPlayer* AUTGameMode::AddNamedBot(const FString& BotName, uint8 TeamNum)
+UUTBotCharacter* AUTGameMode::FindBotAsset(const FString& BotName)
 {
 	if (BotAssets.Num() == 0)
 	{
@@ -960,7 +976,12 @@ AUTBotPlayer* AUTGameMode::AddNamedBot(const FString& BotName, uint8 TeamNum)
 			}
 		}
 	}
+	return BotData;
+}
 
+AUTBotPlayer* AUTGameMode::AddNamedBot(const FString& BotName, uint8 TeamNum)
+{
+	UUTBotCharacter* BotData = FindBotAsset(BotName);
 	if (BotData == NULL)
 	{
 		UE_LOG(UT, Error, TEXT("Character data for bot '%s' not found"), *BotName);

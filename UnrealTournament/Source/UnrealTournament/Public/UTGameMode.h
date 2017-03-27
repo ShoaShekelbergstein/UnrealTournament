@@ -402,6 +402,23 @@ public:
 	UPROPERTY(Config)
 	int32 AutoRestartTime;
 
+	virtual UUTBotCharacter* FindBotAsset(const FString& BotName);
+
+	UPROPERTY(GlobalConfig)
+		TArray<FString> ProtoRed;
+
+	UPROPERTY(GlobalConfig)
+		TArray<FString> ProtoBlue;
+
+	UPROPERTY()
+		bool bUseProtoTeams;
+
+	UPROPERTY()
+		int32 RedProtoIndex;
+
+	UPROPERTY()
+		int32 BlueProtoIndex;
+
 	/** How long has the server been empty */
 	int32 EmptyServerTime;
 
