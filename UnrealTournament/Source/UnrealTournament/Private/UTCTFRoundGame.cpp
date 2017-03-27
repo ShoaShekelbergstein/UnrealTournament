@@ -1352,6 +1352,29 @@ bool AUTCTFRoundGame::IsPlayerOnLifeLimitedTeam(AUTPlayerState* PlayerState) con
 	return PlayerState && PlayerState->Team && IsTeamOnOffense(PlayerState->Team->TeamIndex) ? RCTFGameState->bAttackerLivesLimited : RCTFGameState->bDefenderLivesLimited;
 }
 
+uint8 AUTCTFRoundGame::GetWinningTeamForLineUp() const
+{
+	uint8 Result = Super::GetWinningTeamForLineUp();
+	if (Result == 255)
+	{
+		if (FlagScorer != nullptr)
+		{
+			Result = FlagScorer->GetTeamNum();
+		}
+		else if (CTFGameState != nullptr && CTFGameState->GetScoringPlays().Num() > 0)
+		{
+			const TArray<const FCTFScoringPlay>& ScoringPlays = CTFGameState->GetScoringPlays();
+			const FCTFScoringPlay& WinningPlay = ScoringPlays.Last();
+
+			if (WinningPlay.Team)
+			{
+				Result = WinningPlay.Team->GetTeamNum();
+			}
+		}
+	}
+	return Result;
+}
+
 float AUTCTFRoundGame::GetScoreForXP(AUTPlayerState* PS)
 {
 	return PS->Kills;

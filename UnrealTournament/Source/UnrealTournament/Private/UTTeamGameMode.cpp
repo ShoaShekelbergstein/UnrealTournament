@@ -810,6 +810,22 @@ bool AUTTeamGameMode::ModifyDamage_Implementation(int32& Damage, FVector& Moment
 	return true;
 }
 
+uint8 AUTTeamGameMode::GetWinningTeamForLineUp() const
+{
+	if (UTGameState->WinningTeam != nullptr)
+	{
+		return UTGameState->WinningTeam->GetTeamNum();
+	}
+	else if (UTGameState->ScoringPlayerState)
+	{
+		return UTGameState->ScoringPlayerState->GetTeamNum();
+	}
+	else
+	{
+		return 255;
+	}
+}
+
 float AUTTeamGameMode::RatePlayerStart(APlayerStart* P, AController* Player)
 {
 	float Result = Super::RatePlayerStart(P, Player);

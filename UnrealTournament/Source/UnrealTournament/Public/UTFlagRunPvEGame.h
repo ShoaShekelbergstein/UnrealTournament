@@ -76,6 +76,12 @@ public:
 	virtual void CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, bool bCreateReadOnly, TArray< TSharedPtr<TAttributePropertyBase> >& ConfigProps, int32 MinimumPlayers) override;
 #endif
 
+	virtual uint8 GetWinningTeamForLineUp() const override
+	{
+		// always show player team in endgame line-up, nobody cares about the monsters' stats
+		return 1;
+	}
+
 protected:
 	virtual void SpawnMonster(TSubclassOf<AUTMonster> MonsterClass);
 };

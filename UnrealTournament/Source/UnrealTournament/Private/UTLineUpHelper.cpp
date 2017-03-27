@@ -451,31 +451,11 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 		//Spawn using Winning / Losing teams instead of team color based teams. This means the red list = winning team and blue list = losing team.
 		if (TeamGM && TeamGM->UTGameState && (LineUpType == LineUpTypes::PostMatch || LineUpType == LineUpTypes::Intermission))
 		{
-			if (TeamGM->UTGameState->WinningTeam)
+			uint8 WinningTeamNum = TeamGM->GetWinningTeamForLineUp();
+			if (WinningTeamNum != 255)
 			{
-				RedOrWinningTeamNumber = TeamGM->UTGameState->WinningTeam->GetTeamNum();
+				RedOrWinningTeamNumber = WinningTeamNum;
 				BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
-			}
-			else if (TeamGM->UTGameState->ScoringPlayerState)
-			{
-				RedOrWinningTeamNumber = TeamGM->UTGameState->ScoringPlayerState->GetTeamNum();
-				BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
-			}
-			else if (CTFGM && CTFGM->FlagScorer)
-			{
-				RedOrWinningTeamNumber = CTFGM->FlagScorer->GetTeamNum();
-				BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
-			}
-			else if (CTFGS && CTFGS->GetScoringPlays().Num() > 0)
-			{
-				const TArray<const FCTFScoringPlay>& ScoringPlays = CTFGS->GetScoringPlays();
-				const FCTFScoringPlay& WinningPlay = ScoringPlays.Last();
-
-				if (WinningPlay.Team)
-				{
-					RedOrWinningTeamNumber = WinningPlay.Team->GetTeamNum();
-					BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
-				}
 			}
 		}
 

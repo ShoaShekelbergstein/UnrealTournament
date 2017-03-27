@@ -105,6 +105,9 @@ class UNREALTOURNAMENT_API AUTTeamGameMode : public AUTGameMode
 	 */
 	virtual uint8 PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam);
 
+	/** return team index of team that should be displayed as the winner in an intermission/post-game character line up */
+	virtual uint8 GetWinningTeamForLineUp() const;
+
 	// Creates the URL options for custom games
 	virtual void CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps);
 
