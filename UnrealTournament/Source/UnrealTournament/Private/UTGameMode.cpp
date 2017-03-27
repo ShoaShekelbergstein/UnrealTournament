@@ -927,7 +927,6 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 		}
 		if (bUseProtoTeams)
 		{
-			UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
 			if (UTEngine && (BlueProtoIndex < RedProtoIndex) && (BlueProtoIndex < ProtoBlue.Num()))
 			{
 				SelectedCharacter = UTEngine->FindBotAsset(ProtoBlue[BlueProtoIndex]);
