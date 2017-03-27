@@ -199,8 +199,11 @@ public:
 		float LastBehindYouTime;
 
 	/** Only valid if ?proto=1. */
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnPlayerCardUpdated)
 		class UUTBotCharacter* PlayerCard;
+
+	UFUNCTION()
+		void OnPlayerCardUpdated();
 
 	virtual void SetPlayerCard(const FString& CardName);
 

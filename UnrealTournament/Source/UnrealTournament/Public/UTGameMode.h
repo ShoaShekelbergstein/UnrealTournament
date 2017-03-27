@@ -402,8 +402,6 @@ public:
 	UPROPERTY(Config)
 	int32 AutoRestartTime;
 
-	virtual UUTBotCharacter* FindBotAsset(const FString& BotName);
-
 	UPROPERTY(GlobalConfig)
 		TArray<FString> ProtoRed;
 
@@ -450,9 +448,6 @@ public:
 	/** class used for AI bots */
 	UPROPERTY(EditAnywhere, NoClear, BlueprintReadWrite, Category = Classes)
 	TSubclassOf<class AUTBotPlayer> BotClass;
-
-	/** cached list of UTBotCharacter assets from the asset registry, so we don't need to query the registry every time we add a bot */
-	TArray<FAssetData> BotAssets;
 
 	/** Sorted array of remaining eligible bot characters to select from. */
 	UPROPERTY()

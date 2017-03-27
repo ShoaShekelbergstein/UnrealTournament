@@ -887,25 +887,29 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 	AUTBotPlayer* NewBot = GetWorld()->SpawnActor<AUTBotPlayer>(BotClass);
 	if (NewBot != NULL)
 	{
-		if (BotAssets.Num() == 0)
+		UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
+		if (UTEngine)
 		{
-			GetAllAssetData(UUTBotCharacter::StaticClass(), BotAssets);
-		}
-		if (EligibleBots.Num() == 0)
-		{
-			for (const FAssetData& Asset : BotAssets)
+			if (UTEngine->BotAssets.Num() == 0)
 			{
-				UUTBotCharacter* EligibleCharacter = Cast<UUTBotCharacter>(Asset.GetAsset());
-				if (EligibleCharacter != NULL)
-				{
-					EligibleBots.Add(EligibleCharacter);
-				}
+				GetAllAssetData(UUTBotCharacter::StaticClass(), UTEngine->BotAssets);
 			}
-
-			EligibleBots.Sort([](const UUTBotCharacter& A, const UUTBotCharacter& B) -> bool
+			if (EligibleBots.Num() == 0)
 			{
-				return A.SkillAdjust < B.SkillAdjust;
-			});
+				for (const FAssetData& Asset : UTEngine->BotAssets)
+				{
+					UUTBotCharacter* EligibleCharacter = Cast<UUTBotCharacter>(Asset.GetAsset());
+					if (EligibleCharacter != NULL)
+					{
+						EligibleBots.Add(EligibleCharacter);
+					}
+				}
+
+				EligibleBots.Sort([](const UUTBotCharacter& A, const UUTBotCharacter& B) -> bool
+				{
+					return A.SkillAdjust < B.SkillAdjust;
+				});
+			}
 		}
 		UUTBotCharacter* SelectedCharacter = NULL;
 		int32 TotalStars = 0;
@@ -923,15 +927,21 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 		}
 		if (bUseProtoTeams)
 		{
-			if ((BlueProtoIndex < RedProtoIndex) && (BlueProtoIndex < ProtoBlue.Num()))
+			UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
+			if (UTEngine && (BlueProtoIndex < RedProtoIndex) && (BlueProtoIndex < ProtoBlue.Num()))
 			{
-				SelectedCharacter = FindBotAsset(ProtoBlue[BlueProtoIndex]);
+				SelectedCharacter = UTEngine->FindBotAsset(ProtoBlue[BlueProtoIndex]);
 				BlueProtoIndex++;
 			}
-			else if (RedProtoIndex < ProtoRed.Num())
+			else if (UTEngine && (RedProtoIndex < ProtoRed.Num()))
 			{
-				SelectedCharacter = FindBotAsset(ProtoRed[RedProtoIndex]);
+				SelectedCharacter = UTEngine->FindBotAsset(ProtoRed[RedProtoIndex]);
 				RedProtoIndex++;
+			}
+			AUTPlayerState* PS = Cast<AUTPlayerState>(NewBot->PlayerState);
+			if (PS && SelectedCharacter)
+			{
+				PS->PlayerCard = SelectedCharacter;
 			}
 		}
 		if (SelectedCharacter == NULL)
@@ -969,32 +979,11 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 	return NewBot;
 }
 
-UUTBotCharacter* AUTGameMode::FindBotAsset(const FString& BotName)
-{
-	if (BotAssets.Num() == 0)
-	{
-		GetAllAssetData(UUTBotCharacter::StaticClass(), BotAssets);
-	}
-
-	UUTBotCharacter* BotData = NULL;
-	for (const FAssetData& Asset : BotAssets)
-	{
-		if (Asset.AssetName.ToString() == BotName)
-		{
-			BotData = Cast<UUTBotCharacter>(Asset.GetAsset());
-			if (BotData != NULL)
-			{
-				break;
-			}
-		}
-	}
-	return BotData;
-}
-
 AUTBotPlayer* AUTGameMode::AddNamedBot(const FString& BotName, uint8 TeamNum)
 {
-	UUTBotCharacter* BotData = FindBotAsset(BotName);
-	if (BotData == NULL)
+	UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
+	UUTBotCharacter* BotData = UTEngine ? UTEngine->FindBotAsset(BotName) : nullptr;
+	if (BotData == nullptr)
 	{
 		UE_LOG(UT, Error, TEXT("Character data for bot '%s' not found"), *BotName);
 		return NULL;

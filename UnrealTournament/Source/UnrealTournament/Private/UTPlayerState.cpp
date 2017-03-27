@@ -158,6 +158,7 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME(AUTPlayerState, bIsRconAdmin);
 	DOREPLIFETIME(AUTPlayerState, SelectionOrder);
 	DOREPLIFETIME(AUTPlayerState, ClanName);
+	DOREPLIFETIME(AUTPlayerState, PlayerCard);
 
 	DOREPLIFETIME(AUTPlayerState, DuelMatchesPlayed);
 	DOREPLIFETIME(AUTPlayerState, CTFMatchesPlayed);
@@ -1439,15 +1440,23 @@ bool AUTPlayerState::IsOwnedByReplayController() const
 
 void AUTPlayerState::SetPlayerCard(const FString& CardName)
 {
-	AUTGameMode* Game = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (Game)
+	UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
+	if (UTEngine)
 	{
-		PlayerCard = Game->FindBotAsset(CardName);
+		PlayerCard = UTEngine->FindBotAsset(CardName);
 		if (PlayerCard)
 		{
 			SetCharacter(PlayerCard->Character.ToString());
 		}
+		if (Role == ROLE_Authority)
+		{
+			OnPlayerCardUpdated();
+		}
 	}
+}
+
+void AUTPlayerState::OnPlayerCardUpdated()
+{
 }
 
 void AUTPlayerState::SetCharacter(const FString& CharacterPath)

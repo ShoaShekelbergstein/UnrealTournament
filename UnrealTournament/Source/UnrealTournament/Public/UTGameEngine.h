@@ -3,6 +3,7 @@
 
 #include "UTVideoRecordingFeature.h"
 #include "UTChallengeManager.h"
+#include "../../Engine/Source/Runtime/AssetRegistry/Public/AssetData.h"
 #include "UTGameEngine.generated.h"
 
 
@@ -19,6 +20,11 @@ private:
 	TArray< TSubclassOf<AUTWeapon> > AlwaysLoadedWeapons;
 
 public:
+	/** cached list of UTBotCharacter assets from the asset registry, so we don't need to query the registry every time we add a bot */
+	TArray<FAssetData> BotAssets;
+
+	virtual class UUTBotCharacter* FindBotAsset(const FString& BotName);
+
 	/** default screenshot used for levels when none provided in the level itself */
 	UPROPERTY()
 	UTexture2D* DefaultLevelScreenshot;

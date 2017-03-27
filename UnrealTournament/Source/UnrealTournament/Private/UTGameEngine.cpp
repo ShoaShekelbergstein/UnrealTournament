@@ -14,6 +14,7 @@
 #include "UTMenuGameMode.h"
 #include "UTGameInstance.h"
 #include "IAnalyticsProvider.h"
+#include "UTBotCharacter.h"
 #if !UE_SERVER
 #include "SlateBasics.h"
 #include "MoviePlayer.h"
@@ -1042,4 +1043,26 @@ bool UUTGameEngine::HandleReconnectCommand( const TCHAR* Cmd, FOutputDevice& Ar,
 	{
 		return Super::HandleReconnectCommand(Cmd, Ar, InWorld );
 	}
+}
+
+UUTBotCharacter* UUTGameEngine::FindBotAsset(const FString& BotName)
+{
+	if (BotAssets.Num() == 0)
+	{
+		GetAllAssetData(UUTBotCharacter::StaticClass(), BotAssets);
+	}
+
+	UUTBotCharacter* BotData = NULL;
+	for (const FAssetData& Asset : BotAssets)
+	{
+		if (Asset.AssetName.ToString() == BotName)
+		{
+			BotData = Cast<UUTBotCharacter>(Asset.GetAsset());
+			if (BotData != NULL)
+			{
+				break;
+			}
+		}
+	}
+	return BotData;
 }
