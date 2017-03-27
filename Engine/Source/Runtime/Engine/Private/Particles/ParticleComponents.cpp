@@ -5459,6 +5459,7 @@ void UParticleSystemComponent::DeactivateSystem()
 			Template != NULL ? *Template->GetName() : TEXT("NULL"));
 
 		bDeactiveSystemOnFinalize = true;
+		SetComponentTickEnabled(true);
 		return;
 	}
 
