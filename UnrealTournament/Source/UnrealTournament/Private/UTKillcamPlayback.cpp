@@ -559,9 +559,9 @@ void UUTKillcamPlayback::HideKillcamFromUser()
 		}
 	}
 
-	for (FObjectIterator It(UParticleSystemComponent::StaticClass()); It; ++It)
+	for (TObjectIterator<UParticleSystemComponent> It; It; ++It)
 	{
-		UParticleSystemComponent* PSC = (UParticleSystemComponent*)*It;
+		UParticleSystemComponent* PSC = *It;
 		if (PSC && PSC->GetOwner() && (PSC->GetOwner()->GetWorld() == KillcamWorld))
 		{
 			PSC->CustomTimeDilation = 1.0f;
