@@ -198,6 +198,12 @@ public:
 	UPROPERTY()
 		float LastBehindYouTime;
 
+	/** Only valid if ?proto=1. */
+	UPROPERTY()
+		class UUTBotCharacter* PlayerCard;
+
+	virtual void SetPlayerCard(const FString& CardName);
+
 	FTimerHandle PlayKillAnnouncement;
 	FTimerHandle UpdateOldNameHandle;
 

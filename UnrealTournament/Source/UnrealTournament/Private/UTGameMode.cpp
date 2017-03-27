@@ -791,10 +791,22 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 		if (PS != NULL)
 		{
 			PS->NotIdle();
-			FString InOpt = UGameplayStatics::ParseOption(Options, TEXT("Character"));
-			if (InOpt.Len() > 0)
+
+			if (bUseProtoTeams)
 			{
-				PS->SetCharacter(InOpt);
+				FString InOpt = UGameplayStatics::ParseOption(Options, TEXT("PlayerCard"));
+				if (InOpt.Len() > 0)
+				{
+					PS->SetPlayerCard(InOpt);
+				}
+			}
+			else
+			{
+				FString InOpt = UGameplayStatics::ParseOption(Options, TEXT("Character"));
+				if (InOpt.Len() > 0)
+				{
+					PS->SetCharacter(InOpt);
+				}
 			}
 
 			// warning: blindly calling this here relies on ValidateEntitlements() defaulting to "allow" if we have not yet obtained this user's entitlement information

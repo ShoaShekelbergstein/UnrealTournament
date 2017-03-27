@@ -39,6 +39,7 @@
 #include "UTLineUpHelper.h"
 #include "UTRallyPoint.h"
 #include "Panels/SUTWebBrowserPanel.h"
+#include "UTBotCharacter.h"
 
 #if !UE_SERVER
 #include "SlateBasics.h"
@@ -1434,6 +1435,19 @@ void AUTPlayerState::SetCharacterVoice(const FString& CharacterVoicePath)
 bool AUTPlayerState::IsOwnedByReplayController() const
 {
 	return Cast<AUTDemoRecSpectator>(GetOwner()) != nullptr;
+}
+
+void AUTPlayerState::SetPlayerCard(const FString& CardName)
+{
+	AUTGameMode* Game = GetWorld()->GetAuthGameMode<AUTGameMode>();
+	if (Game)
+	{
+		PlayerCard = Game->FindBotAsset(CardName);
+		if (PlayerCard)
+		{
+			SetCharacter(PlayerCard->Character.ToString());
+		}
+	}
 }
 
 void AUTPlayerState::SetCharacter(const FString& CharacterPath)
