@@ -10,7 +10,7 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 {
 	GENERATED_UCLASS_BODY()
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, BlueprintReadOnly)
 		uint32 bRedToCap : 1;
 
 	UPROPERTY()
