@@ -625,6 +625,15 @@ void AUTRallyPoint::Tick(float DeltaTime)
 										}
 									}
 								}
+
+								// tell bots about FC position
+								// technically this should happen only after someone uses the rally point (since that's when the defender HUD shows up)
+								// but we don't have a "tell bot we realized they were here X seconds ago" function and anyway in the majority of cases the rally point used is not a surprise
+								AUTBot* B = Cast<AUTBot>(Iterator->Get());
+								if (B != NULL && !B->IsTeammate(NearbyFC))
+								{
+									B->UpdateEnemyInfo(NearbyFC, EUT_HeardExact);
+								}
 							}
 						}
 						UUTGameplayStatics::UTPlaySound(GetWorld(), ReadyToRallySound, this, SRT_All);

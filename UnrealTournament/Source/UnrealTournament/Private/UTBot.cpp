@@ -1504,7 +1504,7 @@ void AUTBot::ApplyWeaponAimAdjust(FVector TargetLoc, FVector& FocalPoint)
 
 					if ( MyWeap->bRecommendSplashDamage && EnemyChar != NULL && (Skill >= 4.0f + FMath::Max<float>(0.0f, Personality.Accuracy + Personality.Tactics) || bDefendMelee)
 						&& ( (EnemyChar->GetCharacterMovement()->MovementMode == MOVE_Falling && (GetPawn()->GetActorLocation().Z + 180.0f >= FocalPoint.Z))
-							|| (GetPawn()->GetActorLocation().Z + 40.0f >= FocalPoint.Z && (bDefendMelee || Skill > 6.5f * FMath::FRand() - 0.5f)) ) )
+							|| (GetPawn()->GetActorLocation().Z - 1.0f >= FocalPoint.Z && (bDefendMelee || Skill > 6.5f * FMath::FRand() - 0.5f)) ) )
 					{
 						FHitResult Hit;
 						bClean = !GetWorld()->LineTraceSingleByChannel(Hit, TargetLoc, TargetLoc - FVector(0.0f, 0.0f, TargetHeight + 13.0f), COLLISION_TRACE_WEAPONNOCHARACTER, Params);
@@ -3138,6 +3138,10 @@ void AUTBot::FightEnemy(bool bCanCharge, float EnemyStrength)
 		float AdjustedCombatStyle = Personality.Aggressiveness + MyWeap->SuggestAttackStyle();
 		CurrentAggression = 1.5f * FMath::FRand() - 0.8f + 2.0f * AdjustedCombatStyle - 0.5 * EnemyStrength
 								+ FMath::FRand() * ((Enemy->GetVelocity() - GetPawn()->GetVelocity()).GetSafeNormal() | (EnemyLoc - GetPawn()->GetActorLocation()).GetSafeNormal());
+		if (GetDefensePoint() != nullptr)
+		{
+			CurrentAggression -= 0.5f;
+		}
 		AUTWeapon* EnemyWeap = (Cast<AUTCharacter>(Enemy) != NULL) ? ((AUTCharacter*)Enemy)->GetWeapon() : NULL;
 		if (EnemyWeap != NULL)
 		{

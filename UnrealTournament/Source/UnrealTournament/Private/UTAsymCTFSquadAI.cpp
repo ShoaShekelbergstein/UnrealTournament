@@ -145,16 +145,19 @@ bool AUTAsymCTFSquadAI::ShouldStartRally(AUTBot* B)
 						return true;
 					}
 				}
-				// check if there are unknown respawned enemies
-				// this isn't cheating because the HUD shows respawn times
-				AUTTeamInfo* EnemyTeam = GS->Teams[Team->TeamIndex == 0 ? 1 : 0];
-				if (EnemyList.Num() < EnemyTeam->GetTeamMembers().Num())
+				if (!B->UTLineOfSightTo(Objective))
 				{
-					for (AController* C : EnemyTeam->GetTeamMembers())
+					// check if there are unknown respawned enemies
+					// this isn't cheating because the HUD shows respawn times
+					AUTTeamInfo* EnemyTeam = GS->Teams[Team->TeamIndex == 0 ? 1 : 0];
+					if (EnemyList.Num() < EnemyTeam->GetTeamMembers().Num())
 					{
-						if (C->GetPawn() != nullptr && !EnemyList.ContainsByPredicate([C](const FBotEnemyInfo& TestItem) { return TestItem.GetPawn() == C->GetPawn(); }))
+						for (AController* C : EnemyTeam->GetTeamMembers())
 						{
-							return true;
+							if (C->GetPawn() != nullptr && !EnemyList.ContainsByPredicate([C](const FBotEnemyInfo& TestItem) { return TestItem.GetPawn() == C->GetPawn(); }))
+							{
+								return true;
+							}
 						}
 					}
 				}
@@ -296,16 +299,38 @@ bool AUTAsymCTFSquadAI::HuntEnemyFlag(AUTBot* B)
 			return true;
 		}
 	}
-	else if ( (B->RouteCache.Num() > 0 && (Cast<AUTPickup>(B->RouteCache.Last().Actor.Get()) != nullptr || Cast<AUTDroppedPickup>(B->RouteCache.Last().Actor.Get()) != nullptr) && !NavData->HasReachedTarget(B->GetPawn(), B->GetPawn()->GetNavAgentPropertiesRef(), B->RouteCache.Last())) ||
-				((Flag->GetActorLocation() - B->GetPawn()->GetActorLocation()).Size() < FMath::Min<float>(3000.0f, (Flag->GetActorLocation() - Objective->GetActorLocation()).Size()) && B->UTLineOfSightTo(Flag)) )
-	{
-		// fight/camp here
-		return false;
-	}
 	else
 	{
-		// use alternate route to reach flag so that defenders approach from multiple angles
-		return TryPathToFlag(B, SquadRoutes, TEXT("Camp dropped flag"));
+		// see if any defense points have sight to flag, use them (assume defense point is superior position to just running up near the flag)
+		for (AUTDefensePoint* DP : GameObjective->DefensePoints)
+		{
+			if ( DP->CurrentUser == nullptr && (DP->GetActorLocation() - Flag->GetActorLocation()).Size() < 3000.0f &&
+				!GetWorld()->LineTraceTestByChannel(DP->GetActorLocation() + FVector(0.0f, 0.0f, B->GetPawn()->GetSimpleCollisionHalfHeight()), Flag->GetActorLocation(), ECC_Visibility, FCollisionQueryParams(NAME_None, false), WorldResponseParams) )
+			{
+				const FVector Diff = B->GetPawn()->GetActorLocation() - DP->GetActorLocation();
+				if (Diff.Size() < 500.0f && FMath::Abs<float>(Diff.Z) <= B->GetPawn()->GetSimpleCollisionHalfHeight())
+				{
+					// fight here
+					return false;
+				}
+				else if (B->TryPathToward(DP, true, false, FString::Printf(TEXT("Monitor flag using defense point %s"), *DP->GetName())))
+				{
+					return true;
+				}
+			}
+		}
+
+		if ( (B->RouteCache.Num() > 0 && (Cast<AUTPickup>(B->RouteCache.Last().Actor.Get()) != nullptr || Cast<AUTDroppedPickup>(B->RouteCache.Last().Actor.Get()) != nullptr) && !NavData->HasReachedTarget(B->GetPawn(), B->GetPawn()->GetNavAgentPropertiesRef(), B->RouteCache.Last())) ||
+					((Flag->GetActorLocation() - B->GetPawn()->GetActorLocation()).Size() < FMath::Min<float>(3000.0f, (Flag->GetActorLocation() - Objective->GetActorLocation()).Size()) && B->UTLineOfSightTo(Flag)) )
+		{
+			// fight/camp here
+			return false;
+		}
+		else
+		{
+			// use alternate route to reach flag so that defenders approach from multiple angles
+			return TryPathToFlag(B, SquadRoutes, TEXT("Camp dropped flag"));
+		}
 	}
 }
 
