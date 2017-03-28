@@ -3418,7 +3418,8 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 		StartPlayTime = (NumPlayers > 0) ? FMath::Min(StartPlayTime, GetWorld()->GetTimeSeconds()) : 10000000.f;
 		float ElapsedWaitTime = FMath::Max(0.f, GetWorld()->GetTimeSeconds() - StartPlayTime);
 
-		UTGameState->PlayersNeeded = FMath::Max(0, GameSession->MaxPlayers - NumPlayers);
+		int32 NeededPlayers = GameSession ? GameSession->MaxPlayers : DefaultMaxPlayers;
+		UTGameState->PlayersNeeded = FMath::Max(0, NeededPlayers - NumPlayers);
 		if (!bRequireReady && !bRequireFull && !bRankedSession && (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers))
 		{
 			int32 MinPlayersToStart = bIsQuickMatch ? 1 : 2;
