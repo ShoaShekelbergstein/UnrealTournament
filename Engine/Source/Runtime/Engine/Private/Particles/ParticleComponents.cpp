@@ -4918,10 +4918,13 @@ void UParticleSystemComponent::WaitForAsyncAndFinalize(EForceAsyncWorkCompletion
 				FPlatformProcess::SleepNoStats(0.0f);
 			}
 		}
-
+		
 		float ThisTime = float(FPlatformTime::Seconds() - StartTime) * 1000.0f;
 		if (Behavior != SILENT && ThisTime >= KINDA_SMALL_NUMBER)
 		{
+			// PLK DEBUG! #jira UT-7200
+			ensure(ThisTime <= KINDA_SMALL_NUMBER);
+
 			if (bDefinitelyGameThread || IsInGameThread())
 			{
 				UE_LOG(LogParticles, Warning, TEXT("Stalled gamethread waiting for particles %5.6fms '%s' '%s'"), ThisTime, *GetFullNameSafe(this), *GetFullNameSafe(Template));
