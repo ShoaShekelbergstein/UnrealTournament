@@ -292,6 +292,9 @@ public:
 	UFUNCTION(exec)
 	virtual void ToggleScoreboard(bool bShow);
 
+	UFUNCTION(BlueprintCallable, Category = LineUp)
+	virtual bool IsLineUpActive() const;
+
 	UFUNCTION(client, reliable)
 	virtual void ClientPrepareForLineUp();
 

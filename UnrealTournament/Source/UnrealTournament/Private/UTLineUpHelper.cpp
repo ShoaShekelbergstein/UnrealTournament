@@ -12,6 +12,7 @@
 #include "UTCTFGameMode.h"
 #include "UTFlagRunGameState.h"
 #include "UTPlayerState.h"
+#include "UTCustomMovementTypes.h"
 
 AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -79,6 +80,12 @@ void AUTLineUpHelper::CleanUp()
 		{
 			for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 			{
+				AUTPlayerState* UTPS = Cast<AUTPlayerState>((*Iterator)->PlayerState);
+				if (UTPS)
+				{
+					UTPS->LineUpLocation = INDEX_NONE;
+				}
+
 				AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
 				if (UTPC)
 				{
@@ -184,19 +191,22 @@ void AUTLineUpHelper::SetupDelayedLineUp()
 {
 	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 	{
-		AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
-		if (UTPC)
+		AController* C = Cast<AController>(*Iterator);
+		if (C)
 		{
-			AUTCharacter* UTChar = Cast<AUTCharacter>(UTPC->GetPawn());
+			AUTCharacter* UTChar = Cast<AUTCharacter>(C->GetPawn());
 			if (UTChar)
 			{
 				UTChar->TurnOff();
 				ForceCharacterAnimResetForLineUp(UTChar);
 			}
 
-			UTPC->FlushPressedKeys();
-
-			UTPC->ClientPrepareForLineUp();
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(C);
+			if (UTPC)
+			{
+				UTPC->FlushPressedKeys();
+				UTPC->ClientPrepareForLineUp();
+			}
 		}
 	}
 }
@@ -286,12 +296,23 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 		}
 
 		//Go back through characters now that they are moved and turn them off
-		for (AUTCharacter* UTChar : PlayerPreviewCharacters)
+		for (int32 PlayerIndex = 0; PlayerIndex < PlayerPreviewCharacters.Num(); ++PlayerIndex)
 		{
-			UTChar->TurnOff();
-			UTChar->DeactivateSpawnProtection();
-			ForceCharacterAnimResetForLineUp(UTChar);
-			SpawnPlayerWeapon(UTChar);
+			AUTCharacter* UTChar = PlayerPreviewCharacters[PlayerIndex];
+			if (UTChar)
+			{
+				UTChar->TurnOff();
+				UTChar->DeactivateSpawnProtection();
+				ForceCharacterAnimResetForLineUp(UTChar);
+				SpawnPlayerWeapon(UTChar);
+
+				//Set each player's position in the line up
+				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTChar->PlayerState);
+				if (UTPlayerState)
+				{
+					UTPlayerState->LineUpLocation = PlayerIndex;
+				}
+			}
 		}
 	}
 
@@ -388,6 +409,22 @@ void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
 {
 	if (UTChar)
 	{
+		UUTCharacterMovement* UTCM = Cast<UUTCharacterMovement>(UTChar->GetMovementComponent());
+		if (UTCM)
+		{
+			UTCM->OnLineUp();
+
+			//Need to turn on collision so that the line-up movement mode can find the floor and reset it
+			bool bOriginalCollisionSetting = UTChar->GetActorEnableCollision();
+			UTChar->SetActorEnableCollision(true);
+
+			// This movement mode is tied to LineUp specific anims.
+			UTCM->SetMovementMode(MOVE_Custom, CUSTOMMOVE_LineUp);
+		
+			//Reset collision to whatever it was before line-up
+			UTChar->SetActorEnableCollision(bOriginalCollisionSetting);
+		}
+
 		if (UTChar->GetMesh())
 		{
 			//Want to still update the animations and bones even though we have turned off the Pawn, so re-enable those.
@@ -398,31 +435,6 @@ void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
 			UTChar->GetMesh()->SetSimulatePhysics(false);
 			UTChar->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
-
-		// Teleport non-local players up to better align them with the local player.
-		if (UTChar->GetWorld())
-		{
-			AUTPlayerController* UTPC = Cast<AUTPlayerController>(UTChar->GetWorld()->GetFirstPlayerController());
-			if (UTPC)
-			{
-				if (UTChar != Cast<AUTCharacter>(UTPC->GetPawn()))
-				{
-					FVector Offset(0.0f, 0.0f, 5.0f);
-					FVector TeleportLoc = UTChar->GetActorLocation() + Offset;
-					UTChar->TeleportTo(TeleportLoc, UTChar->GetActorRotation(), false, true);
-				}
-			}
-		}
-
-		UUTCharacterMovement* UTCM = Cast<UUTCharacterMovement>(UTChar->GetMovementComponent());
-		if (UTCM)
-		{
-			UTCM->OnLineUp();
-
-			//Avoid falling anims if we are in the air with our line-up spawn point
-			UTCM->SetMovementMode(MOVE_Walking);
-		}
-		
 	}
 }
 

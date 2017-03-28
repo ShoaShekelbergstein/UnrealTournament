@@ -96,6 +96,8 @@ AUTPlayerState::AUTPlayerState(const class FObjectInitializer& ObjectInitializer
 	MinimumConsiderationForCoolFactorHistory = 200.0f;
 
 	bDrawNameOnDeathIndicator = true;
+
+	LineUpLocation = INDEX_NONE;
 }
 
 void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
@@ -198,6 +200,8 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 
 	DOREPLIFETIME_CONDITION(AUTPlayerState, CriticalObject, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, UnlockList, COND_OwnerOnly);
+
+	DOREPLIFETIME(AUTPlayerState, LineUpLocation);
 
 	// Allow "displayall UTPlayerState CurrentCoolFactor" in development builds
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)

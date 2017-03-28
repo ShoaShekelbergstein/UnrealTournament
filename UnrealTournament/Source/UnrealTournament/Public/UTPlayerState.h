@@ -390,6 +390,10 @@ public:
 	UPROPERTY()
 		TSubclassOf<class AUTWeapon> LineUpWeapon;
 
+	/**If this player is in the active line-up this will be their spot (IE: Index) in the line-up. Lower is better. Owner Only**/
+	UPROPERTY(replicated, BlueprintReadOnly)
+		int32 LineUpLocation;
+
 	UPROPERTY()
 	int32 ElapsedTime;
 

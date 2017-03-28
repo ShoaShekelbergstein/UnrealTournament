@@ -4439,7 +4439,7 @@ void AUTPlayerController::ServerRegisterBanVote_Implementation(AUTPlayerState* B
 
 FRotator AUTPlayerController::GetControlRotation() const
 {
-	if (UTPlayerState && (UTPlayerState->bOnlySpectator || UTPlayerState->bOutOfLives) && !IsBehindView() && (GetViewTarget() != GetSpectatorPawn()) && (GetViewTarget() != GetPawn()))
+	if (UTPlayerState && (UTPlayerState->bOnlySpectator || UTPlayerState->bOutOfLives) && !IsBehindView() && (GetViewTarget() != GetSpectatorPawn()) && (GetViewTarget() != GetPawn()) && (!IsLineUpActive()))
 	{
 		return BlendedTargetViewRotation;
 	}
@@ -4449,6 +4449,12 @@ FRotator AUTPlayerController::GetControlRotation() const
 
 void AUTPlayerController::UpdateRotation(float DeltaTime)
 {
+	if (IsLineUpActive())
+	{
+		//Don't update any controller rotation during a line-up
+		return;
+	}
+
 	UUTPlayerInput* Input = Cast<UUTPlayerInput>(PlayerInput);
 	if (Input)
 	{
@@ -5206,6 +5212,12 @@ void AUTPlayerController::PlayTutorialAnnouncement(int32 Index, UObject* Optiona
 			FUTAnalytics::FireEvent_UTTutorialPlayInstruction(this, NewAnnName.ToString(), Index, OptionalObject ? OptionalObject->GetName() : FString());
 		}
 	}
+}
+
+bool AUTPlayerController::IsLineUpActive() const
+{
+	AUTGameState* UTGS = GetWorld() ? Cast<AUTGameState>(GetWorld()->GetGameState()) : nullptr;
+	return (UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive) ? true : false;
 }
 
 void AUTPlayerController::ClientPrepareForLineUp_Implementation()

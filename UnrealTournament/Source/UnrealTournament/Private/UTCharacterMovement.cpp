@@ -10,6 +10,7 @@
 #include "StatNames.h"
 #include "UTCTFFlag.h"
 #include "PhysicsEngine/PhysicsSettings.h"
+#include "UTCustomMovementTypes.h"
 
 const float MAX_STEP_SIDE_Z = 0.08f;	// maximum z value for the normal on the vertical side of steps
 
@@ -353,6 +354,16 @@ void UUTCharacterMovement::OnMovementModeChanged(EMovementMode PreviousMovementM
 				UTCharOwner->InventoryEvent(InventoryEventName::LandedWater);
 			}
 		}
+	}
+	else if ((MovementMode == MOVE_Custom) && (CustomMovementMode == CUSTOMMOVE_LineUp))
+	{
+		//not falling
+		Velocity.Z = 0.f;
+		
+		// make sure we update our new floor/base on initial entry
+		FindFloor(UpdatedComponent->GetComponentLocation(), CurrentFloor, false);
+		AdjustFloorHeight();
+		SetBaseFromFloor(CurrentFloor);
 	}
 }
 
