@@ -994,7 +994,10 @@ void AUTCarriedObject::FellOutOfWorld(const UDamageType& dmgType)
 {
 	if (Role == ROLE_Authority)
 	{
+		bool bRealGradualReturn = bGradualAutoReturn;
+		bGradualAutoReturn = false;
 		SendHomeWithNotify();
+		bGradualAutoReturn = bRealGradualReturn;
 	}
 	else
 	{
