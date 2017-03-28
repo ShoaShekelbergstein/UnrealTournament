@@ -555,3 +555,7 @@ void AUTDemoRecSpectator::ClientReceiveLocalizedMessage_Implementation(TSubclass
 
 	Super::ClientReceiveLocalizedMessage_Implementation(Message, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
 }
+
+void AUTDemoRecSpectator::ClientUpdateSkillRating_Implementation(const FString& MatchRatingType)
+{
+}
