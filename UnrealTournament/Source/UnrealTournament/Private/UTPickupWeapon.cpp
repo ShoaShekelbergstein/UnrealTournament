@@ -158,6 +158,29 @@ void AUTPickupWeapon::ProcessTouch_Implementation(APawn* TouchedBy)
 			if (Role == ROLE_Authority)
 			{
 				GiveTo(TouchedBy);
+
+				AUTGameMode* UTGameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+				if (UTGameMode != nullptr && UTGameMode->NumBots > 0)
+				{
+					float Radius = 0.0f;
+					if (TakenSound != NULL)
+					{
+						Radius = TakenSound->GetMaxAudibleDistance();
+						const FAttenuationSettings* Settings = TakenSound->GetAttenuationSettingsToApply();
+						if (Settings != NULL)
+						{
+							Radius = FMath::Max<float>(Radius, Settings->GetMaxDimension());
+						}
+					}
+					for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+					{
+						AUTBot* B = Cast<AUTBot>(It->Get());
+						if (B != NULL)
+						{
+							B->NotifyPickup(TouchedBy, this, Radius, false);
+						}
+					}
+				}
 			}
 			if (!GetWorldTimerManager().IsTimerActive(CheckTouchingHandle))
 			{

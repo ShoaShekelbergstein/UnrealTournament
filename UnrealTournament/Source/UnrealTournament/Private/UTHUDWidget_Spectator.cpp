@@ -23,14 +23,24 @@ bool UUTHUDWidget_Spectator::ShouldDraw_Implementation(bool bShowScores)
 		return true;
 	}
 
-	if (UTHUDOwner && UTHUDOwner->UTPlayerOwner && UTHUDOwner->UTPlayerOwner->UTPlayerState && UTGameState && (UTGameState->GetMatchState() != MatchState::PlayerIntro))
+	if (UTHUDOwner && UTHUDOwner->UTPlayerOwner && UTGameState)
 	{
-		AUTPlayerState* PS = UTHUDOwner->UTPlayerOwner->UTPlayerState;
-		if (UTGameState->IsMatchIntermission() || UTGameState->HasMatchEnded() || !UTGameState->HasMatchStarted())
+
+		UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(UTHUDOwner->UTPlayerOwner->Player);
+		if (UTLocalPlayer && UTLocalPlayer->AreMenusOpen() && !UTGameState->HasMatchStarted())
 		{
-			return true;
+			return false;
 		}
-		return (PS->bOnlySpectator || PS->bOutOfLives || (UTCharacterOwner ? UTCharacterOwner->IsDead() : (UTHUDOwner->UTPlayerOwner->GetPawn() == NULL)));
+
+		if (UTHUDOwner->UTPlayerOwner->UTPlayerState && (UTGameState->GetMatchState() != MatchState::PlayerIntro))
+		{
+			AUTPlayerState* PS = UTHUDOwner->UTPlayerOwner->UTPlayerState;
+			if (UTGameState->IsMatchIntermission() || UTGameState->HasMatchEnded() || !UTGameState->HasMatchStarted())
+			{
+				return true;
+			}
+			return (PS->bOnlySpectator || PS->bOutOfLives || (UTCharacterOwner ? UTCharacterOwner->IsDead() : (UTHUDOwner->UTPlayerOwner->GetPawn() == NULL)));
+		}
 	}
 	return false;
 }
@@ -211,7 +221,7 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 			{
 				SpectatorMessage = (UTHUDOwner->GetNetMode() == NM_Standalone) 
 					? NSLOCTEXT("UUTHUDWidget_Spectator", "StartMatchFromMenu", "Click on START MATCH to begin.")
-					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayersMenu", "Click on WARM UP to warm up.");
+					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayersMenu", "Click on JOIN WARM UP to join warm up.");
 			}
 			else
 			{

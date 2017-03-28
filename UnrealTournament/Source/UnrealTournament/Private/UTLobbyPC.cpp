@@ -277,6 +277,13 @@ void AUTLobbyPC::ClientReceiveRedirectCount_Implementation(int32 NewCount)
 	}
 }
 
+void AUTLobbyPC::ResetAllRedirects()
+{
+	bReceivedServerContentList = false;
+	RedirectCount = 0;
+	AllRedirects.Empty();
+}
+
 void AUTLobbyPC::ClientReceiveRedirect_Implementation(const FPackageRedirectReference& Redirect)
 {
 	AllRedirects.Add(FPackageRedirectReference(Redirect));

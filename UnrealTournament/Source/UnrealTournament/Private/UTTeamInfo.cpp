@@ -15,8 +15,8 @@ AUTTeamInfo::AUTTeamInfo(const FObjectInitializer& ObjectInitializer)
 	TeamIndex = 255; // invalid so we will always get ReceivedTeamIndex() on clients
 	TeamColor = FLinearColor::White;
 	DefaultOrderIndex = -1;
-	DefaultOrders.Add(FName(TEXT("Attack")));
-	DefaultOrders.Add(FName(TEXT("Defend")));
+	DefaultOrders.Add(NAME_Attack);
+	DefaultOrders.Add(NAME_Defend);
 	TopAttacker = NULL;
 	TopDefender = NULL;
 	TopSupporter = NULL;

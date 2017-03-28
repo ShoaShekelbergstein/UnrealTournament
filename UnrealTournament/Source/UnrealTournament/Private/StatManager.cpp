@@ -48,6 +48,9 @@ UStatManager::UStatManager(const FObjectInitializer& ObjectInitializer)
 	Stats.Add(NAME_RedeemerKills, new FStat());
 	Stats.Add(NAME_InstagibKills, new FStat());
 	Stats.Add(NAME_TelefragKills, new FStat());
+	Stats.Add(NAME_LightningRiflePrimaryKills, new FStat());
+	Stats.Add(NAME_LightningRifleSecondaryKills, new FStat());
+	Stats.Add(NAME_LightningRifleTertiaryKills, new FStat());
 
 	Stats.Add(NAME_ImpactHammerDeaths, new FStat());
 	Stats.Add(NAME_EnforcerDeaths, new FStat());
@@ -68,6 +71,9 @@ UStatManager::UStatManager(const FObjectInitializer& ObjectInitializer)
 	Stats.Add(NAME_RedeemerDeaths, new FStat());
 	Stats.Add(NAME_InstagibDeaths, new FStat());
 	Stats.Add(NAME_TelefragDeaths, new FStat());
+	Stats.Add(NAME_LightningRiflePrimaryDeaths, new FStat());
+	Stats.Add(NAME_LightningRifleSecondaryDeaths, new FStat());
+	Stats.Add(NAME_LightningRifleTertiaryDeaths, new FStat());
 
 	Stats.Add(NAME_EnforcerShots, new FStat());
 	Stats.Add(NAME_BioRifleShots, new FStat());
@@ -80,6 +86,7 @@ UStatManager::UStatManager(const FObjectInitializer& ObjectInitializer)
 	Stats.Add(NAME_SniperShots, new FStat());
 	Stats.Add(NAME_RedeemerShots, new FStat());
 	Stats.Add(NAME_InstagibShots, new FStat());
+	Stats.Add(NAME_LightningRifleShots, new FStat());
 
 	// Hits can be fractional, multiply by 100 to make sure that we don't lose much precision when going to integers
 	Stats.Add(NAME_EnforcerHits, new FStat(100.0f));
@@ -93,6 +100,7 @@ UStatManager::UStatManager(const FObjectInitializer& ObjectInitializer)
 	Stats.Add(NAME_SniperHits, new FStat(100.0f));
 	Stats.Add(NAME_RedeemerHits, new FStat(100.0f));
 	Stats.Add(NAME_InstagibHits, new FStat(100.0f));
+	Stats.Add(NAME_LightningRifleHits, new FStat(100.0f));
 
 	Stats.Add(NAME_UDamageTime, new FStat());
 	Stats.Add(NAME_BerserkTime, new FStat());
@@ -114,7 +122,6 @@ UStatManager::UStatManager(const FObjectInitializer& ObjectInitializer)
 	Stats.Add(NAME_AirSnot, new FStat(FNewKillAwardXP(3)));
 
 	Stats.Add(NAME_RunDist, new FStat());
-	Stats.Add(NAME_SprintDist, new FStat());
 	Stats.Add(NAME_InAirDist, new FStat());
 	Stats.Add(NAME_SwimDist, new FStat());
 	Stats.Add(NAME_TranslocDist, new FStat());
@@ -158,7 +165,6 @@ UStatManager::UStatManager(const FObjectInitializer& ObjectInitializer)
 	Stats.Add(NAME_PlayerXP, new FStat());
 
 	NumMatchesToKeep = 5;
-	NumPreviousPlayerNamesToKeep = 5;
 
 	JSONVersionNumber = 0;
 }
@@ -285,21 +291,6 @@ void UStatManager::PopulateJsonObjectForNonBackendStats(TSharedPtr<FJsonObject> 
 {
 	JsonObject->SetNumberField(TEXT("Version"), JSONVersionNumber);
 	
-	if (PreviousPlayerNames.Num() > 0)
-	{
-		TArray< TSharedPtr<FJsonValue> > PreviousPlayerNamesJson;
-		PreviousPlayerNamesJson.AddZeroed(PreviousPlayerNames.Num());
-		for (int32 PlayerNameIdx = 0; PlayerNameIdx < PreviousPlayerNames.Num(); PlayerNameIdx++)
-		{
-			TSharedPtr<FJsonObject> PlayerNameJson = MakeShareable(new FJsonObject);
-			PlayerNameJson->SetStringField(TEXT("Name"), PreviousPlayerNames[PlayerNameIdx]);
-
-			PreviousPlayerNamesJson[PlayerNameIdx] = MakeShareable(new FJsonValueObject(PlayerNameJson));
-		}
-
-		JsonObject->SetArrayField(TEXT("Aliases"), PreviousPlayerNamesJson);
-	}
-
 	if (MatchStats.Num() > 0)
 	{
 		TArray< TSharedPtr<FJsonValue> > MatchStatsJson;
@@ -361,20 +352,7 @@ void UStatManager::PopulateJsonObjectForNonBackendStats(TSharedPtr<FJsonObject> 
 }
 
 void UStatManager::InsertDataFromNonBackendJsonObject(TSharedPtr<FJsonObject> JsonObject)
-{	
-	const TArray<TSharedPtr<FJsonValue>>* Aliases;
-	if (JsonObject->TryGetArrayField(TEXT("Aliases"), Aliases))
-	{
-		PreviousPlayerNames.Empty();
-		PreviousPlayerNames.AddZeroed(Aliases->Num());
-
-		for (int32 PlayerIdx = 0; PlayerIdx < Aliases->Num(); PlayerIdx++)
-		{
-			const TSharedPtr<FJsonValue>& AliasJsonValue = (*Aliases)[PlayerIdx];
-			PreviousPlayerNames[PlayerIdx] = AliasJsonValue->AsObject()->GetStringField(TEXT("Name"));
-		}
-	}
-
+{
 	// It would most likely be a performance win to leave matches in JsonValue form so we have less parsing after a user's json is downloaded
 	// We don't do anything with MatchStats from previous matches during game time anyway
 	const TArray<TSharedPtr<FJsonValue>>* Matches;

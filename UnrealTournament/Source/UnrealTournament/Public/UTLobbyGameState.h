@@ -69,16 +69,6 @@ class UNREALTOURNAMENT_API AUTLobbyGameState : public AUTGameState
 	virtual void BroadcastChat(AUTLobbyPlayerState* SenderPS, FName Destination, const FString& Message);
 
 	/**
-	 *	Creates a new match and sets it's host.
-	 **/
-	virtual AUTLobbyMatchInfo* AddNewMatch(AUTLobbyPlayerState* HostOwner, AUTLobbyMatchInfo* MatchToCopy = NULL, bool bIsInParty = false);
-
-	/**
-	 *	Sets someone as the host of a match and replicates all of the relevant match information to them
-	 **/
-	virtual void HostMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy = NULL, bool bIsInParty = false);
-
-	/**
 	 *	Joins an existing match.
 	 **/
 	virtual void JoinMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerState* NewPlayer, bool bAsSpectator=false);
@@ -106,12 +96,7 @@ class UNREALTOURNAMENT_API AUTLobbyGameState : public AUTGameState
 	 *	Launches an instance of a game that was created via the lobby interface.  MatchOwner is the MI of the match that is being created and ServerURLOptions is a string
 	 *  that contains the game options.  
 	 **/
-	void LaunchGameInstance(AUTLobbyMatchInfo* MatchOwner, FString GameURL, int32 DebugCode);
-
-	/**
-	 *	Create the default "MATCH" for the server.
-	 **/
-	void CreateAutoMatch(FString MatchGameMode, FString MatchOptions, FString MatchMap);
+	void LaunchGameInstance(AUTLobbyMatchInfo* MatchOwner, FString GameURL);
 
 	/**
 	 *	Terminate an existing game instance
@@ -230,7 +215,6 @@ protected:
 	virtual bool AddDedicatedInstance(FGuid InstanceGUID, const FString& AccessKey, const FString& ServerName, const FString& ServerGameMode, const FString& ServerDescription, int32 MaxPlayers, bool bTeamGame);
 	void FillOutRconPlayerList(TArray<FRconPlayerData>& PlayerList);
 public:
-	virtual void HandleQuickplayRequest(AUTServerBeaconClient* Beacon, const FString& MatchType, int32 RankCheck, bool bBeginner);
 
 	// Sets a limit on the # of spectators allowed in an instance
 	UPROPERTY(Config)
@@ -269,6 +253,17 @@ public:
 	 *	Returns true on the client if the replication of the map list and ruleset is completed.
 	 **/
 	bool IsClientFullyInformed();
+
+
+	/**
+	 *	Request a new custom match be created.
+	 **/
+	virtual void RequestNewCustomMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool _bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled);
+	/**
+	 *	Request a new match be created.
+	 **/
+	virtual void RequestNewMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled);
+
 
 protected:
 	void ManageMusicVolume(float DeltaTime) { }

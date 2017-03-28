@@ -112,8 +112,6 @@ protected:
 	TSharedPtr<SCheckBox> MouseSmoothing;
 	TSharedPtr<SCheckBox> MouseInvert;
 	TSharedPtr<SEditableTextBox> MouseSensitivityEdit;
-	/** range of values passed to PlayerInput->SetMouseSensitivity() which will be normalized to 0.0 - 1.0 for the slider widget */
-	FVector2D MouseSensitivityRange;
 	void EditSensitivity(const FText& Input, ETextCommit::Type);
 
 	TSharedPtr<SCheckBox> MouseAccelerationCheckBox;

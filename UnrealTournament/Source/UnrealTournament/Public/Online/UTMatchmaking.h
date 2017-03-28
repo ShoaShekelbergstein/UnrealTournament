@@ -144,6 +144,7 @@ public:
 	int32 GetMatchmakingTeamElo();
 	int32 GetEstimatedMatchmakingTime();
 	bool IsRankedMatchmaking();
+	bool IsSkipEloChecksForMatchmaking();
 
 private:
 

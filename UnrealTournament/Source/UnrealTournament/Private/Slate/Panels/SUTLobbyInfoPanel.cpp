@@ -13,8 +13,6 @@
 #include "Engine/UserInterfaceSettings.h"
 #include "UTLobbyHUD.h"
 #include "../Dialogs/SUTGameSetupDialog.h"
-#include "../UIWindows/SUTStartMatchWindow.h"
-
 
 #if !UE_SERVER
 
@@ -178,36 +176,6 @@ void SUTLobbyInfoPanel::BuildChatAndPlayerList()
 }
 
 
-//TODO: Look at resusing the panels.
-
-void SUTLobbyInfoPanel::ShowMatchSetupPanel()
-{
-	if (!LeftPanel.IsValid()) return; // Can't build a panel if the container isn't there.  Should never happen.
-
-	AUTLobbyPlayerState* PlayerState = Cast<AUTLobbyPlayerState>(GetOwnerPlayerState());
-	if (PlayerState && bShowingMatchBrowser)
-	{
-
-		PlayerOwner->bSuppressDownloadDialog = true;
-
-		bShowingMatchBrowser = false;
-		MatchBrowser.Reset();
-		LeftPanel->ClearChildren();
-
-		LeftPanel->AddSlot().AutoHeight().HAlign(HAlign_Left)
-		[
-			SAssignNew(MatchSetup, SUTLobbyMatchSetupPanel)
-			.PlayerOwner(PlayerOwner)
-			.MatchInfo(PlayerState->CurrentMatch)
-			.bIsHost(PlayerState->CurrentMatch->GetOwnerPlayerState() == PlayerState)
-			.OnRulesetUpdated(FOnRulesetUpdated::CreateSP(this, &SUTLobbyInfoPanel::RulesetChanged))
-		];
-
-		BuildChatAndPlayerList();
-	}
-
-}
-
 void SUTLobbyInfoPanel::ShowMatchBrowser()
 {
 	if (!LeftPanel.IsValid()) return; // Can't build a panel if the container isn't there.  Should never happen.
@@ -225,7 +193,6 @@ void SUTLobbyInfoPanel::ShowMatchBrowser()
 		}
 
 		bShowingMatchBrowser = true;
-		MatchSetup.Reset();
 		LeftPanel->ClearChildren();
 
 		LeftPanel->AddSlot().AutoHeight().HAlign(HAlign_Left)
@@ -279,7 +246,7 @@ void SUTLobbyInfoPanel::StartMatch()
 		SAssignNew(SetupDialog, SUTGameSetupDialog)
 			.PlayerOwner(PlayerOwner)
 			.GameRuleSets(LobbyGameState->AvailableGameRulesets)
-			.OnDialogResult(this, &SUTLobbyInfoPanel::OnGameChangeDialogResult);
+			.OnDialogResult(this,&SUTLobbyInfoPanel::OnGameChangeDialogResult);
 
 		if ( SetupDialog.IsValid() )
 		{
@@ -290,37 +257,21 @@ void SUTLobbyInfoPanel::StartMatch()
 
 void SUTLobbyInfoPanel::OnGameChangeDialogResult(TSharedPtr<SCompoundWidget> Dialog, uint16 ButtonPressed)
 {
+
 	if (ButtonPressed == UTDIALOG_BUTTON_OK)
 	{
-		// Looking to start a match...
-
-		bool bIsInParty = false;
-		UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(PlayerOwner->GetWorld(), UPartyContext::StaticClass()));
-		if (PartyContext)
-		{
-			bIsInParty = PartyContext->GetPartySize() > 1;
-		}
-
-		AUTLobbyPlayerState* PlayerState = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
-		if (PlayerState)
-		{
-			PlayerState->ServerCreateMatch(bIsInParty);
-		}
-
-		SAssignNew(StartMatchWindow, SUTStartMatchWindow, PlayerOwner)
-			.bIsHost(true);
-		 
-		if (StartMatchWindow.IsValid())
-		{
-			StartMatchWindow->ParentPanel = SharedThis(this);
-		}
-
-		PlayerOwner->OpenWindow(StartMatchWindow);
+		AUTLobbyPlayerState* LobbyPlayerState = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
+		if (LobbyPlayerState)
+		{	
+			AUTLobbyPC* PC= Cast<AUTLobbyPC>(LobbyPlayerState->GetOwner());
+			if (PC != nullptr)
+			{
+				LobbyPlayerState->ManageStartMatchUI(PC);
+			}
+		}		
 	}
-	else
-	{
-		SetupDialog.Reset();
-	}
+
+	SetupDialog.Reset();
 }
 
 void SUTLobbyInfoPanel::CancelInstance()
@@ -329,23 +280,6 @@ void SUTLobbyInfoPanel::CancelInstance()
 	if (LobbyPlayerState)
 	{	
 		LobbyPlayerState->ServerDestroyOrLeaveMatch();
-	}
-
-	if (StartMatchWindow.IsValid())
-	{
-		PlayerOwner->CloseWindow(StartMatchWindow);
-	}
-	StartMatchWindow.Reset();
-}
-
-void SUTLobbyInfoPanel::ApplySetup(TWeakObjectPtr<AUTLobbyMatchInfo> MatchInfo)
-{
-	if (SetupDialog.IsValid() && MatchInfo.IsValid())
-	{
-		SetupDialog->ConfigureMatchInfo(MatchInfo);
-		MatchInfo->ServerStartMatch();	
-		PlayerOwner->CloseDialog(SetupDialog.ToSharedRef());
-		SetupDialog.Reset();
 	}
 }
 

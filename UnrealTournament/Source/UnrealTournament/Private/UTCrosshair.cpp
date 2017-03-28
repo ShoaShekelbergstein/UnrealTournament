@@ -16,11 +16,11 @@ void UUTCrosshair::ActivateCrosshair_Implementation(AUTHUD* TargetHUD, const FWe
 	{
 		if (!ActiveUMG.IsValid())			
 		{
-			ActiveUMG = Cast<UUTUMGHudWidget_Crosshair>(TargetHUD->ActivateUMGHudWidget(UMGClassname).Get());
+			ActiveUMG = Cast<UUTUMGHudWidget_Crosshair>(TargetHUD->ActivateUMGHudWidget(UMGClassname));
 		}
 		else
 		{
-			TargetHUD->ActivateActualUMGHudWidget(ActiveUMG);
+			TargetHUD->ActivateActualUMGHudWidget(ActiveUMG.Get());
 		}
 
 		if (ActiveUMG.IsValid())
@@ -35,7 +35,7 @@ void UUTCrosshair::DeactivateCrosshair_Implementation(AUTHUD* TargetHUD)
 {
 	if (ActiveUMG.IsValid())
 	{
-		TargetHUD->DeactivateActualUMGHudWidget(ActiveUMG);
+		TargetHUD->DeactivateActualUMGHudWidget(ActiveUMG.Get());
 	}
 }
 

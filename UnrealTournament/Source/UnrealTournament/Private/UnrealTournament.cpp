@@ -34,6 +34,12 @@ DEFINE_LOG_CATEGORY(UTConnection);
 
 static uint32 UTGetNetworkVersion()
 {
+	uint32 Override;
+	if ( FParse::Value(FCommandLine::Get(), TEXT("buildidoverride="), Override) )
+	{
+		return Override;
+	}
+
 	return BUILT_FROM_CHANGELIST;
 }
 
@@ -69,6 +75,8 @@ void FUTModule::StartupModule()
 
 	// set up our handler for network versioning
 	FNetworkVersion::GetLocalNetworkVersionOverride.BindStatic(&UTGetNetworkVersion);
+
+	GConfig->LoadFile(FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
 }
 
 #else
@@ -391,6 +399,7 @@ void GetAllAssetData(UClass* BaseClass, TArray<FAssetData>& AssetList, bool bReq
 	RootPaths.Add(TEXT("/Game/EpicInternal/Pistola/"));
 	RootPaths.Add(TEXT("/Game/EpicInternal/Stu/"));
 	RootPaths.Add(TEXT("/Game/EpicInternal/SR/"));
+	RootPaths.Add(TEXT("/Game/EpicInternal/Loot/"));
 	// Cooked data has the asset data already set up
 	AssetRegistry.ScanPathsSynchronous(RootPaths);
 #endif
@@ -953,5 +962,24 @@ FText GetBotSkillName(int32 Difficulty)
 		case 7: return NSLOCTEXT("BotSkillLevels", "Godlike", "Godlike");
 		default:
 			return (Difficulty > 7) ? NSLOCTEXT("BotSkillLevels", "Godlike", "Godlike") : NSLOCTEXT("BotSkillLevels", "Broken", "Broken");
+	}
+}
+
+FString GetMutatorShortName(const FString& inMutatorPath)
+{
+	int32 PeriodIndex = INDEX_NONE;
+	inMutatorPath.FindChar(TCHAR('.'), PeriodIndex);
+	if (PeriodIndex != INDEX_NONE)
+	{
+		FString MutatorName = inMutatorPath.Right(inMutatorPath.Len() - PeriodIndex -1);
+		MutatorName = MutatorName.Replace(TEXT("_C"), TEXT(""),ESearchCase::IgnoreCase);
+		MutatorName = MutatorName.Replace(TEXT("UTMutator_"), TEXT(""),ESearchCase::IgnoreCase);
+		MutatorName = MutatorName.Replace(TEXT("Mutator_"), TEXT(""),ESearchCase::IgnoreCase);
+
+		return MutatorName;
+	}
+	else
+	{
+		return inMutatorPath;
 	}
 }

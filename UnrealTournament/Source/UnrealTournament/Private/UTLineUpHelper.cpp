@@ -124,6 +124,8 @@ void AUTLineUpHelper::CleanUpPlayerAfterLineUp(AUTPlayerController* UTPC)
 		
 		UTPC->SetEmoteSpeed(1.0f);
 		UTPC->FlushPressedKeys();
+
+		UTPC->SetViewTarget(UTPC->GetPawn());
 	}
 }
 
@@ -215,7 +217,6 @@ void AUTLineUpHelper::OnRep_LineUpInfo()
 
 void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 {	
-	static const FName NAME_LineUpCam = FName(TEXT("LineUpCam"));
 	bIsPlacingPlayers = true;
 	bIsActive = true;
 
@@ -266,12 +267,6 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 				if (UTChar && !UTChar->IsDead())
 				{
 					PlayerPreviewCharacters.Add(UTChar);
-				}
-				
-				AUTPlayerController* UTPC = Cast<AUTPlayerController>(C);
-				if (UTPC)
-				{
-					UTPC->SetCameraMode(NAME_LineUpCam);
 				}
 			}
 		}
@@ -391,11 +386,43 @@ void AUTLineUpHelper::SpawnPlayerWeapon(AUTCharacter* UTChar)
 
 void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
 {
-	if (UTChar && UTChar->GetMesh())
+	if (UTChar)
 	{
-		//Want to still update the animations and bones even though we have turned off the Pawn, so re-enable those.
-		UTChar->GetMesh()->bPauseAnims = false;
-		UTChar->GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
+		if (UTChar->GetMesh())
+		{
+			//Want to still update the animations and bones even though we have turned off the Pawn, so re-enable those.
+			UTChar->GetMesh()->bPauseAnims = false;
+			UTChar->GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
+
+			//Turn off local physics sim and collisions during line-ups
+			UTChar->GetMesh()->SetSimulatePhysics(false);
+			UTChar->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+
+		// Teleport non-local players up to better align them with the local player.
+		if (UTChar->GetWorld())
+		{
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(UTChar->GetWorld()->GetFirstPlayerController());
+			if (UTPC)
+			{
+				if (UTChar != Cast<AUTCharacter>(UTPC->GetPawn()))
+				{
+					FVector Offset(0.0f, 0.0f, 5.0f);
+					FVector TeleportLoc = UTChar->GetActorLocation() + Offset;
+					UTChar->TeleportTo(TeleportLoc, UTChar->GetActorRotation(), false, true);
+				}
+			}
+		}
+
+		UUTCharacterMovement* UTCM = Cast<UUTCharacterMovement>(UTChar->GetMovementComponent());
+		if (UTCM)
+		{
+			UTCM->OnLineUp();
+
+			//Avoid falling anims if we are in the air with our line-up spawn point
+			UTCM->SetMovementMode(MOVE_Walking);
+		}
+		
 	}
 }
 
@@ -478,6 +505,13 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 				}
 				else if (FFASpawns.Num() > FFAIndex)
 				{
+					//If we are in a team game mode and its intermission or post match, still only show winners even in FFA spawns.
+					if (UTGM && UTGM->bTeamGame && (LineUpType == LineUpTypes::PostMatch || LineUpType == LineUpTypes::Intermission) && (PreviewChar->GetTeamNum() != RedOrWinningTeamNumber))
+					{
+						PreviewsMarkedForDestroy.Add(PreviewChar);
+						continue;
+					}
+
 					SpawnTransform = FFASpawns[FFAIndex] * SpawnTransform;
 					++FFAIndex;
 				}
@@ -485,6 +519,7 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 				else
 				{
 					PreviewsMarkedForDestroy.Add(PreviewChar);
+					continue;
 				}
 
 				PreviewChar->bIsTranslocating = true; // Hack to get rid of teleport effect
@@ -521,43 +556,6 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 		PreviewsMarkedForDestroy.Empty();
 	}
 }
-
-LineUpTypes AUTLineUpHelper::GetLineUpTypeToPlay(UWorld* World)
-{
-	LineUpTypes ReturnZoneType = LineUpTypes::Invalid;
-
-	AUTGameState* UTGS = Cast<AUTGameState>(World->GetGameState());
-	if (UTGS == nullptr)
-	{
-		return ReturnZoneType;
-	}
-
-	AUTCTFGameState* UTCTFGS = Cast<AUTCTFGameState>(UTGS);
-	AUTCTFRoundGameState* UTCTFRoundGameGS = Cast<AUTCTFRoundGameState>(UTGS);
-
-	AUTCTFRoundGame* CTFGM = Cast<AUTCTFRoundGame>(World->GetAuthGameMode());
-
-	//The first intermission of CTF Round Game is actually an intro
-	if ((UTGS->GetMatchState() == MatchState::CountdownToBegin) || (UTGS->GetMatchState() == MatchState::PlayerIntro) || ((UTGS->GetMatchState() == MatchState::MatchIntermission) && UTCTFRoundGameGS && (UTCTFRoundGameGS->CTFRound == 1) && (!UTCTFRoundGameGS || UTCTFRoundGameGS->GetScoringPlays().Num() == 0)))
-	{
-		ReturnZoneType = LineUpTypes::Intro;
-	}
-
-	else if (UTGS->GetMatchState() == MatchState::MatchIntermission)
-	{
-		ReturnZoneType = LineUpTypes::Intermission;
-	}
-
-	else if (UTGS->GetMatchState() == MatchState::WaitingPostMatch)
-	{
-		ReturnZoneType = LineUpTypes::PostMatch;
-	}
-
-	return ReturnZoneType;
-}
-
-
-static int32 WeaponIndex = 0;
 
 void AUTLineUpHelper::HandleEndMatchSummary(LineUpTypes SummaryType)
 {

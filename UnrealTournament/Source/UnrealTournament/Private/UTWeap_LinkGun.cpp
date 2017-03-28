@@ -9,6 +9,7 @@
 #include "UTWeaponStateFiring.h"
 #include "Animation/AnimInstance.h"
 #include "UTRewardMessage.h"
+#include "UTWeaponStateFiring_LoopingFire.h"
 
 AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 : Super(OI)
@@ -41,6 +42,7 @@ AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 	PullWarmupTime = 0.15f;
 	LinkPullDamage = 25;
 	ReadyToPullColor = FLinearColor::White;
+	HUDViewKickback = FVector2D(0.f, 0.05f);
 
 	bRecommendSuppressiveFire = true;
 
@@ -130,6 +132,25 @@ void AUTWeap_LinkGun::UpdateScreenTexture(UCanvas* C, int32 Width, int32 Height)
 	}
 }
 
+void AUTWeap_LinkGun::Removed()
+{
+	if (UTOwner)
+	{
+		UTOwner->SetAmbientSound(OverheatSound, true);
+	}
+	Super::Removed();
+}
+
+void AUTWeap_LinkGun::ClientRemoved()
+{
+	if (UTOwner)
+	{
+		UTOwner->SetAmbientSound(OverheatSound, true);
+	}
+	Super::ClientRemoved();
+}
+
+
 void AUTWeap_LinkGun::FireShot()
 {
 	if (!bIsInCoolDown)
@@ -196,7 +217,7 @@ void AUTWeap_LinkGun::Tick(float DeltaTime)
 				}
 			}
 		}
-		else if (UTOwner && OverheatSound)
+		else if (UTOwner && OverheatSound && (!IsFiring() || !FireLoopingSound.IsValidIndex(CurrentFireMode) || !FireLoopingSound[CurrentFireMode]))
 		{
 			UTOwner->SetAmbientSound(OverheatSound, false);
 			UTOwner->ChangeAmbientSoundPitch(OverheatSound, 0.5f + OverheatFactor);
@@ -213,7 +234,7 @@ void AUTWeap_LinkGun::Tick(float DeltaTime)
 		ScreenTexture->FastUpdateResource();
 	}
 
-	if (MuzzleFlash.IsValidIndex(1) && MuzzleFlash[1] != NULL)
+	if (UTOwner && (UTOwner->GetWeapon() == this) && MuzzleFlash.IsValidIndex(1) && MuzzleFlash[1] != NULL)
 	{
 		static FName NAME_PulseScale(TEXT("PulseScale"));
 		float NewScale = 1.0f + FMath::Max<float>(0.0f, 1.0f - (GetWorld()->TimeSeconds - LastBeamPulseTime) / 0.35f);
@@ -270,6 +291,19 @@ void AUTWeap_LinkGun::Tick(float DeltaTime)
 	{
 		UTOwner->PulseTarget = nullptr;
 	}
+
+	UUTWeaponStateFiring_LoopingFire* LoopingState = Cast<UUTWeaponStateFiring_LoopingFire>(GetCurrentState());
+	if (LoopingState)
+	{
+		if (bIsInCoolDown)
+		{
+			LoopingState->EnterCooldown();
+		}
+		else
+		{
+			LoopingState->ExitCooldown();
+		}
+	}
 }
 
 void AUTWeap_LinkGun::StartLinkPull()
@@ -288,6 +322,11 @@ void AUTWeap_LinkGun::StartLinkPull()
 		MuzzleFlash[FiringState.Num()]->SetTemplate(PulseSuccessEffect);
 		MuzzleFlash[FiringState.Num()]->SetActorParameter(FName(TEXT("Player")), CurrentLinkedTarget);
 		PlayWeaponAnim(PulseAnim, PulseAnimHands);
+		AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
+		if (PC != NULL)
+		{
+			PC->AddHUDImpulse(FVector2D(0.f, 0.3f));
+		}
 	}
 	CurrentLinkedTarget = nullptr;
 	LinkStartTime = -100.f;

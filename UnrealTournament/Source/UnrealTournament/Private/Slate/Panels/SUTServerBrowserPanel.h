@@ -648,6 +648,7 @@ public:
 	}
 
 	virtual void SetBrowserState(FName NewBrowserState);
+	virtual void ConnectTo(FServerData ServerData,bool bSpectate);
 
 private:
 
@@ -723,7 +724,6 @@ protected:
 	virtual void OnListMouseButtonDoubleClick(TSharedPtr<FServerData> SelectedServer);
 	virtual void OnSort(EColumnSortPriority::Type, const FName&, EColumnSortMode::Type);
 	virtual FReply OnJoinClick(bool bSpectate);
-	virtual void ConnectTo(FServerData ServerData,bool bSpectate);
 
 	virtual void OnRuleSort(EColumnSortPriority::Type, const FName&, EColumnSortMode::Type);
 	virtual void OnPlayerSort(EColumnSortPriority::Type, const FName&, EColumnSortMode::Type);
@@ -846,6 +846,7 @@ protected:
 
 	int32 TotalPlayersPlaying;
 
+
 	void FoundServer(FOnlineSessionSearchResult& Result);
 	void JoinQuickInstance(const FString& InstanceGuid, bool bAsSpectator);
 	void RestrictedWarning();
@@ -874,6 +875,9 @@ protected:
 	FDelegateHandle OnCancelHandle;
 
 	void SearchForLanServers();
+
+public:
+	static TSharedPtr<FServerData> CreateNewServerData(FOnlineSessionSearchResult& Result);
 
 };
 

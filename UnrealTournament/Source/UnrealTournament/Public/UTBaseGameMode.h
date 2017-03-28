@@ -14,6 +14,7 @@
 #endif
 
 class UUTLocalPlayer;
+class AUTReplicatedGameRuleset;
 
 USTRUCT()
 struct FEpicMapData
@@ -205,6 +206,7 @@ public:
 
 	// Kicks a player
 	virtual void RconKick(const FString& NameOrUIDStr, bool bBan, const FString& Reason);
+	virtual void RconUnban(const FString& UIDStr);
 	virtual void RconAuth(AUTBasePlayerController* Admin, const FString& Password);
 	virtual void RconNormal(AUTBasePlayerController* Admin);
 
@@ -261,5 +263,9 @@ protected:
 
 	UPROPERTY()
 	bool bIgnoreIdlePlayers;
+
+public:
+
+	static AUTReplicatedGameRuleset* CreateCustomReplicateGameRuleset(UWorld* World, AActor* Owner, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, int32 DesiredPlayerCount, bool bTeamGame);
 
 };

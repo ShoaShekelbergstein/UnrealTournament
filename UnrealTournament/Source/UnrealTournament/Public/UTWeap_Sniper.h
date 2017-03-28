@@ -41,8 +41,26 @@ class UNREALTOURNAMENT_API AUTWeap_Sniper : public AUTWeapon
 
 	virtual AUTProjectile* FireProjectile();
 	virtual void FireInstantHit(bool bDealDamage = true, FHitResult* OutHit = NULL);
+	virtual void PlayPredictedImpactEffects(FVector ImpactLoc) override;
 
 	virtual float GetAISelectRating_Implementation() override;
 
 	virtual void OnRep_ZoomState_Implementation() override;
+
+	/** Return true if shots from this weapon can get headshot bonus. */
+	virtual bool CanHeadShot();
+
+	/** Return hitscan damage amount. */
+	virtual int32 GetHitScanDamage();
+
+	virtual void SetFlashExtra(AActor* HitActor) {};
+
+	virtual float SuggestAttackStyle_Implementation() override
+	{
+		return -0.4;
+	}
+	virtual float SuggestDefenseStyle_Implementation() override
+	{
+		return 0.2;
+	}
 };

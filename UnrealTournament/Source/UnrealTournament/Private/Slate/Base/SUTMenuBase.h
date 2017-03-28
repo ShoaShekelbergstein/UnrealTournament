@@ -170,10 +170,15 @@ protected:
 
 	TSharedRef<SWidget> BuildPlayerInfo();
 	const FSlateBrush* GetAvatarImage() const;
+	TSharedPtr<SOverlay> DesktopOverlay;
 	FSlateColor GetLabelColor() const;
 
+	TWeakPtr<SWindow> SlateParentWindowPtr;
+	FDelegateHandle OnActivateHandle;
 public:
+	void HandleWindowActivated();
 	virtual bool SkipWorldRender();
+	
 
 };
 #endif

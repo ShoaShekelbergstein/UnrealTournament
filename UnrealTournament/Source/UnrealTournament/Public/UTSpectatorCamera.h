@@ -11,4 +11,7 @@ class UNREALTOURNAMENT_API AUTSpectatorCamera : public ACameraActor
 
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "SpectatorCamera")
 	FString CamLocationName;
+	
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "SpectatorCamera")
+	bool bLoadingCamera;
 };

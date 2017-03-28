@@ -50,10 +50,6 @@ public:
 	UPROPERTY(GlobalConfig)
 	bool bAllowInstancesToStartWithBots;
 
-	/** Minimum number of players that must have joined an instance before it can be started */
-	UPROPERTY(GlobalConfig)
-	int32 MinPlayersToStart;
-
 	UPROPERTY()
 	TSubclassOf<class UUTLocalMessage>  GameMessageClass;
 
@@ -116,4 +112,5 @@ public:
 	virtual void MakeJsonReport(TSharedPtr<FJsonObject> JsonObject);
 
 	virtual bool SupportsInstantReplay() const override;
+
 };

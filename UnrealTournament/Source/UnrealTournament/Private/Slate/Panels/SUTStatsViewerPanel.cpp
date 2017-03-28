@@ -122,6 +122,11 @@ void SUTStatsViewerPanel::ConstructPanel(FVector2D ViewportSize)
 		]
 	];
 
+	if (StatsWebBrowser.IsValid() && PlayerOwner.IsValid())
+	{
+		StatsWebBrowser->BindUObject(TEXT("StatsViewer"), PlayerOwner.Get(), true);
+	}
+
 	LastStatsDownloadTime = -1;
 }
 

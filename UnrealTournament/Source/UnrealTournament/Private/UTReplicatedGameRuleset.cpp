@@ -17,6 +17,9 @@ AUTReplicatedGameRuleset::AUTReplicatedGameRuleset(const class FObjectInitialize
 	bAlwaysRelevant = true;
 	bReplicateMovement = false;
 	bNetLoadOnClient = false;
+
+	OptionFlags = GAME_OPTION_FLAGS_All;
+
 }
 
 void AUTReplicatedGameRuleset::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
@@ -30,7 +33,6 @@ void AUTReplicatedGameRuleset::GetLifetimeReplicatedProps(TArray< FLifetimePrope
 	DOREPLIFETIME(AUTReplicatedGameRuleset, Description);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, MaxMapsInList);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, MapList);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, MinPlayersToStart);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, MaxPlayers);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, OptimalPlayers);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, DisplayTexture);
@@ -38,6 +40,7 @@ void AUTReplicatedGameRuleset::GetLifetimeReplicatedProps(TArray< FLifetimePrope
 	DOREPLIFETIME(AUTReplicatedGameRuleset, GameMode);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, bTeamGame);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, bCompetitiveMatch);
+	DOREPLIFETIME(AUTReplicatedGameRuleset, OptionFlags);
 }
 
 int32 AUTReplicatedGameRuleset::AddMapAssetToMapList(const FAssetData& Asset)
@@ -58,13 +61,13 @@ void AUTReplicatedGameRuleset::SetRules(UUTGameRuleset* NewRules, const TArray<F
 	Title				= NewRules->Title;
 	Tooltip				= NewRules->Tooltip;
 	Description			= Fixup(NewRules->Description);
-	MinPlayersToStart	= NewRules->MinPlayersToStart;
 	MaxPlayers			= NewRules->MaxPlayers;
 	bTeamGame			= NewRules->bTeamGame;
 	DefaultMap			= NewRules->DefaultMap;
 	QuickPlayMaps		= NewRules->QuickPlayMaps;
 	bCompetitiveMatch	= NewRules->bCompetitiveMatch;
 	MaxMapsInList		= NewRules->MaxMapsInList;
+	OptionFlags			= NewRules->OptionFlags;
 
 	// First add the Epic maps.
 	if (!NewRules->EpicMaps.IsEmpty())
@@ -306,7 +309,6 @@ void AUTReplicatedGameRuleset::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject
 	JsonObject->SetStringField(TEXT("GameMode"), GameMode);
 	JsonObject->SetStringField(TEXT("GameOptions"), GameOptions);
 
-	JsonObject->SetNumberField(TEXT("MinPlayersToStart"), MinPlayersToStart);
 	JsonObject->SetNumberField(TEXT("MaxPlayers"), MaxPlayers);
 	JsonObject->SetNumberField(TEXT("OptimalPlayers"), OptimalPlayers);
 
@@ -339,4 +341,19 @@ void AUTReplicatedGameRuleset::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject
 	}
 }
 
+FString AUTReplicatedGameRuleset::GenerateURL(const FString& StartingMap, bool bAllowBots, int32 BotDifficulty, bool bRequireFilled)
+{
+	FString URL = StartingMap;
+	URL += FString::Printf(TEXT("?Game=%s"), *GameMode);
+	URL += FString::Printf(TEXT("?MaxPlayers=%i"), MaxPlayers);
+	URL += GameOptions;
+	if (!UGameplayStatics::HasOption(URL, TEXT("Difficulty")))
+	{
+		URL += bAllowBots ? FString::Printf(TEXT("?Difficulty=%i"), FMath::Clamp<int32>(BotDifficulty, 0, 7)) : TEXT("?ForceNoBots=1");
+	}
 
+	if (bRequireFilled) URL += TEXT("?RequireFull=1");
+	if (bCompetitiveMatch) URL += TEXT("?NoJIP");
+
+	return URL;
+}

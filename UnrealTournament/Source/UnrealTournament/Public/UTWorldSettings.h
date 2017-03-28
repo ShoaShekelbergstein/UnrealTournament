@@ -173,8 +173,9 @@ public:
 	{
 		TWeakObjectPtr<ULevel> Level;
 		FName ActorName;
-		FDestroyedActorInfo(ULevel* InLevel, FName InName)
-			: Level(InLevel), ActorName(InName)
+		FString FullName;
+		FDestroyedActorInfo(AActor* InActor)
+			: Level(InActor->GetLevel()), ActorName(InActor->GetFName()), FullName(InActor->GetFullName())
 		{}
 	};
 protected:

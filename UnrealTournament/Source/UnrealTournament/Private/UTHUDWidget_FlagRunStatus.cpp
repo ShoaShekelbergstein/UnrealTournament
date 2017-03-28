@@ -9,7 +9,7 @@ UUTHUDWidget_FlagRunStatus::UUTHUDWidget_FlagRunStatus(const FObjectInitializer&
 {
 	NormalLineBrightness = 0.025f;
 	LineGlow = 0.4f;
-	PulseLength = 1.5f;
+	PulseLength = 0.7f;
 	bAlwaysDrawFlagHolderName = false;
 }
 
@@ -41,7 +41,11 @@ void UUTHUDWidget_FlagRunStatus::DrawIndicators(AUTCTFGameState* GameState, FVec
 			AUTCTFFlag* Flag = Cast<AUTCTFFlag>(GameState->FlagBases[OffensiveTeam]->GetCarriedObject());
 			if (Flag && (Flag->ObjectState != CarriedObjectState::Delivered))
 			{
-				DrawFlagStatus(GameState, PlayerViewPoint, PlayerViewRotation, OffensiveTeam, FVector2D(0.0f, 100.0f), GameState->FlagBases[OffensiveTeam], Flag, Flag->Holder);
+				if (Flag->Holder && (Flag->Holder == UTHUDOwner->UTPlayerOwner->UTPlayerState))
+				{
+					FlagHolderNameTemplate.Text = YouHaveFlagText;
+					RenderObj_Text(FlagHolderNameTemplate, FVector2D(0.0f, 50.0f));
+				}
 				DrawFlagWorld(GameState, PlayerViewPoint, PlayerViewRotation, OffensiveTeam, GameState->FlagBases[OffensiveTeam], Flag, Flag->Holder);
 			}
 		}
@@ -86,6 +90,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, F
 		DrawScreenPosition.X -= RenderPosition.X;
 		DrawScreenPosition.Y -= RenderPosition.Y;
 
+		CircleBorderTemplate.RenderColor = (TeamNum == 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
 		CircleBorderTemplate.RenderOpacity = CurrentWorldAlpha;
 		CircleTemplate.RenderOpacity = CurrentWorldAlpha;
 
@@ -105,7 +110,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, F
 
 		if (bDrawEdgeArrow)
 		{
-			DrawEdgeArrow(WorldPosition, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
+			DrawEdgeArrow(WorldPosition, PlayerViewPoint, PlayerViewRotation, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
 		}
 		if (Flag && Flag->ObjectState != CarriedObjectState::Home)
 		{
@@ -126,7 +131,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 	if (Flag && GameState && (bSpectating || bShouldDrawFlagIcon) && (Flag->Holder != UTHUDOwner->GetScorerPlayerState()))
 	{
 		bScaleByDesignedResolution = false;
-		FlagIconTemplate.RenderColor = (GameState->Teams.IsValidIndex(TeamNum) && GameState->Teams[TeamNum]) ? GameState->Teams[TeamNum]->TeamColor : FLinearColor::Green;
+		FlagIconTemplate.RenderColor = (TeamNum == 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
 
 		// Draw the flag / flag base in the world
 		float Dist = (Flag->GetActorLocation() - PlayerViewPoint).Size();
@@ -134,16 +139,18 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 		bool bDrawEdgeArrow = false;
 		float OldFlagAlpha = FlagIconTemplate.RenderOpacity;
 		float CurrentWorldAlpha = InWorldAlpha;
+		float CurrentNumberAlpha = InWorldAlpha;
 		FVector ViewDir = PlayerViewRotation.Vector();
 		float Edge = CircleTemplate.GetWidth()* WorldRenderScale;
 
 		AUTCharacter* Holder = (Flag->ObjectState == CarriedObjectState::Held) ? Cast<AUTCharacter>(Flag->GetAttachmentReplication().AttachParent) : nullptr;
-		FVector WorldPosition = (Holder != nullptr)
-							? Holder->GetMesh()->GetComponentLocation() + FVector(0.f, 0.f, Holder->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() * 2.25f)
-							: Flag->GetActorLocation() + FVector(0.f, 0.f, Flag->Collision->GetUnscaledCapsuleHalfHeight() * 0.75f);
+		if (!Holder && (Flag->ObjectState == CarriedObjectState::Held))
+		{
+			Holder = Flag->HoldingPawn;
+		}
+		FVector WorldPosition = (Holder != nullptr) ? Holder->GetMesh()->GetComponentLocation() + FVector(0.f, 0.f, Holder->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()) : Flag->GetActorLocation();
 		FVector DrawScreenPosition = GetAdjustedScreenPosition(WorldPosition, PlayerViewPoint, ViewDir, Dist, Edge, bDrawEdgeArrow, TeamNum);
-		DrawScreenPosition.Y -= 36.f*RenderScale;
-
+		
 		// Look to see if we should be displaying the in-world indicator for the flag.
 		float CurrentWorldTime = GameState->GetWorld()->GetTimeSeconds();
 		if (bIsEnemyFlag)
@@ -159,62 +166,106 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 			bEnemyFlagWasDrawn = true;
 		}
 
-		float PctFromCenter = (DrawScreenPosition - FVector(0.5f*GetCanvas()->ClipX, 0.5f*GetCanvas()->ClipY, 0.f)).Size() / GetCanvas()->ClipX;
-		CurrentWorldAlpha = InWorldAlpha * FMath::Min(8.f*PctFromCenter, 1.f);
+		float CurrentCircleAlpha = CurrentWorldAlpha;
 		float ViewDist = (PlayerViewPoint - WorldPosition).Size();
 
-		// don't overlap player beacon
 		UFont* TinyFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->TinyFont;
-		float X, Y;
-		float Scale = Canvas->ClipX / 1920.f;
-		Canvas->TextSize(TinyFont, FString("+999   A999"), X, Y, Scale, Scale);
+		float InWorldFlagScale = WorldRenderScale * (StatusScale - 0.5f*(StatusScale - 1.f));
+		float InWorldNumberScale = InWorldFlagScale;
+		FVector EdgeScreenPosition = DrawScreenPosition;
+		float CircleScaling = 1.f;
+		if (!bDrawEdgeArrow)
+		{
+			FVector FootPosition = Holder ? Holder->GetMesh()->GetComponentLocation() : Flag->GetActorLocation() + FVector(0.f,0.f, Flag->Collision->GetUnscaledCapsuleHalfHeight());
+			bool bIgnore = false;
+			EdgeScreenPosition = GetAdjustedScreenPosition(FootPosition, PlayerViewPoint, ViewDir, Dist, Edge, bIgnore, TeamNum);
+			float RingScaleFactor = Holder ? 4.4f : 4.f;
+			CircleScaling = FMath::Max(1.f, RingScaleFactor * (DrawScreenPosition - EdgeScreenPosition).Size() / FMath::Max(1.f, CircleBorderTemplate.GetWidth()));
+			InWorldFlagScale *= CircleScaling;
+			float DistFromCenter = (DrawScreenPosition - FVector(0.5f*GetCanvas()->ClipX, 0.5f*GetCanvas()->ClipY, 0.f)).Size();
+			CurrentCircleAlpha = CurrentCircleAlpha * 1.f / CircleScaling;
+			if ((CircleScaling >= 4.f) && !Holder)
+			{
+				CurrentCircleAlpha *= FMath::Max(0.2f, 1.f /(CircleScaling - 3.f));
+			}
+			if ((CircleScaling < 6.f) && (DistFromCenter < 0.55f*CircleScaling*CircleBorderTemplate.GetWidth()))
+			{
+				CurrentCircleAlpha *= FMath::Min(1.f, 1.f/(7.f - CircleScaling));
+			}
+		}
+		FlagIconTemplate.RenderOpacity = CurrentWorldAlpha;
+		CircleTemplate.RenderOpacity = 1.5f*CurrentWorldAlpha;
+		CircleBorderTemplate.RenderOpacity = CurrentCircleAlpha;
 
 		DrawScreenPosition.X -= RenderPosition.X;
 		DrawScreenPosition.Y -= RenderPosition.Y;
+		EdgeScreenPosition.X -= RenderPosition.X;
+		EdgeScreenPosition.Y -= RenderPosition.Y;
 
-		FlagIconTemplate.RenderOpacity = CurrentWorldAlpha;
-		CircleTemplate.RenderOpacity = CurrentWorldAlpha;
-		CircleBorderTemplate.RenderOpacity = CurrentWorldAlpha;
-
-		float InWorldFlagScale = WorldRenderScale * (StatusScale - 0.5f*(StatusScale - 1.f));
-		RenderObj_TextureAt(CircleTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, CircleTemplate.GetWidth()* InWorldFlagScale, CircleTemplate.GetHeight()* InWorldFlagScale);
-		RenderObj_TextureAt(CircleBorderTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, CircleBorderTemplate.GetWidth()* InWorldFlagScale, CircleBorderTemplate.GetHeight()* InWorldFlagScale);
-
+		if (Holder || (CircleScaling > 2.f) || bDrawEdgeArrow)
+		{
+			CircleBorderTemplate.RenderColor = FLinearColor::Black;
+			RenderObj_TextureAt(CircleBorderTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, CircleBorderTemplate.GetWidth()* InWorldFlagScale, CircleBorderTemplate.GetHeight()* InWorldFlagScale);
+			if (!bDrawEdgeArrow)
+			{
+				CircleBorderTemplate.RenderColor = FlagIconTemplate.RenderColor;
+				RenderObj_TextureAt(CircleBorderTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, 1.1f*CircleBorderTemplate.GetWidth()* InWorldFlagScale, 1.1f*CircleBorderTemplate.GetHeight()* InWorldFlagScale);
+			}
+		}
+		CircleBorderTemplate.RenderColor = FLinearColor::Black;
+		FVector DrawNumberPosition = EdgeScreenPosition;
+		DrawNumberPosition.Y = FMath::Min(DrawScreenPosition.Y, DrawNumberPosition.Y + 0.25f*CircleTemplate.GetHeight()* InWorldNumberScale);
 		if (bDrawEdgeArrow)
 		{
-			DrawEdgeArrow(WorldPosition, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
+			RenderObj_TextureAt(CircleTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, CircleTemplate.GetWidth()* InWorldFlagScale, CircleTemplate.GetHeight()* InWorldFlagScale);
+			DrawEdgeArrow(WorldPosition, PlayerViewPoint, PlayerViewRotation, DrawScreenPosition, CurrentWorldAlpha, InWorldFlagScale, TeamNum);
+		}
+		else if (Holder == nullptr)
+		{
+			if ((DrawNumberPosition + FVector(RenderPosition.X, RenderPosition.Y, 0.f) - FVector(0.5f*GetCanvas()->ClipX, 0.5f*GetCanvas()->ClipY, 0.f)).Size() < 1.2f*CircleTemplate.GetWidth()*WorldRenderScale*1.5f)
+			{
+				CurrentNumberAlpha *= 0.2f;
+			}
+			CircleBorderTemplate.RenderOpacity = CurrentNumberAlpha;
+			CircleTemplate.RenderOpacity = CurrentNumberAlpha;
+			FlagIconTemplate.RenderOpacity = CurrentNumberAlpha;
+			RenderObj_TextureAt(CircleTemplate, DrawNumberPosition.X, DrawNumberPosition.Y, CircleTemplate.GetWidth()*InWorldNumberScale, CircleTemplate.GetHeight()* InWorldNumberScale);
+			RenderObj_TextureAt(CircleBorderTemplate, DrawNumberPosition.X, DrawNumberPosition.Y, CircleTemplate.GetWidth()*InWorldNumberScale, CircleTemplate.GetHeight()* InWorldNumberScale);
+			CircleBorderTemplate.RenderColor = FlagIconTemplate.RenderColor;
+			RenderObj_TextureAt(CircleBorderTemplate, DrawNumberPosition.X, DrawNumberPosition.Y, 1.1f*CircleTemplate.GetWidth()*InWorldNumberScale, 1.1f*CircleTemplate.GetHeight()* InWorldNumberScale);
+			RenderObj_TextureAt(FlagIconTemplate, DrawNumberPosition.X, DrawNumberPosition.Y, FlagIconTemplate.GetWidth()* InWorldNumberScale, FlagIconTemplate.GetHeight()* InWorldNumberScale);
 		}
 		FText FlagStatusMessage = Flag->GetHUDStatusMessage(UTHUDOwner);
 		if (!FlagStatusMessage.IsEmpty())
 		{
 			DrawText(FlagStatusMessage, DrawScreenPosition.X, DrawScreenPosition.Y - ((CircleTemplate.GetHeight() + 40) * WorldRenderScale), AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 1.5f*WorldRenderScale, 0.5f + 0.5f*CurrentWorldAlpha, FLinearColor::White, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);
 		}
-		if (Flag && Flag->ObjectState == CarriedObjectState::Held)
+		if (bDrawEdgeArrow && Flag && Flag->ObjectState == CarriedObjectState::Held)
 		{
 			TakenIconTemplate.RenderOpacity = CurrentWorldAlpha;
+			TakenIconTemplate.RenderColor = FlagIconTemplate.RenderColor;
 			RenderObj_TextureAt(TakenIconTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, 1.1f * TakenIconTemplate.GetWidth()* InWorldFlagScale, 1.1f * TakenIconTemplate.GetHeight()* InWorldFlagScale);
 			RenderObj_TextureAt(FlagIconTemplate, DrawScreenPosition.X - 0.25f * FlagIconTemplate.GetWidth()* InWorldFlagScale, DrawScreenPosition.Y - 0.25f * FlagIconTemplate.GetHeight()* InWorldFlagScale, FlagIconTemplate.GetWidth()* InWorldFlagScale, FlagIconTemplate.GetHeight()* InWorldFlagScale);
 		}
 		else
 		{
-			RenderObj_TextureAt(FlagIconTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, 1.25f*FlagIconTemplate.GetWidth()* InWorldFlagScale, 1.25f*FlagIconTemplate.GetHeight()* InWorldFlagScale);
+			if (bDrawEdgeArrow)
+			{
+				RenderObj_TextureAt(FlagIconTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, 1.25f*FlagIconTemplate.GetWidth()* InWorldFlagScale, 1.25f*FlagIconTemplate.GetHeight()* InWorldFlagScale);
+			}
 
 			if (Flag->ObjectState == CarriedObjectState::Dropped)
 			{
-				float DroppedAlpha = DroppedIconTemplate.RenderOpacity;
-				DroppedIconTemplate.RenderOpacity = CurrentWorldAlpha;
-				RenderObj_TextureAt(DroppedIconTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, 1.25f*DroppedIconTemplate.GetWidth()* InWorldFlagScale, 1.25f*DroppedIconTemplate.GetHeight()* InWorldFlagScale);
-				DroppedIconTemplate.RenderOpacity = DroppedAlpha;
 				bool bCloseToFlag = !bIsEnemyFlag && Cast<AUTCharacter>(UTPlayerOwner->GetPawn()) && Flag->IsNearTeammate((AUTCharacter *)(UTPlayerOwner->GetPawn()));
 				FLinearColor TimeColor = bCloseToFlag ? FLinearColor::Green : FLinearColor::White;
-				DrawText(GetFlagReturnTime(Flag), DrawScreenPosition.X, DrawScreenPosition.Y, TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 1.5f*InWorldFlagScale, 0.5f + 0.5f*CurrentWorldAlpha, TimeColor, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);
+				DrawText(GetFlagReturnTime(Flag), DrawNumberPosition.X, DrawNumberPosition.Y, TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 1.5f*InWorldNumberScale, 0.5f + 0.5f*CurrentNumberAlpha, TimeColor, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);
 			}
 			else if (Flag->ObjectState == CarriedObjectState::Home)
 			{
 				AUTCTFRoundGameState* RCTFGameState = Cast<AUTCTFRoundGameState>(GameState);
 				if (RCTFGameState && (RCTFGameState->RemainingPickupDelay > 0))
 				{
-					DrawText(FText::AsNumber(RCTFGameState->RemainingPickupDelay), DrawScreenPosition.X, DrawScreenPosition.Y, TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 1.5f*InWorldFlagScale, 0.5f + 0.5f*CurrentWorldAlpha, FLinearColor::White, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);
+					DrawText(FText::AsNumber(RCTFGameState->RemainingPickupDelay), DrawNumberPosition.X, DrawNumberPosition.Y, TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 1.5f*InWorldNumberScale, 0.5f + 0.5f*CurrentNumberAlpha, FLinearColor::White, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);
 				}
 			}
 		}
@@ -227,25 +278,32 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 			LastFlagStatus = Flag->ObjectState;
 			LastFlagStatusChange = GetWorld()->GetTimeSeconds();
 		}
-		float TimeSinceChange = GetWorld()->GetTimeSeconds() - LastFlagStatusChange;
-		float LineBrightness = NormalLineBrightness;
-		if (TimeSinceChange < 0.1f)
-		{
-			LineBrightness = LineGlow * TimeSinceChange * 10.f;
-		}
-		else if (TimeSinceChange < 0.1f + PulseLength)
-		{
-			LineBrightness = NormalLineBrightness + LineGlow * FMath::Max(0.f, 1.f - (TimeSinceChange - 0.1f) / PulseLength);
-		}
 
 		// draw line from hud to this loc - can't used Canvas line drawing code because it doesn't support translucency
 		FVector LineEndPoint(DrawScreenPosition.X+RenderPosition.X, DrawScreenPosition.Y+RenderPosition.Y, 0.f);
-		FVector LineStartPoint(0.5f*Canvas->ClipX, 0.12f*Canvas->ClipY, 0.f);
-		FLinearColor LineColor = FlagIconTemplate.RenderColor;
-		LineColor.A = LineBrightness;
-		FBatchedElements* BatchedElements = Canvas->Canvas->GetBatchedElements(FCanvas::ET_Line);
-		FHitProxyId HitProxyId = Canvas->Canvas->GetHitProxyId();
-		BatchedElements->AddTranslucentLine(LineEndPoint, LineStartPoint, LineColor, HitProxyId, 8.f);
+		FVector LineStartPoint(0.5f*Canvas->ClipX, 0.5f*Canvas->ClipY, 0.f);
+		if ((LineEndPoint - LineStartPoint).Size() > 0.05f*Canvas->ClipX)
+		{
+			float LineBrightness = 0.f;
+			float TimeSinceChange = GetWorld()->GetTimeSeconds() - FMath::Max(LastFlagStatusChange, (bIsEnemyFlag ? GameState->LastEnemyLocationReportTime : GameState->LastFriendlyLocationReportTime));
+			if (TimeSinceChange < 0.1f)
+			{
+				LineBrightness = LineGlow * TimeSinceChange * 10.f;
+			}
+			else if (TimeSinceChange < 0.1f + PulseLength)
+			{
+				LineBrightness = NormalLineBrightness + LineGlow * FMath::Max(0.f, 1.f - (TimeSinceChange - 0.1f) / PulseLength);
+			}
+			if (LineBrightness > 0.f)
+			{
+				LineStartPoint += 0.025f*Canvas->ClipX*(LineEndPoint - LineStartPoint).GetSafeNormal();
+				FLinearColor LineColor = FlagIconTemplate.RenderColor;
+				LineColor.A = LineBrightness;
+				FBatchedElements* BatchedElements = Canvas->Canvas->GetBatchedElements(FCanvas::ET_Line);
+				FHitProxyId HitProxyId = Canvas->Canvas->GetHitProxyId();
+				BatchedElements->AddTranslucentLine(LineEndPoint, LineStartPoint, LineColor, HitProxyId, 8.f);
+			}
+		}
 	}
 	else if (bIsEnemyFlag)
 	{

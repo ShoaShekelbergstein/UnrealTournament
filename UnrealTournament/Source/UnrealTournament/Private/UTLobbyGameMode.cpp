@@ -17,8 +17,6 @@
 AUTLobbyGameMode::AUTLobbyGameMode(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	MinPlayersToStart = 2;
-
 	// use our custom HUD class
 	HUDClass = AUTLobbyHUD::StaticClass();
 
@@ -52,8 +50,6 @@ void AUTLobbyGameMode::InitGame( const FString& MapName, const FString& Options,
 			UTGameSession->MaxPlayers = MaxPlayersInLobby;
 		}
 	}
-
-	MinPlayersToStart = FMath::Max(1, UGameplayStatics::GetIntOption(Options, TEXT("MinPlayers"), MinPlayersToStart));
 
 	// I should move this code up in to UTBaseGameMode and probably will (the code hooks are all there) but
 	// for right now I want to limit this to just Lobbies.
@@ -265,7 +261,7 @@ void AUTLobbyGameMode::GetInstanceData(TArray<TSharedPtr<FServerInstanceData>>& 
 					FString Map = FString::Printf(TEXT("%s (%s)"), *MatchInfo->InitialMap, *MatchInfo->DedicatedServerGameMode);
 					// FIXMEJOE - Allow dedicated instances to pass an allowed rank
 
-					Data = FServerInstanceData::Make(MatchInfo->UniqueMatchID, MatchInfo->DedicatedServerName, TEXT(""), GameModeClassname, Map, MatchInfo->DedicatedServerMaxPlayers, MatchInfo->GetMatchFlags(),DEFAULT_RANK_CHECK, false, MatchInfo->bJoinAnytime || !MatchInfo->IsInProgress(), MatchInfo->bSpectatable, MatchInfo->DedicatedServerDescription, false);
+					Data = FServerInstanceData::Make(MatchInfo->UniqueMatchID, MatchInfo->DedicatedServerName, TEXT(""), GameModeClassname, Map, MatchInfo->DedicatedServerMaxPlayers, MatchInfo->GetMatchFlags(),DEFAULT_RANK_CHECK, false, MatchInfo->bJoinAnytime || !MatchInfo->IsInProgress(), MatchInfo->bSpectatable, MatchInfo->DedicatedServerDescription, MatchInfo->CustomGameName);
 				}
 				else
 				{
@@ -276,7 +272,7 @@ void AUTLobbyGameMode::GetInstanceData(TArray<TSharedPtr<FServerInstanceData>>& 
 					}
 
 					FString Map = (MatchInfo->InitialMapInfo.IsValid() ? MatchInfo->InitialMapInfo->Title : MatchInfo->InitialMap);
-					Data = FServerInstanceData::Make(MatchInfo->UniqueMatchID, MatchInfo->CurrentRuleset->Title, MatchInfo->CurrentRuleset->UniqueTag, GameModeClassname, Map, MatchInfo->CurrentRuleset->MaxPlayers, MatchInfo->GetMatchFlags(), MatchInfo->RankCheck, MatchInfo->CurrentRuleset->bTeamGame, MatchInfo->bJoinAnytime || !MatchInfo->IsInProgress(), MatchInfo->bSpectatable, MatchInfo->CurrentRuleset->Description, MatchInfo->bQuickPlayMatch);
+					Data = FServerInstanceData::Make(MatchInfo->UniqueMatchID, MatchInfo->CurrentRuleset->Title, MatchInfo->CurrentRuleset->UniqueTag, GameModeClassname, Map, MatchInfo->CurrentRuleset->MaxPlayers, MatchInfo->GetMatchFlags(), MatchInfo->RankCheck, MatchInfo->CurrentRuleset->bTeamGame, MatchInfo->bJoinAnytime || !MatchInfo->IsInProgress(), MatchInfo->bSpectatable, MatchInfo->CurrentRuleset->Description, MatchInfo->CustomGameName);
 				}
 
 				Data->MatchData = MatchInfo->MatchUpdate;
@@ -474,3 +470,6 @@ TSharedRef<SUTMenuBase> AUTLobbyGameMode::GetGameMenu(UUTLocalPlayer* PlayerOwne
 	return SNew(SUTLobbyMenu).PlayerOwner(PlayerOwner);
 }
 #endif
+
+
+

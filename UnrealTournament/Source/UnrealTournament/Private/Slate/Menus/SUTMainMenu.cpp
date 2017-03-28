@@ -14,6 +14,7 @@
 #include "../Dialogs/SUTMessageBoxDialog.h"
 #include "../Dialogs/SUTGameSetupDialog.h"
 #include "../Widgets/SUTScaleBox.h"
+#include "../Dialogs/SUTDifficultyLevel.h"
 #include "UTGameEngine.h"
 #include "../Panels/SUTServerBrowserPanel.h"
 #include "../Panels/SUTReplayBrowserPanel.h"
@@ -43,6 +44,7 @@ void SUTMainMenu::CreateDesktop()
 
 SUTMainMenu::~SUTMainMenu()
 {
+	HomePanel.Reset();
 }
 
 TSharedRef<SWidget> SUTMainMenu::BuildBackground()
@@ -229,10 +231,11 @@ TSharedRef<SWidget> SUTMainMenu::AddPlayNow()
 
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayDM", "QuickPlay Deathmatch"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch,	EEpicDefaultRuleTags::Deathmatch));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRun", "QuickPlay Flag Run"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRun));
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayTSD", "QuickPlay Showdown"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::TEAMSHOWDOWN));
+	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRunVSAI", "QuickPlay Flag Run Coop vs AI"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRunVSAI));
 	DropDownButton->AddSpacer();
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_ChallengesGame", "Single Player Challenges"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowGamePanel));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_CreateGame", "Custom Single Player Match"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowCustomGamePanel));
+	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_StartLANGame", "Start LAN Match"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowCustomGamePanel));
 
 	DropDownButton->AddSpacer();
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_FindGame", "Find a Match..."), FOnClicked::CreateSP(this, &SUTMenuBase::OnShowServerBrowserPanel),true);
@@ -407,12 +410,10 @@ void SUTMainMenu::OpenDelayedMenu()
 			.GameRuleSets(AvailableGameRulesets)
 			.DialogSize(FVector2D(1920,1080))
 #if PLATFORM_WINDOWS
-			.ButtonMask(UTDIALOG_BUTTON_PLAY | UTDIALOG_BUTTON_LAN | UTDIALOG_BUTTON_CANCEL)
+			.ButtonMask(UTDIALOG_BUTTON_PLAY | UTDIALOG_BUTTON_LAN | UTDIALOG_BUTTON_CANCEL);
 #else
-			.ButtonMask(UTDIALOG_BUTTON_PLAY | UTDIALOG_BUTTON_CANCEL)
+			.ButtonMask(UTDIALOG_BUTTON_PLAY | UTDIALOG_BUTTON_CANCEL);
 #endif
-			.OnDialogResult(this, &SUTMainMenu::OnGameChangeDialogResult);
-		
 
 			if ( CreateGameDialog.IsValid() )
 			{
@@ -422,25 +423,6 @@ void SUTMainMenu::OpenDelayedMenu()
 		}
 	}
 	PlayerOwner->HideContentLoadingMessage();
-}
-
-void SUTMainMenu::OnGameChangeDialogResult(TSharedPtr<SCompoundWidget> Dialog, uint16 ButtonPressed)
-{
-	if ( ButtonPressed != UTDIALOG_BUTTON_CANCEL && CreateGameDialog.IsValid() )
-	{
-		if (ButtonPressed == UTDIALOG_BUTTON_LAN)
-		{
-			StartGame(true);
-		}
-		else if (ButtonPressed == UTDIALOG_BUTTON_PLAY)
-		{
-			StartGame(false);
-		}
-		else
-		{
-			CheckLocalContentForLanPlay();
-		}
-	}
 }
 
 FReply SUTMainMenu::OnPlayQuickMatch(FString QuickMatchType)
@@ -467,6 +449,7 @@ void SUTMainMenu::QuickPlay(const FString& QuickMatchType)
 	UE_LOG(UT,Log,TEXT("QuickMatch: %s"),*QuickMatchType);
 	PlayerOwner->StartQuickMatch(QuickMatchType);
 }
+
 
 FReply SUTMainMenu::OnBootCampClick()
 {
@@ -623,212 +606,6 @@ void SUTMainMenu::ShowCommunity()
 bool SUTMainMenu::ShouldShowBrowserIcon()
 {
 	return (PlayerOwner.IsValid() && PlayerOwner->bShowBrowserIconOnMainMenu);
-}
-
-void SUTMainMenu::CheckLocalContentForLanPlay()
-{
-	UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
-	if (!UTEngine->IsCloudAndLocalContentInSync())
-	{
-		PlayerOwner->ShowMessage(NSLOCTEXT("SUTCreateGamePanel", "CloudSyncErrorCaption", "Cloud Not Synced"), NSLOCTEXT("SUTCreateGamePanel", "CloudSyncErrorMsg", "Some files are not up to date on your cloud storage. Would you like to start anyway?"), UTDIALOG_BUTTON_YES + UTDIALOG_BUTTON_NO, FDialogResultDelegate::CreateSP(this, &SUTMainMenu::CloudOutOfSyncResult));
-	}
-	else
-	{
-		UUTGameUserSettings* GameSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
-
-		bool bShowingLanWarning = false;
-		if( !GameSettings->bShouldSuppressLanWarning )
-		{
-			TWeakObjectPtr<UUTLocalPlayer> LP = PlayerOwner;
-			auto OnDialogConfirmation = [LP] (TSharedPtr<SCompoundWidget> Widget, uint16 Button)
-			{
-				UUTGameUserSettings* LamdaGameSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
-				LamdaGameSettings->SaveConfig();
-			};
-
-			bool bCanBindAll = false;
-			TSharedRef<FInternetAddr> Address = ISocketSubsystem::Get()->GetLocalHostAddr(*GWarn, bCanBindAll);
-			if (Address->IsValid())
-			{
-				FString StringAddress = Address->ToString(false);
-
-				// Note: This is an extremely basic way to test for local network and it only covers the common case
-				if (StringAddress.StartsWith(TEXT("192.168.")))
-				{
-					bShowingLanWarning = true;
-					PlayerOwner->ShowSupressableConfirmation(
-						NSLOCTEXT("SUTCreateGamePanel", "LocalNetworkWarningTitle", "Local Network Detected"),
-						NSLOCTEXT("SUTCreateGamePanel", "LocalNetworkWarningDesc", "Make sure ports 7777 and 15000 are forwarded in your router to be visible to players outside your local network"),
-						FVector2D(0, 0),
-						GameSettings->bShouldSuppressLanWarning,
-						FDialogResultDelegate::CreateLambda( OnDialogConfirmation ) );
-				}
-			}
-		}
-		
-		UUTGameEngine* Engine = Cast<UUTGameEngine>(GEngine);
-		if (Engine != NULL && !Engine->IsCloudAndLocalContentInSync())
-		{
-			FText DialogText = NSLOCTEXT("UT", "ContentOutOfSyncWarning", "You have locally created custom content that is not in your cloud storage. Players may be unable to join your server. Are you sure?");
-			FDialogResultDelegate Callback;
-			Callback.BindSP(this, &SUTMainMenu::StartGameWarningComplete);
-			PlayerOwner->ShowMessage(NSLOCTEXT("U1T", "ContentNotInSync", "Custom Content Out of Sync"), DialogText, UTDIALOG_BUTTON_YES | UTDIALOG_BUTTON_NO, Callback);
-		}
-		else
-		{
-			StartGame(true);
-		}
-	}
-}
-
-void SUTMainMenu::StartGameWarningComplete(TSharedPtr<SCompoundWidget> Dialog, uint16 ButtonID)
-{
-	if (ButtonID == UTDIALOG_BUTTON_YES || ButtonID == UTDIALOG_BUTTON_OK)
-	{
-		StartGame(true);
-	}
-}
-
-
-
-void SUTMainMenu::StartGame(bool bLanGame)
-{
-	// Kill any existing Dedicated servers
-	if (PlayerOwner->DedicatedServerProcessHandle.IsValid())
-	{
-		FPlatformProcess::TerminateProc(PlayerOwner->DedicatedServerProcessHandle,true);
-		PlayerOwner->DedicatedServerProcessHandle.Reset();
-	}
-
-	FString StartingMap;
-	FString GameOptions;
-
-	if (CreateGameDialog->IsCustomSettings())
-	{
-		FString GameMode;
-		FString Description;
-		FString GameModeName;
-
-		TArray<FString> GameOptionsList;
-		int32 DesiredPlayerCount = 0;
-		int32 bTeamGame;
-		CreateGameDialog->GetCustomGameSettings(GameMode, StartingMap, Description, GameModeName, GameOptionsList, DesiredPlayerCount,bTeamGame);	
-		GameOptions = FString::Printf(TEXT("?Game=%s"), *GameMode);
-		for (int32 i = 0; i < GameOptionsList.Num(); i++)
-		{
-			GameOptions += FString::Printf(TEXT("?%s"),*GameOptionsList[i]);
-		}
-
-		if (CreateGameDialog->BotSkillLevel >= 0)
-		{
-			GameOptions += FString::Printf(TEXT("?Difficulty=%i?BotFill=%i?MaxPlayers=%i"),CreateGameDialog->BotSkillLevel, DesiredPlayerCount, DesiredPlayerCount);
-		}
-		else
-		{
-			GameOptions += FString::Printf(TEXT("?ForceNoBots=1?MaxPlayers=%i"), DesiredPlayerCount);
-		}
-
-		if (FUTAnalytics::IsAvailable())
-		{
-			if (FUTAnalytics::IsAvailable())
-			{
-				GameOptions += FUTAnalytics::AnalyticsLoggedGameOptionTrue;
-				
-				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("MainMenu - Custom Game - %s"),*GameModeName));
-			}
-		}
-	}
-	else
-	{
-		// Build the settings from the ruleset...
-		AUTReplicatedGameRuleset* CurrentRule = CreateGameDialog->SelectedRuleset.Get();
-		StartingMap = CreateGameDialog->GetSelectedMap();
-		AUTGameMode* DefaultGameMode = CurrentRule->GetDefaultGameModeObject();
-		GameOptions = FString::Printf(TEXT("?Game=%s"), *CurrentRule->GameMode);
-		GameOptions += FString::Printf(TEXT("?MaxPlayers=%i"), CurrentRule->MaxPlayers);
-		GameOptions += CurrentRule->GameOptions;
-		if ( DefaultGameMode && CreateGameDialog->BotSkillLevel >= 0 )
-		{
-			GameOptions += FString::Printf(TEXT("?BotFill=%i?Difficulty=%i"), CurrentRule->MaxPlayers, FMath::Clamp<int32>(CreateGameDialog->BotSkillLevel,0,7));				
-		}
-		else
-		{
-			GameOptions += TEXT("?ForceNoBots=1");
-		}
-
-		if (PlayerOwner.IsValid() && FUTAnalytics::IsAvailable() && CurrentRule)
-		{
-			GameOptions += FUTAnalytics::AnalyticsLoggedGameOptionTrue;
-			
-			if (DefaultGameMode)
-			{
-				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("MainMenu - Predefined Game Type - %s"), *DefaultGameMode->DisplayName.ToString()));
-			}
-			else
-			{
-				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("MainMenu - Predefined Game Type - %s"), *CurrentRule->GameMode));
-			}
-		}
-	}
-
-	for (int32 i=0; i<AvailableGameRulesets.Num();i++)
-	{
-		AvailableGameRulesets[i]->SlateBadge = NULL;
-	}
-
-	FString URL = StartingMap + GameOptions;
-
-	if (bLanGame)
-	{
-		GameOptions += TEXT("?MaxPlayerWait=180");
-		FString ExecPath = TEXT("..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Shipping.exe");
-		FString Options = FString::Printf(TEXT("unrealtournament %s -log -server -LAN -AUTH_PASSWORD="), *URL);
-
-		IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
-		if (OnlineSubsystem)
-		{
-			IOnlineIdentityPtr OnlineIdentityInterface = OnlineSubsystem->GetIdentityInterface();
-			if (OnlineIdentityInterface.IsValid())
-			{
-				TSharedPtr<const FUniqueNetId> UserId = OnlineIdentityInterface->GetUniquePlayerId(PlayerOwner->GetControllerId());
-				if (UserId.IsValid())
-				{
-					Options += FString::Printf(TEXT(" -cloudID=%s"), *UserId->ToString());
-				}
-			}
-		}
-
-		FString AppName = GetEpicAppName();
-		if (!AppName.IsEmpty())
-		{
-			Options += FString::Printf(TEXT(" -EPICAPP=%s"), *AppName);
-		}
-
-		PlayerOwner->DedicatedServerProcessHandle = FPlatformProcess::CreateProc(*ExecPath, *(Options + FString::Printf(TEXT(" -ClientProcID=%u"), FPlatformProcess::GetCurrentProcessId())), true, false, false, NULL, 0, NULL, NULL);
-		if (PlayerOwner->DedicatedServerProcessHandle.IsValid())
-		{
-			GEngine->SetClientTravel(PlayerOwner->PlayerController->GetWorld(), TEXT("127.0.0.1"), TRAVEL_Absolute);
-			PlayerOwner->HideMenu();
-		}
-	}
-	else
-	{
-		ConsoleCommand(TEXT("Start ") + URL);
-	}
-
-	if (CreateGameDialog.IsValid())
-	{
-		CreateGameDialog.Reset();
-	}
-}
-
-
-void SUTMainMenu::CloudOutOfSyncResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID)
-{
-	if (ButtonID == UTDIALOG_BUTTON_YES)
-	{
-		StartGame(true);
-	}
 }
 
 FReply SUTMainMenu::OnShowServerBrowserPanel()

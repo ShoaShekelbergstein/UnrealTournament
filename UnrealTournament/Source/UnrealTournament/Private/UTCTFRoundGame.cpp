@@ -170,6 +170,15 @@ void AUTCTFRoundGame::BeginGame()
 		CTFGameState->NumRounds = NumRounds;
 		CTFGameState->HalftimeScoreDelay = 0.5f;
 	}
+	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+	{
+		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+		if (UTPlayerState)
+		{
+			UTPlayerState->NotIdle();
+		}
+	}
+
 	float RealIntermissionDuration = IntermissionDuration;
 	IntermissionDuration = 10.f;
 	SetMatchState(MatchState::MatchIntermission);
@@ -190,7 +199,6 @@ void AUTCTFRoundGame::BeginGame()
 
 AActor* AUTCTFRoundGame::SetIntermissionCameras(uint32 TeamToWatch)
 {
-	PlacePlayersAroundFlagBase(TeamToWatch, TeamToWatch);
 	return CTFGameState->FlagBases[TeamToWatch];
 }
 
@@ -198,21 +206,20 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 {
 	if (bFirstRoundInitialized)
 	{
-/*
 		// kick idlers
 		if (UTGameState && GameSession)
 		{
 			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 			{
 				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-				if (UTPlayerState && !UTPlayerState->bIsABot && !UTPlayerState->bOutOfLives && UTPlayerState->IsPlayerIdle() && !UTPlayerState->bOnlySpectator && !UTPlayerState->bIsInactive && Cast<APlayerController>(UTPlayerState->GetOwner()))
+				if (UTPlayerState && IsPlayerIdle(UTPlayerState) && Cast<APlayerController>(UTPlayerState->GetOwner()))
 				{
 					Cast<APlayerController>(UTPlayerState->GetOwner())->ClientWasKicked(NSLOCTEXT("General", "IdleKick", "You were kicked for being idle."));
 					UTPlayerState->GetOwner()->Destroy();
 				}
 			}
 		}
-*/
+
 		// view defender base, with last team to score around it
 		int32 TeamToWatch = IntermissionTeamToView(nullptr);
 
@@ -234,14 +241,18 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 				PC->SetViewTarget(IntermissionFocus);
 			}
 		}
+
+		if (UTGameState->LineUpHelper)
+		{
+			UTGameState->LineUpHelper->HandleLineUp(LineUpTypes::Intermission);
+		}
 	}
 
 	if (CTFGameState)
 	{
 		CTFGameState->bIsAtIntermission = true;
-		CTFGameState->OnIntermissionChanged();
 		CTFGameState->bStopGameClock = true;
-		Cast<AUTCTFRoundGameState>(CTFGameState)->IntermissionTime = IntermissionDuration;
+		CTFGameState->IntermissionTime = IntermissionDuration;
 	}
 }
 
@@ -586,9 +597,13 @@ void AUTCTFRoundGame::HandleExitingIntermission()
 	// Send all flags home..
 	CTFGameState->ResetFlags();
 	CTFGameState->bIsAtIntermission = false;
-	CTFGameState->OnIntermissionChanged();
 	CTFGameState->SetTimeLimit(TimeLimit);		// Reset the GameClock for the second time.
 	SetMatchState(MatchState::InProgress);
+
+	if (UTGameState->LineUpHelper)
+	{
+		UTGameState->LineUpHelper->CleanUp();
+	}
 }
 
 void AUTCTFRoundGame::InitFlagForRound(AUTCarriedObject* Flag)
@@ -822,7 +837,6 @@ void AUTCTFRoundGame::InitPlayerForRound(AUTPlayerState* PS)
 {
 	if (PS)
 	{
-		PS->bHasLifeLimit = bPerPlayerLives;
 		PS->RoundKills = 0;
 		PS->RoundDeaths = 0;
 		PS->RoundKillAssists = 0;
@@ -844,7 +858,6 @@ void AUTCTFRoundGame::InitPlayerForRound(AUTPlayerState* PS)
 		else if (PS)
 		{
 			PS->RemainingLives = RoundLives;
-			PS->bHasLifeLimit = IsPlayerOnLifeLimitedTeam(PS);
 			PS->SetOutOfLives(false);
 		}
 		PS->ForceNetUpdate();
@@ -857,7 +870,6 @@ void AUTCTFRoundGame::HandleTeamChange(AUTPlayerState* PS, AUTTeamInfo* OldTeam)
 	{
 		return;
 	}
-	PS->bHasLifeLimit = IsPlayerOnLifeLimitedTeam(PS);
 	if (bSitOutDuringRound)
 	{
 		PS->RemainingLives = 0;

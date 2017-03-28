@@ -1142,12 +1142,10 @@ void SUTServerBrowserPanel::OnCancelComplete(bool bSuccessful)
 		SearchForLanServers();
 		CleanupQoS();
 	}
-
 }
 
-void SUTServerBrowserPanel::FoundServer(FOnlineSessionSearchResult& Result)
+TSharedPtr<FServerData> SUTServerBrowserPanel::CreateNewServerData(FOnlineSessionSearchResult& Result)
 {
-
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 	IOnlineSessionPtr OnlineSessionInterface;
 	if (OnlineSubsystem) OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
@@ -1225,8 +1223,14 @@ void SUTServerBrowserPanel::FoundServer(FOnlineSessionSearchResult& Result)
 
 	TSharedRef<FServerData> NewServer = FServerData::Make( ServerName, ServerIP, BeaconIP, ServerGamePath, ServerGameName, ServerMap, ServerNoPlayers, ServerNoSpecs, ServerMaxPlayers, ServerMaxSpectators, ServerNumMatches, ServerMinRank, ServerMaxRank, ServerVer, ServerPing, ServerFlags,ServerTrustLevel);
 	NewServer->SearchResult = Result;
+	
+	return NewServer;
+}
 
-	if (PingList.Num() == 0 || ServerGamePath != LOBBY_GAME_PATH )
+void SUTServerBrowserPanel::FoundServer(FOnlineSessionSearchResult& Result)
+{
+	TSharedPtr<FServerData> NewServer = CreateNewServerData(Result);
+	if (PingList.Num() == 0 || NewServer->GameModePath != LOBBY_GAME_PATH )
 	{
 		PingList.Add( NewServer );
 	}
@@ -1235,7 +1239,7 @@ void SUTServerBrowserPanel::FoundServer(FOnlineSessionSearchResult& Result)
 		PingList.Insert(NewServer,0);
 	}
 
-	TotalPlayersPlaying += ServerNoPlayers + ServerNoSpecs;
+	TotalPlayersPlaying += NewServer->NumPlayers + NewServer->NumSpectators;
 
 }
 
@@ -2664,7 +2668,7 @@ FReply SUTServerBrowserPanel::OnIPClick()
 {
 	PlayerOwner->OpenDialog(
 		SNew(SUTInputBoxDialog)
-		.DefaultInput(PlayerOwner->LastConnectToIP)
+		.DefaultInput(PlayerOwner->StoredLastConnectToIP)
 		.DialogSize(FVector2D(700, 300))
 		.OnDialogResult(this, &SUTServerBrowserPanel::ConnectIPDialogResult)
 		.PlayerOwner(PlayerOwner)
@@ -2687,7 +2691,8 @@ void SUTServerBrowserPanel::ConnectIPDialogResult(TSharedPtr<SCompoundWidget> Wi
 			if (InputText.Len() > 0 && PlayerOwner.IsValid())
 			{
 				FString AdjustedText = InputText.Replace(TEXT("://"), TEXT(""));
-				PlayerOwner->LastConnectToIP = AdjustedText;
+				PlayerOwner->StoredLastConnectToIP = AdjustedText;
+				PlayerOwner->LastConnectToIP = PlayerOwner->StoredLastConnectToIP;
 				PlayerOwner->SaveConfig();
 				PlayerOwner->ViewportClient->ConsoleCommand(*FString::Printf(TEXT("open %s"), *AdjustedText));
 				PlayerOwner->ShowConnectingDialog();

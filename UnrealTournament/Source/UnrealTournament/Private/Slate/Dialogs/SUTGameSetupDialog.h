@@ -179,9 +179,6 @@ public:
 	TArray<FMapPlayListInfo> MapPlayList;
 	TWeakObjectPtr<class AUTReplicatedGameRuleset> SelectedRuleset;
 
-	void ApplyCurrentRuleset(TWeakObjectPtr<AUTLobbyMatchInfo> MatchInfo);
-	int32 BotSkillLevel;
-
 	// Will return true if this settings dialog is on the custom tab.  
 	bool IsCustomSettings()
 	{
@@ -260,8 +257,6 @@ protected:
 	int32 DesiredMapIndex;
 
 	TSharedRef<SWidget> BuildBotSkill();
-	FReply OnBotSkillClick(int32 NewSkill);
-	TArray<TSharedPtr<SUTTabButton>> BotSkillButtons;
 
 	virtual void AddButtonsToLeftOfButtonBar(uint32& ButtonCount);
 	
@@ -270,21 +265,40 @@ protected:
 	TSharedPtr<SCheckBox> cbPrivateMatch;
 
 	TSharedPtr<SUTSlider> sBotSkill;
+	TSharedPtr<SCheckBox> cbUseBots;
+	TSharedPtr<SCheckBox> cbRequireFull;
 
 	bool bBeginnerMatch;
 	bool bUserHasBeenWarned;
 	void RankCheckChanged(ECheckBoxState NewState);
 
 	FText GetBotSkillText() const;
-	virtual void OnBotSkillChanged(float NewValue);
 
 	int32 CurrentTabIndex;
 
+	void OnGameNameTextCommited(const FText &NewText,ETextCommit::Type CommitType);
+	FText GameName;
+
+	TSharedPtr<SEditableTextBox> GameNameText;
+
+	TSharedRef<SWidget> BuildSessionName();
+	TSharedPtr<SHorizontalBox> BotSkillLevelBox;
+
+	bool GetBotSkillEnabled() const;
+	FSlateColor GetBotSkillColor() const;
+
+	TSharedPtr<SBox> BotSkillBox;
+
+	EVisibility GetAllowBotsVis() const;
+	EVisibility GetBotSkillVis() const;
+	EVisibility GetRequireFullVis() const;
+
 public:
 	FString GetSelectedMap();
+	bool bGameNameChanged;
+	FText GetGameNameText() const;
 
-	void ConfigureMatchInfo(TWeakObjectPtr<AUTLobbyMatchInfo> MatchInfo);
-
+	void ConfigureMatch(ECreateInstanceTypes::Type InstanceType);
 };
 
 

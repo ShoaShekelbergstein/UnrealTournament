@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Kismet/KismetSystemLibrary.h"
+#include "UTGameInstance.h"
 
 #include "UTGameplayStatics.generated.h"
 
@@ -76,6 +77,8 @@ class UNREALTOURNAMENT_API UUTGameplayStatics : public UBlueprintFunctionLibrary
 								, const TArray<FVector>* AltVisibilityOrigins = NULL
 #endif
 								);
+
+	static bool ComponentIsVisibleFrom(UPrimitiveComponent* VictimComp, FVector const& Origin, AActor const* IgnoredActor, FHitResult& OutHitResult, const TArray<FVector>* AltVisibilityOrigins);
 
 // DEPRECATED - use ChooseBestAimTarget()
 	UFUNCTION(meta=(DeprecatedFunction, DeprecationMessage = "Use ChooseBestAimTarget"),BlueprintCallable, BlueprintAuthorityOnly, Category = "Game|Targeting")
@@ -228,9 +231,6 @@ class UNREALTOURNAMENT_API UUTGameplayStatics : public UBlueprintFunctionLibrary
 	static bool IsPlayInEditor(UObject* WorldContextObject);
 
 	UFUNCTION(BlueprintCallable, Category = "UTAnalytics")
-	static void RecordEvent_UTTutorialStarted(AUTPlayerController* UTPC, FString TutorialMap);
-
-	UFUNCTION(BlueprintCallable, Category = "UTAnalytics")
 	static void RecordEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap);
 
 	UFUNCTION(BlueprintCallable, Category = "UTAnalytics")
@@ -246,4 +246,45 @@ class UNREALTOURNAMENT_API UUTGameplayStatics : public UBlueprintFunctionLibrary
 		AGameStateBase* GS = (World != nullptr) ? World->GetGameState() : nullptr;
 		return (GS != nullptr) ? GS->GameModeClass : nullptr;
 	}
+
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "UT", meta = (WorldContext = "WorldContextObject"))
+	static void ExecuteDatabaseQuery(UObject* WorldContextObject, const FString& DatabaseQuery, TArray<FDatabaseRow>& OutDatabaseRows);
+
+	/** Loads a string value from the Mod.ini */
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	static bool GetModConfigString(const FString& ConfigSection, const FString& ConfigKey, FString& Value);
+
+	/** Loads an array of string values from the Mod.ini */
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	static int32 GetModConfigStringArray(const FString& ConfigSection, const FString& ConfigKey, TArray<FString>& Value);
+
+	/** Loads an int value from the Mod.ini */
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	static bool GetModConfigInt(const FString& ConfigSection, const FString& ConfigKey, int32& Value);
+	
+	/** Loads a float value from the Mod.ini */
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	static bool GetModConfigFloat(const FString& ConfigSection, const FString& ConfigKey, float& Value);
+
+	/** Saves a string value to the Mod.ini */
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	static void SetModConfigString(const FString& ConfigSection, const FString& ConfigKey, const FString& Value);
+
+	/** Saves an array of string values to the Mod.ini */
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	static void SetModConfigStringArray(const FString& ConfigSection, const FString& ConfigKey, const TArray<FString>& Value);
+
+	/** Saves an int value to the Mod.ini */
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	static void SetModConfigInt(const FString& ConfigSection, const FString& ConfigKey, int32 Value);
+
+	/** Saves a float value to the Mod.ini */
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	static void SetModConfigFloat(const FString& ConfigSection, const FString& ConfigKey, float Value);
+
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	static void SaveModConfig();
+
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	static void ReloadModConfig();
 };

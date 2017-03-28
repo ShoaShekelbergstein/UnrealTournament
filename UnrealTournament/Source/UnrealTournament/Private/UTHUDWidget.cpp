@@ -12,6 +12,20 @@ namespace ERenderObjectType
 	const FName TextObject = FName(TEXT("HUDRenderObject_Text"));
 }
 
+UUTHUDWidget::UUTHUDWidget(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+{
+	bIgnoreHUDBaseColor = false;
+	Opacity = 1.0f;
+	Origin = FVector2D(0.0f, 0.0f);
+	ScreenPosition = FVector2D(0.0f, 0.0f);
+	bScaleByDesignedResolution = true;
+	bMaintainAspectRatio = true;
+	DesignedResolution = 720;
+	UTHUDOwner = nullptr;
+	bIgnoreHUDOpacity = false;
+	bShouldKickBack = true;
+}
+
 DECLARE_CYCLE_STAT(TEXT("CanvasTextItem Time"), STAT_Canvas_TextItemTime, STATGROUP_Canvas);
 void FUTCanvasTextItem::Draw(FCanvas* InCanvas)
 {
@@ -295,22 +309,10 @@ void FUTCanvasTextItem::UTDrawStringInternal(class FCanvas* InCanvas, const FVec
 	}
 }
 
-UUTHUDWidget::UUTHUDWidget(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
-{
-	bIgnoreHUDBaseColor = false;
-	Opacity = 1.0f;
-	Origin = FVector2D(0.0f, 0.0f);
-	ScreenPosition = FVector2D(0.0f, 0.0f);
-	bScaleByDesignedResolution = true;
-	bMaintainAspectRatio = true;
-	DesignedResolution=720;
-	UTHUDOwner = nullptr;
-	bIgnoreHUDOpacity = false;
-}
-
 void UUTHUDWidget::InitializeWidget(AUTHUD* InHUD)
 {
 	UTHUDOwner = InHUD;
+	RealOrigin = Origin;
 	for (TFieldIterator<UStructProperty> PropIt(GetClass()); PropIt; ++PropIt)
 	{
 		UStructProperty* Prop = NULL;
@@ -407,6 +409,7 @@ void UUTHUDWidget::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCanvas* InCan
 	UTHUDOwner = InUTHUDOwner;
 	if (UTHUDOwner != NULL)
 	{
+		Origin = bShouldKickBack ? RealOrigin + UTHUDOwner->CurrentHUDImpulse : RealOrigin;
 		UTPlayerOwner = UTHUDOwner->UTPlayerOwner;
 		if (UTPlayerOwner != NULL)
 		{

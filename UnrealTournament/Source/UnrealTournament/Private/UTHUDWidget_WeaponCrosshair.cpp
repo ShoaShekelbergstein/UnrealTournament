@@ -15,6 +15,7 @@ UUTHUDWidget_WeaponCrosshair::UUTHUDWidget_WeaponCrosshair(const class FObjectIn
 	Size=FVector2D(0.0f,0.0f);
 	ScreenPosition=FVector2D(0.5f, 0.5f);
 	LastWeapon = nullptr;
+	bShouldKickBack = false;
 }
 
 bool UUTHUDWidget_WeaponCrosshair::ShouldDraw_Implementation(bool bShowScores)

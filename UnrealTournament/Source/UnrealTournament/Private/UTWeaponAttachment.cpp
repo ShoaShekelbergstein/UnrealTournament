@@ -385,3 +385,6 @@ void AUTWeaponAttachment::StopFiringEffects_Implementation(bool bIgnoreCurrentMo
 		}
 	}
 }
+
+void AUTWeaponAttachment::ModifyFireEffect_Implementation(class UParticleSystemComponent* Effect)
+{}

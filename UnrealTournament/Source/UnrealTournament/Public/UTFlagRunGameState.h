@@ -99,6 +99,15 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 	UPROPERTY(BlueprintReadWrite)
 		int32 BobLifeCount;
 
+	UPROPERTY(BlueprintReadWrite)
+		int32 BubbleGumCount;
+
+	UPROPERTY(BlueprintReadWrite)
+		int32 NaturalKillerCount;
+
+	UPROPERTY(BlueprintReadWrite)
+		int32 DestroyerCount;
+
 	UFUNCTION()
 	virtual void OnBonusLevelChanged();
 
@@ -108,12 +117,9 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 	virtual void UpdateSelectablePowerups();
 
 	virtual void CheckTimerMessage() override;
-	virtual void PrepareForIntermission() override;
 
 	virtual bool IsTeamOnOffense(int32 TeamNumber) const override;
 	virtual bool IsTeamOnDefense(int32 TeamNumber) const override;
-
-	virtual void OnIntermissionChanged() override;
 
 	UFUNCTION(BlueprintCallable, Category = Team)
 		virtual bool IsTeamOnDefenseNextRound(int32 TeamNumber) const;
@@ -143,9 +149,9 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 
 	virtual FLinearColor GetGameStatusColor() override;
 
-	virtual void UpdateHighlights_Implementation() override;
+	virtual void UpdateRoundHighlights() override;
 
-	virtual void AddMinorHighlights_Implementation(AUTPlayerState* PS) override;
+	virtual void AddMinorRoundHighlights(AUTPlayerState* PS);
 
 	virtual int32 NumHighlightsNeeded() override;
 

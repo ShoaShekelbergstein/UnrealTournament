@@ -102,6 +102,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Scoreboard")
 		USoundBase* ScoreUpdateSound;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Scoreboard")
+		USoundBase* XPGainedSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Scoreboard")
+		USoundBase* LevelUpSound;
+
 	UPROPERTY()
 		float ScaledEdgeSize;
 
@@ -185,6 +191,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		FText InteractiveText;
 
+	UPROPERTY(EditAnywhere, Category = "Scoreboard")
+		FText DifficultyText[3];
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		bool bDrawMinimapInScoreboard;
 
@@ -195,11 +204,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 	UTexture2D* FlagAtlas;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
+		UTexture2D* HighlightIcon;
+
 	virtual bool ShouldDraw_Implementation(bool bShowScores)
 	{
 		return bShowScores;
 	}
 
+	virtual void GetTitleMessageArgs(FFormatNamedArguments& Args) const;
 	virtual void DrawGamePanel(float RenderDelta, float& YOffset);
 
 	/** Draw timer and game goal on scoreboard game panel.  If bGetLengthOnly, just return the max length of these strings. */
@@ -323,6 +336,8 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = "Scoreboard")
 	bool HandleContextCommand(uint8 ContextId, AUTPlayerState* InSelectedPlayer);
 
+	virtual void DrawMatchSummary(float RenderDelta);
 
+	virtual void DrawFramedBackground(float XOffset, float YOffset, float Width, float Height);
 };
 

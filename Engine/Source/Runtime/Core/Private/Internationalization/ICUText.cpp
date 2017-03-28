@@ -162,6 +162,30 @@ bool FText::EqualToCaseIgnored( const FText& Other ) const
 	return EqualTo(Other, ETextComparisonLevel::Secondary);
 }
 
+FText FText::ToLower() const
+{
+	FString ResultString = ICUUtilities::ConvertString(ICUUtilities::ConvertString(ToString()).toLower());
+
+	FText Result = FText::FromString(ResultString);
+	if (!GIsEditor)
+	{
+		Result.Flags |= ETextFlag::Transient;
+	}
+	return Result;
+}
+
+FText FText::ToUpper() const
+{
+	FString ResultString = ICUUtilities::ConvertString(ICUUtilities::ConvertString(ToString()).toUpper());
+
+	FText Result = FText::FromString(ResultString);
+	if (!GIsEditor)
+	{
+		Result.Flags |= ETextFlag::Transient;
+	}
+	return Result;
+}
+
 class FText::FSortPredicate::FSortPredicateImplementation
 {
 public:

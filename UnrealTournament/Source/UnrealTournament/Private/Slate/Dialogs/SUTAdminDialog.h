@@ -275,10 +275,65 @@ private:
 	TSharedPtr<FRconMatchData> MatchData;
 };
 
+class UNREALTOURNAMENT_API SAdminBanRow : public SMultiColumnTableRow< TSharedPtr<FBanInfo> >
+{
+public:
+	
+	SLATE_BEGIN_ARGS( SAdminBanRow )
+		: _BanData()
+		{}
+
+		SLATE_ARGUMENT( TSharedPtr<FBanInfo>, BanData)
+		SLATE_STYLE_ARGUMENT( FTableRowStyle, Style )
+
+
+	SLATE_END_ARGS()
+	
+	/**
+	 * Construct the widget
+	 *
+	 * @param InArgs   A declaration from which to construct the widget
+	 */
+	void Construct( const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwnerTableView )
+	{
+		BanData = InArgs._BanData;
+		FSuperRowType::Construct( FSuperRowType::FArguments().Padding(1).Style(InArgs._Style), InOwnerTableView );	
+	}
+
+	virtual TSharedRef<SWidget> GenerateWidgetForColumn( const FName& ColumnName ) override
+	{
+		FText ColumnText;
+
+		if (BanData.IsValid())
+		{
+			if (ColumnName == FName(TEXT("BanListPlayerName"))) 
+			{
+				return SNew(STextBlock)
+				.Font(SUTStyle::Get().GetFontStyle("UT.Font.ServerBrowser.List.Normal"))
+				.Text(BanData->GetUserName());
+			}
+			else if (ColumnName == FName(TEXT("BanListUniqueID"))) 
+			{
+				return SNew(STextBlock)
+				.Font(SUTStyle::Get().GetFontStyle("UT.Font.ServerBrowser.List.Normal"))
+				.Text(BanData->GetUniqueID());
+			}
+		}
+
+		return SNew(STextBlock)
+			.Font(SUTStyle::Get().GetFontStyle("UT.Font.ServerBrowser.List.Normal"))
+			.Text(NSLOCTEXT("SUTAdminDialog","UnknownColumnText","n/a"));
+	}
+
+private:
+
+	/** A pointer to the data item that we visualize/edit */
+	TSharedPtr<FBanInfo> BanData;
+};
 
 
 
-class UNREALTOURNAMENT_API SUTAdminDialog : public SUTDialogBase
+class UNREALTOURNAMENT_API SUTAdminDialog : public SUTDialogBase , public FGCObject
 {
 	SLATE_BEGIN_ARGS(SUTAdminDialog)
 	: _DialogTitle(NSLOCTEXT("SUTAdminDialog", "Title", "ADMIN PANEL"))
@@ -302,6 +357,8 @@ class UNREALTOURNAMENT_API SUTAdminDialog : public SUTDialogBase
 	void Tick( const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime );
 	virtual void OnDialogClosed() override;
 
+	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 protected:
 
 	TWeakObjectPtr<AUTRconAdminInfo> AdminInfo;
@@ -311,18 +368,22 @@ protected:
 
 	TArray<TSharedPtr<FRconPlayerData>> SortedPlayerList;
 	TArray<TSharedPtr<FRconMatchData>> SortedMatchList;
+	TArray<TSharedPtr<FBanInfo>> SortedBanList;
 
 	TSharedPtr<SListView<TSharedPtr<FRconPlayerData>>> PlayerList;
 	TSharedPtr<SListView<TSharedPtr<FRconMatchData>>> MatchList;
-	TArray<TSharedPtr<SUTButton>> ButtonList;
+	TSharedPtr<SListView<TSharedPtr<FBanInfo>>> BanList;
+	TArray<TSharedPtr<SUTTabButton>> ButtonList;
 
 	FReply ChangeTab(int32 WidgetTag);
 
 	void AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox);
 	void AddMatchPanel(TSharedPtr<SHorizontalBox> ButtonBox);
+	void AddBanPanel(TSharedPtr<SHorizontalBox> ButtonBox);
 
 	TSharedRef<ITableRow> OnGenerateWidgetForPlayerList( TSharedPtr<FRconPlayerData> InItem, const TSharedRef<STableViewBase>& OwnerTable );
 	TSharedRef<ITableRow> OnGenerateWidgetForMatchList( TSharedPtr<FRconMatchData> InItem, const TSharedRef<STableViewBase>& OwnerTable );
+	TSharedRef<ITableRow> OnGenerateWidgetForBanList( TSharedPtr<FBanInfo> InItem, const TSharedRef<STableViewBase>& OwnerTable );
 
 	TSharedPtr<SEditableTextBox> UserMessage;
 	FReply MessageUserClicked();
@@ -332,6 +393,9 @@ protected:
 	void OnMatchListSelectionChanged(TSharedPtr<FRconMatchData> SelectedItem, ESelectInfo::Type SelectInfo);
 	virtual void UpdateMatchInfo();
 	virtual FReply KillMatch();
+
+	FReply RemoveBanClicked();
+
 };
 
 #endif

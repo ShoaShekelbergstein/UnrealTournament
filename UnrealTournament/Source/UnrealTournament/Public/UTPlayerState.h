@@ -344,10 +344,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
 	bool bIsDemoRecording;
 
-	/** Whether this player currently has a limited number of lives. */
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = PlayerState)
-		bool bHasLifeLimit;
-
 	UPROPERTY()
 	bool bAllowedEarlyLeave;
 
@@ -363,7 +359,7 @@ public:
 	// Player Stats 
 
 	/** This is the unique ID for stats generation*/
-	UPROPERTY(replicated)
+	UPROPERTY(BlueprintReadOnly, replicated, Category = PlayerState)
 	FString StatsID;
 	
 	/** Add an entry to MatchHighlights only if an empty slot is found. */
@@ -664,7 +660,17 @@ public:
 
 	inline const FCanvasIcon& GetHUDIcon() const
 	{
-		return HUDIcon.Texture != nullptr ? HUDIcon : SelectedCharacter.GetDefaultObject()->DefaultCharacterPortrait;
+		if (HUDIcon.Texture != nullptr)
+		{
+			return HUDIcon;
+		}
+
+		if (SelectedCharacter.GetDefaultObject() != nullptr)
+		{
+			return SelectedCharacter.GetDefaultObject()->DefaultCharacterPortrait;
+		}
+
+		return HUDIcon;
 	}
 
 protected:
@@ -1253,18 +1259,11 @@ public:
 	UFUNCTION()
 	void NotIdle();
 
-	// returns true if the player is idle
-	UFUNCTION()
-	bool IsPlayerIdle();
-
+	// The time at which the player that owns this PlayerState was active in real time seconds.  This should be set by calling NotActive()
+	UPROPERTY(BlueprintReadWrite)
+		float LastActiveTime;
 
 protected:
-	// The time at which the player that owns this PlayerState was active in real time seconds.  This should be set by calling NotActive()
-	float LastActiveTime;
-
-	// Will be true if this player is considered idle
-	UPROPERTY(replicated)
-	bool bPlayerIsIdle;
 
 
 #if !UE_SERVER

@@ -42,6 +42,12 @@ void SUTWebMessage::Construct(const FArguments& InArgs)
 		];
 	}
 
+	// Temporarily change audio level
+	UUTAudioSettings* AudioSettings = UUTAudioSettings::StaticClass()->GetDefaultObject<UUTAudioSettings>();
+	if (AudioSettings)
+	{
+		AudioSettings->SetSoundClassVolume(EUTSoundClass::Music,0.0f);
+	}
 }
 
 
@@ -54,6 +60,10 @@ void SUTWebMessage::Browse(FText Caption, FString Url)
 
 FReply SUTWebMessage::OnButtonClick(uint16 ButtonID)
 {
+
+	UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
+	UserSettings->SetSoundClassVolume(EUTSoundClass::Music, UserSettings->GetSoundClassVolume(EUTSoundClass::Music));
+
 	PlayerOwner->CloseWebMessage();
 	return FReply::Handled();
 }

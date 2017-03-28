@@ -66,6 +66,7 @@ struct FMatchmakingParams
 		PartySize(1),
 		PlaylistId(INDEX_NONE),
 		bRanked(false),
+		bSkipEloChecks(false),
 		Flags(EMatchmakingFlags::None),
 		StartWith(EMatchmakingStartLocation::Lobby),
 		ChanceToHostOverride(0.f),
@@ -92,6 +93,8 @@ struct FMatchmakingParams
 	int32 PlaylistId;
 	UPROPERTY()
 	bool bRanked;
+	UPROPERTY()
+	bool bSkipEloChecks;
 	/** Matchmaking flags */
 	UPROPERTY()
 	EMatchmakingFlags Flags;

@@ -179,12 +179,20 @@ public:
 	UPROPERTY()
 		uint32 bIsQuickMatch : 1;
 
+	/** If true, all players are on blue team in team games. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = TeamGame)
+		uint32 bIsVSAI : 1; 
+
 	/** If TRUE, force dead players to respawn immediately. Can be overridden with ForceRespawn=x on the url */
 	UPROPERTY(EditDefaultsOnly, Category = Game)
 	bool bForceRespawn;
 
 	UPROPERTY(EditDefaultsOnly)
 	bool bHasRespawnChoices;
+
+	/** If true, when rating player starts also rate against potential starts (if bHasRespawnChoices is true).  Used before match to keep player start choices apart. */
+	UPROPERTY(BlueprintReadWrite, Category = Game)
+		bool bCheckAgainstPotentialStarts;
 
 	/** If true, allow announcements for pickup spawn. */
 	UPROPERTY(EditDefaultsOnly, Category=Game)
@@ -204,6 +212,10 @@ public:
 	/** If true, require full set of players to be ready to start  (ready implied by warming up). */
 	UPROPERTY(EditDefaultsOnly, Category = Game)
 		bool bRequireReady;
+
+	/** If true, require full set of players to start. */
+	UPROPERTY(EditDefaultsOnly, Category = Game)
+		bool bRequireFull;
 
 	/** If true, bots will not fill undermanned match. */
 	UPROPERTY(EditDefaultsOnly, Category = Game)
@@ -267,10 +279,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Game")
 	bool bFirstBloodOccurred;
 
-	/** Minimum number of players that must have joined match before it will start. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="MatchStart")
-	int32 MinPlayersToStart;
-
 	/** After this wait, add bots to min players level */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MatchStart")
 		int32 MaxWaitForPlayers;
@@ -278,6 +286,10 @@ public:
 	/** MaxWaitForPlayers for QuickMatch */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MatchStart")
 		int32 QuickWaitForPlayers;
+
+	/** ShortWaitForPlayers for LAN servers or servers that have already been through a map vote */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MatchStart")
+		int32 ShortWaitForPlayers;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MatchStart")
 		int32 DefaultMaxPlayers;
@@ -342,14 +354,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
 	bool bAmmoIsLimited;
 
-	/** If true, the intro cinematic will play just before the countdown to begin */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
-	bool bPlayPlayerIntro;
-
-	/** If true, the intro cinematic will play just before the countdown to begin */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
-	bool bShowMatchSummary;
-
 	/** Offline challenge mode. */
 	UPROPERTY(BlueprintReadOnly, Category = "Game")
 	bool bOfflineChallenge;
@@ -407,6 +411,9 @@ public:
 	/** How long has the server been empty */
 	int32 EmptyServerTime;
 
+	/** How many bots to fill in if game needs more players. */
+	virtual int32 AdjustedBotFillCount();
+
 	/** Whether player is allowed to suicide. */
 	virtual bool AllowSuicideBy(AUTPlayerController* PC);
 
@@ -446,6 +453,11 @@ public:
 	/** maximum number of players per squad (except human-led squad if human forces bots to follow) */
 	UPROPERTY(EditDefaultsOnly, Category = AI)
 	int32 MaxSquadSize;
+
+
+	// returns true if the player is idle
+	UFUNCTION()
+		bool IsPlayerIdle(AUTPlayerState* PS);
 
 	/** cached list of mutator assets from the asset registry and native classes, used to allow shorthand names for mutators instead of full paths all the time */
 	TArray<FAssetData> MutatorAssets;
@@ -577,6 +589,9 @@ public:
 	virtual FString InitNewPlayer(class APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal = TEXT("")) override;
 
 	virtual void GiveDefaultInventory(APawn* PlayerPawn);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = UTGame)
+	void NotifyPlayerDefaultsSet(APawn* PlayerPawn);
 
 	virtual float OverrideRespawnTime(AUTPickupInventory* Pickup, TSubclassOf<AUTInventory> InventoryType);
 
@@ -906,9 +921,6 @@ public:
 	virtual void BuildWeaponInfo(AUTPlayerState* PlayerState, TSharedPtr<class SUTTabWidget> TabWidget, TArray<TSharedPtr<struct TAttributeStat> >& StatList);
 	virtual void BuildMovementInfo(AUTPlayerState* PlayerState, TSharedPtr<class SUTTabWidget> TabWidget, TArray<TSharedPtr<struct TAttributeStat> >& StatList);
 #endif
-
-	virtual void InstanceNextMap(const FString& NextMap);
-
 	// Allow game modes to restrict some content.
 	virtual bool ValidateHat(AUTPlayerState* HatOwner, const FString& HatClass);
 	
@@ -1047,5 +1059,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Meta = (MetaClass = "UObject"))
 	TArray<FStringClassReference> AssetsToPreloadOnClients;
+
+	UPROPERTY()
+	uint32 bDebugHitScanReplication : 1;
+
+	// Holds the game time at which returning players are no longer guarenteed a spot.
+	UPROPERTY()
+	float ReturningPlayerGraceCutoff;
 };
 

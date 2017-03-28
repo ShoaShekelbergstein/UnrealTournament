@@ -150,7 +150,6 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 	MinPainSoundInterval = 0.35f;
 	LastPainSoundTime = -100.0f;
 
-	SprintAmbientStartSpeed = 1000.f;
 	FallingAmbientStartSpeed = -1300.f;
 	LandEffectSpeed = 500.f;
 
@@ -415,10 +414,14 @@ void AUTCharacter::PositionUpdated(bool bShotSpawned)
 	}
 }
 
-FVector AUTCharacter::GetRewindLocation(float PredictionTime)
+FVector AUTCharacter::GetRewindLocation(float PredictionTime, AUTPlayerController* DebugViewer)
 {
 	FVector TargetLocation = GetActorLocation();
+	FVector PrePosition = GetActorLocation();
+	FVector PostPosition = GetActorLocation();
 	float TargetTime = GetWorld()->GetTimeSeconds() - PredictionTime;
+	float Percent = 0.999f;
+	bool bTeleported = false;
 	if (PredictionTime > 0.f)
 	{
 		for (int32 i=SavedPositions.Num()-1; i >= 0; i--)
@@ -428,12 +431,30 @@ FVector AUTCharacter::GetRewindLocation(float PredictionTime)
 			{
 				if (!SavedPositions[i].bTeleported && (i<SavedPositions.Num()-1))
 				{
-					float Percent = (SavedPositions[i + 1].Time == SavedPositions[i].Time) ? 1.f : (TargetTime - SavedPositions[i].Time) / (SavedPositions[i + 1].Time - SavedPositions[i].Time);
-					TargetLocation = SavedPositions[i].Position + Percent * (SavedPositions[i + 1].Position - SavedPositions[i].Position);
+					PrePosition = SavedPositions[i].Position;
+					PostPosition = SavedPositions[i + 1].Position;
+					if (SavedPositions[i + 1].Time == SavedPositions[i].Time)
+					{
+						Percent = 1.f;
+						TargetLocation = SavedPositions[i + 1].Position;
+					}
+					else
+					{
+						Percent = (TargetTime - SavedPositions[i].Time) / (SavedPositions[i + 1].Time - SavedPositions[i].Time);
+						TargetLocation = SavedPositions[i].Position + Percent * (SavedPositions[i + 1].Position - SavedPositions[i].Position);
+					}
+				}
+				else
+				{
+					bTeleported = SavedPositions[i].bTeleported;
 				}
 				break;
 			}
 		}
+	}
+	if (DebugViewer)
+	{
+		DebugViewer->ClientDebugRewind(GetActorLocation(), TargetLocation, PrePosition, PostPosition, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), PredictionTime, Percent, bTeleported);
 	}
 	return TargetLocation;
 }
@@ -1341,6 +1362,7 @@ void AUTCharacter::FlagPingedBy(AUTPlayerState* PS)
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	AUTGameVolume* GV = UTCharacterMovement ? Cast<AUTGameVolume>(UTCharacterMovement->GetPhysicsVolume()) : nullptr;
 	float MinTimeForVerbal = (GV && GS && (GV->VoiceLinesSet != GS->LastEnemyLocationName)) ? 0.f : 6.f;
+	Flag->LastPinger = PS ? PS : Flag->LastPinger;
 	if (PS && Flag && GS && (GetWorld()->GetTimeSeconds() - GS->LastEnemyLocationReportTime > MinTimeForVerbal) && !Flag->bCurrentlyPinged)
 	{
 		if (GS)
@@ -1355,13 +1377,16 @@ void AUTCharacter::FlagPingedBy(AUTPlayerState* PS)
 			{
 				GS->CurrentRallyPoint->WarnEnemyRally();
 			}
+			if (GV->bPlayIncomingWarning && (GetWorld()->GetTimeSeconds() - GS->LastIncomingWarningTime > 3.f))
+			{
+				GV->WarnFCIncoming(this);
+			}
 		}
 		else
 		{
 			PS->AnnounceStatus(StatusMessage::EnemyFCHere);
 		}
 	}
-	Flag->LastPinger = PS ? PS : Flag->LastPinger;
 }
 
 void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
@@ -1375,14 +1400,19 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 		AUTCarriedObject* TargeterFlag = TargeterChar->GetCarriedObject();
 		if (TargeterFlag && TargeterFlag->bShouldPingFlag && GetController() && Cast<AUTPlayerState>(PlayerState))
 		{
-			// ping the flag carrier if victim is looking at him
-			FVector ViewDir = GetController()->GetControlRotation().Vector();
-			FVector EnemyDir = (Targeter->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-			if (((ViewDir | EnemyDir) > 0.7f) && GetController()->LineOfSightTo(TargeterChar))
+			// ping the flag carrier if victim is looking at him or victim was killed by FC
+			bool bShouldPing = (Health <= 0);
+			if (!bShouldPing)
 			{
-				TargeterChar->FlagPingedBy(Cast<AUTPlayerState>(PlayerState));
+				FVector ViewDir = GetController()->GetControlRotation().Vector();
+				FVector EnemyDir = (Targeter->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+				bShouldPing = ((ViewDir | EnemyDir) > 0.7f) && GetController()->LineOfSightTo(TargeterChar);
+			}
+			if (bShouldPing)
+			{
 				TargeterChar->LastTargeter = Cast<AUTPlayerState>(PlayerState);
 				TargeterChar->LastTargetSeenTime = GetWorld()->GetTimeSeconds();
+				TargeterChar->FlagPingedBy(Cast<AUTPlayerState>(PlayerState));
 			}
 		}
 	}
@@ -1402,10 +1432,42 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 	}
 
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-	if (TargeterChar && GS && GS->bPlayStatusAnnouncements && Cast<AUTPlayerController>(GetController()))
+	if (TargeterChar && GS && GS->bPlayStatusAnnouncements)
 	{
 		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(PlayerState);
-		if (UTPlayerState && UTPlayerState->Team && (GetWorld()->GetTimeSeconds() - UTPlayerState->LastBehindYouTime > 8.f))
+		bool bBlueTeamWarning = (UTPlayerState && UTPlayerState->Team && (UTPlayerState->Team->TeamIndex == 1));
+		float LastSniperWarningTime = bBlueTeamWarning ? GS->LastBlueSniperWarningTime : GS->LastRedSniperWarningTime;
+		if (UTPlayerState && TargeterChar->GetWeapon() && TargeterChar->GetController() && TargeterChar->GetWeapon()->bSniping && (GetWorld()->GetTimeSeconds() - LastSniperWarningTime > 10.f) && ((TargeterChar->GetActorLocation() - GetActorLocation()).Size() > 2000.f))
+		{
+			UTPlayerState->AnnounceStatus(StatusMessage::SniperSpotted);
+
+			UTPlayerState->GetCharacterVoiceClass();
+			if (UTPlayerState->CharacterVoice != NULL)
+			{
+				// send to same team with LOS to sniper only
+				int32 Switch = UTPlayerState->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::SniperSpotted);
+				if (Switch >= 0)
+				{
+					for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+					{
+						AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+						if (PC && PC->GetPawn() && GS->OnSameTeam(this, PC) && TargeterChar->GetController()->LineOfSightTo(PC->GetPawn()))
+						{
+							PC->ClientReceiveLocalizedMessage(UTPlayerState->CharacterVoice, Switch, UTPlayerState, PC->PlayerState, NULL);
+						}
+					}
+				}
+				if (bBlueTeamWarning)
+				{
+					GS->LastBlueSniperWarningTime = GetWorld()->GetTimeSeconds();
+				}
+				else
+				{
+					GS->LastRedSniperWarningTime = GetWorld()->GetTimeSeconds();
+				}
+			}
+		}
+		else if (UTPlayerState && UTPlayerState->Team && (GetWorld()->GetTimeSeconds() - UTPlayerState->LastBehindYouTime > 8.f) && Cast<AUTPlayerController>(GetController()))
 		{
 			// announce behind you if attacker is behind this player && teammate can see it
 			FVector ViewDir = GetActorRotation().Vector();
@@ -1417,7 +1479,7 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 				if ((UTPlayerState->Team->TeamIndex == 1) == GS->bRedToCap)
 				{
 					AUTGameVolume* EnemyVolume = Cast<AUTGameVolume>(Targeter->GetPawnPhysicsVolume());
-					if (EnemyVolume && EnemyVolume->bIsNoRallyZone && !EnemyVolume->bIsTeamSafeVolume)
+					if (EnemyVolume && EnemyVolume->bIsDefenderBase)
 					{
 						bBaseWarning = true;
 					}
@@ -1618,10 +1680,10 @@ bool AUTCharacter::Died(AController* EventInstigator, const FDamageEvent& Damage
 				LastTakeHitInfo.Count = 8;
 			}
 
+			AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
 			GetWorld()->GetAuthGameMode<AUTGameMode>()->Killed(EventInstigator, ControllerKilled, this, DamageEvent.DamageTypeClass);
 
 			// Drop any carried objects when you die.
-			AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
 			if (PS != NULL && PS->CarriedObject != NULL)
 			{
 				PS->CarriedObject->Drop(EventInstigator);
@@ -3623,6 +3685,8 @@ APlayerCameraManager* AUTCharacter::GetPlayerCameraManager()
 
 USoundBase* AUTCharacter::GetFootstepSoundForSurfaceType(EPhysicalSurface SurfaceType, bool bLocalPlayer)
 {
+	return nullptr;
+
 	USoundBase** SoundPtr = nullptr;
 
 	if (bLocalPlayer)
@@ -4414,6 +4478,13 @@ void AUTCharacter::UpdateSkin()
 			FirstPersonMesh->SetMaterial(i, GetClass()->GetDefaultObject<AUTCharacter>()->FirstPersonMesh->GetMaterial(i));
 		}
 	}
+
+	FirstPersonMeshMIDs.Empty();
+	for (int32 i = 0; i < FirstPersonMesh->GetNumMaterials(); i++)
+	{
+		FirstPersonMeshMIDs.Add(FirstPersonMesh->CreateAndSetMaterialInstanceDynamic(i));
+	}
+
 	if (Weapon != NULL)
 	{
 		Weapon->SetSkin((ReplicatedBodyMaterial1P != NULL) ? ReplicatedBodyMaterial1P : ReplicatedBodyMaterial);
@@ -4780,21 +4851,9 @@ void AUTCharacter::Tick(float DeltaTime)
 			{
 				SetLocalAmbientSound(WallSlideAmbientSound, 1.f, false);
 			}
-			else if (GetCharacterMovement()->IsMovingOnGround() && (GetCharacterMovement()->Velocity.Size2D() > SprintAmbientStartSpeed))
-			{
-				float NewLocalAmbientVolume = FMath::Min(1.f, (GetCharacterMovement()->Velocity.Size2D() - SprintAmbientStartSpeed) / (UTCharacterMovement->SprintSpeed - SprintAmbientStartSpeed));
-				LocalAmbientVolume = LocalAmbientVolume*(1.f - DeltaTime) + NewLocalAmbientVolume*DeltaTime;
-				SetLocalAmbientSound(CharacterData.GetDefaultObject()->SprintAmbientSound, LocalAmbientVolume, false);
-			}
-			else if ((LocalAmbientSound == CharacterData.GetDefaultObject()->SprintAmbientSound) && (LocalAmbientVolume > 0.05f))
-			{
-				LocalAmbientVolume = LocalAmbientVolume*(1.f - DeltaTime);
-				SetLocalAmbientSound(CharacterData.GetDefaultObject()->SprintAmbientSound, LocalAmbientVolume, false);
-			}
 			else
 			{
 				SetLocalAmbientSound(WallSlideAmbientSound, 0.f, true);
-				SetLocalAmbientSound(CharacterData.GetDefaultObject()->SprintAmbientSound, 0.f, true);
 			}
 		}
 	}
@@ -5133,8 +5192,6 @@ void AUTCharacter::ApplyCharacterData(TSubclassOf<AUTCharacterContent> CharType)
 		GetMesh()->RelativeScale3D = GetClass()->GetDefaultObject<AUTCharacter>()->GetMesh()->RelativeScale3D * Data->Mesh->RelativeScale3D;
 		if (GetMesh() != GetRootComponent())
 		{
-			// FIXMESTEVE re-enable after fixing content, also need to override startcrouch and endcrouch to use this value
-			//GetMesh()->RelativeLocation = Data->Mesh->RelativeLocation;
 			GetMesh()->RelativeRotation = Data->Mesh->RelativeRotation;
 		}
 		// reapply any temporary override effects
@@ -5246,14 +5303,14 @@ void AUTCharacter::OnHealthUpdated()
 	if ((Health > OldHealth) && (GetNetMode() != NM_DedicatedServer))
 	{
 		// play first or third person armor effects
-	if (GetWorld()->TimeSeconds - GetMesh()->LastRenderTime < 0.1f)
-	{
-		if (GetCachedScalabilityCVars().DetailMode > 0)
+		if (GetWorld()->TimeSeconds - GetMesh()->LastRenderTime < 0.1f)
 		{
-			UGameplayStatics::SpawnEmitterAttached(ThirdPersonHealthEffect, GetCapsuleComponent(), NAME_None, GetActorLocation() - FVector(0.f, 0.f, 80.f), GetController() ? GetControlRotation() : GetActorRotation(), EAttachLocation::KeepWorldPosition);
+			if (GetCachedScalabilityCVars().DetailMode > 0)
+			{
+				UGameplayStatics::SpawnEmitterAttached(ThirdPersonHealthEffect, GetCapsuleComponent(), NAME_None, GetActorLocation() - FVector(0.f, 0.f, 80.f), GetController() ? GetControlRotation() : GetActorRotation(), EAttachLocation::KeepWorldPosition);
+			}
 		}
-	}
-	else if (IsLocallyViewed())
+		else if (IsLocallyViewed())
 		{
 			UGameplayStatics::SpawnEmitterAttached(FirstPersonHealthEffect, CharacterCameraComponent, NAME_None, FVector(0.f, 0.f, 0.f), FRotator(0.f), EAttachLocation::SnapToTarget);
 		}
@@ -5677,10 +5734,15 @@ void AUTCharacter::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector
 void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canvas, FVector CameraPosition, FVector CameraDir)
 {
 	AUTPlayerState* UTPS = Cast<AUTPlayerState>(PlayerState);
-	if (UTPS)
+	if (UTPS && PC)
 	{
+		AUTHUD* UTHUD = Cast<AUTHUD>(PC->MyHUD);
+		if (UTHUD && UTHUD->bDisplayMatchSummary)
+		{
+			return;
+		}
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		bool bDrawHighlight = (GS && (UTPS->MatchHighlights[0] != NAME_None));
+		bool bDrawHighlight = GS && (UTPS->MatchHighlights[0] != NAME_None);
 		float TextXL, TextYL;
 		UFont* SmallFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->SmallFont;
 		FLinearColor TeamColor = UTPS->Team ? UTPS->Team->TeamColor : FLinearColor::Black;
@@ -5752,7 +5814,6 @@ void AUTCharacter::PostRenderForInGameIntro(APlayerController* PC, UCanvas *Canv
 		{
 			// Vary height of names to avoid overlaps
 			ScreenPosition.Y += TextYL - 1.75f*BarHeight;
-			AUTHUD* UTHUD = Cast<AUTHUD>(PC->MyHUD);
 			if (UTHUD && (UTHUD->ELOBadges.Num() > 0))
 			{
 				AUTGameMode* DefaultGame = GS && GS->GameModeClass ? GS->GameModeClass->GetDefaultObject<AUTGameMode>() : NULL;

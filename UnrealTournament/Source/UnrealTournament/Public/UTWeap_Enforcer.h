@@ -18,6 +18,9 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	USkeletalMeshComponent* LeftMesh;
 
+	UPROPERTY()
+	TArray<UMaterialInstanceDynamic*> LeftMeshMIDs;
+
 	UPROPERTY(Instanced, BlueprintReadOnly, Category = "States")
 	UUTWeaponStateEquipping* EnforcerEquippingState;
 
@@ -58,9 +61,45 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 	UPROPERTY(BlueprintReadWrite, Category = Enforcer)
 	float StoppingPower;
 
-	/** Left hand mesh equip anims */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	UAnimMontage* LeftBringUpAnim;
+	UAnimMontage* Dual_BringUpLeftHandFirstAttach;
+		
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UAnimMontage* Dual_BringUpLeftWeaponFirstAttach;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UAnimMontage* Dual_BringUpHand;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UAnimMontage* Dual_PutDownHand;
+		
+	/** Unequip anim for when we have dual enforcer out */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UAnimMontage* Dual_PutDownLeftWeapon;
+
+	/** Unequip anim for when we have dual enforcer out */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UAnimMontage* Dual_PutDownRightWeapon;
+
+	/** AnimMontage to play each time we fire */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	TArray<UAnimMontage*> Dual_FireAnimationLeftHand;
+
+	/** AnimMontage to play each time we fire */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	TArray<UAnimMontage*> Dual_FireAnimationRightHand;
+
+	/** socket to attach weapon to hands; if None, then the hands are hidden */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+	FName HandsAttachSocketLeft;
+	
+	/** AnimMontage to play each time we fire */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	TArray<UAnimMontage*> Dual_FireAnimationLeftWeapon;
+
+	/** AnimMontage to play each time we fire */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		TArray<UAnimMontage*> Dual_FireAnimationRightWeapon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon", meta = (ClampMin = "0.1"))
 	TArray<float> FireIntervalDualWield;
@@ -91,6 +130,10 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 	UPROPERTY()
 		bool bFireLeftSide;
 
+	/**Track whether the last fired shot was from the left or right gun. Used to sync firing effects and impact effects **/
+	UPROPERTY()
+		bool bFireLeftSideImpact;
+
 	UPROPERTY()
 	int32 ImpactCount;
 
@@ -103,13 +146,11 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	TArray<UParticleSystemComponent*> LeftMuzzleFlash;
 
-	/**Update the left hand mesh positioning*/
-	virtual void UpdateViewBob(float DeltaTime) override;
-
 	virtual void PlayFiringEffects() override;
 	virtual void FireInstantHit(bool bDealDamage, FHitResult* OutHit) override;
 	virtual bool StackPickup_Implementation(AUTInventory* ContainedInv) override; 
 	virtual void BringUp(float OverflowTime) override;
+	virtual bool PutDown() override;
 	virtual void PlayImpactEffects_Implementation(const FVector& TargetLoc, uint8 FireMode, const FVector& SpawnLocation, const FRotator& SpawnRotation) override;
 	virtual void UpdateOverlays() override;
 	virtual void SetSkin(UMaterialInterface* NewSkin) override;
@@ -117,6 +158,9 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 	virtual void FireShot() override;
 	virtual void StateChanged() override;
 	virtual void UpdateWeaponHand() override;
+	
+	virtual void PlayWeaponAnim(UAnimMontage* WeaponAnim, UAnimMontage* HandsAnim = NULL, float RateOverride = 0.0f) override;
+
 	virtual TArray<UMeshComponent*> Get1PMeshes_Implementation() const
 	{
 		TArray<UMeshComponent*> Result = Super::Get1PMeshes_Implementation();

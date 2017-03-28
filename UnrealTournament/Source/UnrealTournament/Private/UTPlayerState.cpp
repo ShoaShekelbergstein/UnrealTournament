@@ -45,8 +45,6 @@
 #include "SlateExtras.h"
 #endif
 
-const float IDLE_TIMEOUT_TIME=120.0f;
-
 /** disables load warnings for dedicated server where invalid client input can cause unpreventable logspam, but enables on clients so developers can make sure their stuff is working */
 static inline ELoadFlags GetCosmeticLoadFlags()
 {
@@ -180,7 +178,6 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME(AUTPlayerState, SpectatingID);
 	DOREPLIFETIME(AUTPlayerState, SpectatingIDTeam);
 	DOREPLIFETIME(AUTPlayerState, bCaster);
-	DOREPLIFETIME(AUTPlayerState, bHasLifeLimit);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, bIsDemoRecording, COND_InitialOnly);
 	DOREPLIFETIME(AUTPlayerState, MatchHighlights);
 	DOREPLIFETIME(AUTPlayerState, MatchHighlightData);
@@ -204,8 +201,6 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	DOREPLIFETIME_CONDITION(AUTPlayerState, CurrentCoolFactor, COND_OwnerOnly);
 #endif
-
-	DOREPLIFETIME(AUTPlayerState, bPlayerIsIdle);
 }
 
 void AUTPlayerState::Destroyed()
@@ -855,24 +850,13 @@ void AUTPlayerState::Tick(float DeltaTime)
 				bNeedRallyReminder = false;
 			}
 		}
-
-		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-		// Only update the idle state if the match is in progress.
-		if (UTGameState && UTGameState->IsMatchInProgress() && !bOutOfLives)
-		{
-			bPlayerIsIdle = GetWorld()->GetTimeSeconds() - LastActiveTime > IDLE_TIMEOUT_TIME;
-		}
-		else if (UTGameState == nullptr || !UTGameState->HasMatchEnded())
-		{
-			NotIdle();
-		}
 	}
 	// If we are waiting to respawn then count down
 	RespawnTime -= DeltaTime;
 	ForceRespawnTime -= DeltaTime;
 
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (GS != NULL && (GS->IsMatchInProgress() || GS->IsMatchInCountdown()) && !GS->IsMatchIntermission() && !GS->IsMatchInCountdown() && GS->BoostRechargeTime > 0.0f && RemainingBoosts < GS->BoostRechargeMaxCharges)
+	if (GS != NULL && (GS->IsMatchInProgress() || GS->GetMatchState() == MatchState::WaitingToStart) && !GS->IsMatchIntermission() && GS->BoostRechargeTime > 0.0f && RemainingBoosts < GS->BoostRechargeMaxCharges)
 	{
 		BoostRechargePct += DeltaTime / GS->BoostRechargeTime;
 		if (BoostRechargePct >= 1.0f)
@@ -1259,6 +1243,7 @@ void AUTPlayerState::CopyProperties(APlayerState* PlayerState)
 		{
 			// MovePlayerToTeam(AController* Player, AUTPlayerState* PS, uint8 NewTeam
 		}
+		PS->ClanName = ClanName;
 		PS->Team = Team;
 		PS->bReadStatsFromCloud = bReadStatsFromCloud;
 		PS->bSuccessfullyReadStatsFromCloud = bSuccessfullyReadStatsFromCloud;
@@ -1313,6 +1298,9 @@ void AUTPlayerState::CopyProperties(APlayerState* PlayerState)
 		PS->RankedCTFMatchesPlayed = RankedCTFMatchesPlayed;
 		PS->RankedShowdownMatchesPlayed = RankedShowdownMatchesPlayed;
 		PS->RankedFlagRunMatchesPlayed = RankedFlagRunMatchesPlayed;
+
+		PS->KickCount = KickCount;
+
 	}
 }
 void AUTPlayerState::OverrideWith(APlayerState* PlayerState)
@@ -1817,13 +1805,6 @@ void AUTPlayerState::WriteStatsToCloud()
 		// Write the stats stored in the cloud file
 		if (bReadStatsFromCloud && OnlineUserCloudInterface.IsValid() && !bOnlySpectator)
 		{
-			// We ended with this player name, save it in the stats
-			StatManager->PreviousPlayerNames.AddUnique(PlayerName);
-			if (StatManager->PreviousPlayerNames.Num() > StatManager->NumPreviousPlayerNamesToKeep)
-			{
-				StatManager->PreviousPlayerNames.RemoveAt(0, StatManager->PreviousPlayerNames.Num() - StatManager->NumPreviousPlayerNamesToKeep);
-			}
-
 			TArray<uint8> FileContents;
 			TSharedPtr<FJsonObject> StatsJson = MakeShareable(new FJsonObject);
 			StatsJson->SetStringField(TEXT("StatsID"), StatsID);
@@ -2831,6 +2812,32 @@ TSharedRef<SWidget> AUTPlayerState::BuildRankInfo()
 				]
 			]
 			]
+		+ SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(FText::Format(NSLOCTEXT("AUTPlayerState", "ChallengeStarsFormatOld", ".          {0} "), FText::AsNumber(LP->GetRewardStars(NAME_REWARD_OldStars))))
+			.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+			.ColorAndOpacity(FLinearColor::Gray)
+			]
+		+ SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				SNew(SVerticalBox)
+				+ SVerticalBox::Slot()
+			[
+				SNew(SBox).WidthOverride(32).HeightOverride(32)
+				[
+					SNew(SImage)
+					.Image(SUTStyle::Get().GetBrush("UT.Star"))
+			.ColorAndOpacity(FLinearColor::Gray)
+				]
+			]
+			]
 			];
 	}
 	else
@@ -3607,13 +3614,6 @@ void AUTPlayerState::OnRepEmoteSpeed()
 	{
 		UTC->SetEmoteSpeed(EmoteSpeed);
 	}
-#if !UE_SERVER
-	UUTLocalPlayer* FirstPlayer = Cast<UUTLocalPlayer>(GEngine->GetLocalPlayerFromControllerId(GetWorld(), 0));
-	if (FirstPlayer != nullptr)
-	{
-		FirstPlayer->OnEmoteSpeedChanged(this, EmoteSpeed);
-	}
-#endif
 }
 
 void AUTPlayerState::OnRepTaunt()
@@ -3666,7 +3666,7 @@ void AUTPlayerState::PlayTauntByIndex(int32 TauntIndex)
 	AUTCharacter* UTChar = GetUTCharacter();
 	if (UTChar == nullptr)
 	{
-		UE_LOG(UT,Warning,TEXT("Attempting to Taunt without a character"));
+		//UE_LOG(UT,Log,TEXT("Attempting to Taunt without a character"));
 		FTimerHandle TempHandle;
 		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTPlayerState::OnRepTaunt, 0.05f, false);
 		return;
@@ -3761,14 +3761,6 @@ void AUTPlayerState::PlayTauntByClass(TSubclassOf<AUTTaunt> TauntToPlay)
 		{
 			UTC->PlayTauntByClass(TauntToPlay, EmoteSpeed);
 		}
-		//Pass the taunt along to characters in the MatchSummary
-#if !UE_SERVER
-		UUTLocalPlayer* FirstPlayer = Cast<UUTLocalPlayer>(GEngine->GetLocalPlayerFromControllerId(GetWorld(), 0));
-		if (FirstPlayer != nullptr)
-		{
-			FirstPlayer->OnTauntPlayed(this, TauntToPlay, EmoteSpeed);
-		}
-#endif
 	}
 }
 
@@ -4189,11 +4181,6 @@ void AUTPlayerState::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVect
 
 void AUTPlayerState::NotIdle()
 {
-	bPlayerIsIdle = false;
 	LastActiveTime = GetWorld()->GetTimeSeconds();
 }
 
-bool AUTPlayerState::IsPlayerIdle()
-{
-	return (!bIsABot && !bOnlySpectator && bPlayerIsIdle);
-}

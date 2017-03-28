@@ -7,6 +7,7 @@
 #include "UTHUD.h"
 #include "UTLineUpHelper.h"
 #include "UTAnnouncer.h"
+#include "UTGameState.h"
 #include "Engine/DemoNetDriver.h"
 
 UUTLocalMessage::UUTLocalMessage(const class FObjectInitializer& ObjectInitializer)
@@ -280,4 +281,20 @@ bool UUTLocalMessage::ShouldCountInstances_Implementation(int32 MessageIndex, UO
 FString UUTLocalMessage::GetAnnouncementUMGClassname(int32 Switch, const UObject* OptionalObject) const
 {
 	return TEXT("");
+}
+
+bool UUTLocalMessage::ShouldStillPlay(AUTGameState * GS, const FAnnouncementInfo AnnouncementInfo) const
+{
+	if (!bPlayDuringIntermission)
+	{
+		if (GS && (!GS->IsMatchInProgress() || GS->IsMatchIntermission()))
+		{
+			if (EnableAnnouncerLogging())
+			{
+				UE_LOG(UT, Warning, TEXT("SKIP FOR INTERMISSION"));
+			}
+			return false;
+		}
+	}
+	return true;
 }

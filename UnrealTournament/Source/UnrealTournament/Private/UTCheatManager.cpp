@@ -44,6 +44,7 @@
 #include "UTTutorialAnnouncement.h"
 #include "UTFlagRunMessage.h"
 #include "UTDoorMessage.h"
+#include "StatNames.h"
 
 #if WITH_PROFILE
 #include "OnlineSubsystemMcp.h"
@@ -108,6 +109,19 @@ void UUTCheatManager::Ann(int32 Switch)
 */
 }
 
+void UUTCheatManager::HL()
+{
+	AUTHUD* HLHUD = Cast<AUTHUD>(GetOuterAPlayerController()->MyHUD);
+	if (HLHUD)
+	{
+		GetOuterAUTPlayerController()->UTPlayerState->MatchHighlights[0] = HighlightNames::TopScorer;
+		GetOuterAUTPlayerController()->UTPlayerState->MatchHighlights[1] = HighlightNames::MostHeadShots;
+		GetOuterAUTPlayerController()->UTPlayerState->MatchHighlights[2] = NAME_AirRox;
+		GetOuterAUTPlayerController()->UTPlayerState->MatchHighlights[3] = NAME_MultiKillLevel3;
+		HLHUD->OpenMatchSummary();
+	}
+}
+
 void UUTCheatManager::AnnM(float F)
 {
 	AnnCount = 0;
@@ -168,16 +182,6 @@ void UUTCheatManager::Spread(float Scaling)
 				UE_LOG(UT, Warning, TEXT("%s New Spread %d is %f"), *It->GetName(), i, It->Spread[i]);
 			}
 		}
-	}
-}
-
-void UUTCheatManager::Sum()
-{
-	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(GetOuterAPlayerController()->Player);
-	AUTGameState* GS = GetOuterAPlayerController()->GetWorld()->GetGameState<AUTGameState>();
-	if (LP && GS)
-	{
-		LP->OpenMatchSummary(GS);
 	}
 }
 

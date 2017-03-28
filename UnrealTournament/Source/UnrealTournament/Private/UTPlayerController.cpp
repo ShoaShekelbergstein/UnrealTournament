@@ -6,6 +6,7 @@
 #include "ActiveSound.h"
 #include "AudioDevice.h"
 #include "UTPickupWeapon.h"
+#include "UTPickupToken.h"
 #include "UTAnnouncer.h"
 #include "UTPlayerInput.h"
 #include "UTPlayerCameraManager.h"
@@ -130,8 +131,8 @@ AUTPlayerController::AUTPlayerController(const class FObjectInitializer& ObjectI
 	LastBuyMenuOpenTime = 0.0f;
 	BuyMenuToggleDelay = 0.25f;
 
-	FootStepAmp.OwnVolumeMultiplier = 0.3f;
-	FootStepAmp.OwnPitchMultiplier = 0.5f;
+	FootStepAmp.OwnVolumeMultiplier = 0.1f;
+	FootStepAmp.OwnPitchMultiplier = 0.2f;
 	FootStepAmp.TeammateVolumeMultiplier = 0.5f;
 	PainSoundAmp.InstigatorVolumeMultiplier = 2.5f;
 	PainSoundAmp.TargetVolumeMultiplier = 2.5f;
@@ -662,6 +663,10 @@ void AUTPlayerController::ClientRestart_Implementation(APawn* NewPawn)
 
 	SetCameraMode("Default");
 	DeathCamFocus = nullptr;
+	if (GetPawn())
+	{
+		ClientSetRotation(GetPawn()->GetActorRotation());
+	}
 
 	//There is an out of order chance during the initial connection that:
 	// The new players character will be spawned and possessed. Replicating the characters PlayerState.
@@ -1988,7 +1993,7 @@ void AUTPlayerController::ClientHearSound_Implementation(USoundBase* TheSound, A
 					GetActorEyesViewPoint(ViewPoint, ViewRotation);
 					if (SoundPlayer && ((ViewRotation.Vector() | (SoundPlayer->GetActorLocation() - ViewPoint).GetSafeNormal()) < 0.7f))
 					{
-						VolumeMultiplier = 2.f;
+						VolumeMultiplier = 3.f;
 					}
 				}
 			}
@@ -2428,6 +2433,12 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 			{
 				HideComponentTree(Pickup->Collision, HiddenComponents);
 			}
+
+			AUTPickupToken* PickupToken = Cast<AUTPickupToken>(*It);
+			if (PickupToken)
+			{
+				HideComponentTree(Cast<UPrimitiveComponent>(PickupToken->GetRootComponent()), HiddenComponents);
+			}
 		}
 	}
 }
@@ -2581,10 +2592,6 @@ void AUTPlayerController::ServerRestartPlayer_Implementation()
 	{
 		return;
 	}
-
-	// Flag this player as not being idle
-	if (UTPlayerState) UTPlayerState->NotIdle();
-
 	Super::ServerRestartPlayer_Implementation();
 }
 
@@ -2638,9 +2645,6 @@ void AUTPlayerController::ServerRestartPlayerAltFire_Implementation()
 {
 	bUseAltSpawnPoint = true;
 
-	// Flag this player as not being idle
-	if (UTPlayerState) UTPlayerState->NotIdle();
-
 	if (UTPlayerState != nullptr)
 	{
 		UTPlayerState->bChosePrimaryRespawnChoice = false;
@@ -2661,9 +2665,6 @@ bool AUTPlayerController::ServerSelectSpawnPoint_Validate(APlayerStart* DesiredS
 }
 void AUTPlayerController::ServerSelectSpawnPoint_Implementation(APlayerStart* DesiredStart)
 {
-	// Flag this player as not being idle
-	if (UTPlayerState) UTPlayerState->NotIdle();
-
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (GS != NULL && UTPlayerState != NULL)
 	{
@@ -2839,7 +2840,7 @@ void AUTPlayerController::ClientGameEnded_Implementation(AActor* EndGameFocus, b
 {
 	static const FName NAME_GameOver = FName(TEXT("GameOver"));
 	ChangeState(NAME_GameOver);
-
+	ClientPrepareForIntermission();
 	bool bIsInGameIntroHandlingEndGameSummary = false;
 	if (GetWorld() && GetWorld()->GetGameState())
 	{
@@ -2902,27 +2903,6 @@ void AUTPlayerController::ClientBackendNotify_Implementation(const FString& Type
 		}
 	}
 }
-
-/*void AUTPlayerController::ClientReceiveXP_Implementation(FXPBreakdown GainedXP)
-{
-	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
-	AUTGameMode* Game = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (LP != NULL && LP->IsEarningXP())
-	{
-		LP->AddOnlineXP(GainedXP.Total());
-		LP->SaveProfileSettings();
-
-		//Store the XPBreakdown for the SUTXPBar
-		XPBreakdown = GainedXP;
-	}
-}
-
-void AUTPlayerController::ClientReceiveLevelReward_Implementation(int32 Level, const UUTProfileItem* RewardItem)
-{
-	// Store the reward. The SUTXPBar will display the toast when it triggers a level up
-	LevelRewards.SetNumZeroed(FMath::Max<int32>(LevelRewards.Num(), Level + 1));
-	LevelRewards[Level] = RewardItem;
-}*/
 
 void AUTPlayerController::ShowMenu(const FString& Parameters)
 {
@@ -3361,7 +3341,7 @@ void AUTPlayerController::Tick(float DeltaTime)
 	if (GetNetMode() != NM_DedicatedServer)
 	{
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS && GS->bPlayPlayerIntro && GS->GetMatchState() == MatchState::WaitingToStart)
+		if (GS != nullptr && GS->GetMatchState() == MatchState::WaitingToStart)
 		{
 			for (TActorIterator<AUTPlayerState> It(GetWorld()); It; ++It)
 			{
@@ -4729,16 +4709,6 @@ void AUTPlayerController::GhostPlay()
 	}
 }
 
-void AUTPlayerController::OpenMatchSummary()
-{
-	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
-	AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
-	if (LocalPlayer != nullptr && UTGS != nullptr)
-	{
-		LocalPlayer->OpenMatchSummary(UTGS);
-	}
-}
-
 void AUTPlayerController::UTClientSetRotation_Implementation(FRotator NewRotation)
 {
 	SetControlRotation(NewRotation);
@@ -5258,22 +5228,12 @@ void AUTPlayerController::ClientSetActiveLineUp_Implementation()
 			{
 				ToggleScoreboard(false);
 
-				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+				for (FActorIterator It(GetWorld()); It; ++It)
 				{
-					const AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
-					if (UTPC)
+					AUTCharacter* UTChar = Cast<AUTCharacter>(*It);
+					if (UTChar)
 					{
-						AUTCharacter* UTChar = Cast<AUTCharacter>(UTPC->GetCharacter());
-						if (UTChar)
-						{
-							UTGS->LineUpHelper->ForceCharacterAnimResetForLineUp(UTChar);
-
-							UUTCharacterMovement* UTCM = Cast<UUTCharacterMovement>(UTChar->GetMovementComponent());
-							if (UTCM)
-							{
-								UTCM->OnLineUp();
-							}
-						}
+						UTGS->LineUpHelper->ForceCharacterAnimResetForLineUp(UTChar);
 					}
 				}
 			}
@@ -5383,24 +5343,55 @@ void AUTPlayerController::BeginSpectatingState()
 	FlushPressedKeys();
 }
 
-void AUTPlayerController::ClientWasKicked_Implementation(const FText& KickReason)
+void AUTPlayerController::AddHUDImpulse(FVector2D NewImpulse)
 {
-	ULocalPlayer* UTLocalPlayer = Cast<ULocalPlayer>(Player);
-	if (UTLocalPlayer != nullptr)
+	if (MyUTHUD)
 	{
-		UUTGameViewportClient* ViewportClient = Cast<UUTGameViewportClient>(UTLocalPlayer->ViewportClient);
-		if (ViewportClient != nullptr)
-		{
-			ViewportClient->KickReason = KickReason;
-		}
+		MyUTHUD->AddHUDImpulse(NewImpulse);
 	}
+}
 
-	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
-	if (PartyContext)
+void AUTPlayerController::ClientDebugRewind_Implementation(FVector_NetQuantize TargetLocation, FVector_NetQuantize RewindLocation, FVector_NetQuantize PrePosition, FVector_NetQuantize PostPosition, float TargetCapsuleHeight, float PredictionTime, float Percent, bool bTeleported)
+{
+	DrawDebugCapsule(GetWorld(), TargetLocation, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Red, false, 8.f);
+	DrawDebugCapsule(GetWorld(), RewindLocation, TargetCapsuleHeight, 40.f, FQuat::Identity, FColor::Yellow, false, 8.f);
+	DrawDebugCapsule(GetWorld(), PrePosition, TargetCapsuleHeight - 20.f, 40.f, FQuat::Identity, FColor::Blue, false, 8.f);
+	DrawDebugCapsule(GetWorld(), PostPosition, TargetCapsuleHeight + 20.f, 40.f, FQuat::Identity, FColor::White, false, 8.f);
+	ClientSay(UTPlayerState, FString::Printf(TEXT("REWIND teleported %d prediction time %f      SERVER prediction time %f percent %f"), bTeleported, GetPredictionTime(), PredictionTime, Percent), ChatDestinations::System);
+}
+
+void AUTPlayerController::SetMouseAccel(float NewAccel)
+{
+	UUTPlayerInput* Input = Cast<UUTPlayerInput>(PlayerInput);
+	if (Input)
 	{
-		if (PartyContext->GetPartySize() > 1)
-		{
-			PartyContext->LeaveParty();
-		}
+		Input->Acceleration = NewAccel;
+	}
+}
+
+void AUTPlayerController::SetMouseAccelPower(float NewAccelPower)
+{
+	UUTPlayerInput* Input = Cast<UUTPlayerInput>(PlayerInput);
+	if (Input)
+	{
+		Input->AccelerationPower = NewAccelPower;
+	}
+}
+
+void AUTPlayerController::SetMouseAccelMax(float NewAccelMax)
+{
+	UUTPlayerInput* Input = Cast<UUTPlayerInput>(PlayerInput);
+	if (Input)
+	{
+		Input->AccelerationMax = NewAccelMax;
+	}
+}
+
+void AUTPlayerController::SetMouseAccelOffset(float NewAccelOffset)
+{
+	UUTPlayerInput* Input = Cast<UUTPlayerInput>(PlayerInput);
+	if (Input)
+	{
+		Input->AccelerationOffset = NewAccelOffset;
 	}
 }

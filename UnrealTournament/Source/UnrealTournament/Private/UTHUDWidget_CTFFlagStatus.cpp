@@ -28,6 +28,11 @@ UUTHUDWidget_CTFFlagStatus::UUTHUDWidget_CTFFlagStatus(const FObjectInitializer&
 	CurrentStatusScale[0] = 1.f;
 	CurrentStatusScale[1] = 1.f;
 	ScaleDownTime = 0.5f;
+
+	TopEdgePadding = 0.1f;
+	BottomEdgePadding = 0.18f;
+	LeftEdgePadding = 0.025f;
+	RightEdgePadding = 0.025f;
 }
 
 void UUTHUDWidget_CTFFlagStatus::InitializeWidget(AUTHUD* Hud)
@@ -116,17 +121,17 @@ void UUTHUDWidget_CTFFlagStatus::DrawFlagStatus(AUTCTFGameState* GameState, FVec
 				if (bAlwaysDrawFlagHolderName)
 				{
 					FlagHolderNameTemplate.Text = FText::FromString(FlagHolder->PlayerName);
+					RenderObj_Text(FlagHolderNameTemplate, IndicatorPosition);
 				}
-				else
+				else if (FlagHolder == UTHUDOwner->UTPlayerOwner->UTPlayerState)
 				{
-					FlagHolderNameTemplate.Text = (FlagHolder == UTHUDOwner->UTPlayerOwner->UTPlayerState) ? YouHaveFlagText : FText::GetEmpty();
+					FlagHolderNameTemplate.Text = YouHaveFlagText;
+					RenderObj_Text(FlagHolderNameTemplate, IndicatorPosition);
 				}
-				RenderObj_Text(FlagHolderNameTemplate, IndicatorPosition);
 			}
 
 			float CarriedX = XPos - 0.25f * FlagIconTemplate.GetWidth() * FlagStatusScale;
 			float CarriedY = YPos - 0.25f * FlagIconTemplate.GetHeight() * FlagStatusScale;
-
 			RenderObj_TextureAt(FlagIconTemplate, CarriedX, CarriedY, FlagStatusScale * FlagIconTemplate.GetWidth(), FlagStatusScale * FlagIconTemplate.GetHeight());
 		}
 		else
@@ -254,7 +259,7 @@ void UUTHUDWidget_CTFFlagStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 			
 			if (bDrawEdgeArrow)
 			{
-				DrawEdgeArrow(WorldPosition, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
+				DrawEdgeArrow(WorldPosition, PlayerViewPoint, PlayerViewRotation, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
 			}
 			else
 			{
@@ -344,7 +349,7 @@ void UUTHUDWidget_CTFFlagStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, F
 	
 			if (bDrawEdgeArrow)
 			{
-				DrawEdgeArrow(WorldPosition, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
+				DrawEdgeArrow(WorldPosition, PlayerViewPoint, PlayerViewRotation, DrawScreenPosition, CurrentWorldAlpha, WorldRenderScale, TeamNum);
 			}
 			else
 			{
@@ -406,20 +411,20 @@ void UUTHUDWidget_CTFFlagStatus::DrawStatusMessage(float DeltaTime)
 	}	
 }
 
-FVector UUTHUDWidget_CTFFlagStatus::GetAdjustedScreenPosition(const FVector& WorldPosition, const FVector& ViewPoint, const FVector& ViewDir, float Dist, float Edge, bool& bDrawEdgeArrow, int32 Team)
+FVector UUTHUDWidget_CTFFlagStatus::GetAdjustedScreenPosition(const FVector& WorldPosition, const FVector& ViewPoint, const FVector& ViewDir, float Dist, float IconSize, bool& bDrawEdgeArrow, int32 Team)
 {
 	FVector Cross = (ViewDir ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
-	FVector DrawScreenPosition;
-	float ExtraPadding = 0.1f * Canvas->ClipX;
-	DrawScreenPosition = GetCanvas()->Project(WorldPosition);
-	FVector FlagDir = WorldPosition - ViewPoint;
+	FVector DrawScreenPosition = GetCanvas()->Project(WorldPosition);
+	FVector FlagDir = (WorldPosition - ViewPoint).GetSafeNormal();
 	if ((ViewDir | FlagDir) < 0.f)
 	{
-		bool bWasLeft = (Team == 0) ? bRedWasLeft : bBlueWasLeft;
 		bDrawEdgeArrow = true;
-		DrawScreenPosition.X = bWasLeft ? Edge + ExtraPadding : GetCanvas()->ClipX - Edge - ExtraPadding;
-		DrawScreenPosition.Y = 0.5f*GetCanvas()->ClipY;
+		FVector LeftDir = (ViewDir ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
+		bool bLeftOfScreen = (FlagDir | LeftDir) > 0.f;
+		DrawScreenPosition.X = bLeftOfScreen ? -0.5f*GetCanvas()->ClipX * (ViewDir | FlagDir) : GetCanvas()->ClipX * (1.f + 0.5f*(ViewDir | FlagDir));
+		DrawScreenPosition.Y = (1.f - BottomEdgePadding)*GetCanvas()->ClipY - IconSize;
 		DrawScreenPosition.Z = 0.0f;
+		DrawScreenPosition.X = FMath::Clamp(DrawScreenPosition.X, IconSize + LeftEdgePadding*GetCanvas()->ClipX, GetCanvas()->ClipX - IconSize - RightEdgePadding*GetCanvas()->ClipX);
 		return DrawScreenPosition;
 	}
 	else if ((DrawScreenPosition.X < 0.f) || (DrawScreenPosition.X > GetCanvas()->ClipX))
@@ -427,71 +432,37 @@ FVector UUTHUDWidget_CTFFlagStatus::GetAdjustedScreenPosition(const FVector& Wor
 		bool bLeftOfScreen = (DrawScreenPosition.X < 0.f);
 		float OffScreenDistance = bLeftOfScreen ? -1.f*DrawScreenPosition.X : DrawScreenPosition.X - GetCanvas()->ClipX;
 		bDrawEdgeArrow = true;
-		DrawScreenPosition.X = bLeftOfScreen ? Edge+ ExtraPadding : GetCanvas()->ClipX - Edge - ExtraPadding;
-		//Y approaches 0.5*Canvas->ClipY as further off screen
+		DrawScreenPosition.X = bLeftOfScreen ? IconSize + LeftEdgePadding*GetCanvas()->ClipX : GetCanvas()->ClipX - IconSize - RightEdgePadding*GetCanvas()->ClipX;
+		//Y approaches 0.9*Canvas->ClipY as further off screen
 		float MaxOffscreenDistance = GetCanvas()->ClipX;
-		DrawScreenPosition.Y = 0.5f*GetCanvas()->ClipY + FMath::Clamp((MaxOffscreenDistance - OffScreenDistance)/ MaxOffscreenDistance, 0.f, 1.f) * (DrawScreenPosition.Y - 0.5f*GetCanvas()->ClipY);
-		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, 0.25f*GetCanvas()->ClipY, 0.75f*GetCanvas()->ClipY);
-		if (Team == 0)
+		DrawScreenPosition.Y = (1.f- BottomEdgePadding)*GetCanvas()->ClipY + FMath::Clamp((MaxOffscreenDistance - OffScreenDistance)/ MaxOffscreenDistance, 0.f, 1.f) * (DrawScreenPosition.Y - (1.f - BottomEdgePadding)*GetCanvas()->ClipY);
+		if (Team == 1)
 		{
-			bRedWasLeft = bLeftOfScreen;
+			DrawScreenPosition.Y += 0.05f*GetCanvas()->ClipY;
 		}
-		else
-		{
-			bBlueWasLeft = bLeftOfScreen;
-		}
+		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, IconSize + TopEdgePadding*GetCanvas()->ClipY, GetCanvas()->ClipY - IconSize - BottomEdgePadding*GetCanvas()->ClipY);
 	}
 	else
 	{
-		if (Team == 0)
-		{
-			bRedWasLeft = false;
-		}
-		else
-		{
-			bBlueWasLeft = false;
-		}
-		DrawScreenPosition.X = FMath::Clamp(DrawScreenPosition.X, Edge, GetCanvas()->ClipX - Edge);
-		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, Edge, GetCanvas()->ClipY - Edge);
+		DrawScreenPosition.X = FMath::Clamp(DrawScreenPosition.X, IconSize + LeftEdgePadding*GetCanvas()->ClipX, GetCanvas()->ClipX - IconSize - RightEdgePadding*GetCanvas()->ClipX);
+		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, IconSize + TopEdgePadding*GetCanvas()->ClipY, GetCanvas()->ClipY - IconSize - BottomEdgePadding*GetCanvas()->ClipY);
 		DrawScreenPosition.Z = 0.0f;
-
-		// keep out of center
-		float MinDistSq = FMath::Square(0.05f*GetCanvas()->ClipX);
-		float ActualDistSq = FMath::Square(DrawScreenPosition.X - 0.5f*GetCanvas()->ClipX) + FMath::Square(DrawScreenPosition.Y - 0.5f*GetCanvas()->ClipY);
-		if (ActualDistSq < MinDistSq)
-		{
-			float Scaling = FMath::Sqrt(MinDistSq / FMath::Max(ActualDistSq, 1.f));
-			DrawScreenPosition.X = 0.5f*GetCanvas()->ClipX + (DrawScreenPosition.X - 0.5f*GetCanvas()->ClipX)*Scaling;
-			DrawScreenPosition.Y = 0.5f*GetCanvas()->ClipY + (DrawScreenPosition.Y - 0.5f*GetCanvas()->ClipY)*Scaling;
-		}
 	}
 	return DrawScreenPosition;
 }
 
-void UUTHUDWidget_CTFFlagStatus::DrawEdgeArrow(FVector InWorldPosition, FVector InDrawScreenPosition, float CurrentWorldAlpha, float WorldRenderScale, int32 Team)
+void UUTHUDWidget_CTFFlagStatus::DrawEdgeArrow(FVector InWorldPosition, FVector PlayerViewPoint, FRotator PlayerViewRotation, FVector InDrawScreenPosition, float CurrentWorldAlpha, float WorldRenderScale, int32 Team)
 {
-	bool bLeftOfScreen = (InDrawScreenPosition.X < 0.f);
-	float DroppedAlpha = DroppedIconTemplate.RenderOpacity;
-	DroppedIconTemplate.RenderOpacity = CurrentWorldAlpha;
-	DroppedIconTemplate.Rotation = bLeftOfScreen ? 90.f : -90.f;
-	float ArrowOffsetY = bLeftOfScreen ? 0.5f : -0.5f;
-	ArrowOffsetY = ArrowOffsetY * CircleBorderTemplate.GetHeight()* WorldRenderScale + 0.5f*DroppedIconTemplate.GetHeight();
-	RenderObj_TextureAt(DroppedIconTemplate, InDrawScreenPosition.X + 0.5f*CircleTemplate.GetWidth()* WorldRenderScale, InDrawScreenPosition.Y + ArrowOffsetY, 2.f*DroppedIconTemplate.GetWidth()* WorldRenderScale, 2.f*DroppedIconTemplate.GetHeight()* WorldRenderScale);
-	DroppedIconTemplate.Rotation = 0.f;
-	DroppedIconTemplate.RenderOpacity = DroppedAlpha;
+	ArrowTemplate.RenderScale = 1.1f * WorldRenderScale;
+	ArrowTemplate.RenderOpacity = CurrentWorldAlpha;
+	ArrowTemplate.RenderColor = (Team == 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
+	float RotYaw = FMath::Acos(PlayerViewRotation.Vector() | (InWorldPosition - PlayerViewPoint).GetSafeNormal()) * 180.f / PI;
+	if (InDrawScreenPosition.X < 0.f)
+	{
+		RotYaw *= -1.f;
+	}
+	RenderObj_TextureAtWithRotation(ArrowTemplate, FVector2D(InDrawScreenPosition.X, InDrawScreenPosition.Y), RotYaw);
 }
-/*
-	FVector OffScreenPosition = GetCanvas()->Project(InWorldPosition);
-
-	ArrowTemplate.Atlas = UTHUDOwner->HUDAtlas;
-	ArrowTemplate.UVs = FTextureUVs(100.f, 836.f, 72.f, 96.f);
-	ArrowTemplate.RenderOffset = FVector2D(0.5f, 0.625f);
-	ArrowTemplate.RotPivot =  FVector2D(0.5f, 0.625f);
-	ArrowTemplate.RenderScale = 1.05f;
-	FVector Dir = (OffScreenPosition - InWorldPosition).GetSafeNormal();
-	FRotator Rot = Dir.Rotation();
-	RenderObj_TextureAtWithRotation(ArrowTemplate, FVector2D(InDrawScreenPosition.X, InDrawScreenPosition.Y), Rot.Yaw);
-}*/
 
 FText UUTHUDWidget_CTFFlagStatus::GetFlagReturnTime(AUTCTFFlag* Flag)
 {

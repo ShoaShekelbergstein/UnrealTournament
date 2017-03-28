@@ -633,7 +633,8 @@ void AUTGameSessionRanked::CreateServerGame()
 	{
 		UTGameInstance->GetPlaylistManager()->GetURLForPlaylist(PlaylistId, TravelURL);
 
-		if (!TravelURL.IsEmpty())
+		// Can't use HasOption here because the TravelURL is actually a full fledged URL including map name
+		if ( !TravelURL.IsEmpty() && TravelURL.Find(TEXT("difficulty="),ESearchCase::IgnoreCase) == INDEX_NONE )
 		{
 			int32 BotSkill = UTGameInstance->GetBotSkillForTeamElo(TeamElo);
 			TravelURL += FString::Printf(TEXT("?Difficulty=%d"), BotSkill);

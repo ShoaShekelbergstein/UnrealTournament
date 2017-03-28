@@ -208,16 +208,7 @@ void AUTServerBeaconClient::ClientReceivedAllInstancePlayers_Implementation(int3
 bool AUTServerBeaconClient::ServerRequestQuickplay_Validate(const FString& MatchType, int32 ELORank, bool bBeginner) { return true; }
 void AUTServerBeaconClient::ServerRequestQuickplay_Implementation(const FString& MatchType, int32 ELORank, bool bBeginner)
 {
-	AUTLobbyGameState* LobbyGameState = GetWorld()->GetGameState<AUTLobbyGameState>();
-	if (LobbyGameState)
-	{
-		// Have the lobby see if we can quick play this player.	
-		LobbyGameState->HandleQuickplayRequest(this, MatchType, ELORank, bBeginner);
-	}
-	else
-	{
-		ClientQuickplayNotAvailable();	
-	}
+	ClientQuickplayNotAvailable();	
 }
 
 void AUTServerBeaconClient::ClientQuickplayNotAvailable_Implementation()

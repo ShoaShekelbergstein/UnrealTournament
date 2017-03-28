@@ -84,9 +84,9 @@ bool UUTHUDWidget_SpectatorSlideOut::ShouldDraw_Implementation(bool bShowScores)
 	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(UTHUDOwner->UTPlayerOwner->Player);
 #if !UE_SERVER
 
-	if (!bShowScores && UTHUDOwner->UTPlayerOwner && UTHUDOwner->UTPlayerOwner->UTPlayerState && UTGameState && (UTHUDOwner->UTPlayerOwner->UTPlayerState->bOnlySpectator || UTHUDOwner->UTPlayerOwner->UTPlayerState->bOutOfLives))
+	if (LP && !bShowScores && UTHUDOwner->UTPlayerOwner && UTHUDOwner->UTPlayerOwner->UTPlayerState && UTGameState && (UTHUDOwner->UTPlayerOwner->UTPlayerState->bOnlySpectator || UTHUDOwner->UTPlayerOwner->UTPlayerState->bOutOfLives))
 	{
-		if ( UTGameState->HasMatchEnded() || !UTGameState->HasMatchStarted() || UTGameState->IsMatchIntermission() || (LP && LP->bRecordingReplay) )
+		if ( UTGameState->HasMatchEnded() || !UTGameState->HasMatchStarted() || UTGameState->IsMatchIntermission() || (LP->bRecordingReplay) || LP->IsKillcamReplayActive() )
 		{
 			bShouldDraw = false;
 		}
@@ -167,7 +167,7 @@ void UUTHUDWidget_SpectatorSlideOut::Draw_Implementation(float DeltaTime)
 		for (APlayerState* PS : UTGameState->PlayerArray)
 		{
 			AUTPlayerState* UTPS = Cast<AUTPlayerState>(PS);
-			if (UTPS != NULL && !UTPS->bOnlySpectator)
+			if (UTPS != NULL && !UTPS->bOnlySpectator && UTGameState->CanSpectate(UTPlayerOwner, UTPS))
 			{
 				if (!UTGameState->bTeamGame)
 				{

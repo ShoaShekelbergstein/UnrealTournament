@@ -39,6 +39,8 @@ class UNREALTOURNAMENT_API AUTCTFSquadAI : public AUTSquadAI
 		Super::SetObjective(InObjective);
 	}
 
+	virtual FName GetCurrentOrders(AUTBot* B) override;
+
 	virtual void Initialize(AUTTeamInfo* InTeam, FName InOrders) override;
 	virtual bool MustKeepEnemy(AUTBot* B, APawn* TheEnemy) override;
 	virtual bool ShouldUseTranslocator(AUTBot* B) override;

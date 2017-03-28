@@ -2351,6 +2351,7 @@ bool AUTRecastNavMesh::FindBestPath(APawn* Asker, const FNavAgentProperties& Age
 
 			if (bAllowDetours && !bNeedMoveToStartNode && Asker != NULL && (RequestOwner == NULL || RequestOwner == Asker->Controller) && NodeRoute.Num() > ((RouteGoal != NULL) ? 2 : 1))
 			{
+				AUTPlayerState* PS = Cast<AUTPlayerState>(Asker->PlayerState);
 				FVector NextLoc = NodeRoute[0].GetLocation(Asker);
 				FVector NextDir = (NextLoc - StartLoc).GetSafeNormal();
 				float MaxDetourDist = (StartLoc - NextLoc).Size() * 1.5f;
@@ -2368,8 +2369,8 @@ bool AUTRecastNavMesh::FindBestPath(APawn* Asker, const FNavAgentProperties& Age
 						AUTDroppedPickup* DroppedPickup = Cast<AUTDroppedPickup>(POI.Get());
 						if (Pickup != NULL || DroppedPickup != NULL)
 						{
-							FVector POILoc = POI->GetActorLocation();
-							float Dist = (POILoc - NextLoc).Size();
+							const FVector POILoc = POI->GetActorLocation();
+							const float Dist = (POILoc - NextLoc).Size();
 							bool bValid = (DroppedPickup != NULL);
 							if (!bValid && Pickup != NULL)
 							{
@@ -2394,7 +2395,26 @@ bool AUTRecastNavMesh::FindBestPath(APawn* Asker, const FNavAgentProperties& Age
 									}
 									if (NewDetourWeight > BestDetourWeight)
 									{
-										BestDetour = POI.Get();
+										// reject detour if another AI on same team is going for it and closer
+										const float PawnDistSq = (POILoc - StartLoc).SizeSquared();
+										bool bReserved = false;
+										if (PS != nullptr && PS->Team != nullptr)
+										{
+											for (AController* C : PS->Team->GetTeamMembers())
+											{
+												AUTBot* OtherB = Cast<AUTBot>(C);
+												if (OtherB != nullptr && OtherB != B && OtherB->GetPawn() != nullptr && OtherB->GetMoveTarget().Actor == POI && (POILoc - OtherB->GetPawn()->GetNavAgentLocation()).SizeSquared() < PawnDistSq)
+												{
+													bReserved = true;
+													break;
+												}
+											}
+										}
+										if (!bReserved)
+										{
+											BestDetour = POI.Get();
+											BestDetourWeight = NewDetourWeight;
+										}
 									}
 								}
 							}
@@ -2797,7 +2817,11 @@ void AUTRecastNavMesh::BeginPlay()
 {
 	Super::BeginPlay();
 
-	LoadMapLearningData();
+	// the learning data isn't replicated so even if a client wanted to use it there's not going to be any consistency
+	if (GetNetMode() != NM_Client)
+	{
+		LoadMapLearningData();
+	}
 }
 
 static const int32 LearningDataSizeLimit = 20000000;
@@ -2807,7 +2831,12 @@ FString AUTRecastNavMesh::GetMapLearningDataFilename() const
 	// determine filename based on map GUID
 	// this causes the data to be invalidated on editor changes
 	// and not invalidated on map copy/move/rename
-	return FPaths::GameSavedDir() + GetOutermost()->GetGuid().ToString() + TEXT(".ai");
+	FName GameModeName = NAME_None;
+	if (GetWorld()->GetGameState() != nullptr && GetWorld()->GetGameState()->GameModeClass != nullptr)
+	{
+		GameModeName = GetWorld()->GetGameState()->GameModeClass->GetFName();
+	}
+	return FPaths::GameSavedDir() + GetOutermost()->GetGuid().ToString() + TEXT("-") + GameModeName.ToString() + TEXT(".ai");
 }
 
 void AUTRecastNavMesh::SaveMapLearningData()

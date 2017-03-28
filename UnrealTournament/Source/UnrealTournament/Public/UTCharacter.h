@@ -249,7 +249,7 @@ struct FPhysicalSoundResponse
 	USoundBase* SoundOwner;
 };
 
-UCLASS(config=Game, collapsecategories, hidecategories=(Clothing,Lighting,AutoExposure,LensFlares,AmbientOcclusion,DepthOfField,MotionBlur,Misc,ScreenSpaceReflections,Bloom,SceneColor,Film,AmbientCubemap,AgentPhysics,Attachment,Avoidance,PlanarMovement,AI,Replication,Input,Actor,Tags,GlobalIllumination))
+UCLASS(config=Game, collapsecategories, hidecategories=(Clothing,Lighting,AutoExposure,LensFlares,AmbientOcclusion,DepthOfField,MotionBlur,Misc,ScreenSpaceReflections,Bloom,SceneColor,Film,AmbientCubemap,AgentPhysics,Attachment,Avoidance,PlanarMovement,AI,Replication,Input,Actor,Tags,GlobalIllumination,CharacterData))
 class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInterface
 {
 	GENERATED_UCLASS_BODY()
@@ -312,6 +312,9 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	/** Pawn mesh: 1st person view (arms; seen only by self) */
 	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
 	class USkeletalMeshComponent* FirstPersonMesh;
+	
+	UPROPERTY(BlueprintReadOnly, Category = Mesh)
+	TArray<UMaterialInstanceDynamic*> FirstPersonMeshMIDs;
 
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
@@ -439,7 +442,7 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 
 	/** Returns this character's position PredictionTime seconds ago. */
 	UFUNCTION(BlueprintCallable, Category = Pawn)
-	virtual FVector GetRewindLocation(float PredictionTime);
+	virtual FVector GetRewindLocation(float PredictionTime, AUTPlayerController* DebugViewer=nullptr);
 
 	/** Max time server will look back to found client synchronized shot position. */
 	UPROPERTY(EditAnyWhere, Category = "Weapon")
@@ -1459,10 +1462,6 @@ public:
 	/** Ambient sound played while wall sliding */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
 		USoundBase* WallSlideAmbientSound;
-
-	/** Running speed to engage sprint sound */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
-	float SprintAmbientStartSpeed;
 	
 	/** Ambient sound played while falling fast */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
@@ -1577,7 +1576,7 @@ public:
 	virtual void PlayerChangedTeam();
 	virtual void PlayerSuicide();
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = CharacterData)
 	TSubclassOf<class AUTCharacterContent> CharacterData;
 
 	UPROPERTY(BlueprintReadWrite, Category = FFA)
@@ -1965,7 +1964,7 @@ protected:
 		TSubclassOf<AUTWeaponAttachment> HolsteredWeaponAttachmentClass;
 
 public:
-	inline const AUTWeaponAttachment* GetWeaponAttachment() const
+	inline AUTWeaponAttachment* GetWeaponAttachment() const
 	{
 		return WeaponAttachment;
 	}

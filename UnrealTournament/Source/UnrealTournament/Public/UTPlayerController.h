@@ -384,6 +384,9 @@ public:
 	UFUNCTION(exec)
 		virtual void NetStats();
 
+	/** Add HUD impulse (to offset HUD). */
+	virtual void AddHUDImpulse(FVector2D NewImpulse);
+
 	virtual void SetViewTarget(class AActor* NewViewTarget, FViewTargetTransitionParams TransitionParams = FViewTargetTransitionParams()) override;
 	virtual void ServerViewSelf_Implementation(FViewTargetTransitionParams TransitionParams) override;
 	virtual void ViewSelf(FViewTargetTransitionParams TransitionParams = FViewTargetTransitionParams());
@@ -641,6 +644,18 @@ public:
 
 	UFUNCTION(reliable, server, WithValidation)
 	virtual void ServerPlayGroupTaunt();
+
+	UFUNCTION(Exec)
+	void SetMouseAccel(float NewAccel);
+
+	UFUNCTION(Exec)
+	void SetMouseAccelPower(float NewAccelPower);
+
+	UFUNCTION(Exec)
+	void SetMouseAccelMax(float NewAccelMax);
+
+	UFUNCTION(Exec)
+	void SetMouseAccelOffset(float NewAccelOffset);
 
 	UFUNCTION(Exec)
 	virtual void SetMouseSensitivityUT(float NewSensitivity);
@@ -1167,9 +1182,6 @@ public:
 	UFUNCTION(exec)
 	virtual void TestCallstack();
 
-	UFUNCTION(exec)
-	virtual void OpenMatchSummary();
-
 	/**The last recieved XP breakdown from ClientReceiveXP()*/
 	UPROPERTY()
 	FXPBreakdown XPBreakdown;
@@ -1290,7 +1302,9 @@ public:
 	bool CanPerformRally() const;
 
 	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
-	void ClientWasKicked_Implementation(const FText& KickReason) override;
+
+	UFUNCTION(Client, Unreliable)
+		void ClientDebugRewind(FVector_NetQuantize TargetLocation, FVector_NetQuantize RewindLocation, FVector_NetQuantize PrePosition, FVector_NetQuantize PostPosition, float TargetCapsuleHeight, float PredictionTime, float Percent, bool bTeleported);
 };
 
 

@@ -307,6 +307,9 @@ class ENGINE_API UDemoNetDriver : public UNetDriver
 	/** Streaming levels waiting to be saved next frame */
 	TArray< UObject* >					NewStreamingLevelsThisFrame;
 
+	UPROPERTY()
+	TArray<UObject*> AsyncLoadedObjects;
+
 	bool bRecordMapChanges;
 
 private:

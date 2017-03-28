@@ -45,6 +45,16 @@ void UUTRadialMenu_BoostPowerup::Draw_Implementation(float RenderDelta)
 	}
 
 	DrawMenu(ScreenCenter, RenderDelta);
+
+	if (SelectedPowerup != INDEX_NONE && UTPlayerOwner->UTPlayerState != nullptr)
+	{
+		AUTGameState* GS = UTHUDOwner->GetWorld()->GetGameState<AUTGameState>();
+		TSubclassOf<AUTInventory> ItemType = GS->GetSelectableBoostByIndex(UTPlayerOwner->UTPlayerState, SelectedPowerup);
+		if (ItemType != nullptr)
+		{
+			ItemType.GetDefaultObject()->DrawBoostHUD(UTHUDOwner, Canvas, UTPlayerOwner->GetPawn());
+		}
+	}
 }
 
 void UUTRadialMenu_BoostPowerup::DrawMenu(FVector2D ScreenCenter, float RenderDelta)
@@ -54,7 +64,7 @@ void UUTRadialMenu_BoostPowerup::DrawMenu(FVector2D ScreenCenter, float RenderDe
 	{
 		const FVector2D CenterPoint = FVector2D(0.0f, -250.0f);
 		Opacity = UTPlayerOwner->UTPlayerState->GetRemainingBoosts() > 0 ? 1.0f : 0.33f;
-		CaptionTemplate.Text = FText();
+		CaptionTemplate = GetClass()->GetDefaultObject<UUTRadialMenu_BoostPowerup>()->CaptionTemplate;
 		TArray<TSubclassOf<AUTInventory>> OffsetItems;
 		{
 			TSubclassOf<AUTInventory> NextItem;
@@ -138,12 +148,10 @@ void UUTRadialMenu_BoostPowerup::DrawMenu(FVector2D ScreenCenter, float RenderDe
 		{
 			RenderObj_Text(CaptionTemplate, FVector2D(0.0f, 300.0f));
 
-			if (UTPlayerOwner->UTPlayerState->GetRemainingBoosts() == 0)
-			{
-				CaptionTemplate.Text = NSLOCTEXT("PowerupWheel","Charging","<Charging...>");
-				CaptionTemplate.TextScale = 0.75f;
-				RenderObj_Text(CaptionTemplate, FVector2D(0.0f, 335.0f));
-			}
+			CaptionTemplate.Text = NSLOCTEXT("PowerupWheel","AltCancel","(AltFire to cancel)");
+			CaptionTemplate.TextScale = 0.75f;
+			CaptionTemplate.RenderColor = FLinearColor(0.5, 0.5, 0.5, 1.0);
+			RenderObj_Text(CaptionTemplate, FVector2D(0.0f, 340.0f));
 		}
 	}
 }

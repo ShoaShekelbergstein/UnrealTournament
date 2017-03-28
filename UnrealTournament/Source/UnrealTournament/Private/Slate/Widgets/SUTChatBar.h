@@ -50,6 +50,7 @@ protected:
 	void BuildChatDestinationMenu();
 	FReply ChangeChatDestination(TSharedPtr<SComboButton> Button, FName NewDestination);
 	void ChatTextCommited(const FText& NewText, ETextCommit::Type CommitType);
+	void ChatConsoleCommand(const FString& Destination, const FString& FinalText);
 };
 
 #endif

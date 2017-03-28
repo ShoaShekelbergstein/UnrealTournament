@@ -60,7 +60,7 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		QuickStatsBackgroundAlpha = 0.15;
 		QuickStatsForegroundAlpha = 1.0f;
 		bQuickStatsHidden = true;
-		bQuickInfoHidden = false;
+		bQuickInfoHidden = true;
 		bHealthArcShown = false;
 		QuickStatsScaleOverride = 0.75f;
 		HealthArcRadius = 60;
@@ -72,10 +72,10 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		HUDWidgetOpacity = 1.0f;
 		HUDWidgetBorderOpacity = 1.0f;
 		HUDWidgetSlateOpacity = 0.5f;
-		HUDWidgetWeaponbarInactiveOpacity = 0.35f;
+		HUDWidgetWeaponbarInactiveOpacity = 0.6f;
 		HUDWidgetWeaponBarScaleOverride = 1.f;
-		HUDWidgetWeaponBarInactiveIconOpacity = 0.35f;
-		HUDWidgetWeaponBarEmptyOpacity = 0.2f;
+		HUDWidgetWeaponBarInactiveIconOpacity = 0.6f;
+		HUDWidgetWeaponBarEmptyOpacity = 0.35f;
 		HUDWidgetScaleOverride = 1.f;
 		HUDMessageScaleOverride = 1.0f;
 		bUseWeaponColors = true;
@@ -93,7 +93,7 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		MouseAccelerationMax = 1.0f;
 		DoubleClickTime = 0.3f;
 
-		MouseSensitivity = 0.07f;
+		MouseSensitivity = 0.05f;
 
 		MaxDodgeClickTimeValue = 0.25;
 		bEnableDoubleTapDodge = true;
@@ -682,6 +682,8 @@ void UUTProfileSettings::GetWeaponCustomization(FName WeaponCustomizationTag, FW
 		else
 		{
 			outWeaponCustomizationInfo.CrosshairTag = WeaponCustomizations[WeaponCustomizationTag].DefaultCrosshairTag;
+			outWeaponCustomizationInfo.CrosshairScaleOverride = 1.0f;
+			outWeaponCustomizationInfo.CrosshairColorOverride = FLinearColor::White;
 		}
 	}
 	else
@@ -852,7 +854,7 @@ void UUTProfileSettings::ApplyInputSettings(UUTLocalPlayer* ProfilePlayer)
 
 	for (TObjectIterator<UUTPlayerInput> It(RF_NoFlags); It; ++It)
 	{
-		PlayerInput->SetMouseSensitivity(MouseSensitivity);
+		PlayerInput->SetMouseSensitivity(FMath::Max(0.1f, MouseSensitivity));
 		PlayerInput->AccelerationPower = MouseAccelerationPower;
 		PlayerInput->Acceleration = MouseAcceleration;
 		PlayerInput->AccelerationMax = MouseAccelerationMax;

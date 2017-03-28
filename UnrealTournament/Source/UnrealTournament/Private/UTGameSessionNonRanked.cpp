@@ -454,8 +454,11 @@ bool AUTGameSessionNonRanked::KickPlayer(APlayerController* KickedPlayer, const 
 				}
 			}
 		}
-		KickedPlayer->ClientWasKicked(KickReason);
-		KickedPlayer->Destroy();
+		AUTBasePlayerController* KickedBasePlayer = Cast<AUTBasePlayerController>(KickedPlayer);
+		if (KickedBasePlayer != nullptr)
+		{
+			KickedBasePlayer->GuaranteedKick(KickReason);
+		}
 		return true;
 	}
 	else
@@ -519,3 +522,21 @@ void AUTGameSessionNonRanked::OnConnectionStatusChanged(EOnlineServerConnectionS
 		UnRegisterServer(true);
 	}
 }
+
+void AUTGameSessionNonRanked::UnbanPlayer(const FString& UIDStr)
+{
+	int32 i = 0 ;
+	while (i < BannedUsers.Num())
+	{
+		if (BannedUsers[i].UniqueID.Equals(UIDStr, ESearchCase::IgnoreCase))
+		{
+			BannedUsers.RemoveAt(i);		
+		}
+		else
+		{
+			i++;
+		}
+	}
+	SaveConfig();
+}
+

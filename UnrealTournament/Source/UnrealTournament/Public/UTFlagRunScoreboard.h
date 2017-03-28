@@ -149,8 +149,6 @@ protected:
 
 	virtual float DrawWinAnnouncement(float DeltaTime, UFont* InFont);
 
-	virtual void DrawFramedBackground(float XOffset, float YOffset, float Width, float Height);
-
 	virtual void DrawScoringPlays(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float MaxHeight) override;
 
 	virtual void GetScoringStars(int32& NumStars, FLinearColor& StarColor) const;

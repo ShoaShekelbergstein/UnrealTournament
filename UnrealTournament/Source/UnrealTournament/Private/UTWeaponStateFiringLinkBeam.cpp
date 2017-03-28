@@ -42,15 +42,6 @@ void UUTWeaponStateFiringLinkBeam::FireShot()
 		}
     }
 
-	if (FiringLoopAnim != NULL)
-	{
-		UAnimInstance* AnimInstance = GetOuterAUTWeapon()->GetMesh()->GetAnimInstance();
-		if (AnimInstance != NULL && !AnimInstance->Montage_IsPlaying(FiringLoopAnim))
-		{
-			GetOuterAUTWeapon()->PlayWeaponAnim(FiringLoopAnim, FiringLoopAnimHands, 1.0f);
-		}
-	}
-    
 	if (GetUTOwner() != NULL)
     {
 		GetUTOwner()->TargetEyeOffset.Y = LinkGun->FiringBeamKickbackY;
@@ -68,6 +59,7 @@ void UUTWeaponStateFiringLinkBeam::EndFiringSequence(uint8 FireModeNum)
 			Super::EndFiringSequence(FireModeNum);
 		if (FireModeNum == GetOuterAUTWeapon()->GetCurrentFireMode())
 			{
+				PlayEndFireAnims();
 				GetOuterAUTWeapon()->GotoActiveState();
 			}
 		}

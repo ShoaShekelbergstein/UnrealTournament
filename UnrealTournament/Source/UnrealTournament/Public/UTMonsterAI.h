@@ -10,6 +10,12 @@ class AUTMonsterAI : public AUTBot
 {
 	GENERATED_BODY()
 public:
+	AUTMonsterAI(const FObjectInitializer& OI)
+		: Super(OI)
+	{
+		FiringRotationRateMult = 1.0f;
+	}
+
 	/** class of monster to use, set when the monster can respawn so the controller is left around */
 	UPROPERTY()
 	TSubclassOf<AUTCharacter> PawnClass;
@@ -18,5 +24,11 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	bool bOneShotAttacks;
 
+	/** multiplier to rotation speed when firing */
+	UPROPERTY(EditDefaultsOnly)
+	float FiringRotationRateMult;
+
 	virtual void CheckWeaponFiring(bool bFromWeapon = true) override;
+	virtual void UpdateControlRotation(float DeltaTime, bool bUpdatePawn = true) override;
+	virtual bool NeedToTurn(const FVector& TargetLoc, bool bForcePrecise = false) override;
 };

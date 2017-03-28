@@ -43,6 +43,15 @@ void SUTMenuBase::Construct(const FArguments& InArgs)
 
 void SUTMenuBase::OnMenuOpened(const FString& Parameters)
 {
+	if (!SlateParentWindowPtr.IsValid())
+	{
+		SlateParentWindowPtr = FSlateApplication::Get().FindWidgetWindow(SharedThis(this));
+	}
+
+	if (SlateParentWindowPtr.IsValid())
+	{
+		OnActivateHandle = SlateParentWindowPtr.Pin()->GetOnWindowActivatedEvent().AddSP(this, &SUTMenuBase::HandleWindowActivated);
+	}
 
 	AUTGameState* UTGameState = (PlayerOwner.IsValid() && PlayerOwner->GetWorld() != nullptr) ? PlayerOwner->GetWorld()->GetGameState<AUTGameState>() : nullptr;
 	if (UTGameState != nullptr) UTGameState->bLocalMenusAreActive = true;
@@ -58,6 +67,11 @@ void SUTMenuBase::OnMenuOpened(const FString& Parameters)
 
 void SUTMenuBase::OnMenuClosed()
 {
+	if (SlateParentWindowPtr.IsValid())
+	{
+		SlateParentWindowPtr.Pin()->GetOnWindowActivatedEvent().Remove(OnActivateHandle);
+	}
+
 	AUTGameState* UTGameState = ( PlayerOwner.IsValid() && PlayerOwner->GetWorld() != nullptr) ? PlayerOwner->GetWorld()->GetGameState<AUTGameState>() : nullptr;
 	if (UTGameState != nullptr) UTGameState->bLocalMenusAreActive = false;
 
@@ -65,7 +79,7 @@ void SUTMenuBase::OnMenuClosed()
 
 	if (ActivePanel.IsValid())
 	{
-		DeactivatePanel(ActivePanel);
+		ActivePanel->PanelClosed();
 	}
 
 	FSlateApplication::Get().ClearUserFocus(0);
@@ -286,7 +300,7 @@ void SUTMenuBase::CreateDesktop()
 					.VAlign(VAlign_Fill)
 					.HAlign(HAlign_Fill)
 					[
-						SNew(SOverlay)
+						SAssignNew(DesktopOverlay, SOverlay)
 						+ SOverlay::Slot()
 						[
 							SAssignNew(Desktop, SOverlay)
@@ -542,7 +556,7 @@ TSharedRef<SWidget> SUTMenuBase::BuildAboutSubMenu()
 
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_BuildNotes", "Build Notes"), FOnClicked::CreateSP(this, &SUTMenuBase::OpenBuildNotes));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_TPSReport", "Third Party Software"), FOnClicked::CreateSP(this, &SUTMenuBase::OpenTPSReport));
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_Credits", "Credits"), FOnClicked::CreateSP(this, &SUTMenuBase::OpenCredits));
+	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_Credits", "Community Contributors"), FOnClicked::CreateSP(this, &SUTMenuBase::OpenCredits));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_About_UTSite", "UnrealTournament.com"), FOnClicked::CreateSP(this, &SUTMenuBase::OnMenuHTTPButton, FString(TEXT("http://www.unrealtournament.com/"))));
 
 #if UE_BUILD_DEBUG
@@ -1155,5 +1169,12 @@ FSlateColor SUTMenuBase::GetLabelColor() const
 {
 	return PlayerButton.IsValid() ? PlayerButton->GetLabelColor() : FSlateColor(FLinearColor::White);
 }
+
+
+void SUTMenuBase::HandleWindowActivated()
+{
+	FSlateApplication::Get().SetAllUserFocus(SharedThis(this), EFocusCause::WindowActivate);
+}
+
 
 #endif

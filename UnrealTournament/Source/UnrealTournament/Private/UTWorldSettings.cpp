@@ -81,7 +81,7 @@ void AUTWorldSettings::CreateLevelSummary()
 
 void AUTWorldSettings::LevelActorDestroyed(AActor* TheActor)
 {
-	new(DestroyedLevelActors) FDestroyedActorInfo(TheActor->GetLevel(), TheActor->GetFName());
+	new(DestroyedLevelActors) FDestroyedActorInfo(TheActor);
 }
 
 void AUTWorldSettings::NotifyBeginPlay()
@@ -169,6 +169,15 @@ void AUTWorldSettings::Reset_Implementation()
 		}
 	}
 	FadingEffects.Empty();
+	for (int32 i = 0; i < TimedEffects.Num(); i++)
+	{
+		if (TimedEffects[i].EffectComp != nullptr)
+		{
+			TimedEffects[i].EffectComp->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+			TimedEffects[i].EffectComp->DestroyComponent();
+		}
+	}
+	TimedEffects.Empty();
 }
 
 void AUTWorldSettings::AddImpactEffect(USceneComponent* NewEffect, float LifeScaling)

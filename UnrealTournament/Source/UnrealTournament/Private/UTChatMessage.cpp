@@ -9,6 +9,7 @@
 #include "UTLocalPlayer.h"
 #include "UTLobbyMatchInfo.h"
 #include "UTLobbyGameState.h"
+#include "UTGameViewportClient.h"
 
 UUTChatMessage::UUTChatMessage(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -114,6 +115,28 @@ void UUTChatMessage::ClientReceiveChat(const FClientReceiveData& ClientData, FNa
 
 		FText LocalMessageText = FText::FromString(FString::Printf(TEXT(": %s"), *ClientData.MessageString));
 		Cast<AUTHUD>(ClientData.LocalPC->MyHUD)->ReceiveLocalMessage(GetClass(), ClientData.RelatedPlayerState_1, ClientData.RelatedPlayerState_2, MessageIndex, LocalMessageText, ClientData.OptionalObject);
+		
+		// Pipe console messages to the demo playback hud for live view of chat
+		ULocalPlayer* LP = Cast<ULocalPlayer>(ClientData.LocalPC->Player);
+		UUTGameViewportClient* UTGVC = Cast<UUTGameViewportClient>(LP->ViewportClient);
+		if (UTGVC && UTGVC->HasActiveWorldOverride())
+		{
+			UWorld* DemoWorld = UTGVC->GetWorld();
+			if (DemoWorld)
+			{
+				for (FConstPlayerControllerIterator Iterator = DemoWorld->GetPlayerControllerIterator(); Iterator; ++Iterator)
+				{
+					if (Iterator->Get()->Player == LP)
+					{
+						AUTHUD* DemoHUD = Cast<AUTHUD>(Iterator->Get()->MyHUD);
+						if (DemoHUD)
+						{
+							DemoHUD->ReceiveLocalMessage(GetClass(), ClientData.RelatedPlayerState_1, ClientData.RelatedPlayerState_2, ClientData.MessageIndex, LocalMessageText, ClientData.OptionalObject);
+						}
+					}
+				}
+			}
+		}
 
 		FString ChatMessage;
 		if (Destination == ChatDestinations::MOTD || Destination == ChatDestinations::System || Destination == ChatDestinations::Lobby)

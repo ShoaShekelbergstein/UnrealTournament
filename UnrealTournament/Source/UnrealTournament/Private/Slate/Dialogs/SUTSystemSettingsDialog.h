@@ -218,8 +218,6 @@ protected:
 	// widgets only shown in advanced mode
 	TArray<TSharedRef<SWidget>> AdvancedWidgets;
 
-	/** range of values passed to PlayerInput->SetMouseSensitivity() which will be normalized to 0.0 - 1.0 for the slider widget */
-	FVector2D MouseSensitivityRange;
 	/** range of values for decal lifetime which will be normalized to 0.0 - 1.0 for the slider widget
 	 * note that the max value (1.0 on the slider) becomes infinite lifetime
 	 */

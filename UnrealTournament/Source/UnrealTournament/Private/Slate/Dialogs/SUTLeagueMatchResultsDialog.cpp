@@ -4,6 +4,8 @@
 #include "SUTLeagueMatchResultsDialog.h"
 #include "../SUWindowsStyle.h"
 #include "SUTStyle.h"
+#include "UTLocalPlayer.h"
+#include "UTKillcamPlayback.h"
 
 #if !UE_SERVER
 FText SUTLeagueMatchResultsDialog::LeagueTierToText(int32 Tier)
@@ -43,6 +45,19 @@ FString SUTLeagueMatchResultsDialog::LeagueTierToBrushName(int32 Tier)
 	return L"UT.RankedBronze";
 }
 
+EVisibility SUTLeagueMatchResultsDialog::GetDialogVisibility() const
+{
+	if (PlayerOwner.IsValid())
+	{
+		if (PlayerOwner->GetKillcamPlaybackManager()->IsEnabled())
+		{
+			return EVisibility::Hidden;
+		}
+	}
+
+	return EVisibility::Visible;
+}
+
 void SUTLeagueMatchResultsDialog::Construct(const FArguments& InArgs)
 {
 	SUTDialogBase::Construct(SUTDialogBase::FArguments()
@@ -55,6 +70,7 @@ void SUTLeagueMatchResultsDialog::Construct(const FArguments& InArgs)
 		.ContentPadding(InArgs._ContentPadding)
 		.ButtonMask(InArgs._ButtonMask)
 		.OnDialogResult(InArgs._OnDialogResult)
+		.Visibility(this, &SUTLeagueMatchResultsDialog::GetDialogVisibility)
 		);
 
 

@@ -19,6 +19,7 @@
 #include "UTAIAction_Camp.h"
 #include "UTLift.h"
 #include "UTFlagRunGame.h"
+#include "UTArmor.h"
 
 void FBotEnemyInfo::Update(EAIEnemyUpdateType UpdateType, const FVector& ViewerLoc)
 {
@@ -131,6 +132,11 @@ AUTBot::AUTBot(const FObjectInitializer& ObjectInitializer)
 	UsingSquadRouteIndex = INDEX_NONE;
 	HuntInterceptFailedTime = -100000.0f;
 	DirectionChangeOffsetPct = 0.5f;
+
+	LastDeathTime = -10000.0f;
+	LastUnderFireTime = -10000.0f;
+	LastTranslocTime = -10000.0f;
+	LastRespawnTime = -10000.0f;
 
 	WaitForMoveAction = ObjectInitializer.CreateDefaultSubobject<UUTAIAction_WaitForMove>(this, FName(TEXT("WaitForMove")));
 	WaitForLandingAction = ObjectInitializer.CreateDefaultSubobject<UUTAIAction_WaitForLanding>(this, FName(TEXT("WaitForLanding")));
@@ -341,6 +347,7 @@ void AUTBot::InitializeSkill(float NewBaseSkill)
 		PS->DMMatchesPlayed = 255;
 		PS->ShowdownMatchesPlayed = 255;
 		PS->FlagRunMatchesPlayed = 255;
+		PS->Ping = (90 - 10 * Skill) / 4;
 	}
 
 	float AimingSkill = Skill + Personality.Accuracy;
@@ -474,6 +481,7 @@ void AUTBot::Possess(APawn* InPawn)
 void AUTBot::PawnPendingDestroy(APawn* InPawn)
 {
 	LastDeathTime = GetWorld()->TimeSeconds;
+	LastUnderFireTime = -10000.0f;
 	Enemy = NULL;
 	StartNewAction(NULL);
 	MoveTarget.Clear();
@@ -1077,6 +1085,13 @@ void AUTBot::SetMoveTarget(const FRouteCacheItem& NewMoveTarget, const TArray<FC
 	TranslocTarget = FVector::ZeroVector;
 	// default movement code will generate points and set MoveTimer, this just makes sure we don't abort before even getting there
 	MoveTimer = FMath::Max<float>(MoveTimer, 1.0f);
+
+	// if previous focus was MoveTarget, update
+	if (PrevMoveTarget.Actor.IsValid() && GetFocusActorForPriority(EAIFocusPriority::Gameplay) == PrevMoveTarget.Actor.Get())
+	{
+		// note: if new target is NULL (a point instead of an Actor) this will fall back to EAIFocusPriority::Move
+		SetFocus(NewMoveTarget.Actor.Get(), EAIFocusPriority::Gameplay);
+	}
 }
 
 void AUTBot::UpdateMovementOptions(bool bNewPath)
@@ -1124,11 +1139,6 @@ void AUTBot::UpdateMovementOptions(bool bNewPath)
 		if (AngleToPath < 0.75f && AngleToPath > 0.25f)
 		{
 			DodgeChance *= 2.0f;
-		}
-		else if (GetUTChar()->UTCharacterMovement->bIsSprinting)
-		{
-			// dodge will nullify sprinting bonus so reduce chance
-			DodgeChance *= 0.5f;
 		}
 		if (FMath::FRand() < DodgeChance)
 		{
@@ -1592,6 +1602,7 @@ void AUTBot::UpdateControlRotation(float DeltaTime, bool bUpdatePawn)
 
 			FVector NewTrackedVelocity = (GetFocusActor() != NULL) ? GetFocusActor()->GetVelocity() : FVector::ZeroVector;
 			bLastCanAttackSuccess = false;
+			bStopSuppressiveWeapon = false;
 
 			// warning: assumption that if bot wants to shoot an enemy Pawn it always sets it as Enemy
 			if (Enemy != NULL && GetFocusActor() == Enemy)
@@ -1635,7 +1646,7 @@ void AUTBot::UpdateControlRotation(float DeltaTime, bool bUpdatePawn)
 							//DrawDebugSphere(GetWorld(), TargetLoc + TrackedVelocity*TrackingReactionTime, 40.f, 8, FColor::Yellow, false);
 							//DrawDebugSphere(GetWorld(), TargetLoc + TrackedVelocity*(TrackingReactionTime + TrackingPredictionError), 40.f, 8, FColor::Red, false);
 							TargetLoc = TargetLoc + TrackedVelocity * (TrackingReactionTime + TrackingPredictionError) + SideDir * (TrackingOffsetError * FMath::Min<float>(500.f, (TargetLoc - P->GetActorLocation()).Size()));
-							//DrawDebugSphere(GetWorld(), TargetLoc, 40.f, 8, FColor::Red, false); // FIXME THIS SEEMS TO SMALL AT SKILL 4
+							//DrawDebugSphere(GetWorld(), TargetLoc, 40.f, 8, FColor::Red, false); // FIXME THIS SEEMS TOO SMALL AT SKILL 4
 							if (EnemyUTC != NULL)
 							{
 								TargetLoc += EnemyUTC->GetLocationCenterOffset();
@@ -1646,6 +1657,21 @@ void AUTBot::UpdateControlRotation(float DeltaTime, bool bUpdatePawn)
 								bLastCanAttackSuccess = true;
 								bPickNewFireMode = false;
 								ApplyWeaponAimAdjust(TargetLoc, FocalPoint);
+							}
+							// if suppressive weapon spam last seen loc using current fire mode
+							else if (UTChar != nullptr && UTChar->GetWeapon() != nullptr && UTChar->GetWeapon()->bRecommendSuppressiveFire)
+							{
+								if (CanAttack(Enemy, GetEnemyInfo(Enemy, false)->LastSeenLoc, true, true))
+								{
+									// note: bLastCanAttackSuccess left at false so AI will give up on this after a short time (see CheckWeaponFiring())
+									FocalPoint = GetEnemyInfo(Enemy, false)->LastSeenLoc;
+									ApplyWeaponAimAdjust(FocalPoint, FocalPoint);
+								}
+								else
+								{
+									// we defer this to the next weapon update so it doesn't look so mechanical
+									bStopSuppressiveWeapon = true;
+								}
 							}
 							else
 							{
@@ -1825,6 +1851,17 @@ void AUTBot::NotifyMoveBlocked(const FHitResult& Impact)
 						AdjustLoc = AdjustTraceHit.Location - AdjustTraceHit.Normal;
 					}
 					SetAdjustLoc(NewAdjustLoc);
+				}
+			}
+			else if (HitPawn != NULL && GetMoveTarget().Actor == HitPawn)
+			{
+				if (Skill + Personality.MovementAbility >= 4.0f)
+				{
+					DoTacticalMove();
+				}
+				else
+				{
+					DoRangedAttackOn(HitPawn);
 				}
 			}
 			// crouch if path says we should
@@ -2296,7 +2333,7 @@ void AUTBot::CheckWeaponFiring(bool bFromWeapon)
 					}
 				}
 			}
-			else if (TestTarget == NULL || !bFromWeapon || !UTChar->GetWeapon()->bRecommendSuppressiveFire || GetWorld()->TimeSeconds - LastFireSuccessTime > 1.0f)
+			else if (TestTarget == NULL || !bFromWeapon || !UTChar->GetWeapon()->bRecommendSuppressiveFire || bStopSuppressiveWeapon || GetWorld()->TimeSeconds - LastFireSuccessTime > 1.0f)
 			{
 				UTChar->StopFiring();
 			}
@@ -2426,6 +2463,56 @@ bool AUTBot::FindInventoryGoal(float MinWeight)
 		LastFindInventoryWeight = MinWeight;
 
 		FBestInventoryEval NodeEval(RespawnPredictionTime, (GetCharacter() != NULL) ? GetCharacter()->GetCharacterMovement()->MaxWalkSpeed : GetDefault<AUTCharacter>()->GetCharacterMovement()->MaxWalkSpeed, (MinWeight > 0.0f) ? FMath::TruncToInt(5.0f / MinWeight) : 0);
+		// check for teammates about to pick up things and reject them from evaluation
+		// unlike super pickups, we're just checking direct move goals or allies camping the pickup already;
+		// desire for minor pickups change rapidly and there's not a lot of value in trying to claim far ahead
+		// we're primarily just trying to avoid cases of teammates near each other (especially from a spawn room) competing for the same pickup
+		// when obviously only one of them is going to get it
+		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+		if (PS != nullptr && PS->Team != nullptr && GS != nullptr)
+		{
+			auto CheckPickup = [GS, &NodeEval](AActor* A)
+			{
+				if (A->IsA(AUTPickup::StaticClass()) || A->IsA(AUTDroppedPickup::StaticClass()))
+				{
+					if (!GS->bWeaponStay)
+					{
+						NodeEval.ClaimedPickups.Add(A);
+					}
+					else
+					{
+						AUTPickupInventory* ItemPickup = Cast<AUTPickupInventory>(A);
+						if (ItemPickup != nullptr)
+						{
+							TSubclassOf<AUTWeapon> WeaponClass(*ItemPickup->GetInventoryType());
+							if (WeaponClass == nullptr || !WeaponClass.GetDefaultObject()->bWeaponStay)
+							{
+								NodeEval.ClaimedPickups.Add(A);
+							}
+						}
+					}
+				}
+			};
+			for (AController* C : PS->Team->GetTeamMembers())
+			{
+				if (C != nullptr && C != this && C->GetPawn() != nullptr)
+				{
+					TSet<AActor*> Overlaps;
+					GetOverlappingActors(Overlaps, AActor::StaticClass());
+					for (AActor* A : Overlaps)
+					{
+						CheckPickup(A);
+					}
+					AUTBot* B = Cast<AUTBot>(C);
+					if (B != nullptr && B->GetMoveTarget().Actor.IsValid())
+					{
+						CheckPickup(B->GetMoveTarget().Actor.Get());
+					}
+				}
+			}
+		}
+
 		return NavData->FindBestPath(GetPawn(), GetPawn()->GetNavAgentPropertiesRef(), this, NodeEval, GetPawn()->GetNavAgentLocation(), MinWeight, false, RouteCache);
 	}
 }
@@ -2748,7 +2835,7 @@ void AUTBot::ExecuteWhatToDoNext()
 		bool bLowSkillEnemyFocus = false;
 		if (!bLeadTarget && Enemy != nullptr && IsEnemyVisible(Enemy) && (Enemy->GetActorLocation() - GetPawn()->GetActorLocation()).Size() < 2000.0f)
 		{
-			bLowSkillEnemyFocus = (UTChar != nullptr && UTChar->UTCharacterMovement->bIsSprinting) || FMath::FRand() < 0.3f - (Skill * 0.1f);
+			bLowSkillEnemyFocus = FMath::FRand() < 0.3f - (Skill * 0.1f);
 		}
 		if ((bLowSkillEnemyFocus || Squad == NULL || !Squad->CheckSquadObjectives(this)) && !ShouldDefendPosition())
 		{
@@ -3153,7 +3240,7 @@ void AUTBot::FightEnemy(bool bCanCharge, float EnemyStrength)
 				GoalString = "Charge closer";
 				DoCharge();
 			}
-			else if (MyWeap->bPrioritizeAccuracy /*|| IsSniping()*/ || (FMath::FRand() > 0.17f * (Skill + Personality.Tactics - 1.0f)/* && !DefendMelee(EnemyDist)*/))
+			else if (MyWeap->bPrioritizeAccuracy || IsSniping() || (FMath::FRand() > 0.17f * (Skill + Personality.Tactics - 1.0f)/* && !DefendMelee(EnemyDist)*/))
 			{
 				GoalString = "Ranged Attack";
 				DoRangedAttackOn(Enemy);
@@ -3988,6 +4075,7 @@ void AUTBot::UTNotifyKilled(AController* Killer, AController* KilledPlayer, APaw
 
 void AUTBot::NotifyTakeHit(AController* InstigatedBy, int32 Damage, FVector Momentum, const FDamageEvent& DamageEvent)
 {
+	LastUnderFireTime = GetWorld()->TimeSeconds;
 	if (InstigatedBy != NULL && InstigatedBy != this && InstigatedBy->GetPawn() != NULL && (Enemy == NULL || !LineOfSightTo(Enemy)) && Squad != NULL && !IsTeammate(InstigatedBy))
 	{
 		UpdateEnemyInfo(InstigatedBy->GetPawn(), EUT_TookDamage);
@@ -4002,7 +4090,7 @@ void AUTBot::NotifyCausedHit(APawn* HitPawn, int32 Damage)
 	}
 }
 
-void AUTBot::NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius)
+void AUTBot::NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius, bool bWillBecomeInactive)
 {
 	if (GetPawn() != NULL && GetPawn() != PickedUpBy && !IsTeammate(PickedUpBy))
 	{
@@ -4027,7 +4115,7 @@ void AUTBot::NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius
 			// assume inventory items that manipulate damage change effective health
 			if (InventoryType != NULL)
 			{
-				bCanUpdateEnemyInfo = InventoryType.GetDefaultObject()->bCallDamageEvents;
+				bCanUpdateEnemyInfo = InventoryType.GetDefaultObject()->bCallDamageEvents || InventoryType->IsChildOf(AUTArmor::StaticClass());
 			}
 		}
 		if ((Pickup->GetActorLocation() - GetPawn()->GetActorLocation()).Size() < AudibleRadius * HearingRadiusMult * 0.5f || IsEnemyVisible(PickedUpBy) || LineOfSightTo(Pickup))
@@ -4047,6 +4135,10 @@ void AUTBot::NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius
 					Say(FText::Format(NSLOCTEXT("UTBot", "EnemyPickup", "Enemy {0} got {1}."), FText::FromString(PickedUpBy->PlayerState->PlayerName), Item->GetDisplayName()).ToString(), true);
 				}
 			}
+			if (bWillBecomeInactive && MoveTarget.Actor.Get() == Pickup && CurrentAction != nullptr)
+			{
+				CurrentAction->PickupTargetTaken();
+			}
 		}
 	}
 	else if (GetPawn() == PickedUpBy)
@@ -4058,11 +4150,16 @@ void AUTBot::NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius
 			Say(FText::Format(NSLOCTEXT("UTBot", "GotPickup", "I got the {0}!"), Item->GetDisplayName()).ToString(), true);
 		}
 	}
+	else if (IsTeammate(PickedUpBy) && bWillBecomeInactive && MoveTarget.Actor.Get() == Pickup && CurrentAction != nullptr)
+	{
+		CurrentAction->PickupTargetTaken();
+	}
 	// clear any claims on this pickup since it's likely no longer available
 	if (Squad != NULL && Squad->Team != NULL)
 	{
 		Squad->Team->ClearClaimedPickup(Pickup);
 	}
+	
 }
 
 void AUTBot::ReceiveProjWarning(AUTProjectile* Incoming)
@@ -4072,10 +4169,7 @@ void AUTBot::ReceiveProjWarning(AUTProjectile* Incoming)
 		// bots may duck if not falling or swimming
 		if (Skill >= 2.0f && (Enemy != NULL || FMath::FRand() < Personality.Alertness)) // TODO: if 1 on 1 (T)DM be more alert? maybe enemy will usually be set so doesn't matter
 		{
-			//LastUnderFire = WorldInfo.TimeSeconds;
-			//if (WorldInfo.TimeSeconds - LastWarningTime < 0.5)
-			//	return;
-			//LastWarningTime = WorldInfo.TimeSeconds;
+			LastUnderFireTime = GetWorld()->TimeSeconds;
 
 			// TODO: should adjust target location if projectile can explode in air like shock combo (i.e. account for damage radius and dodge earlier)
 			float ProjTime = Incoming->GetTimeToLocation(GetPawn()->GetActorLocation());
@@ -4119,10 +4213,7 @@ void AUTBot::ReceiveInstantWarning(AUTCharacter* Shooter, const FVector& FireDir
 			X.Z = 0;
 			if ((EnemyDir.GetSafeNormal() | X.GetSafeNormal()) >= PeripheralVision)
 			{
-				//LastUnderFire = WorldInfo.TimeSeconds;
-				//if (WorldInfo.TimeSeconds - LastWarningTime < 0.5)
-				//	return;
-				//LastWarningTime = WorldInfo.TimeSeconds;
+				LastUnderFireTime = GetWorld()->TimeSeconds;
 
 				UpdateEnemyInfo(Shooter, EUT_TookDamage);
 
@@ -4689,6 +4780,7 @@ void AUTBot::SetEnemy(APawn* NewEnemy)
 			}
 		}
 		LastEnemyChangeTime = GetWorld()->TimeSeconds;
+		LastFireSuccessTime = -100.0f; // this is so AI will abort suppressive fire immediately if new enemy is clearly behind a wall
 		if (Enemy != NULL)
 		{
 			UpdateTrackingError(true);

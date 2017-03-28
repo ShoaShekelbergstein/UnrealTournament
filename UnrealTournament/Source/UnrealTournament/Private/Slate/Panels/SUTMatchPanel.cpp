@@ -159,7 +159,7 @@ void SUTMatchPanel::Construct(const FArguments& InArgs)
 			[
 				SAssignNew( MatchList, SListView< TSharedPtr<FTrackedMatch> > )
 				// List view items are this tall
-				.ItemHeight(80)
+				.ItemHeight(96)
 				// Tell the list view where to get its source data
 				.ListItemsSource( &TrackedMatches)
 				// When the list view needs to generate a widget for some data item, use this method
@@ -167,8 +167,21 @@ void SUTMatchPanel::Construct(const FArguments& InArgs)
 				.SelectionMode(ESelectionMode::Single)
 				.OnMouseButtonDoubleClick(this, &SUTMatchPanel::OnListMouseButtonDoubleClick)
 			]
+			+SOverlay::Slot()
+			[
+				SNew(STextBlock)
+				.Text(NSLOCTEXT("SUTMatchPanel","PrivateServer","This server is private so the match data is unavailalble."))
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Medium.Bold")
+				.AutoWrapText(true)
+				.Visibility(this, &SUTMatchPanel::GetPrivateHubVis)
+			]
 		]
 	];
+}
+
+EVisibility SUTMatchPanel::GetPrivateHubVis() const
+{
+	return (bShowPrivateHub) ? EVisibility::Visible : EVisibility::Collapsed;
 }
 
 bool SUTMatchPanel::ShouldUseLiveData()
@@ -202,7 +215,7 @@ TSharedRef<ITableRow> SUTMatchPanel::OnGenerateWidgetForMatchList( TSharedPtr<FT
 					.VAlign(VAlign_Center)
 					.AutoWidth()
 					[
-						SNew(SBox).WidthOverride(78).HeightOverride(78)
+						SNew(SBox).WidthOverride(86).HeightOverride(86)
 						[
 							SNew(SOverlay)
 							+SOverlay::Slot()
@@ -258,7 +271,7 @@ TSharedRef<ITableRow> SUTMatchPanel::OnGenerateWidgetForMatchList( TSharedPtr<FT
 					.VAlign(VAlign_Center)
 					.AutoWidth()
 					[
-						SNew(SBox).HeightOverride(78).WidthOverride(408).Padding(FMargin(5.0f, 0.0f, 5.0f, 0.0f))
+						SNew(SBox).HeightOverride(86).WidthOverride(563).Padding(FMargin(5.0f, 0.0f, 5.0f, 0.0f))
 						[
 							SNew(SVerticalBox)
 							+SVerticalBox::Slot()
@@ -287,17 +300,8 @@ TSharedRef<ITableRow> SUTMatchPanel::OnGenerateWidgetForMatchList( TSharedPtr<FT
 									.ColorAndOpacity(FSlateColor(FLinearColor(0.6f,0.6f,0.6f,1.0f)))
 								]
 							]
-						]
-					]
-					+SHorizontalBox::Slot()
-					.VAlign(VAlign_Center)
-					.AutoWidth()
-					[
-						SNew(SBox).WidthOverride(155).HeightOverride(78)
-						[
-							SNew(SVerticalBox)
 							+SVerticalBox::Slot()
-							.FillHeight(1.0)
+							.AutoHeight()
 							.VAlign(VAlign_Bottom)
 							[
 								SNew(SRichTextBlock)
@@ -314,7 +318,7 @@ TSharedRef<ITableRow> SUTMatchPanel::OnGenerateWidgetForMatchList( TSharedPtr<FT
 					.VAlign(VAlign_Center)
 					.AutoWidth()
 					[
-						SNew(SBox).WidthOverride(103).HeightOverride(78)
+						SNew(SBox).WidthOverride(103).HeightOverride(86)
 						[
 							SNew(SVerticalBox)
 							+SVerticalBox::Slot()
@@ -347,7 +351,7 @@ TSharedRef<ITableRow> SUTMatchPanel::OnGenerateWidgetForMatchList( TSharedPtr<FT
 					.VAlign(VAlign_Center)
 					.AutoWidth()
 					[
-						SNew(SBox).WidthOverride(92).HeightOverride(78)
+						SNew(SBox).WidthOverride(92).HeightOverride(86)
 						[
 							SNew(SHorizontalBox)
 							+SHorizontalBox::Slot()
@@ -398,7 +402,7 @@ TSharedRef<ITableRow> SUTMatchPanel::OnGenerateWidgetForMatchList( TSharedPtr<FT
 					.AutoWidth()
 					.Padding(0.0,0.0,5.0,0.0)
 					[
-						SNew(SBox).WidthOverride(115).HeightOverride(78)
+						SNew(SBox).WidthOverride(115).HeightOverride(86)
 						[
 							SNew(SUTButton)
 							.ButtonStyle(SUTStyle::Get(),"UT.ClearButton")
@@ -1133,6 +1137,9 @@ FReply SUTMatchPanel::SpectateMatchButtonClicked(TSharedPtr<FTrackedMatch> InIte
 void SUTMatchPanel::SetServerData(TSharedPtr<FServerData> inServerData)
 {
 	TrackedMatches.Empty();
+
+	bShowPrivateHub = (inServerData->Flags & SERVERFLAG_RequiresPassword) > 0;
+	if (bShowPrivateHub) return;
 
 	// Update the friends.
 	TArray<FUTFriend> FriendsList;

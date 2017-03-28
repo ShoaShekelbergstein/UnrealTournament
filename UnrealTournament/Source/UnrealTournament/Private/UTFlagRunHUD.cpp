@@ -86,12 +86,6 @@ void AUTFlagRunHUD::NotifyMatchStateChange()
 	Super::NotifyMatchStateChange();
 }
 
-bool AUTFlagRunHUD::ScoreboardIsUp()
-{
-	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	return  (GS && (GS->IsMatchIntermission() || GS->HasMatchEnded())) || Super::ScoreboardIsUp();
-}
-
 void AUTFlagRunHUD::GetPlayerListForIcons(TArray<AUTPlayerState*>& SortedPlayers)
 {
 	AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(GetWorld()->GetGameState());
@@ -118,7 +112,7 @@ void AUTFlagRunHUD::DrawHUD()
 		if (GS->FlagRunMessageTeam && UTPlayerOwner)
 		{
 			bUseShortWinMessage = true;
-			DrawWinConditions(TinyFont, 0.f, 0.07f*GetHUDWidgetScaleOverride()*Canvas->ClipY, Canvas->ClipX, GetHUDWidgetScaleOverride(), true);
+			DrawWinConditions(Canvas, TinyFont, 0.f, 0.07f*GetHUDWidgetScaleOverride()*Canvas->ClipY, Canvas->ClipX, GetHUDWidgetScaleOverride(), true);
 			bUseShortWinMessage = false;
 		}
 
@@ -237,12 +231,12 @@ void AUTFlagRunHUD::DrawPlayerIcon(AUTPlayerState* PlayerState, float LiveScalin
 	}
 }
 
-float AUTFlagRunHUD::DrawWinConditions(UFont* InFont, float XOffset, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage, bool bSkipDrawing)
+float AUTFlagRunHUD::DrawWinConditions(UCanvas* InCanvas, UFont* InFont, float XOffset, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage, bool bSkipDrawing)
 {
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	if (GS && GS->HasMatchEnded())
 	{
-		return Super::DrawWinConditions(InFont, XOffset, YPos, ScoreWidth, RenderScale, bCenterMessage);
+		return Super::DrawWinConditions(InCanvas, InFont, XOffset, YPos, ScoreWidth, RenderScale, bCenterMessage);
 	}
 	if (GS && GS->FlagRunMessageTeam != nullptr)
 	{
@@ -255,7 +249,7 @@ float AUTFlagRunHUD::DrawWinConditions(UFont* InFont, float XOffset, float YPos,
 		FLinearColor EmphasisColor = (GS->FlagRunMessageTeam->TeamIndex == 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
 
 		float YL, EmphasisXL;
-		Canvas->StrLen(InFont, EmphasisText.ToString(), EmphasisXL, YL);
+		InCanvas->StrLen(InFont, EmphasisText.ToString(), EmphasisXL, YL);
 		float BonusXL = 0.f;
 		float MustScoreXL = 0.f;
 		FText BonusType = GS->BronzeBonusText;
@@ -291,15 +285,15 @@ float AUTFlagRunHUD::DrawWinConditions(UFont* InFont, float XOffset, float YPos,
 		{
 			if (Switch > 3)
 			{
-				Canvas->StrLen(InFont, MustScoreText.ToString(), MustScoreXL, YL);
+				InCanvas->StrLen(InFont, MustScoreText.ToString(), MustScoreXL, YL);
 			}
-			Canvas->StrLen(InFont, BonusType.ToString(), BonusXL, YL);
+			InCanvas->StrLen(InFont, BonusType.ToString(), BonusXL, YL);
 		}
 		FFormatNamedArguments Args;
 		Args.Add("TimeNeeded", TimeNeeded);
 		PostfixText = FText::Format(PostfixText, Args);
 		float PostXL;
-		Canvas->StrLen(InFont, PostfixText.ToString(), PostXL, YL);
+		InCanvas->StrLen(InFont, PostfixText.ToString(), PostXL, YL);
 
 		if (bCenterMessage)
 		{
@@ -307,31 +301,31 @@ float AUTFlagRunHUD::DrawWinConditions(UFont* InFont, float XOffset, float YPos,
 		}
 		if (!bSkipDrawing)
 		{
-			Canvas->SetLinearDrawColor(EmphasisColor);
-			Canvas->DrawText(InFont, EmphasisText, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
+			InCanvas->SetLinearDrawColor(EmphasisColor);
+			InCanvas->DrawText(InFont, EmphasisText, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
 			ScoreX += EmphasisXL*RenderScale;
 
 			if (Switch > 1)
 			{
 				if (Switch < 4)
 				{
-					Canvas->SetLinearDrawColor(FLinearColor::White);
-					Canvas->DrawText(InFont, PostfixText, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
+					InCanvas->SetLinearDrawColor(FLinearColor::White);
+					InCanvas->DrawText(InFont, PostfixText, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
 					ScoreX += PostXL*RenderScale;
 					PostfixText = FText::GetEmpty();
 				}
 				else
 				{
-					Canvas->SetLinearDrawColor(FLinearColor::White);
-					Canvas->DrawText(InFont, MustScoreText, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
+					InCanvas->SetLinearDrawColor(FLinearColor::White);
+					InCanvas->DrawText(InFont, MustScoreText, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
 					ScoreX += MustScoreXL*RenderScale;
 				}
-				Canvas->SetLinearDrawColor(BonusColor);
-				Canvas->DrawText(InFont, BonusType, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
+				InCanvas->SetLinearDrawColor(BonusColor);
+				InCanvas->DrawText(InFont, BonusType, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
 				ScoreX += BonusXL*RenderScale;
 			}
-			Canvas->SetLinearDrawColor(FLinearColor::White);
-			Canvas->DrawText(InFont, PostfixText, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
+			InCanvas->SetLinearDrawColor(FLinearColor::White);
+			InCanvas->DrawText(InFont, PostfixText, ScoreX, YPos, RenderScale, RenderScale, TextRenderInfo);
 		}
 		return RenderScale * (EmphasisXL + PostXL + MustScoreXL + BonusXL);
 	}

@@ -81,6 +81,10 @@ class UNREALTOURNAMENT_API UUTAIAction : public UObject
 		return false;
 	}
 
+	/** called from AUTBot::NotifyPickup() when MoveTarget is a pickup and someone else has taken it (only called if bot sees/hears the pickup or it's a teammate) */
+	virtual void PickupTargetTaken()
+	{}
+
 	/** called repeatedly while enemy is valid but not visible; combat actions often react to this by changing position, aborting, etc */
 	virtual void EnemyNotVisible()
 	{}

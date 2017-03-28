@@ -183,6 +183,9 @@ SUTPlayerInfoDialog::~SUTPlayerInfoDialog()
 
 void SUTPlayerInfoDialog::AddReferencedObjects(FReferenceCollector& Collector)
 {
+	Collector.AddReferencedObject(PlayerPreviewMesh);
+	Collector.AddReferencedObject(PreviewWeapon);
+	Collector.AddReferencedObject(PreviewEnvironment);
 	Collector.AddReferencedObject(PlayerPreviewTexture);
 	Collector.AddReferencedObject(PlayerPreviewMID);
 	Collector.AddReferencedObject(PlayerPreviewWorld);
@@ -210,7 +213,7 @@ void SUTPlayerInfoDialog::OnUniqueIdChanged()
 		}
 	}
 
-	if (false) // TargetPlayerState.IsValid())
+	if (TargetPlayerState.IsValid())
 	{
 		// We have the player state, so we can instantly use it to get the latest configuration data.
 		

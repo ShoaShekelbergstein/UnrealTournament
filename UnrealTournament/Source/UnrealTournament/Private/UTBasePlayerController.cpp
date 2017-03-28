@@ -16,6 +16,9 @@
 #include "Net/OnlineEngineInterface.h"
 #include "UnrealTournamentFullScreenMovie.h"
 #include "UTHeartBeatManager.h"
+#include "BlueprintContextLibrary.h"
+#include "PartyContext.h"
+#include "SUTQuickChatWindow.h"
 
 AUTBasePlayerController::AUTBasePlayerController(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -440,7 +443,7 @@ void AUTBasePlayerController::CancelConnectViaGUID()
 		}
 }
 
-void AUTBasePlayerController::ConnectToServerViaGUID(FString ServerGUID, int32 DesiredTeam, bool bSpectate)
+void AUTBasePlayerController::ConnectToServerViaGUID(FString ServerGUID, int32 DesiredTeam, bool bSpectate, bool bVerifyServerFirst)
 {
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 	if (OnlineSubsystem && !GUIDSessionSearchSettings.IsValid()) 
@@ -455,6 +458,7 @@ void AUTBasePlayerController::ConnectToServerViaGUID(FString ServerGUID, int32 D
 		GUIDJoinAttemptCount = 0;
 		GUIDSessionSearchSettings.Reset();
 		GUIDJoinDesiredTeam = DesiredTeam;
+		bGUIDJoinVerifyFirst = bVerifyServerFirst;
 		
 		// Check to make sure we are not downloading content.  If we are.. stall until it's completed.
 
@@ -502,6 +506,7 @@ void AUTBasePlayerController::OnCancelGUIDFindSessionComplete(bool bWasSuccessfu
 		IOnlineSessionPtr OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
 		OnlineSessionInterface->ClearOnCancelFindSessionsCompleteDelegate_Handle(OnCancelGUIDFindSessionCompleteDelegateHandle);
 		OnlineSessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(OnFindGUIDSessionCompleteDelegateHandle);
+
 		AttemptGUIDJoin();
 	}
 	else
@@ -574,16 +579,33 @@ void AUTBasePlayerController::OnFindSessionsComplete(bool bWasSuccessful)
 				UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
 				if (LP)
 				{
-
-					LP->LastSession = Result;
-					LP->bLastSessionWasASpectator = GUIDJoinWantsToSpectate;
-
 					// Clear the Quickmatch wait timer.
 					LP->QuickMatchLimitTime = 0.0;
-					if (LP->JoinSession(Result, GUIDJoinWantsToSpectate, GUIDJoinDesiredTeam))
+
+					if (bGUIDJoinVerifyFirst)
 					{
-						//LP->HideMenu(); // should happen on level change now
+						// Build the beacon
+						PingBeacon = GetWorld()->SpawnActor<AUTServerBeaconClient>(AUTServerBeaconClient::StaticClass());
+						if (PingBeacon)
+						{
+							PingBeacon->OnServerRequestResults = FServerRequestResultsDelegate::CreateUObject(this, &AUTBasePlayerController::OnPingBeaconResult);
+							PingBeacon->OnServerRequestFailure = FServerRequestFailureDelegate::CreateUObject(this, &AUTBasePlayerController::OnPingBeaconFailure);
+						
+							IOnlineSessionPtr OnlineSessionInterface;
+							if (OnlineSubsystem) OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
+
+							if (OnlineSessionInterface.IsValid())
+							{
+								FString BeaconIP;
+								OnlineSessionInterface->GetResolvedConnectString(Result, FName(TEXT("BeaconPort")), BeaconIP);
+								FURL BeaconURL(nullptr, *BeaconIP, TRAVEL_Absolute);
+								PingBeacon->InitClient(BeaconURL);
+								return;
+							}
+						}
 					}
+
+					LP->JoinSession(Result, GUIDJoinWantsToSpectate, GUIDJoinDesiredTeam);
 				}
 
 				GUIDJoinWantsToSpectate = false;
@@ -597,6 +619,30 @@ void AUTBasePlayerController::OnFindSessionsComplete(bool bWasSuccessful)
 	FTimerHandle TempHandle;
 	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTBasePlayerController::AttemptGUIDJoin, 10.0f, false);
 }
+
+void AUTBasePlayerController::OnPingBeaconResult(AUTServerBeaconClient* Sender, FServerBeaconInfo ServerInfo)
+{
+	PingBeacon->Destroy();
+	PingBeacon = nullptr;
+
+	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
+	if (LP)
+	{
+		LP->JoinSession(GUIDSessionSearchSettings->SearchResults[0], GUIDJoinWantsToSpectate, GUIDJoinDesiredTeam);
+	}
+}
+void AUTBasePlayerController::OnPingBeaconFailure(AUTServerBeaconClient* Sender)
+{
+	PingBeacon->Destroy();
+	PingBeacon = nullptr;
+
+	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
+	if (LP)
+	{
+		LP->ReturnToMainMenu();
+	}
+}
+
 
 void AUTBasePlayerController::ClientReturnedToMenus()
 {
@@ -742,6 +788,59 @@ UUTLocalPlayer* AUTBasePlayerController::GetUTLocalPlayer()
 	return Cast<UUTLocalPlayer>(Player);
 }
 
+void AUTBasePlayerController::RconDBExec(FString Command)
+{
+	ServerRconDBExec(Command);
+}
+
+bool AUTBasePlayerController::ServerRconDBExec_Validate(const FString& Command)
+{
+	return true;
+}
+
+void AUTBasePlayerController::ServerRconDBExec_Implementation(const FString& Command)
+{
+	if (UTPlayerState == nullptr || !UTPlayerState->bIsRconAdmin)
+	{
+		ClientSay(UTPlayerState, TEXT("Rcon not authenticated"), ChatDestinations::System);
+		return;
+	}
+	
+	UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
+	if (GI)
+	{
+		TArray<FDatabaseRow> DBRows;
+		bool DBReturn = GI->ExecDatabaseCommand(Command, DBRows);
+
+		if (DBRows.Num() > 0)
+		{
+			// Failsafe to not blow out on clientsay
+			const int MAXROWS = 10;
+			for (int i = 0; i < DBRows.Num() && i < MAXROWS; i++)
+			{
+				FString Message;
+				for (int j = 0; j < DBRows[i].Text.Num(); j++)
+				{
+					Message += DBRows[i].Text[j] + TEXT(" ");
+				}
+
+				ClientSay(UTPlayerState, Message, ChatDestinations::System);
+			}
+		}
+		else
+		{
+			if (DBReturn)
+			{
+				ClientSay(UTPlayerState, TEXT("DB command accepted"), ChatDestinations::System);
+			}
+			else
+			{
+				ClientSay(UTPlayerState, TEXT("DB command rejected"), ChatDestinations::System);
+			}
+		}
+	}
+}
+
 void AUTBasePlayerController::RconExec(FString Command)
 {
 	ServerRconExec(Command);
@@ -792,6 +891,31 @@ void AUTBasePlayerController::ServerRconKick_Implementation(const FString& NameO
 		GM->RconKick(NameOrUIDStr, bBan, Reason);
 	}
 }
+
+void AUTBasePlayerController::RconUnban(const FString& UIDStr)
+{
+	ServerRconUnban(UIDStr);
+}
+
+bool AUTBasePlayerController::ServerRconUnban_Validate(const FString& UIDStr) { return true; }
+void AUTBasePlayerController::ServerRconUnban_Implementation(const FString& UIDStr)
+{
+	// Quick out if we haven't been authenticated.
+	if (UTPlayerState == nullptr || !UTPlayerState->bIsRconAdmin)
+	{
+		ClientSay(UTPlayerState, TEXT("Rcon not authenticated"), ChatDestinations::System);
+		return;
+	}
+
+	AUTBaseGameMode* GM = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
+	if (GM)
+	{
+		GM->RconUnban(UIDStr);
+	}
+
+}
+
+
 
 void AUTBasePlayerController::RconMessage(const FString& DestinationId, const FString &Message)
 {
@@ -851,10 +975,18 @@ void AUTBasePlayerController::UpdateInputMode()
 			return;
 		}
 
+		bool bSetWidgetFocus = true;
+		TSharedPtr<SWidget> WidgetToFocus = LocalPlayer->ViewportClient->GetGameViewportWidget();
+
 		//Menus default to UI
 		if (LocalPlayer->AreMenusOpen())
 		{
 			NewInputMode = EInputMode::EIM_UIOnly;
+
+			if (LocalPlayer->IsQuickChatOpen())
+			{
+				bSetWidgetFocus = false;
+			}
 		}
 		else
 		{
@@ -876,6 +1008,7 @@ void AUTBasePlayerController::UpdateInputMode()
 		//Apply the new input if it needs to be changed
 		if (NewInputMode != InputMode && NewInputMode != EInputMode::EIM_None)
 		{
+			UE_LOG(UT, Warning, TEXT("Input Mode Changing!"));
 			InputMode = NewInputMode;
 			switch (NewInputMode)
 			{
@@ -883,10 +1016,17 @@ void AUTBasePlayerController::UpdateInputMode()
 				Super::SetInputMode(FInputModeGameOnly());
 				break;
 			case EInputMode::EIM_GameAndUI:
-				Super::SetInputMode(FInputModeGameAndUI().SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture).SetWidgetToFocus(LocalPlayer->ViewportClient->GetGameViewportWidget()));
+				Super::SetInputMode(FInputModeGameAndUI().SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture).SetWidgetToFocus(WidgetToFocus));
 				break;
 			case EInputMode::EIM_UIOnly:
-				Super::SetInputMode(FInputModeUIOnly().SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture).SetWidgetToFocus(LocalPlayer->ViewportClient->GetGameViewportWidget()));
+				if (bSetWidgetFocus)
+				{
+					Super::SetInputMode(FInputModeUIOnly().SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture).SetWidgetToFocus(WidgetToFocus));
+				}
+				else
+				{
+					Super::SetInputMode(FInputModeUIOnly().SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture));
+				}
 				break;
 			}
 		}
@@ -948,6 +1088,7 @@ void AUTBasePlayerController::ReceivedPlayer()
 	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(Player);
 	if (UTLocalPlayer)
 	{
+		ServerChangeClanName(UTLocalPlayer->GetClanName());
 		ServerSetAvatar(UTLocalPlayer->GetAvatar());
 		UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(UTLocalPlayer->GetGameInstance());
 		if (UTGameInstance)
@@ -1322,6 +1463,16 @@ void AUTBasePlayerController::NextTutorial()
 	}
 }
 
+void AUTBasePlayerController::PrevTutorial()
+{
+	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
+	if (LocalPlayer)
+	{
+		LocalPlayer->PrevTutorial();
+	}
+}
+
+
 void AUTBasePlayerController::RepeatTutorial()
 {
 	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
@@ -1349,4 +1500,53 @@ void AUTBasePlayerController::InitializeHeartbeatManager()
 		HeartbeatManager = NewObject<UUTHeartbeatManager>(this);
 		HeartbeatManager->StartManager(this);
 	}
+}
+
+void AUTBasePlayerController::GuaranteedKick( const FText& KickReason)
+{
+	if (!AuthKickHandle.IsValid())
+	{
+		ClientWasKicked(KickReason);
+		GetWorldTimerManager().SetTimer(AuthKickHandle, this, &AUTBasePlayerController::TimedKick, 1.0f, false);
+	}
+}
+
+void AUTBasePlayerController::TimedKick()
+{
+	Destroy();
+}
+
+void AUTBasePlayerController::ClientWasKicked_Implementation(const FText& KickReason)
+{
+	ULocalPlayer* UTLocalPlayer = Cast<ULocalPlayer>(Player);
+	if (UTLocalPlayer != nullptr)
+	{
+		UUTGameViewportClient* ViewportClient = Cast<UUTGameViewportClient>(UTLocalPlayer->ViewportClient);
+		if (ViewportClient != nullptr)
+		{
+			ViewportClient->KickReason = KickReason;
+		}
+	}
+
+	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
+	if (PartyContext)
+	{
+		if (PartyContext->GetPartySize() > 1)
+		{
+			PartyContext->LeaveParty();
+		}
+	}
+}
+
+
+FText AUTBasePlayerController::GetNextTutorialName()
+{
+	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(Player);
+	return (UTLocalPlayer != nullptr) ? UTLocalPlayer->GetNextTutorialName() : FText::GetEmpty();
+}
+
+FText AUTBasePlayerController::GetPrevTutorialName()
+{
+	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(Player);
+	return (UTLocalPlayer != nullptr) ? UTLocalPlayer->GetPrevTutorialName() : FText::GetEmpty();
 }

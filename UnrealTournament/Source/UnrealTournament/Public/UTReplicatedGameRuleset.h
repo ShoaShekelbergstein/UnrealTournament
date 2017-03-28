@@ -42,10 +42,6 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
 	TArray<AUTReplicatedMapInfo*> MapList;
 
-	// The number of players needed to start.
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
-	int32 MinPlayersToStart;
-
 	// The number of players allowed in this match.  
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
 	int32 MaxPlayers;
@@ -64,11 +60,14 @@ public:
 	UPROPERTY()
 	TArray<FString> RequiredPackages;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
 	uint32 bTeamGame:1;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
 	uint32 bCompetitiveMatch : 1;
+
+	UPROPERTY(Replicated)
+	uint16 OptionFlags;
 
 	// Not displayed, this wholes the game type that will be passed to the server via the URL.  
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
@@ -119,6 +118,10 @@ protected:
 public:
 	virtual void MakeJsonReport(TSharedPtr<FJsonObject> JsonObject);
 
+	/**
+	 *	Generates a URL that can be used to launch a match based on this Ruleset.
+	 **/
+	virtual FString GenerateURL(const FString& StartingMap, bool bAllowBots, int32 BotDifficulty, bool bRequireFilled);
 };
 
 

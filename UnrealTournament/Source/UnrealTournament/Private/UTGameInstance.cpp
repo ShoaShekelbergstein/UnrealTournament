@@ -23,6 +23,10 @@
 #include "Widgets/SUTAspectPanel.h"
 #endif
 
+#if UE_SERVER
+#include "ThirdParty/sqlite/sqlite3.h"
+#endif
+
 /* Delays for various timers during matchmaking */
 #define DELETESESSION_DELAY 1.0f
 
@@ -33,6 +37,9 @@ UUTGameInstance::UUTGameInstance(const class FObjectInitializer& ObjectInitializ
 {
 	bLevelIsLoading = false;
 	bDisablePerformanceCounters = false;
+#if UE_SERVER
+	Database = nullptr;
+#endif
 }
 
 void UUTGameInstance::Init()
@@ -68,6 +75,18 @@ void UUTGameInstance::Init()
 	else
 	{
 		PlaylistManager = NewObject<UUTPlaylistManager>(this);
+
+#if UE_SERVER
+		FString DatabasePath = FPaths::GameSavedDir() / "Mods.db";
+		if (sqlite3_open_v2(TCHAR_TO_ANSI(*DatabasePath), &Database, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX, nullptr) == SQLITE_OK)
+		{
+			UE_LOG(UT, Log, TEXT("SQL DB opened"));
+		}
+		else
+		{
+			UE_LOG(UT, Warning, TEXT("SQL DB failed to open"));
+		}
+#endif
 	}
 
 	if (!FParse::Param(FCommandLine::Get(), TEXT("server")))
@@ -77,6 +96,57 @@ void UUTGameInstance::Init()
 	}
 }
 
+bool UUTGameInstance::ExecDatabaseCommand(const FString& DatabaseCommand, TArray<FDatabaseRow>& DatabaseRows)
+{
+#if UE_SERVER
+	int DBreturn = SQLITE_ERROR;
+
+	if (Database)
+	{
+		// Might want to do small amount of input scrubbing to avoid injection
+		// Removing anything after the first semicolon might be enough
+		// Could go to a system where parameters get bound, but seems like a pain for mods to use
+		sqlite3_stmt* DatabaseStatement = nullptr;
+		DBreturn = sqlite3_prepare_v2(Database, TCHAR_TO_ANSI(*DatabaseCommand), -1, &DatabaseStatement, nullptr);
+		if (DBreturn != SQLITE_OK)
+		{
+			return false;
+		}
+
+		DBreturn = sqlite3_step(DatabaseStatement);
+		while (DBreturn == SQLITE_ROW)
+		{
+			FDatabaseRow NewRow;
+			int DBColumnCount = sqlite3_column_count(DatabaseStatement);
+			for (int i = 0; i < DBColumnCount; i++)
+			{
+				int DBColumnType = sqlite3_column_type(DatabaseStatement, i);
+				if (DBColumnType == SQLITE_TEXT)
+				{
+					const unsigned char* DBText = sqlite3_column_text(DatabaseStatement, i);
+					NewRow.Text.Add(ANSI_TO_TCHAR((char*)DBText));
+				}
+				else if (DBColumnType == SQLITE_INTEGER)
+				{
+					int DBInteger = sqlite3_column_int(DatabaseStatement, i);
+					NewRow.Text.Add(FString::Printf(TEXT("%d"), DBInteger));
+				}
+				else if (DBColumnType == SQLITE_FLOAT)
+				{
+					float DBFloat = sqlite3_column_double(DatabaseStatement, i);
+					NewRow.Text.Add(FString::Printf(TEXT("%f"), DBFloat));
+				}
+			}
+			DatabaseRows.Add(NewRow);
+			DBreturn = sqlite3_step(DatabaseStatement);
+		}
+	}
+
+	return (DBreturn == SQLITE_DONE) || (DBreturn == SQLITE_OK);
+#endif
+
+	return false;
+}
 
 bool UUTGameInstance::PerfExecCmd(const FString& ExecCmd, FOutputDevice& Ar)
 {
@@ -351,6 +421,7 @@ void UUTGameInstance::StartRecordingReplay(const FString& Name, const FString& F
 						{
 							Channel->SetChannelActorForDestroy(&Info);
 						}
+						CurrentWorld->DemoNetDriver->DeletedNetStartupActors.Add(Obj.FullName);
 					}
 				}
 			}
@@ -429,6 +500,13 @@ void UUTGameInstance::Shutdown()
 		Party->OnShutdown();
 	}
 	
+#if UE_SERVER
+	if (Database)
+	{
+		sqlite3_close(Database);
+	}
+#endif
+
 	Super::Shutdown();
 }
 
@@ -790,10 +868,13 @@ void UUTGameInstance::OnMoviePlaybackFinished()
 		}
 	}
 
-	AUTBaseGameMode* GM = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
-	if (GM)
+	if (GetWorld())
 	{
-		GM->OnLoadingMovieEnd();
+		AUTBaseGameMode* GM = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
+		if (GM)
+		{
+			GM->OnLoadingMovieEnd();
+		}
 	}
 }
 #endif
@@ -805,15 +886,18 @@ void UUTGameInstance::EndLevelLoading()
 
 #if !UE_SERVER
 
-	if ( GetMoviePlayer().IsValid() && GetMoviePlayer()->IsMovieCurrentlyPlaying() )
+	if (!GIsRequestingExit)
 	{
-		GetMoviePlayer()->OnMoviePlaybackFinished().Clear();
-		GetMoviePlayer()->OnMoviePlaybackFinished().AddUObject(this, &UUTGameInstance::OnMoviePlaybackFinished);
-
-		IUnrealTournamentFullScreenMovieModule* const FullScreenMovieModule = FModuleManager::LoadModulePtr<IUnrealTournamentFullScreenMovieModule>("UnrealTournamentFullScreenMovie");
-		if (FullScreenMovieModule != nullptr)
+		if (GetMoviePlayer().IsValid() && GetMoviePlayer()->IsMovieCurrentlyPlaying())
 		{
-			FullScreenMovieModule->WaitForMovieToFinished();
+			GetMoviePlayer()->OnMoviePlaybackFinished().Clear();
+			GetMoviePlayer()->OnMoviePlaybackFinished().AddUObject(this, &UUTGameInstance::OnMoviePlaybackFinished);
+
+			IUnrealTournamentFullScreenMovieModule* const FullScreenMovieModule = FModuleManager::LoadModulePtr<IUnrealTournamentFullScreenMovieModule>("UnrealTournamentFullScreenMovie");
+			if (FullScreenMovieModule != nullptr)
+			{
+				FullScreenMovieModule->WaitForMovieToFinished();
+			}
 		}
 	}
 #endif

@@ -57,12 +57,6 @@ protected:
 
 	TArray<AUTReplicatedGameRuleset*> AvailableGameRulesets;
 	TSharedPtr<SUTGameSetupDialog> CreateGameDialog;
-	void OnGameChangeDialogResult(TSharedPtr<SCompoundWidget> Dialog, uint16 ButtonPressed);
-
-	virtual void CheckLocalContentForLanPlay();
-	virtual void CloudOutOfSyncResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
-	virtual void StartGameWarningComplete(TSharedPtr<SCompoundWidget> Dialog, uint16 ButtonID);
-	virtual void StartGame(bool bLanGame);
 
 	virtual FReply OnShowHomePanel() override;
 
@@ -71,6 +65,7 @@ protected:
 	TSharedPtr<SUTFragCenterPanel> FragCenterPanel;
 	TSharedPtr<SUTChallengePanel> ChallengePanel;
 	TSharedPtr<SUTUMGPanel> TutorialPanel;
+
 
 public:
 	virtual ~SUTMainMenu();
@@ -88,8 +83,5 @@ public:
 	virtual void DeactivatePanel(TSharedPtr<class SUTPanelBase> PanelToDeactivate);
 
 	virtual void OnMenuOpened(const FString& Parameters);
-
-
-
 };
 #endif

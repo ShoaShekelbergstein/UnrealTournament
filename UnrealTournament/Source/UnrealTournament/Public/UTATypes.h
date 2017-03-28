@@ -22,7 +22,7 @@ const uint16 UTDIALOG_BUTTON_APPLY = 0x2000;
 const uint16 TUTORIAL_Movement = 0x0001;
 const uint16 TUTOIRAL_Weapon = 0x0002;
 const uint16 TUTORIAL_Pickups = 0x0004;
-const uint16 TUTORIAL_SkillMoves = TUTORIAL_Movement;
+const uint16 TUTORIAL_SkillMoves = TUTORIAL_Movement | TUTOIRAL_Weapon | TUTORIAL_Pickups;
 
 const uint16 TUTORIAL_DM = 0x0008;
 const uint16 TUTORIAL_TDM = 0x0010;
@@ -49,6 +49,11 @@ const FLinearColor BLUEHUDCOLOR = FLinearColor(0.1f, 0.1f, 1.0f, 1.0f);
 const FLinearColor GOLDCOLOR = FLinearColor(1.f, 0.9f, 0.15f);
 const FLinearColor SILVERCOLOR = FLinearColor(0.5f, 0.5f, 0.75f);
 const FLinearColor BRONZECOLOR = FLinearColor(0.48f, 0.25f, 0.18f);
+
+const uint16 GAME_OPTION_FLAGS_All = 0xFFFF;
+const uint16 GAME_OPTION_FLAGS_RequireFull = 0x0001;
+const uint16 GAME_OPTION_FLAGS_AllowBots = 0x0002;
+const uint16 GAME_OPTION_FLAGS_BotSkill = 0x0004;
 
 UENUM()
 namespace EGameStage
@@ -223,6 +228,7 @@ namespace StatusMessage
 	const FName RedeemerSpotted = FName(TEXT("RedeemerSpotted"));
 	const FName GetTheFlag = FName(TEXT("GetTheFlag"));
 	const FName DoorRally = FName(TEXT("DoorRally"));
+	const FName SniperSpotted = FName(TEXT("SniperSpotted"));
 }
 
 namespace HighlightNames
@@ -261,6 +267,7 @@ namespace HighlightNames
 	const FName FlagCap = FName(TEXT("FlagCap"));
 
 	const FName BadMF = FName(TEXT("BadMF"));
+	const FName BadAss = FName(TEXT("BadAss"));
 	const FName LikeABoss = FName(TEXT("LikeABoss"));
 	const FName DeathIncarnate = FName(TEXT("DeathIncarnate"));
 	const FName NaturalBornKiller = FName(TEXT("NaturalBornKiller"));
@@ -279,6 +286,12 @@ namespace HighlightNames
 	const FName AllOutOfBubbleGum = FName(TEXT("AllOutOfBubbleGum"));
 	const FName GameOver = FName(TEXT("GameOver"));
 	const FName LikeTheWind = FName(TEXT("LikeTheWind"));
+	const FName MoreThanAHandful = FName(TEXT("MoreThanAHandful"));
+	const FName ToughGuy = FName(TEXT("ToughGuy"));
+	const FName LargerThanLife = FName(TEXT("LargerThanLife"));
+	const FName AssKicker = FName(TEXT("AssKicker"));
+	const FName Destroyer = FName(TEXT("Destroyer"));
+	const FName LockedAndLoaded = FName(TEXT("LockedAndLoaded"));
 }
 
 namespace ArmorTypeName
@@ -1135,7 +1148,7 @@ struct FServerInstanceData
 	TArray<FMatchPlayerListStruct> Players;
 
 	UPROPERTY()
-	bool bQuickplayMatch;
+	FString CustomGameName;
 
 	FServerInstanceData()
 		: RulesTitle(TEXT(""))
@@ -1149,12 +1162,12 @@ struct FServerInstanceData
 		, bJoinableAsPlayer(false)
 		, bJoinableAsSpectator(false)
 		, MutatorList(TEXT(""))
-		, bQuickplayMatch(false)
+		, CustomGameName(TEXT(""))
 	{
 		MatchData = FMatchUpdate();
 	}
 
-	FServerInstanceData(FGuid inInstanceId, const FString& inRulesTitle, const FString& inRulesTag, const FString&  inGameModeClass, const FString& inMapName, int32 inMaxPlayers, uint32 inFlags, int32 inRankCheck, bool inbTeamGame, bool inbJoinableAsPlayer, bool inbJoinableAsSpectator, const FString& inMutatorList, bool inbQuickplayMatch)
+	FServerInstanceData(FGuid inInstanceId, const FString& inRulesTitle, const FString& inRulesTag, const FString&  inGameModeClass, const FString& inMapName, int32 inMaxPlayers, uint32 inFlags, int32 inRankCheck, bool inbTeamGame, bool inbJoinableAsPlayer, bool inbJoinableAsSpectator, const FString& inMutatorList, const FString& inCustomGameName)
 		: InstanceId(inInstanceId)
 		, RulesTitle(inRulesTitle)
 		, RulesTag(inRulesTag)
@@ -1167,7 +1180,7 @@ struct FServerInstanceData
 		, bJoinableAsPlayer(inbJoinableAsPlayer)
 		, bJoinableAsSpectator(inbJoinableAsSpectator)
 		, MutatorList(inMutatorList)
-		, bQuickplayMatch(inbQuickplayMatch)
+		, CustomGameName(inCustomGameName)
 	{
 		MatchData = FMatchUpdate();
 	}
@@ -1191,9 +1204,9 @@ struct FServerInstanceData
 		return Count;
 	}
 
-	static TSharedRef<FServerInstanceData> Make(FGuid inInstanceId, const FString& inRulesTitle, const FString& inRulesTag, const FString& inGameModeClass, const FString& inMapName, int32 inMaxPlayers, uint32 inFlags, int32 inRankCheck, bool inbTeamGame, bool inbJoinableAsPlayer, bool inbJoinableAsSpectator, const FString& inMutatorList, bool inbQuickplayMatch)
+	static TSharedRef<FServerInstanceData> Make(FGuid inInstanceId, const FString& inRulesTitle, const FString& inRulesTag, const FString& inGameModeClass, const FString& inMapName, int32 inMaxPlayers, uint32 inFlags, int32 inRankCheck, bool inbTeamGame, bool inbJoinableAsPlayer, bool inbJoinableAsSpectator, const FString& inMutatorList, const FString& inCustomGameName)
 	{
-		return MakeShareable(new FServerInstanceData(inInstanceId, inRulesTitle, inRulesTag, inGameModeClass, inMapName, inMaxPlayers, inFlags, inRankCheck, inbTeamGame, inbJoinableAsPlayer, inbJoinableAsSpectator, inMutatorList, inbQuickplayMatch));
+		return MakeShareable(new FServerInstanceData(inInstanceId, inRulesTitle, inRulesTag, inGameModeClass, inMapName, inMaxPlayers, inFlags, inRankCheck, inbTeamGame, inbJoinableAsPlayer, inbJoinableAsSpectator, inMutatorList, inCustomGameName));
 	}
 	static TSharedRef<FServerInstanceData> Make(const FServerInstanceData& Other)
 	{
@@ -1227,17 +1240,17 @@ namespace EEpicDefaultRuleTags
 	const FString iCTF = TEXT("iCTF");
 	const FString iCTFT = TEXT("iCTF+T");
 	const FString FlagRun = TEXT("FlagRun");
+	const FString FlagRunVSAI = TEXT("FlagRunVSAI");
+	const FString FlagRunVSAIEasy = TEXT("FlagRunVSAIEasy");
+	const FString FlagRunVSAINormal = TEXT("FlagRunVSAINormal");
+	const FString FlagRunVSAIHard = TEXT("FlagRunVSAIHard");
+	const FString FlagRunVSAIHard3v5 = TEXT("FlagRunVSAIHard3v5");
+	const FString Siege = TEXT("Siege");
 }
 
 namespace EPlayerListContentCommand
 {
 	const FName PlayerCard = FName(TEXT("PlayerCard"));
-	const FName ChangeTeam = FName(TEXT("ChangeTeam"));
-	const FName Spectate = FName(TEXT("Spectate"));
-	const FName Kick = FName(TEXT("Kick"));
-	const FName Ban = FName(TEXT("Ban"));
-	const FName Invite = FName(TEXT("Invite"));
-	const FName UnInvite = FName(TEXT("Uninvite"));
 	const FName ServerKick = FName(TEXT("ServerKick"));
 	const FName ServerBan = FName(TEXT("ServerBan"));
 	const FName SendMessage = FName(TEXT("SendMessage"));
@@ -2304,6 +2317,112 @@ struct FHUDandUMGParticleSystemTracker
 		ScreenLocation = inScreenLocation;
 	}
 
+};
+
+UENUM()
+namespace ECreateInstanceTypes
+{
+	enum Type
+	{
+		Lobby,
+		Standalone,
+		LAN,
+		MAX,
+	};
+}
+
+USTRUCT()
+struct FBanInfo 
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	FString UserName;
+
+	UPROPERTY()
+		FString UniqueID;
+
+	FBanInfo()
+		: UserName(TEXT(""))
+		, UniqueID(TEXT(""))
+	{
+	}
+
+	FBanInfo(const FString& inUserName, const FString& inUniqueID)
+		: UserName(inUserName)
+		, UniqueID(inUniqueID)
+	{
+	}
+
+	FText GetUserName() const
+	{
+		return FText::FromString(UserName);
+	}
+
+	FText GetUniqueID() const
+	{
+		return FText::FromString(UniqueID);
+	}
+
+	static TSharedRef<FBanInfo> Make(const FBanInfo& Original)
+	{
+		return MakeShareable( new FBanInfo(Original.UserName, Original.UniqueID));
+	}
+
+};
+
+USTRUCT()
+struct FMCPAnnouncement
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	FString Title;
+
+	UPROPERTY()
+	FDateTime StartDate;
+	
+	UPROPERTY()
+	FDateTime EndDate;
+
+	UPROPERTY()
+	FString AnnouncementURL;
+
+	UPROPERTY()
+	float MinHeight;
+
+	UPROPERTY()
+	bool bHasAudio;
+
+	FMCPAnnouncement()
+		: Title(TEXT(""))
+		, StartDate(FDateTime::Now())
+		, EndDate(FDateTime::Now())
+		, AnnouncementURL(TEXT(""))
+		, MinHeight(240)
+		, bHasAudio(false)
+	{
+	}
+
+	FMCPAnnouncement(FDateTime inStartDate, FDateTime inEndDate, const FString& inTitle, const FString& inURL, float inMinHeight=240, bool inbHasAudio=false)
+		: Title(inTitle)
+		, StartDate(inStartDate)
+		, EndDate(inEndDate)
+		, AnnouncementURL(inURL)
+		, MinHeight(inMinHeight)
+		, bHasAudio(inbHasAudio)
+	{
+	}
+
+};
+
+USTRUCT()
+struct FMCPAnnouncementBlob
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	TArray<FMCPAnnouncement> Announcements;	
 };
 
 

@@ -10,6 +10,7 @@
 #include "UTPickupEnergy.h"
 #include "SNumericEntryBox.h"
 #include "Slate/SUWindowsStyle.h"
+#include "Slate/SUTStyle.h"
 
 AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 	: Super(OI)
@@ -18,8 +19,8 @@ AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 	BotFillCount = 5;
 	NumRounds = 1;
 	GoalScore = 1;
-	UnlimitedRespawnWaitTime = 10.0f;
-	RollingAttackerRespawnDelay = 10.0f;
+	UnlimitedRespawnWaitTime = 9.0f;
+	RollingAttackerRespawnDelay = 9.0f;
 	bRollingAttackerSpawns = true;
 	RoundLives = 3;
 	BaseKillsForExtraLife = 20;
@@ -29,22 +30,24 @@ AUTFlagRunPvEGame::AUTFlagRunPvEGame(const FObjectInitializer& OI)
 	HUDClass = AUTFlagRunPvEHUD::StaticClass();
 	SquadType = AUTFlagRunPvESquadAI::StaticClass();
 	GameStateClass = AUTFlagRunPvEGameState::StaticClass();
-	DisplayName = NSLOCTEXT("UTGameMode", "FRPVE", "Flag Invasion");
+	DisplayName = NSLOCTEXT("UTGameMode", "FRPVE", "Siege");
 	DefaultMaxPlayers = 5;
+	XPMultiplier = 1.0f;
 
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/BronzeTaye.BronzeTaye_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/BronzeTayeBio.BronzeTayeBio_C")));
-	//EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/BronzeTayeFlame.BronzeTayeFlame_C")));
+	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/BronzeTayeFlame.BronzeTayeFlame_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/SilverSkaarj.SilverSkaarj_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/SilverSkaarjBoots.SilverSkaarjBoots_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/Ghost.Ghost_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/ShieldBot.ShieldBot_C")));
 	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/Bobodemon.Bobodemon_C")));
+	EditableMonsterTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Monsters/Sniper.Sniper_C")));
 
 	BoostPowerupTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/Boost_RocketSalvo.Boost_RocketSalvo_C")));
 	BoostPowerupTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/Boost_ShieldBubble.Boost_ShieldBubble_C")));
 	BoostPowerupTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/Boost_AmmoShower.Boost_AmmoShower_C")));
-	BoostPowerupTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_Recall.BP_Recall_C")));
+	BoostPowerupTypes.Add(FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/Boost_SlowingBurst.Boost_SlowingBurst_C")));
 
 	VialReplacement = FStringClassReference(TEXT("/Game/RestrictedAssets/Pickups/Energy_Small.Energy_Small_C"));
 }
@@ -89,6 +92,10 @@ void AUTFlagRunPvEGame::InitGame(const FString& MapName, const FString& Options,
 		bLevelHasEnergyPickups = true;
 		break;
 	}
+
+	// set all bots on players team to defend so they're less aggressive
+	Teams[1]->DefaultOrders.Reset();
+	Teams[1]->DefaultOrders.Add(NAME_Defend);
 }
 
 bool AUTFlagRunPvEGame::CheckRelevance_Implementation(AActor* Other)
@@ -125,6 +132,7 @@ void AUTFlagRunPvEGame::InitGameState()
 	Super::InitGameState();
 
 	AUTFlagRunPvEGameState* GS = Cast<AUTFlagRunPvEGameState>(GameState);
+	GS->bAllowTeamSwitches = false;
 	GS->GameDifficulty = FMath::TruncToInt(GameDifficulty);
 	if (BoostPowerupTypes.Num() > 0)
 	{
@@ -339,6 +347,11 @@ bool AUTFlagRunPvEGame::ModifyDamage_Implementation(int32& Damage, FVector& Mome
 	{
 		Damage *= 0.4f + GameDifficulty * 0.12f;
 	}
+	// no self damage for monsters
+	if (Cast<AUTMonster>(Injured) != nullptr && Injured->GetController() == InstigatedBy)
+	{
+		Damage = 0;
+	}
 	Super::ModifyDamage_Implementation(Damage, Momentum, Injured, InstigatedBy, HitInfo, DamageCauser, DamageType);
 	if (Damage > 0 && InstigatedBy != nullptr && !UTGameState->OnSameTeam(InstigatedBy, Injured))
 	{
@@ -485,7 +498,7 @@ void AUTFlagRunPvEGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuS
 				.WidthOverride(350)
 				[
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 					.Text(NSLOCTEXT("UTGameMode", "NumCombatants", "Number of Combatants"))
 				]
 			]
@@ -499,7 +512,7 @@ void AUTFlagRunPvEGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuS
 					bCreateReadOnly ?
 					StaticCastSharedRef<SWidget>(
 						SNew(STextBlock)
-						.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+						.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween.Bold")
 						.Text(CombatantsAttr.ToSharedRef(), &TAttributeProperty<int32>::GetAsText)
 						) :
 					StaticCastSharedRef<SWidget>(

@@ -24,6 +24,8 @@ class UNREALTOURNAMENT_API SUTHomePanel : public SUTPanelBase
 	{
 		return false;
 	}
+	virtual void PanelClosed();
+
 
 protected:
 
@@ -39,8 +41,6 @@ protected:
 	FReply RecentMatches_Click();
 	FReply WatchLive_Click();
 	FReply TrainingVideos_Click();
-
-	FReply ViewTournament(int32 Which);
 
 	virtual FLinearColor GetFadeColor() const;
 	virtual FSlateColor GetFadeBKColor() const;
@@ -69,6 +69,21 @@ protected:
 
 	TSharedRef<SWidget> BuildRankedPlaylist();
 	FReply OnStartRankedPlaylist(int32 PlaylistId);
+
+	TArray<TSharedPtr<FServerData>> LanMatches;
+	TSharedPtr<SVerticalBox> LanBox;
+	FTimerHandle LanTimerHandle;
+
+	void CheckForLanServers();
+
+	virtual FReply OnJoinLanClicked(TSharedPtr<FServerData> Server);
+	virtual FReply OnSpectateLanClicked(TSharedPtr<FServerData> Server);
+	FDelegateHandle OnFindLanSessionCompleteDelegate;
+	TSharedPtr<class FUTOnlineGameSearchBase> LanSearchSettings;
+	void OnFindLANSessionsComplete(bool bWasSuccessful);
+
+	TArray<TSharedPtr<SUTWebBrowserPanel>> AnnouncementBrowserList;
+
 };
 
 #endif

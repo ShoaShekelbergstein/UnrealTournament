@@ -86,7 +86,7 @@ void UUTCTFMajorMessage::ClientReceive(const FClientReceiveData& ClientData) con
 
 bool UUTCTFMajorMessage::ShouldDrawMessage(int32 MessageIndex, AUTPlayerController* PC, bool bIsAtIntermission, bool bNoLivePawnTarget) const
 {
-	if (MessageIndex == 23)
+	if ((MessageIndex == 23) || (MessageIndex == 30))
 	{
 		// only draw if can still rally
 		if (!PC->CanPerformRally())

@@ -52,14 +52,5 @@ void UUTWeaponStateEquipping_Enforcer::StartEquip(float OverflowTime)
 		AUTWeap_Enforcer* OuterWeapon = Cast<AUTWeap_Enforcer>(GetOuterAUTWeapon());
 		
 		GetOuterAUTWeapon()->PlayWeaponAnim(GetOuterAUTWeapon()->BringUpAnim, GetOuterAUTWeapon()->BringUpAnimHands, GetAnimLengthForScaling(GetOuterAUTWeapon()->BringUpAnim, GetOuterAUTWeapon()->BringUpAnimHands) / EquipTime);
-
-		if (OuterWeapon->LeftBringUpAnim != NULL && OuterWeapon->bDualEnforcerMode)
-		{
-			UAnimInstance* AnimInstance = OuterWeapon->LeftMesh->GetAnimInstance();
-			if (AnimInstance != NULL)
-			{
-				AnimInstance->Montage_Play(OuterWeapon->LeftBringUpAnim, OuterWeapon->LeftBringUpAnim->SequenceLength / EquipTime);
-			}
-		}
 	}
 }

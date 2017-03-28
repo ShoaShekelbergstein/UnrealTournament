@@ -23,7 +23,6 @@ void SUTStartMatchWindow::Construct(const FArguments& InArgs, TWeakObjectPtr<UUT
 	Funny.Add(TEXT("Performing some dark magic..."));
 	Funny.Add(TEXT("Spell checking..."));
 	Funny.Add(TEXT("Activating the Field LAttice Generator..."));
-	Funny.Add(TEXT("Taking a WOW break..."));
 	Funny.Add(TEXT("Dividing by Zero..."));
 	Funny.Add(TEXT("Tightening up the graphics..."));
 	Funny.Add(TEXT("Let\'s BOUNCE!!!"));
@@ -127,7 +126,7 @@ FText SUTStartMatchWindow::GetMainText() const
 				return NSLOCTEXT("SUTStartMatchWindow","CreatingMatch","Server is starting a match...");
 			}
 		}
-		return NSLOCTEXT("SUTStartMatchWindow","ConfigMatch","Configuring Game...");
+		return bIsHost ? NSLOCTEXT("SUTStartMatchWindow","ConfigMatch","Configuring Game...") : NSLOCTEXT("SUTStartMatchWindow","WaitingForMatch","Waiting for Match...");
 	}
 	return NSLOCTEXT("SUTStartMatchWindow","BadMainText","Broken - Please Fix");
 }
@@ -192,6 +191,17 @@ FReply SUTStartMatchWindow::OnCancelClick()
 		ParentPanel->CancelInstance();
 	}
 	
+	// If we aren't the host, exit the match
+	if (!bIsHost)
+	{
+		AUTLobbyPlayerState* UTLobbyPlayerState = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
+		if (UTLobbyPlayerState)
+		{
+			UTLobbyPlayerState->ServerDestroyOrLeaveMatch();
+		}
+	}
+
+
 	return FReply::Handled();
 }
 
@@ -207,12 +217,16 @@ void SUTStartMatchWindow::Tick( const FGeometry& AllottedGeometry, const double 
 	AUTLobbyPlayerState* LobbyPlayerState = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
 	if (LobbyPlayerState )
 	{
+/*
 		if (bAwaitingMatchInfo && LobbyPlayerState->CurrentMatch != nullptr)
 		{
 			bAwaitingMatchInfo = false;
-			ParentPanel->ApplySetup(LobbyPlayerState->CurrentMatch);
+			if (ParentPanel.IsValid())
+			{
+				ParentPanel->ApplySetup(LobbyPlayerState->CurrentMatch);
+			}
 		}
-
+*/
 		if (LobbyPlayerState->CurrentMatch != nullptr && LobbyPlayerState->CurrentMatch->CurrentRuleset.IsValid())
 		{
 			FunnyTimer += InDeltaTime;

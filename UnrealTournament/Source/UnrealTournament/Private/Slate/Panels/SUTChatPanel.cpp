@@ -11,6 +11,7 @@
 #include "UTLobbyGameState.h"
 #include "SUTMidGameInfoPanel.h"
 #include "SUTChatPanel.h"
+#include "UTGameViewportClient.h"
 
 
 #if !UE_SERVER
@@ -414,6 +415,26 @@ void SUTChatPanel::ChatTextChanged(const FText& NewText)
 	}
 }
 
+void SUTChatPanel::ChatConsoleCommand(const FString& Destination, const FString& FinalText)
+{
+	UUTGameViewportClient* UTGVC = Cast<UUTGameViewportClient>(PlayerOwner->ViewportClient);
+	if (UTGVC && UTGVC->HasActiveWorldOverride())
+	{
+		UWorld* RealWorld = UTGVC->GetWorldNoActiveWorldOverride();
+		for (FConstPlayerControllerIterator Iterator = RealWorld->GetPlayerControllerIterator(); Iterator; ++Iterator)
+		{
+			if (Iterator->Get()->Player == PlayerOwner)
+			{
+				Iterator->Get()->ProcessConsoleExec(*FString::Printf(TEXT("%s %s"), *Destination, *FinalText), *GLog, Iterator->Get()->GetPawnOrSpectator());
+			}
+		}
+	}
+	else
+	{
+		ConsoleCommand(FString::Printf(TEXT("%s %s"), *Destination, *FinalText));
+	}
+}
+
 void SUTChatPanel::ChatTextCommited(const FText& NewText, ETextCommit::Type CommitType)
 {
 	FName ChatDestination = GetOwnerPlayerState() ? GetOwnerPlayerState()->ChatDestination : ChatDestinations::Global;
@@ -434,12 +455,12 @@ void SUTChatPanel::ChatTextCommited(const FText& NewText, ETextCommit::Type Comm
 		// Figure out the type of chat...
 		if (FinalText != TEXT(""))
 		{
-			if (ChatDestination == ChatDestinations::Global)	ConsoleCommand(FString::Printf(TEXT("GlobalChat %s"), *FinalText));
-			if (ChatDestination == ChatDestinations::Friends)	ConsoleCommand(FString::Printf(TEXT("FriendSay %s"), *FinalText));
-			if (ChatDestination == ChatDestinations::Lobby)		ConsoleCommand(FString::Printf(TEXT("LobbySay %s"), *FinalText));
-			if (ChatDestination == ChatDestinations::Local)		ConsoleCommand(FString::Printf(TEXT("Say %s"), *FinalText));
-			if (ChatDestination == ChatDestinations::Match)		ConsoleCommand(FString::Printf(TEXT("MatchChat %s"), *FinalText));
-			if (ChatDestination == ChatDestinations::Team)		ConsoleCommand(FString::Printf(TEXT("TeamSay %s"), *FinalText));
+			if (ChatDestination == ChatDestinations::Global)	ChatConsoleCommand(TEXT("GlobalChat"), FinalText);
+			if (ChatDestination == ChatDestinations::Friends)	ChatConsoleCommand(TEXT("FriendSay"), FinalText);
+			if (ChatDestination == ChatDestinations::Lobby)		ChatConsoleCommand(TEXT("LobbySay"), FinalText);
+			if (ChatDestination == ChatDestinations::Local)		ChatConsoleCommand(TEXT("Say"), FinalText);
+			if (ChatDestination == ChatDestinations::Match)		ChatConsoleCommand(TEXT("MatchChat"), FinalText);
+			if (ChatDestination == ChatDestinations::Team)		ChatConsoleCommand(TEXT("TeamSay"), FinalText);
 		}
 
 		ChatText->SetText(FText::GetEmpty());

@@ -4,13 +4,22 @@
 #include "AssetRegistryModule.h"
 #include "Runtime/JsonUtilities/Public/JsonUtilities.h"
 #include "UpdateBackendContentCommandlet.h"
+#include "UTRewards.h"
 #if WITH_PROFILE
 #include "CatalogDefinition.h"
 #include "MultiLocHelper.h"
 #include "LootTables.h"
+#include "UtMcpDefinition.h"
 #endif
 
 DEFINE_LOG_CATEGORY(LogTemplates);
+
+enum class EValidatorAction
+{
+	Reject,
+	Accept,
+	ManualJson,
+};
 
 int32 UUpdateBackendContentCommandlet::Main(const FString& FullCommandLine)
 {
@@ -50,6 +59,8 @@ struct FJsonExporter : public TSharedFromThis<FJsonExporter>
 	{
 	}
 
+	TArray<UUtMcpDefinition*> CachedMcpDefintions;
+
 	bool Export(const FString& ExportDirectory)
 	{
 		if (Initialize(ExportDirectory))
@@ -57,12 +68,27 @@ struct FJsonExporter : public TSharedFromThis<FJsonExporter>
 			// write everything
 			bool bSuccess = true;
 			
-			// TODO:
-			//bSuccess = ExportLootTables() && bSuccess;
-			// TODO:
+			// Force load all mcp definitions
+			TArray<FAssetData> Assets;
+			GetAllAssetData(UUtMcpDefinition::StaticClass(), Assets, false);
+			for (const FAssetData& Asset : Assets)
+			{
+				UUtMcpDefinition* Item = Cast<UUtMcpDefinition>(Asset.GetAsset());
+				if (Item)
+				{
+					CachedMcpDefintions.Add(Item);
+				}
+			}
+
 			//bSuccess = WriteCatalogJson() && bSuccess;
 			bSuccess = ExportProfileItems() && bSuccess;
 			bSuccess = ExportXPTable() && bSuccess;
+			bSuccess = WriteSimpleItemAssetJson(EUtItemType::CardPack, TEXT("ItemTemplates/CardPack.json")) && bSuccess;
+			bSuccess = WriteSimpleItemAssetJson(EUtItemType::Token, TEXT("ItemTemplates/Token.json")) && bSuccess;
+			bSuccess = WriteSimpleItemAssetJson(EUtItemType::Boost, TEXT("ItemTemplates/Boost.json")) && bSuccess;
+
+			bSuccess = ExportLootTables() && bSuccess;
+			bSuccess = ExportLoginRewards() && bSuccess;
 
 			UE_LOG(LogTemplates, Log, TEXT("Export Complete"));
 			return bSuccess;
@@ -221,12 +247,119 @@ protected:
 		return IsValidTemplateId(TemplateIdOrPath);
 	}
 
+	bool ConvertItemDefToId(FString& ItemPathInOut)
+	{
+		UUtMcpDefinition* ItemDef = nullptr;
+		if (ItemPathInOut.StartsWith(TEXT("/")))
+		{
+			ItemDef = LoadObject<UUtMcpDefinition>(nullptr, *ItemPathInOut);
+		}
+		else
+		{
+			//ItemDef = UOrionGlobals::Get().FindItemInAssetLists(ItemPathInOut);
+		}
+
+		if (ItemDef == nullptr)
+		{
+			UE_LOG(LogTemplates, Error, TEXT("%s is not a valid UUtMcpDefinition"), *ItemPathInOut);
+			return false;
+		}
+		ItemPathInOut = ItemDef->GetPersistentName();
+		return true;
+	}
+
+	bool IsValidLootTable(const FString& LootTable)
+	{
+		return ValidLootTables.Contains(LootTable);
+	}
+
+	bool ExportLoginRewards()
+	{
+		UE_LOG(LogTemplates, Display, TEXT("BEGIN EXPORT - LoginRewards"));
+
+		bool bSuccess = true;
+
+		// get the loot tables root object
+		static const TCHAR* LOGIN_REWARDS_PATH = TEXT("/Game/EpicInternal/Loot/LoginRewards.LoginRewards");
+		UDataTable* DataTable = LoadObject<UDataTable>(nullptr, LOGIN_REWARDS_PATH);
+		if (DataTable == nullptr)
+		{
+			UE_LOG(LogTemplates, Error, TEXT("Unable to find LoginRewards object at %s"), LOGIN_REWARDS_PATH);
+			return false;
+		}
+
+		BeginJson(TEXT("DataTemplates/LoginRewards.json"));
+		Json->WriteObjectStart();
+			Json->WriteValue(TEXT("templateId"), TEXT("Data.LoginRewards"));
+			Json->WriteObjectStart(TEXT("attributes"));
+			{
+				if (!DataTable || !DataTable->RowStruct || !DataTable->RowStruct->IsChildOf(FLoginRewardData::StaticStruct()))
+				{
+					UE_LOG(LogTemplates, Error, TEXT("Unable to export FLoginRewardData"));
+					bSuccess = false;
+				}
+				else
+				{
+					const FString Context = TEXT("exporting daily login rewards");
+
+					Json->WriteArrayStart(TEXT("reward_table"));
+					for (int32 i = 0; i < DataTable->RowMap.Num(); ++i)
+					{
+						FName RowName = FName(*FString::Printf(TEXT("%d"), i));
+						FLoginRewardData* Reward = DataTable->FindRow<FLoginRewardData>(RowName, Context);
+						if (Reward == nullptr)
+						{
+							Json->WriteNull();
+							UE_LOG(LogTemplates, Error, TEXT("Missing LoginRewards for day %d"), i + 1);
+							bSuccess = false;
+						}
+						//TODO - validate TierGroup in loot table
+						else if ((Reward->SpecificItem == NULL) && (Reward->LootTierGroup.Len() == 0))
+						{
+							Json->WriteNull();
+							UE_LOG(LogTemplates, Error, TEXT("Missing LoginRewards item for day %d"), i + 1);
+							bSuccess = false;
+						}
+						else
+						{
+							Json->WriteObjectStart();
+							Json->WriteValue(TEXT("quantity"), Reward->Quantity);
+							if (Reward->SpecificItem)
+							{
+								Json->WriteValue(TEXT("specificItem"), Reward->SpecificItem->GetPersistentName());
+								if (!Reward->LootTierGroup.IsEmpty())
+								{
+									UE_LOG(LogTemplates, Warning, TEXT("Both specificItem and lootTierGroup specified for login reward table"));
+								}
+							}
+							else
+							{
+								Json->WriteValue(TEXT("lootTierGroup"), Reward->LootTierGroup);
+								if (!(Reward->LootTierGroup.IsEmpty() || IsValidLootTable(Reward->LootTierGroup)))
+								{
+									UE_LOG(LogTemplates, Error, TEXT("Daily Reward table references invalid loot tier group: %s"), *Reward->LootTierGroup);
+									bSuccess = false;
+								}
+							}
+							Json->WriteObjectEnd();
+						}
+					}
+					Json->WriteArrayEnd();
+				}
+			}
+			Json->WriteObjectEnd();
+		Json->WriteObjectEnd();
+		
+
+		return EndJson() && bSuccess;
+	}
+
 	bool ExportLootTables()
 	{
 		UE_LOG(LogTemplates, Display, TEXT("BEGIN EXPORT - LootTables"));
 
 		// get the loot tables root object
-		static const TCHAR* LOOT_TABLES_PATH = TEXT("/Game/GameObjects/GameData/DataTables/Loot/LootTables.LootTables");
+		static const TCHAR* LOOT_TABLES_PATH = TEXT("/Game/EpicInternal/Loot/LootTables.LootTables");
 		ULootTables* LootTables = LoadObject<ULootTables>(nullptr, LOOT_TABLES_PATH);
 		if (LootTables == nullptr)
 		{
@@ -236,6 +369,7 @@ protected:
 
 		// bind the template ID check function
 		LootTables->OnIsValidTemplateId.BindSP(AsShared(), &FJsonExporter::IsValidTemplateIdOrPath);
+		LootTables->OnConvertItemDefToId.BindSP(AsShared(), &FJsonExporter::ConvertItemDefToId);
 
 		// export
 		BeginJson(TEXT("DataTemplates/LootTables.json"));
@@ -281,6 +415,67 @@ protected:
 		}
 		Json->WriteArrayEnd();
 		return EndJson();
+	}
+
+	bool WriteSimpleItemAssetJson(EUtItemType ItemType, const TCHAR* FileName, TFunction<EValidatorAction(UUtMcpDefinition*)>&& Validator = [](UUtMcpDefinition* ItemDef) { return EValidatorAction::Accept; })
+	{
+		bool bSuccess = true;
+		
+		TArray<FAssetData> Assets;
+		GetAllAssetData(UUtMcpDefinition::StaticClass(), Assets, false);
+
+		BeginJson(FileName);
+		Json->WriteArrayStart();
+
+		// Add all item templates.  Assumption that the writer has already opened an array.
+
+		for (const FAssetData& Asset : Assets)
+		{
+			UUtMcpDefinition* ItemDef = Cast<UUtMcpDefinition>(Asset.GetAsset());
+
+			if (ItemDef != nullptr)
+			{
+				if (ItemDef->ItemType == ItemType)
+				{
+					if (ItemDef->IsExportAllowed())
+					{
+						EValidatorAction Action = Validator(ItemDef);
+						if (Action == EValidatorAction::Accept)
+						{
+							ItemDef->LoadDependenciesForExport();
+
+							auto JsonRef = Json.ToSharedRef();
+							if (!ItemDef->WriteJsonTemplate(JsonRef))
+							{
+								UE_LOG(LogTemplates, Error, TEXT("%s JSON construction failed"), *ItemDef->GetFullName());
+								bSuccess = false;
+								continue;
+							}
+
+							ExportedTemplates.Add(ItemDef->GetPersistentName());
+						}
+						else if (Action == EValidatorAction::Reject)
+						{
+							UE_LOG(LogTemplates, Error, TEXT("%s failed export validation"), *ItemDef->GetFullName());
+							bSuccess = false;
+						}
+						else if (Action == EValidatorAction::ManualJson)
+						{
+							// add it as a valid template, but don't write Json
+							ExportedTemplates.Add(ItemDef->GetPersistentName());
+						}
+					}
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemplates, Error, TEXT("%s failed to find Item definition"), *Asset.GetFullName());
+				bSuccess = false;
+			}
+		}
+
+		Json->WriteArrayEnd();
+		return EndJson() && bSuccess;
 	}
 
 	bool ExportXPTable()
@@ -343,8 +538,8 @@ protected:
 bool UUpdateBackendContentCommandlet::ExportTemplates(const FString& ExportDir)
 {
 #if WITH_PROFILE
-	FJsonExporter Exporter;
-	return Exporter.Export(ExportDir);
+	TSharedPtr<FJsonExporter> Exporter = MakeShareable(new FJsonExporter());
+	return Exporter->Export(ExportDir);
 #else
 	return false;
 #endif

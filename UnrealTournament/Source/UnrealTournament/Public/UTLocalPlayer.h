@@ -18,7 +18,6 @@ class SUTMenuBase;
 class SUTWindowBase;
 class SUTServerBrowserPanel;
 class SUTFriendsPopupWindow;
-class SUTQuickMatchWindow;
 class SUTLoginDialog;
 class SUTDownloadAllDialog;
 class SUTMapVoteDialog;
@@ -30,7 +29,6 @@ class SUTJoinInstanceWindow;
 class FServerData;
 class AUTRconAdminInfo;
 class SUTSpectatorWindow;
-class SUTMatchSummaryPanel;
 class SUTChatEditBox;
 class SUTQuickChatWindow;
 class UUTKillcamPlayback;
@@ -38,6 +36,8 @@ class SUTWebMessage;
 class SUTReportUserDialog;
 class UUTUMGWidget;
 class UUTUMGWidget_Toast;
+class AUTReplicatedGameRuleset;
+class SUTDifficultyLevel;
 
 enum class EMatchmakingCompleteResult : uint8;
 
@@ -250,7 +250,7 @@ public:
 	/** utilities for opening and closing dialogs */
 	virtual void OpenDialog(TSharedRef<class SUTDialogBase> Dialog, int32 ZOrder = 255);
 	virtual void CloseDialog(TSharedRef<class SUTDialogBase> Dialog);
-	TSharedPtr<class SUTServerBrowserPanel> GetServerBrowser();
+	TSharedPtr<class SUTServerBrowserPanel> GetServerBrowser(bool Create = true);
 	TSharedPtr<class SUTReplayBrowserPanel> GetReplayBrowser();
 	TSharedPtr<class SUTStatsViewerPanel> GetStatsViewer();
 	TSharedPtr<class SUTCreditsPanel> GetCreditsPanel();
@@ -380,7 +380,10 @@ public:
 
 	// Last text entered in Connect To IP
 	UPROPERTY(config)
-		FString LastConnectToIP;
+	FString StoredLastConnectToIP;
+
+	UPROPERTY()
+	FString LastConnectToIP;
 
 	UPROPERTY(config)
 		uint32 bNoMidGameMenu : 1;
@@ -844,8 +847,6 @@ public:
 	int32 ServerPingBlockSize;
 
 	virtual void ShowPlayerInfo(const FString& TargetId, const FString PlayerName);
-	virtual void OnTauntPlayed(AUTPlayerState* PS, TSubclassOf<AUTTaunt> TauntToPlay, float EmoteSpeed);
-	virtual void OnEmoteSpeedChanged(AUTPlayerState* PS, float EmoteSpeed);
 
 	// Request someone be my friend...
 	UFUNCTION(BlueprintCallable, Category = Friends)
@@ -871,9 +872,6 @@ public:
 
 	virtual void OpenMapVote(AUTGameState* GameState);
 	virtual void CloseMapVote();
-
-	virtual void OpenMatchSummary(AUTGameState* GameState);
-	virtual void CloseMatchSummary();
 
 	// What is your role within the unreal community.
 	EUnrealRoles::Type CommunityRole;
@@ -1032,6 +1030,11 @@ public:
 		return MCPStorageFilename;
 	}
 
+	static const FString& GetMCPAnnouncementFilename()
+	{
+		const static FString MCPAnnouncementFilename = "UnrealTournmentMCPAnnouncement.json";
+		return MCPAnnouncementFilename;
+	}
 
 	static const FString& GetOnlineSettingsFilename()
 	{
@@ -1135,8 +1138,6 @@ protected:
 	UPROPERTY()
 	TArray<UObject*> SharedMcpProfileManager;
 
-	TSharedPtr<SUTMatchSummaryPanel> GetSummaryPanel();
-
 	// Check to see if this user should be using the Epic branded flag
 	void EpicFlagCheck();
 
@@ -1162,6 +1163,11 @@ public:
 
 	void ShowQuickChat(FName ChatDestination);
 	void CloseQuickChat();
+
+#if !UE_SERVER
+	bool IsQuickChatOpen() { return QuickChatWindow.IsValid(); }
+	TSharedPtr<SUTQuickChatWindow> GetQuickChatWidget();
+#endif
 
 	UPROPERTY()
 	bool bAutoRankLockWarningShown;
@@ -1247,7 +1253,7 @@ public:
 
 	virtual FText GetMenuCommandTooltipText(FName MenuCommand) const;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TArray<FTutorialData> TutorialData;
 
 	UFUNCTION(BlueprintCallable, Category=Tutorial)
@@ -1280,7 +1286,17 @@ public:
 	virtual void NextTutorial();
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual void PrevTutorial();
+
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual FText GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const;
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	FText GetNextTutorialName();
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	FText GetPrevTutorialName();
 
 protected:
 	UPROPERTY()
@@ -1334,6 +1350,14 @@ protected:
 	void ChatWidgetConsoleKeyPressed();
 	void SocialInitialized();
 
+	FTimerHandle BrowerCheckHandle;
+	void CheckIfBrowserisDone();
+
+	void WaitingForListenServerDialogClosed(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
+
+	TSharedPtr<SUTDifficultyLevel> DifficultyLevelDialog;
+	void DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
+
 public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
 	void CloseSavingWidget();
@@ -1342,5 +1366,35 @@ public:
 	void UpdateCheck();
 
 	FTimerHandle SocialInitializationTimerHandle;
+
+	/**
+	 *	Request a new custom match be created.
+	 **/
+	virtual void CreateNewCustomMatch(ECreateInstanceTypes::Type InstanceType, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled);
+
+	/**
+	 *	Request a new match be created.
+	 **/
+	virtual void CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled);
+	
+	/**
+	 *	until we get the new quest system online, push the challenge stars out to the MCP so that 
+	 *  the player card is updated.
+	 **/
+	virtual void PushChallengeStarsToMCP();
+
+	// Holds a list of pending announcements from the MCP.
+	FMCPAnnouncementBlob MCPAnnouncements;
+
+	/**
+	 * Returns true if a killcam playback is active
+	 **/
+	UFUNCTION(BlueprintCallable, Category = Game)
+	bool IsKillcamReplayActive();
+
+
+	void RegainFocus();
+
+
 };
 

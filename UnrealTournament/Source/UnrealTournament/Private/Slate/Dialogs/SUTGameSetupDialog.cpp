@@ -36,8 +36,6 @@ void SUTGameSetupDialog::Construct(const FArguments& InArgs)
 						);
 
 	GameRulesets = InArgs._GameRuleSets;
-	BotSkillLevel = 3;
-
 	if (DialogContent.IsValid())
 	{
 		DialogContent->AddSlot()
@@ -83,9 +81,14 @@ void SUTGameSetupDialog::Construct(const FArguments& InArgs)
 					SAssignNew(CustomBox, SVerticalBox)
 				]
 			]
-			+ SVerticalBox::Slot().Padding(15.0f, 25.0f, 10.0f, 25.0f).AutoHeight()
+			+ SVerticalBox::Slot().Padding(15.0f, 10.0f, 10.0f, 0.0f).AutoHeight()
 			[
-				SNew(SBox).HeightOverride(46)
+				BuildSessionName()
+			]
+
+			+ SVerticalBox::Slot().Padding(15.0f, 10.0f, 10.0f, 0.0f).AutoHeight()
+			[
+				SAssignNew(BotSkillBox, SBox).HeightOverride(72)
 				[
 					BuildBotSkill()
 				]
@@ -97,6 +100,8 @@ void SUTGameSetupDialog::Construct(const FArguments& InArgs)
 			]
 		];
 	}
+
+	GameName = FText::Format(NSLOCTEXT("SUTGameSetupDialog","GameNameFormat","{0}'s Game"),PlayerOwner->GetAccountDisplayName());
 
 	BuildCategories();
 
@@ -224,11 +229,19 @@ void SUTGameSetupDialog::BuildRuleList(FName Category)
 	{
 		CustomBox->AddSlot().AutoHeight()
 		[
-			SNew(SBox).HeightOverride(800)
+			SNew(SBox).HeightOverride(920)
 			[
 				SAssignNew(CustomPanel, SUTCreateGamePanel, GetPlayerOwner())
 			]
 		];
+
+		if (CustomPanel.IsValid())
+		{
+			CustomPanel->SetBoxSkill(cbUseBots.ToSharedRef(), BotSkillLevelBox.ToSharedRef(), cbRequireFull.ToSharedRef());
+		}
+
+
+		BotSkillBox->SetVisibility(EVisibility::Collapsed);
 
 		return;	
 	}
@@ -236,6 +249,8 @@ void SUTGameSetupDialog::BuildRuleList(FName Category)
 	{
 		CustomPanel.Reset();
 	}
+
+	BotSkillBox->SetVisibility(EVisibility::Visible);
 
 	RulesInfoBox->AddSlot()
 		.Padding(15.0f, 0.0f, 10.0f, 10.0f)
@@ -368,6 +383,8 @@ FReply SUTGameSetupDialog::OnRuleClick(int32 RuleIndex)
 			SelectedRuleset = RuleSubset[RuleIndex].Ruleset;
 			BuildMapList();
 		}
+
+		cbRequireFull->SetIsChecked(SelectedRuleset->bCompetitiveMatch ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
 	}
 
 	return FReply::Handled();
@@ -644,14 +661,6 @@ void SUTGameSetupDialog::SelectMap(int32 MapIndex)
 		MapPlayList[MapIndex].bSelected = true;
 		MapPlayList[MapIndex].Button->BePressed();
 	}
-
-	// If we are a hub menu, then selecting the map is as good as starting.
-	//if (bHubMenu)
-	//{
-	//	OnButtonClick(UTDIALOG_BUTTON_OK);
-	//}
-
-
 }
 
 FReply SUTGameSetupDialog::OnMapClick(int32 MapIndex)
@@ -714,42 +723,11 @@ FText SUTGameSetupDialog::GetMatchRulesDescription() const
 	return SelectedRuleset.IsValid() ? FText::FromString(SelectedRuleset.Get()->GetDescription()) : FText::GetEmpty();
 }
 
-void SUTGameSetupDialog::ApplyCurrentRuleset(TWeakObjectPtr<AUTLobbyMatchInfo> MatchInfo)
-{
-	if (!MatchInfo.IsValid() || !MatchInfo->CurrentRuleset.IsValid() || MatchInfo->CurrentRuleset->Categories.Num()<= 0) return;
-
-	// Attempt to hook up a given ruleset.
-
-	// Find the best tab...
-
-	for (int32 i=0; i<Tabs.Num();i++)
-	{
-		if (Tabs[i].Category == MatchInfo->CurrentRuleset->Categories[0])
-		{
-			// Found it, switch to it's tab.
-			OnTabButtonClick(i);
-
-			// Now find the rule and pick it.
-
-			for (int32 RuleIndex = 0; RuleIndex < RuleSubset.Num(); RuleIndex++)
-			{
-				if (RuleSubset[RuleIndex].Ruleset.IsValid() && RuleSubset[RuleIndex].Ruleset->UniqueTag.Equals(MatchInfo->CurrentRuleset->UniqueTag, ESearchCase::IgnoreCase))
-				{
-					// Select it.
-					OnRuleClick(RuleIndex);
-					BuildMapPanel();		
-					return;
-				}
-			}
-		}
-	}
-}
-
 void SUTGameSetupDialog::GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, FString& GameModeName, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32& bTeamGame)
 {
 	if (CustomPanel.IsValid())
 	{
-		CustomPanel->GetCustomGameSettings(GameMode, StartingMap, Description, GameModeName, GameOptions, DesiredPlayerCount, BotSkillLevel, bTeamGame);
+		CustomPanel->GetCustomGameSettings(GameMode, StartingMap, Description, GameModeName, GameOptions, DesiredPlayerCount, bTeamGame);
 	}
 }
 
@@ -805,8 +783,9 @@ void SUTGameSetupDialog::Tick(const FGeometry& AllottedGeometry, const double In
 
 FReply SUTGameSetupDialog::OnButtonClick(uint16 ButtonID)
 {
-	if (ButtonID == UTDIALOG_BUTTON_PLAY || ButtonID == UTDIALOG_BUTTON_OK)
+	if (ButtonID != UTDIALOG_BUTTON_CANCEL ) 
 	{
+		// Save the selected bot skill out to the profile
 		if (PlayerOwner->GetProfileSettings())
 		{
 			PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel = sBotSkill->GetSnapValue();
@@ -815,94 +794,171 @@ FReply SUTGameSetupDialog::OnButtonClick(uint16 ButtonID)
 
 		if (bHubMenu)
 		{
-			if (FUTAnalytics::IsAvailable())
-			{
-				if (CustomPanel.IsValid())
-				{
-					FString GameMode;
-					FString StartingMap;
-					FString Description;
-					FString GameModeName;
-
-					TArray<FString> GameOptions;
-
-					int32 DesiredPlayerCount = 0;
-					int32 bTeamGame = 0;
-
-					GetCustomGameSettings(GameMode, StartingMap, Description, GameModeName, GameOptions, DesiredPlayerCount, bTeamGame);
-
-					FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("HUB - Create - %s"), *GameModeName));
-				}
-				else
-				{
-					if (SelectedRuleset.IsValid())
-					{
-						AUTGameMode* DefaultGameMode = SelectedRuleset->GetDefaultGameModeObject();
-						if (DefaultGameMode)
-						{
-							FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("HUB - Create - %s"), *DefaultGameMode->DisplayName.ToString()));
-						}
-					}
-				}
-			}
+			ConfigureMatch(ECreateInstanceTypes::Lobby);
+		}
+		else if (ButtonID == UTDIALOG_BUTTON_PLAY)
+		{
+			ConfigureMatch(ECreateInstanceTypes::Standalone);
+		}
+		else if (ButtonID == UTDIALOG_BUTTON_LAN)
+		{
+			ConfigureMatch(ECreateInstanceTypes::LAN);
 		}
 	}
 
-	if (ButtonID == UTDIALOG_BUTTON_CANCEL && CustomPanel.IsValid())
+	else if (ButtonID == UTDIALOG_BUTTON_CANCEL && CustomPanel.IsValid())
 	{
 		CustomPanel->Cancel();		
 	}
 
 	return SUTDialogBase::OnButtonClick(ButtonID);
+}
 
+TSharedRef<SWidget> SUTGameSetupDialog::BuildSessionName()
+{
+	if (bHubMenu)
+	{
+		GameName = FText::GetEmpty();
+		TSharedPtr<SBox> Box;
+		SAssignNew(Box,SBox).HeightOverride(42)
+		[
+			SNew(SHorizontalBox)
+			+SHorizontalBox::Slot().AutoWidth().Padding(0.0f,0.0f,10.0f,0.0f).VAlign(VAlign_Center)
+			[
+				SNew(STextBlock)
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
+				.Text(NSLOCTEXT("SUTGameSetupDialog","GameName","Custom Game Name:"))
+			]
+			+SHorizontalBox::Slot().AutoWidth()
+			[
+				SNew(SBox).WidthOverride(600)
+				[
+					SAssignNew(GameNameText, SEditableTextBox)
+					.Style(SUTStyle::Get(),"UT.EditBox.Boxed.Medium")
+					.MinDesiredWidth(450)
+					.Text(this, &SUTGameSetupDialog::GetGameNameText)
+					.OnTextCommitted(this, &SUTGameSetupDialog::OnGameNameTextCommited)
+				]
+			]
+
+		];
+
+		return Box.ToSharedRef();
+
+	}
+	else
+	{
+		return SNullWidget::NullWidget;
+	}
 }
 
 TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 {
 	int32 DefaultBotSkillLevel = PlayerOwner->GetProfileSettings() ? PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel : 3;
-	DefaultBotSkillLevel = FMath::Clamp<int32>(DefaultBotSkillLevel,0,9);
-	BotSkillLevel = DefaultBotSkillLevel - 1;
+	DefaultBotSkillLevel = FMath::Clamp<int32>(DefaultBotSkillLevel,0,8);
 
-	TSharedPtr<SHorizontalBox> Final;
-	SAssignNew(Final, SHorizontalBox)
-		+SHorizontalBox::Slot().AutoWidth().Padding(0.0f,0.0f,10.0f,0.0f).VAlign(VAlign_Center)
+	TSharedPtr<SVerticalBox> Final;
+	SAssignNew(Final, SVerticalBox)
+		+SVerticalBox::Slot().AutoHeight()
 		[
-			SNew(STextBlock)
-			.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
-			.Text(NSLOCTEXT("SUTGameSetupDialog","BotSkillCaption","Bot Skill Level:"))
-		]
-		+SHorizontalBox::Slot().AutoWidth().Padding(10.0f,0.0f,10.0f,0.0f)
-		[
-			SNew(SBox).WidthOverride(400)
+			SAssignNew(cbRequireFull, SCheckBox)
+			.IsChecked(ECheckBoxState::Unchecked)
+			.Style(SUTStyle::Get(), "UT.CheckBox")
+			.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","RequireFullTT","Multiplayer only!  If checked, the game will not start until all of the available slots in the match have been filled.")))
+			.Visibility(this, &SUTGameSetupDialog::GetRequireFullVis)
+			.Content()
 			[
-				SAssignNew(sBotSkill, SUTSlider)
-				.SnapCount(9)
-				.IndentHandle(false)
-				.InitialSnap(DefaultBotSkillLevel)
-				.Style(SUTStyle::Get(), "UT.Slider")
-				.OnValueChanged(this, &SUTGameSetupDialog::OnBotSkillChanged)
+				SNew(STextBlock)
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
+				.Text(NSLOCTEXT("SULobbySetup", "RequireFull", "Require all slots to be filled before starting."))
 			]
+
 		]
-		+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+		+SVerticalBox::Slot().AutoHeight()
 		[
-			SNew(STextBlock)
-			.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
-			.Text(this, &SUTGameSetupDialog::GetBotSkillText)
+			SNew(SHorizontalBox)
+			+SHorizontalBox::Slot().AutoWidth().Padding(0.0f,0.0f,25.0f,0.0f).VAlign(VAlign_Center)
+			[
+				SAssignNew(cbUseBots, SCheckBox)
+				.IsChecked(ECheckBoxState::Checked)
+				.Style(SUTStyle::Get(), "UT.CheckBox")
+				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","AllowBotsTT","If checked, bots will be added to this match.")))
+				.Visibility(this, &SUTGameSetupDialog::GetAllowBotsVis)
+				.Content()
+				[
+					SNew(STextBlock)
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
+					.Text(NSLOCTEXT("SULobbySetup", "USeBots", "Allow Bots"))
+				]
+
+			]
+			+SHorizontalBox::Slot().AutoWidth().Padding(0.0f,0.0f,10.0f,0.0f).VAlign(VAlign_Center)
+			[
+				SAssignNew(BotSkillLevelBox, SHorizontalBox)
+				+SHorizontalBox::Slot().AutoWidth().Padding(0.0f,0.0f,10.0f,0.0f).VAlign(VAlign_Center)
+				[
+					SNew(STextBlock)
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
+					.Text(NSLOCTEXT("SUTGameSetupDialog","BotSkillCaption","Bot Skill Level:"))
+					.Visibility(this, &SUTGameSetupDialog::GetBotSkillVis)
+				]
+				+SHorizontalBox::Slot().AutoWidth().Padding(10.0f,0.0f,10.0f,0.0f)
+				[
+					SNew(SBox).WidthOverride(400)
+					[
+						SAssignNew(sBotSkill, SUTSlider)
+						.SnapCount(8)
+						.IndentHandle(false)
+						.InitialSnap(DefaultBotSkillLevel)
+						.Style(SUTStyle::Get(), "UT.Slider")
+						.Visibility(this, &SUTGameSetupDialog::GetBotSkillVis)
+					]
+				]
+				+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+				[
+					SNew(STextBlock)
+					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
+					.Text(this, &SUTGameSetupDialog::GetBotSkillText)
+					.ColorAndOpacity(this, &SUTGameSetupDialog::GetBotSkillColor)
+					.Visibility(this, &SUTGameSetupDialog::GetBotSkillVis)
+				]
+			]
 		];
 
 
 	return Final.ToSharedRef();
 }
 
-void SUTGameSetupDialog::OnBotSkillChanged(float NewValue)
+EVisibility SUTGameSetupDialog::GetAllowBotsVis() const
 {
-	BotSkillLevel = sBotSkill->GetSnapValue() - 1;
+	return (!SelectedRuleset.IsValid() || CurrentCategory == FName(TEXT("Custom")) || (SelectedRuleset->OptionFlags & GAME_OPTION_FLAGS_AllowBots) > 0) ? EVisibility::Visible : EVisibility::Collapsed;
+}
+
+EVisibility SUTGameSetupDialog::GetBotSkillVis() const
+{
+	return (!SelectedRuleset.IsValid() || CurrentCategory == FName(TEXT("Custom")) || (SelectedRuleset->OptionFlags & GAME_OPTION_FLAGS_BotSkill) > 0) ? EVisibility::Visible : EVisibility::Collapsed;
+}
+
+EVisibility SUTGameSetupDialog::GetRequireFullVis() const
+{
+	return (!SelectedRuleset.IsValid() || CurrentCategory == FName(TEXT("Custom")) || (SelectedRuleset->OptionFlags & GAME_OPTION_FLAGS_RequireFull) > 0) ? EVisibility::Visible : EVisibility::Collapsed;
+}
+
+
+bool SUTGameSetupDialog::GetBotSkillEnabled() const
+{
+	return (cbUseBots.IsValid() && cbUseBots->IsChecked());
+}
+
+FSlateColor SUTGameSetupDialog::GetBotSkillColor() const
+{
+	return GetBotSkillEnabled() ? FSlateColor(FLinearColor::White) : FSlateColor(FLinearColor(0.4f,0.4f,0.4f,1.0f));
 }
 
 FText SUTGameSetupDialog::GetBotSkillText() const
 {
 	int32 Skill = int32(8.0f * sBotSkill->GetValue());
-	return (Skill == 0) ? NSLOCTEXT("BotSkillLevels", "NoBots", "No Bots") : GetBotSkillName(Skill - 1);
+	return GetBotSkillName(Skill);
 }
 
 void SUTGameSetupDialog::AddButtonsToLeftOfButtonBar(uint32& ButtonCount)
@@ -957,44 +1013,72 @@ void SUTGameSetupDialog::AddButtonsToLeftOfButtonBar(uint32& ButtonCount)
 
 }
 
-void SUTGameSetupDialog::ConfigureMatchInfo(TWeakObjectPtr<AUTLobbyMatchInfo> MatchInfo)
+void SUTGameSetupDialog::ConfigureMatch(ECreateInstanceTypes::Type InstanceType)
 {
-
 	bool bRankLocked = cbRankLocked.IsValid() ? cbRankLocked->IsChecked() : true;
 	bool bSpectatable = cbSpectatable.IsValid() ? cbSpectatable->IsChecked() : true;
 	bool bPrivateMatch = cbPrivateMatch.IsValid() ? cbPrivateMatch->IsChecked() : false;
-	TWeakObjectPtr<AUTLobbyPlayerState> MatchOwner = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
-	bBeginnerMatch = (MatchOwner.IsValid() && MatchOwner->IsABeginner(SelectedRuleset.IsValid() ? SelectedRuleset->GetDefaultGameModeObject() : NULL));
+	bool bUseBots = cbUseBots.IsValid() ? cbUseBots->IsChecked() : true;
+	bool bRequireFilled = cbRequireFull.IsValid() ? cbRequireFull->IsChecked() : false;
+	int32 BotDifficulty = sBotSkill.IsValid() ? sBotSkill->GetSnapValue() : 3;
+
+	FString GameMode = TEXT("");
+	FString StartingMap = GetSelectedMap();
+	FString Description = TEXT("");
+	FString GameModeName = TEXT("");
+
+	TArray<FString> GameOptions;
+	int32 DesiredPlayerCount = 0;
+	int32 bTeamGame = 0;
+
+	bool bIsInParty = false;
+	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(PlayerOwner->GetWorld(), UPartyContext::StaticClass()));
+	if (PartyContext)
+	{
+		bIsInParty = PartyContext->GetPartySize() > 1;
+	}
 
 	if ( IsCustomSettings() )
 	{
-		FString GameMode;
-		FString StartingMap;
-		FString Description;
-		FString GameModeName;
-
-		TArray<FString> GameOptions;
-
-		int32 DesiredPlayerCount = 0;
-		int32 bTeamGame = 0;
 		GetCustomGameSettings(GameMode, StartingMap, Description, GameModeName, GameOptions, DesiredPlayerCount, bTeamGame);
-		MatchInfo->ServerCreateCustomRule(GameMode, StartingMap, Description, GameOptions, BotSkillLevel, DesiredPlayerCount, bTeamGame != 0, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch);
 	}
 
-	else if (SelectedRuleset.IsValid())
+	if (InstanceType == ECreateInstanceTypes::Lobby)
 	{
-		bool bIsInParty = false;
-		UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(PlayerOwner->GetWorld(), UPartyContext::StaticClass()));
-		if (PartyContext)
+		// This is the client (ie: a hub user) so we have to forward the startup information to the server before we can move forward.  This is done via the 
+		// lobby Player state.
+
+		AUTLobbyPlayerState* LobbyPlayerState = Cast<AUTLobbyPlayerState>(PlayerOwner->PlayerController->PlayerState);
+		if (LobbyPlayerState != nullptr)
 		{
-			bIsInParty = PartyContext->GetPartySize() > 1;
+			if (FUTAnalytics::IsAvailable())
+			{
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("HUB - Create - %s"), *GameMode));
+			}
+
+			if ( IsCustomSettings() )
+			{
+				LobbyPlayerState->ServerCreateCustomInstance(GetGameNameText().ToString(), GameMode, StartingMap, bIsInParty, Description, GameOptions, DesiredPlayerCount, bTeamGame != 0, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);
+			}
+			else
+			{
+				LobbyPlayerState->ServerCreateInstance(GetGameNameText().ToString(), SelectedRuleset->UniqueTag, StartingMap, bIsInParty, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);					
+			}
 		}
-
-		FString StartingMap = GetSelectedMap();
-		MatchInfo->ServerSetRules(SelectedRuleset->UniqueTag, StartingMap, BotSkillLevel, bIsInParty, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch);
 	}
-
+	else
+	{
+		if ( IsCustomSettings() )
+		{
+			PlayerOwner->CreateNewCustomMatch(InstanceType, GameMode, StartingMap, Description, GameOptions, DesiredPlayerCount, bTeamGame != 0, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);
+		}
+		else
+		{
+			PlayerOwner->CreateNewMatch(InstanceType, SelectedRuleset.Get(), StartingMap, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);					
+		}
+	}
 }
+
 
 void SUTGameSetupDialog::RankCheckChanged(ECheckBoxState NewState)
 {
@@ -1008,5 +1092,16 @@ void SUTGameSetupDialog::RankCheckChanged(ECheckBoxState NewState)
 		}
 	}
 }
+
+FText SUTGameSetupDialog::GetGameNameText() const
+{
+	return GameName;
+}
+
+void SUTGameSetupDialog::OnGameNameTextCommited(const FText &NewText,ETextCommit::Type CommitType)
+{
+	GameName = NewText;
+}
+
 
 #endif

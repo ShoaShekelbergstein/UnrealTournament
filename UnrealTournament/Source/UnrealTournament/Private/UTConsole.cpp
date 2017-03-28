@@ -25,7 +25,7 @@ void UUTConsole::FakeGotoState(FName NextStateName)
 			bReopenMenus = LP->GetCurrentMenu().IsValid();
 			LP->HideMenu();
 
-			if (World->GetNetMode() == NM_Standalone)
+			if ((World->GetNetMode() == NM_Standalone) && LP->PlayerController)
 			{
 				LP->PlayerController->SetPause(true);
 			}

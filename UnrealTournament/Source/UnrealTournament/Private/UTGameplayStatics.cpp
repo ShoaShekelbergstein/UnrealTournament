@@ -157,7 +157,7 @@ float UUTGameplayStatics::GetGravityZ(UObject* WorldContextObject, const FVector
 }
 
 /** largely copied from GameplayStatics.cpp, with mods to use our trace channel and better handling if we don't get a hit on the target */
-static bool ComponentIsVisibleFrom(UPrimitiveComponent* VictimComp, FVector const& Origin, AActor const* IgnoredActor, FHitResult& OutHitResult, const TArray<FVector>* AltVisibilityOrigins)
+bool UUTGameplayStatics::ComponentIsVisibleFrom(UPrimitiveComponent* VictimComp, FVector const& Origin, AActor const* IgnoredActor, FHitResult& OutHitResult, const TArray<FVector>* AltVisibilityOrigins)
 {
 	static FName NAME_ComponentIsVisibleFrom = FName(TEXT("ComponentIsVisibleFrom"));
 	FCollisionQueryParams LineParams(NAME_ComponentIsVisibleFrom, true, IgnoredActor);
@@ -950,15 +950,6 @@ bool UUTGameplayStatics::IsPlayInEditor(UObject* WorldContextObject)
 	}
 }
 
-void UUTGameplayStatics::RecordEvent_UTTutorialStarted(AUTPlayerController* UTPC, FString TutorialMap)
-{
-	if (FUTAnalytics::IsAvailable())
-	{
-		FUTAnalytics::FireEvent_UTTutorialStarted(UTPC,TutorialMap);
-	}
-}
-
-
 void UUTGameplayStatics::RecordEvent_UTTutorialCompleted(AUTPlayerController* UTPC, FString TutorialMap)
 {
 	if (FUTAnalytics::IsAvailable())
@@ -973,4 +964,67 @@ void UUTGameplayStatics::RecordEvent_UTTutorialPlayInstruction(AUTPlayerControll
 	{
 		FUTAnalytics::FireEvent_UTTutorialPlayInstruction(UTPC, AnnouncementName, InstructionID);
 	}
+}
+
+void UUTGameplayStatics::ExecuteDatabaseQuery(UObject* WorldContextObject, const FString& DatabaseQuery, TArray<FDatabaseRow>& OutDatabaseRows)
+{
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, false);
+	if (World)
+	{
+		UUTGameInstance* GI = Cast<UUTGameInstance>(World->GetGameInstance());
+		if (GI)
+		{
+			GI->ExecDatabaseCommand(DatabaseQuery, OutDatabaseRows);
+		}
+	}
+}
+
+bool UUTGameplayStatics::GetModConfigString(const FString& ConfigSection, const FString& ConfigKey, FString& Value)
+{
+	return GConfig->GetString(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+bool UUTGameplayStatics::GetModConfigInt(const FString& ConfigSection, const FString& ConfigKey, int32& Value)
+{
+	return GConfig->GetInt(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+bool UUTGameplayStatics::GetModConfigFloat(const FString& ConfigSection, const FString& ConfigKey, float& Value)
+{
+	return GConfig->GetFloat(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+int32 UUTGameplayStatics::GetModConfigStringArray(const FString& ConfigSection, const FString& ConfigKey, TArray<FString>& Value)
+{
+	return GConfig->GetArray(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+void UUTGameplayStatics::SetModConfigString(const FString& ConfigSection, const FString& ConfigKey, const FString& Value)
+{
+	GConfig->SetString(*ConfigSection, *ConfigKey, *Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+void UUTGameplayStatics::SetModConfigStringArray(const FString& ConfigSection, const FString& ConfigKey, const TArray<FString>& Value)
+{
+	GConfig->SetArray(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+void UUTGameplayStatics::SetModConfigInt(const FString& ConfigSection, const FString& ConfigKey, int32 Value)
+{
+	GConfig->SetInt(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+void UUTGameplayStatics::SetModConfigFloat(const FString& ConfigSection, const FString& ConfigKey, float Value)
+{
+	GConfig->SetFloat(*ConfigSection, *ConfigKey, Value, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+void UUTGameplayStatics::SaveModConfig()
+{
+	GConfig->Flush(false, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
+}
+
+void UUTGameplayStatics::ReloadModConfig()
+{
+	GConfig->Flush(true, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
 }

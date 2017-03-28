@@ -21,11 +21,11 @@ void SUTQuickChatWindow::Construct(const FArguments& InArgs, TWeakObjectPtr<UUTL
 	SUTWindowBase::Construct
 	(
 		SUTWindowBase::FArguments()
-			.Size(FVector2D(1.0f,1.0f))
+			.Size(FVector2D(0.4f,0.2f))
 			.bSizeIsRelative(true)
-			.Position(FVector2D(0.5f, 0.5f))
+			.Position(FVector2D(0.2f, 0.9f))
 			.AnchorPoint(FVector2D(0.5f, 0.5f))
-			.bShadow(true)
+			.bShadow(false)
 			.ShadowAlpha(0.5f)
 		, PlayerOwner
 
@@ -37,18 +37,13 @@ void SUTQuickChatWindow::BuildWindow()
 	Content->AddSlot().VAlign(VAlign_Fill).HAlign(HAlign_Fill)
 	[
 		SNew(SVerticalBox)
-		+SVerticalBox::Slot().FillHeight(1.0)
-		[
-			SNew(SCanvas)
-		]
 		+SVerticalBox::Slot().AutoHeight()
 		[
 			SNew(SBox).HeightOverride(42)
 			[
 				SAssignNew(ChatBar, SUTChatBar, PlayerOwner)
 				.OnTextCommitted(this, &SUTQuickChatWindow::ChatTextCommited)
-				.InitialChatDestination(ChatDestination)
-				
+				.InitialChatDestination(ChatDestination)				
 			]
 		]
 	];

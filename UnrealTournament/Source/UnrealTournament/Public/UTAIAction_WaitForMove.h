@@ -17,6 +17,11 @@ class UNREALTOURNAMENT_API UUTAIAction_WaitForMove : public UUTAIAction
 
 	float LastReevalEnemyTime;
 
+	virtual void PickupTargetTaken()
+	{
+		GetOuterAUTBot()->ClearMoveTarget();
+	}
+
 	virtual bool Update(float DeltaTime) override
 	{
 		return !GetOuterAUTBot()->GetMoveTarget().IsValid();

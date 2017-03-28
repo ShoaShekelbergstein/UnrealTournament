@@ -233,8 +233,6 @@ class UNREALTOURNAMENT_API UStatManager : public UObject
 
 	virtual void AddMatchToStats(const FString& MapName, const FString& GameType, const TArray<class AUTTeamInfo*>* Teams, const TArray<APlayerState*>* ActivePlayerStates, const TArray<APlayerState*>* InactivePlayerStates);
 
-	int32 NumPreviousPlayerNamesToKeep;
-	TArray<FString> PreviousPlayerNames;
 private:
 	int32 NumMatchesToKeep;
 	int32 JSONVersionNumber;

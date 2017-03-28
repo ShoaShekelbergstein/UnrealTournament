@@ -9,6 +9,7 @@
 #include "PerfCountersHelpers.h"
 #include "QosInterface.h"
 
+#include "UTMenuGameMode.h"
 #include "UTFlagRunGame.h"
 #include "UTFlagRunGameState.h"
 #include "UTLobbyMatchInfo.h"
@@ -154,9 +155,16 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(EloRange);
 	AddGenericParamName(SeekTime);
 
+	AddGenericParamName(bIsMenu);
+	AddGenericParamName(bIsOnline);
+	AddGenericParamName(bIsRanked);
+	AddGenericParamName(bIsQuickMatch);
+	
 	AddGenericParamName(UTMatchMakingStart);
 	AddGenericParamName(UTMatchMakingCancelled);
 	AddGenericParamName(UTMatchMakingJoinGame);
+	AddGenericParamName(UTMatchMakingFailed);
+	AddGenericParamName(LastMatchMakingSessionId);
 
 	AddGenericParamName(HitchThresholdInMs);
 	AddGenericParamName(NumHitchesAboveThreshold);
@@ -190,13 +198,14 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(EndedInTieBreaker);
 	AddGenericParamName(RedTeamBonusTime);
 	AddGenericParamName(BlueTeamBonusTime);
+	AddGenericParamName(WinningTeamNum);
 
 	AddGenericParamName(UTEnterMatch);
 	AddGenericParamName(EnterMethod);
-	AddGenericParamName(UTStartRankedMatch);
-	AddGenericParamName(UTEndRankedMatch);
-	AddGenericParamName(UTStartQuickplayMatch);
-	AddGenericParamName(UTEndQuickplayMatch);
+	AddGenericParamName(UTInitContext);
+	AddGenericParamName(UTInitMatch);
+	AddGenericParamName(UTStartMatch);
+	AddGenericParamName(UTEndMatch);
 	AddGenericParamName(ELOPlayerInfo);
 
 	AddGenericParamName(UTTutorialPickupToken);
@@ -299,9 +308,9 @@ void FUTAnalytics::LoginStatusChanged(FString NewAccountID)
 
 void FUTAnalytics::PrivateSetUserID(const FString& AccountID, EAccountSource AccountSource)
 {
-	// Set the UserID to "LoginID|AccountID|OSID|AccountIDSource".
+	// Set the UserID to "LoginID|AccountID|OSID|DeviceID|AccountIDSource".
 	const TCHAR* AccountSourceStr = AccountSource == EAccountSource::EFromRegistry ? TEXT("Reg") : TEXT("OSS");
-	Analytics->SetUserID(FString::Printf(TEXT("%s|%s|%s|%s"), *FPlatformMisc::GetLoginId(), *AccountID, *FPlatformMisc::GetOperatingSystemId(), AccountSourceStr));
+	Analytics->SetUserID(FString::Printf(TEXT("%s|%s|%s|%s|%s"), *FPlatformMisc::GetLoginId(), *AccountID, *FPlatformMisc::GetOperatingSystemId(), *FPlatformMisc::GetDeviceId(), AccountSourceStr));
 	// remember the current value so we don't spuriously restart the session if the user logs in later with the same ID.
 	CurrentAccountID = AccountID;
 	CurrentAccountSource = AccountSource;
@@ -333,9 +342,16 @@ void FUTAnalytics::SetClientInitialParameters(AUTBasePlayerController* UTPC, TAr
 			AUTGameState* UTGS = UTPC->GetWorld()->GetGameState<AUTGameState>();
 			if (UTGS)
 			{
-				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGS->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
-				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGS->ReplayID));
-			
+				if (UTGS->ServerInstanceGUID.IsValid())
+				{
+					ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGS->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
+				}
+
+				if (UTGS->ReplayID.IsEmpty())
+				{
+					ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGS->ReplayID));
+				}
+
 				AUTBaseGameMode* UTGM = Cast<AUTBaseGameMode>(UTPC->GetWorld()->GetAuthGameMode());
 				if (UTGM)
 				{
@@ -370,11 +386,19 @@ void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalytic
 	if (UTGM)
 	{
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), UTGM->DisplayName.ToString()));
-		
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ContextGUID), UTGM->ContextGUID));
+
 		if (UTGM->UTGameState)
 		{
-			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGM->UTGameState->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
-			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGM->UTGameState->ReplayID));
+			if (UTGM->UTGameState->ServerInstanceGUID.IsValid())
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGM->UTGameState->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
+			}
+
+			if (!UTGM->UTGameState->ReplayID.IsEmpty())
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGM->UTGameState->ReplayID));
+			}
 		}
 
 		if (UTGM->GetWorld())
@@ -389,9 +413,13 @@ void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalytic
 					ELOStats.Add(GetEpicAccountName(UTPC), UTGM->GetEloFor(UTPC->UTPlayerState, bIsRankedMatch));
 				}
 			}
-			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ELOPlayerInfo), ELOStats));
-		}
 
+			if (ELOStats.Num() > 0)
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ELOPlayerInfo), ELOStats));
+			}
+		}
+		
 		AddPlayerListToParameters(UTGM, ParamArray);
 	}
 
@@ -439,7 +467,7 @@ void FUTAnalytics::AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalytic
 			}
 		}
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerList), PlayerGUIDs));
-	
+
 		for (APlayerState* PS : UTGM->InactivePlayerArray)
 		{
 			AUTPlayerState* UTPS = Cast<AUTPlayerState>(PS);
@@ -547,6 +575,10 @@ FString FUTAnalytics::GetGameModeName(AUTBasePlayerController* UTPC)
 			{
 				GameModeName = UTGM->DisplayName.ToString();
 			}
+		}
+		else
+		{
+			GameModeName = UTPC->GetWorld()->URL.GetOption(TEXT("Game"), TEXT(""));
 		}
 	}
 
@@ -993,6 +1025,31 @@ void FUTAnalytics::FireEvent_UTMatchMakingJoinGame(AUTBasePlayerController* UTPC
 	}
 }
 
+/*
+* @EventName UTMatchMakingFailed
+*
+* @Trigger Sent when a player was added to a quickmatch server but it was full
+*
+* @Type Sent by the Client
+*
+* @EventParam LastMatchMakingSessionId string The GUID for the last matchmaking session
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTMatchMakingFailed(AUTBasePlayerController* UTPC, FString LastMatchMakingSessionId)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (UTPC && AnalyticsProvider.IsValid())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetClientInitialParameters(UTPC, ParamArray, false);
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::LastMatchMakingSessionId), LastMatchMakingSessionId));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTMatchMakingFailed), ParamArray);
+	}
+}
 
 /*
 * @EventName FlagRunRoundEnd
@@ -1017,7 +1074,7 @@ void FUTAnalytics::FireEvent_UTMatchMakingJoinGame(AUTBasePlayerController* UTPC
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDefenseRoundWin, bool bIsFinalRound)
+void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDefenseRoundWin, bool bIsFinalRound, int WinningTeamNum)
 {
 	if (UTGame)
 	{
@@ -1076,6 +1133,11 @@ void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDef
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::EndedInTieBreaker), bEndedInTie));
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RedTeamBonusTime), RedTeamBonusTime));
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::BlueTeamBonusTime), BlueTeamBonusTime));
+
+				if (bIsFinalRound)
+				{
+					ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::WinningTeamNum), WinningTeamNum));
+				}
 
 				AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::FlagRunRoundEnd), ParamArray);
 			}
@@ -1407,7 +1469,7 @@ void FUTAnalytics::FireEvent_UTCancelOnboarding(AUTPlayerController* UTPC)
 }
 
 /*
-* @EventName UTGraphicsSettings,
+* @EventName UTGraphicsSettings
 *
 * @Trigger Fires after login by client. Reports all loaded graphics settings.
 *
@@ -1467,90 +1529,144 @@ void FUTAnalytics::FireEvent_UTGraphicsSettings(AUTPlayerController* UTPC)
 }
 
 /*
-* @EventName UTStartRankedMatch
+* @EventName UTInitContext
 *
-* @Trigger Fires when a server beings a ranked match
+* @Trigger Fires whenever a new context is created.
 *
 * @Type Sent by the Server
 *
+* @Param 
+*
+* @Owner Tommy Ross
+*
 * @Comments
 */
-void FUTAnalytics::FireEvent_UTStartRankedMatch(AUTGameMode* UTGM)
+void FUTAnalytics::FireEvent_UTInitContext(const AUTBaseGameMode* UTGM)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
 	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 
-		SetMatchInitialParameters(UTGM, ParamArray, false, true);
+		if (UTGM)
+		{
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), UTGM->DisplayName.ToString()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ContextGUID), UTGM->ContextGUID));
 
-		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTStartRankedMatch), ParamArray);
+			if (UTGM->GetWorld())
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MapName), UTGM->GetWorld()->GetMapName()));
+			}
+
+			AUTGameState* UTGameState = Cast<AUTGameState>(UTGM->GameState);
+			if (UTGameState)
+			{
+				const bool bIsOnlineGame = (UTGM->GetNetMode() != NM_Standalone);
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsRanked), static_cast<bool>(UTGameState->bRankedSession)));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsQuickMatch), static_cast<bool>(UTGameState->bIsQuickMatch)));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsOnline), bIsOnlineGame));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsMenu), (Cast<AUTMenuGameMode>(UTGM) != nullptr)));
+			}
+		}
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTInitContext), ParamArray);
 	}
 }
 
 /*
-* @EventName UTEndRankedMatch
+* @EventName UTInitMatch
 *
-* @Trigger Fires when a server ends a ranked match
+* @Trigger Fires when a server initializes a match, but before it actually starts
 *
 * @Type Sent by the Server
 *
+* @Owner Tommy Ross
+*
 * @Comments
 */
-void FUTAnalytics::FireEvent_UTEndRankedMatch(AUTGameMode* UTGM)
+void FUTAnalytics::FireEvent_UTInitMatch(AUTGameMode* UTGM)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetMatchInitialParameters(UTGM, ParamArray, false, (UTGM->UTGameState) ? UTGM->UTGameState->bRankedSession : false);
+
+		if (UTGM->UTGameState)
+		{
+			const bool bIsOnlineGame = (UTGM->GetNetMode() != NM_Standalone);
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsRanked), static_cast<bool>(UTGM->UTGameState->bRankedSession)));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsQuickMatch), static_cast<bool>(UTGM->UTGameState->bIsQuickMatch)));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsOnline), bIsOnlineGame));
+		}
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTInitMatch), ParamArray);
+	}
+}
+
+/*
+* @EventName UTStartMatch
+*
+* @Trigger Fires when a server starts a match
+*
+* @Type Sent by the Server
+* 
+* @Owner Tommy Ross
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTStartMatch(AUTGameMode* UTGM)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetMatchInitialParameters(UTGM, ParamArray, true, (UTGM->UTGameState) ? UTGM->UTGameState->bRankedSession : false);
+
+		if (UTGM->UTGameState)
+		{
+			const bool bIsOnlineGame = (UTGM->GetNetMode() != NM_Standalone);
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsRanked), static_cast<bool>(UTGM->UTGameState->bRankedSession)));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsQuickMatch), static_cast<bool>(UTGM->UTGameState->bIsQuickMatch)));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsOnline), bIsOnlineGame));
+		}
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTStartMatch), ParamArray);
+	}
+}
+
+/*
+* @EventName UTEndMatch
+*
+* @Trigger Fires when a server ends a match
+*
+* @Type Sent by the Server
+*
+*
+* @Owner Tommy Ross
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTEndMatch(AUTGameMode* UTGM)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
 	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 		
-		SetMatchInitialParameters(UTGM, ParamArray, false, true);
+		SetMatchInitialParameters(UTGM, ParamArray, true, (UTGM->UTGameState) ? UTGM->UTGameState->bRankedSession : false);
 
-		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTEndRankedMatch), ParamArray);
-	}
-}
+		if (UTGM->UTGameState)
+		{
+			const bool bIsOnlineGame = (UTGM->GetNetMode() != NM_DedicatedServer);
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsRanked), static_cast<bool>(UTGM->UTGameState->bRankedSession)));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsQuickMatch), static_cast<bool>(UTGM->UTGameState->bIsQuickMatch)));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsOnline), bIsOnlineGame));
+		}
 
-/*
-* @EventName UTStartQuickplayMatch
-*
-* @Trigger Fires when a server beings a quickplay match
-*
-* @Type Sent by the Server
-*
-* @Comments
-*/
-void FUTAnalytics::FireEvent_UTStartQuickplayMatch(AUTGameMode* UTGM)
-{
-	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
-	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
-	{
-		TArray<FAnalyticsEventAttribute> ParamArray;
-
-		SetMatchInitialParameters(UTGM, ParamArray, false, true);
-
-		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTStartQuickplayMatch), ParamArray);
-	}
-}
-
-/*
-* @EventName UTEndQuickplayMatch
-*
-* @Trigger Fires when a server ends a quickplay match
-*
-* @Type Sent by the Server
-*
-* @Comments
-*/
-void FUTAnalytics::FireEvent_UTEndQuickplayMatch(AUTGameMode* UTGM)
-{
-	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
-	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
-	{
-		TArray<FAnalyticsEventAttribute> ParamArray;
-
-		SetMatchInitialParameters(UTGM, ParamArray, false, true);
-
-		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTEndQuickplayMatch), ParamArray);
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTEndMatch), ParamArray);
 	}
 }
 
@@ -1655,28 +1771,28 @@ void FUTAnalytics::FireEvent_UTHubBootUp(AUTBaseGameMode* UTGM)
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_UTHubNewInstance(AUTLobbyMatchInfo* NewGameInfo, AUTPlayerState* Host)
+void FUTAnalytics::FireEvent_UTHubNewInstance(AUTLobbyMatchInfo* NewGameInfo, const FString& HostId)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
-	if (AnalyticsProvider.IsValid() && NewGameInfo && NewGameInfo->CurrentRuleset.IsValid() && Host)
+	if (AnalyticsProvider.IsValid() && NewGameInfo && NewGameInfo->CurrentRuleset.IsValid())
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 
-		AUTLobbyGameState* GameState = Host->GetWorld()->GetGameState<AUTLobbyGameState>();
+		AUTLobbyGameState* GameState = NewGameInfo->GetWorld()->GetGameState<AUTLobbyGameState>();
 		if (GameState)
 		{
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerName), GameState->ServerName));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), GameState->HubGuid));
 		}
 
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), NewGameInfo->CurrentRuleset->Title));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), NewGameInfo->CurrentRuleset->GameMode));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MapName), NewGameInfo->InitialMap));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsCustomRuleset), (int32)(NewGameInfo->CurrentRuleset->bCustomRuleset)));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameOptions), NewGameInfo->CurrentRuleset->GameOptions));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RequiredPackages), NewGameInfo->CurrentRuleset->RequiredPackages));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::CurrentGameState), NewGameInfo->CurrentState.ToString()));
 
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(Host)));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), HostId));
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTHubNewInstance), ParamArray);
 	}

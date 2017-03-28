@@ -928,6 +928,21 @@ bool UUTMatchmaking::IsRankedMatchmaking()
 	return false;
 }
 
+bool UUTMatchmaking::IsSkipEloChecksForMatchmaking()
+{
+	if (Matchmaking)
+	{
+		return Matchmaking->GetMatchmakingParams().bSkipEloChecks;
+	}
+
+	if (CachedMatchmakingSearchParams.IsValid())
+	{
+		return CachedMatchmakingSearchParams.GetMatchmakingParams().bSkipEloChecks;
+	}
+
+	return false;
+}
+
 void UUTMatchmaking::TravelToServer()
 {
 	bool bWillTravel = false;
@@ -955,7 +970,7 @@ void UUTMatchmaking::OnClientSessionIdChanged(const FString& SessionId)
 	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController());
 	if (LP)
 	{
-		if (LP->LastSession.GetSessionIdStr() == SessionId && !LP->IsMenuGame())
+		if (LP->LastSession.GetSessionIdStr() == SessionId && !LP->IsMenuGame() && LP->PlayerController && !LP->PlayerController->PlayerState->bOnlySpectator)
 		{
 			return;
 		}

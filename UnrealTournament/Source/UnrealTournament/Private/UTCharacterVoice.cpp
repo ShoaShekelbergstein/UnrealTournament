@@ -2,6 +2,7 @@
 #include "UnrealTournament.h"
 #include "UTCharacterVoice.h"
 #include "UTAnnouncer.h"
+#include "UTCTFGameMessage.h"
 
 UUTCharacterVoice::UUTCharacterVoice(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -84,6 +85,7 @@ UUTCharacterVoice::UUTCharacterVoice(const FObjectInitializer& ObjectInitializer
 	StatusOffsets.Add(StatusMessage::GetTheFlag, KEY_CALLOUTS + 5010);
 	StatusOffsets.Add(StatusMessage::RallyNow, KEY_CALLOUTS + 5011);
 	StatusOffsets.Add(StatusMessage::DoorRally, KEY_CALLOUTS + 5012);
+	StatusOffsets.Add(StatusMessage::SniperSpotted, KEY_CALLOUTS + 5013);
 
 	//FIRSTPICKUPSPEECH = KEY_CALLOUTS + 5099;
 	StatusOffsets.Add(PickupSpeechType::RedeemerPickup, KEY_CALLOUTS + 5100);
@@ -125,7 +127,7 @@ int32 UUTCharacterVoice::GetDestinationIndex(int32 MessageIndex) const
 
 FText UUTCharacterVoice::GetText(int32 Switch, bool bTargetsPlayerState1, class APlayerState* RelatedPlayerState_1, class APlayerState* RelatedPlayerState_2, class UObject* OptionalObject) const
 {
-	// @TOOD FIXMESTEVE option to turn these one
+	// @TOOD FIXMESTEVE option to turn these on
 	return FText::GetEmpty();
 
 	FFormatNamedArguments Args;
@@ -495,6 +497,10 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 			{
 				return (DoorRallyMessages.Num() == 0) ? EmptySpeech : DoorRallyMessages[FMath::RandRange(0, DoorRallyMessages.Num() - 1)];
 			}
+			else if (Switch == GetStatusIndex(StatusMessage::SniperSpotted))
+			{
+				return (SniperSpottedMessages.Num() == 0) ? EmptySpeech : SniperSpottedMessages[FMath::RandRange(0, SniperSpottedMessages.Num() - 1)];
+			}
 			else if (Switch == GetStatusIndex(StatusMessage::FindFC))
 			{
 				return (FindFCMessages.Num() == 0) ? EmptySpeech : FindFCMessages[FMath::RandRange(0, FindFCMessages.Num() - 1)];
@@ -579,6 +585,10 @@ bool UUTCharacterVoice::ShouldPlayAnnouncement(const FClientReceiveData& ClientD
 
 bool UUTCharacterVoice::IsFlagLocationUpdate(int32 Switch) const
 {
+	if (Switch == GetStatusIndex(StatusMessage::DoorRally))
+	{
+		return true;
+	}
 	return (Switch > StatusBaseIndex + FIRSTGAMEVOLUMESPEECH) && (Switch < StatusBaseIndex + LASTGAMEVOLUMESPEECH) && (Switch % 10 < 2);
 }
 
@@ -603,6 +613,10 @@ bool UUTCharacterVoice::InterruptAnnouncement(const FAnnouncementInfo Announceme
 		{
 			return true;
 		}
+		if ((AnnouncementInfo.Switch == GetStatusIndex(StatusMessage::RallyNow)) && (OtherAnnouncementInfo.Switch == GetStatusIndex(StatusMessage::NeedRally)))
+		{
+			return true;
+		}
 	}
 	return false;
 }
@@ -623,10 +637,18 @@ bool UUTCharacterVoice::CancelByAnnouncement_Implementation(int32 Switch, const 
 		{
 			return true;
 		}
+		if ((OtherSwitch == GetStatusIndex(StatusMessage::RallyNow)) && (Switch == GetStatusIndex(StatusMessage::NeedRally)))
+		{
+			return true;
+		}
 		return false;
 	}
 	else
 	{
+		if ((OtherMessageClass == UUTCTFGameMessage::StaticClass()) && (OtherSwitch == 4) && (Switch == GetStatusIndex(StatusMessage::GetTheFlag)))
+		{
+			return true;
+		}
 		return (Switch < StatusBaseIndex + KEY_CALLOUTS);
 	}
 }

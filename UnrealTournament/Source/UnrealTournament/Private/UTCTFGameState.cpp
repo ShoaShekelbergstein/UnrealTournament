@@ -50,7 +50,7 @@ AUTCTFGameState::AUTCTFGameState(const FObjectInitializer& ObjectInitializer)
 	HighlightMap.Add(HighlightNames::TopFlagReturnsBlue, NSLOCTEXT("AUTGameMode", "TopFlagReturnsBlue", "Most Flag Returns for Blue with {0}."));
 
 	HighlightMap.Add(NAME_FCKills, NSLOCTEXT("AUTGameMode", "FCKills", "Killed Enemy Flag Carrier ({0})."));
-	HighlightMap.Add(NAME_FlagGrabs, NSLOCTEXT("AUTGameMode", "FlagGrabs", "Grabbed Enemy Flag ({0)."));
+	HighlightMap.Add(NAME_FlagGrabs, NSLOCTEXT("AUTGameMode", "FlagGrabs", "Grabbed Enemy Flag ({0})."));
 	HighlightMap.Add(NAME_FlagSupportKills, NSLOCTEXT("AUTGameMode", "FlagSupportKills", "Killed Enemy chasing Flag Carrier ({0})."));
 	HighlightMap.Add(HighlightNames::FlagCaptures, NSLOCTEXT("AUTGameMode", "FlagCaptures", "Captured Flag ({0})."));
 	HighlightMap.Add(HighlightNames::Assists, NSLOCTEXT("AUTGameMode", "Assists", "Assisted Flag Capture ({0})."));
@@ -106,6 +106,7 @@ void AUTCTFGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & O
 	DOREPLIFETIME(AUTCTFGameState, ScoringPlays);
 	DOREPLIFETIME(AUTCTFGameState, CTFRound); 
 	DOREPLIFETIME(AUTCTFGameState, NumRounds);
+	DOREPLIFETIME(AUTCTFGameState, IntermissionTime);
 }
 
 void AUTCTFGameState::SetMaxNumberOfTeams(int32 TeamCount)
@@ -130,7 +131,11 @@ void AUTCTFGameState::CacheFlagBase(AUTCTFFlagBase* BaseToCache)
 
 float AUTCTFGameState::GetClockTime()
 {
-	if (IsMatchInOvertime())
+	if (IsMatchIntermission())
+	{
+		return IntermissionTime;
+	}
+	else if (IsMatchInOvertime())
 	{
 		return ElapsedTime - OvertimeStartTime;
 	}
@@ -249,57 +254,47 @@ FName AUTCTFGameState::OverrideCameraStyle(APlayerController* PCOwner, FName Cur
 	}
 }
 
-void AUTCTFGameState::OnIntermissionChanged()
-{
-	if (bIsAtIntermission)
-	{
-		// delay toggling scoreboard
-		FTimerHandle TempHandle;
-		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTCTFGameState::ToggleScoreboards, HalftimeScoreDelay);
-	}
-	else
-	{
-		ToggleScoreboards();
-	}
-}
-
-void AUTCTFGameState::ToggleScoreboards()
-{
-	for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
-	{
-		AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
-		if (PC != NULL)
-		{
-			PC->ClientToggleScoreboard(bIsAtIntermission);
-		}
-	}
-}
-
 AUTLineUpZone* AUTCTFGameState::GetAppropriateSpawnList(LineUpTypes ZoneType)
 {
-	AUTLineUpZone* ZoneToUse = Super::GetAppropriateSpawnList(ZoneType);
-
-	//See if we have a child LineUpZone on the winning team flag to use for intermission / end game
-	if (ZoneType == LineUpTypes::Intermission || ZoneType == LineUpTypes::PostMatch)
+	AUTLineUpZone* FoundPotentialMatch = nullptr;
+	AUTCTFFlagBase* ScoringBase = GetLeadTeamFlagBase();
+	
+	if (GetWorld())
 	{
-		AUTCTFFlagBase* ScoringBase = GetLeadTeamFlagBase();
-		if (ScoringBase)
+		for (TActorIterator<AUTLineUpZone> It(GetWorld()); It; ++It)
 		{
-			for (AActor* ChildActor : ScoringBase->Children)
+			if (It->ZoneType == ZoneType)
 			{
-				AUTLineUpZone* LineUp = Cast<AUTLineUpZone>(ChildActor);
-				if (LineUp)
+				//Found perfect match, lets return it!
+				if (It->GameObjectiveReference == ScoringBase)
 				{
-					if (LineUp->ZoneType == ZoneType)
-					{
-						ZoneToUse = LineUp;
-					}
+					return *It;
+				}
+
+				//imperfect match, but it might be all we have
+				else if (It->GameObjectiveReference == nullptr)
+				{
+					FoundPotentialMatch = *It;
 				}
 			}
 		}
 	}
 
-	return ZoneToUse;
+	return (FoundPotentialMatch == nullptr) ? Super::GetAppropriateSpawnList(ZoneType) : FoundPotentialMatch;
+}
+
+void AUTCTFGameState::DefaultTimer()
+{
+	Super::DefaultTimer();
+	if (bIsAtIntermission)
+	{
+		IntermissionTime--;
+	}
+}
+
+float AUTCTFGameState::GetIntermissionTime()
+{
+	return IntermissionTime;
 }
 
 void AUTCTFGameState::SpawnDefaultLineUpZones()
@@ -362,20 +357,22 @@ void AUTCTFGameState::SpawnLineUpZoneOnFlagBase(AUTCTFFlagBase* BaseToSpawnOn, L
 		}
 		
 		//See if the new zone's camera is stuck inside of a wall
-		if (GetWorld() && NewZone->Camera)
+		if (GetWorld())
 		{
 			FHitResult CameraCollision;
 			FCollisionQueryParams Params(NAME_FreeCam, false, this);
 			Params.AddIgnoredActor(NewZone);
 			Params.AddIgnoredActor(BaseToSpawnOn);
 			
-			GetWorld()->SweepSingleByChannel(CameraCollision, NewZone->GetActorLocation(), NewZone->Camera->GetActorLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)),Params);
+			GetWorld()->SweepSingleByChannel(CameraCollision, NewZone->GetActorLocation(), NewZone->Camera->GetComponentLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)),Params);
 
 			if (CameraCollision.bBlockingHit)
 			{
-				NewZone->Camera->SetActorLocation(CameraCollision.ImpactPoint);
+				NewZone->Camera->SetWorldLocation(CameraCollision.ImpactPoint);
 			}
 		}
+
+		NewZone->GameObjectiveReference = BaseToSpawnOn;
 
 		SpawnedLineUps.Add(NewZone);
 	}

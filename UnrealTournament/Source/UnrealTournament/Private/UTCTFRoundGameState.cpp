@@ -21,7 +21,6 @@ void AUTCTFRoundGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty 
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AUTCTFRoundGameState, IntermissionTime);
 	DOREPLIFETIME(AUTCTFRoundGameState, OffenseKills);
 	DOREPLIFETIME(AUTCTFRoundGameState, DefenseKills);
 	DOREPLIFETIME(AUTCTFRoundGameState, RemainingPickupDelay);
@@ -33,11 +32,7 @@ void AUTCTFRoundGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty 
 void AUTCTFRoundGameState::DefaultTimer()
 {
 	Super::DefaultTimer();
-	if (bIsAtIntermission)
-	{
-		IntermissionTime--;
-	}
-	else if ((GetNetMode() != NM_DedicatedServer) && IsMatchInProgress())
+	if (!bIsAtIntermission && (GetNetMode() != NM_DedicatedServer) && IsMatchInProgress())
 	{
 		UpdateTimeMessage();
 	}
@@ -47,10 +42,6 @@ void AUTCTFRoundGameState::UpdateTimeMessage()
 {
 }
 
-float AUTCTFRoundGameState::GetIntermissionTime()
-{
-	return IntermissionTime;
-}
 
 FText AUTCTFRoundGameState::GetRoundStatusText(bool bForScoreboard)
 {

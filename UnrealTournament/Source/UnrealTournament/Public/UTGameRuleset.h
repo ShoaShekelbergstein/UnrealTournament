@@ -54,10 +54,6 @@ public:
 	UPROPERTY(Config)
 	TArray<FString> CustomMapList;
 
-	// The number of players needed to start.
-	UPROPERTY(Config)
-	int32 MinPlayersToStart;
-
 	// The number of players allowed in this match.  NOTE: it must be duplicated in the GameOptions string.
 	UPROPERTY(Config)
 	int32 MaxPlayers;
@@ -83,6 +79,10 @@ public:
 	/** If competitive, no join in progress allowed, and all players must ready up for match to start. */
 	UPROPERTY(Config)
 		uint32 bCompetitiveMatch : 1;
+
+	UPROPERTY(Config)
+	uint16 OptionFlags;
+
 };
 
 

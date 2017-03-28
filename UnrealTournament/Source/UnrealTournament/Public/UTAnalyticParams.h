@@ -39,6 +39,8 @@ namespace EGenericAnalyticParam
 		UTMatchMakingStart,
 		UTMatchMakingCancelled,
 		UTMatchMakingJoinGame,
+		UTMatchMakingFailed,
+		LastMatchMakingSessionId,
 
 		HitchThresholdInMs,
 		NumHitchesAboveThreshold,
@@ -73,14 +75,20 @@ namespace EGenericAnalyticParam
 		EndedInTieBreaker,
 		RedTeamBonusTime,
 		BlueTeamBonusTime,
+		WinningTeamNum,
 
 		UTEnterMatch,
 		EnterMethod,
-		UTStartRankedMatch,
-		UTEndRankedMatch,
-		UTStartQuickplayMatch,
-		UTEndQuickplayMatch,
+		UTStartMatch,
+		UTInitContext,
+		UTInitMatch,
+		UTEndMatch,
 		ELOPlayerInfo,
+
+		bIsMenu,
+		bIsOnline,
+		bIsRanked,
+		bIsQuickMatch,
 
 		UTTutorialPickupToken,
 		TokenID,

@@ -35,7 +35,9 @@ public:
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
-		
+
+	EVisibility GetDialogVisibility() const;
+
 	FText LeagueTierToText(int32 Tier);
 	FString LeagueTierToBrushName(int32 Tier);
 };

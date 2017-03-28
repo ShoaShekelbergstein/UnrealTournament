@@ -28,6 +28,12 @@ FLinearColor AUTHUD_CTF::GetBaseHUDColor()
 	return TeamColor;
 }
 
+bool AUTHUD_CTF::ScoreboardIsUp()
+{
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	return  (GS && (GS->IsMatchIntermission() || GS->HasMatchEnded())) || Super::ScoreboardIsUp();
+}
+
 void AUTHUD_CTF::NotifyMatchStateChange()
 {
 	UUTCTFScoreboard* CTFScoreboard = Cast<UUTCTFScoreboard>(MyUTScoreboard);

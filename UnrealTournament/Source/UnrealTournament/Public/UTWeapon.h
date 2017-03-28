@@ -235,6 +235,10 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	TArray<float> Spread;
 
+	/** Scale Vertical portion of spread by this value. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		float VerticalSpreadScaling;
+
 	/** First person, non attenuated sound to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 		TArray<USoundBase*> FPFireSound;
@@ -325,6 +329,13 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Weapon")
 	bool bCanThrowWeapon;
 
+	/** if true, user has no voluntary movement while IsFiring() returns true
+	 * and cannot start firing while in the air
+	 * does not affect movement caused by outside control (knockback, jumppad, etc)
+	 */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Weapon")
+	bool bRootWhileFiring;
+
 	/** if true, don't display in menus like the weapon priority menu (generally because the weapon's use is outside the user's control, e.g. instagib) */
 	UPROPERTY(EditDefaultsOnly, Category = UI)
 	bool bHideInMenus;
@@ -339,6 +350,18 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	/** Hack for adjusting first person weapon mesh at different FOVs (until we have separate render pass for first person weapon. */
 	UPROPERTY(EditDefaultsOnly, Category="Weapon")
 	FVector FOVOffset;
+
+	UPROPERTY()
+	TArray<UMaterialInstanceDynamic*> MeshMIDs;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Panini")
+	float Panini_d;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Panini")
+	float Panini_PushMax;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Panini")
+	float Panini_PushMin;
 
 	UPROPERTY()
 	UUTWeaponSkin* WeaponSkin;
@@ -503,7 +526,7 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY()
 	FRotator FirstPMeshRotation;
 
-	/** Scaling for 1st person weapon bob */
+	/** Scaling for Procedural 1st person weapon bob.  Set to zero to disable. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponBob")
 	float WeaponBobScaling;
 
@@ -514,6 +537,10 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	/**1st person firing view kickback to the side*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponBob")
 		float FiringViewKickbackY;
+
+	/**HUD recoil when firing weapon*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponBob")
+		FVector2D HUDViewKickback;
 
 	virtual void UpdateViewBob(float DeltaTime);
 
@@ -700,6 +727,8 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY()
 		TEnumAsByte<ESoundAmplificationType> FireSoundAmp;
 
+	virtual void PlayFiringSound(uint8 EffectFiringMode);
+
 	/** play firing effects not associated with the shot's results (e.g. muzzle flash but generally NOT emitter to target) */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void PlayFiringEffects();
@@ -761,6 +790,9 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 
 	UFUNCTION(BlueprintCallable, Category = Firing)
 	void K2_FireInstantHit(bool bDealDamage, FHitResult& OutHit);
+
+	/** return true if Actor should be ignored by weapon traces in HitScanTrace() and FireCone() */
+	virtual bool ShouldTraceIgnore(AActor* TestActor);
 
 	/** Handles rewind functionality for net games with ping prediction */
 	virtual void HitScanTrace(const FVector& StartLocation, const FVector& EndTrace, float TraceRadius, FHitResult& Hit, float PredictionTime);
@@ -911,19 +943,27 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY()
 	float	OldMaxDiff[2];
 
-	/** How fast Weapon Rotation offsets */
+	/** Animated weapon lag scaling. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Rotation")
+		float	AnimLagMultiplier;
+
+	/** Animated weapon lag return speed. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Rotation")
+		float	AnimLagSpeedReturn;
+
+	/** How fast Procedural Weapon Rotation offsets */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Rotation")
 	float	RotChgSpeed; 
 
-	/** How fast Weapon Rotation returns */
+	/** How fast Procedural Weapon Rotation returns */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Rotation")
 	float	ReturnChgSpeed;
 
-	/** Max Weapon Rotation Yaw offset */
+	/** Max Procedural Weapon Rotation Yaw offset */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Rotation")
 	float	MaxYawLag;
 
-	/** Max Weapon Rotation Pitch offset */
+	/** Max Procedural Weapon Rotation Pitch offset */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Rotation")
 	float	MaxPitchLag;
 
@@ -1174,7 +1214,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	FName WeaponSkinCustomizationTag;
 
-
 	/** Holds a pointer to the current crosshair */
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
 	UUTCrosshair* ActiveCrosshair;
@@ -1182,4 +1221,42 @@ public:
 	// The customization for this crosshair based on the customization info
 	UPROPERTY(BlueprintReadOnly, Category = Crosshair)
 	FWeaponCustomizationInfo ActiveCrosshairCustomizationInfo;
+
+	/** Hitscan replication debugging. */
+	UPROPERTY()
+		bool bTrackHitScanReplication;
+
+	UPROPERTY()
+		AUTCharacter* HitScanHitChar;
+
+	UPROPERTY()
+		FVector_NetQuantize HitScanCharLoc;
+
+	UPROPERTY()
+		FVector_NetQuantize HitScanStart;
+
+	UPROPERTY()
+		FVector_NetQuantize HitScanEnd;
+
+	UPROPERTY()
+		float HitScanHeight;
+
+
+	UPROPERTY()
+		uint8 HitScanIndex;
+
+	UPROPERTY()
+		float HitScanTime;
+
+	UPROPERTY()
+		AUTCharacter* ReceivedHitScanHitChar;
+
+	UPROPERTY()
+		uint8 ReceivedHitScanIndex;
+
+	UFUNCTION(Server, Unreliable, WithValidation)
+		void ServerHitScanHit(AUTCharacter* HitScanChar, uint8 HitScanEventIndex);
+
+	UFUNCTION (Client, Unreliable)
+		void ClientMissedHitScan(FVector_NetQuantize MissedHitScanStart, FVector_NetQuantize MissedHitScanEnd, FVector_NetQuantize MissedHitScanLoc, float MissedHitScanTime, uint8 MissedHitScanIndex);
 };

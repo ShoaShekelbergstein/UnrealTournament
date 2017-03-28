@@ -7,5 +7,6 @@ UUTGameRuleset::UUTGameRuleset(const class FObjectInitializer& ObjectInitializer
 : Super(ObjectInitializer)
 {
 	bCompetitiveMatch = false;
+	OptionFlags = GAME_OPTION_FLAGS_All;
 }
 

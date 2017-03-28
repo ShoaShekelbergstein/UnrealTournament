@@ -36,8 +36,6 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 	UPROPERTY()
 	bool bIsPlacingPlayers;
 	
-	static LineUpTypes GetLineUpTypeToPlay(UWorld* World);
-	
 	/*Handles all the clean up for a particular player when a line-up is ending*/
 	static void CleanUpPlayerAfterLineUp(AUTPlayerController* UTPC);
 

@@ -15,6 +15,7 @@
 #include "UTLobbyGameState.h"
 #include "PartyContext.h"
 #include "BlueprintContextLibrary.h"
+#include "../SUTUtils.h"
 
 #if !UE_SERVER
 
@@ -104,14 +105,14 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 {
 	SAssignNew(GamePanel,SVerticalBox)
 	+ SVerticalBox::Slot().FillHeight(1.0f)
-	.Padding(FMargin(60.0f, 60.0f, 60.0f, 20.0f))
+	.Padding(FMargin(60.0f, 20.0f, 60.0f, 20.0f))
 	[
 		SNew(SVerticalBox)
 
 		// Game type and map selection
 		+SVerticalBox::Slot()
 		.AutoHeight()
-		.Padding(FMargin(0, 0, 0, 50))
+		.Padding(FMargin(0, 0, 0, 15))
 		[
 			// Selection Controls
 			SNew(SHorizontalBox)
@@ -305,7 +306,7 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 
 		// Game Settings and mutators
 		+SVerticalBox::Slot()
-		.Padding(FMargin(0.0f,30.0f,0.0f,0.0f))
+		.Padding(FMargin(0.0f,15.0f,0.0f,0.0f))
 		.FillHeight(1.0f)
 		[
 			SNew(SHorizontalBox)
@@ -315,7 +316,7 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 			.Padding(FMargin(0, 0, 60, 0))
 			[
 				SNew(SBox)
-				.WidthOverride(700)
+				.WidthOverride(800)
 				[
 					SNew(SVerticalBox)
 					// Heading
@@ -328,9 +329,14 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 						.Text(NSLOCTEXT("SUTCreateGamePanel", "GameSettings", "Game Settings:"))
 					]
 					// Game config panel
-					+ SVerticalBox::Slot()
+					+ SVerticalBox::Slot().AutoHeight()
 					[
 						SAssignNew(GameConfigPanel, SVerticalBox)
+					]
+
+					+SVerticalBox::Slot().AutoHeight().Padding(0.0f,50.0f,0.0f,0.0f)
+					[
+						SAssignNew(BotSkillBox, SVerticalBox)
 					]
 				]
 			]
@@ -795,7 +801,7 @@ FReply SUTCreateGamePanel::ConfigureMutator()
 	return FReply::Handled();
 }
 
-void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, FString& GameModeName, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32 BotSkillLevel, int32& bTeamGame)
+void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, FString& GameModeName, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32& bTeamGame)
 {
 	StartingMap = MapList->GetSelectedItem().IsValid() ? MapList->GetSelectedItem().Get()->MapPackageName : TEXT("");
 	AUTGameMode* DefaultGameMode = SelectedGameClass->GetDefaultObject<AUTGameMode>();
@@ -814,12 +820,6 @@ void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& Start
 
 		DefaultGameMode->GetGameURLOptions(GameConfigProps, GameOptions, DesiredPlayerCount);
 		bTeamGame = DefaultGameMode->bTeamGame;
-
-		if (BotSkillLevel >=0)
-		{
-			GameOptions.Add(FString::Printf(TEXT("Difficulty=%i"), BotSkillLevel));
-		}
-
 		for (int32 i = 0; i < GameOptions.Num(); i++)
 		{
 			Description += FString::Printf(TEXT("\n%s"), *GameOptions[i]);
@@ -831,12 +831,12 @@ void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& Start
 			FString MutatorOption = TEXT("");
 			LastMutators.Add(MutatorListEnabled[0]->GetPathName());
 
-			MutatorOption += FString::Printf(TEXT("?mutator=%s"), *MutatorListEnabled[0]->GetPathName());
+			MutatorOption += FString::Printf(TEXT("?mutator=%s"), *GetMutatorShortName(MutatorListEnabled[0]->GetPathName()));
 			GetCustomMutatorOptions(MutatorListEnabled[0], Description, GameOptions);
 
 			for (int32 i = 1; i < MutatorListEnabled.Num(); i++)
 			{
-				MutatorOption += TEXT(",") + MutatorListEnabled[i]->GetPathName();
+				MutatorOption += TEXT(",") + GetMutatorShortName(MutatorListEnabled[i]->GetPathName());
 				GetCustomMutatorOptions(MutatorListEnabled[i], Description, GameOptions);
 				LastMutators.Add(MutatorListEnabled[i]->GetPathName());
 			}
@@ -905,6 +905,28 @@ EVisibility SUTCreateGamePanel::GetLockImageVis() const
 
 	return EVisibility::Collapsed;
 }
+
+void SUTCreateGamePanel::SetBoxSkill(TSharedRef<SCompoundWidget> AllowBotsWidgets, TSharedRef<SHorizontalBox> BotSkillWidgets, TSharedRef<SCompoundWidget> RequireFilled)
+{
+	if (BotSkillBox.IsValid())
+	{
+		BotSkillBox->AddSlot().AutoHeight()
+		[
+			RequireFilled
+		];
+
+		BotSkillBox->AddSlot().AutoHeight()
+		[
+			AllowBotsWidgets
+		];
+
+		BotSkillBox->AddSlot().AutoHeight()
+		[
+			BotSkillWidgets
+		];
+	}
+}
+
 
 
 #endif

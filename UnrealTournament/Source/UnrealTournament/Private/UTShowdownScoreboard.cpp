@@ -75,7 +75,7 @@ void UUTShowdownScoreboard::DrawScoreHeaders(float RenderDelta, float& YOffset)
 void UUTShowdownScoreboard::DrawPlayerScore(AUTPlayerState* PlayerState, float XOffset, float YOffset, float Width, FLinearColor DrawColor)
 {
 	DrawText(FText::AsNumber(int32(PlayerState->Score)), XOffset + (Width * ColumnHeaderScoreX), YOffset + ColumnY, UTHUDOwner->SmallFont, 1.0f, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
-	DrawText(FText::AsNumber(PlayerState->Kills), XOffset + (Width * ColumnHeaderKillsX), YOffset + ColumnY, UTHUDOwner->TinyFont, 1.0f, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
+	DrawText(FText::Format(NSLOCTEXT("UnrealTournament", "KillsAndFinalBlows", "{0} ({1})"), FText::AsNumber(PlayerState->Kills + PlayerState->KillAssists), FText::AsNumber(PlayerState->Kills)), XOffset + (Width * ColumnHeaderKillsX), YOffset + ColumnY, UTHUDOwner->TinyFont, 1.0f, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
 	DrawText(FText::AsNumber(PlayerState->Deaths), XOffset + (Width * ColumnHeaderDeathsX), YOffset + ColumnY, UTHUDOwner->TinyFont, 1.0f, 1.0f, DrawColor, ETextHorzPos::Center, ETextVertPos::Center);
 }
 

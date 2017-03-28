@@ -8,6 +8,8 @@
 #include "DataChannel.h"
 #include "UTDemoRecSpectator.h"
 #include "UTGameMessage.h"
+#include "UTReplicatedGameRuleset.h"
+#include "UTAnalytics.h"
 #if WITH_PROFILE
 #include "UtMcpProfileManager.h"
 #endif
@@ -142,6 +144,12 @@ void AUTBaseGameMode::InitGameState()
 		{
 			GS->ServerName = TEXT("UT Server");
 		}
+	}
+
+	//Context is actually init inside of InitGame, but we want the gamestate populated so we can get data
+	if (FUTAnalytics::IsAvailable())
+	{
+		FUTAnalytics::FireEvent_UTInitContext(this);
 	}
 }
 
@@ -514,6 +522,16 @@ void AUTBaseGameMode::RconKick(const FString& NameOrUIDStr, bool bBan, const FSt
 	}
 }
 
+void AUTBaseGameMode::RconUnban(const FString& UIDStr)
+{
+	AUTGameSession* GSession = Cast<AUTGameSession>(GameSession);
+	if (GSession)
+	{
+		GSession->UnbanPlayer(UIDStr);
+	}
+}
+
+
 void AUTBaseGameMode::RconAuth(AUTBasePlayerController* Admin, const FString& Password)
 {
 	if (Admin)
@@ -709,3 +727,76 @@ bool AUTBaseGameMode::SupportsInstantReplay() const
 {
 	return false;
 }
+
+
+AUTReplicatedGameRuleset* AUTBaseGameMode::CreateCustomReplicateGameRuleset(UWorld* World, AActor* Owner, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, int32 DesiredPlayerCount, bool bTeamGame)
+{
+	AUTReplicatedGameRuleset* NewReplicatedRuleset = nullptr;
+
+	if ( World != nullptr )
+	{
+		FActorSpawnParameters Params;
+		Params.Owner = Owner;
+		NewReplicatedRuleset = World->SpawnActor<AUTReplicatedGameRuleset>(Params);
+
+		if (NewReplicatedRuleset)
+		{
+			// Look up the game mode in the AllowedGameData array and get the text description.
+			NewReplicatedRuleset->Title = TEXT("Custom Rule");
+			NewReplicatedRuleset->Tooltip = TEXT("");
+			NewReplicatedRuleset->Description = Description;
+		
+			int32 PlayerCount = 20;
+			NewReplicatedRuleset->GameMode = GameMode;
+			FString FinalGameOptions = TEXT("");
+
+			AUTGameMode* CustomGameModeDefaultObject = NewReplicatedRuleset->GetDefaultGameModeObject();
+			if (CustomGameModeDefaultObject)
+			{
+				NewReplicatedRuleset->Title = FString::Printf(TEXT("Custom %s"), *CustomGameModeDefaultObject->DisplayName.ToString());
+
+				TArray< TSharedPtr<TAttributePropertyBase> > AllowedProps;
+				CustomGameModeDefaultObject->CreateGameURLOptions(AllowedProps);
+
+				for (int32 i=0; i<GameOptions.Num();i++)
+				{
+					if (!GameOptions[i].IsEmpty())
+					{
+						FString Sanitized = GameOptions[i].Replace(TEXT(" "), TEXT(""));
+						Sanitized = Sanitized.Replace(TEXT("?"),TEXT(""));
+						Sanitized = Sanitized.Replace(TEXT("?"),TEXT(""));
+						Sanitized = Sanitized.Replace(TEXT("|"),TEXT(""));
+						Sanitized = Sanitized.Replace(TEXT(";"),TEXT(""));
+						Sanitized = Sanitized.Replace(TEXT("<"),TEXT(""));
+						Sanitized = Sanitized.Replace(TEXT(">"),TEXT(""));
+						TArray<FString> Split;
+						Sanitized.ParseIntoArray(Split, TEXT("="),true);
+						if (Split.Num() == 2)
+						{
+							// Verify the settings on time limit
+							if (Split[0].Equals(TEXT("timelimit"),ESearchCase::IgnoreCase))
+							{
+								int32 TimeLimitValue = FCString::Atoi(*Split[1]);												
+								if (TimeLimitValue <= 0 || TimeLimitValue >=60)
+								{
+									Sanitized = TEXT("TimeLimit=60");
+								}
+							}
+
+							FinalGameOptions += TEXT("?") + Sanitized;
+						}
+					}
+				}
+			}
+
+			NewReplicatedRuleset->MaxPlayers = (DesiredPlayerCount > 0) ? DesiredPlayerCount : CustomGameModeDefaultObject->DefaultMaxPlayers;
+			NewReplicatedRuleset->GameOptions = FinalGameOptions;
+			NewReplicatedRuleset->DisplayTexture = "Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_Custom.GB_Custom'";
+			NewReplicatedRuleset->bCustomRuleset = true;
+			NewReplicatedRuleset->bTeamGame = bTeamGame;
+		}
+	}
+
+	return NewReplicatedRuleset;
+}
+

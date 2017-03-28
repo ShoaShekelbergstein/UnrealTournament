@@ -17,6 +17,7 @@ class UNREALTOURNAMENT_API AUTHUD_CTF : public AUTHUD
 	virtual void ReceiveLocalMessage(TSubclassOf<class UUTLocalMessage> MessageClass, APlayerState* RelatedPlayerState_1, APlayerState* RelatedPlayerState_2, uint32 MessageIndex, FText LocalMessageText, UObject* OptionalObject);
 
 	virtual void ClientRestart();
+	virtual bool ScoreboardIsUp() override;
 
 protected:
 	virtual void PingBoostIndicator();

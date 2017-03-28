@@ -133,7 +133,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		FText ScoreMessageText;
 
-	virtual float DrawWinConditions(UFont* InFont, float XPos, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage, bool bSkipDrawing = false);
+	virtual float DrawWinConditions(UCanvas* InCanvas, UFont* InFont, float XPos, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage, bool bSkipDrawing = false);
 
 	// The Global Opacity for Hud Widgets
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
@@ -324,8 +324,8 @@ public:
 
 	virtual void ShowDebugInfo(float& YL, float& YPos) override;
 
-	UPROPERTY()
-		bool bShowUTHUD;
+	UPROPERTY(BlueprintReadonly, Category = "HUD")
+	bool bShowUTHUD;
 
 	virtual void ShowHUD() override;
 
@@ -337,6 +337,12 @@ public:
 	FTimerHandle MatchSummaryHandle;
 
 	virtual void OpenMatchSummary();
+
+	UPROPERTY()
+		bool bDisplayMatchSummary;
+
+	UPROPERTY()
+		float MatchSummaryTime;
 
 	inline UUTScoreboard* GetScoreboard() const
 	{
@@ -557,6 +563,9 @@ public:
 		FText BuildText;
 
 	UPROPERTY()
+		FText WarmupText;
+
+	UPROPERTY()
 		float BuildTextWidth;
 
 	void DrawString(FText Text, float X, float Y, ETextHorzPos::Type HorzAlignment, ETextVertPos::Type VertAlignment, UFont* Font, FLinearColor Color, float Scale=1.0, bool bOutline=false);
@@ -685,22 +694,29 @@ public:
 	/**
 	 *	returns true if a given umg widget is active on the stack
 	 **/
-
-	bool IsUMGWidgetActive(TWeakObjectPtr<UUTUMGHudWidget> TestWidget);
+	UFUNCTION(BlueprintCallable, Category=UMG)
+	bool IsUMGWidgetActive(UUTUMGHudWidget* TestWidget);
 
 	/**
 	 *	Activate a UMG HUD widget and display it over the HUD
 	 **/
-	virtual TWeakObjectPtr<class UUTUMGHudWidget> ActivateUMGHudWidget(FString UMGHudWidgetClassName, bool bUnique = true);
-	virtual void ActivateActualUMGHudWidget(TWeakObjectPtr<UUTUMGHudWidget> WidgetToActivate);
+	UFUNCTION(BlueprintCallable, Category=UMG)
+	virtual UUTUMGHudWidget* ActivateUMGHudWidget(FString UMGHudWidgetClassName, bool bUnique = true);
+
+	UFUNCTION(BlueprintCallable, Category=UMG)
+	virtual void ActivateActualUMGHudWidget(UUTUMGHudWidget* WidgetToActivate);
 
 	/**
 	 *	Deactivates a UMG HUD widget that is already active
 	 **/
+	UFUNCTION(BlueprintCallable, Category=UMG)
 	virtual void DeactivateUMGHudWidget(FString UMGHudWidgetClassName);
-	virtual void DeactivateActualUMGHudWidget(TWeakObjectPtr<UUTUMGHudWidget> WidgetToDeactivate);
+
+	UFUNCTION(BlueprintCallable, Category=UMG)
+	virtual void DeactivateActualUMGHudWidget(UUTUMGHudWidget* WidgetToDeactivate);
 
 	/**/
+	UFUNCTION(BlueprintCallable, Category=UMG)
 	virtual void ClearAllUMGWidgets();
 
 	/**
@@ -716,10 +732,29 @@ public:
 	UPROPERTY()
 	UTexture2D* CharacterPortraitAtlas;
 
+	/** Add HUD impulse (to offset HUD). */
+	virtual void AddHUDImpulse(FVector2D NewImpulse);
+
+	UPROPERTY()
+	FVector2D TargetHUDImpulse;
+
+	UPROPERTY()
+	FVector2D CurrentHUDImpulse;
+
+
 protected:
-	TArray<TWeakObjectPtr<UUTUMGHudWidget>> UMGHudWidgetStack;
+	// Called when the first frame is rendered
+	UFUNCTION(BlueprintNativeEvent, Category = UMG)
+	void BeforeFirstFrame();
+	
+	bool bFirstRender;
+
+	TArray<UUTUMGHudWidget*> UMGHudWidgetStack;
 
 	UFUNCTION()
 	virtual void ShowUTMenu();
+
+	bool bFirstPlay;
+
 };
 

@@ -343,6 +343,7 @@ TSharedRef<class SWidget> SUTWeaponConfigDialog::BuildCustomButtonBar()
 
 void SUTWeaponConfigDialog::AddReferencedObjects(FReferenceCollector& Collector)
 {
+	Collector.AddReferencedObject(PreviewEnvironment);
 	Collector.AddReferencedObject(PreviewTexture);
 	Collector.AddReferencedObject(PreviewMID);
 	Collector.AddReferencedObject(PreviewWorld);
@@ -362,8 +363,6 @@ void SUTWeaponConfigDialog::AddReferencedObjects(FReferenceCollector& Collector)
 	for (int32 i = 0 ; i < WeaponSkinGCList.Num(); i++) Collector.AddReferencedObject(WeaponSkinGCList[i]);
 	for (int32 i = 0 ; i < PickupPreviewActors.Num(); i++) Collector.AddReferencedObject(PickupPreviewActors[i]);
 	for (int32 i = 0; i < WeaponPreviewActors.Num(); i++) Collector.AddReferencedObject(WeaponPreviewActors[i]);
-
-
 }
 
 void SUTWeaponConfigDialog::GeneratePage()
@@ -886,7 +885,7 @@ void SUTWeaponConfigDialog::GenerateWeaponList(UClass* DesiredSelectedWeaponClas
 		GroupBoxes[Group].NoButtons++;
 		TSharedPtr<SUTButton> Button;
 
-		if (AllWeapons[i].WeaponDefaultObject.IsValid())
+		if (AllWeapons[i].WeaponDefaultObject.IsValid() && AllWeapons[i].WeaponIconBrush != nullptr)
 		{
 			ButtonBox->AddSlot(Col, Row).Padding(5.0f, 5.0f, 5.0f, 5.0f)
 			[
@@ -1527,6 +1526,13 @@ FText SUTWeaponConfigDialog::GetVarientText() const
 			{
 				return WeaponSkin->DisplayName;
 			}
+		}
+		else
+		{
+			return (AllWeapons.IsValidIndex(CurrentWeaponIndex) && AllWeapons[CurrentWeaponIndex].WeaponDefaultObject != nullptr) 
+					? AllWeapons[CurrentWeaponIndex].WeaponDefaultObject->DisplayName 
+					: FText::GetEmpty();
+
 		}
 	}
 	return NSLOCTEXT("SUTWeaponConfigDialog","DefaultWeaponSkinDesc","Epic Special");

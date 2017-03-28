@@ -26,8 +26,10 @@ AUTWeap_Sniper::AUTWeap_Sniper(const FObjectInitializer& ObjectInitializer)
 	BaseAISelectRating = 0.7f;
 	BasePickupDesireability = 0.63f;
 	FiringViewKickback = -50.f;
-	FiringViewKickbackY = 30.f;
+	FiringViewKickbackY = 0.f;
 	BlockedHeadshotDamage = 45;
+	bSniping = true;
+	HUDViewKickback = FVector2D(0.f, 0.2f);
 
 	KillStatsName = NAME_SniperKills;
 	AltKillStatsName = NAME_SniperHeadshotKills;
@@ -38,6 +40,7 @@ AUTWeap_Sniper::AUTWeap_Sniper(const FObjectInitializer& ObjectInitializer)
 	bCheckHeadSphere = true;
 	bCheckMovingHeadSphere = true;
 	bIgnoreShockballs = true;
+	bTrackHitScanReplication = true;
 
 	WeaponCustomizationTag = EpicWeaponCustomizationTags::Sniper;
 	WeaponSkinCustomizationTag = EpicWeaponSkinCustomizationTags::Sniper;
@@ -92,7 +95,7 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 	float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
 	HitScanTrace(SpawnLocation, EndTrace, InstantHitInfo[CurrentFireMode].TraceHalfSize, Hit, PredictionTime);
 
-	if (Role == ROLE_Authority && Cast<AUTCharacter>(Hit.Actor.Get()) == NULL)
+	if (Cast<AUTCharacter>(Hit.Actor.Get()) == NULL)
 	{
 		// in some cases the head sphere is partially outside the capsule
 		// so do a second search just for that
@@ -110,7 +113,6 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 			PS->ModifyStatsValue(ShotsStatsName, 1);
 		}
 
-		UTOwner->SetFlashLocation(Hit.Location, CurrentFireMode);
 		// warn bot target, if any
 		if (UTPC != NULL)
 		{
@@ -156,13 +158,13 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 	}
 	if (Hit.Actor != NULL && Hit.Actor->bCanBeDamaged && bDealDamage)
 	{
-		int32 Damage = InstantHitInfo[CurrentFireMode].Damage;
+		int32 Damage = GetHitScanDamage();
 		TSubclassOf<UDamageType> DamageType = InstantHitInfo[CurrentFireMode].DamageType;
 
 		bool bIsHeadShot = false;
 		bool bBlockedHeadshot = false;
 		AUTCharacter* C = Cast<AUTCharacter>(Hit.Actor.Get());
-		if (C != NULL && C->IsHeadShot(Hit.Location, FireDir, GetHeadshotScale(C), UTOwner, PredictionTime))
+		if (C != NULL && CanHeadShot() && C->IsHeadShot(Hit.Location, FireDir, GetHeadshotScale(C), UTOwner, PredictionTime))
 		{
 			bIsHeadShot = true;
 			if (C->BlockedHeadShot(Hit.Location, FireDir, GetHeadshotScale(C), true, UTOwner))
@@ -195,10 +197,31 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 			PS->ModifyStatsValue(HitsStatsName, 1);
 		}
 	}
+	if (Role == ROLE_Authority)
+	{
+		SetFlashExtra(Hit.Actor.Get());
+		UTOwner->SetFlashLocation(Hit.Location, CurrentFireMode);
+	}
 	if (OutHit != NULL)
 	{
 		*OutHit = Hit;
 	}
+}
+
+void AUTWeap_Sniper::PlayPredictedImpactEffects(FVector ImpactLoc)
+{
+	SetFlashExtra(nullptr);
+	Super::PlayPredictedImpactEffects(ImpactLoc);
+}
+
+int32 AUTWeap_Sniper::GetHitScanDamage()
+{
+	return InstantHitInfo[CurrentFireMode].Damage;;
+}
+
+bool AUTWeap_Sniper::CanHeadShot()
+{
+	return true;
 }
 
 float AUTWeap_Sniper::GetAISelectRating_Implementation()

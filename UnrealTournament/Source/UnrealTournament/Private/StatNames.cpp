@@ -107,7 +107,6 @@ const FName NAME_FlakShreds(TEXT("FlakShreds"));
 const FName NAME_AirSnot(TEXT("AirSnot"));
 
 const FName NAME_RunDist(TEXT("RunDist"));
-const FName NAME_SprintDist(TEXT("SprintDist"));
 const FName NAME_InAirDist(TEXT("InAirDist"));
 const FName NAME_SwimDist(TEXT("SwimDist"));
 const FName NAME_TranslocDist(TEXT("TranslocDist"));

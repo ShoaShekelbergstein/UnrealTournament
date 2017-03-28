@@ -53,7 +53,16 @@ class UNREALTOURNAMENT_API UUTReachSpec_JumpPad : public UUTReachSpec
 		NavMesh->DoStringPulling(StartLoc, PolyRoute, AgentProps, MovePoints);
 		if (JumpPad.IsValid())
 		{
-			MovePoints.Add(FComponentBasedPosition(JumpPad->GetRootComponent(), JumpPad->GetActorLocation()));
+			// the jump pad is generally affixed to the floor, so we want to offset upwards to where the Pawn's location would be when touching it
+			// however, we don't want to do this for pads that are affixed to walls, as the navmesh is only built on floors and so pushing upwards in either local or world Z is likely to just push the location off the mesh
+			FVector JumpPadMoveLocation = JumpPad->TriggerBox->GetComponentLocation();
+			const FVector JumpPadZAxis = JumpPad->TriggerBox->GetComponentTransform().GetUnitAxis(EAxis::Z);
+			if (JumpPadZAxis.Z >= 0.7f)
+			{
+				JumpPadMoveLocation += JumpPadZAxis * ((AgentProps.AgentHeight * 0.5f) - JumpPad->TriggerBox->RelativeLocation.Z);
+			}
+
+			MovePoints.Add(FComponentBasedPosition(JumpPad->GetRootComponent(), JumpPadMoveLocation));
 		}
 		MovePoints.Add(FComponentBasedPosition(Target.GetLocation(Asker)));
 		return true;

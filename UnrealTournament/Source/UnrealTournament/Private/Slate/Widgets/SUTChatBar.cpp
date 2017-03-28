@@ -5,6 +5,7 @@
 #include "Slate/SlateGameResources.h"
 #include "SUTChatBar.h"
 #include "SUTChatEditBox.h"
+#include "UTGameViewportClient.h"
 
 #if !UE_SERVER
 
@@ -193,6 +194,26 @@ FText SUTChatBar::GetChatDestinationText() const
 	return NSLOCTEXT("Chat", "GlobalTag","Global Chat");
 }
 
+void SUTChatBar::ChatConsoleCommand(const FString& Destination, const FString& FinalText)
+{
+	UUTGameViewportClient* UTGVC = Cast<UUTGameViewportClient>(PlayerOwner->ViewportClient);
+	if (UTGVC && UTGVC->HasActiveWorldOverride())
+	{
+		UWorld* RealWorld = UTGVC->GetWorldNoActiveWorldOverride();
+		for (FConstPlayerControllerIterator Iterator = RealWorld->GetPlayerControllerIterator(); Iterator; ++Iterator)
+		{
+			if (Iterator->Get()->Player == PlayerOwner)
+			{
+				Iterator->Get()->ProcessConsoleExec(*FString::Printf(TEXT("%s %s"), *Destination, *FinalText), *GLog, Iterator->Get()->GetPawnOrSpectator());
+			}
+		}
+	}
+	else
+	{
+		PlayerOwner->ConsoleCommand(FString::Printf(TEXT("%s %s"), *Destination, *FinalText));
+	}
+}
+
 void SUTChatBar::ChatTextCommited(const FText& NewText, ETextCommit::Type CommitType)
 {
 	if (CommitType == ETextCommit::OnEnter)
@@ -212,12 +233,12 @@ void SUTChatBar::ChatTextCommited(const FText& NewText, ETextCommit::Type Commit
 			// World can go null during load
 			if (PlayerOwner->GetWorld() != nullptr)
 			{
-				if (ChatDestination == ChatDestinations::Global)	PlayerOwner->ConsoleCommand(FString::Printf(TEXT("GlobalChat %s"), *FinalText));
-				if (ChatDestination == ChatDestinations::Friends)	PlayerOwner->ConsoleCommand(FString::Printf(TEXT("FriendSay %s"), *FinalText));
-				if (ChatDestination == ChatDestinations::Lobby)		PlayerOwner->ConsoleCommand(FString::Printf(TEXT("LobbySay %s"), *FinalText));
-				if (ChatDestination == ChatDestinations::Local)		PlayerOwner->ConsoleCommand(FString::Printf(TEXT("Say %s"), *FinalText));
-				if (ChatDestination == ChatDestinations::Match)		PlayerOwner->ConsoleCommand(FString::Printf(TEXT("MatchChat %s"), *FinalText));
-				if (ChatDestination == ChatDestinations::Team)		PlayerOwner->ConsoleCommand(FString::Printf(TEXT("TeamSay %s"), *FinalText));
+				if (ChatDestination == ChatDestinations::Global)	ChatConsoleCommand(TEXT("GlobalChat"), FinalText);
+				if (ChatDestination == ChatDestinations::Friends)	ChatConsoleCommand(TEXT("FriendSay"), FinalText);
+				if (ChatDestination == ChatDestinations::Lobby)		ChatConsoleCommand(TEXT("LobbySay"), FinalText);
+				if (ChatDestination == ChatDestinations::Local)		ChatConsoleCommand(TEXT("Say"), FinalText);
+				if (ChatDestination == ChatDestinations::Match)		ChatConsoleCommand(TEXT("MatchChat"), FinalText);
+				if (ChatDestination == ChatDestinations::Team)		ChatConsoleCommand(TEXT("TeamSay"), FinalText);
 				PlayerOwner->GetChatWidget()->SetText(FText::GetEmpty());
 			}
 		}

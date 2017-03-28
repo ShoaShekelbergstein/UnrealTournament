@@ -230,6 +230,9 @@ void SUTStyle::SetIcons(TSharedRef<FSlateStyleSet> StyleRef)
 	Style.Set("UT.Icon.Chat36", new IMAGE_BRUSH("UTStyle/Icons/UT.Icon.Chat36", FVector2D(36, 36)));
 	Style.Set("UT.Icon.Chat.Inverted", new IMAGE_BRUSH("UTStyle/Icons/UT.Icon.Chat.Inverted", FVector2D(36, 36)));
 	
+	Style.Set("UT.Icon.Lan.Big", new IMAGE_BRUSH("UTStyle/Icons/UT.Icon.Lan.Big", FVector2D(90, 64)));
+
+
 	Style.Set("UT.Icon.Browser", new IMAGE_BRUSH("UTStyle/Icons/UT.Icon.Browser", FVector2D(48, 48)));
 	Style.Set("UT.Icon.SocialBang", new IMAGE_BRUSH("UTStyle/Icons/UT.Icon.SocialBang", FVector2D(12, 12)));
 
@@ -252,6 +255,7 @@ void SUTStyle::SetIcons(TSharedRef<FSlateStyleSet> StyleRef)
 	Style.Set("UT.Icon.LockedContent", new IMAGE_BRUSH( "UTStyle/Icons/UT.Icon.LockedContent", FVector2D(128.0f, 128.0f)));
 
 	Style.Set("UT.Icon.Pumpkin", new IMAGE_BRUSH("UTStyle/Icons/UT.Icon.Pumpkin", FVector2D(64.0, 64.0)));
+	Style.Set("UT.Icon.Skull.128x128", new IMAGE_BRUSH("UTStyle/Icons/UT.Icon.Skull.128x128", FVector2D(128.0, 128.0)));
 }
 
 
@@ -288,6 +292,16 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 		.SetHoveredSound(ButtonHoverSound)
 		.SetPressedSound(ButtonPressSound)
 	);
+
+	Style.Set("UT.SimpleButton.SuperDark", FButtonStyle()
+		.SetNormal( FSlateColorBrush(FLinearColor::Black) )
+		.SetPressed( FSlateColorBrush(Pressed) )
+		.SetHovered( FSlateColorBrush(Hovered) )
+		.SetDisabled( FSlateColorBrush(Disabled) )
+		.SetHoveredSound(ButtonHoverSound)
+		.SetPressedSound(ButtonPressSound)
+	);
+
 
 	Style.Set("UT.SimpleButton.Medium", FButtonStyle()
 		.SetNormal( FSlateColorBrush(Medium) )
@@ -447,6 +461,16 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 		.SetBackgroundImageFocused( FSlateColorBrush(UltraBright))
 		.SetBackgroundImageReadOnly( FSlateColorBrush(Medium))
 		);
+
+	Style.Set("UT.EditBox.Boxed.Medium", FEditableTextBoxStyle()
+		.SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Regular", FONT_SIZE_Medium))
+		.SetForegroundColor(FLinearColor(0.75f,0.75f,0.75f,1.0f))
+		.SetBackgroundImageNormal( FSlateColorBrush(Dark))
+		.SetBackgroundImageHovered( FSlateColorBrush(SuperDark))
+		.SetBackgroundImageFocused( FSlateColorBrush(SuperDarkListA))
+		.SetBackgroundImageReadOnly( FSlateColorBrush(SuperDarkListB))
+		);
+
 
 	Style.Set("UT.ChatEditBox", FEditableTextBoxStyle()
 		.SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Regular", FONT_SIZE_Small))

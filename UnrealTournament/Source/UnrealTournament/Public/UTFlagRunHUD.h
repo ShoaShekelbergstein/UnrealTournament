@@ -11,7 +11,6 @@ class UNREALTOURNAMENT_API AUTFlagRunHUD : public AUTHUD_CTF
 {
 	GENERATED_UCLASS_BODY()
 
-	virtual bool ScoreboardIsUp() override;
 	virtual void DrawHUD() override;
 	virtual void NotifyMatchStateChange() override;
 	virtual void BeginPlay() override;
@@ -71,7 +70,7 @@ class UNREALTOURNAMENT_API AUTFlagRunHUD : public AUTHUD_CTF
 	int32 RedPlayerCount;
 	int32 BluePlayerCount;
 
-	virtual float DrawWinConditions(UFont* InFont, float XPos, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage, bool bSkipDrawing=false) override;
+	virtual float DrawWinConditions(UCanvas* InCanvas, UFont* InFont, float XPos, float YPos, float ScoreWidth, float RenderScale, bool bCenterMessage, bool bSkipDrawing=false) override;
 
 	virtual void DrawPlayerIcon(AUTPlayerState* PlayerState, float LiveScaling, float XOffset, float YOffset, float IconSize, bool bDrawLives);
 	// get sorted array of players for which we should draw icons at the top of the HUD

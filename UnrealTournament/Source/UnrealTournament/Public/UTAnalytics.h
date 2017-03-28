@@ -45,15 +45,15 @@ public:
 	static void FireEvent_PlayerContextLocationPerMinute(AUTBasePlayerController* UTPC, FString& PlayerContextLocation, const int32 NumSocialPartyMembers);
 	static void FireEvent_UTServerFPSCharts(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& InParamArray);
 	static void FireEvent_UTServerWeaponKills(AUTGameMode* UTGM, TMap<TSubclassOf<UDamageType>, int32>* KillsArray);
-	static void FireEvent_UTStartRankedMatch(AUTGameMode* UTGM);
-	static void FireEvent_UTEndRankedMatch(AUTGameMode* UTGM);
-	static void FireEvent_UTStartQuickplayMatch(AUTGameMode* UTGM);
-	static void FireEvent_UTEndQuickplayMatch(AUTGameMode* UTGM);
+	static void FireEvent_UTInitContext(const AUTBaseGameMode* UTGM);
+	static void FireEvent_UTInitMatch(AUTGameMode* UTGM);
+	static void FireEvent_UTStartMatch(AUTGameMode* UTGM);
+	static void FireEvent_UTEndMatch(AUTGameMode* UTGM);
 	static void FireEvent_UTServerPlayerJoin(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	static void FireEvent_UTServerPlayerDisconnect(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	
 	static void FireEvent_UTHubBootUp(AUTBaseGameMode* UTGM);
-	static void FireEvent_UTHubNewInstance(class AUTLobbyMatchInfo* NewGameInfo, AUTPlayerState* Host);
+	static void FireEvent_UTHubNewInstance(class AUTLobbyMatchInfo* NewGameInfo, const FString& HostId);
 	static void FireEvent_UTHubPlayerJoinLobby(AUTBaseGameMode* UTGM, AUTPlayerState* UTPS);
 	static void FireEvent_UTHubPlayerEnterInstance(class AUTLobbyMatchInfo* GameInfo, AUTPlayerState* UTPS, bool bAsSpectator);
 
@@ -71,9 +71,10 @@ public:
 	static void FireEvent_UTMatchMakingStart(AUTBasePlayerController* UTPC, struct FMatchmakingParams* MatchParams);
 	static void FireEvent_UTMatchMakingCancelled(AUTBasePlayerController* UTPC, float SeekTime);
 	static void FireEvent_UTMatchMakingJoinGame(AUTBasePlayerController* UTPC, FString& TeamELORating, float SeekTime);
+	static void FireEvent_UTMatchMakingFailed(AUTBasePlayerController* UTPC, FString LastMatchMakingSessionId);
 
 	/* GameMode Metrics*/
-	static void FireEvent_FlagRunRoundEnd(class AUTFlagRunGame* UTGame, bool bIsDefenseRoundWin, bool bIsFinalRound);
+	static void FireEvent_FlagRunRoundEnd(class AUTFlagRunGame* UTGame, bool bIsDefenseRoundWin, bool bIsFinalRound = false, int WinningTeamNum = 0);
 	static void FireEvent_PlayerUsedRally(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	static void FireEvent_RallyPointBeginActivate(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	static void FireEvent_RallyPointCompleteActivate(AUTGameMode* UTGM, AUTPlayerState* UTPS);

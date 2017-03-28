@@ -15,9 +15,6 @@ class UNREALTOURNAMENT_API UUTCheatManager : public UCheatManager
 	GENERATED_UCLASS_BODY()
 
 	UFUNCTION(exec)
-	virtual void Sum();
-
-	UFUNCTION(exec)
 	virtual void AllAmmo();
 
 	UFUNCTION(exec)
@@ -56,6 +53,9 @@ class UNREALTOURNAMENT_API UUTCheatManager : public UCheatManager
 
 	UFUNCTION(exec)
 	virtual void Ann(int32 Switch);
+
+	UFUNCTION(exec)
+		virtual void HL();
 
 	UFUNCTION(exec)
 	virtual void Teleport();

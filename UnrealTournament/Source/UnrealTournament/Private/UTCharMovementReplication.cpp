@@ -50,8 +50,7 @@ const FVector& NewAccel
 	//UE_LOG(UT, Warning, TEXT("+++++++Set server move time %f"), CurrentServerMoveTime); //MinTimeBetweenTimeStampResets
 	UpdateFromCompressedFlags(CompressedFlags);
 
-	//UE_LOG(UT, Warning, TEXT("sprinting %d acceleration %f %f"), bIsSprinting, Acceleration.X, Acceleration.Y);
-	bool bOldSprinting = bIsSprinting;
+	bool bOldIsDodgeLanding = bIsDodgeLanding;
 	FVector OldAccel = NewAccel;
 	CharacterOwner->CheckJumpInput(DeltaTime);
 	Acceleration = ConstrainInputAcceleration(NewAccel);
@@ -59,9 +58,9 @@ const FVector& NewAccel
 
 	AnalogInputModifier = ComputeAnalogInputModifier();
 	/*
-	if (bOldSprinting != bIsSprinting)
+	if (bOldIsDodgeLanding != bIsDodgeLanding)
 	{
-		UE_LOG(UTNet, Warning, TEXT("%f SPRINTING changed from %d to %d"), ClientTimeStamp, bOldSprinting, bIsSprinting);
+		UE_LOG(UTNet, Warning, TEXT("%f DODGELANDING changed from %d to %d"), ClientTimeStamp, bOldIsDodgeLanding, bIsDodgeLanding);
 	}*/
 	DeltaTime = bClearingSpeedHack ? 0.001f : FMath::Min(DeltaTime, AGameNetworkManager::StaticClass()->GetDefaultObject<AGameNetworkManager>()->MAXCLIENTUPDATEINTERVAL);
 	PerformMovement(DeltaTime);
@@ -85,7 +84,7 @@ void UUTCharacterMovement::UpdateFromCompressedFlags(uint8 Flags)
 	bPressedDodgeBack = (DodgeFlags == 2);
 	bPressedDodgeLeft = (DodgeFlags == 3);
 	bPressedDodgeRight = (DodgeFlags == 4);
-	bIsSprinting = (DodgeFlags == 5);
+	bIsDodgeLanding = (DodgeFlags == 5);
 	bIsFloorSliding = (DodgeFlags == 6);
 	bPressedSlide = (DodgeFlags == 7);
 	bool bOldWillFloorSlide = bWantsFloorSlide;
@@ -199,9 +198,6 @@ void UUTCharacterMovement::SimulateMovement(float DeltaSeconds)
 
 		if (MovementMode == MOVE_Walking)
 		{
-			// update simulated velocity for walking (falling done in simulatemovement_internal)
-			bIsSprinting = (RealVelocity.SizeSquared() > 1.01f * FMath::Square(MaxWalkSpeed));
-
 			const float MaxAccel = GetMaxAcceleration();
 			float MaxSpeed = GetMaxSpeed();
 
@@ -276,11 +272,7 @@ void UUTCharacterMovement::SimulateMovement(float DeltaSeconds)
 			{
 				if (bIsFloorSliding)
 				{
-					Velocity = FMath::Min(Speed, SprintSpeed) * Velocity.GetSafeNormal2D();
-				}
-				else if (Speed > SprintSpeed)
-				{
-					Velocity = DodgeLandingSpeedFactor * Velocity.GetSafeNormal2D();
+					Velocity = FMath::Min(Speed, MaxSlideSpeed) * Velocity.GetSafeNormal2D();
 				}
 				else
 				{
@@ -317,7 +309,6 @@ void UUTCharacterMovement::SetReplicatedAcceleration(FRotator MovementRotation, 
 	{
 		AccelDir -= SideDir;
 	}
-	bIsSprinting = ((MovementMode == MOVE_Walking) && (Velocity.SizeSquared() > FMath::Square<float>(MaxWalkSpeed)));
 	Acceleration = GetMaxAcceleration() * AccelDir.GetSafeNormal();
 	//UE_LOG(UT, Warning, TEXT("New replcated velocity %f %f acceleration %f %f"), Velocity.X, Velocity.Y, Acceleration.X, Acceleration.Y);
 }
@@ -764,7 +755,7 @@ void UUTCharacterMovement::UTCallServerMove()
 			ClientMovementBase = NULL;
 			NewMove->EndBoneName = NAME_None;
 		}
-		//UE_LOG(UTNet, Warning, TEXT("Sending current move %f relative %d flags %d  dodge %d sprint %d shotspawned %d"), NewMove->TimeStamp, bUseRelativeLocation, NewMove->GetCompressedFlags(), (((const FSavedMove_UTCharacter*)NewMove.Get())->bPressedDodgeForward || ((const FSavedMove_UTCharacter*)NewMove.Get())->bPressedDodgeForward || ((const FSavedMove_UTCharacter*)NewMove.Get())->bPressedDodgeForward), ((const FSavedMove_UTCharacter*)NewMove.Get())->bSavedIsSprinting, ((const FSavedMove_UTCharacter*)NewMove.Get())->bShotSpawned);
+		//UE_LOG(UTNet, Warning, TEXT("Sending current move %f relative %d flags %d  dodge %d dodgelanding %d shotspawned %d"), NewMove->TimeStamp, bUseRelativeLocation, NewMove->GetCompressedFlags(), (((const FSavedMove_UTCharacter*)NewMove.Get())->bPressedDodgeForward || ((const FSavedMove_UTCharacter*)NewMove.Get())->bPressedDodgeForward || ((const FSavedMove_UTCharacter*)NewMove.Get())->bPressedDodgeForward), ((const FSavedMove_UTCharacter*)NewMove.Get())->bSavedIsDodgeLanding, ((const FSavedMove_UTCharacter*)NewMove.Get())->bShotSpawned);
 		ClientData->ClientUpdateTime = NewMove->TimeStamp;
 		UTCharacterOwner->UTServerMove
 			(
@@ -1192,7 +1183,7 @@ FSavedMovePtr FNetworkPredictionData_Client_UTChar::AllocateNewMove()
 
 bool FSavedMove_UTCharacter::CanCombineWith(const FSavedMovePtr& NewMove, ACharacter* Character, float MaxDelta) const
 {
-	if (bSavedIsSprinting != ((FSavedMove_UTCharacter*)&NewMove)->bSavedIsSprinting)
+	if (bSavedIsDodgeLanding != ((FSavedMove_UTCharacter*)&NewMove)->bSavedIsDodgeLanding)
 	{
 		return false;
 	}
@@ -1253,7 +1244,7 @@ uint8 FSavedMove_UTCharacter::GetCompressedFlags() const
 	{
 		Result |= (7 << 2);
 	}
-	else if (bSavedIsSprinting)
+	else if (bSavedIsDodgeLanding)
 	{
 		Result |= (5 << 2);
 	}
@@ -1284,13 +1275,12 @@ void FSavedMove_UTCharacter::Clear()
 	bPressedDodgeBack = false;
 	bPressedDodgeLeft = false;
 	bPressedDodgeRight = false;
-	bSavedIsSprinting = false;
+	bSavedIsDodgeLanding = false;
 	bSavedIsRolling = false;
 	bSavedWantsWallSlide = false;
 	bSavedWantsSlide = false;
 	SavedMultiJumpCount = 0;
 	SavedWallDodgeCount = 0;
-	SavedSprintStartTime = 0.f;
 	SavedDodgeResetTime = 0.f;
 	SavedFloorSlideEndTime = 0.f;
 	bSavedJumpAssisted = false;
@@ -1309,19 +1299,18 @@ void FSavedMove_UTCharacter::SetMoveFor(ACharacter* Character, float InDeltaTime
 		bPressedDodgeBack = UTCharMov->bPressedDodgeBack;
 		bPressedDodgeLeft = UTCharMov->bPressedDodgeLeft;
 		bPressedDodgeRight = UTCharMov->bPressedDodgeRight;
-		bSavedIsSprinting = UTCharMov->bIsSprinting;
+		bSavedIsDodgeLanding = UTCharMov->bIsDodgeLanding;
 		bSavedIsRolling = UTCharMov->bIsFloorSliding;
 		bSavedWantsWallSlide = UTCharMov->WantsWallSlide();
 		bSavedWantsSlide = UTCharMov->WantsFloorSlide();
 		SavedMultiJumpCount = UTCharMov->CurrentMultiJumpCount;
 		SavedWallDodgeCount = UTCharMov->CurrentWallDodgeCount;
-		SavedSprintStartTime = UTCharMov->SprintStartTime;
 		SavedDodgeResetTime = UTCharMov->DodgeResetTime;
 		SavedFloorSlideEndTime = UTCharMov->FloorSlideEndTime;
 		bSavedJumpAssisted = UTCharMov->bJumpAssisted;
 		bSavedIsDodging = UTCharMov->bIsDodging;
 		bPressedSlide = UTCharMov->bPressedSlide;
-		//UE_LOG(UTNet, Warning, TEXT("set move %f Dodge %d Sprint %d saved sprint start %f"), TimeStamp, (bPressedDodgeForward || bPressedDodgeBack || bPressedDodgeLeft || bPressedDodgeRight), bSavedIsSprinting, SavedSprintStartTime);
+		//UE_LOG(UTNet, Warning, TEXT("set move %f Dodge %d "), TimeStamp, (bPressedDodgeForward || bPressedDodgeBack || bPressedDodgeLeft || bPressedDodgeRight));
 	}
 
 	// Round acceleration, so sent version and locally used version always match
@@ -1341,7 +1330,6 @@ void FSavedMove_UTCharacter::PrepMoveFor(ACharacter* Character)
 		{
 			UTCharMov->CurrentMultiJumpCount = SavedMultiJumpCount;
 			UTCharMov->CurrentWallDodgeCount = SavedWallDodgeCount;
-			UTCharMov->SprintStartTime = SavedSprintStartTime;
 			UTCharMov->DodgeResetTime = SavedDodgeResetTime;
 			UTCharMov->FloorSlideEndTime = SavedFloorSlideEndTime;
 			UTCharMov->bJumpAssisted = bSavedJumpAssisted;
@@ -1359,10 +1347,6 @@ void FSavedMove_UTCharacter::PrepMoveFor(ACharacter* Character)
 			if (SavedWallDodgeCount != UTCharMov->CurrentWallDodgeCount)
 			{
 			UE_LOG(UTNet, Warning, TEXT("prep move %f SavedWallDodgeCount from %d to %d"), TimeStamp, SavedWallDodgeCount, UTCharMov->CurrentWallDodgeCount);
-			}
-			if (SavedSprintStartTime != UTCharMov->SprintStartTime)
-			{
-			UE_LOG(UTNet, Warning, TEXT("prep move %f SavedSprintStartTime from %f to %f"), TimeStamp, SavedSprintStartTime, UTCharMov->SprintStartTime);
 			}
 			if (SavedDodgeResetTime != UTCharMov->DodgeResetTime)
 			{
@@ -1389,7 +1373,6 @@ void FSavedMove_UTCharacter::PrepMoveFor(ACharacter* Character)
 			// @TODO FIXMESTEVE should I update all properties (non input)?
 			SavedMultiJumpCount = UTCharMov->CurrentMultiJumpCount;
 			SavedWallDodgeCount = UTCharMov->CurrentWallDodgeCount;
-			SavedSprintStartTime = UTCharMov->SprintStartTime;
 			SavedDodgeResetTime = UTCharMov->DodgeResetTime;
 			SavedFloorSlideEndTime = UTCharMov->FloorSlideEndTime;
 			bSavedJumpAssisted = UTCharMov->bJumpAssisted;

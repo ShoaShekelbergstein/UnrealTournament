@@ -9,6 +9,7 @@
 #include "UTEpicDefaultRulesets.h"
 #include "UTServerBeaconLobbyClient.h"
 #include "UTMutator.h"
+#include "UTAnalytics.h"
 
 AUTLobbyGameState::AUTLobbyGameState(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -281,29 +282,6 @@ TWeakObjectPtr<AUTReplicatedGameRuleset> AUTLobbyGameState::FindRuleset(FString 
 	return NULL;
 }
 
-AUTLobbyMatchInfo* AUTLobbyGameState::AddNewMatch(AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy, bool bIsInParty)
-{
-	// Create a match and replicate all of the relevant information
-
-	AUTLobbyMatchInfo* NewMatchInfo = GetWorld()->SpawnActor<AUTLobbyMatchInfo>();
-	if (NewMatchInfo)
-	{	
-		AvailableMatches.Add(NewMatchInfo);
-		HostMatch(NewMatchInfo, MatchOwner, MatchToCopy, bIsInParty);
-
-		return NewMatchInfo;
-	}
-		
-	return NULL;
-}
-
-void AUTLobbyGameState::HostMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerState* MatchOwner, AUTLobbyMatchInfo* MatchToCopy, bool bIsInParty)
-{
-	MatchInfo->SetOwner(MatchOwner->GetOwner());
-	MatchInfo->AddPlayer(MatchOwner, true);
-	MatchInfo->SetSettings(this, MatchOwner, MatchToCopy, bIsInParty);
-}
-
 void AUTLobbyGameState::JoinMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerState* NewPlayer, bool bAsSpectator)
 {
 	if (!NewPlayer->bIsRconAdmin)
@@ -349,6 +327,7 @@ void AUTLobbyGameState::JoinMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerSt
 
 	if (MatchInfo->CurrentState == ELobbyMatchState::Launching)
 	{
+/*
 		if (bAsSpectator)
 		{
 			NewPlayer->ClientMatchError(NSLOCTEXT("LobbyMessage","MatchIsStartingSpectate","The match you are trying to spectate is starting.  Please try again after it launches."));	
@@ -358,6 +337,7 @@ void AUTLobbyGameState::JoinMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerSt
 			NewPlayer->ClientMatchError(NSLOCTEXT("LobbyMessage","MatchIsStarting","The match you are trying to join is starting.  Please try again after it launches."));	
 		}
 		return;
+*/
 	}
 	else if (MatchInfo->CurrentState == ELobbyMatchState::InProgress)
 	{
@@ -463,30 +443,7 @@ void AUTLobbyGameState::SetupLobbyBeacons()
 	UE_LOG(UT,Log,TEXT("Could not create Lobby Beacons"));
 }
 
-void AUTLobbyGameState::CreateAutoMatch(FString MatchGameMode, FString MatchOptions, FString MatchMap)
-{
-/*
-	// Create the MatchInfo for this match
-	AUTLobbyMatchInfo* NewMatchInfo = GetWorld()->SpawnActor<AUTLobbyMatchInfo>();
-	if (NewMatchInfo)
-	{	
-		AvailableMatches.Add(NewMatchInfo);
-		NewMatchInfo->MatchGameMode = MatchGameMode;
-		NewMatchInfo->MatchOptions = MatchOptions;
-		NewMatchInfo->MatchMap = MatchMap;
-		NewMatchInfo->bJoinAnytime = true;
-		NewMatchInfo->bSpectatable = true;
-		NewMatchInfo->MaxPlayers = 20;
-		NewMatchInfo->bDedicatedMatch = true;
-
-		MatchOptions = MatchOptions + TEXT("?DedI=TRUE");
-
-		LaunchGameInstance(NewMatchInfo, MatchOptions, 10, -1);
-	}
-*/
-}
-
-void AUTLobbyGameState::LaunchGameInstance(AUTLobbyMatchInfo* MatchOwner, FString GameURL, int32 DebugCode)
+void AUTLobbyGameState::LaunchGameInstance(AUTLobbyMatchInfo* MatchOwner, FString GameURL)
 {
 	AUTLobbyGameMode* LobbyGame = GetWorld()->GetAuthGameMode<AUTLobbyGameMode>();
 
@@ -494,7 +451,7 @@ void AUTLobbyGameState::LaunchGameInstance(AUTLobbyMatchInfo* MatchOwner, FStrin
 	{
 		if (MatchOwner->GameInstanceProcessHandle.IsValid())
 		{
-			UE_LOG(UT, Warning, TEXT("Attempted to Launch a game instance when an instance already has a proc id.  Ignoring. DebugCode = %i"), DebugCode);
+			UE_LOG(UT, Warning, TEXT("Attempted to Launch a game instance when an instance already has a proc id.  Ignoring."));
 			return;
 		}
 
@@ -509,11 +466,6 @@ void AUTLobbyGameState::LaunchGameInstance(AUTLobbyMatchInfo* MatchOwner, FStrin
 		if (MatchOwner->bRankLocked)
 		{
 			GameURL += FString::Printf(TEXT("?RankCheck=%i"), MatchOwner->RankCheck);
-		}
-
-		if (MatchOwner->bQuickPlayMatch)
-		{
-			GameURL += TEXT("?QuickMatch=1");
 		}
 
 		if (MatchOwner->bPrivateMatch)
@@ -571,6 +523,11 @@ void AUTLobbyGameState::LaunchGameInstance(AUTLobbyMatchInfo* MatchOwner, FStrin
 		}
 
 		UE_LOG(UT,Verbose,TEXT("Launching %s with Params %s"), *ExecPath, *Options);
+
+		if (FUTAnalytics::IsAvailable())
+		{
+			FUTAnalytics::FireEvent_UTHubNewInstance(MatchOwner, MatchOwner->OwnerId.ToString());
+		}
 
 		MatchOwner->GameInstanceProcessHandle = FPlatformProcess::CreateProc(*ExecPath, *Options, true, false, false, NULL, 0, NULL, NULL);
 
@@ -1020,24 +977,24 @@ bool AUTLobbyGameState::AddDedicatedInstance(FGuid InstanceGUID, const FString& 
 		GameInstanceID++;
 		if (GameInstanceID == 0) GameInstanceID = 1;	// Always skip 0.
 
-
 		UE_LOG(UT,Verbose,TEXT("... Creating Dedicated Instance data for InstanceId %i"), GameInstanceID)
 
 		AvailableMatches.Add(NewMatchInfo);
 		GameInstances.Add(FGameInstanceData(NewMatchInfo, 7777));
 		NumGameInstances = GameInstances.Num();
 
+		NewMatchInfo->SetOwner(this);
 		NewMatchInfo->GameInstanceID = GameInstanceID;
-		NewMatchInfo->SetSettings(this, nullptr, nullptr);
 		NewMatchInfo->bDedicatedMatch = true;
 		NewMatchInfo->AccessKey = AccessKey;
 		NewMatchInfo->DedicatedServerName = InServerName;
 		NewMatchInfo->DedicatedServerGameMode = ServerGameMode;
 		NewMatchInfo->DedicatedServerDescription = InServerDescription;
+		NewMatchInfo->CustomGameName = InServerDescription;
 		NewMatchInfo->DedicatedServerMaxPlayers = MaxPlayers;
 		NewMatchInfo->bDedicatedTeamGame = InbTeamGame;
 		NewMatchInfo->GameInstanceGUID = InstanceGUID.ToString();
-		NewMatchInfo->ServerSetLobbyMatchState(ELobbyMatchState::InProgress);
+		NewMatchInfo->SetLobbyMatchState(ELobbyMatchState::InProgress);
 		return true;
 	}			
 
@@ -1057,58 +1014,6 @@ AUTLobbyMatchInfo* AUTLobbyGameState::FindMatch(FGuid MatchID)
 	}
 
 	return NULL;
-}
-
-void AUTLobbyGameState::HandleQuickplayRequest(AUTServerBeaconClient* Beacon, const FString& MatchType, int32 RankCheck, bool bBeginner)
-{
-	// Look through all available matches and see if there is 
-
-	int32 BestInstanceIndex = -1;
-
-	UE_LOG(UT,Verbose,TEXT("===================================================="));
-	UE_LOG(UT,Verbose,TEXT("HandleQuickplayRequest: %s %i %i"), *MatchType, RankCheck, bBeginner);
-	UE_LOG(UT,Verbose,TEXT("===================================================="));
-
-	if (CanLaunch())
-	{
-		// Tell the client they will have to wait while we spool up a match
-		Beacon->ClientWaitForQuickplay(1);
-		AUTLobbyMatchInfo* NewMatchInfo = GetWorld()->SpawnActor<AUTLobbyMatchInfo>();
-		if (NewMatchInfo)
-		{
-			AvailableMatches.Add(NewMatchInfo);
-
-			TWeakObjectPtr<AUTReplicatedGameRuleset> NewRuleset = FindRuleset(MatchType);
-
-			if (NewRuleset.IsValid())
-			{
-				FString MapToPlay = NewRuleset->DefaultMap;
-				if (NewRuleset->QuickPlayMaps.Num() > 0)
-				{
-					int32 Index = FMath::RandRange(0, NewRuleset->QuickPlayMaps.Num()-1);
-					MapToPlay = NewRuleset->QuickPlayMaps[Index];
-				}
-
-				NewMatchInfo->SetRules(NewRuleset, MapToPlay);
-			}
-
-			NewMatchInfo->bQuickPlayMatch = true;
-			NewMatchInfo->NotifyBeacons.Add(Beacon);
-			NewMatchInfo->bJoinAnytime = true;
-			NewMatchInfo->bSpectatable = true;
-			NewMatchInfo->bBeginnerMatch = bBeginner;
-
-			NewMatchInfo->RankCheck = RankCheck;
-
-			NewMatchInfo->bRankLocked = RankCheck < ((NUMBER_RANK_LEVELS * 2) -1); // Bronze 9
-			NewMatchInfo->LaunchMatch(true,1);
-		}
-	}
-	else
-	{
-		// We couldn't create a match, so tell the client to look elsewhere.
-		Beacon->ClientQuickplayNotAvailable();
-	}
 }
 
 void AUTLobbyGameState::RequestInstanceJoin(AUTServerBeaconClient* Beacon, const FString& InstanceId, bool bSpectator, int32 Rank)
@@ -1384,3 +1289,32 @@ bool AUTLobbyGameState::IsClientFullyInformed()
 	}
 	return false;
 }
+
+void AUTLobbyGameState::RequestNewCustomMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool _bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled)
+{
+	AUTReplicatedGameRuleset* CustomRuleset = AUTBaseGameMode::CreateCustomReplicateGameRuleset(GetWorld(), this, GameMode, StartingMap, Description, GameOptions, DesiredPlayerCount, bTeamGame);
+	if (CustomRuleset != nullptr)
+	{
+		RequestNewMatch(Creator, InstanceType, CustomName, CustomRuleset, StartingMap, bRankLocked, bSpectatable, _bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);	
+	}
+}
+
+void AUTLobbyGameState::RequestNewMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled)
+{
+
+	if (InstanceType == ECreateInstanceTypes::Lobby)
+	{
+		// Create a match and replicate all of the relevant information
+
+		AUTLobbyMatchInfo* NewMatchInfo = GetWorld()->SpawnActor<AUTLobbyMatchInfo>();
+		if (NewMatchInfo != nullptr)
+		{	
+			AvailableMatches.Add(NewMatchInfo);
+			NewMatchInfo->InitializeMatch(Creator, CustomName, Ruleset, StartingMap, bRankLocked, bSpectatable, _bPrivateMatch, bBeginnerMatch);
+			NewMatchInfo->LaunchMatch(bUseBots, BotDifficulty, bRequireFilled);
+		}
+
+	}
+	
+}
+

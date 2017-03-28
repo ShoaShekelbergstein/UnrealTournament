@@ -88,7 +88,7 @@ public:
 		{
 			Canvas->DrawColor = FColor::White;
 			FVector2D Size(32.0f, 32.0f);
-			Size *= FMath::Clamp<float>(1.0f - (GetActorLocation() - CameraPosition).Size() / 5000.0f, 0.25f, 1.0f);
+			Size *= Canvas->ClipX / 1920.0f * FMath::Clamp<float>(1.0f - (GetActorLocation() - CameraPosition).Size() / 5000.0f, 0.25f, 1.0f);
 			Canvas->DrawTile(BeaconArrow.Texture, Pos.X - Size.X * 0.5f, Pos.Y - Size.Y * 0.5f, Size.X, Size.Y, BeaconArrow.U, BeaconArrow.V, BeaconArrow.UL, BeaconArrow.VL);
 			Pos.Y -= Size.Y * 1.5f;
 			Canvas->DrawTile(BeaconIcon.Texture, Pos.X - Size.X * 0.5f, Pos.Y - Size.Y * 0.5f, Size.X, Size.Y, BeaconIcon.U, BeaconIcon.V, BeaconIcon.UL, BeaconIcon.VL);

@@ -566,7 +566,6 @@ void AUTGauntletGame::ForceEndOfRound()
 	}
 
 	GauntletGameState->bIsAtIntermission = true;
-	GauntletGameState->OnIntermissionChanged();
 
 	// inform actors of intermission start
 	for (FActorIterator It(GetWorld()); It; ++It)

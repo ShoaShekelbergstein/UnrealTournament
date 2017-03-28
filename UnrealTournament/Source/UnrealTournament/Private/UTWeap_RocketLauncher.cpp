@@ -39,6 +39,7 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	LockOffset = 800.f;
 	bTargetLockingActive = true;
 	LastTargetLockCheckTime = 0.0f;
+	HUDViewKickback = FVector2D(0.f, 0.2f);
 
 	UnderReticlePadding = 20.0f;
 	CrosshairScale = 0.5f;
@@ -58,7 +59,7 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	BasePickupDesireability = 0.78f;
 	BaseAISelectRating = 0.78f;
 	FiringViewKickback = -50.f;
-	FiringViewKickbackY = 40.f;
+	FiringViewKickbackY = 20.f;
 	bRecommendSplashDamage = true;
 
 	KillStatsName = NAME_RocketKills;
@@ -86,18 +87,26 @@ void AUTWeap_RocketLauncher::BeginLoadRocket()
 	if ((GetNetMode() != NM_DedicatedServer) && (GetMesh()->GetAnimInstance() != nullptr))
 	{
 		UAnimMontage* PickedAnimation = nullptr;
+		UAnimMontage* PickedHandHanim = nullptr;
 		if (Ammo > 0)
 		{
 			PickedAnimation = (LoadingAnimation.IsValidIndex(NumLoadedBarrels) && LoadingAnimation[NumLoadedBarrels] != NULL) ? LoadingAnimation[NumLoadedBarrels] : nullptr;
+			PickedHandHanim = (LoadingAnimationHands.IsValidIndex(NumLoadedBarrels) && LoadingAnimationHands[NumLoadedBarrels] != NULL) ? LoadingAnimationHands[NumLoadedBarrels] : nullptr;
+
 		}
 		else
 		{
 			PickedAnimation = (EmptyLoadingAnimation.IsValidIndex(NumLoadedBarrels) && EmptyLoadingAnimation[NumLoadedBarrels] != NULL) ? EmptyLoadingAnimation[NumLoadedBarrels] : nullptr;
+			PickedHandHanim = (EmptyLoadingAnimationHands.IsValidIndex(NumLoadedBarrels) && EmptyLoadingAnimationHands[NumLoadedBarrels] != NULL) ? EmptyLoadingAnimationHands[NumLoadedBarrels] : nullptr;
 		}
 
 		if (PickedAnimation != nullptr)
 		{
 			GetMesh()->GetAnimInstance()->Montage_Play(PickedAnimation, PickedAnimation->SequenceLength / GetLoadTime(NumLoadedBarrels));
+		}
+		if (GetUTOwner() != nullptr && GetUTOwner()->FirstPersonMesh != nullptr && GetUTOwner()->FirstPersonMesh->GetAnimInstance() != nullptr && PickedHandHanim != nullptr)
+		{
+			GetUTOwner()->FirstPersonMesh->GetAnimInstance()->Montage_Play(PickedHandHanim, PickedHandHanim->SequenceLength / GetLoadTime(NumLoadedBarrels));
 		}
 	}
 
@@ -118,6 +127,14 @@ void AUTWeap_RocketLauncher::EndLoadRocket()
 		NumLoadedRockets++;
 		SetRocketFlashExtra(CurrentFireMode, NumLoadedRockets + 1, CurrentRocketFireMode, bDrawRocketModeString);
 		ConsumeAmmo(CurrentFireMode);
+		if ((Ammo <= LowAmmoThreshold) && (Ammo > 0) && (LowAmmoSound != nullptr))
+		{
+			AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+			if (!GameMode || GameMode->bAmmoIsLimited)
+			{
+				GetWorldTimerManager().SetTimer(PlayLowAmmoSoundHandle, this, &AUTWeapon::PlayLowAmmoSound, LowAmmoSoundDelay, false);
+			}
+		}
 	}
 	else
 	{
@@ -190,6 +207,12 @@ void AUTWeap_RocketLauncher::ClientAbortLoad_Implementation()
 		if (AnimInstance != NULL && LoadingAnimation.IsValidIndex(NumLoadedRockets) && LoadingAnimation[NumLoadedRockets] != NULL)
 		{
 			AnimInstance->Montage_SetPlayRate(LoadingAnimation[NumLoadedRockets], 0.0f);
+		}
+
+		UAnimInstance* AnimInstanceHands = (GetUTOwner() && GetUTOwner()->FirstPersonMesh) ? GetUTOwner()->FirstPersonMesh->GetAnimInstance() : nullptr;
+		if (AnimInstanceHands != NULL && LoadingAnimationHands.IsValidIndex(NumLoadedRockets) && LoadingAnimationHands[NumLoadedRockets] != NULL)
+		{
+			AnimInstanceHands->Montage_SetPlayRate(LoadingAnimationHands[NumLoadedRockets], 0.0f);
 		}
 		// set grace timer
 		float AdjustedGraceTime = GracePeriod;
@@ -367,6 +390,11 @@ void AUTWeap_RocketLauncher::PlayFiringEffects()
 	{
 		UTOwner->TargetEyeOffset.X = FiringViewKickback;
 		UTOwner->TargetEyeOffset.Y = FiringViewKickbackY;
+		AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
+		if (PC != NULL)
+		{
+			PC->AddHUDImpulse(HUDViewKickback);
+		}
 
 		// try and play the sound if specified
 		if (RocketFireModes.IsValidIndex(CurrentRocketFireMode) && RocketFireModes[CurrentRocketFireMode].FireSound != NULL)
@@ -390,6 +418,16 @@ void AUTWeap_RocketLauncher::PlayFiringEffects()
 				if (AnimInstance != NULL)
 				{
 					AnimInstance->Montage_Play(FiringAnimation[NumLoadedRockets], 1.f);
+				}
+			}
+
+			// try and play a firing animation for hands if specified
+			if (FiringAnimationHands.IsValidIndex(NumLoadedRockets) && FiringAnimationHands[NumLoadedRockets] != NULL)
+			{
+				UAnimInstance* AnimInstanceHands = (GetUTOwner() && GetUTOwner()->FirstPersonMesh) ? GetUTOwner()->FirstPersonMesh->GetAnimInstance() : nullptr;
+				if (AnimInstanceHands != NULL)
+				{
+					AnimInstanceHands->Montage_Play(FiringAnimationHands[NumLoadedRockets], 1.f);
 				}
 			}
 
@@ -497,7 +535,6 @@ AUTProjectile* AUTWeap_RocketLauncher::FireRocketProjectile()
 	return ResultProj;
 }
 
-
 float AUTWeap_RocketLauncher::GetSpread(int32 ModeIndex)
 {
 	if (RocketFireModes.IsValidIndex(ModeIndex))
@@ -506,7 +543,6 @@ float AUTWeap_RocketLauncher::GetSpread(int32 ModeIndex)
 	}
 	return 0.0f;
 }
-
 
 // Target Locking Code
 void AUTWeap_RocketLauncher::StateChanged()
@@ -624,7 +660,76 @@ void AUTWeap_RocketLauncher::UpdateLock()
 	}
 
 	const FVector FireLoc = UTOwner->GetPawnViewLocation();
-	AActor* NewTarget = UUTGameplayStatics::ChooseBestAimTarget(UTOwner->Controller, FireLoc, GetBaseFireRotation().Vector(), LockAim, LockRange, LockOffset,AUTCharacter::StaticClass());
+	const FVector FireDir = GetBaseFireRotation().Vector();
+	AActor* NewTarget = nullptr;
+	
+	AUTCharacter* LockedPawn = Cast<AUTCharacter>(LockedTarget);
+	if (LockedPawn)
+	{
+		bool bKeepLock = false;
+		if (!LockedPawn->IsDead())
+		{
+			// prioritize keeping same lock
+			FVector AimDir = LockedPawn->GetActorLocation() - FireLoc;
+			float TestAim = FireDir | AimDir;
+			if (TestAim > 0.0f)
+			{
+				float FireDist = AimDir.SizeSquared();
+				if (FireDist < FMath::Square(LockRange))
+				{
+					FireDist = FMath::Sqrt(FireDist);
+					TestAim /= FireDist;
+					if ((TestAim < LockAim) && (FireDist < 2.f*LockOffset))
+					{
+						AimDir.Z += LockedPawn->BaseEyeHeight;
+						AimDir = AimDir.GetSafeNormal();
+						TestAim = (FireDir | AimDir);
+					}
+					if (TestAim >= LockAim)
+					{
+						float OffsetDist = FMath::PointDistToLine(LockedPawn->GetActorLocation(), FireDir, FireLoc);
+						if (OffsetDist < LockOffset)
+						{
+							// check visibility: try head, center, and actual fire line
+							FCollisionQueryParams TraceParams(FName(TEXT("ChooseBestAimTarget")), false);
+							bool bHit = GetWorld()->LineTraceTestByChannel(FireLoc, LockedPawn->GetActorLocation() + FVector(0.0f, 0.0f, LockedPawn->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()), COLLISION_TRACE_WEAPONNOCHARACTER, TraceParams);
+							if (bHit)
+							{
+								bHit = GetWorld()->LineTraceTestByChannel(FireLoc, LockedPawn->GetActorLocation(), COLLISION_TRACE_WEAPONNOCHARACTER, TraceParams);
+								if (bHit)
+								{
+									// try spot on capsule nearest to where shot is firing
+									FVector ClosestPoint = FMath::ClosestPointOnSegment(LockedPawn->GetActorLocation(), FireLoc, FireLoc + FireDir*(FireDist + 500.f));
+									FVector TestPoint = LockedPawn->GetActorLocation() + LockedPawn->GetCapsuleComponent()->GetUnscaledCapsuleRadius() * (ClosestPoint - LockedPawn->GetActorLocation()).GetSafeNormal();
+									float CharZ = LockedPawn->GetActorLocation().Z;
+									float CapsuleHeight = LockedPawn->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
+									TestPoint.Z = FMath::Clamp(ClosestPoint.Z, CharZ - CapsuleHeight, CharZ + CapsuleHeight);
+									bHit = GetWorld()->LineTraceTestByChannel(FireLoc, TestPoint, COLLISION_TRACE_WEAPONNOCHARACTER, TraceParams);
+								}
+							}
+							if (!bHit)
+							{
+								bKeepLock = true;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (!bKeepLock)
+		{
+			LockedPawn = nullptr;
+		}
+	}
+	
+	if (LockedPawn)
+	{
+		NewTarget = LockedPawn;
+	}
+	else
+	{
+		NewTarget = UUTGameplayStatics::ChooseBestAimTarget(UTOwner->Controller, FireLoc, FireDir, LockAim, LockRange, LockOffset, AUTCharacter::StaticClass());
+	}
 
 	//Have a target. Update the target lock
 	if (LockedTarget != NULL)
@@ -946,6 +1051,12 @@ void AUTWeap_RocketLauncher::FiringExtraUpdated_Implementation(uint8 NewFlashExt
 				if (AnimInstance != NULL && LoadingAnimation.IsValidIndex(NumLoadedRockets - 1) && LoadingAnimation[NumLoadedRockets - 1] != NULL)
 				{
 					AnimInstance->Montage_Play(LoadingAnimation[NumLoadedRockets - 1], LoadingAnimation[NumLoadedRockets - 1]->SequenceLength / GetLoadTime(NumLoadedRockets - 1));
+				}
+
+				UAnimInstance* AnimInstanceHands = (GetUTOwner() && GetUTOwner()->FirstPersonMesh) ? GetUTOwner()->FirstPersonMesh->GetAnimInstance() : nullptr;
+				if (AnimInstanceHands != NULL && LoadingAnimationHands.IsValidIndex(NumLoadedRockets - 1) && LoadingAnimationHands[NumLoadedRockets - 1] != NULL)
+				{
+					AnimInstanceHands->Montage_Play(LoadingAnimationHands[NumLoadedRockets - 1], LoadingAnimationHands[NumLoadedRockets - 1]->SequenceLength / GetLoadTime(NumLoadedRockets - 1));
 				}
 			}
 		}

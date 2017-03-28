@@ -51,7 +51,8 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	RefirePutDownTimePercent = 1.0f;
 	WeaponBobScaling = 1.f;
 	FiringViewKickback = -20.f;
-	FiringViewKickbackY = 12.f;
+	FiringViewKickbackY = 6.f;
+	HUDViewKickback = FVector2D(0.03f, 0.1f);
 	bNetDelayedShot = false;
 
 	bFPFireFromCenter = true;
@@ -95,6 +96,12 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	MaxPitchLag = 3.3f;
 	FOVOffset = FVector(1.f);
 	bProceduralLagRotation = true;
+	AnimLagMultiplier = -4.f;;
+	AnimLagSpeedReturn = 2.f;
+
+	Panini_d = 1.0f;
+	Panini_PushMax = -100.0f;
+	Panini_PushMin = 0;
 
 	// default icon texture
 	static ConstructorHelpers::FObjectFinder<UTexture> WeaponTexture(TEXT("Texture2D'/Game/RestrictedAssets/Proto/UI/HUD/Elements/UI_HUD_BaseB.UI_HUD_BaseB'"));
@@ -121,6 +128,7 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	FireEventIndex = 0;
 
 	WeaponSkinCustomizationTag = NAME_None;
+	VerticalSpreadScaling = 1.f;
 }
 
 void AUTWeapon::PostInitProperties()
@@ -238,6 +246,14 @@ void AUTWeapon::BeginPlay()
 	if (GetMesh() && Settings->bUseCapsuleDirectShadowsForCharacter)
 	{
 		GetMesh()->bCastCapsuleDirectShadow = true;
+	}
+
+	if (GetMesh())
+	{
+		for (int i = 0; i < GetMesh()->GetNumMaterials(); i++)
+		{
+			MeshMIDs.Add(GetMesh()->CreateAndSetMaterialInstanceDynamic(i));
+		}
 	}
 }
 
@@ -362,6 +378,7 @@ void AUTWeapon::DropFrom(const FVector& StartLocation, const FVector& TossVeloci
 		}
 		else
 		{
+			SetZoomState(EZoomState::EZS_NotZoomed);
 			Super::DropFrom(StartLocation, TossVelocity);
 			if (UTOwner == NULL && CurrentState != InactiveState)
 			{
@@ -432,6 +449,10 @@ bool AUTWeapon::FollowsInList(AUTWeapon* OtherWeapon)
 void AUTWeapon::StartFire(uint8 FireModeNum)
 {
 	if (UTOwner && UTOwner->IsFiringDisabled())
+	{
+		return;
+	}
+	if (bRootWhileFiring && UTOwner != nullptr && UTOwner->GetCharacterMovement() != nullptr && UTOwner->GetCharacterMovement()->MovementMode == MOVE_Falling)
 	{
 		return;
 	}
@@ -889,7 +910,7 @@ void AUTWeapon::AttachToOwner_Implementation()
 	if (Mesh != NULL && Mesh->SkeletalMesh != NULL)
 	{
 		UpdateWeaponHand();
-		Mesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, (GetWeaponHand() != EWeaponHand::HAND_Hidden) ? HandsAttachSocket : NAME_None);
+		Mesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, (UTOwner->FirstPersonMesh->SkeletalMesh != nullptr && GetWeaponHand() != EWeaponHand::HAND_Hidden) ? HandsAttachSocket : NAME_None);
 		if (ShouldPlay1PVisuals())
 		{
 			Mesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPose; // needed for anims to be ticked even if weapon is not currently displayed, e.g. sniper zoom
@@ -902,6 +923,28 @@ void AUTWeapon::AttachToOwner_Implementation()
 				OverlayMesh->bRecentlyRendered = true;
 			}
 			UpdateViewBob(0.0f);
+		}
+
+		static FName FNamePanini_d = TEXT("d");
+		static FName FNamePanini_PushMax = TEXT("Push Max");
+		static FName FNamePanini_PushMin = TEXT("Push Min");
+		for (int i = 0; i < MeshMIDs.Num(); i++)
+		{
+			if (MeshMIDs[i])
+			{
+				MeshMIDs[i]->SetScalarParameterValue(FNamePanini_d, Panini_d);
+				MeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMax, Panini_PushMax);
+				MeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMin, Panini_PushMin);
+			}
+		}
+		for (int i = 0; i < UTOwner->FirstPersonMeshMIDs.Num(); i++)
+		{
+			if (UTOwner->FirstPersonMeshMIDs[i])
+			{
+				UTOwner->FirstPersonMeshMIDs[i]->SetScalarParameterValue(FNamePanini_d, Panini_d);
+				UTOwner->FirstPersonMeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMax, Panini_PushMax);
+				UTOwner->FirstPersonMeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMin, Panini_PushMin);
+			}
 		}
 	}
 	// register components now
@@ -1124,25 +1167,29 @@ UAnimMontage* AUTWeapon::GetFiringAnim(uint8 FireMode, bool bOnHands) const
 	return (AnimArray.IsValidIndex(CurrentFireMode) ? AnimArray[CurrentFireMode] : NULL);
 }
 
+void AUTWeapon::PlayFiringSound(uint8 EffectFiringMode)
+{
+	// try and play the sound if specified
+	if (FireSound.IsValidIndex(EffectFiringMode) && FireSound[EffectFiringMode] != NULL)
+	{
+		if (FPFireSound.IsValidIndex(CurrentFireMode) && FPFireSound[CurrentFireMode] != NULL && Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), FPFireSound[CurrentFireMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
+		}
+		else
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), FireSound[EffectFiringMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
+		}
+	}
+}
+
 void AUTWeapon::PlayFiringEffects()
 {
 	if (UTOwner != NULL)
 	{
 		//UE_LOG(UT, Warning, TEXT("PlayFiringEffects at %f"), GetWorld()->GetTimeSeconds());
 		uint8 EffectFiringMode = (Role == ROLE_Authority || UTOwner->Controller != NULL) ? CurrentFireMode : UTOwner->FireMode;
-
-		// try and play the sound if specified
-		if (FireSound.IsValidIndex(EffectFiringMode) && FireSound[EffectFiringMode] != NULL)
-		{
-			if (FPFireSound.IsValidIndex(CurrentFireMode) && FPFireSound[CurrentFireMode] != NULL && Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
-			{
-				UUTGameplayStatics::UTPlaySound(GetWorld(), FPFireSound[CurrentFireMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
-			}
-			else
-			{
-				UUTGameplayStatics::UTPlaySound(GetWorld(), FireSound[EffectFiringMode], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
-			}
-		}
+		PlayFiringSound(EffectFiringMode);
 
 		// reload sound on local shooter
 		if ((GetNetMode() != NM_DedicatedServer) && UTOwner && UTOwner->GetLocalViewer())
@@ -1160,11 +1207,15 @@ void AUTWeapon::PlayFiringEffects()
 				}
 			}
 		}
-
+		UTOwner->TargetEyeOffset.X = FiringViewKickback;
+		UTOwner->TargetEyeOffset.Y = FiringViewKickbackY;
+		AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
+		if (PC != NULL)
+		{
+			PC->AddHUDImpulse(HUDViewKickback);
+		}
 		if (ShouldPlay1PVisuals() && GetWeaponHand() != EWeaponHand::HAND_Hidden)
 		{
-			UTOwner->TargetEyeOffset.X = FiringViewKickback;
-			UTOwner->TargetEyeOffset.Y = FiringViewKickbackY;
 			// try and play a firing animation if specified
 			PlayWeaponAnim(GetFiringAnim(EffectFiringMode, false), GetFiringAnim(EffectFiringMode, true));
 
@@ -1252,13 +1303,24 @@ void AUTWeapon::PlayImpactEffects_Implementation(const FVector& TargetLoc, uint8
 						UUTGameViewportClient* UTViewport = Cast<UUTGameViewportClient>(It->ViewportClient);
 						if (UTViewport != NULL)
 						{
-							AdjustedSpawnLocation = UTViewport->PaniniProjectLocationForPlayer(*It, SpawnLocation, Mesh->GetMaterial(0));
+							FVector PaniniAdjustedSpawnLocation = UTViewport->PaniniProjectLocationForPlayer(*It, SpawnLocation, Mesh->GetMaterial(0));
+							if (!PaniniAdjustedSpawnLocation.ContainsNaN())
+							{
+								AdjustedSpawnLocation = PaniniAdjustedSpawnLocation;
+							}
+							else
+							{
+								UE_LOG(UT, Warning, TEXT("Panini projection returned NaN %s"), *GetName());
+								PaniniAdjustedSpawnLocation.DiagnosticCheckNaN();
+							}
+
 							break;
 						}
 					}
 				}
 			}
 			FireEffectCount = 0;
+			AdjustedSpawnLocation.DiagnosticCheckNaN();
 			UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), FireEffect[FireMode], AdjustedSpawnLocation, SpawnRotation, true);
 
 			// limit dist to target
@@ -1320,7 +1382,30 @@ void AUTWeapon::FireShot()
 			}
 			else
 			{
-				FireInstantHit();
+				FHitResult OutHit;
+				FireInstantHit(true, &OutHit);
+				if (bTrackHitScanReplication && (UTOwner == nullptr || !UTOwner->IsLocallyControlled() || Cast<APlayerController>(UTOwner->GetController()) != nullptr))
+				{
+					HitScanHitChar = Cast<AUTCharacter>(OutHit.Actor.Get());
+					if ((Role < ROLE_Authority) && HitScanHitChar)
+					{
+						ServerHitScanHit(HitScanHitChar, FireEventIndex);
+					}
+					else if ((Role == ROLE_Authority) && !HitScanHitChar && ReceivedHitScanHitChar && GetWorld()->GetGameState<AUTGameState>() && GetWorld()->GetGameState<AUTGameState>()->bDebugHitScanReplication)
+					{
+						HitScanIndex = FireEventIndex;
+						HitScanTime = (GetUTOwner() && GetUTOwner()->UTCharacterMovement) ? GetUTOwner()->UTCharacterMovement->GetCurrentMovementTime() : 0.f;
+						HitScanCharLoc = HitScanHitChar ? HitScanHitChar->GetActorLocation() : FVector::ZeroVector;
+						HitScanHeight = HitScanHitChar ? HitScanHitChar->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 108.f;
+						HitScanStart = GetFireStartLoc();
+						HitScanEnd = OutHit.Location;
+						AUTPlayerController* UTPC = UTOwner ? Cast<AUTPlayerController>(UTOwner->Controller) : NULL;
+						float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
+						FVector MissedLoc = ReceivedHitScanHitChar->GetRewindLocation(PredictionTime, UTPC);
+						ClientMissedHitScan(HitScanStart, HitScanEnd, MissedLoc, HitScanTime, HitScanIndex);
+					}
+				}
+				ReceivedHitScanHitChar = nullptr;
 			}
 		}
 		//UE_LOG(UT, Warning, TEXT("FireShot"));
@@ -1332,6 +1417,31 @@ void AUTWeapon::FireShot()
 	}
 	FireZOffsetTime = 0.f;
 }
+
+bool AUTWeapon::ServerHitScanHit_Validate(AUTCharacter* HitScanChar, uint8 HitScanEventIndex)
+{
+	return true;
+}
+
+void AUTWeapon::ServerHitScanHit_Implementation(AUTCharacter* HitScanChar, uint8 HitScanEventIndex)
+{
+	UE_LOG(UT, Warning, TEXT("Received ServerHitScanHit %d"), HitScanEventIndex);
+	ReceivedHitScanHitChar = HitScanChar;
+	ReceivedHitScanIndex = HitScanEventIndex;
+}
+
+void AUTWeapon::ClientMissedHitScan_Implementation(FVector_NetQuantize MissedHitScanStart, FVector_NetQuantize MissedHitScanEnd, FVector_NetQuantize MissedHitScanLoc, float MissedHitScanTime, uint8 MissedHitScanIndex)
+{
+	DrawDebugLine(GetWorld(), HitScanStart, HitScanEnd, FColor::Green, false, 8.f);
+	DrawDebugLine(GetWorld(), MissedHitScanStart, MissedHitScanEnd, FColor::Yellow, false, 8.f);
+	DrawDebugCapsule(GetWorld(), HitScanCharLoc, HitScanHeight, 40.f, FQuat::Identity, FColor::Green, false, 8.f);
+	AUTPlayerController* PC = GetUTOwner() ? Cast<AUTPlayerController>(GetUTOwner()->GetController()) : nullptr;
+	if (PC)
+	{
+		PC->ClientSay(PC->UTPlayerState, FString::Printf(TEXT("HIT MISMATCH LOCAL index %d time %f      SERVER index %d time %f error distance %f"), HitScanIndex, HitScanTime, MissedHitScanIndex, MissedHitScanTime, (HitScanCharLoc - MissedHitScanLoc).Size()), ChatDestinations::System);
+	}
+}
+
 
 bool AUTWeapon::IsFiring() const
 {
@@ -1553,7 +1663,7 @@ FRotator AUTWeapon::GetAdjustedAim_Implementation(FVector StartFireLoc)
 		NetSynchRandomSeed();
 		float RandY = 0.5f * (FMath::FRand() + FMath::FRand() - 1.f);
 		float RandZ = FMath::Sqrt(0.25f - FMath::Square(RandY)) * (FMath::FRand() + FMath::FRand() - 1.f);
-		return (X + RandY * Spread[CurrentFireMode] * Y + RandZ * Spread[CurrentFireMode] * Z).Rotation();
+		return (X + RandY * Spread[CurrentFireMode] * Y + RandZ * VerticalSpreadScaling * Spread[CurrentFireMode] * Z).Rotation();
 	}
 	else
 	{
@@ -1619,6 +1729,23 @@ void AUTWeapon::NetSynchRandomSeed()
 	}
 }
 
+bool AUTWeapon::ShouldTraceIgnore(AActor* TestActor)
+{
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (bIgnoreShockballs && Cast<AUTProj_ShockBall>(TestActor))
+	{
+		return true;
+	}
+	else if (UTOwner != nullptr && (Cast<AUTProj_WeaponScreen>(TestActor) != nullptr || (Cast<AUTTeamDeco>(TestActor) != nullptr && !((AUTTeamDeco*)(TestActor))->bBlockTeamProjectiles)))
+	{
+		return (GS != nullptr && GS->OnSameTeam(UTOwner, TestActor));
+	}
+	else
+	{
+		return false;
+	}
+}
+
 void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTrace, float TraceRadius, FHitResult& Hit, float PredictionTime)
 {
 	ECollisionChannel TraceChannel = COLLISION_TRACE_WEAPONNOCHARACTER;
@@ -1634,26 +1761,10 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 			{
 				Hit.Location = EndTrace;
 			}
-			else if (Hit.Actor.IsValid())
+			else if (Hit.Actor.IsValid() && ShouldTraceIgnore(Hit.GetActor()))
 			{
-				if (bIgnoreShockballs && Cast<AUTProj_ShockBall>(Hit.Actor.Get()))
-				{
-					QueryParams.AddIgnoredActor(Hit.Actor.Get());
-					NewSkipActorCount = SkipActorCount--;
-				}
-				else if (UTOwner && Cast<AUTTeamDeco>(Hit.Actor.Get()) && !((AUTTeamDeco *)(Hit.Actor.Get()))->bBlockTeamProjectiles)
-				{
-					if (GS && GS->OnSameTeam(UTOwner, Hit.Actor.Get()))
-					{
-						QueryParams.AddIgnoredActor(Hit.Actor.Get());
-						NewSkipActorCount = SkipActorCount--;
-					}
-				}
-				else if (Cast<AUTProj_WeaponScreen>(Hit.Actor.Get()) != nullptr && GS != nullptr && GS->OnSameTeam(UTOwner, ((AUTProj_WeaponScreen*)Hit.Actor.Get())->Instigator))
-				{
-					QueryParams.AddIgnoredActor(Hit.Actor.Get());
-					NewSkipActorCount = SkipActorCount--;
-				}
+				QueryParams.AddIgnoredActor(Hit.Actor.Get());
+				NewSkipActorCount = SkipActorCount--;
 			}
 			SkipActorCount = NewSkipActorCount;
 		}
@@ -1698,6 +1809,7 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 	}
 	if (!(Hit.Location - StartLocation).IsNearlyZero())
 	{
+		AUTCharacter* ClientSideHitActor = (bTrackHitScanReplication && ReceivedHitScanHitChar && ((ReceivedHitScanIndex == FireEventIndex) || (ReceivedHitScanIndex == FireEventIndex - 1))) ? ReceivedHitScanHitChar : nullptr;
 		AUTCharacter* BestTarget = NULL;
 		FVector BestPoint(0.f);
 		FVector BestCapsulePoint(0.f);
@@ -1707,6 +1819,7 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 			AUTCharacter* Target = Cast<AUTCharacter>(*Iterator);
 			if (Target && (Target != UTOwner) && (bTeammatesBlockHitscan || !GS || !GS->OnSameTeam(UTOwner, Target)))
 			{
+				float ExtraHitPadding = (Target == ClientSideHitActor) ? 40.f : 0.f;
 				// find appropriate rewind position, and test against trace from StartLocation to Hit.Location
 				FVector TargetLocation = ((PredictionTime > 0.f) && (Role == ROLE_Authority)) ? Target->GetRewindLocation(PredictionTime) : Target->GetActorLocation();
 
@@ -1719,6 +1832,7 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 				}
 				float CollisionRadius = Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
 
+				bool bCheckOutsideHit = false;
 				bool bHitTarget = false;
 				FVector ClosestPoint(0.f);
 				FVector ClosestCapsulePoint = TargetLocation;
@@ -1726,14 +1840,30 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 				{
 					ClosestPoint = FMath::ClosestPointOnSegment(TargetLocation, StartLocation, Hit.Location);
 					bHitTarget = ((ClosestPoint - TargetLocation).SizeSquared() < FMath::Square(CollisionHeight + TraceRadius));
+					if (!bHitTarget && (ExtraHitPadding > 0.f))
+					{
+						bHitTarget = ((ClosestPoint - TargetLocation).SizeSquared() < FMath::Square(CollisionHeight + TraceRadius + ExtraHitPadding));
+						bCheckOutsideHit = true;
+					}
 				}
 				else
 				{
 					FVector CapsuleSegment = FVector(0.f, 0.f, CollisionHeight - CollisionRadius);
 					FMath::SegmentDistToSegmentSafe(StartLocation, Hit.Location, TargetLocation - CapsuleSegment, TargetLocation + CapsuleSegment, ClosestPoint, ClosestCapsulePoint);
 					bHitTarget = ((ClosestPoint - ClosestCapsulePoint).SizeSquared() < FMath::Square(CollisionRadius + TraceRadius));
+					if (!bHitTarget && (ExtraHitPadding > 0.f))
+					{
+						bHitTarget = ((ClosestPoint - ClosestCapsulePoint).SizeSquared() < FMath::Square(CollisionRadius + TraceRadius + ExtraHitPadding));
+						bCheckOutsideHit = true;
+					}
 				}
-				if (bHitTarget &&  (!BestTarget || ((ClosestPoint - StartLocation).SizeSquared() < (BestPoint - StartLocation).SizeSquared())))
+				if (bCheckOutsideHit)
+				{
+					FHitResult CheckHit;
+					FVector PointToCheck = ClosestCapsulePoint + CollisionRadius*(ClosestPoint - ClosestCapsulePoint).GetSafeNormal();
+					bHitTarget = !GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, PointToCheck, TraceChannel, QueryParams);
+				}
+				if (bHitTarget && (!BestTarget || ((ClosestPoint - StartLocation).SizeSquared() - ExtraHitPadding < (BestPoint - StartLocation).SizeSquared())))
 				{
 					BestTarget = Target;
 					BestPoint = ClosestPoint;
@@ -1914,6 +2044,10 @@ float AUTWeapon::GetImpartedMomentumMag(AActor* HitActor)
 
 void AUTWeapon::K2_FireInstantHit(bool bDealDamage, FHitResult& OutHit)
 {
+	if (bTrackHitScanReplication && (UTOwner == nullptr || !UTOwner->IsLocallyControlled() || Cast<APlayerController>(UTOwner->GetController()) != nullptr))
+	{
+		FFrame::KismetExecutionMessage(*FString::Printf(TEXT("%s::FireInstantHit(): from script!"), *GetName()), ELogVerbosity::Warning);
+	}
 	if (!InstantHitInfo.IsValidIndex(CurrentFireMode))
 	{
 		FFrame::KismetExecutionMessage(*FString::Printf(TEXT("%s::FireInstantHit(): Fire mode %i doesn't have instant hit info"), *GetName(), int32(CurrentFireMode)), ELogVerbosity::Warning);
@@ -2075,6 +2209,8 @@ void AUTWeapon::FireCone()
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
 	
+	FCollisionResponseParams TraceResponseParams = WorldResponseParams;
+	TraceResponseParams.CollisionResponse.SetResponse(COLLISION_PROJECTILE_SHOOTABLE, ECR_Block);
 	TArray<FOverlapResult> OverlapHits;
 	TArray<FHitResult> RealHits;
 	GetWorld()->OverlapMultiByChannel(OverlapHits, SpawnLocation, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceRange));
@@ -2086,14 +2222,28 @@ void AUTWeapon::FireCone()
 			if (((ObjectLoc - SpawnLocation).GetSafeNormal() | FireDir) >= InstantHitInfo[CurrentFireMode].ConeDotAngle)
 			{
 				bool bClear;
-				if (InstantHitInfo[CurrentFireMode].TraceHalfSize <= 0.0f)
+				int32 Retries = 2;
+				FCollisionQueryParams QueryParams(NAME_None, true, UTOwner);
+				do 
 				{
-					bClear = !GetWorld()->LineTraceTestByChannel(SpawnLocation, ObjectLoc, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionQueryParams(NAME_None, true, UTOwner), WorldResponseParams);
-				}
-				else
-				{
-					bClear = !GetWorld()->SweepTestByChannel(SpawnLocation, ObjectLoc, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceHalfSize), FCollisionQueryParams(NAME_None, true, UTOwner), WorldResponseParams);
-				}
+					FHitResult Hit;
+					if (InstantHitInfo[CurrentFireMode].TraceHalfSize <= 0.0f)
+					{
+						bClear = !GetWorld()->LineTraceSingleByChannel(Hit, SpawnLocation, ObjectLoc, COLLISION_TRACE_WEAPONNOCHARACTER, QueryParams, TraceResponseParams);
+					}
+					else
+					{
+						bClear = !GetWorld()->SweepSingleByChannel(Hit, SpawnLocation, ObjectLoc, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceHalfSize), QueryParams, TraceResponseParams);
+					}
+					if (bClear || Hit.GetActor() == nullptr || !ShouldTraceIgnore(Hit.GetActor()))
+					{
+						break;
+					}
+					else
+					{
+						QueryParams.AddIgnoredActor(Hit.GetActor());
+					}
+				} while (Retries-- > 0);
 				if (bClear)
 				{
 					// trace only against target to get good hit info
@@ -2145,14 +2295,28 @@ void AUTWeapon::FireCone()
 				const FVector HitLocation = ClosestPoint + BackDist * (SpawnLocation - EndTrace).GetSafeNormal();
 
 				bool bClear;
-				if (InstantHitInfo[CurrentFireMode].TraceHalfSize <= 0.0f)
+				int32 Retries = 2;
+				FCollisionQueryParams QueryParams(NAME_None, true, UTOwner);
+				do
 				{
-					bClear = !GetWorld()->LineTraceTestByChannel(SpawnLocation, HitLocation, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionQueryParams(NAME_None, true, UTOwner), WorldResponseParams);
-				}
-				else
-				{
-					bClear = !GetWorld()->SweepTestByChannel(SpawnLocation, HitLocation, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceHalfSize), FCollisionQueryParams(NAME_None, true, UTOwner), WorldResponseParams);
-				}
+					FHitResult Hit;
+					if (InstantHitInfo[CurrentFireMode].TraceHalfSize <= 0.0f)
+					{
+						bClear = !GetWorld()->LineTraceTestByChannel(SpawnLocation, HitLocation, COLLISION_TRACE_WEAPONNOCHARACTER, QueryParams, TraceResponseParams);
+					}
+					else
+					{
+						bClear = !GetWorld()->SweepTestByChannel(SpawnLocation, HitLocation, FQuat::Identity, COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionShape::MakeSphere(InstantHitInfo[CurrentFireMode].TraceHalfSize), QueryParams, TraceResponseParams);
+					}
+					if (bClear || Hit.GetActor() == nullptr || !ShouldTraceIgnore(Hit.GetActor()))
+					{
+						break;
+					}
+					else
+					{
+						QueryParams.AddIgnoredActor(Hit.GetActor());
+					}
+				} while (Retries-- > 0);
 				if (bClear)
 				{
 					FHitResult* NewHit = new(RealHits) FHitResult;
@@ -2356,7 +2520,12 @@ void AUTWeapon::UpdateViewBob(float DeltaTime)
 	{
 		// if weapon is up in first person, view bob with movement
 		USkeletalMeshComponent* BobbedMesh = (HandsAttachSocket != NAME_None) ? UTOwner->FirstPersonMesh : Mesh;
-		if (FirstPMeshOffset.IsZero())
+		if (HandsAttachSocket != NAME_None)
+		{
+			FirstPMeshOffset = FVector::ZeroVector;
+			FirstPMeshRotation = BobbedMesh->GetRelativeTransform().Rotator();
+		}
+		else if (FirstPMeshOffset.IsZero())
 		{
 			FirstPMeshOffset = BobbedMesh->GetRelativeTransform().GetLocation();
 			FirstPMeshRotation = BobbedMesh->GetRelativeTransform().Rotator();
@@ -2408,7 +2577,7 @@ void AUTWeapon::Destroyed()
 
 bool AUTWeapon::CanFireAgain()
 {
-	return (GetUTOwner() && (GetUTOwner()->GetPendingWeapon() == NULL) && HasAmmo(GetCurrentFireMode()));
+	return (GetUTOwner() && (GetUTOwner()->GetPendingWeapon() == NULL) && HasAmmo(GetCurrentFireMode()) && (!bRootWhileFiring || UTOwner->GetCharacterMovement() == nullptr || UTOwner->GetCharacterMovement()->MovementMode == MOVE_Falling));
 }
 
 bool AUTWeapon::HandleContinuedFiring()

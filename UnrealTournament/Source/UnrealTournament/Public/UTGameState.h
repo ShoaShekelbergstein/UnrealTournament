@@ -92,10 +92,6 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	/**If true, had to force balance teams. */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
 	uint32 bForcedBalance : 1;
-	
-	/** If true, the intro cinematic will play just before the countdown to begin */
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
-	uint32 bPlayPlayerIntro : 1;
 
 	/** If true, teammates play status announcements */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
@@ -104,6 +100,14 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	/** If true, kill icon messages persist through a round/ */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
 		uint32 bPersistentKillIconMessages : 1;
+
+	/** If true, hitscan replication debugging is enabled. */
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = GameState)
+		uint32 bDebugHitScanReplication : 1;
+
+	/** Replicated only for vs AI matches, 0 means not vs AI. */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
+		uint8 AIDifficulty;
 
 	/** If a single player's (or team's) score hits this limited, the game is over */
 	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadOnly, Category = GameState)
@@ -173,6 +177,31 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 
 	UPROPERTY()
 		float LastEnemyLocationReportTime;
+
+	UPROPERTY()
+		float LastRedSniperWarningTime;
+
+	UPROPERTY()
+		float LastBlueSniperWarningTime;
+
+
+	UPROPERTY(replicatedusing = OnUpdateFriendlyLocation)
+		uint8 FCFriendlyLocCount;
+
+	UPROPERTY(replicatedusing = OnUpdateEnemyLocation)
+		uint8 FCEnemyLocCount;
+
+	UFUNCTION()
+		void OnUpdateFriendlyLocation();
+
+	UFUNCTION()
+		void OnUpdateEnemyLocation();
+
+	virtual void UpdateFCFriendlyLocation(AUTPlayerState* AnnouncingPlayer, FName VoiceLineSet);
+	virtual void UpdateFCEnemyLocation(AUTPlayerState* AnnouncingPlayer, FName VoiceLineSet);
+
+	UPROPERTY()
+		float LastIncomingWarningTime;
 
 	UPROPERTY()
 		FName LastFriendlyLocationName;
@@ -509,6 +538,7 @@ public:
 		virtual bool PreventWeaponFire();
 
 	virtual void UpdateMatchHighlights();
+	virtual void UpdateRoundHighlights();
 
 	/** On server side - generate a list of highlights for each player.  Every UTPlayerStates' MatchHighlights array will have been cleared when this is called. */
 	UFUNCTION(BlueprintNativeEvent, Category = "Game")
@@ -527,7 +557,7 @@ public:
 	virtual FText FormatPlayerHighlightText(AUTPlayerState* PS, int32 Index);
 
 	/** Return short version of top highlight for that player. */
-	virtual FText ShortPlayerHighlightText(AUTPlayerState* PS);
+	virtual FText ShortPlayerHighlightText(AUTPlayerState* PS, int32 Index=0);
 
 	/** Return a score value for the "impressiveness" of the Match highlights for PS. */
 	virtual float MatchHighlightScore(AUTPlayerState* PS);
@@ -724,7 +754,7 @@ public:
 
 	virtual void SpawnDefaultLineUpZones();
 
-	virtual AActor* GetCameraActorForLineUp(LineUpTypes ZoneType);
+	virtual UCameraComponent* GetCameraComponentForLineUp(LineUpTypes ZoneType);
 	
 	// Returns true if the replication of the MapVote list is completed
 	bool IsMapVoteListReplicationCompleted();

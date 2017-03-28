@@ -6,6 +6,7 @@
 #include "SWidgetSwitcher.h"
 #include "../Base/SUTPanelBase.h"
 #include "../Widgets/SUTTabButton.h"
+#include "../Widgets/SUTSlider.h"
 
 #if !UE_SERVER
 
@@ -17,7 +18,7 @@ public:
 
 	virtual ~SUTCreateGamePanel();
 
-	void GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, FString& GameModeName, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32 BotSkillLevel, int32& bTeamGame);
+	void GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, FString& GameModeName, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32& bTeamGame);
 
 	void Cancel();
 protected:
@@ -102,10 +103,12 @@ protected:
 	void OnStoreDialogResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 	void OnStoreReturnResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 
+	TSharedPtr<SVerticalBox> BotSkillBox;
 
 public:
 
 	bool IsReadyToPlay();
+	void SetBoxSkill(TSharedRef<SCompoundWidget> AllowBotsWidgets, TSharedRef<SHorizontalBox> BotSkillWidgets, TSharedRef<SCompoundWidget> RequireFilled);
 
 };
 

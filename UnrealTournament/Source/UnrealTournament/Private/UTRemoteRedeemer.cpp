@@ -717,7 +717,7 @@ void AUTRemoteRedeemer::Tick(float DeltaSeconds)
 		BlowUp();
 		return;
 	}
-	else if ((CurrentFuelTime < 3.f) && (CurrentFuelTime + DeltaSeconds >= 3.f) && FuelWarningSound && Cast<AUTPlayerController>(GetController()))
+	else if (!bExploded && !bShotDown && (CurrentFuelTime < 3.f) && (CurrentFuelTime + DeltaSeconds >= 3.f) && FuelWarningSound && Cast<AUTPlayerController>(GetController()))
 	{
 		Cast<AUTPlayerController>(GetController())->UTClientPlaySound(FuelWarningSound);
 	}

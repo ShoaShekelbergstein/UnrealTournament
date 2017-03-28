@@ -426,7 +426,7 @@ bool AUTAsymCTFSquadAI::CheckSquadObjectives(AUTBot* B)
 				B->StartWaitForMove();
 				return true;
 			}
-			else if (Flag->HoldingPawn == nullptr && (B->UTLineOfSightTo(Flag) || (Flag->GetActorLocation() - B->GetPawn()->GetActorLocation()).Size() < 2500.0f))
+			else if (Flag->bFriendlyCanPickup && Flag->HoldingPawn == nullptr && (B->UTLineOfSightTo(Flag) || (Flag->GetActorLocation() - B->GetPawn()->GetActorLocation()).Size() < 2500.0f))
 			{
 				return B->TryPathToward(Flag, true, false, "Get flag because near");
 			}

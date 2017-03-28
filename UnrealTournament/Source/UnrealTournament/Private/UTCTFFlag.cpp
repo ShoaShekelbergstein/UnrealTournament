@@ -310,7 +310,7 @@ void AUTCTFFlag::UpdateOutline()
 	// 0 is a null value for the stencil so use team + 1
 	// last bit in stencil is a bitflag so empty team uses 127
 	uint8 NewStencilValue = (GetTeamNum() == 255) ? 127 : (GetTeamNum() + 1);
-	if (HoldingPawn != NULL && HoldingPawn->GetOutlineWhenUnoccluded())
+	if (HoldingPawn == NULL || HoldingPawn->GetOutlineWhenUnoccluded())
 	{
 		NewStencilValue |= 128;
 	}
@@ -379,7 +379,7 @@ void AUTCTFFlag::Tick(float DeltaTime)
 			if (bShouldPingFlag)
 			{
 				bCurrentlyPinged = (GetWorld()->GetTimeSeconds() - LastPingedTime < PingedDuration);
-				if (!bCurrentlyPinged && GV && GV->bIsNoRallyZone)
+				if (!bCurrentlyPinged && GV && GV->bIsDefenderBase)
 				{
 					if (GetWorld()->GetTimeSeconds() - EnteredEnemyBaseTime < PingedDuration)
 					{
@@ -440,7 +440,7 @@ void AUTCTFFlag::Tick(float DeltaTime)
 			if (HoldingPawn->GetCharacterMovement() && HoldingPawn->GetCharacterMovement()->IsWalking() && (!HoldingPawn->GetMovementBase() || !MovementBaseUtility::UseRelativeLocation(HoldingPawn->GetMovementBase())))
 			{
 				bool bAlreadyInNoRallyZone = (PastPositions.Num() > 0) && (PastPositions[PastPositions.Num() - 1].bIsInNoRallyZone || PastPositions[PastPositions.Num() - 1].bEnteringNoRallyZone);
-				bool bNowInNoRallyZone = GV && GV->bIsNoRallyZone;
+				bool bNowInNoRallyZone = GV && (GV->bIsDefenderBase || GV->bIsTeamSafeVolume);
 				bool bJustTransitionedToNoRallyZone = !bAlreadyInNoRallyZone && bNowInNoRallyZone;
 				FVector PendingNewPosition = bJustTransitionedToNoRallyZone ? RecentPosition[0] : HoldingPawn->GetActorLocation();
 				if ((HoldingPawn->GetActorLocation() - RecentPosition[0]).Size() > 100.f)

@@ -25,17 +25,21 @@ UUTCTFScoreboard::UUTCTFScoreboard(const FObjectInitializer& ObjectInitializer)
 	ColumnHeaderReturnsX = 0.85;
 	ReadyX = 0.7f;
 
-	static ConstructorHelpers::FObjectFinder<USoundBase> OtherSpreeSoundFinder(TEXT("SoundCue'/Game/RestrictedAssets/Audio/UI/ScoreUpdate_Cue.ScoreUpdate_Cue'")); 
-	ScoreUpdateSound = OtherSpreeSoundFinder.Object;
-
 	CH_Caps = NSLOCTEXT("UTCTFScoreboard", "ColumnHeader_PlayerCaps", "C");
 	CH_Assists = NSLOCTEXT("UTCTFScoreboard", "ColumnHeader_PlayerAssists", "A");
 	CH_Returns = NSLOCTEXT("UTCTFScoreboard", "ColumnHeader_PlayerReturns", "R");
 }
 
+void UUTCTFScoreboard::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCanvas* InCanvas, FVector2D InCanvasCenter)
+{
+	Super::PreDraw(DeltaTime, InUTHUDOwner, InCanvas, InCanvasCenter);
+
+	bDrawMinimapInScoreboard = (Cast<AUTCTFGameState>(UTGameState) && ((UTGameState->GetMatchState() == MatchState::MatchIntermission) || UTGameState->HasMatchEnded())) ? (Cast<AUTCTFGameState>(UTGameState)->IntermissionTime < 25) : true;
+}
+
 bool UUTCTFScoreboard::ShouldDrawScoringStats()
 {
-	return UTGameState && ((UTGameState->GetMatchState() == MatchState::MatchIntermission) || UTGameState->HasMatchEnded());
+	return UTGameState && ((UTGameState->GetMatchState() == MatchState::MatchIntermission) || UTGameState->HasMatchEnded()) && Cast<AUTCTFGameState>(UTGameState) && (Cast<AUTCTFGameState>(UTGameState)->IntermissionTime < 25);
 }
 
 void UUTCTFScoreboard::DrawScoreHeaders(float RenderDelta, float& YOffset)

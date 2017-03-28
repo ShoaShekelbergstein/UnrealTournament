@@ -50,12 +50,14 @@ struct UNREALTOURNAMENT_API FBestInventoryEval : public FUTNodeEvaluator
 	const float RespawnPredictionTime;
 	const float MoveSpeed;
 	const int32 MaxDist;
+	/** list of pickups to ignore because a teammate has a claim on them */
+	TArray<AActor*> ClaimedPickups;
 
 	float BestWeight;
 	AActor* BestPickup;
 
 	/** goal from last pathing attempt
-	 * this is used to when using respawn prediction and the time-to-goal changes so the bot doesn't "lose" its existing valid goal
+	 * this is used when using respawn prediction and the time-to-goal changes so the bot doesn't "lose" its existing valid goal
 	 */
 	AActor* PrevGoal;
 
@@ -68,11 +70,11 @@ struct UNREALTOURNAMENT_API FBestInventoryEval : public FUTNodeEvaluator
 	/** return false to ignore this pickup even if it is desirable and available */
 	virtual bool AllowPickup(APawn* Asker, AController* RequestOwner, AActor* Pickup, float Desireability, float PickupDist)
 	{
-		return true;
+		return !ClaimedPickups.Contains(Pickup);
 	}
 
-	FBestInventoryEval(float InPredictionTime, float InMoveSpeed, int32 InMaxDist = 0)
-		: RespawnPredictionTime(InPredictionTime), MoveSpeed(FMath::Max<float>(InMoveSpeed, 1.0f)), MaxDist(InMaxDist), BestWeight(0.0f), BestPickup(NULL), PrevGoal(NULL)
+	FBestInventoryEval(float InPredictionTime, float InMoveSpeed, int32 InMaxDist = 0, const TArray<AActor*>& InClaimedPickups = TArray<AActor*>())
+		: RespawnPredictionTime(InPredictionTime), MoveSpeed(FMath::Max<float>(InMoveSpeed, 1.0f)), MaxDist(InMaxDist), ClaimedPickups(InClaimedPickups), BestWeight(0.0f), BestPickup(NULL), PrevGoal(NULL)
 	{}
 };
 struct UNREALTOURNAMENT_API FRandomDestEval : public FUTNodeEvaluator
@@ -265,10 +267,10 @@ class UNREALTOURNAMENT_API AUTBot : public AAIController, public IUTTeamInterfac
 	float TrackingReactionTime;
 	/** time needed for bot mental model to interpolate between velocities as enemy changes direction */
 	UPROPERTY(BlueprintReadWrite, Category = Skill)
-		float TrackingInterpTime;
+	float TrackingInterpTime;
 	/** timestamp when last tracked velocity */
 	UPROPERTY(BlueprintReadWrite, Category = Skill)
-		float TrackingTimeStamp;
+	float TrackingTimeStamp;
 	/** Max Error in bots estimate about how far to lead player based on misjudging tracking reaction */
 	UPROPERTY(BlueprintReadWrite, Category = Skill)
 	float MaxTrackingPredictionError;
@@ -280,7 +282,7 @@ class UNREALTOURNAMENT_API AUTBot : public AAIController, public IUTTeamInterfac
 	float MaxTrackingOffsetError;
 	/** Increase AdjustedMaxTrackingOffsetError error back to this pct of MaxTrackingOffsetError when enemy makes sudden direction change */
 	UPROPERTY(BlueprintReadWrite, Category = Skill)
-		float DirectionChangeOffsetPct;
+	float DirectionChangeOffsetPct;
 
 	/** max offset error adjusted for current combat factors (stopped, have a bead on current enemy, etc) */
 	UPROPERTY()
@@ -290,7 +292,7 @@ class UNREALTOURNAMENT_API AUTBot : public AAIController, public IUTTeamInterfac
 	float TrackingOffsetError;
 	/** True if tracked enemy just had a large velocity change. */
 	UPROPERTY(BlueprintReadOnly)
-		bool bLargeTrackedVelocityChange;
+	bool bLargeTrackedVelocityChange;
 	/** How frequently to update tracking error */
 	UPROPERTY(BlueprintReadWrite, Category = Skill)
 	float TrackingErrorUpdateInterval;
@@ -405,6 +407,9 @@ class UNREALTOURNAMENT_API AUTBot : public AAIController, public IUTTeamInterfac
 	UPROPERTY()
 	FString GoalString;
 
+	/** last time bot detected it was shot at (not necessarily hit) */
+	UPROPERTY()
+	float LastUnderFireTime;
 	/** last time bot died */
 	UPROPERTY()
 	float LastDeathTime;
@@ -643,6 +648,8 @@ protected:
 	bool bPickNewFireMode;
 	/** set each frame in UpdateControlRotation() if desired target location can be attacked by current weapon (used by weapon refire logic) */
 	bool bLastCanAttackSuccess;
+	/** set each frame in UpdateControlRotation() when using a suppressive weapon; indicates AI should stop shooting immediately when bLastCanAttackSuccess == false instead of spamming old enemy location */
+	bool bStopSuppressiveWeapon;
 	/** last time we successfully fired a weapon from CheckWeaponFiring() */
 	float LastFireSuccessTime;
 	/** valid only when target is set to a class that supports position history; set in UpdateControlRotation() to target velocity being used by aiming logic (generally, its velocity from a short time in the past) */
@@ -771,7 +778,7 @@ public:
 	 * if close enough, bot updates some enemy info based on the pickup (e.g. if it's a health/armor pickup, update view of enemy effective health)
 	 * this is also used to send team messages about major powerups ("the enemy got the shield belt", "I got the UDamage", etc)
 	 */
-	virtual void NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius);
+	virtual void NotifyPickup(APawn* PickedUpBy, AActor* Pickup, float AudibleRadius, bool bWillBecomeInactive);
 
 	/** called by timer and also by weapons when ready to fire. Bot sets appropriate fire mode it wants to shoot (if any) */
 	virtual void CheckWeaponFiring(bool bFromWeapon = true);

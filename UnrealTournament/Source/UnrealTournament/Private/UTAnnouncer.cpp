@@ -41,22 +41,14 @@ void UUTAnnouncer::PlayAnnouncement(TSubclassOf<UUTLocalMessage> MessageClass, i
 		{
 			UE_LOG(UT, Warning, TEXT("Play announcement %s %d"), *MessageClass->GetName(), Switch);
 		}
-		if (!MessageClass.GetDefaultObject()->ShouldPlayDuringIntermission(Switch))
+		FAnnouncementInfo NewAnnouncement(MessageClass, Switch, PlayerState1, PlayerState2, OptionalObject, GetWorld()->GetTimeSeconds());
+		if (!MessageClass.GetDefaultObject()->ShouldStillPlay(GetWorld()->GetGameState<AUTGameState>(), NewAnnouncement))
 		{
-			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-			if (GS && (!GS->IsMatchInProgress() || GS->IsMatchIntermission()))
-			{
-				if (MessageClass.GetDefaultObject()->EnableAnnouncerLogging())
-				{
-					UE_LOG(UT, Warning, TEXT("SKIP FOR INTERMISSION"));
-				}
-				return;
-			}
+			return;
 		}
 		FName SoundName = MessageClass.GetDefaultObject()->GetAnnouncementName(Switch, OptionalObject, PlayerState1, PlayerState2);
 		if (SoundName != NAME_None)
 		{
-			FAnnouncementInfo NewAnnouncement(MessageClass, Switch, PlayerState1, PlayerState2, OptionalObject, GetWorld()->GetTimeSeconds());
 			// if we should cancel the current announcement, then play the new one over top of it
 			if (CurrentAnnouncement.MessageClass != NULL && MessageClass.GetDefaultObject()->InterruptAnnouncement(NewAnnouncement, CurrentAnnouncement))
 			{
@@ -198,20 +190,16 @@ void UUTAnnouncer::PlayNextAnnouncement()
 		}
 
 		FAnnouncementInfo Next = QueuedAnnouncements[0];
-		if (!Next.MessageClass.GetDefaultObject()->ShouldPlayDuringIntermission(Next.Switch))
+		if (!Next.MessageClass.GetDefaultObject()->ShouldStillPlay(GetWorld()->GetGameState<AUTGameState>(), Next))
 		{
-			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-			if (GS && (!GS->IsMatchInProgress() || GS->IsMatchIntermission()))
+			QueuedAnnouncements.RemoveAt(0);
+			if (QueuedAnnouncements.Num() > 0)
 			{
-				QueuedAnnouncements.RemoveAt(0);
-				if (QueuedAnnouncements.Num() > 0)
-				{
-					Next = QueuedAnnouncements[0];
-				}
-				else
-				{
-					return;
-				}
+				Next = QueuedAnnouncements[0];
+			}
+			else
+			{
+				return;
 			}
 		}
 		QueuedAnnouncements.RemoveAt(0);

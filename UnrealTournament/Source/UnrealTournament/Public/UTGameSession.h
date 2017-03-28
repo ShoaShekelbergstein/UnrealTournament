@@ -107,4 +107,9 @@ public:
 	
 	void AcknowledgeAdmin(const FString& AdminId, bool bIsAdmin);
 	void CleanupServerSession();
+
+	virtual void UnbanPlayer(const FString& UIDStr)
+	{
+	}
+
 };

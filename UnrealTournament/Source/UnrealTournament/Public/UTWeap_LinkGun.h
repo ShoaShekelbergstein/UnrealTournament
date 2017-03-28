@@ -165,11 +165,8 @@ public:
 	virtual void StartLinkPull();
 
 	virtual void Tick(float DeltaTime) override;
-
 	virtual void FiringExtraUpdated_Implementation(uint8 NewFlashExtra, uint8 InFireMode) override;
-
 	virtual void StateChanged() override;
-
 	virtual void PlayWeaponAnim(UAnimMontage* WeaponAnim, UAnimMontage* HandsAnim = NULL, float RateOverride = 0.0f) override;
 
 	/** check if bot should use pulse while firing beam */
@@ -186,4 +183,6 @@ public:
 	}
 
 	virtual void DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHudWidget, float RenderDelta) override;
+	virtual void Removed() override;
+	virtual void ClientRemoved() override;
 };

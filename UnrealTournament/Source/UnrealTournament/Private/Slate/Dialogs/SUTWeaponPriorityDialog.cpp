@@ -102,6 +102,7 @@ void SUTWeaponPriorityDialog::InitializeList(TArray<FWeaponInfo>& AllWeapons)
 
 TSharedRef<ITableRow> SUTWeaponPriorityDialog::GenerateWeaponListRow(TSharedPtr<FWeaponListEntry> Item, const TSharedRef<STableViewBase>& OwningList)
 {
+	bool bWeaponDebug = ( FParse::Param(FCommandLine::Get(), TEXT("weapondebug")));
 	return SNew(STableRow<TSharedPtr<FWeaponListEntry>>, OwningList)
 		.Padding(5)
 		.Style(SUTStyle::Get(),"UT.PlayerList.Row")
@@ -113,8 +114,8 @@ TSharedRef<ITableRow> SUTWeaponPriorityDialog::GenerateWeaponListRow(TSharedPtr<
 				+SHorizontalBox::Slot().FillWidth(1.0).VAlign(VAlign_Center)
 				[
 					SNew(STextBlock)
-					.Text(Item->Weapon->DisplayName)
-					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large")
+					.Text(bWeaponDebug ? FText::FromString(Item->Weapon->GetFullName()) : Item->Weapon->DisplayName)
+					.TextStyle(SUTStyle::Get(), bWeaponDebug ? "UT.Font.NormalText.Tiny" : "UT.Font.NormalText.Large")
 				]
 				+SHorizontalBox::Slot().Padding(5.0f,0.0f,0.0f,0.0f).AutoWidth()
 				[
@@ -133,6 +134,7 @@ TSharedRef<ITableRow> SUTWeaponPriorityDialog::GenerateWeaponListRow(TSharedPtr<
 								.OnClicked(this, &SUTWeaponPriorityDialog::MoveUpClicked,Item)
 								.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTWeaponPriorityDialog","UpPriorityTT","Give this weapon a higher priority.")))
 								[
+
 									SNew(SImage)
 									.Image(SUTStyle::Get().GetBrush("UT.Icon.SortUp.Big"))
 								]

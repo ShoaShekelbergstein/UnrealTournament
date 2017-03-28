@@ -251,8 +251,11 @@ public:
 
 	//=========================================
 	// DODGING
+	/** whether dodging is allowed at all */
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
+	bool bCanDodge;
 	/** Dodge impulse in XY plane */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Impulse- Horizontal"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Impulse - Horizontal"))
 	float DodgeImpulseHorizontal;
 
 	/** Dodge impulse added in Z direction */
@@ -264,15 +267,15 @@ public:
 	float WallDodgeTraceDist;
 
 	/** Wall Dodge impulse in XY plane */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Wall Dodge Impulse- Horizontal"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Wall Dodge Impulse - Horizontal"))
 		float WallDodgeImpulseHorizontal;
 
 	/** Vertical impulse for first wall dodge. */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Wall Dodge Impulse Vertical"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Wall Dodge Impulse - Vertical"))
 	float WallDodgeImpulseVertical;
 
 	/** Vertical impulse for subsequent consecutive wall dodges. */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Wall Dodge Second Impulse Vertical"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
 		float WallDodgeSecondImpulseVertical;
 
 	/** Grace negative velocity which is zeroed before adding walldodgeimpulse */
@@ -280,7 +283,7 @@ public:
 		float WallDodgeGraceVelocityZ;
 
 	/** Minimum Normal of Wall Dodge from wall (1.0 is 90 degrees, 0.0 is along wall, 0.7 is 45 degrees). */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Wall Dodge Min Normal"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
 		float WallDodgeMinNormal;
 
 	/** Wall normal of most recent wall dodge */
@@ -292,43 +295,47 @@ public:
 	float MaxConsecutiveWallDodgeDP;
 
 	/** Max number of consecutive wall dodges without landing. */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Max Wall Dodges"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
 		int32 MaxWallDodges;
 
 	/** Current count of wall dodges. */
-	UPROPERTY(Category = "Dodging", BlueprintReadWrite, meta = (DisplayName = "Current Wall Dodge Count"))
+	UPROPERTY(Category = "Dodging", BlueprintReadWrite)
 		int32 CurrentWallDodgeCount;
 
 	/** Time after starting wall dodge before another can be attempted. */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Wall Dodge Reset Interval"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
 		float WallDodgeResetInterval;
 
 	/** If falling faster than this speed, then don't add wall dodge impulse. */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Min Additive Dodge Fall Speed"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
 	float MinAdditiveDodgeFallSpeed;
 
 	/** Max positive Z speed with additive Wall Dodge Vertical Impulse.  Wall Dodge will not add impulse making vertical speed higher than this amount. */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Max Additive Dodge Jump Speed"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
 	float MaxAdditiveDodgeJumpSpeed;
 
 	/** Horizontal speed reduction on dodge landing (multiplied). */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Landing Speed Factor"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
 		float DodgeLandingSpeedFactor;
 
 	/** Horizontal speed reduction on dodge jump landing (multiplied). */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Jump Landing Speed Factor"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
 		float DodgeJumpLandingSpeedFactor;
 
 	/** Time after landing dodge before another can be attempted. */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Reset Interval"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
 		float DodgeResetInterval;
 
+	/** Adjustment from DodgeResetInterval for when bIsDodgeLanding acceleration adjust ends. */
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
+		float DodgeLandingTimeAdjust;
+
 	/** Time after landing dodge-jump before another can be attempted. */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Jump Reset Interval"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
 		float DodgeJumpResetInterval;
 
 	/** Maximum XY velocity of dodge (dodge impulse + current movement combined). */
-	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Dodge Max Horizontal Velocity"))
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadWrite)
 		float DodgeMaxHorizontalVelocity;
 
 	/** World time when another dodge can be attempted. */
@@ -482,6 +489,9 @@ public:
 	/** Flag to synchronize tap slide */
 	bool bPressedSlide;
 
+	/** return true if weapon is preventing controlled movement */
+	bool IsRootedByWeapon() const;
+
 	/** Return true if character can dodge. */
 	virtual bool CanDodge();
 
@@ -574,43 +584,15 @@ public:
 	/** Return true if can multijump now. */
 	virtual bool CanMultiJump();
 
-	//=========================================
-	// AUTO-SPRINT
+	/** Max speed when sliding. */
+	UPROPERTY(Category = "FloorSlide", EditAnywhere, BlueprintReadWrite)
+		float MaxSlideSpeed;
 
-	/** How long you have to be running/grounded before auto-sprint engages. */
-	UPROPERTY(Category = "Autosprint", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Auto Sprint Delay Interval"))
-		float AutoSprintDelayInterval;
+	/** True when just landed a dodge and acceleration is still limited. */
+	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadOnly)
+		bool bIsDodgeLanding;
 
-	/** Max speed when sprinting. */
-	UPROPERTY(Category = "Autosprint", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Sprint Speed"))
-		float SprintSpeed;
-
-	/** Acceleration when sprinting. */
-	UPROPERTY(Category = "Autosprint", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Sprint Acceleration"))
-		float SprintAccel;
-
-	/** Max dotproduct of wall surface sprinter ran into that doesn't stop sprint. */
-	UPROPERTY(Category = "Autosprint", EditAnywhere, BlueprintReadWrite)
-		float SprintMaxWallNormal;
-
-	/** World time when sprinting can start. */
-	UPROPERTY(Category = "Autosprint", BlueprintReadWrite, meta = (DisplayName = "Sprint Start Time"))
-		float SprintStartTime;
-
-	/** True when sprinting. */
-	UPROPERTY(Category = "Autosprint", EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "Is sprinting"))
-		bool bIsSprinting;
-
-	/** Reset sprint start if braking. */
-	virtual void ApplyVelocityBraking(float DeltaTime, float Friction, float BrakingDeceleration) override;
-
-	/** Support for sprint acceleration. */
 	virtual float GetMaxAcceleration() const override;
-
-	/** Return true if character can sprint right now */
-	virtual bool CanSprint() const;
-
-	/** Return SprintSpeed if CanSprint(). */
 	virtual float GetMaxSpeed() const override;
 
 	//=========================================
@@ -747,7 +729,7 @@ public:
 	bool bPressedDodgeBack;
 	bool bPressedDodgeLeft;
 	bool bPressedDodgeRight;
-	bool bSavedIsSprinting;
+	bool bSavedIsDodgeLanding;
 	bool bSavedIsRolling;
 	bool bSavedWantsWallSlide;
 	bool bSavedWantsSlide;
@@ -756,7 +738,6 @@ public:
 	// local only properties (not replicated) used when replaying moves
 	int32 SavedMultiJumpCount;
 	int32 SavedWallDodgeCount;
-	float SavedSprintStartTime;
 	float SavedDodgeResetTime;
 	float SavedFloorSlideEndTime;
 	bool bSavedJumpAssisted;

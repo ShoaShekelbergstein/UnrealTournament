@@ -291,6 +291,11 @@ void AUTCarriedObject::OnHolderChanged()
 	{
 		Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Collision->bShouldUpdatePhysicsVolume = false;
+		UParticleSystem* FirstPersonEffect = (GetTeamNum() == 1) ? FirstPersonBlueFlagEffect : FirstPersonRedFlagEffect;
+		if (FirstPersonEffect && Holder->GetUTCharacter() && Holder->GetUTCharacter()->IsLocallyViewed())
+		{
+			UGameplayStatics::SpawnEmitterAttached(FirstPersonEffect, Holder->GetUTCharacter()->CharacterCameraComponent, NAME_None, FVector(0.f, 0.f, 0.f), FRotator(0.f), EAttachLocation::SnapToTarget);
+		}
 	}
 	else
 	{
@@ -487,13 +492,9 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 		PC->UTClientPlaySound(HolderPickupSound);
 	}
 	AUTGameVolume* GV = Cast<AUTGameVolume>(HoldingPawn->GetPawnPhysicsVolume());
-	if (GV && GV->bIsNoRallyZone && !GV->bIsTeamSafeVolume)
+	if (GV && GV->bIsDefenderBase)
 	{
-		// play alarm
-		if (GetWorld()->GetTimeSeconds() - EnteredEnemyBaseTime > 2.f)
-		{
-			UUTGameplayStatics::UTPlaySound(GetWorld(), GV->AlarmSound, HoldingPawn, SRT_All, false, FVector::ZeroVector, NULL, NULL, false);
-		}
+		PlayAlarm();
 		EnteredEnemyBaseTime = GetWorld()->GetTimeSeconds();
 	}
 
@@ -752,7 +753,7 @@ void AUTCarriedObject::Drop(AController* Killer)
 void AUTCarriedObject::RemoveInvalidPastPositions()
 {
 	AUTGameVolume* GV = Cast<AUTGameVolume>(Collision->GetPhysicsVolume());
-	bool bInNoRallyZone = GV && GV->bIsNoRallyZone;
+	bool bInNoRallyZone = GV && (GV->bIsDefenderBase || GV->bIsTeamSafeVolume);
 	bool bRemovingPositions = true;
 	while ((PastPositions.Num() > 0) && bRemovingPositions)
 	{
@@ -864,6 +865,11 @@ void AUTCarriedObject::SendHome()
 					BasePosition.Location = GetHomeLocation();
 					PutGhostFlagAt(BasePosition);
 					bWantsGhostFlag = true;
+					AUTCTFFlagBase* FlagBase = Cast<AUTCTFFlagBase>(HomeBase);
+					if (FlagBase)
+					{
+						UUTGameplayStatics::UTPlaySound(GetWorld(), FlagBase->FlagReturnedSound, this);
+					}
 				}
 				if ((GetWorld()->GetTimeSeconds() - LastDroppedMessageTime > AutoReturnTime - 2.f) && GameState && !GameState->IsMatchIntermission() && !GameState->HasMatchEnded())
 				{
@@ -1125,4 +1131,19 @@ float AUTCarriedObject::GetGhostFlagTimerTime(AUTGhostFlag* Ghost)
 	AUTCTFRoundGameState* RCTFGameState = GetWorld()->GetGameState<AUTCTFRoundGameState>();
 	float ReturnTime = (RCTFGameState && (RCTFGameState->RemainingPickupDelay > 0.f)) ? RCTFGameState->RemainingPickupDelay : FlagReturnTime;
 	return AutoReturnTime > 0.f ? (1.0f - ReturnTime / 12.f) : 0.f;
+}
+
+void AUTCarriedObject::PlayAlarm()
+{
+	AUTGameVolume* GV = HoldingPawn ? Cast<AUTGameVolume>(HoldingPawn->GetPawnPhysicsVolume()) : nullptr;
+	if (GV && GV->bIsDefenderBase && GV->AlarmSound && (!GetWorld()->GetTimerManager().IsTimerActive(AlarmHandle) || (GetWorld()->GetTimerManager().GetTimerRemaining(AlarmHandle) < 1.f)))
+	{
+		// play alarm
+		AUTCTFRoundGameState* RCTFGameState = GetWorld()->GetGameState<AUTCTFRoundGameState>();
+		if (RCTFGameState && !RCTFGameState->IsMatchIntermission() && RCTFGameState->IsMatchInProgress())
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), GV->AlarmSound, HoldingPawn, SRT_All, false, FVector::ZeroVector, NULL, NULL, false);
+			GetWorld()->GetTimerManager().SetTimer(AlarmHandle, this, &AUTCarriedObject::PlayAlarm, 4.f, false);
+		}
+	}
 }

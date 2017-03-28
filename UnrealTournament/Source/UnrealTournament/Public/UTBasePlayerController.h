@@ -4,6 +4,8 @@
 
 #include "UTTeamInterface.h"
 #include "OnlineSessionInterface.h"
+#include "UTServerBeaconClient.h"
+
 #include "UTBasePlayerController.generated.h"
 
 class UUTGameViewportClient;
@@ -114,7 +116,7 @@ public:
 	/**
 	 *	User a GUID to find a server via the MCP and connect to it.  NOTE.. DesiredTeam = 0, 1, 255 or -1 for don't set the team
 	 **/
-	virtual void ConnectToServerViaGUID(FString ServerGUID, int32 DesiredTeam, bool bSpectate=false);
+	virtual void ConnectToServerViaGUID(FString ServerGUID, int32 DesiredTeam, bool bSpectate=false, bool bVerifyServerFirst = false);
 
 	/**
 	 *	Used by the hub system to cancel a pending connect if the player is downloading content.  Used for aborting.
@@ -181,6 +183,13 @@ protected:
 	bool GUIDJoinWantsToSpectate;
 	int32 GUIDJoinAttemptCount;
 	int32 GUIDJoinDesiredTeam;
+	bool bGUIDJoinVerifyFirst;
+
+	virtual void OnPingBeaconResult(AUTServerBeaconClient* Sender, FServerBeaconInfo ServerInfo);
+	virtual void OnPingBeaconFailure(AUTServerBeaconClient* Sender);
+	
+	UPROPERTY()
+	AUTServerBeaconClient* PingBeacon;
 
 public:
 	void StartGUIDJoin();
@@ -212,6 +221,12 @@ public:
 	virtual void ServerRconNormal();
 
 	UFUNCTION(Exec)
+	virtual void RconDBExec(FString Command);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerRconDBExec(const FString& Command);
+
+	UFUNCTION(Exec)
 	virtual void RconExec(FString Command);
 
 	UFUNCTION(Server, Reliable, WithValidation)
@@ -222,6 +237,12 @@ public:
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	virtual void ServerRconKick(const FString& NameOrUIDStr, bool bBan, const FString& Reason);
+
+	UFUNCTION(Exec)
+	virtual void RconUnban(const FString& UIDStr);
+
+	UFUNCTION(server, Reliable, WithValidation)
+	virtual void ServerRconUnban(const FString& UIDStr);
 
 	UFUNCTION(Exec)
 	virtual void RconMessage(const FString& DestinationId, const FString &Message);
@@ -334,14 +355,34 @@ public:
 	virtual void NextTutorial();
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	virtual void PrevTutorial();
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual void RepeatTutorial();
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual FText GetTutorialSectionText(TEnumAsByte<ETutorialSections::Type> Section) const;
 
+	// Kicks the player, but allows enough time for the kick message to replicate.
+	UFUNCTION()
+	virtual void GuaranteedKick( const FText& KickReason);
+
+	void ClientWasKicked_Implementation(const FText& KickReason) override;
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	FText GetNextTutorialName();
+
+	UFUNCTION(BlueprintCallable, Category="Tutorial")
+	FText GetPrevTutorialName();
+
+
 protected:
+	FTimerHandle AuthKickHandle;
+
 	void InitializeHeartbeatManager();
+	void TimedKick();
 
 	UPROPERTY()
 	class UUTHeartbeatManager* HeartbeatManager;
+
 };

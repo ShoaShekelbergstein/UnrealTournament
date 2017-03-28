@@ -25,6 +25,7 @@ AUTWeap_ShockRifle::AUTWeap_ShockRifle(const FObjectInitializer& ObjectInitializ
 	ShotsStatsName = NAME_ShockRifleShots;
 	bCheckHeadSphere = true;
 	bCheckMovingHeadSphere = true;
+	bTrackHitScanReplication = true;
 
 	WeaponCustomizationTag = EpicWeaponCustomizationTags::ShockRifle;
 	WeaponSkinCustomizationTag= EpicWeaponSkinCustomizationTags::ShockRifle;
@@ -33,7 +34,7 @@ AUTWeap_ShockRifle::AUTWeap_ShockRifle(const FObjectInitializer& ObjectInitializ
 	TutorialAnnouncements.Add(TEXT("SecShockRifle"));
 
 	FiringViewKickback = -50.f;
-	FiringViewKickbackY = 20.f;
+	FiringViewKickbackY = 0.f;
 	HighlightText = NSLOCTEXT("Weapon", "ShockHighlightText", "Don't Tase Me Bro");
 }
 

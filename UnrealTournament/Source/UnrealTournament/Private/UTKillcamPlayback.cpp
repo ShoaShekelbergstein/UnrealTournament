@@ -494,6 +494,8 @@ void UUTKillcamPlayback::ShowKillcamToUser()
 		return;
 	}
 
+	bIsEnabled = true;
+
 	UGameInstance* GameInstance = KillcamWorld->GetGameInstance();
 	if (GameInstance != nullptr)
 	{

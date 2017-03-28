@@ -5,15 +5,13 @@
 #include "../Base/SUTPanelBase.h"
 #include "../SUWindowsStyle.h"
 #include "SUTInGameHomePanel.h"
-#include "SUTLobbyMatchSetupPanel.h"
+#include "SUTGameSetupDialog.h"
 #include "SUTPlayerListPanel.h"
 #include "SUTTextChatPanel.h"
 #include "SUTMatchPanel.h"
 #include "UTLobbyMatchInfo.h"
 
 #if !UE_SERVER
-
-class SUTStartMatchWindow;
 
 class UNREALTOURNAMENT_API SUTLobbyInfoPanel : public SUTPanelBase 
 {
@@ -27,7 +25,6 @@ protected:
 
 	// TODO: Add a SP for the Chat panel when it's written.
 	TSharedPtr<SUTMatchPanel> MatchBrowser;
-	TSharedPtr<SUTLobbyMatchSetupPanel> MatchSetup;
 	TSharedPtr<SUTPlayerListPanel> PlayerListPanel;
 	TSharedPtr<SUTTextChatPanel> TextChatPanel;
 
@@ -45,8 +42,6 @@ protected:
 	 **/
 	virtual void BuildChatAndPlayerList();
 
-	void ShowMatchSetupPanel();
-
 	/**
 	 *	Builds the Match Browser
 	 **/
@@ -60,10 +55,8 @@ protected:
 	virtual void OnHidePanel();
 
 	TSharedPtr<SUTGameSetupDialog> SetupDialog;
-	TSharedPtr<SUTStartMatchWindow> StartMatchWindow;
 
 public:
-	void ApplySetup(TWeakObjectPtr<AUTLobbyMatchInfo> MatchInfo);
 	void StartMatch();
 	void OnGameChangeDialogResult(TSharedPtr<SCompoundWidget> Dialog, uint16 ButtonPressed);
 	void CancelInstance();

@@ -8,6 +8,7 @@
 #include "UTTimedPowerup.h"
 #include "SlateGameResources.h"
 #include "SUWindowsStyle.h"
+#include "SUTStyle.h"
 #include "SNumericEntryBox.h"
 #include "UTShowdownSquadAI.h"
 #include "UTGenericObjectivePoint.h"
@@ -19,6 +20,7 @@
 #include "UTSpectatorCamera.h"
 #include "UTPickupAmmo.h"
 #include "UTPlayerStart.h"
+#include "UTLineUpHelper.h"
 
 AUTShowdownGame::AUTShowdownGame(const FObjectInitializer& OI)
 : Super(OI)
@@ -470,9 +472,9 @@ void AUTShowdownGame::StartIntermission()
 
 void AUTShowdownGame::RestartPlayer(AController* aPlayer)
 {
-	if (GetMatchState() == MatchState::WaitingToStart)
+	if (GetMatchState() == MatchState::WaitingToStart || (UTGameState && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive))
 	{
-		// warmup
+		// warmup or line-up
 		Super::RestartPlayer(aPlayer);
 	}
 	else
@@ -1086,7 +1088,7 @@ void AUTShowdownGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpa
 				[
 					SNew(STextBlock)
 					.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
-					.Text(NSLOCTEXT("UTGameMode", "GoalScore", "Goal Score"))
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 				]
 			]
 			+ SHorizontalBox::Slot()
@@ -1099,7 +1101,7 @@ void AUTShowdownGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpa
 					bCreateReadOnly ?
 					StaticCastSharedRef<SWidget>(
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween.Bold")
 					.Text(GoalScoreAttr.ToSharedRef(), &TAttributeProperty<int32>::GetAsText)
 					) :
 					StaticCastSharedRef<SWidget>(
@@ -1134,7 +1136,7 @@ void AUTShowdownGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpa
 				.WidthOverride(350)
 				[
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 					.Text(NSLOCTEXT("UTGameMode", "RoundTimeLimit", "Round Time Limit"))
 				]
 			]
@@ -1148,7 +1150,7 @@ void AUTShowdownGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpa
 					bCreateReadOnly ?
 					StaticCastSharedRef<SWidget>(
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween.Bold")
 					.Text(TimeLimitAttr.ToSharedRef(), &TAttributeProperty<int32>::GetAsText)
 					) :
 					StaticCastSharedRef<SWidget>(
@@ -1190,7 +1192,7 @@ void AUTShowdownGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpa
 			.WidthOverride(350)
 			[
 				SNew(STextBlock)
-				.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 				.Text(NSLOCTEXT("UTGameMode", "PowerupBreaker", "Spawn Overcharge Powerup after 70s"))
 			]
 		]
@@ -1234,7 +1236,7 @@ void AUTShowdownGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpa
 			.WidthOverride(350)
 			[
 				SNew(STextBlock)
-				.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 				.Text(NSLOCTEXT("UTGameMode", "XRayBreaker", "Get XRay Vision at 70s"))
 			]
 		]

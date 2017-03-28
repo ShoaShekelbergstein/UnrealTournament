@@ -2196,11 +2196,8 @@ void ALandscapeProxy::UpdateGrass(const TArray<FVector>& Cameras, bool bForceSyn
 
 										{
 											QUICK_SCOPE_CYCLE_COUNTER(STAT_GrassAttachComp);
-
-											HierarchicalInstancedStaticMeshComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-											FTransform DesiredTransform = GetRootComponent()->ComponentToWorld;
-											DesiredTransform.RemoveScaling();
-											HierarchicalInstancedStaticMeshComponent->SetWorldTransform(DesiredTransform);
+											
+											HierarchicalInstancedStaticMeshComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 
 											FoliageComponents.Add(HierarchicalInstancedStaticMeshComponent);
 										}

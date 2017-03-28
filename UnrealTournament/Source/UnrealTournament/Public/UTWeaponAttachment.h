@@ -125,7 +125,7 @@ public:
 	void HolsterToOwner();
 
 	/** blueprint hook to modify spawned instance of FireEffect (e.g. tracer or beam) */
-	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Weapon")
 	void ModifyFireEffect(UParticleSystemComponent* Effect);
 
 	/** play firing effects (both muzzle flash and any tracers/beams/impact effects)

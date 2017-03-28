@@ -17,6 +17,15 @@
 class UUTMatchmaking;
 class UUTParty;
 
+USTRUCT(BlueprintType)
+struct FDatabaseRow
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	TArray<FString> Text;
+};
+
 enum EUTNetControlMessage
 {
 	UNMT_Redirect = 0, // required download from redirect
@@ -119,7 +128,9 @@ protected:
 
 	UPROPERTY(Transient)
 	UUTPlaylistManager* PlaylistManager;
-	
+
+	struct sqlite3* Database;
+
 	/** Timer waiting to call SafeSessionDelete again because session was in a creating/ending state */
 	FTimerHandle SafeSessionDeleteTimerHandle;
 
@@ -154,6 +165,8 @@ public:
 	UUTPlaylistManager* GetPlaylistManager() const;
 
 	bool IsInSession(const FUniqueNetId& SessionId) const;
+
+	bool ExecDatabaseCommand(const FString& DatabaseCommand, TArray<FDatabaseRow>& DatabaseRows);
 
 	/**
 	 * Safe delete mechanism to make sure we aren't deleting a session too soon after its creation

@@ -13,6 +13,7 @@
 #include "UTDroppedAmmoBox.h"
 #include "SlateGameResources.h"
 #include "SUWindowsStyle.h"
+#include "SUTStyle.h"
 #include "SNumericEntryBox.h"
 #include "UTShowdownRewardMessage.h"
 #include "UTShowdownStatusMessage.h"
@@ -36,6 +37,7 @@ void AUTTeamShowdownGame::InitGame(const FString& MapName, const FString& Option
 	int32 SavedBotFillCount = BotFillCount;
 
 	Super::InitGame(MapName, Options, ErrorMessage);
+	bBalanceTeams = !bOfflineChallenge;
 
 	// skip Duel overrides we don't want
 	if (bOfflineChallenge)
@@ -451,7 +453,7 @@ void AUTTeamShowdownGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> Men
 				.WidthOverride(350)
 				[
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 					.Text(NSLOCTEXT("UTGameMode", "NumCombatants", "Number of Combatants"))
 				]
 			]
