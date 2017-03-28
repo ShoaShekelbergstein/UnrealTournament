@@ -170,7 +170,7 @@ void SUTMatchPanel::Construct(const FArguments& InArgs)
 			+SOverlay::Slot()
 			[
 				SNew(STextBlock)
-				.Text(NSLOCTEXT("SUTMatchPanel","PrivateServer","This server is private so the match data is unavailalble."))
+				.Text(NSLOCTEXT("SUTMatchPanel","PrivateServer","Match data is unavailable for private servers."))
 				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Medium.Bold")
 				.AutoWrapText(true)
 				.Visibility(this, &SUTMatchPanel::GetPrivateHubVis)
