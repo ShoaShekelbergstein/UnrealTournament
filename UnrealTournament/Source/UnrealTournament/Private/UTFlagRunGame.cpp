@@ -313,23 +313,7 @@ void AUTFlagRunGame::NotifyFirstPickup(AUTCarriedObject* Flag)
 void AUTFlagRunGame::IntermissionSwapSides()
 {
 	// swap sides, if desired
-	AUTWorldSettings* Settings = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
-	if (Settings != NULL && Settings->bAllowSideSwitching)
-	{
-		CTFGameState->ChangeTeamSides(1);
-	}
-	else
-	{
-		// force update of flags since defender flag gets destroyed
-		for (AUTCTFFlagBase* Base : CTFGameState->FlagBases)
-		{
-			IUTTeamInterface* TeamObj = Cast<IUTTeamInterface>(Base);
-			if (TeamObj != NULL)
-			{
-				TeamObj->Execute_SetTeamForSideSwap(Base, Base->TeamNum);
-			}
-		}
-	}
+	CTFGameState->ChangeTeamSides(1);
 }
 
 void AUTFlagRunGame::InitFlags()
