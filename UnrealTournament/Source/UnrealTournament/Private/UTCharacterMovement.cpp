@@ -99,9 +99,9 @@ UUTCharacterMovement::UUTCharacterMovement(const class FObjectInitializer& Objec
 	WallDodgeImpulseHorizontal = 1300.f; 
 	WallDodgeImpulseVertical = 470.f; 
 
-	MaxSlideRiseZ = 650.f; 
-	MaxSlideFallZ = -120.f;
-	SlideGravityScaling = 0.08f;
+	MaxWallRunRiseZ = 650.f; 
+	MaxWallRunFallZ = -120.f;
+	WallRunGravityScaling = 0.08f;
 	MinWallSlideSpeed = 500.f;
 	MaxSlideWallDist = 20.f;
 	FloorSlideJumpZ = 50.f;
@@ -1705,7 +1705,7 @@ void UUTCharacterMovement::CheckWallSlide(FHitResult const& Impact)
 	if (UTCharOwner)
 	{
 		UTCharOwner->bApplyWallSlide = false;
-		if (bWantsWallSlide && (Impact.ImpactNormal.Z > -0.1f) && (Velocity.Z < MaxSlideRiseZ) && (Velocity.Z > MaxSlideFallZ) && !Acceleration.IsZero() && !UTCharOwner->IsThirdPersonTaunting())
+		if (bWantsWallSlide && (Impact.ImpactNormal.Z > -0.1f) && (Velocity.Z < MaxWallRunRiseZ) && (Velocity.Z > MaxWallRunFallZ) && !Acceleration.IsZero() && !UTCharOwner->IsThirdPersonTaunting())
 		{
 			FVector VelocityAlongWall = Velocity + FMath::Abs(Velocity | Impact.ImpactNormal) * Impact.ImpactNormal;
 			UTCharOwner->bApplyWallSlide = (VelocityAlongWall.Size2D() >= MinWallSlideSpeed);
@@ -1779,7 +1779,7 @@ float UUTCharacterMovement::GetGravityZ() const
 	AUTCharacter* UTCharOwner = Cast<AUTCharacter>(CharacterOwner);
 	if (UTCharOwner && UTCharOwner->bApplyWallSlide && (Velocity.Z < 0.f))
 	{
-		return Super::GetGravityZ() * SlideGravityScaling * (1.f - FMath::Square(0.5f + 0.5f*WallSlideNormal.Z));
+		return Super::GetGravityZ() * WallRunGravityScaling * (1.f - FMath::Square(0.5f + 0.5f*WallSlideNormal.Z));
 	}
 	return Super::GetGravityZ();
 }

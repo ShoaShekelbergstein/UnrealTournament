@@ -46,15 +46,19 @@ public:
 	UPROPERTY(EditAnywhere, Meta = (MetaClass = "UTCharacterVoice"), Category = Cosmetics)
 	FStringClassReference CharacterVoice;
 
+	/** Whether this character can dodge. */
 	UPROPERTY(EditAnywhere, Category = Movement)
 		bool bCanDodge;
 
+	/** Time after landing dodge before another can be attempted. */
 	UPROPERTY(EditAnywhere, Category = Movement)
 		float DodgeResetInterval;
 
+	/** If greater than 1, can multijump. */
 	UPROPERTY(EditAnywhere, Category = Movement)
 		int32 MaxMultiJumpCount;
 
+	/** Vertical impulse on multijump. */
 	UPROPERTY(EditAnywhere, Category = Movement)
 		float MultiJumpImpulse;
 
@@ -64,15 +68,23 @@ public:
 	UPROPERTY(EditAnywhere, Category = Movement)
 		float AirControl;
 
+	/* Vertical impulse magnitude when player jumps. */
 	UPROPERTY(EditAnywhere, Category = Movement)
 		float JumpImpulse;
+
+	/**  Wall run stops when falling faster than this */
+	UPROPERTY(EditAnywhere, Category = Movement)
+		float MaxWallRunFallZ;
+
+	/** Gravity reduction during wall run */
+	UPROPERTY(EditAnywhere, Category = Movement)
+		float WallRunGravityScaling;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray< TSubclassOf<AUTInventory> > CardInventory;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		int32 ExtraArmor;
-
 };
 
 /*
@@ -95,9 +107,4 @@ DodgeImpulseVertical = 500.f;
 WallDodgeImpulseHorizontal = 1300.f;
 WallDodgeImpulseVertical = 470.f;
 
-MaxSlideRiseZ = 650.f;
-MaxSlideFallZ = -120.f;
-SlideGravityScaling = 0.08f;
-MinWallSlideSpeed = 500.f;
-MaxSlideWallDist = 20.f;
 */

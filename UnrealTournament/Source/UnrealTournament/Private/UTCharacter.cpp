@@ -5155,8 +5155,8 @@ void AUTCharacter::PlayerCardUpdated()
 		UTCharacterMovement->DodgeResetInterval = PS->PlayerCard->DodgeResetInterval;
 		UTCharacterMovement->DodgeJumpResetInterval = UTCharacterMovement->DodgeResetInterval;
 		UTCharacterMovement->JumpZVelocity = PS->PlayerCard->JumpImpulse;
-
-
+		UTCharacterMovement->MaxWallRunFallZ = PS->PlayerCard->MaxWallRunFallZ;
+		UTCharacterMovement->WallRunGravityScaling = PS->PlayerCard->WallRunGravityScaling;
 	}
 }
 

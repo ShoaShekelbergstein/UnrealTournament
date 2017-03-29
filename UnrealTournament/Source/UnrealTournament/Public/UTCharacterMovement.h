@@ -625,28 +625,28 @@ public:
 	//=========================================
 	// Wall Run
 
-	/**  Max Falling velocity Z to get slide */
-	UPROPERTY(Category = "Wall Slide", EditAnywhere, BlueprintReadWrite)
-	float MaxSlideFallZ;
+	/**  Max Falling velocity Z to get wall run */
+	UPROPERTY(Category = "Wall Run", EditAnywhere, BlueprintReadWrite)
+	float MaxWallRunFallZ;
 
-	/**  Max jump positive velocity Z to be considered for sliding */
-	UPROPERTY(Category = "Wall Slide", EditAnywhere, BlueprintReadWrite)
-	float MaxSlideRiseZ;
+	/**  Max jump positive velocity Z to be considered for wall running */
+	UPROPERTY(Category = "Wall Run", EditAnywhere, BlueprintReadWrite)
+	float MaxWallRunRiseZ;
 
-	/** Gravity acceleration reduction during wall slide */
-	UPROPERTY(Category = "Wall Slide", EditAnywhere, BlueprintReadWrite)
-	float SlideGravityScaling;
+	/** Gravity reduction during wall run */
+	UPROPERTY(Category = "Wall Run", EditAnywhere, BlueprintReadWrite)
+	float WallRunGravityScaling;
 
-	/** Minimum horizontal velocity to wall slide */
-	UPROPERTY(Category = "Wall Slide", EditAnywhere, BlueprintReadWrite)
+	/** Minimum horizontal velocity to wall run */
+	UPROPERTY(Category = "Wall Run", EditAnywhere, BlueprintReadWrite)
 	float MinWallSlideSpeed;
 
 	/** Maximum dist to wall for wallslide to continue */
-	UPROPERTY(Category = "Wall Slide", EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(Category = "Wall Run", EditAnywhere, BlueprintReadWrite)
 		float MaxSlideWallDist;
 
 	/** If true, the player is against the wall and WallSlideNormal will describe the touch. */
-	UPROPERTY(Category = "Wall Slide", BlueprintReadOnly)
+	UPROPERTY(Category = "Wall Run", BlueprintReadOnly)
 	bool bIsAgainstWall;
 
 	/** Used to gate client=side checking whether other characters are falling against a wall. */
@@ -654,11 +654,11 @@ public:
 	float LastCheckedAgainstWall;
 
 	/** Normal of the wall we are wall running against. */
-	UPROPERTY(Category = "Wall Slide", BlueprintReadOnly)
+	UPROPERTY(Category = "Wall Run", BlueprintReadOnly)
 	FVector WallSlideNormal;
 
 	/** Wall material we are wall running against. */
-	UPROPERTY(Category = "Wall Slide", BlueprintReadOnly)
+	UPROPERTY(Category = "Wall Run", BlueprintReadOnly)
 		UPhysicalMaterial* WallRunMaterial;
 
 	virtual void HandleImpact(FHitResult const& Impact, float TimeSlice, const FVector& MoveDelta) override;
