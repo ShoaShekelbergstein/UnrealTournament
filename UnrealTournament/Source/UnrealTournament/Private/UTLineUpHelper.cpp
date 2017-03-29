@@ -13,6 +13,7 @@
 #include "UTFlagRunGameState.h"
 #include "UTPlayerState.h"
 #include "UTCustomMovementTypes.h"
+#include "UTPickupWeapon.h"
 
 AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -237,14 +238,19 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 		//Setup LineUp weapon. Favorite weapon if set, current weapon otherwise
 		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 		{
-			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
-			if (UTPC)
+			AController* C = Cast<AController>(*Iterator);
+			if (C)
 			{
-				AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTPC->PlayerState);
-				AUTCharacter* UTChar = Cast<AUTCharacter>(UTPC->GetPawn());
-				if (UTPS && UTChar)
+				AUTPlayerState* UTPS = Cast<AUTPlayerState>(C->PlayerState);
+				if (UTPS)
 				{
-					UTPS->LineUpWeapon = (UTPS->FavoriteWeapon != NULL)? UTPS->FavoriteWeapon : UTChar->GetWeaponClass();
+					UTPS->LineUpWeapon = (UTPS->FavoriteWeapon != NULL)? UTPS->FavoriteWeapon : NULL;
+					
+					if (UTPS->LineUpWeapon == NULL)
+					{
+						AUTCharacter* UTChar = Cast<AUTCharacter>(C->GetPawn());
+						UTPS->LineUpWeapon = (UTChar) ? UTChar->GetWeaponClass() : nullptr;
+					}
 				}
 			}
 		}
@@ -360,7 +366,6 @@ void AUTLineUpHelper::FlagFixUp()
 
 void AUTLineUpHelper::SpawnPlayerWeapon(AUTCharacter* UTChar)
 {
-	//If we already have a weapon attachment, keep that
 	if (UTChar)
 	{
 		AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTChar->PlayerState);
@@ -371,10 +376,23 @@ void AUTLineUpHelper::SpawnPlayerWeapon(AUTCharacter* UTChar)
 			WeaponClass = UTPS->LineUpWeapon ? UTPS->LineUpWeapon->GetDefaultObject<AUTWeapon>()->GetClass() : NULL;
 		}
 
-		//Default to Link Gun
+		//If we already have a weapon attachment, keep that
 		if (!WeaponClass)
 		{
+			//Default to Link Gun
 			WeaponClass = LoadClass<AUTWeapon>(NULL, TEXT("/Game/RestrictedAssets/Weapons/LinkGun/BP_LinkGun.BP_LinkGun_C"), NULL, LOAD_None, NULL);
+
+			//Try and pick a random weapon available on the map for pickup
+			BuildMapWeaponList();
+			if (MapWeaponTypeList.Num() > 0)
+			{
+				int32 WeaponIndex = FMath::RandHelper(MapWeaponTypeList.Num());
+
+				if (MapWeaponTypeList[WeaponIndex] != NULL)
+				{
+					WeaponClass = MapWeaponTypeList[WeaponIndex];
+				}
+			}
 		}
 		
 		//Remove all inventory so that when we add this weapon in, it is equipped.
@@ -404,6 +422,21 @@ void AUTLineUpHelper::SpawnPlayerWeapon(AUTCharacter* UTChar)
 	}
 }
 
+void AUTLineUpHelper::BuildMapWeaponList()
+{
+	TSubclassOf<AUTWeapon> RedeemerWeaponClass = LoadClass<AUTWeapon>(NULL, TEXT("/Game/RestrictedAssets/Weapons/Redeemer/BP_Redeemer.BP_Redeemer_C"), NULL, LOAD_None, NULL);
+	if (MapWeaponTypeList.Num() == 0)
+	{
+		for (FActorIterator It(GetWorld()); It; ++It)
+		{
+			AUTPickupWeapon* Pickup = Cast<AUTPickupWeapon>(*It);
+			if (Pickup && (Pickup->WeaponType != NULL) && (Pickup->WeaponType != RedeemerWeaponClass))
+			{
+				MapWeaponTypeList.AddUnique(Pickup->WeaponType);
+			}
+		}
+	}
+}
 
 void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
 {

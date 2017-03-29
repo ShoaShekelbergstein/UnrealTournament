@@ -74,6 +74,9 @@ protected:
 	UFUNCTION()
 	void FlagFixUp();
 
+	UFUNCTION()
+	void BuildMapWeaponList();
+
 	TWeakPtr<AUTCharacter> SelectedCharacter;
 
 	float TimerDelayForIntro;
@@ -94,4 +97,8 @@ protected:
 
 	UPROPERTY()
 	TArray<class UAnimationAsset*> PreviewAnimations;
+
+	UPROPERTY()
+	TArray<TSubclassOf<AUTWeapon>> MapWeaponTypeList;
+
 };
