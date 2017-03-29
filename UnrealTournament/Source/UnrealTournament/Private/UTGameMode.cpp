@@ -617,7 +617,6 @@ void AUTGameMode::InitGameState()
 		FUTAnalytics::FireEvent_UTInitMatch(this);
 	}
 
-	ActiveRuleset = CreateGameRuleset(ActiveRuleTag);
 	RegisterServerWithSession();
 }
 
@@ -2757,32 +2756,45 @@ bool AUTGameMode::PrepareMapVote()
 	MapPrefixList.Add(MapPrefix);
 	UTGameState->ScanForMaps(MapPrefixList, AllMaps);
 
-	// If there is an active ruleset, then get a list of allowed maps
-	if (ActiveRuleset != nullptr)
-	{
-		ActiveRuleset->GetCompleteMapList(MapList);
 
-		// Now, ensure full names
-		for (FString& Map : MapList)
+	// If there is an active ruleset, then get a list of allowed maps
+	if (!ActiveRuleTag.IsEmpty())
+	{
+		// Get a pointer to the active ruleset.
+
+		UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
+		if (UTGameEngine)
 		{
-			if (FPackageName::IsShortPackageName(Map))
+			FUTGameRuleset* ActiveRuleset = UTGameEngine->GetRuleset(ActiveRuleTag);
+			if (ActiveRuleset)
 			{
-				for (const FAssetData& MapAsset : AllMaps)
+				ActiveRuleset->GetCompleteMapList(MapList);
+
+				// Now, ensure full names
+				for (FString& Map : MapList)
 				{
-					FString PackageName = MapAsset.PackageName.ToString();
-					PackageName = PackageName.Right(PackageName.Len() - PackageName.Find(TEXT("/") - 1, ESearchCase::IgnoreCase, ESearchDir::FromEnd));
-					if (Map == PackageName)
+					if (FPackageName::IsShortPackageName(Map))
 					{
-						Map = MapAsset.PackageName.ToString();
-						break;
+						for (const FAssetData& MapAsset : AllMaps)
+						{
+							FString PackageName = MapAsset.PackageName.ToString();
+							PackageName = PackageName.Right(PackageName.Len() - PackageName.Find(TEXT("/") - 1, ESearchCase::IgnoreCase, ESearchDir::FromEnd));
+							if (Map == PackageName)
+							{
+								Map = MapAsset.PackageName.ToString();
+								break;
+							}
+						}
 					}
 				}
+			
 			}
 		}
 	}
-	else
+
+	// If we don't have any maps, just add all of the maps to the list
+	if (MapList.Num() == 0 )
 	{
-		// Just add all of the maps to the list
 		for (const FAssetData& MapAsset : AllMaps)
 		{
 			MapList.Add(MapAsset.PackageName.ToString());

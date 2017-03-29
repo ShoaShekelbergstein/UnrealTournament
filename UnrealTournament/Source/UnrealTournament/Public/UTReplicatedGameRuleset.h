@@ -3,7 +3,6 @@
 
 #include "AssetData.h"
 #include "UTATypes.h"
-#include "UTGameRuleset.h"
 #include "UTReplicatedGameRuleset.generated.h"
 
 
@@ -85,7 +84,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = Ruleset)
 	TArray<FString> QuickPlayMaps;
 
-	void SetRules(UUTGameRuleset* NewRules, const TArray<FAssetData>& MapAssets);
+	void SetRules(const FUTGameRuleset& NewRules, const TArray<FAssetData>& MapAssets);
 
 	UPROPERTY()
 	UTexture2D*  BadgeTexture;

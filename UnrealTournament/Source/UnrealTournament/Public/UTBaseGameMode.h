@@ -15,7 +15,6 @@
 
 class UUTLocalPlayer;
 class AUTReplicatedGameRuleset;
-class UUTGameRuleset;
 	
 USTRUCT()
 struct FEpicMapData
@@ -270,11 +269,7 @@ protected:
 	bool bIgnoreIdlePlayers;
 
 public:
-	/**
-	 *	Creates a Replicated Ruleset from a Tag or nullptr if the tag doesn't exist.
-	 **/
 	
-	UUTGameRuleset* CreateGameRuleset(const FString& RuleTag);
 	/**
 	 *	Creates a Replicated ruleset for a custom game based on params passed in
 	 **/

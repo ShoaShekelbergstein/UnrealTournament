@@ -4,6 +4,7 @@
 #include "UTLobbyPlayerState.h"
 #include "UTServerBeaconLobbyHostListener.h"
 #include "UTServerBeaconLobbyHostObject.h"
+#include "UTServerBeaconLobbyClient.h"
 #include "UTReplicatedGameRuleset.h"
 #include "UTLobbyGameState.generated.h"
 
@@ -264,10 +265,17 @@ public:
 	 **/
 	virtual void RequestNewMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled);
 
+	/**
+	 *	Called from UTGameEngine once all of the rulesets are loaded.
+	 **/
+	virtual void RulesetsAreLoaded();
 
 protected:
 	void ManageMusicVolume(float DeltaTime) { }
 	USoundBase* LobbyMusic;
+
+	FTimerHandle RuleWaitHandle;
+
 };
 
 

@@ -1211,9 +1211,6 @@ void UUTLocalPlayer::OnLoginStatusChanged(int32 LocalUserNum, ELoginStatus::Type
 	{
 
 		LoginPhase = ELoginPhase::GettingProfile;
-
-		EnumerateTitleFiles();
-
 		LeagueRecords.Empty();
 		MMREntries.Empty();
 		
@@ -1803,7 +1800,6 @@ void UUTLocalPlayer::OnReadProgressionComplete(bool bWasSuccessful, const FUniqu
 								UTDIALOG_BUTTON_OK, FDialogResultDelegate(), FVector2D(0.4, 0.25));
 #endif
 					InitializeSocial();
-					LoginProcessComplete();
 					return;
 				}
 
@@ -1853,8 +1849,7 @@ void UUTLocalPlayer::OnReadProgressionComplete(bool bWasSuccessful, const FUniqu
 		ReportStarsToServer();
 
 		InitializeSocial();
-		LoginProcessComplete();
-
+	
 	}
 }
 
@@ -4836,7 +4831,19 @@ void UUTLocalPlayer::EnumerateTitleFiles()
 {
 	if (OnlineTitleFileInterface.IsValid())
 	{
+		LoginPhase = ELoginPhase::GettingTitleUpdate;
+
+		// We queue here what title files we want to read.  Once started, this step won't be skilled until the queue is empty.
+		TitleFileQueue.Add(GetMCPStorageFilename());
+		TitleFileQueue.Add(GetOnlineSettingsFilename());
+		TitleFileQueue.Add(GetMCPAnnouncementFilename());
+		TitleFileQueue.Add(GetMCPGameRulesUpdateFilename());
+
 		OnlineTitleFileInterface->EnumerateFiles();
+	}
+	else
+	{
+		LoginPhase = ELoginPhase::LoggedIn;
 	}
 }
 
@@ -4844,11 +4851,13 @@ void UUTLocalPlayer::OnEnumerateTitleFilesComplete(bool bWasSuccessful)
 {
 	if (bWasSuccessful)
 	{
+		// Queue up all of the title file reads...
 		if (OnlineTitleFileInterface.IsValid())
 		{
-			OnlineTitleFileInterface->ReadFile(GetMCPStorageFilename());
-			OnlineTitleFileInterface->ReadFile(GetOnlineSettingsFilename());
-			OnlineTitleFileInterface->ReadFile(GetMCPAnnouncementFilename());
+			for (int32 i=0; i < TitleFileQueue.Num(); i++)
+			{
+				OnlineTitleFileInterface->ReadFile(TitleFileQueue[i]);
+			}
 		}
 	}
 }
@@ -4945,6 +4954,32 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 				FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &MCPAnnouncements, 0, 0);
 			}
 		}
+	}
+
+	else if (Filename == GetMCPGameRulesUpdateFilename())
+	{
+		if (bWasSuccessful)
+		{
+			FString JsonString = TEXT("");
+			TArray<uint8> FileContents;
+			OnlineTitleFileInterface->GetFileContents(GetMCPGameRulesUpdateFilename(), FileContents);
+			FileContents.Add(0);
+			JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
+
+			
+			UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
+			if (UTGameEngine)
+			{
+				UTGameEngine->ProcessMCPRulesetUpdate(JsonString);
+			}
+		}
+	}
+
+	int32 Index = TitleFileQueue.Find(Filename);
+	if (Index != INDEX_NONE) TitleFileQueue.RemoveAt(Index);
+	if (TitleFileQueue.Num() == 0)
+	{
+		LoginProcessComplete();
 	}
 }
 
@@ -5933,6 +5968,7 @@ void UUTLocalPlayer::LoginProcessComplete()
 		TSharedPtr<const FUniqueNetId> UserId = OnlineIdentityInterface->GetUniquePlayerId(GetControllerId());
 		ShowRankedReconnectDialog(UserId->ToString());
 	}
+	LoginPhase = ELoginPhase::LoggedIn;
 }
 
 void UUTLocalPlayer::QoSComplete()
@@ -6079,8 +6115,7 @@ void UUTLocalPlayer::SocialInitialized()
 #endif
 
 	PushChallengeStarsToMCP();
-	LoginPhase = ELoginPhase::LoggedIn;
-
+	EnumerateTitleFiles();
 }
 
 void UUTLocalPlayer::PushChallengeStarsToMCP()

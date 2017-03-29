@@ -60,7 +60,7 @@ public:
 		Rules.Add(EEpicDefaultRuleTags::iCTFT);
 	}
 
-	static void InsureEpicDefaults(UUTGameRuleset* NewRuleset)
+	static void InsureEpicDefaults(FUTGameRuleset* NewRuleset)
 	{
 		// TODO: This should pull from a file that is pushed from the MCP if the MCP is available
 

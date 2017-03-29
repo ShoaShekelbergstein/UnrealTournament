@@ -10,6 +10,7 @@
 #include "UTServerBeaconLobbyClient.h"
 #include "UTMutator.h"
 #include "UTAnalytics.h"
+#include "UTGameEngine.h"
 
 AUTLobbyGameState::AUTLobbyGameState(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -54,89 +55,74 @@ void AUTLobbyGameState::PostInitializeComponents()
 
 	if (Role == ROLE_Authority)
 	{
-
 		bCustomContentAvailable = LobbyGameMode ? LobbyGameMode->RedirectReferences.Num() > 0 : 0;
-
 		FTimerHandle TempHandle;
 		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTLobbyGameState::CheckInstanceHealth, 60.0f, true);	
-
-		// Grab all of the available map assets.
-		TArray<FAssetData> MapAssets;
-		FindAllPlayableMaps(MapAssets);
-
-		TArray<FString> AllowedGameRulesets;
-
-		UUTEpicDefaultRulesets* DefaultRulesets = UUTEpicDefaultRulesets::StaticClass()->GetDefaultObject<UUTEpicDefaultRulesets>();
-		if (DefaultRulesets && DefaultRulesets->AllowedRulesets.Num() > 0)
+		if (Role == ROLE_Authority)
 		{
-			AllowedGameRulesets.Append(DefaultRulesets->AllowedRulesets);
+			GetWorldTimerManager().SetTimer(RuleWaitHandle, this, &AUTLobbyGameState::RulesetsAreLoaded, 1.5f, true);	
 		}
+		
 
-		// If someone has screwed up the ini completely, just load all of the Epic defaults
-		if (AllowedGameRulesets.Num() <= 0)
-		{
-			UUTEpicDefaultRulesets::GetEpicRulesets(AllowedGameRulesets);
-		}
+	}
+}
 
-		UE_LOG(UT,Verbose,TEXT("Loading Settings for %i Rules"), AllowedGameRulesets.Num())
-		for (int32 i=0; i < AllowedGameRulesets.Num(); i++)
+void AUTLobbyGameState::RulesetsAreLoaded()
+{
+	UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
+	if (Role == ROLE_Authority && UTGameEngine->bReceivedTitleFiles)
+	{
+		GetWorldTimerManager().ClearTimer(RuleWaitHandle);
+	}
+
+	// Grab all of the available map assets.
+	TArray<FAssetData> MapAssets;
+	FindAllPlayableMaps(MapAssets);
+
+	for (int32 i=0; i < UTGameEngine->GameRulesets.Num(); i++)
+	{
+		if (!UTGameEngine->GameRulesets[i].bHideFromUI)
 		{
-			UE_LOG(UT,Verbose,TEXT("Loading Rule %s"), *AllowedGameRulesets[i])
-			if (!AllowedGameRulesets[i].IsEmpty())
+			bool bExistsAlready = false;
+			for (int32 j=0; j < AvailableGameRulesets.Num(); j++)
 			{
-				FName RuleName = FName(*AllowedGameRulesets[i]);
-				UUTGameRuleset* NewRuleset = NewObject<UUTGameRuleset>(GetTransientPackage(), RuleName, RF_Transient);
-				if (NewRuleset)
+				if ( AvailableGameRulesets[j]->UniqueTag.Equals(UTGameEngine->GameRulesets[i].UniqueTag, ESearchCase::IgnoreCase) || AvailableGameRulesets[j]->Title.ToLower() == UTGameEngine->GameRulesets[i].Title.ToLower() )
 				{
-					NewRuleset->UniqueTag = AllowedGameRulesets[i];
-					bool bExistsAlready = false;
-					for (int32 j=0; j < AvailableGameRulesets.Num(); j++)
+					bExistsAlready = true;
+					break;
+				}
+			}
+
+			if ( !bExistsAlready )
+			{
+				FActorSpawnParameters Params;
+				Params.Owner = this;
+				AUTReplicatedGameRuleset* NewReplicatedRuleset = GetWorld()->SpawnActor<AUTReplicatedGameRuleset>(Params);
+				if (NewReplicatedRuleset)
+				{
+					// Build out the map info
+					NewReplicatedRuleset->SetRules(UTGameEngine->GameRulesets[i], MapAssets);
+
+					// If this ruleset doesn't have any maps, then don't use it
+					if (NewReplicatedRuleset->MapList.Num() > 0)
 					{
-						if ( AvailableGameRulesets[j]->UniqueTag.Equals(NewRuleset->UniqueTag, ESearchCase::IgnoreCase) || AvailableGameRulesets[j]->Title.ToLower() == NewRuleset->Title.ToLower() )
-						{
-							bExistsAlready = true;
-							break;
-						}
-					}
-
-					if ( !bExistsAlready )
-					{
-						// Before we create the replicated version of this rule.. if it's an epic rule.. insure they are using our defaults.
-						UUTEpicDefaultRulesets::InsureEpicDefaults(NewRuleset);
-
-						FActorSpawnParameters Params;
-						Params.Owner = this;
-						AUTReplicatedGameRuleset* NewReplicatedRuleset = GetWorld()->SpawnActor<AUTReplicatedGameRuleset>(Params);
-						if (NewReplicatedRuleset)
-						{
-							// Build out the map info
-
-							NewReplicatedRuleset->SetRules(NewRuleset, MapAssets);
-
-							// If this ruleset doesn't have any maps, then don't use it
-							if (NewReplicatedRuleset->MapList.Num() > 0)
-							{
-								AvailableGameRulesets.Add(NewReplicatedRuleset);
-							}
-							else
-							{
-								UE_LOG(UT,Warning,TEXT("Detected a ruleset [%s] that has no maps"), *NewRuleset->UniqueTag);
-								NewReplicatedRuleset->Destroy();
-							}
-						}
+						AvailableGameRulesets.Add(NewReplicatedRuleset);
 					}
 					else
 					{
-						UE_LOG(UT,Verbose,TEXT("Rule %s already exists."), *AllowedGameRulesets[i]);
+						UE_LOG(UT,Warning,TEXT("Detected a ruleset [%s] that has no maps"), *UTGameEngine->GameRulesets[i].UniqueTag);
+						NewReplicatedRuleset->Destroy();
 					}
 				}
 			}
+			else
+			{
+				UE_LOG(UT,Verbose,TEXT("Rule already exists."));
+			}
 		}
-	
-		AvailabelGameRulesetCount = AvailableGameRulesets.Num();
-		AllMapsOnServerCount = AllMapsOnServer.Num();
 	}
-
+	AvailabelGameRulesetCount = AvailableGameRulesets.Num();
+	AllMapsOnServerCount = AllMapsOnServer.Num();
 }
 	
 void AUTLobbyGameState::CheckInstanceHealth()

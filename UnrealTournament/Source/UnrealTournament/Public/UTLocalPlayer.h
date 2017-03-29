@@ -1037,6 +1037,14 @@ public:
 		const static FString OnlineSettingsFilename = "UnrealTournamentOnlineSettings.json";
 		return OnlineSettingsFilename;
 	}
+
+	static const FString& GetMCPGameRulesUpdateFilename()
+	{
+		const static FString MCPAnnouncementFilename = "UnrealTournmentMCPGameRulesets.json";
+		return MCPAnnouncementFilename;
+	}
+
+
 	bool IsRankedMatchmakingEnabled(int32 PlaylistId);
 	TArray<int32> ActiveRankedPlaylists;
 	int32 RankedEloRange;
@@ -1391,6 +1399,12 @@ public:
 
 	void RegainFocus();
 
+	/**
+	 *	Get's a rules update from the MCP
+	 **/
+	void GetRulesUpdateFromMCP();
+
+	TArray<FString> TitleFileQueue;
 
 };
 

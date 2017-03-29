@@ -745,6 +745,8 @@ public:
 	// code that fades out the level music while in a game
 	bool bLocalMenusAreActive;
 
+	virtual void RulesetsAreLoaded() {}
+
 protected:
 	virtual AUTLineUpZone* CreateLineUpAtPlayerStart(LineUpTypes LineUpType, class APlayerStart* PlayerSpawn);
 };

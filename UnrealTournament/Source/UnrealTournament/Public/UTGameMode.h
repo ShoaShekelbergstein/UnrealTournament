@@ -26,7 +26,6 @@ namespace MatchState
 }
 
 class AUTPlayerController;
-class UUTGameRuleset;
 
 /** list of bots user asked to put into the game */
 USTRUCT()
@@ -1009,10 +1008,5 @@ public:
 	// If this is a single player game, or an instance server, this will hold the unique tag of the ruleset being used if relevant
 	UPROPERTY(BlueprintReadOnly,Category = Game)
 	FString ActiveRuleTag;
-
-	// Hold a local copy of the ruleset being used.
-	UPROPERTY(BlueprintReadOnly, Category = Game)
-	UUTGameRuleset* ActiveRuleset;
-
 };
 
