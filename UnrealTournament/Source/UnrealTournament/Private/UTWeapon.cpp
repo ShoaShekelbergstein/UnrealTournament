@@ -2421,7 +2421,7 @@ bool AUTWeapon::StackLockerPickup(AUTInventory* ContainedInv)
 	int32 DefaultAmmo = GetClass()->GetDefaultObject<AUTWeapon>()->Ammo;
 	int32 Amount = Cast<AUTWeapon>(ContainedInv) ? Cast<AUTWeapon>(ContainedInv)->Ammo : DefaultAmmo;
 	Amount = FMath::Min(Amount, DefaultAmmo - Ammo);
-	Amount = FMath::Max(Amount, 1);
+	Amount = FMath::Max(Amount, 0);
 	AddAmmo(Amount);
 	return true;
 }
