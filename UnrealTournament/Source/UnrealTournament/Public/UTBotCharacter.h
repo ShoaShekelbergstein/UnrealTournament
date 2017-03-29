@@ -69,13 +69,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray< TSubclassOf<AUTInventory> > CardInventory;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		int32 ExtraArmor;
+
 };
 
 /*
-Add default inventory modifiers
-Health, armor
-Ultimate power
-
 no speed clamp (decelerate rather than clamp)
 
 MaxAdditiveDodgeJumpSpeed = 700.f;

@@ -13,5 +13,5 @@ UUTBotCharacter::UUTBotCharacter(const class FObjectInitializer& ObjectInitializ
 	AirControl = 0.55f;
 	DodgeResetInterval = 0.35f;
 	JumpImpulse = 730.f;
-
+	ExtraArmor = 0;
 }

@@ -3012,7 +3012,11 @@ void AUTGameMode::GiveDefaultInventory(APawn* PlayerPawn)
 			}
 		}
 		UTCharacter->AddDefaultInventory(DefaultInventory);
-
+		AUTPlayerState * PS = Cast<AUTPlayerState>(UTCharacter->PlayerState);
+		if (StartingArmorClass && PS && PS->PlayerCard && (PS->PlayerCard->ExtraArmor > 0))
+		{
+			UTCharacter->SetArmorAmount(StartingArmorClass.GetDefaultObject(), FMath::Max(FMath::Max(UTCharacter->GetArmorAmount(), PS->PlayerCard->ExtraArmor), FMath::Min(100, UTCharacter->GetArmorAmount() + PS->PlayerCard->ExtraArmor)));
+		}
 		AUTGameVolume* GV = UTCharacter->UTCharacterMovement ? Cast<AUTGameVolume>(UTCharacter->UTCharacterMovement->GetPhysicsVolume()) : nullptr;
 		if (GV && GV->bIsTeamSafeVolume)
 		{
