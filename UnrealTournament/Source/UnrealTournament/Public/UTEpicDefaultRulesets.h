@@ -5,41 +5,13 @@
 #include "UTReplicatedGameRuleset.h"
 #include "UTEpicDefaultRulesets.generated.h"
 
-// Eventually, this class needs to be a file pulled from the MCP so we can update
-// our rulesets on the fly.
 
-USTRUCT()
-struct FRuleCategoryData
-{
-	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY()
-	FName CategoryName;
-
-	UPROPERTY()
-	FString CategoryButtonText;
-
-	FRuleCategoryData()
-		: CategoryName(NAME_None)
-		, CategoryButtonText(TEXT(""))
-	{
-	}
-};
-
-UCLASS(Config=Rules)
+UCLASS()
 class UNREALTOURNAMENT_API UUTEpicDefaultRulesets : public UObject
 {
 	GENERATED_UCLASS_BODY()
 
 public:
-
-	UPROPERTY(Config)
-	TArray<FRuleCategoryData> RuleCategories;
-
-	// Holds the complete list of rules allowed in a Hub.  
-	UPROPERTY(Config)
-	TArray<FString> AllowedRulesets;
-	
 	static void GetEpicRulesets(TArray<FString>& Rules)
 	{
 		Rules.Add(EEpicDefaultRuleTags::FlagRun);
