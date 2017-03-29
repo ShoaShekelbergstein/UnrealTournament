@@ -2308,7 +2308,13 @@ void AUTCharacter::PlayFeignDeath()
 		{
 			WeaponAttachment->SetActorHiddenInGame(true);
 		}
-		StartRagdoll();
+
+		// Anim BP is going to handle the ragdoll
+		StopFiring();
+		DisallowWeaponFiring(true);
+		GetCharacterMovement()->StopActiveMovement();
+		GetCharacterMovement()->Velocity = FVector::ZeroVector;
+		bApplyWallSlide = false;
 	}
 	else
 	{
@@ -2316,7 +2322,8 @@ void AUTCharacter::PlayFeignDeath()
 		{
 			WeaponAttachment->SetActorHiddenInGame(false);
 		}
-		StopRagdoll();
+
+		// Anim BP is going to handle leaving ragdoll
 	}
 }
 
