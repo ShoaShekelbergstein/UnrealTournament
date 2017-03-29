@@ -2195,6 +2195,8 @@ namespace EMenuCommand
 	const FName MC_QuickPlayFlagrun = FName(TEXT("MenuOption_QuickPlayFlagrun"));
 	const FName MC_QuickPlayShowdown = FName(TEXT("MenuOption_QuickPlayShowdown"));
 	const FName MC_Challenges = FName(TEXT("MenuOption_QuickPlayChallenges"));
+	const FName MC_Tutorial = FName(TEXT("MenuOption_Tutorial"));
+	const FName MC_InstantAction = FName(TEXT("MenuOption_InstantAction"));
 	const FName MC_FindAMatch = FName(TEXT("MenuOption_FindAMatch"));
 }
 
