@@ -133,6 +133,11 @@ void AUTBasePlayerController::ServerChangeClanName_Implementation(const FString&
 			}
 		}
 		UTPlayerState->ClanName = ClampedName;
+		AUTGameMode* Game = GetWorld()->GetAuthGameMode<AUTGameMode>();
+		if (Game && Game->bUseProtoTeams && !UTPlayerState->ClanName.IsEmpty())
+		{
+			UTPlayerState->SetPlayerCard(UTPlayerState->ClanName);
+		}
 	}
 }
 

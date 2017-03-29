@@ -766,6 +766,10 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 				{
 					PS->SetPlayerCard(InOpt);
 				}
+				else if (!PS->ClanName.IsEmpty())
+				{
+					PS->SetPlayerCard(PS->ClanName);
+				}
 			}
 			else
 			{
