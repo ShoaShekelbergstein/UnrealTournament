@@ -230,8 +230,8 @@ TSharedRef<SWidget> SUTMainMenu::AddPlayNow()
 	];
 
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayDM", "QuickPlay Deathmatch"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch,	EEpicDefaultRuleTags::Deathmatch));
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRun", "QuickPlay Flag Run"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRun));
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRunVSAI", "QuickPlay Flag Run Coop vs AI"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRunVSAI));
+	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRun", "QuickPlay Blitz"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRun));
+	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRunVSAI", "QuickPlay Blitz Coop vs AI"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRunVSAI));
 	DropDownButton->AddSpacer();
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_ChallengesGame", "Single Player Challenges"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowGamePanel));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_CreateGame", "Custom Single Player Match"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowCustomGamePanel));

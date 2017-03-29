@@ -2578,7 +2578,7 @@ TSharedRef<SWidget> AUTPlayerState::BuildRankInfo()
 	.Padding(10.0f, 0.0f, 10.0f, 5.0f)
 	.AutoHeight()
 	[
-		BuildRank(AUTFlagRunGame::StaticClass()->GetDefaultObject<AUTGameMode>(), false, NSLOCTEXT("Generic", "FlagRunRank", "Flag Run Rank :"))
+		BuildRank(AUTFlagRunGame::StaticClass()->GetDefaultObject<AUTGameMode>(), false, NSLOCTEXT("Generic", "FlagRunRank", "Blitz Rank :"))
 	];
 	VBox->AddSlot()
 	.Padding(10.0f, 0.0f, 10.0f, 5.0f)

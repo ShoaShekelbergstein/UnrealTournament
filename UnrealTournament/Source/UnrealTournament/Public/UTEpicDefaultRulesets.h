@@ -471,9 +471,9 @@ public:
 			NewRuleset->Categories.Empty();
 			NewRuleset->Categories.Add(TEXT("Featured"));
 
-			NewRuleset->Title = TEXT("Flag Run");
+			NewRuleset->Title = TEXT("Blitz");
 			NewRuleset->Tooltip = TEXT("Attackers must deliver their flag to the enemy base.");
-			NewRuleset->Description = TEXT("Flag Run.\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
+			NewRuleset->Description = TEXT("Blitz.\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
 			NewRuleset->MaxPlayers = 10;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTFlagRunGame");
@@ -500,9 +500,9 @@ public:
 			NewRuleset->Categories.Empty();
 			NewRuleset->Categories.Add(TEXT("Featured"));
 
-			NewRuleset->Title = TEXT("FlagRun vs AI");
+			NewRuleset->Title = TEXT("Blitz vs AI");
 			NewRuleset->Tooltip = TEXT("Co-op vs AI.  Attackers must deliver their flag to the enemy base.");
-			NewRuleset->Description = TEXT("Flag Run Coop vs AI.\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
+			NewRuleset->Description = TEXT("Blitz Coop vs AI.\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
 			NewRuleset->MaxPlayers = 5;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTFlagRunGame");

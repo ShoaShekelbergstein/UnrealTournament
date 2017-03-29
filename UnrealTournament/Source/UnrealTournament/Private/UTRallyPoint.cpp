@@ -562,7 +562,7 @@ void AUTRallyPoint::OnRallyTimeRemaining()
 	RallyTimeRemaining = ReplicatedRallyTimeRemaining;
 }
 
-// flag run game has pointer to active flag, use this to determine distance. base on flag, not carrier
+// Blitz game has pointer to active flag, use this to determine distance. base on flag, not carrier
 void AUTRallyPoint::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

@@ -50,7 +50,7 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	SilverScore = 2;
 	BronzeScore = 1;
 	DefenseScore = 1;
-	DisplayName = NSLOCTEXT("UTGameMode", "FLAGRUN", "Flag Run");
+	DisplayName = NSLOCTEXT("UTGameMode", "Blitz", "Blitz");
 	bHideInUI = false;
 	bWeaponStayActive = false;
 	bAllowPickupAnnouncements = true;

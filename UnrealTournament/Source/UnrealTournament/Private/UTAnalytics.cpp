@@ -1060,7 +1060,7 @@ void FUTAnalytics::FireEvent_UTMatchMakingFailed(AUTBasePlayerController* UTPC, 
 /*
 * @EventName FlagRunRoundEnd
 *
-* @Trigger Fires at the end of each round of Flag Run
+* @Trigger Fires at the end of each round of Blitz
 *
 * @Type Sent by the Server
 *
@@ -1339,7 +1339,7 @@ void FUTAnalytics::FireEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC
 * @EventParam TDMTutorialCompleted If the TDM tutorial has been previously completed
 * @EventParam CTFTutorialCompleted If the CTF tutorial has been previously completed
 * @EventParam DuelTutorialCompleted If the Duel tutorial has been previously completed
-* @EventParam FlagRunTutorialCompleted If the Flag Run tutorial has been previously completed
+* @EventParam FlagRunTutorialCompleted If the Blitz tutorial has been previously completed
 * @EventParam ShowdownTutorialCompleted If the Showdown tutorial has been previously completed
 *
 * @Comments
