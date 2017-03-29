@@ -5147,6 +5147,7 @@ void AUTCharacter::PlayerCardUpdated()
 		UTCharacterMovement->MaxMultiJumpCount = PS->PlayerCard->MaxMultiJumpCount;
 		UTCharacterMovement->MaxWalkSpeed = PS->PlayerCard->MaxRunSpeed;
 		UTCharacterMovement->MultiJumpImpulse = PS->PlayerCard->MultiJumpImpulse;
+		UTCharacterMovement->DodgeJumpImpulse = PS->PlayerCard->MultiJumpImpulse;
 		UTCharacterMovement->bCanDodge = PS->PlayerCard->bCanDodge;
 		UTCharacterMovement->MaxCustomMovementSpeed = UTCharacterMovement->MaxWalkSpeed;
 		UTCharacterMovement->AirControl = PS->PlayerCard->AirControl;
@@ -5157,6 +5158,10 @@ void AUTCharacter::PlayerCardUpdated()
 		UTCharacterMovement->JumpZVelocity = PS->PlayerCard->JumpImpulse;
 		UTCharacterMovement->MaxWallRunFallZ = PS->PlayerCard->MaxWallRunFallZ;
 		UTCharacterMovement->WallRunGravityScaling = PS->PlayerCard->WallRunGravityScaling;
+		UTCharacterMovement->MaxAdditiveDodgeJumpSpeed = PS->PlayerCard->MaxAdditiveDodgeJumpSpeed;
+		UTCharacterMovement->DodgeImpulseHorizontal = PS->PlayerCard->DodgeImpulseHorizontal;
+		UTCharacterMovement->DodgeImpulseVertical = PS->PlayerCard->DodgeImpulseVertical;
+		UTCharacterMovement->DodgeMaxHorizontalVelocity = PS->PlayerCard->DodgeMaxHorizontalVelocity;
 	}
 }
 

@@ -16,4 +16,8 @@ UUTBotCharacter::UUTBotCharacter(const class FObjectInitializer& ObjectInitializ
 	ExtraArmor = 0;
 	MaxWallRunFallZ = -120.f;
 	WallRunGravityScaling = 0.08f;
+	MaxAdditiveDodgeJumpSpeed = 700.f;
+	DodgeImpulseHorizontal = 1500.f;
+	DodgeImpulseVertical = 500.f;
+	DodgeMaxHorizontalVelocity = 1700.f;
 }

@@ -46,14 +46,6 @@ public:
 	UPROPERTY(EditAnywhere, Meta = (MetaClass = "UTCharacterVoice"), Category = Cosmetics)
 	FStringClassReference CharacterVoice;
 
-	/** Whether this character can dodge. */
-	UPROPERTY(EditAnywhere, Category = Movement)
-		bool bCanDodge;
-
-	/** Time after landing dodge before another can be attempted. */
-	UPROPERTY(EditAnywhere, Category = Movement)
-		float DodgeResetInterval;
-
 	/** If greater than 1, can multijump. */
 	UPROPERTY(EditAnywhere, Category = Movement)
 		int32 MaxMultiJumpCount;
@@ -80,6 +72,30 @@ public:
 	UPROPERTY(EditAnywhere, Category = Movement)
 		float WallRunGravityScaling;
 
+	/** Whether this character can dodge. */
+	UPROPERTY(EditAnywhere, Category = Dodging)
+		bool bCanDodge;
+
+	/** Time after landing dodge before another can be attempted. */
+	UPROPERTY(EditAnywhere, Category = Dodging)
+		float DodgeResetInterval;
+
+	/** Dodge impulse in XY plane */
+	UPROPERTY(EditAnywhere, Category = Dodging)
+		float DodgeImpulseHorizontal;
+
+	/** Dodge impulse added in Z direction */
+	UPROPERTY(EditAnywhere, Category = Dodging)
+		float DodgeImpulseVertical;
+
+	/** Max positive Z speed with additive Wall Dodge Vertical Impulse.  Wall Dodge will not add impulse making vertical speed higher than this amount. */
+	UPROPERTY(EditAnywhere, Category = Dodging)
+		float MaxAdditiveDodgeJumpSpeed;
+
+	/** Maximum XY velocity of dodge (dodge impulse + current movement combined). */
+	UPROPERTY(EditAnywhere, Category = Dodging)
+		float DodgeMaxHorizontalVelocity;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray< TSubclassOf<AUTInventory> > CardInventory;
 
@@ -90,20 +106,15 @@ public:
 /*
 no speed clamp (decelerate rather than clamp)
 
-MaxAdditiveDodgeJumpSpeed = 700.f;
-DodgeJumpImpulse = 600.f;
 MaxSlideSpeed = 1230.f;
-
 MaxFloorSlideSpeed = 900.f;
 MaxInitialFloorSlideSpeed = 1350.f;
 FloorSlideDuration = 0.7f;
 FloorSlideEndingSpeedFactor = 0.4f;
 FloorSlideSlopeBraking = 2.7f;
 
-DodgeImpulseHorizontal = 1500.f;
 DodgeMaxHorizontalVelocity = 1700.f;
 WallDodgeSecondImpulseVertical = 320.f;
-DodgeImpulseVertical = 500.f;
 WallDodgeImpulseHorizontal = 1300.f;
 WallDodgeImpulseVertical = 470.f;
 
