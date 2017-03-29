@@ -1133,11 +1133,6 @@ void UUTGameEngine::Start()
 		}
 	}
 
-	for (int32 i=0; i < GameRulesets.Num(); i++)
-	{
-		UE_LOG(UT,Warning, TEXT("Ruleset %s"), *GameRulesets[i].UniqueTag);
-	}
-
 	Super::Start();
 
 	if (IsRunningDedicatedServer())
@@ -1205,8 +1200,8 @@ void UUTGameEngine::OnReadTitleFileComplete(bool bWasSuccessful, const FString& 
 		}
 	}
 }
-
-FUTGameRuleset* UUTGameEngine::GetRuleset(const FString& RulesetTag)
+FUTGameRuleset* UUTGameEngine::Ge
+tRuleset(const FString& RulesetTag)
 {
 	for (int32 i=0; i < GameRulesets.Num(); i++)
 	{
