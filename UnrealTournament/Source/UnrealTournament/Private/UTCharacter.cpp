@@ -3534,6 +3534,13 @@ void AUTCharacter::AddDefaultInventory(const TArray<TSubclassOf<AUTInventory>>& 
 
 			UTPlayerState->PreservedKeepOnDeathInventoryList.Empty();
 		}
+		if (UTPlayerState->PlayerCard)
+		{
+			for (int32 i = 0; i<UTPlayerState->PlayerCard->CardInventory.Num(); i++)
+			{
+				CreateInventory(UTPlayerState->PlayerCard->CardInventory[i]);
+			}
+		}
 	}
 
 	// Add the default character inventory

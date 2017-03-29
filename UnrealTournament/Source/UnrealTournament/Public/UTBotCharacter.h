@@ -67,6 +67,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = Movement)
 		float JumpImpulse;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray< TSubclassOf<AUTInventory> > CardInventory;
 };
 
 /*
