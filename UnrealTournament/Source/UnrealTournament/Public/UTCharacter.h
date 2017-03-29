@@ -316,9 +316,6 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
 	class USkeletalMeshComponent* FirstPersonMesh;
 	
-	UPROPERTY(BlueprintReadOnly, Category = Mesh)
-	TArray<UMaterialInstanceDynamic*> FirstPersonMeshMIDs;
-
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	class UCameraComponent* CharacterCameraComponent;
