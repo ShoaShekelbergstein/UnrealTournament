@@ -74,6 +74,8 @@ Add default inventory modifiers
 Health, armor
 Ultimate power
 
+no speed clamp (decelerate rather than clamp)
+
 MaxAdditiveDodgeJumpSpeed = 700.f;
 DodgeJumpImpulse = 600.f;
 MaxSlideSpeed = 1230.f;
@@ -84,7 +86,6 @@ FloorSlideDuration = 0.7f;
 FloorSlideEndingSpeedFactor = 0.4f;
 FloorSlideSlopeBraking = 2.7f;
 
-MaxMultiJumpZSpeed = 280.f;
 DodgeImpulseHorizontal = 1500.f;
 DodgeMaxHorizontalVelocity = 1700.f;
 WallDodgeSecondImpulseVertical = 320.f;

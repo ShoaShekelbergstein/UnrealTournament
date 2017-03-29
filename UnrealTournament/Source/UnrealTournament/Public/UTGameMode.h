@@ -3,7 +3,6 @@
 
 #include "TAttributeProperty.h"
 #include "UTServerBeaconLobbyClient.h"
-#include "UTReplicatedLoadoutInfo.h"
 #include "UTAntiCheatModularFeature.h"
 #include "UTBotPlayer.h"
 #include "UTGameMode.generated.h"
@@ -26,75 +25,8 @@ namespace MatchState
 
 }
 
-USTRUCT()
-struct FLoadoutInfo
-{
-	GENERATED_USTRUCT_BODY()
-
-	// Holds a descriptor for this loadout.  It will be used to look things up
-	UPROPERTY()
-	FName ItemTag;
-
-	// The class of the weapon to include
-	UPROPERTY()
-	FString ItemClassStringRef;
-
-	// The class of the weapon to include
-	UPROPERTY()
-	TSubclassOf<AUTInventory> ItemClass;
-
-	// What rounds should this weapon be available
-	UPROPERTY()
-	uint8 RoundMask;
-
-	// How much should this weapon cost to be included in the loadout
-	UPROPERTY()
-	float InitialCost;
-
-	// If true, this item will always be included in the loadout.
-	UPROPERTY()
-	uint32 bDefaultInclude:1;
-
-	// If true, this item is only available for purchase
-	UPROPERTY()
-	uint32 bPurchaseOnly:1;
-
-	FLoadoutInfo()
-		: ItemTag(NAME_None)
-		, ItemClass(nullptr)
-		, RoundMask(0x00)
-		, InitialCost(0.0f)
-		, bDefaultInclude(false)
-		, bPurchaseOnly(false)
-	{}
-};
-
-class AUTReplicatedLoadoutInfo;
 class AUTPlayerController;
 class UUTGameRuleset;
-
-USTRUCT()
-struct FLoadoutPack
-{
-	GENERATED_USTRUCT_BODY()
-
-public:
-	UPROPERTY()
-	FLoadoutPackReplicatedInfo PackInfo;
-
-	// Holds a list of items in this pack
-	UPROPERTY()
-	TArray<FName> ItemsInPack;
-
-	// Holds a reference to the replicated loadout info for each item in this pack
-	UPROPERTY()
-	TArray<AUTReplicatedLoadoutInfo*> LoadoutCache;
-
-	// This value will be added to the default health of a new character
-	UPROPERTY()
-	int32 SpawnHealthModifier;
-
-};
 
 /** list of bots user asked to put into the game */
 USTRUCT()
@@ -926,14 +858,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Game")
 	bool bNoDefaultLeaderHat;
 
-	// Holds a list of items that are available for loadouts in this mode
-	UPROPERTY(Config)
-	TArray<FLoadoutInfo> AvailableLoadout;
-
-	// Holds a collection of potential loadout packs available in this mode.
-	UPROPERTY(Config)
-	TArray<FLoadoutPack> AvailableLoadoutPacks;
-
 	// Called when the player attempts to restart using AltFire
 	UFUNCTION(BlueprintNativeEvent, Category="Game")
 	bool PlayerCanAltRestart( APlayerController* Player );
@@ -1008,9 +932,6 @@ public:
 	// This is the match's combined ELO rank.  It incorporates the both the level and the sublevel and is set with the url option
 	// ?RankCheck=xxxxx
 	int32 RankCheck;
-
-	// Return INDEX_NONE if thbe pack is invalid, otherwise returns the index of the pack
-	virtual int32 LoadoutPackIsValid(const FName& PackTag);
 
 #if !UE_SERVER
 	// The hud will create a spawn window that is displayed when the player has died.  

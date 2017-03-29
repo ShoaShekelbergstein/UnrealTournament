@@ -1092,27 +1092,6 @@ public:
 	virtual void SetOverrideHatClass(const FString& NewOverrideHatClass);
 
 protected:
-	UPROPERTY(Replicated)
-	float AvailableCurrency;
-
-public:
-	UPROPERTY(Replicated)
-	TArray<AUTReplicatedLoadoutInfo*> Loadout;
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerUpdateLoadout(const TArray<AUTReplicatedLoadoutInfo*>& NewLoadout);
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerBuyLoadout(AUTReplicatedLoadoutInfo* DesiredLoadout);
-
-	UFUNCTION(Client, Reliable)
-	virtual void ClientShowLoadoutMenu();
-
-	virtual float GetAvailableCurrency();
-
-	virtual void AdjustCurrency(float Adjustment);
-
-protected:
 	TArray<FTempBanInfo> BanVotes;
 
 public:
@@ -1185,47 +1164,11 @@ public:
 
 	virtual void MakeJsonReport(TSharedPtr<FJsonObject> JsonObject);
 
-	// Will hold the tag of the current loadout to apply to this character.
-	UPROPERTY(Replicated)
-	FName CurrentLoadoutPackTag;
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	virtual void ServerSetLoadoutPack(const FName& NewLoadoutPackTag);
-
 	UFUNCTION(Server, Reliable, WithValidation)
 	virtual void ServerSetBoostItem(int PowerupIndex);
 
-	// DO NOT USE: This is WIP temp code and may go away.
-	UPROPERTY(Replicated)
-	AActor* CriticalObject;
-
-	// DO NOT USE: This is WIP temp code and may go away.
-	UPROPERTY(Replicated)
-	AUTReplicatedLoadoutInfo* PrimarySpawnInventory;
-
-	// DO NOT USE: This is WIP temp code and may go away.
-	UPROPERTY(Replicated)
-	AUTReplicatedLoadoutInfo* SecondarySpawnInventory;
-
-	// Holds a list of loadout items that are allowed by this player
-	UPROPERTY(Replicated)
-	TArray<FName> AllowedLoadoutItemTags;
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerUnlockItem(FName ItemTag, bool bSecondary);
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerSelectLoadout(FName ItemTag, bool bSecondary);
-
-	UPROPERTY(Replicated, replicatedUsing = OnUnlockList)
-	TArray<FName> UnlockList;
-
 	UPROPERTY(BlueprintReadOnly, Category = "Game")
 	bool bIsTalking;
-
-protected:
-	UFUNCTION()
-	virtual void OnUnlockList();
 
 public:
 	/** Holds the last known location of the pawn associated with this pri */

@@ -1,7 +1,6 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
 
-#include "UTReplicatedLoadoutInfo.h"
 #include "ChartCreation.h"
 
 #include "UTGameState.generated.h"
@@ -13,8 +12,6 @@ class AUTReplicatedMapInfo;
 class AUTLineUpHelper;
 
 enum class LineUpTypes : uint8;
-
-struct FLoadoutInfo;
 
 UCLASS(Config = Game)
 class UNREALTOURNAMENT_API AUTGameState : public AGameState
@@ -474,19 +471,6 @@ public:
 	UPROPERTY(Replicated)
 	FGuid HubGuid;
 
-	// Holds a list of weapons available for loadouts
-	UPROPERTY(Replicated)
-	TArray<AUTReplicatedLoadoutInfo*> AvailableLoadout;
-
-	// Adds a weapon to the list of possible loadout weapons.
-	virtual void AddLoadoutItem(const FLoadoutInfo& Loadout);
-
-	// Finds a loadout item
-	AUTReplicatedLoadoutInfo* FindLoadoutItem(const FName& ItemTag);
-
-	// Adjusts the cost of a weapon available for loadouts
-	virtual void AdjustLoadoutCost(TSubclassOf<AUTInventory> ItemClass, float NewCost);
-
 	/** Game specific rating of a player as a desireable camera focus for spectators. */
 	virtual float ScoreCameraView(AUTPlayerState* InPS, AUTCharacter *Character)
 	{
@@ -648,13 +632,6 @@ public:
 	}
 
 	virtual void MakeJsonReport(TSharedPtr<FJsonObject> JsonObject);
-
-	UPROPERTY(Replicated)
-	TArray<FLoadoutPackReplicatedInfo> SpawnPacks;
-
-	// If true, the weapons will carry a weight that will affect the overall max speeds of the player
-	UPROPERTY(Replicated)
-	bool bWeightedCharacter;
 
 	/** if > 0 and BoostRechargeMaxCharges > 0 then player's activatable boost recharges after this many seconds */
 	UPROPERTY(BlueprintReadWrite, Replicated)

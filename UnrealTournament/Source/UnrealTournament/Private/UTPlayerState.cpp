@@ -88,7 +88,6 @@ AUTPlayerState::AUTPlayerState(const class FObjectInitializer& ObjectInitializer
 	EmoteSpeed = 1.0f;
 	bAnnounceWeaponSpree = false;
 	bAnnounceWeaponReward = false;
-	CurrentLoadoutPackTag = NAME_None;
 	RespawnWaitTime = 0.f;
 
 	CoolFactorCombinationWindow = 5.0f;
@@ -152,9 +151,7 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME(AUTPlayerState, bSpecialTeamPlayer);
 	DOREPLIFETIME(AUTPlayerState, bCanRally);
 	DOREPLIFETIME(AUTPlayerState, OverrideHatClass);
-	DOREPLIFETIME(AUTPlayerState, Loadout);
 	DOREPLIFETIME(AUTPlayerState, KickCount);
-	DOREPLIFETIME(AUTPlayerState, AvailableCurrency);
 	DOREPLIFETIME(AUTPlayerState, StatsID);
 	DOREPLIFETIME(AUTPlayerState, FavoriteWeapon);
 	DOREPLIFETIME(AUTPlayerState, bIsRconAdmin);
@@ -191,15 +188,6 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 
 	DOREPLIFETIME_CONDITION(AUTPlayerState, bDrawNameOnDeathIndicator, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, HUDIcon, COND_InitialOnly);
-
-	DOREPLIFETIME(AUTPlayerState, CurrentLoadoutPackTag);
-
-	DOREPLIFETIME_CONDITION(AUTPlayerState, PrimarySpawnInventory, COND_OwnerOnly);
-	DOREPLIFETIME_CONDITION(AUTPlayerState, SecondarySpawnInventory, COND_OwnerOnly);
-	DOREPLIFETIME_CONDITION(AUTPlayerState, AllowedLoadoutItemTags, COND_OwnerOnly);
-
-	DOREPLIFETIME_CONDITION(AUTPlayerState, CriticalObject, COND_OwnerOnly);
-	DOREPLIFETIME_CONDITION(AUTPlayerState, UnlockList, COND_OwnerOnly);
 
 	DOREPLIFETIME(AUTPlayerState, LineUpLocation);
 
@@ -3385,54 +3373,6 @@ void AUTPlayerState::OnRepOverrideHat()
 	}
 }
 
-bool AUTPlayerState::ServerUpdateLoadout_Validate(const TArray<AUTReplicatedLoadoutInfo*>& NewLoadout) { return true; }
-void AUTPlayerState::ServerUpdateLoadout_Implementation(const TArray<AUTReplicatedLoadoutInfo*>& NewLoadout)
-{
-	Loadout = NewLoadout;
-}
-
-bool AUTPlayerState::ServerBuyLoadout_Validate(AUTReplicatedLoadoutInfo* DesiredLoadout) { return true; }
-void AUTPlayerState::ServerBuyLoadout_Implementation(AUTReplicatedLoadoutInfo* DesiredLoadout)
-{
-	AUTCharacter* UTChar = GetUTCharacter();
-	if (UTChar != nullptr)
-	{
-		if (DesiredLoadout->CurrentCost <= GetAvailableCurrency())
-		{
-				UTChar->AddInventory(GetWorld()->SpawnActor<AUTInventory>(DesiredLoadout->ItemClass, FVector(0.0f), FRotator(0, 0, 0)), true);
-				AdjustCurrency(DesiredLoadout->CurrentCost * -1);
-		}
-		else
-		{
-			AUTPlayerController* PC = Cast<AUTPlayerController>(GetOwner());	
-			if (PC)
-			{
-				PC->ClientReceiveLocalizedMessage(UUTGameMessage::StaticClass(),14, this);
-			}
-		}
-	}
-}
-
-void AUTPlayerState::AdjustCurrency(float Adjustment)
-{
-	AvailableCurrency += Adjustment;
-	if (AvailableCurrency < 0.0) AvailableCurrency = 0.0f;
-}
-
-float AUTPlayerState::GetAvailableCurrency()
-{
-	return AvailableCurrency;
-}
-
-void AUTPlayerState::ClientShowLoadoutMenu_Implementation()
-{
-	AUTPlayerController* PC = Cast<AUTPlayerController>(GetOwner());
-	if ( PC && PC->Player && Cast<UUTLocalPlayer>(PC->Player) )
-	{
-		Cast<UUTLocalPlayer>(PC->Player)->OpenLoadout();
-	}
-}
-
 void AUTPlayerState::LogBanRequest(AUTPlayerState* Voter)
 {
 	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
@@ -3911,8 +3851,6 @@ const FSlateBrush* AUTPlayerState::GetELOBadgeNumberImage(AUTBaseGameMode* Defau
 }
 #endif
 
-
-
 void AUTPlayerState::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject)
 {
 	JsonObject->SetStringField(TEXT("PlayerName"), PlayerName);
@@ -3938,97 +3876,6 @@ void AUTPlayerState::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject)
 	JsonObject->SetNumberField(TEXT("No_Showdowns"), ShowdownMatchesPlayed);
 	JsonObject->SetNumberField(TEXT("FlagRunRank"), FlagRunRank);
 	JsonObject->SetNumberField(TEXT("No_FlagRun_Matches_Played"), FlagRunMatchesPlayed);
-}
-
-bool AUTPlayerState::ServerSetLoadoutPack_Validate(const FName& NewLoadoutPackTag) { return true; }
-void AUTPlayerState::ServerSetLoadoutPack_Implementation(const FName& NewLoadoutPackTag)
-{
-	if (NewLoadoutPackTag != CurrentLoadoutPackTag)
-	{
-		AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-		if (GameMode)
-		{
-			if (GameMode->LoadoutPackIsValid(NewLoadoutPackTag) != INDEX_NONE)
-			{
-				CurrentLoadoutPackTag = NewLoadoutPackTag;
-			}
-		}
-	}
-}
-
-
-bool AUTPlayerState::ServerUnlockItem_Validate(FName ItemTag, bool bSecondary) { return true; }
-void AUTPlayerState::ServerUnlockItem_Implementation(FName ItemTag, bool bSecondary)
-{
-	if (UnlockList.Find(ItemTag) == INDEX_NONE)
-	{
-		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-		if (UTGameState)
-		{
-			AUTReplicatedLoadoutInfo* UnlockLoadout = UTGameState->FindLoadoutItem(ItemTag);
-			if (UnlockLoadout)
-			{
-				AdjustCurrency(UnlockLoadout->CurrentCost * -1);
-				UnlockList.Add(ItemTag);
-				ServerSelectLoadout(ItemTag, bSecondary);
-				if (GetWorld()->GetNetMode() != NM_DedicatedServer)
-				{
-					OnUnlockList();
-				}
-			}
-		}
-	}
-
-	for (int32 i=0; i < UnlockList.Num() ; i++)
-	{
-		UE_LOG(UT,Log,TEXT("Unlock: %s"), *UnlockList[i].ToString());
-	}
-}
-
-bool AUTPlayerState::ServerSelectLoadout_Validate(FName ItemTag, bool bSecondary) { return true; }
-void AUTPlayerState::ServerSelectLoadout_Implementation(FName ItemTag, bool bSecondary)
-{
-	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-	if (UTGameState)
-	{
-		AUTReplicatedLoadoutInfo* RepLoadout = UTGameState->FindLoadoutItem(ItemTag);
-		if (RepLoadout)
-		{
-			if (bSecondary)
-			{
-				SecondarySpawnInventory = RepLoadout;
-			}
-			else
-			{
-				PrimarySpawnInventory = RepLoadout;
-			}
-		}
-	}
-
-}
-
-void AUTPlayerState::OnUnlockList()
-{
-	// Need a better way but until I'm sure this is what we want this will do.
-	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-	if (UTGameState)
-	{
-		for (int32 j=0; j < UTGameState->AvailableLoadout.Num();j++)
-		{
-			UTGameState->AvailableLoadout[j]->bUnlocked = false;
-		}
-
-		for (int32 i=0; i < UnlockList.Num(); i++)
-		{
-			for (int32 k = 0; k < UTGameState->AvailableLoadout.Num(); k++)
-			{
-				if (UTGameState->AvailableLoadout[k]->ItemTag == UnlockList[i])
-				{
-					UTGameState->AvailableLoadout[k]->bUnlocked = true;
-				}
-			}
-		}
-	}
 }
 
 bool AUTPlayerState::ServerSetBoostItem_Validate(int PowerupIndex) { return true; }

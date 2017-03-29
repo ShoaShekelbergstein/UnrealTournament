@@ -1720,21 +1720,6 @@ namespace AchievementIDs
 	const FName FacePumpkins(TEXT("FacePumpkins"));
 };
 
-USTRUCT()
-struct FLoadoutPackReplicatedInfo
-{
-	GENERATED_USTRUCT_BODY()
-
-public:
-	// Holds the name of of this pack
-	UPROPERTY()
-	FName PackTag;
-
-	// The description for this pack
-	UPROPERTY()
-	FString PackTitle;
-};
-
 namespace EQuickStatsLayouts
 {
 	const FName Arc = FName(TEXT("Arc"));

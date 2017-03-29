@@ -862,14 +862,10 @@ public:
 
 protected:
 #if !UE_SERVER
-	TSharedPtr<SUTMenuBase> LoadoutMenu;
 	TSharedPtr<SUTMapVoteDialog> MapVoteMenu;
 #endif
 
 public:
-	virtual void OpenLoadout(bool bBuyMenu = false);
-	virtual void CloseLoadout();
-
 	virtual void OpenMapVote(AUTGameState* GameState);
 	virtual void CloseMapVote();
 

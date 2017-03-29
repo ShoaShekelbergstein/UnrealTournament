@@ -49,14 +49,12 @@
 #include "UTFlagRunGameState.h"
 #include "UTRemoteRedeemer.h"
 #include "UTKillerTarget.h"
-#include "UTGauntletFlag.h"
 #include "UTTutorialAnnouncement.h"
 #include "UTLineUpHelper.h"
 #include "UTRallyPoint.h"
 #include "UTDemoRecSpectator.h"
 #include "UTFlagRunScoreboard.h"
 #include "UTFlagRunPvEHUD.h"
-#include "UTGauntletGameMessage.h"
 #include "BlueprintContextLibrary.h"
 #include "PartyContext.h"
 
@@ -495,8 +493,6 @@ void AUTPlayerController::SetupInputComponent()
 	InputComponent->BindAction("PlayTaunt2", IE_Pressed, this, &AUTPlayerController::PlayTaunt2);
 	InputComponent->BindAction("PlayGroupTaunt", IE_Pressed, this, &AUTPlayerController::PlayGroupTaunt);
 
-	InputComponent->BindAction("ShowBuyMenu", IE_Pressed, this, &AUTPlayerController::ShowBuyMenu);
-
 	InputComponent->BindAction("DropCarriedObject", IE_Pressed, this, &AUTPlayerController::DropCarriedObject);
 	InputComponent->BindAction("DropCarriedObject", IE_Released, this, &AUTPlayerController::StopDropCarriedObject);
 
@@ -505,7 +501,6 @@ void AUTPlayerController::SetupInputComponent()
 
 	InputComponent->BindAction("ToggleWeaponWheel", IE_Pressed, this, &AUTPlayerController::ShowWeaponWheel);
 	InputComponent->BindAction("ToggleWeaponWheel", IE_Released, this, &AUTPlayerController::HideWeaponWheel);
-		
 
 	InputComponent->BindAction("ActivateSpecial", IE_Pressed, this, &AUTPlayerController::ActivateSpecial);
 
@@ -1159,17 +1154,7 @@ void AUTPlayerController::SwitchWeapon(int32 Group)
 {
 	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
 	int32 AdjustedGroup = Group -1;
-	if ( UTGameState && UTPlayerState && 
-		(UTPlayerState->bOutOfLives || (UTCharacter ? UTCharacter->IsDead() : (GetPawn() == NULL))) &&
-		(AdjustedGroup >= 0 && UTGameState->SpawnPacks.IsValidIndex(AdjustedGroup)) )
-	{
-		UE_LOG(UT,Log,TEXT("ServerSetLoadoutPack %s"),*UTGameState->SpawnPacks[AdjustedGroup].PackTag.ToString());
-		UTPlayerState->ServerSetLoadoutPack(UTGameState->SpawnPacks[AdjustedGroup].PackTag);
-	}
-	else
-	{
-		SwitchWeaponGroup(Group);
-	}
+	SwitchWeaponGroup(Group);
 }
 
 void AUTPlayerController::DemoRestart()
@@ -4266,11 +4251,6 @@ void AUTPlayerController::ResolveKeybind(FString Command, TArray<FString>& Keys,
 	}
 }
 
-void AUTPlayerController::SkullPickedUp()
-{
-	// deprecated
-}
-
 void AUTPlayerController::PumpkinPickedUp(float GainedAmount, float GoalAmount)
 {
 	ClientPumpkinPickedUp(GainedAmount, GoalAmount);
@@ -4284,20 +4264,6 @@ void AUTPlayerController::ClientPumpkinPickedUp_Implementation(float GainedAmoun
 	TotalPumpkins += GainedAmount;
 	TotalPumpkins = FMath::Min(GoalAmount, TotalPumpkins);
 	UUTGameplayStatics::SetBestTime(GetWorld(), FacePumpkins, TotalPumpkins);
-}
-
-void AUTPlayerController::DebugTest(FString TestCommand)
-{
-
-	int32 Index = FCString::Atoi(*TestCommand);
-
-	ClientReceiveLocalizedMessage(UUTGauntletGameMessage::StaticClass(), Index, PlayerState, nullptr, nullptr);
-	Super::DebugTest(TestCommand);
-
-}
-
-void AUTPlayerController::ServerDebugTest_Implementation(const FString& TestCommand)
-{
 }
 
 void AUTPlayerController::ClientRequireContentItemListComplete_Implementation()
@@ -4485,36 +4451,6 @@ void AUTPlayerController::UpdateRotation(float DeltaTime)
 	}
 
 	Super::UpdateRotation(DeltaTime);
-}
-
-void AUTPlayerController::ClientOpenLoadout_Implementation(bool bBuyMenu)
-{
-	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
-	if (LocalPlayer)
-	{
-		LocalPlayer->OpenLoadout(bBuyMenu);
-	}
-}
-
-void AUTPlayerController::ShowBuyMenu()
-{
-	//Prevents the menu from opening/closing by rapid inputs
-	if (((GetWorld()->GetTimeSeconds() - LastBuyMenuOpenTime) >= BuyMenuToggleDelay) || (LastBuyMenuOpenTime <= SMALL_NUMBER))
-	{
-		LastBuyMenuOpenTime = GetWorld()->GetTimeSeconds();
-
-		// It's silly to send this to the server before handling it here.  I probably should just for safe keepeing but for now
-		// just locally.
-
-		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS && GS->AvailableLoadout.Num() > 0)
-		{
-			if (GetPawn() == nullptr || !GS->HasMatchStarted() || GS->IsMatchIntermission())
-			{
-				ClientOpenLoadout_Implementation(true);
-			}
-		}
-	}
 }
 
 void AUTPlayerController::DropCarriedObject()

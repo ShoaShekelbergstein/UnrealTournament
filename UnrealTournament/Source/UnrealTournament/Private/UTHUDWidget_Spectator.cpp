@@ -104,29 +104,6 @@ void UUTHUDWidget_Spectator::DrawSimpleMessage(FText SimpleMessage, float DeltaT
 	DrawText(SimpleMessage, TextPosition, YOffset + 20.f*RenderScale, UTHUDOwner->MediumFont, RenderScale, 1.f, GetMessageColor(), ETextHorzPos::Left, ETextVertPos::Center);
 }
 
-void UUTHUDWidget_Spectator::DrawSpawnPacks(float DeltaTime)
-{
-	if (UTGameState && UTGameState->SpawnPacks.Num() > 0 )
-	{
-		FVector2D TextSize = DrawText(NSLOCTEXT("UUTHUDWidget_Spectator","SpawnPackTitle","Loadouts:"), 20.0f, -50.0f, UTHUDOwner->MediumFont, 1.0, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
-
-		float XPos = 60 + TextSize.X;
-		AUTPlayerState* PlayerState = UTHUDOwner->UTPlayerOwner->UTPlayerState;
-		for (int32 i = 0 ; i < UTGameState->SpawnPacks.Num(); i++)
-		{
-			FLinearColor DrawColor = UTGameState->SpawnPacks[i].PackTag == PlayerState->CurrentLoadoutPackTag ? FLinearColor(0.0f,0.5f,1.0f,1.0f) : FLinearColor::White;
-			TArray<FString> Keys;
-			UTHUDOwner->UTPlayerOwner->ResolveKeybind(FString::Printf(TEXT("switchweapon %i"), i+1), Keys, false, false);
-			if (Keys.Num() > 0)
-			{
-				FText OutputText = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator","TitleTextFormat","({0}) {1}"), FText::FromString(UTHUDOwner->UTPlayerOwner->FixedupKeyname(Keys[0])), FText::FromString(UTGameState->SpawnPacks[i].PackTitle));
-				TextSize = DrawText(OutputText, XPos, -50.0f, UTHUDOwner->MediumFont, 1.0, 1.f, DrawColor, ETextHorzPos::Left, ETextVertPos::Center);		
-				XPos += 400 - TextSize.X;
-			}
-		}
-	}
-}
-
 void UUTHUDWidget_Spectator::Draw_Implementation(float DeltaTime)
 {
 	Super::Draw_Implementation(DeltaTime);
@@ -134,7 +111,6 @@ void UUTHUDWidget_Spectator::Draw_Implementation(float DeltaTime)
 	FText ShortMessage;
 	FText SpectatorMessage = GetSpectatorMessageText(ShortMessage);
 	DrawSimpleMessage(SpectatorMessage, DeltaTime, ShortMessage);
-	DrawSpawnPacks(DeltaTime);
 }
 
 FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)

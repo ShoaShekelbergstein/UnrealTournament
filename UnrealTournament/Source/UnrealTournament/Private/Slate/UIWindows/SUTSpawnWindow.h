@@ -3,7 +3,6 @@
 
 #include "SlateBasics.h"
 #include "Slate/SlateGameResources.h"
-#include "../FLoadoutData.h"
 #include "../Base/SUTWindowBase.h"
 #include "SUTHUDWindow.h"
 

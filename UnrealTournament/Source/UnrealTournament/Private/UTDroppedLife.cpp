@@ -81,25 +81,6 @@ void AUTDroppedLife::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AA
 			if (TouchingPlayerState)
 			{
 				float MyPoints = float(int(Value * 0.75f));
-				float OtherPoints = float(int(Value - MyPoints));
-										  
-				TouchingPlayerState->AdjustCurrency(MyPoints);
-
-				AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
-				if (GameState)
-				{
-					for (int32 i=0; i < GameState->PlayerArray.Num();i++)
-					{
-						AUTPlayerState* OtherPlayerState = Cast<AUTPlayerState>(GameState->PlayerArray[i]);
-						if (OtherPlayerState)
-						{
-							if (TouchingPlayerState != OtherPlayerState && GameState->OnSameTeam(TouchingPlayerState, OtherPlayerState))
-							{
-								OtherPlayerState->AdjustCurrency(OtherPoints);
-							}
-						}
-					}
-				}
 			}
 
 			if (PickupSound != NULL)

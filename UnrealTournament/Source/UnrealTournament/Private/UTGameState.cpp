@@ -10,7 +10,6 @@
 #include "UTGameMessage.h"
 #include "Net/UnrealNetwork.h"
 #include "UTTimerMessage.h"
-#include "UTReplicatedLoadoutInfo.h"
 #include "UTMutator.h"
 #include "UTReplicatedMapInfo.h"
 #include "UTPickup.h"
@@ -278,8 +277,6 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	NeedPlayersStatus = NSLOCTEXT("UTGameState", "NeedPlayers", "Need {NumNeeded} More");
 	OvertimeStatus = NSLOCTEXT("UTCTFGameState", "Overtime", "Overtime!");
 
-	bWeightedCharacter = false;
-
 	BoostRechargeMaxCharges = 1;
 	BoostRechargeTime = 0.0f; // off by default
 	MusicVolume = 1.f;
@@ -318,7 +315,6 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME_CONDITION(AUTGameState, bIsInstanceServer, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, AIDifficulty, COND_InitialOnly);
 	DOREPLIFETIME(AUTGameState, PlayersNeeded);
-	DOREPLIFETIME(AUTGameState, AvailableLoadout);
 	DOREPLIFETIME(AUTGameState, HubGuid);
 
 	DOREPLIFETIME_CONDITION(AUTGameState, bAllowTeamSwitches, COND_InitialOnly);
@@ -341,9 +337,6 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME(AUTGameState, VoteTimer);
 
 	DOREPLIFETIME(AUTGameState, bForcedBalance);
-
-	DOREPLIFETIME(AUTGameState, SpawnPacks);
-	DOREPLIFETIME_CONDITION(AUTGameState, bWeightedCharacter, COND_InitialOnly);
 
 	DOREPLIFETIME_CONDITION(AUTGameState, BoostRechargeTime, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, BoostRechargeMaxCharges, COND_InitialOnly);
@@ -1493,49 +1486,6 @@ int32 AUTGameState::GetMaxTeamSpectatingId(int32 TeamNum)
 	}
 	return MaxSpectatingID;
 
-}
-
-void AUTGameState::AddLoadoutItem(const FLoadoutInfo& Item)
-{
-	FActorSpawnParameters Params;
-	Params.Owner = this;
-	AUTReplicatedLoadoutInfo* NewLoadoutInfo = GetWorld()->SpawnActor<AUTReplicatedLoadoutInfo>(Params);
-	if (NewLoadoutInfo)
-	{
-		NewLoadoutInfo->ItemTag = Item.ItemTag;
-		NewLoadoutInfo->ItemClass = Item.ItemClass;	
-		NewLoadoutInfo->RoundMask = Item.RoundMask;
-		NewLoadoutInfo->CurrentCost = Item.InitialCost;
-		NewLoadoutInfo->bDefaultInclude = Item.bDefaultInclude;
-		NewLoadoutInfo->bPurchaseOnly = Item.bPurchaseOnly;
-		NewLoadoutInfo->LoadItemImage();
-		AvailableLoadout.Add(NewLoadoutInfo);
-	}
-}
-
-AUTReplicatedLoadoutInfo* AUTGameState::FindLoadoutItem(const FName& ItemTag)
-{
-	for (int32 i=0; i < AvailableLoadout.Num();i++)
-	{
-		if (AvailableLoadout[i]->ItemTag == ItemTag)
-		{
-			return AvailableLoadout[i];
-		}
-	}
-
-	return nullptr;
-}
-
-void AUTGameState::AdjustLoadoutCost(TSubclassOf<AUTInventory> ItemClass, float NewCost)
-{
-	for (int32 i=0; i < AvailableLoadout.Num(); i++)
-	{
-		if (AvailableLoadout[i]->ItemClass == ItemClass)
-		{
-			AvailableLoadout[i]->CurrentCost = NewCost;
-			return;
-		}
-	}
 }
 
 bool AUTGameState::IsTempBanned(const FUniqueNetIdRepl& UniqueId)

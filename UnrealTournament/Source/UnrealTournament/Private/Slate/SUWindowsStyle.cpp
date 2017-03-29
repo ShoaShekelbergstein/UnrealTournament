@@ -162,28 +162,6 @@ TSharedRef<FSlateStyleSet> SUWindowsStyle::Create()
 		.SetColorAndOpacity(FLinearColor(FColor(33, 93, 220, 255)))
 		);
 
-	// Loadout
-	{
-		Style.Set("UT.Loadout.List.Normal", new IMAGE_BRUSH( "Loadout/UT.Loadout.List.Normal", Icon128x128, FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
-		Style.Set("UT.Loadout.Tab", new BOX_BRUSH("Loadout/UT.Loadout.Tab", FMargin(2.0f / 85.0f, 0.0f, 58.0f / 85.0f, 0.0f)));
-		Style.Set("UT.Loadout.UpperBar", new IMAGE_BRUSH( "Loadout/UT.Loadout.UpperBar", FVector2D(16.0f, 16.0f), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
-
-		Style.Set("UT.Loadout.List.Row", FTableRowStyle()
-			.SetEvenRowBackgroundBrush(FSlateNoResource(FVector2D(128.0f, 128.0f)))
-			.SetEvenRowBackgroundHoveredBrush(IMAGE_BRUSH("Loadout/UT.Loadout.List.Hovered", Icon8x8, FLinearColor(1.0f, 1.0f, 1.0f, 1.0f), ESlateBrushTileType::Horizontal))
-			.SetOddRowBackgroundBrush(FSlateNoResource(FVector2D(128.0f, 128.0f)))
-			.SetOddRowBackgroundHoveredBrush(IMAGE_BRUSH("Loadout/UT.Loadout.List.Hovered", Icon8x8, FLinearColor(1.0f, 1.0f, 1.0f, 1.0f), ESlateBrushTileType::Horizontal))
-			.SetSelectorFocusedBrush(IMAGE_BRUSH("Loadout/UT.Loadout.List.Selected", Icon256x256, FLinearColor(1.0f, 1.0f, 1.0f, 1.0f)))
-			.SetActiveBrush(IMAGE_BRUSH("Loadout/UT.Loadout.List.Selected", Icon256x256, FLinearColor(1.0f, 1.0f, 1.0f, 1.0f)))
-			.SetActiveHoveredBrush(IMAGE_BRUSH("Loadout/UT.Loadout.List.Selected", Icon256x256, FLinearColor(1.0f, 1.0f, 1.0f, 1.0f)))
-			.SetInactiveBrush(FSlateNoResource(FVector2D(128.0f, 128.0f)))
-			.SetInactiveHoveredBrush(FSlateNoResource(FVector2D(128.0f, 128.0f)))
-			.SetTextColor(FLinearColor::White)
-			.SetSelectedTextColor(FLinearColor::Yellow)
-			);
-	}
-
-
 	Style.Set("UT.Dialog.Background", new BOX_BRUSH("TopMenu/UT.Dialog.Background", FMargin(10.0f / 256.0f, 64.0f/256.0f, 10.0f / 256.0f, 25.0f/256.0f)));
 	Style.Set("UT.DialogBox.Background", new BOX_BRUSH("TopMenu/UT.DialogBox.Background", FMargin(10.0f / 256.0f, 64.0f / 256.0f, 10.0f / 256.0f, 64.0f / 256.0f)));
 

@@ -606,38 +606,6 @@ void AUTGameMode::InitGameState()
 				UTGameState->AIDifficulty = (GameDifficulty > 4.f) ? 3 : 2;
 			}
 		}
-		
-		// Setup the loadout replication
-		for (int32 i=0; i < AvailableLoadout.Num(); i++)
-		{
-			UUTGameEngine* Engine = Cast<UUTGameEngine>(GEngine);
-			if (Engine && !AvailableLoadout[i].ItemClassStringRef.IsEmpty())
-			{
-				AvailableLoadout[i].ItemClass = Cast<UClass>(StaticLoadObject(UClass::StaticClass(), NULL, *AvailableLoadout[i].ItemClassStringRef, NULL, LOAD_NoWarn));
-			}
-
-			if (AvailableLoadout[i].ItemClass != nullptr)
-			{
-				UTGameState->AddLoadoutItem(AvailableLoadout[i]);
-			}
-		}
-
-		// Resolve any load out packs
-		if (AvailableLoadoutPacks.Num() > 0 && AvailableLoadout.Num() > 0)
-		{
-			for (int32 i=0; i < AvailableLoadoutPacks.Num(); i++)
-			{
-				for (int32 j=0; j < AvailableLoadoutPacks[i].ItemsInPack.Num(); j++)
-				{
-					AUTReplicatedLoadoutInfo* LoadoutInfo = UTGameState->FindLoadoutItem(AvailableLoadoutPacks[i].ItemsInPack[j]);
-					if (LoadoutInfo != nullptr)
-					{
-						AvailableLoadoutPacks[i].LoadoutCache.Add(LoadoutInfo);
-					}
-				}
-				UTGameState->SpawnPacks.Add(AvailableLoadoutPacks[i].PackInfo);
-			}
-		}
 	}
 	else
 	{
@@ -811,18 +779,6 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 
 			// warning: blindly calling this here relies on ValidateEntitlements() defaulting to "allow" if we have not yet obtained this user's entitlement information
 			PS->ValidateEntitlements();
-
-			// Setup the default loadout
-			if (UTGameState->AvailableLoadout.Num() > 0)
-			{
-				for (int32 i=0; i < UTGameState->AvailableLoadout.Num(); i++)			
-				{
-					if (UTGameState->AvailableLoadout[i]->bDefaultInclude)
-					{
-						PS->Loadout.Add(UTGameState->AvailableLoadout[i]);
-					}
-				}
-			}
 
 			bool bCaster = EvalBoolOptions(UGameplayStatics::ParseOption(Options, TEXT("Caster")), false);
 			if (bCaster && bCasterControl)
@@ -3781,12 +3737,6 @@ void AUTGameMode::GenericPlayerInitialization(AController* C)
 {
 	Super::GenericPlayerInitialization(C);
 
-	AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(C->PlayerState);
-	if (UTPlayerState && AvailableLoadoutPacks.Num() > 0)
-	{
-		UTPlayerState->ServerSetLoadoutPack(AvailableLoadoutPacks[0].PackInfo.PackTag);
-	}
-
 	if (BaseMutator != NULL)
 	{
 		BaseMutator->PostPlayerInit(C);
@@ -5398,17 +5348,6 @@ void AUTGameMode::SendLobbyMessage(const FString& Message, AUTPlayerState* Sende
 	{
 		LobbyBeacon->Lobby_ReceiveUserMessage(Message, Sender->PlayerName);
 	}
-}
-int32 AUTGameMode::LoadoutPackIsValid(const FName& PackTag)
-{
-	for (int32 i=0; i < AvailableLoadoutPacks.Num(); i++)
-	{
-		if (AvailableLoadoutPacks[i].PackInfo.PackTag == PackTag)
-		{
-			return i;
-		}
-	}
-	return INDEX_NONE;
 }
 
 #if !UE_SERVER

@@ -34,8 +34,6 @@
 #include "SUTFriendsPopupWindow.h"
 #include "SUTDownloadAllDialog.h"
 #include "SUTVideoCompressionDialog.h"
-#include "SUTLoadoutWindow.h"
-#include "SUTBuyWindow.h"
 #include "SUTMapVoteDialog.h"
 #include "SUTReplayWindow.h"
 #include "Menus/SUTReplayMenu.h"
@@ -807,7 +805,6 @@ bool UUTLocalPlayer::AreMenusOpen()
 	
 	return DesktopSlateWidget.IsValid()
 		|| LoginDialog.IsValid()
-		|| LoadoutMenu.IsValid()
 		|| QuickChatWindow.IsValid()
 		|| OpenDialogs.Num() > 0
 		|| UMGWidgetsPresent;
@@ -3956,53 +3953,6 @@ void UUTLocalPlayer::HandleNetworkFailureMessage(enum ENetworkFailure::Type Fail
 	}
 }
 
-void UUTLocalPlayer::OpenLoadout(bool bBuyMenu)
-{
-#if !UE_SERVER
-	// Create the slate widget if it doesn't exist
-	if (!LoadoutMenu.IsValid())
-	{
-		if (bBuyMenu)
-		{
-			SAssignNew(LoadoutMenu, SUTBuyWindow).PlayerOwner(this);
-		}
-		else
-		{
-			SAssignNew(LoadoutMenu, SUTLoadoutWindow).PlayerOwner(this);
-		}
-
-		if (LoadoutMenu.IsValid())
-		{
-			GEngine->GameViewport->AddViewportWidgetContent( SNew(SWeakWidget).PossiblyNullContent(LoadoutMenu.ToSharedRef()),60);
-		}
-
-		// Make it visible.
-		if (LoadoutMenu.IsValid())
-		{
-			// Widget is already valid, just make it visible.
-			LoadoutMenu->SetVisibility(EVisibility::Visible);
-			LoadoutMenu->OnMenuOpened(TEXT(""));
-		}
-	}
-#endif
-}
-
-void UUTLocalPlayer::CloseLoadout()
-{
-#if !UE_SERVER
-	if (LoadoutMenu.IsValid())
-	{
-		GEngine->GameViewport->RemoveViewportWidgetContent(LoadoutMenu.ToSharedRef());
-		LoadoutMenu->OnMenuClosed();
-		LoadoutMenu.Reset();
-		if (PlayerController)
-		{
-			PlayerController->SetPause(false);
-		}
-	}
-#endif
-}
-
 void UUTLocalPlayer::OpenMapVote(AUTGameState* GameState)
 {
 #if !UE_SERVER
@@ -4574,7 +4524,6 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 	CreditsPanelWidget.Reset();
 	ContentLoadingMessage.Reset();
 	FriendsMenu.Reset();
-	LoadoutMenu.Reset();
 	ReplayWindow.Reset();
 	
 	CloseSpectatorWindow();

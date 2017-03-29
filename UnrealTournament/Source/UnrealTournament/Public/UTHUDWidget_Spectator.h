@@ -35,7 +35,5 @@ protected:
 	/** Last time viewed player changed. */
 	float ViewCharChangeTime;
 
-	void DrawSpawnPacks(float DeltaTime);
-
 private:
 };

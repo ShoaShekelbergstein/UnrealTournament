@@ -3495,66 +3495,9 @@ void AUTCharacter::PostNetReceive()
 
 void AUTCharacter::AddDefaultInventory(const TArray<TSubclassOf<AUTInventory>>& DefaultInventoryToAdd)
 {
-	// Check to see if this player has an active loadout.  If they do, apply it.  NOTE: Loadouts are 100% authoratative.  So if we apply any type of loadout, then end the AddDefaultInventory 
-	// call right there.  If you are using the loadout system and want to insure a player has some default items, use bDefaultInclude and make sure their cost is 0.
-
 	AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(PlayerState);
 	if (UTPlayerState)
 	{
-		if (UTPlayerState->PrimarySpawnInventory || UTPlayerState->SecondarySpawnInventory)
-		{
-			// Use the Spawn Inventory
-			if (UTPlayerState->PrimarySpawnInventory)
-			{
-				CreateInventory(UTPlayerState->PrimarySpawnInventory->ItemClass);
-			}
-
-			// Use the Spawn Inventory
-			if (UTPlayerState->SecondarySpawnInventory)
-			{
-				CreateInventory(UTPlayerState->SecondarySpawnInventory->ItemClass);
-			}
-
-			return;
-		}
-
-		if ( UTPlayerState->Loadout.Num() > 0 )
-		{
-			for (int32 i=0; i < UTPlayerState->Loadout.Num(); i++)
-			{
-				if (UTPlayerState->GetAvailableCurrency() >= UTPlayerState->Loadout[i]->CurrentCost)
-				{
-					CreateInventory(UTPlayerState->Loadout[i]->ItemClass);
-					UTPlayerState->AdjustCurrency(UTPlayerState->Loadout[i]->CurrentCost * -1);
-				}
-			}
-
-			return;
-		}
-
-		if (UTPlayerState->CurrentLoadoutPackTag != NAME_None)
-		{
-			// Verify it's valid.
-			AUTGameMode* UTGameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-			if ( UTGameMode )
-			{
-				int32 PackIndex = UTGameMode->LoadoutPackIsValid(UTPlayerState->CurrentLoadoutPackTag);
-				if (PackIndex != INDEX_NONE && PackIndex < UTGameMode->AvailableLoadoutPacks.Num())
-				{
-					for (int32 i=0; i < UTGameMode->AvailableLoadoutPacks[PackIndex].LoadoutCache.Num(); i++)
-					{
-						AUTReplicatedLoadoutInfo* Info = UTGameMode->AvailableLoadoutPacks[PackIndex].LoadoutCache[i];
-						CreateInventory(Info->ItemClass);
-					}
-
-					Health += UTGameMode->AvailableLoadoutPacks[PackIndex].SpawnHealthModifier;
-					OnHealthUpdated();
-					return;
-				}
-			}
-		
-		}
-
 		if (UTPlayerState->PreservedKeepOnDeathInventoryList.Num() > 0)
 		{
 			for(AUTInventory* PreservedItem : UTPlayerState->PreservedKeepOnDeathInventoryList)
@@ -3582,22 +3525,6 @@ void AUTCharacter::AddDefaultInventory(const TArray<TSubclassOf<AUTInventory>>& 
 void AUTCharacter::SetInitialHealth_Implementation()
 {
 	Health = HealthMax;
-	AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(PlayerState);
-
-	if (UTPlayerState && UTPlayerState->CurrentLoadoutPackTag != NAME_None)
-	{
-		// Verify it's valid.
-		AUTGameMode* UTGameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-		if ( UTGameMode )
-		{
-			int32 PackIndex = UTGameMode->LoadoutPackIsValid(UTPlayerState->CurrentLoadoutPackTag);
-			if (PackIndex != INDEX_NONE && PackIndex < UTGameMode->AvailableLoadoutPacks.Num())
-			{
-				Health += UTGameMode->AvailableLoadoutPacks[PackIndex].SpawnHealthModifier;
-				OnHealthUpdated();
-			}
-		}
-	}
 }
 
 bool AUTCharacter::CanSlide() const
@@ -7169,20 +7096,9 @@ void AUTCharacter::RemoveVisibilityMask(int32 Channel)
 	VisibilityMask &= ~(1 << Channel);
 }
 
-
 void AUTCharacter::ResetMaxSpeedPctModifier()
 {
-	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-	if (UTGameState && UTGameState->bWeightedCharacter)
-	{
-		AUTCarriedObject* CarriedObject = GetCarriedObject();
-		MaxSpeedPctModifier = (CarriedObject) ? CarriedObject->WeightSpeedPctModifier : 1.0f;
-		MaxSpeedPctModifier = (MaxSpeedPctModifier == 1.0 && Weapon) ? Weapon->WeightSpeedPctModifier : MaxSpeedPctModifier;
-	}
-	else
-	{
-		MaxSpeedPctModifier = 1.0f;
-	}
+	MaxSpeedPctModifier = 1.0f;
 }
 
 void AUTCharacter::BoostSpeedForTime(float SpeedBoostPct, float TimeToBoost)
@@ -7250,6 +7166,7 @@ void AUTCharacter::TriggerBoostPower()
 		}
 	}
 }
+
 void AUTCharacter::TeamNotifyBoostPowerUse()
 {
 	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();

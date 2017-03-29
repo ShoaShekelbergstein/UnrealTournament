@@ -1050,12 +1050,6 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation)
 	virtual void ServerReceiveCountryFlag(FName NewCountryFlag);
 
-	virtual void DebugTest(FString TestCommand) override;
-
-        // deprecated
-	UFUNCTION(BlueprintCallable, Category = PlayerController)
-	virtual void SkullPickedUp();
-
 	UFUNCTION(BlueprintCallable, Category = PlayerController)
 	virtual void PumpkinPickedUp(float GainedAmount, float GoalAmount);
 
@@ -1092,12 +1086,6 @@ public:
 	void ServerRegisterBanVote(AUTPlayerState* BadGuy);
 	
 	virtual void UpdateRotation(float DeltaTime) override;
-
-	UFUNCTION(client, reliable)
-	void ClientOpenLoadout(bool bBuyMenu);
-
-	UFUNCTION(Exec)
-	void ShowBuyMenu();
 
 	UFUNCTION(Exec)
 	void DropCarriedObject();
@@ -1243,8 +1231,6 @@ public:
 
 	UFUNCTION(exec)
 	virtual void HideWeaponWheel();
-
-	void ServerDebugTest_Implementation(const FString& TestCommand) override;
 
 	UFUNCTION(exec)
 	virtual void FlushVOIP();
