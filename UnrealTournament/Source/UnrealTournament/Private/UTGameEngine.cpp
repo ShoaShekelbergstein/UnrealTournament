@@ -1200,8 +1200,7 @@ void UUTGameEngine::OnReadTitleFileComplete(bool bWasSuccessful, const FString& 
 		}
 	}
 }
-FUTGameRuleset* UUTGameEngine::Ge
-tRuleset(const FString& RulesetTag)
+FUTGameRuleset* UUTGameEngine::GetRuleset(const FString& RulesetTag)
 {
 	for (int32 i=0; i < GameRulesets.Num(); i++)
 	{
