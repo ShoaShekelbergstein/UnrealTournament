@@ -28,7 +28,7 @@ UUTCharacterMovement::UUTCharacterMovement(const class FObjectInitializer& Objec
 	MinAdditiveDodgeFallSpeed = -5000.f;  
 	MaxAdditiveDodgeJumpSpeed = 700.f;  
 	MaxMultiJumpCount = 0;
-	bAllowDodgeMultijumps = false;
+	bAllowDodgeMultijumps = true;
 	bAllowJumpMultijumps = true;
 	bIsDoubleJumpAvailableForFlagCarrier = true;
 	MultiJumpImpulse = 600.f;

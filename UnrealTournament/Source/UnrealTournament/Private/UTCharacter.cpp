@@ -49,6 +49,7 @@
 #include "UTDroppedHealth.h"
 #include "UTDroppedArmor.h"
 #include "UTJumpBoots.h"
+#include "UTBotCharacter.h"
 
 static FName NAME_HatSocket(TEXT("HatSocket"));
 
@@ -5185,7 +5186,23 @@ void AUTCharacter::OnRep_PlayerState()
 
 void AUTCharacter::PlayerCardUpdated()
 {
-	
+	AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+	if (PS && PS->PlayerCard && UTCharacterMovement)
+	{
+		UTCharacterMovement->MaxMultiJumpCount = PS->PlayerCard->MaxMultiJumpCount;
+		UTCharacterMovement->MaxWalkSpeed = PS->PlayerCard->MaxRunSpeed;
+		UTCharacterMovement->MultiJumpImpulse = PS->PlayerCard->MultiJumpImpulse;
+		UTCharacterMovement->bCanDodge = PS->PlayerCard->bCanDodge;
+		UTCharacterMovement->MaxCustomMovementSpeed = UTCharacterMovement->MaxWalkSpeed;
+		UTCharacterMovement->AirControl = PS->PlayerCard->AirControl;
+		UTCharacterMovement->MultiJumpAirControl = UTCharacterMovement->AirControl;
+		UTCharacterMovement->DodgeAirControl = UTCharacterMovement->AirControl * 0.41f/0.55f;
+		UTCharacterMovement->DodgeResetInterval = PS->PlayerCard->DodgeResetInterval;
+		UTCharacterMovement->DodgeJumpResetInterval = UTCharacterMovement->DodgeResetInterval;
+		UTCharacterMovement->JumpZVelocity = PS->PlayerCard->JumpImpulse;
+
+
+	}
 }
 
 void AUTCharacter::SetCosmeticsFromPlayerState()
