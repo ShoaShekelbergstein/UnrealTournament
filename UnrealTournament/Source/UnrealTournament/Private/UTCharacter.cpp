@@ -53,6 +53,10 @@
 
 static FName NAME_HatSocket(TEXT("HatSocket"));
 
+static TAutoConsoleVariable<int32> CVarFeignDeath(
+	TEXT("ut.RagdollFeignDeath"), 1,
+	TEXT("Debug way to not feign death on ragdoll."));
+
 UUTMovementBaseInterface::UUTMovementBaseInterface(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {}
@@ -2309,12 +2313,21 @@ void AUTCharacter::PlayFeignDeath()
 			WeaponAttachment->SetActorHiddenInGame(true);
 		}
 
-		// Anim BP is going to handle the ragdoll
-		StopFiring();
-		DisallowWeaponFiring(true);
-		GetCharacterMovement()->StopActiveMovement();
-		GetCharacterMovement()->Velocity = FVector::ZeroVector;
-		bApplyWallSlide = false;
+#if !UE_BUILD_SHIPPING
+		if (CVarFeignDeath.GetValueOnGameThread() == 1)
+		{
+#endif
+			StartRagdoll();
+#if !UE_BUILD_SHIPPING
+		}
+		else
+		{
+			// Anim BP is going to handle the ragdoll
+			StopFiring();
+			DisallowWeaponFiring(true);
+			bApplyWallSlide = false;
+		}
+#endif
 	}
 	else
 	{
@@ -2323,7 +2336,14 @@ void AUTCharacter::PlayFeignDeath()
 			WeaponAttachment->SetActorHiddenInGame(false);
 		}
 
-		// Anim BP is going to handle leaving ragdoll
+#if !UE_BUILD_SHIPPING
+		if (CVarFeignDeath.GetValueOnGameThread() == 1)
+		{
+#endif
+			StopRagdoll();
+#if !UE_BUILD_SHIPPING
+		}
+#endif
 	}
 }
 
