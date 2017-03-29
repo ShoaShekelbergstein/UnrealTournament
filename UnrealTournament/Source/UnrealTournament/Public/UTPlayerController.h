@@ -1050,6 +1050,10 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation)
 	virtual void ServerReceiveCountryFlag(FName NewCountryFlag);
 
+        // deprecated
+	UFUNCTION(BlueprintCallable, Category = PlayerController)
+	virtual void SkullPickedUp();
+
 	UFUNCTION(BlueprintCallable, Category = PlayerController)
 	virtual void PumpkinPickedUp(float GainedAmount, float GoalAmount);
 
