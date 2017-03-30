@@ -328,7 +328,7 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bAllowBots, int32 BotDifficulty, bool b
 		if (!bJoinAnytime && GameURL.Find(TEXT("NoJIP"), ESearchCase::IgnoreCase) == INDEX_NONE) GameURL += TEXT("?NoJIP");
 		if (bHostControl) 
 		{
-			GameURL += FString::Printf(TEXT("?Host=%s"), *OwnerId.ToString());
+			GameURL += FString::Printf(TEXT("?HostId=%s"), *OwnerId.ToString());
 		}
 
 		LobbyGameState->LaunchGameInstance(this, GameURL);
