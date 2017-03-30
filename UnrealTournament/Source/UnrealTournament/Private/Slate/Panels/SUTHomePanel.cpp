@@ -465,7 +465,28 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 						]
 						+ SHorizontalBox::Slot().Padding(25.0f,0.0f,25.0f,0.0f)
 						[
-							BuildHomePanelButton(EMenuCommand::MC_Challenges, TEXT("UT.HomePanel.Challenges"), NSLOCTEXT("SUTHomePanel","Challenges","Challenges"))
+							SNew(SOverlay)
+							+SOverlay::Slot()
+							[
+								BuildHomePanelButton(EMenuCommand::MC_Challenges, TEXT("UT.HomePanel.Challenges"), NSLOCTEXT("SUTHomePanel","Challenges","Challenges"))
+							]
+							+SOverlay::Slot()
+							[
+								SAssignNew(NewChallengeBox, SVerticalBox)
+								.Visibility(this, &SUTHomePanel::ShowNewChallengeImage)
+								+SVerticalBox::Slot()
+								.AutoHeight()
+								[
+									SNew(SHorizontalBox)
+									+SHorizontalBox::Slot().HAlign(HAlign_Center)
+									[
+										SAssignNew(NewChallengeImage, SUTImage)
+										.Image(SUTStyle::Get().GetBrush("UT.HomePanel.ChallengesNewIcon"))
+										.WidthOverride(72.0f).HeightOverride(72.0f)
+										.RenderTransformPivot(FVector2D(0.5f, 0.5f))
+									]
+								]
+							]
 						]
 						+ SHorizontalBox::Slot()
 						[
@@ -683,7 +704,7 @@ EVisibility SUTHomePanel::ShowNewChallengeImage() const
 	{
 		if (PlayerOwner->ChallengeRevisionNumber< PlayerOwner->MCPPulledData.ChallengeRevisionNumber)
 		{
-			return EVisibility::Visible;
+			return EVisibility::HitTestInvisible;
 		}
 	}
 
