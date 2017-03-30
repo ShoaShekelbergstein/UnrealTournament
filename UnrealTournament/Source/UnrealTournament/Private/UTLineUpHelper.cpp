@@ -14,6 +14,11 @@
 #include "UTPlayerState.h"
 #include "UTCustomMovementTypes.h"
 #include "UTPickupWeapon.h"
+#include "UTSupplyChest.h"
+#include "UTMutator.h"
+#include "UTWeap_Redeemer.h"
+#include "UTWeap_Enforcer.h"
+#include "UTWeap_Translocator.h"
 
 AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -32,6 +37,11 @@ void AUTLineUpHelper::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 	DOREPLIFETIME(AUTLineUpHelper, bIsActive);
 	DOREPLIFETIME(AUTLineUpHelper, LastActiveType);
+}
+
+void AUTLineUpHelper::BeginPlay()
+{
+	BuildMapWeaponList();
 }
 
 void AUTLineUpHelper::HandleLineUp(LineUpTypes ZoneType)
@@ -246,7 +256,8 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 				{
 					UTPS->LineUpWeapon = (UTPS->FavoriteWeapon != NULL)? UTPS->FavoriteWeapon : NULL;
 					
-					if (UTPS->LineUpWeapon == NULL)
+					//Either we didn't have an existing favorite weapon, or its not valid in this map
+					if (UTPS->LineUpWeapon == NULL || (!MapWeaponTypeList.Contains(UTPS->LineUpWeapon)))
 					{
 						AUTCharacter* UTChar = Cast<AUTCharacter>(C->GetPawn());
 						UTPS->LineUpWeapon = (UTChar) ? UTChar->GetWeaponClass() : nullptr;
@@ -379,11 +390,7 @@ void AUTLineUpHelper::SpawnPlayerWeapon(AUTCharacter* UTChar)
 		//If we already have a weapon attachment, keep that
 		if (!WeaponClass)
 		{
-			//Default to Link Gun
-			WeaponClass = LoadClass<AUTWeapon>(NULL, TEXT("/Game/RestrictedAssets/Weapons/LinkGun/BP_LinkGun.BP_LinkGun_C"), NULL, LOAD_None, NULL);
-
 			//Try and pick a random weapon available on the map for pickup
-			BuildMapWeaponList();
 			if (MapWeaponTypeList.Num() > 0)
 			{
 				int32 WeaponIndex = FMath::RandHelper(MapWeaponTypeList.Num());
@@ -424,15 +431,78 @@ void AUTLineUpHelper::SpawnPlayerWeapon(AUTCharacter* UTChar)
 
 void AUTLineUpHelper::BuildMapWeaponList()
 {
-	TSubclassOf<AUTWeapon> RedeemerWeaponClass = LoadClass<AUTWeapon>(NULL, TEXT("/Game/RestrictedAssets/Weapons/Redeemer/BP_Redeemer.BP_Redeemer_C"), NULL, LOAD_None, NULL);
-	if (MapWeaponTypeList.Num() == 0)
+	//All weapon spawning is on the server, so Clients don't need a MapWeaponList
+	if (GetNetMode() != NM_Client)
 	{
 		for (FActorIterator It(GetWorld()); It; ++It)
 		{
+			//Weapon Pickups
 			AUTPickupWeapon* Pickup = Cast<AUTPickupWeapon>(*It);
-			if (Pickup && (Pickup->WeaponType != NULL) && (Pickup->WeaponType != RedeemerWeaponClass))
+			if (Pickup && (Pickup->WeaponType != NULL))
 			{
 				MapWeaponTypeList.AddUnique(Pickup->WeaponType);
+			}
+
+			//Supply Chest Weapons
+			AUTSupplyChest* UTSupplyChest = Cast<AUTSupplyChest>(*It);
+			if (UTSupplyChest && UTSupplyChest->bIsActive && (UTSupplyChest->Weapons.Num() > 0))
+			{
+				for (TSubclassOf<AUTWeapon>& Weapon : UTSupplyChest->Weapons)
+				{
+					if (Weapon != NULL)
+					{
+						MapWeaponTypeList.AddUnique(Weapon);
+					}
+				}
+			}
+		}
+
+		//Default Inventory Weapons
+		AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+		if (GameMode)
+		{
+			for (TSubclassOf<AUTInventory>& Item : GameMode->DefaultInventory)
+			{
+				TSubclassOf<AUTWeapon> Weapon = Item.Get();
+				if (Weapon != NULL)
+				{
+					MapWeaponTypeList.AddUnique(Weapon);
+				}
+			}
+		}
+
+		//Remove invalid weapons for line-ups
+		AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
+		if (GameMode && GameMode->BaseMutator)
+		{
+			TArray<TSubclassOf<AUTWeapon>> InvalidWeaponsToRemove;
+			for (TSubclassOf<AUTWeapon>& Weapon : MapWeaponTypeList)
+			{
+				//Remove anything mutators won't allow
+				if (!GameMode->BaseMutator->CheckRelevance(Weapon->GetDefaultObject<AActor>()))
+				{
+					InvalidWeaponsToRemove.Add(Weapon);
+				}
+				//Translocator
+				else if (Weapon->IsChildOf(AUTWeap_Translocator::StaticClass()))
+				{
+					InvalidWeaponsToRemove.Add(Weapon);
+				}
+				//Enforcer
+				else if (Weapon->IsChildOf(AUTWeap_Enforcer::StaticClass()))
+				{
+					InvalidWeaponsToRemove.Add(Weapon);
+				}
+				//Redeemer
+				else if (Weapon->IsChildOf(AUTWeap_Redeemer::StaticClass()))
+				{
+					InvalidWeaponsToRemove.Add(Weapon);
+				}
+			}
+
+			for (TSubclassOf<AUTWeapon>& InvalidWeapon : InvalidWeaponsToRemove)
+			{
+				MapWeaponTypeList.Remove(InvalidWeapon);
 			}
 		}
 	}
