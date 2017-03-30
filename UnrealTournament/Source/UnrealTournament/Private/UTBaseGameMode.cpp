@@ -259,7 +259,6 @@ APlayerController* AUTBaseGameMode::Login(class UPlayer* NewPlayer, ENetRole InR
 #if WITH_PROFILE
 	if (PC != NULL)
 	{
-		AUTPlayerState* PS = Cast<AUTPlayerState>(PC->PlayerState);
 		if (PS != NULL && PS->UniqueId.IsValid())
 		{
 			UMcpProfileGroup* Group = GetMcpProfileManager()->CreateProfileGroup(UniqueId, UniqueId.GetUniqueNetId(), true, false);
