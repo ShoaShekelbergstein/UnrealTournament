@@ -342,6 +342,10 @@ public:
 	UPROPERTY(Category = "Dodging", BlueprintReadWrite)
 		float DodgeResetTime;
 
+	/** Acceleration during a dodge landing. */
+	UPROPERTY(Category = "Dodging", BlueprintReadOnly)
+		float DodgeLandingAcceleration;
+
 	/** If falling, verify can wall dodge.  This causes character to dodge. */
 	UFUNCTION()
 	bool PerformDodge(FVector &DodgeDir, FVector &DodgeCross);

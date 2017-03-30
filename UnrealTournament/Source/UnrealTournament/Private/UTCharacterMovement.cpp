@@ -72,7 +72,8 @@ UUTCharacterMovement::UUTCharacterMovement(const class FObjectInitializer& Objec
 	SlopeDodgeScaling = 0.93f;
 	bSlideFromGround = false;
 	bHasPlayedWallHitSound = false;
-	DodgeLandingTimeAdjust = -0.15f;
+	DodgeLandingTimeAdjust = -0.25f;
+	DodgeLandingAcceleration = 1000.f;
 
 	FastInitialAcceleration = 12000.f;
 	MaxFastAccelSpeed = 200.f;
@@ -1171,9 +1172,13 @@ void UUTCharacterMovement::UpdateMovementStats(const FVector& StartLocation)
 float UUTCharacterMovement::GetMaxAcceleration() const
 {
 	float Result;
-	if (bIsFloorSliding || bIsDodgeLanding)
+	if (bIsFloorSliding)
 	{
 		Result = FloorSlideAcceleration;
+	}
+	else if (bIsDodgeLanding)
+	{
+		Result = DodgeLandingAcceleration;
 	}
 	else if (MovementMode == MOVE_Falling)
 	{
