@@ -39,7 +39,6 @@ UUTCharacterMovement::UUTCharacterMovement(const class FObjectInitializer& Objec
 	DodgeResetInterval = 0.35f;
 	DodgeJumpResetInterval = 0.35f;
 	WallDodgeResetInterval = 0.2f;
-	MaxSlideSpeed = 1230.f;
 	LandingStepUp = 40.f;
 	LandingAssistBoost = 430.f;
 	CrouchedSpeedMultiplier_DEPRECATED = 0.31f;

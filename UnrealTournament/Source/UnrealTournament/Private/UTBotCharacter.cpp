@@ -20,4 +20,12 @@ UUTBotCharacter::UUTBotCharacter(const class FObjectInitializer& ObjectInitializ
 	DodgeImpulseHorizontal = 1500.f;
 	DodgeImpulseVertical = 500.f;
 	DodgeMaxHorizontalVelocity = 1700.f;
+	WallDodgeSecondImpulseVertical = 320.f;
+	WallDodgeImpulseHorizontal = 1300.f;
+	WallDodgeImpulseVertical = 470.f;
+	FloorSlideEndingSpeedFactor = 0.4f;
+	FloorSlideAcceleration = 400.f;
+	MaxFloorSlideSpeed = 900.f;
+	MaxInitialFloorSlideSpeed = 1350.f;
+	FloorSlideDuration = 0.7f;
 }

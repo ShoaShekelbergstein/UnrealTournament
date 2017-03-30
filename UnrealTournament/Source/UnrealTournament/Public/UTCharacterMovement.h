@@ -539,6 +539,7 @@ public:
 	/** Max absolute Z velocity allowed for multijump (low values mean only near jump apex). */
 	UPROPERTY(Category = "Multijump", EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Max Multijump Z Speed"))
 	float MaxMultiJumpZSpeed;
+
 	/** if set, always allow multijump while Velocity.Z < 0 */
 	UPROPERTY(Category = "Multijump", EditAnywhere, BlueprintReadWrite)
 	bool bAlwaysAllowFallingMultiJump;
@@ -587,10 +588,6 @@ public:
 
 	/** Return true if can multijump now. */
 	virtual bool CanMultiJump();
-
-	/** Max speed when sliding. */
-	UPROPERTY(Category = "FloorSlide", EditAnywhere, BlueprintReadWrite)
-		float MaxSlideSpeed;
 
 	/** True when just landed a dodge and acceleration is still limited. */
 	UPROPERTY(Category = "Dodging", EditAnywhere, BlueprintReadOnly)

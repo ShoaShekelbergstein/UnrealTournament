@@ -272,7 +272,7 @@ void UUTCharacterMovement::SimulateMovement(float DeltaSeconds)
 			{
 				if (bIsFloorSliding)
 				{
-					Velocity = FMath::Min(Speed, MaxSlideSpeed) * Velocity.GetSafeNormal2D();
+					Velocity = FMath::Min(Speed, MaxInitialFloorSlideSpeed) * Velocity.GetSafeNormal2D();
 				}
 				else
 				{

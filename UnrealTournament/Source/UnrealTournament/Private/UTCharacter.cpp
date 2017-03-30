@@ -5162,6 +5162,14 @@ void AUTCharacter::PlayerCardUpdated()
 		UTCharacterMovement->DodgeImpulseHorizontal = PS->PlayerCard->DodgeImpulseHorizontal;
 		UTCharacterMovement->DodgeImpulseVertical = PS->PlayerCard->DodgeImpulseVertical;
 		UTCharacterMovement->DodgeMaxHorizontalVelocity = PS->PlayerCard->DodgeMaxHorizontalVelocity;
+		UTCharacterMovement->WallDodgeSecondImpulseVertical = PS->PlayerCard->WallDodgeSecondImpulseVertical;
+		UTCharacterMovement->WallDodgeImpulseHorizontal = PS->PlayerCard->WallDodgeImpulseHorizontal;
+		UTCharacterMovement->WallDodgeImpulseVertical = PS->PlayerCard->WallDodgeImpulseVertical;
+		UTCharacterMovement->FloorSlideEndingSpeedFactor = PS->PlayerCard->FloorSlideEndingSpeedFactor;
+		UTCharacterMovement->FloorSlideAcceleration = PS->PlayerCard->FloorSlideAcceleration;
+		UTCharacterMovement->MaxFloorSlideSpeed = PS->PlayerCard->MaxFloorSlideSpeed;
+		UTCharacterMovement->MaxInitialFloorSlideSpeed = PS->PlayerCard->MaxInitialFloorSlideSpeed;
+		UTCharacterMovement->FloorSlideDuration = PS->PlayerCard->FloorSlideDuration;
 	}
 }
 

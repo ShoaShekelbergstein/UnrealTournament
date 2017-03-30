@@ -96,26 +96,41 @@ public:
 	UPROPERTY(EditAnywhere, Category = Dodging)
 		float DodgeMaxHorizontalVelocity;
 
+	/** Wall Dodge impulse in XY plane */
+	UPROPERTY(EditAnywhere, Category = Dodging)
+		float WallDodgeImpulseHorizontal;
+
+	/** Vertical impulse for first wall dodge. */
+	UPROPERTY(EditAnywhere, Category = Dodging)
+		float WallDodgeImpulseVertical;
+
+	/** Vertical impulse for subsequent consecutive wall dodges. */
+	UPROPERTY(EditAnywhere, Category = Dodging)
+		float WallDodgeSecondImpulseVertical;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray< TSubclassOf<AUTInventory> > CardInventory;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		int32 ExtraArmor;
+
+	/** Horizontal speed reduction on slide ending (multiplied). */
+	UPROPERTY(Category = "FloorSlide", EditAnywhere, BlueprintReadWrite)
+		float FloorSlideEndingSpeedFactor;
+
+	/** Acceleration during a floor slide. */
+	UPROPERTY(Category = "FloorSlide", BlueprintReadOnly)
+		float FloorSlideAcceleration;
+
+	/** Max speed during a floor slide (decelerates to this if too fast). */
+	UPROPERTY(Category = "FloorSlide", BlueprintReadOnly)
+		float MaxFloorSlideSpeed;
+
+	/** Max initial speed for a floor slide. */
+	UPROPERTY(Category = "FloorSlide", BlueprintReadOnly)
+		float MaxInitialFloorSlideSpeed;
+
+	/** How long floor slide lasts. */
+	UPROPERTY(Category = "FloorSlide", BlueprintReadOnly)
+		float FloorSlideDuration;
 };
-
-/*
-no speed clamp (decelerate rather than clamp)
-
-MaxSlideSpeed = 1230.f;
-MaxFloorSlideSpeed = 900.f;
-MaxInitialFloorSlideSpeed = 1350.f;
-FloorSlideDuration = 0.7f;
-FloorSlideEndingSpeedFactor = 0.4f;
-FloorSlideSlopeBraking = 2.7f;
-
-DodgeMaxHorizontalVelocity = 1700.f;
-WallDodgeSecondImpulseVertical = 320.f;
-WallDodgeImpulseHorizontal = 1300.f;
-WallDodgeImpulseVertical = 470.f;
-
-*/
