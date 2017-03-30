@@ -268,6 +268,9 @@ protected:
 	TSharedPtr<SCheckBox> cbUseBots;
 	TSharedPtr<SCheckBox> cbRequireFull;
 
+	TSharedPtr<SCheckBox> cbHostControl;
+
+
 	bool bBeginnerMatch;
 	bool bUserHasBeenWarned;
 	void RankCheckChanged(ECheckBoxState NewState);
@@ -299,6 +302,9 @@ public:
 	FText GetGameNameText() const;
 
 	void ConfigureMatch(ECreateInstanceTypes::Type InstanceType);
+
+	virtual TSharedRef<class SWidget> BuildCustomButtonBar();
+
 };
 
 

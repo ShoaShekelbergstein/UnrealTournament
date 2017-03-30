@@ -1034,11 +1034,11 @@ void SUTGameSetupDialog::ConfigureMatch(ECreateInstanceTypes::Type InstanceType)
 
 			if ( IsCustomSettings() )
 			{
-				LobbyPlayerState->ServerCreateCustomInstance(GetGameNameText().ToString(), GameMode, StartingMap, bIsInParty, Description, GameOptions, DesiredPlayerCount, bTeamGame != 0, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);
+				LobbyPlayerState->ServerCreateCustomInstance(GetGameNameText().ToString(), GameMode, StartingMap, bIsInParty, Description, GameOptions, DesiredPlayerCount, bTeamGame != 0, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled, cbHostControl->IsChecked());
 			}
 			else
 			{
-				LobbyPlayerState->ServerCreateInstance(GetGameNameText().ToString(), SelectedRuleset->UniqueTag, StartingMap, bIsInParty, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);					
+				LobbyPlayerState->ServerCreateInstance(GetGameNameText().ToString(), SelectedRuleset->UniqueTag, StartingMap, bIsInParty, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled, cbHostControl->IsChecked());					
 			}
 		}
 	}
@@ -1077,6 +1077,32 @@ FText SUTGameSetupDialog::GetGameNameText() const
 void SUTGameSetupDialog::OnGameNameTextCommited(const FText &NewText,ETextCommit::Type CommitType)
 {
 	GameName = NewText;
+}
+
+TSharedRef<class SWidget> SUTGameSetupDialog::BuildCustomButtonBar()
+{
+	TSharedPtr<SHorizontalBox> Box;
+	SAssignNew(Box, SHorizontalBox);
+	if (bHubMenu)
+	{
+		Box->AddSlot()
+		.AutoWidth()
+		.VAlign(VAlign_Center)
+		[
+			SAssignNew(cbHostControl, SCheckBox)
+			.IsChecked(ECheckBoxState::Unchecked)
+			.Style(SUTStyle::Get(), "UT.CheckBox")
+			.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","HostControlTT","If checked, you (the host) will be responsibile for starting the match once in game.")))
+			.Content()
+			[
+				SNew(STextBlock)
+				.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small.Bold")
+				.Text(NSLOCTEXT("SULobbySetup", "HostControl", " Host Controlled Start"))
+			]
+		];
+	}
+
+	return Box.ToSharedRef();
 }
 
 

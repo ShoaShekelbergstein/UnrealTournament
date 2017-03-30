@@ -1254,16 +1254,16 @@ bool AUTLobbyGameState::IsClientFullyInformed()
 	return false;
 }
 
-void AUTLobbyGameState::RequestNewCustomMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool _bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled)
+void AUTLobbyGameState::RequestNewCustomMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool _bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled, bool bHostControl)
 {
 	AUTReplicatedGameRuleset* CustomRuleset = AUTBaseGameMode::CreateCustomReplicateGameRuleset(GetWorld(), this, GameMode, StartingMap, Description, GameOptions, DesiredPlayerCount, bTeamGame);
 	if (CustomRuleset != nullptr)
 	{
-		RequestNewMatch(Creator, InstanceType, CustomName, CustomRuleset, StartingMap, bRankLocked, bSpectatable, _bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);	
+		RequestNewMatch(Creator, InstanceType, CustomName, CustomRuleset, StartingMap, bRankLocked, bSpectatable, _bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled, bHostControl);	
 	}
 }
 
-void AUTLobbyGameState::RequestNewMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled)
+void AUTLobbyGameState::RequestNewMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled, bool bHostControl)
 {
 
 	if (InstanceType == ECreateInstanceTypes::Lobby)
@@ -1275,7 +1275,7 @@ void AUTLobbyGameState::RequestNewMatch(AUTLobbyPlayerState* Creator, ECreateIns
 		{	
 			AvailableMatches.Add(NewMatchInfo);
 			NewMatchInfo->InitializeMatch(Creator, CustomName, Ruleset, StartingMap, bRankLocked, bSpectatable, _bPrivateMatch, bBeginnerMatch);
-			NewMatchInfo->LaunchMatch(bUseBots, BotDifficulty, bRequireFilled);
+			NewMatchInfo->LaunchMatch(bUseBots, BotDifficulty, bRequireFilled, bHostControl);
 		}
 
 	}

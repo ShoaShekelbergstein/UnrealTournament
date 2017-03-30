@@ -259,11 +259,11 @@ public:
 	/**
 	 *	Request a new custom match be created.
 	 **/
-	virtual void RequestNewCustomMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool _bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled);
+	virtual void RequestNewCustomMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions,  int32 DesiredPlayerCount, bool _bTeamGame, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled, bool bHostControl);
 	/**
 	 *	Request a new match be created.
 	 **/
-	virtual void RequestNewMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled);
+	virtual void RequestNewMatch(AUTLobbyPlayerState* Creator, ECreateInstanceTypes::Type InstanceType, const FString& CustomName, AUTReplicatedGameRuleset* Ruleset, const FString& StartingMap, bool bRankLocked, bool bSpectatable, bool _bPrivateMatch, bool bBeginnerMatch, bool bUseBots, int32 BotDifficulty, bool bRequireFilled, bool bHostControl);
 
 	/**
 	 *	Called from UTGameEngine once all of the rulesets are loaded.
