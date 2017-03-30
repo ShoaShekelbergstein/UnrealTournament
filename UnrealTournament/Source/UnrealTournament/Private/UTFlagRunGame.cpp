@@ -948,7 +948,7 @@ void AUTFlagRunGame::HandleMatchIntermission()
 	{
 		GS->UpdateRoundHighlights();
 	}
-	if ((GS == nullptr) || (GS->CTFRound < GS->NumRounds - 2))
+	if ((GS == nullptr) || (GS->CTFRound < GS->NumRounds - 3))
 	{
 		return;
 	}
@@ -960,7 +960,28 @@ void AUTFlagRunGame::HandleMatchIntermission()
 	RequiredTime = FMath::Max(RequiredTime, 0);
 	GS->FlagRunMessageTeam = nullptr;
 	GS->EarlyEndTime = 0;
-	if (GS->CTFRound == GS->NumRounds - 2)
+	if (GS->CTFRound == GS->NumRounds - 3)
+	{
+		if (NextAttacker->Score > NextDefender->Score - 1)
+		{
+			GS->FlagRunMessageTeam = NextDefender;
+			GS->FlagRunMessageSwitch = FMath::Clamp(5 - (NextAttacker->Score - NextDefender->Score), 1, 3);
+		}
+		else if (NextAttacker->Score < NextDefender->Score - 4)
+		{
+			GS->FlagRunMessageTeam = NextAttacker;
+			int32 BonusType = NextDefender->Score - 4 - NextAttacker->Score;
+			if (RequiredTime > 60)
+			{
+				BonusType++;
+				RequiredTime = 0;
+			}
+			BonusType = FMath::Min(BonusType, 3);
+			GS->FlagRunMessageSwitch = 100 * RequiredTime + BonusType + 3;
+			GS->EarlyEndTime = 60 * (BonusType - 1) + RequiredTime;
+		}
+	}
+	else if (GS->CTFRound == GS->NumRounds - 2)
 	{
 		if (NextAttacker->Score > NextDefender->Score)
 		{
