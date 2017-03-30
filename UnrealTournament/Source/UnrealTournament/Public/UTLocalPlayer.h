@@ -1406,5 +1406,9 @@ public:
 
 	TArray<FString> TitleFileQueue;
 
+	// Checks to see if the loading movie should be forced to a tutorial
+	virtual void CheckLoadingMovie(const FString& GameMode);
+
+
 };
 

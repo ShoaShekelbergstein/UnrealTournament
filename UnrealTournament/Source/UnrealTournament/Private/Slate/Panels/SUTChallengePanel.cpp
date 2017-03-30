@@ -1098,6 +1098,9 @@ void SUTChallengePanel::StartChallenge(int32 Difficulty)
 			FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), "Challenge");
 
 			Options += FUTAnalytics::AnalyticsLoggedGameOptionTrue;
+
+			PlayerOwner->CheckLoadingMovie(Challenge.GameURL);
+
 		}
 
 		ConsoleCommand(TEXT("Open ") + Options);

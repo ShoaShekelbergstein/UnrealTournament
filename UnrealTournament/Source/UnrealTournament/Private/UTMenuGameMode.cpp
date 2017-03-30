@@ -122,17 +122,13 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 	#endif
 					}
 				}
-				else if ( ((ProfileSettings->TutorialMask & 0x07) != 0x07)  || (ProfileSettings->TutorialMask < 8) )
-				{
-					bForceTutorialMenu = true;
-				}
 			}
 		}
 
 #if !UE_SERVER
 		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(PC->Player);
 		// start with tutorial menu if requested
-		if (bForceTutorialMenu || LastURL.HasOption(TEXT("tutorialmenu")))
+		if (LastURL.HasOption(TEXT("tutorialmenu")))
 		{
 			// NOTE: If we are in a party, never return to the tutorial menu
 			if (LP != NULL && !LP->IsInAnActiveParty())

@@ -711,6 +711,8 @@ EVisibility SUTHomePanel::ShowNewChallengeImage() const
 	return EVisibility::Collapsed;
 }
 
+
+
 void SUTHomePanel::OnHidePanel()
 {
 	PlayerOwner->GetWorld()->GetTimerManager().ClearTimer(LanTimerHandle);
@@ -795,7 +797,7 @@ TSharedRef<SWidget> SUTHomePanel::BuildRankedPlaylist()
 				+SVerticalBox::Slot().AutoHeight()
 				[
 					SNew(STextBlock)
-					.Text(FText::FromString(TEXT("- Ranked Matches -")))
+					.Text(FText::FromString(TEXT("League Matches")))
 					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
 
 				]

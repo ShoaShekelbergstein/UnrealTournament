@@ -6911,6 +6911,7 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 	}
 	else if (InstanceType == ECreateInstanceTypes::Standalone)
 	{
+		CheckLoadingMovie(Ruleset->GameMode);
 
 		if (FUTAnalytics::IsAvailable())
 		{
@@ -6926,6 +6927,59 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 
 		CloseAllUI();
 		ConsoleCommand(TEXT("Start ") + URL);
+	}
+}
+
+void UUTLocalPlayer::CheckLoadingMovie(const FString& GameMode)
+{
+	// Look to see if we have completed the tutorial for this 
+
+	FString TutorialMovie = TEXT("");
+	int32 DesiredTutorial = 0x00;
+	if (GameMode.Find(TEXT(".UTDMGameMode"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE || GameMode.Find(TEXT("=DM"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE) 
+	{
+		DesiredTutorial = TUTORIAL_DM;
+		TutorialMovie = TEXT("TutorialMovies/dm-tutorial");
+	}
+	else if (GameMode.Find(TEXT(".UTTeamDMGameMode"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE || GameMode.Find(TEXT("=TDM"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE)
+	{
+		DesiredTutorial = TUTORIAL_TDM;
+		TutorialMovie = TEXT("TutorialMovies/tdm-tutorial");
+	}
+	else if (GameMode.Find(TEXT(".UTCTFGameMode"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE || GameMode.Find(TEXT("=CTF"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE) 
+	{
+		DesiredTutorial = TUTORIAL_CTF;
+		TutorialMovie = TEXT("TutorialMovies/ctf-tutorial");
+	}
+	else if (GameMode.Find(TEXT(".UTDuelGame"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE || GameMode.Find(TEXT("=Duel"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE) 
+	{
+		DesiredTutorial = TUTORIAL_Duel;
+		TutorialMovie = TEXT("TutorialMovies/duel-tutorial");
+	}
+	else if (GameMode.Find(TEXT(".UTShowdownGame"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE || GameMode.Find(TEXT("=TEAMSHOWDOWN"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE) 
+	{
+		DesiredTutorial = TUTORIAL_Showdown;
+		TutorialMovie = TEXT("TutorialMovies/showdown-tutorial");
+	}
+	else if (GameMode.Find(TEXT(".UTFlagRunGame"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE || GameMode.Find(TEXT("=FlagRun"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE) 
+	{
+		DesiredTutorial = TUTORIAL_FlagRun;
+		TutorialMovie = TEXT("TutorialMovies/flagrun-tutorial");
+	}
+			
+	if (DesiredTutorial != 0x00)
+	{
+		// Look to see if this tutorial has been completed
+		if ((GetProfileSettings()->TutorialMask & DesiredTutorial) != DesiredTutorial)
+		{
+			// Set the loading movie
+			UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
+			if (GI)
+			{
+				GI->LoadingMovieToPlay = TutorialMovie;
+				GI->bSuppressLoadingText = true;
+			}
+		}
 	}
 }
 
