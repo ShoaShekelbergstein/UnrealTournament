@@ -239,12 +239,15 @@ void UUTCharacterMovement::SimulateMovement(float DeltaSeconds)
 
 		if (MovementMode == MOVE_Falling)
 		{
-			if (GetWorld()->GetTimeSeconds() - LastCheckedAgainstWall > 0.07f)
+			AUTCharacter* UTCharacterOwner = Cast<AUTCharacter>(CharacterOwner);
+			bool bIsWallRunning = UTCharacterOwner && UTCharacterOwner->bApplyWallSlide;
+			if (bIsWallRunning || (GetWorld()->GetTimeSeconds() - LastCheckedAgainstWall > 0.07f))
 			{
 				LastCheckedAgainstWall = GetWorld()->GetTimeSeconds();
 				static const FName FallingTraceParamsTag = FName(TEXT("PhysFalling"));
 				const float TestWalkTime = FMath::Max(DeltaSeconds, 0.05f);
-				const FVector TestWalk = (FVector(0.f, 0.f, GetGravityZ()) * TestWalkTime + Velocity) * TestWalkTime;
+				float VelMult = bIsWallRunning ? 2.f : 1.f;
+				const FVector TestWalk = (FVector(0.f, 0.f, GetGravityZ()) * TestWalkTime + VelMult*Velocity) * TestWalkTime;
 				FCollisionQueryParams CapsuleQuery(FallingTraceParamsTag, false, CharacterOwner);
 				FCollisionResponseParams ResponseParam;
 				InitCollisionParams(CapsuleQuery, ResponseParam);
@@ -253,6 +256,18 @@ void UUTCharacterMovement::SimulateMovement(float DeltaSeconds)
 				const ECollisionChannel CollisionChannel = UpdatedComponent->GetCollisionObjectType();
 				FHitResult Hit(1.f);
 				bIsAgainstWall = GetWorld()->SweepSingleByChannel(Hit, PawnLocation, PawnLocation + TestWalk, FQuat::Identity, CollisionChannel, GetPawnCapsuleCollisionShape(SHRINK_RadiusCustom, 2.f), CapsuleQuery, ResponseParam);
+				if (bIsWallRunning && !bIsAgainstWall)
+				{
+					// need to check again, find valid wall
+					FVector LeftDir = (Velocity ^ FVector(0.f, 0.f, 1.f)).SafeNormal();
+					LeftDir *= 1.2f*MaxSlideWallDist;
+					bIsAgainstWall = GetWorld()->SweepSingleByChannel(Hit, PawnLocation, PawnLocation + LeftDir, FQuat::Identity, CollisionChannel, GetPawnCapsuleCollisionShape(SHRINK_RadiusCustom, 2.f), CapsuleQuery, ResponseParam);
+					if (!bIsAgainstWall)
+					{
+						LeftDir *= -1.f;
+						bIsAgainstWall = GetWorld()->SweepSingleByChannel(Hit, PawnLocation, PawnLocation + LeftDir, FQuat::Identity, CollisionChannel, GetPawnCapsuleCollisionShape(SHRINK_RadiusCustom, 2.f), CapsuleQuery, ResponseParam);
+					}
+				}
 				if (bIsAgainstWall)
 				{
 					WallSlideNormal = Hit.Normal;
