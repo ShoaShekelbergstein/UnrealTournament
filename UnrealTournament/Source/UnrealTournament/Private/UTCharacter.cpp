@@ -1965,7 +1965,7 @@ void AUTCharacter::PlayDying()
 
 	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
 	bool bIsInLineUp = UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive;
-	if (bIsInLineUp)
+	if (!bIsInLineUp)
 	{
 		SpawnBloodDecal(GetActorLocation() - FVector(0.0f, 0.0f, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()), FVector(0.0f, 0.0f, -1.0f));
 		LastDeathDecalTime = GetWorld()->TimeSeconds;
