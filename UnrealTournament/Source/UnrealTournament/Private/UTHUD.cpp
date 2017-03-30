@@ -619,7 +619,6 @@ void AUTHUD::NotifyMatchStateChange()
 	{
 		if (GS->GetMatchState() == MatchState::InProgress)
 		{
-			bShowScores = false;
 			bForceScores = false;
 
 			if (bFirstPlay)

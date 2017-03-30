@@ -538,7 +538,7 @@ void UUTScoreboard::DrawScorePanel(float RenderDelta, float& YOffset)
 		SelectionStack.Empty();
 	}
 	LastScorePanelYOffset = YOffset;
-	if (UTGameState && (!UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive || (UTHUDOwner && UTHUDOwner->bDisplayMatchSummary && bIsInteractive)))
+	if (UTGameState && (!UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive || (UTHUDOwner && UTHUDOwner->bShowScores) || (UTHUDOwner && UTHUDOwner->bDisplayMatchSummary && bIsInteractive)))
 	{
 		DrawScoreHeaders(RenderDelta, YOffset);
 		DrawPlayerScores(RenderDelta, YOffset);

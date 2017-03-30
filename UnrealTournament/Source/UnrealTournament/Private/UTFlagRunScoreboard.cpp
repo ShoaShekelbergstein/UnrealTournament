@@ -84,7 +84,7 @@ bool UUTFlagRunScoreboard::ShowScorePanel()
 {
 	if (UTHUDOwner && UTHUDOwner->bShowScores)
 	{
-		return !bHasAnnouncedWin;
+		return true;
 	}
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	if (GS == nullptr || (GS->GetMatchState() == MatchState::CountdownToBegin) || (GS->GetMatchState() == MatchState::PlayerIntro) || bHasAnnouncedWin)
