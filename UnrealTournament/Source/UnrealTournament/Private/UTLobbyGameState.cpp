@@ -58,22 +58,24 @@ void AUTLobbyGameState::PostInitializeComponents()
 		bCustomContentAvailable = LobbyGameMode ? LobbyGameMode->RedirectReferences.Num() > 0 : 0;
 		FTimerHandle TempHandle;
 		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTLobbyGameState::CheckInstanceHealth, 60.0f, true);	
+	
 		if (Role == ROLE_Authority)
 		{
 			GetWorldTimerManager().SetTimer(RuleWaitHandle, this, &AUTLobbyGameState::RulesetsAreLoaded, 1.5f, true);	
 		}
-		
-
 	}
 }
 
 void AUTLobbyGameState::RulesetsAreLoaded()
 {
 	UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
-	if (Role == ROLE_Authority && UTGameEngine->bReceivedTitleFiles)
-	{
-		GetWorldTimerManager().ClearTimer(RuleWaitHandle);
-	}
+
+	// If we aren't authority, or if the GameEngine hasn't received it's title files yet, just exit out.
+	if (UTGameEngine == nullptr || Role != ROLE_Authority || !UTGameEngine->bReceivedTitleFiles) return;
+
+	// Clear the timer that got us here
+	GetWorldTimerManager().ClearTimer(RuleWaitHandle);
+
 
 	// Grab all of the available map assets.
 	TArray<FAssetData> MapAssets;
@@ -848,51 +850,27 @@ void AUTLobbyGameState::FindAllPlayableMaps(TArray<FAssetData>& MapAssets)
 }
 
 /**
- *	On the server this will create all of the ReplicatedMapInfos for all available maps.  On the client, it will return
- *  any ReplicatedMapInfos that match the prefixes
+ * 
  **/
 void AUTLobbyGameState::GetMapList(const TArray<FString>& AllowedMapPrefixes, TArray<AUTReplicatedMapInfo*>& MapList, bool bUseCache)
 {
-	if (Role == ROLE_Authority && !bUseCache)
+	for (int32 i = 0; i < AllMapsOnServer.Num(); i++)
 	{
-		TArray<FAssetData> MapAssets;
-		ScanForMaps(AllowedMapPrefixes, MapAssets);
-
-		// Build the Replicated Map Infos....
-		for (int32 i=0; i < MapAssets.Num(); i++)
+		if ( AllMapsOnServer[i] )
 		{
-			AUTReplicatedMapInfo* MI = GetMapInfo(MapAssets[i].PackageName.ToString());
-			if (MI == NULL)
+			bool bFound = AllowedMapPrefixes.Num() == 0;
+			for (int32 j = 0; j < AllowedMapPrefixes.Num(); j++)
 			{
-				AUTReplicatedMapInfo* MapInfo = CreateMapInfo(MapAssets[i]);
-				if (MapInfo)
+				if ( AllMapsOnServer[i]->MapAssetName.StartsWith(AllowedMapPrefixes[j] + TEXT("-")) )
 				{
-					AllMapsOnServer.Add( MapInfo );
-					MapList.Add( MapInfo );
+					bFound = true;
+					break;
 				}
 			}
-		}
-	}
-	else
-	{
-		for (int32 i = 0; i < AllMapsOnServer.Num(); i++)
-		{
-			if ( AllMapsOnServer[i] )
-			{
-				bool bFound = AllowedMapPrefixes.Num() == 0;
-				for (int32 j = 0; j < AllowedMapPrefixes.Num(); j++)
-				{
-					if ( AllMapsOnServer[i]->MapAssetName.StartsWith(AllowedMapPrefixes[j] + TEXT("-")) )
-					{
-						bFound = true;
-						break;
-					}
-				}
 
-				if (bFound)
-				{
-					MapList.Add(AllMapsOnServer[i]);
-				}
+			if (bFound)
+			{
+				MapList.AddUnique(AllMapsOnServer[i]);
 			}
 		}
 	}
