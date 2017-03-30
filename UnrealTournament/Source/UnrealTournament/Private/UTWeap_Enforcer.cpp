@@ -547,6 +547,12 @@ void AUTWeap_Enforcer::SetSkin(UMaterialInterface* NewSkin)
 				LeftMesh->SetMaterial(i, GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->GetMaterial(i));
 			}
 		}
+
+		LeftMeshMIDs.Empty();
+		for (int i = 0; i < LeftMesh->GetNumMaterials(); i++)
+		{
+			LeftMeshMIDs.Add(LeftMesh->CreateAndSetMaterialInstanceDynamic(i));
+		}
 	}
 
 	Super::SetSkin(NewSkin);
@@ -569,7 +575,16 @@ void AUTWeap_Enforcer::AttachLeftMesh()
 			LeftMesh->LastRenderTime = GetWorld()->TimeSeconds;
 			LeftMesh->bRecentlyRendered = true;
 		}
-		
+
+		static FName FNameScale = TEXT("Scale");
+		for (int i = 0; i < LeftMeshMIDs.Num(); i++)
+		{
+			if (LeftMeshMIDs[i])
+			{
+				LeftMeshMIDs[i]->SetScalarParameterValue(FNameScale, WeaponRenderScale);
+			}
+		}
+
 		if (UTOwner != NULL && UTOwner->GetWeapon() == this)
 		{
 			if (Dual_BringUpLeftWeaponFirstAttach != NULL)

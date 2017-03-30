@@ -99,6 +99,8 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	AnimLagMultiplier = -4.f;;
 	AnimLagSpeedReturn = 2.f;
 
+	WeaponRenderScale = 0.8f;
+
 	// default icon texture
 	static ConstructorHelpers::FObjectFinder<UTexture> WeaponTexture(TEXT("Texture2D'/Game/RestrictedAssets/Proto/UI/HUD/Elements/UI_HUD_BaseB.UI_HUD_BaseB'"));
 	HUDIcon.Texture = WeaponTexture.Object;
@@ -242,6 +244,14 @@ void AUTWeapon::BeginPlay()
 	if (GetMesh() && Settings->bUseCapsuleDirectShadowsForCharacter)
 	{
 		GetMesh()->bCastCapsuleDirectShadow = true;
+	}
+
+	if (GetMesh())
+	{
+		for (int i = 0; i < GetMesh()->GetNumMaterials(); i++)
+		{
+			MeshMIDs.Add(GetMesh()->CreateAndSetMaterialInstanceDynamic(i));
+		}
 	}
 }
 
@@ -913,6 +923,23 @@ void AUTWeapon::AttachToOwner_Implementation()
 			UpdateViewBob(0.0f);
 		}
 	}
+
+	static FName FNameScale = TEXT("Scale");
+	for (int i = 0; i < MeshMIDs.Num(); i++)
+	{
+		if (MeshMIDs[i])
+		{
+			MeshMIDs[i]->SetScalarParameterValue(FNameScale, WeaponRenderScale);
+		}
+	}
+	for (int i = 0; i < UTOwner->FirstPersonMeshMIDs.Num(); i++)
+	{
+		if (UTOwner->FirstPersonMeshMIDs[i])
+		{
+			UTOwner->FirstPersonMeshMIDs[i]->SetScalarParameterValue(FNameScale, WeaponRenderScale);
+		}
+	}
+
 	// register components now
 	bAttachingToOwner = true;
 	RegisterAllComponents();
