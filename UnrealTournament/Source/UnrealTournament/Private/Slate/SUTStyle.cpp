@@ -607,8 +607,12 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 	Style.Set("UT.HomePanel.Replays", new IMAGE_BRUSH( "UTStyle/MainPanel/Replays", FVector2D(180,180), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
 	Style.Set("UT.HomePanel.Live", new IMAGE_BRUSH( "UTStyle/MainPanel/Live", FVector2D(180,180), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
 	Style.Set("UT.HomePanel.BasicTraining", new IMAGE_BRUSH( "UTStyle/MainPanel/BasicTraining", FVector2D(800,220), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
-	Style.Set("UT.HomePanel.Challenges", new IMAGE_BRUSH( "UTStyle/MainPanel/ChallangesBackground", FVector2D(800,220), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
 	Style.Set("UT.HomePanel.ChallengesNewIcon", new IMAGE_BRUSH( "UTStyle/MainPanel/NewChallenge72x72", FVector2D(72,72), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
+
+	Style.Set("UT.HomePanel.BasicTraining", new IMAGE_BRUSH( "UTStyle/MainPanel/NewBadge4", FVector2D(250,270), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
+	Style.Set("UT.HomePanel.Challenges", new IMAGE_BRUSH( "UTStyle/MainPanel/NewBadge2", FVector2D(250,270), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
+	Style.Set("UT.HomePanel.vsBots", new IMAGE_BRUSH( "UTStyle/MainPanel/NewBadge3", FVector2D(250,270), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
+
 
 	Style.Set("UT.HomePanel.Button", FButtonStyle()
 		.SetNormal( FSlateNoResource(FVector2D(256.0f, 256.0f) ))

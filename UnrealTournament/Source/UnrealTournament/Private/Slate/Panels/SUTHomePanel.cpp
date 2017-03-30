@@ -461,7 +461,7 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 						SNew(SHorizontalBox)
 						+ SHorizontalBox::Slot()
 						[
-							BuildHomePanelButton(EMenuCommand::MC_Tutorial, TEXT("UT.HomePanel.Challenges"), NSLOCTEXT("SUTHomePanel","BasicTraining","Basic Training"))
+							BuildHomePanelButton(EMenuCommand::MC_Tutorial, TEXT("UT.HomePanel.BasicTraining"), NSLOCTEXT("SUTHomePanel","BasicTraining","Basic Training"))
 						]
 						+ SHorizontalBox::Slot().Padding(25.0f,0.0f,25.0f,0.0f)
 						[
@@ -469,7 +469,7 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 						]
 						+ SHorizontalBox::Slot()
 						[
-							BuildHomePanelButton(EMenuCommand::MC_InstantAction, TEXT("UT.HomePanel.Challenges"), NSLOCTEXT("SUTHomePanel","InstantAction","vs. Bots"))
+							BuildHomePanelButton(EMenuCommand::MC_InstantAction, TEXT("UT.HomePanel.vsBots"), NSLOCTEXT("SUTHomePanel","InstantAction","vs. Bots"))
 						]
 					]
 				]
