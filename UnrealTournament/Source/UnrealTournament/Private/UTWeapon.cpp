@@ -3107,24 +3107,17 @@ bool AUTWeapon::CanAttack_Implementation(AActor* Target, const FVector& TargetLo
 	if (B != NULL)
 	{
 		APawn* TargetPawn = Cast<APawn>(Target);
-		if (TargetPawn != NULL && TargetLoc == Target->GetActorLocation() && B->IsEnemyVisible(TargetPawn))
+		// by default bots do not try shooting enemies when the enemy info is stale
+		// since even if the target location is visible the enemy is probably not near there anymore
+		// subclasses can override if their fire mode(s) are suitable for speculative or predictive firing
+		const FBotEnemyInfo* EnemyInfo = (TargetPawn != NULL) ? B->GetEnemyInfo(TargetPawn, true) : NULL;
+		if (EnemyInfo != NULL && GetWorld()->TimeSeconds - EnemyInfo->LastFullUpdateTime > 1.0f)
 		{
-			bVisible = true;
+			bVisible = false;
 		}
 		else
 		{
-			// by default bots do not try shooting enemies when the enemy info is stale
-			// since even if the target location is visible the enemy is probably not near there anymore
-			// subclasses can override if their fire mode(s) are suitable for speculative or predictive firing
-			const FBotEnemyInfo* EnemyInfo = (TargetPawn != NULL) ? B->GetEnemyInfo(TargetPawn, true) : NULL;
-			if (EnemyInfo != NULL && GetWorld()->TimeSeconds - EnemyInfo->LastFullUpdateTime > 1.0f)
-			{
-				bVisible = false;
-			}
-			else
-			{
-				bVisible = B->UTLineOfSightTo(Target, FVector::ZeroVector, false, TargetLoc);
-			}
+			bVisible = B->UTLineOfSightTo(Target, GetFireStartLoc(), false, TargetLoc);
 		}
 	}
 	else

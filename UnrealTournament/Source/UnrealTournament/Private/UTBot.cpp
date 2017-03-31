@@ -2827,6 +2827,18 @@ void AUTBot::ExecuteWhatToDoNext()
 		if (UTChar != nullptr && !UTChar->bDamageHurtsHealth && Enemy != nullptr && UTChar->LastGameVolume != nullptr && UTChar->LastGameVolume->bIsTeamSafeVolume && IsEnemyVisible(Enemy) && CanAttack(Enemy, Enemy->GetActorLocation(), true))
 		{
 			GoalString = TEXT("Stay in spawn protected volume and shoot spawn campers");
+			// randomly move around a little to make sure we don't get stuck
+			if (FMath::FRand() < 0.25f)
+			{
+				const FVector Forward = UTChar->GetActorRotation().Vector();
+				const FVector MoveAmt = Forward * (FMath::FRand() * -300.0f) + (Forward ^ FVector(0.0f, 0.0f, 1.0f)) * FMath::FRandRange(-500.0f, 500.0f);
+				FNavLocation Dest;
+				if (NavData->ProjectPoint(UTChar->GetNavAgentLocation() + MoveAmt, Dest, NavData->GetHumanPathSize().GetExtent()) && !NavData->RaycastWithZCheck(GetNavAgentLocation(), Dest.Location))
+				{
+					SetMoveTargetDirect(FRouteCacheItem(Dest.Location, Dest.NodeRef));
+					return;
+				}
+			}
 			DoRangedAttackOn(Enemy);
 			return;
 		}
