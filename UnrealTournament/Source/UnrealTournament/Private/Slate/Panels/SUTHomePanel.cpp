@@ -148,7 +148,8 @@ void SUTHomePanel::OnFindLANSessionsComplete(bool bWasSuccessful)
 		for (int32 ServerIndex = 0; ServerIndex < LanSearchSettings->SearchResults.Num(); ServerIndex++)
 		{
 			TSharedPtr<FServerData> NewServer = SUTServerBrowserPanel::CreateNewServerData(LanSearchSettings->SearchResults[ServerIndex]);
-			if (NewServer.IsValid())
+
+			if (NewServer.IsValid() && NewServer->Version == FString::FromInt(FNetworkVersion::GetLocalNetworkVersion()))
 			{
 				FText ServerName = NewServer->GetBrowserName();
 				FText ServerInfo = FText::Format(NSLOCTEXT("SUTHomePanel","LanServerFormat","Game: {0}  Map: {1}   # Players: {2}   # Friends: {3}"),
