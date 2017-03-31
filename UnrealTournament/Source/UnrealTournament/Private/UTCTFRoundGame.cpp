@@ -1315,7 +1315,7 @@ void AUTCTFRoundGame::CheckRoundTimeVictory()
 void AUTCTFRoundGame::CheckGameTime()
 {
 	AUTCTFRoundGameState* RCTFGameState = Cast<AUTCTFRoundGameState>(CTFGameState);
-	if (CTFGameState->IsMatchIntermission())
+	if (CTFGameState && CTFGameState->IsMatchIntermission())
 	{
 		if (RCTFGameState && (RCTFGameState->IntermissionTime <= 0))
 		{
