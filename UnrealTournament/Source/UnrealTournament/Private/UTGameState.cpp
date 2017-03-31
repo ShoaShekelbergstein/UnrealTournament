@@ -2355,19 +2355,19 @@ AUTLineUpZone* AUTGameState::CreateLineUpAtPlayerStart(LineUpTypes LineUpType, A
 			NewZone->DefaultCreateForOnly1Character();
 
 			NewZone->AttachToActor(PlayerSpawn, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		}
 
-		SpawnedLineUps.Add(NewZone);
+			SpawnedLineUps.Add(NewZone);
 
-		//See if the new zone's camera is stuck inside of a wall
-		if (GetWorld())
-		{
-			FHitResult CameraCollision;
-			GetWorld()->SweepSingleByChannel(CameraCollision, NewZone->GetActorLocation(), NewZone->Camera->GetComponentLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
-
-			if (CameraCollision.bBlockingHit)
+			//See if the new zone's camera is stuck inside of a wall
+			if (GetWorld())
 			{
-				NewZone->Camera->SetWorldLocation(CameraCollision.ImpactPoint);
+				FHitResult CameraCollision;
+				GetWorld()->SweepSingleByChannel(CameraCollision, NewZone->GetActorLocation(), NewZone->Camera->GetComponentLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
+
+				if (CameraCollision.bBlockingHit)
+				{
+					NewZone->Camera->SetWorldLocation(CameraCollision.ImpactPoint);
+				}
 			}
 		}
 	}
