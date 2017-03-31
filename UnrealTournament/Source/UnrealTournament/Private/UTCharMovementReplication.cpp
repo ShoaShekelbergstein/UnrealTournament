@@ -259,7 +259,7 @@ void UUTCharacterMovement::SimulateMovement(float DeltaSeconds)
 				if (bIsWallRunning && !bIsAgainstWall)
 				{
 					// need to check again, find valid wall
-					FVector LeftDir = (Velocity ^ FVector(0.f, 0.f, 1.f)).SafeNormal();
+					FVector LeftDir = (Velocity ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
 					LeftDir *= 1.2f*MaxSlideWallDist;
 					bIsAgainstWall = GetWorld()->SweepSingleByChannel(Hit, PawnLocation, PawnLocation + LeftDir, FQuat::Identity, CollisionChannel, GetPawnCapsuleCollisionShape(SHRINK_RadiusCustom, 2.f), CapsuleQuery, ResponseParam);
 					if (!bIsAgainstWall)
