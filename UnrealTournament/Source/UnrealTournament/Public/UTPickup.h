@@ -114,9 +114,18 @@ class UNREALTOURNAMENT_API AUTPickup : public AActor, public IUTResetInterface, 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = HUD)
 	FCanvasIcon GetMinimapIcon() const;
 
+	/** if set draw beacon on HUD when closer than this dist, optionally also through walls */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
+	float BeaconDist;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
+	bool bBeaconThroughWalls;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
+	FCanvasIcon BeaconArrow;
+
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
+	virtual void PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir) override;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Effects)
 	bool bHasTacComView;

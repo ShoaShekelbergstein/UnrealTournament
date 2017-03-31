@@ -71,10 +71,24 @@ void AUTPickup::BeginPlay()
 		BaseEffect->SetTemplate(BaseTemplateAvailable);
 	}
 
-	AUTRecastNavMesh* NavData = GetUTNavData(GetWorld());
-	if (NavData != NULL)
+	if (!IsPendingKillPending())
 	{
-		NavData->AddToNavigation(this);
+		AUTRecastNavMesh* NavData = GetUTNavData(GetWorld());
+		if (NavData != NULL)
+		{
+			NavData->AddToNavigation(this);
+		}
+
+		if (BeaconDist > 0.0f)
+		{
+			for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+			{
+				if (It->PlayerController != nullptr && It->PlayerController->MyHUD != nullptr)
+				{
+					It->PlayerController->MyHUD->AddPostRenderedActor(this);
+				}
+			}
+		}
 	}
 }
 
@@ -87,6 +101,14 @@ void AUTPickup::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (NavData != NULL)
 	{
 		NavData->RemoveFromNavigation(this);
+	}
+
+	for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+	{
+		if (It->PlayerController != nullptr && It->PlayerController->MyHUD != nullptr)
+		{
+			It->PlayerController->MyHUD->RemovePostRenderedActor(this);
+		}
 	}
 }
 
@@ -377,6 +399,23 @@ void AUTPickup::Tick(float DeltaTime)
 	if (TimerEffect && (RespawnTime > 0.0f) && !State.bActive && World->GetTimerManager().IsTimerActive(WakeUpTimerHandle))
 	{
 		TimerEffect->SetFloatParameter(NAME_Progress, 1.0f - World->GetTimerManager().GetTimerRemaining(WakeUpTimerHandle) / RespawnTime);
+	}
+}
+
+void AUTPickup::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
+{
+	if (State.bActive && (CameraPosition - GetActorLocation()).Size() < BeaconDist && (bBeaconThroughWalls || GetWorld()->TimeSeconds - GetLastRenderTime() < 0.2f))
+	{
+		FVector Pos = Canvas->Project(GetActorLocation() + FVector(0.0f, 0.0f, Collision->GetScaledCapsuleHalfHeight()));
+		if (Pos.X > 0.0f && Pos.Y > 0.0f && Pos.X < Canvas->SizeX && Pos.Y < Canvas->SizeY && Pos.Z > 0.0f)
+		{
+			Canvas->DrawColor = FColor::White;
+			FVector2D Size(32.0f, 32.0f);
+			Size *= Canvas->ClipX / 1920.0f * FMath::Clamp<float>(1.0f - (GetActorLocation() - CameraPosition).Size() / 5000.0f, 0.25f, 1.0f);
+			Canvas->DrawTile(BeaconArrow.Texture, Pos.X - Size.X * 0.5f, Pos.Y - Size.Y * 0.5f, Size.X, Size.Y, BeaconArrow.U, BeaconArrow.V, BeaconArrow.UL, BeaconArrow.VL);
+			Pos.Y -= Size.Y * 1.5f;
+			Canvas->DrawTile(HUDIcon.Texture, Pos.X - Size.X * 0.5f, Pos.Y - Size.Y * 0.5f, Size.X, Size.Y, HUDIcon.U, HUDIcon.V, HUDIcon.UL, HUDIcon.VL);
+		}
 	}
 }
 
