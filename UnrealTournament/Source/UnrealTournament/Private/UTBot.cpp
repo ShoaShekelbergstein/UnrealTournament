@@ -2621,12 +2621,15 @@ FVector AUTBot::GetEnemyLocation(APawn* TestEnemy, bool bAllowPrediction)
 
 bool AUTBot::IsEnemyVisible(APawn* TestEnemy)
 {
-	// only use local enemies for personal visibility
-	for (const FBotEnemyInfo& Info : LocalEnemyList)
+	if (TestEnemy != nullptr)
 	{
-		if (Info.GetPawn() == TestEnemy)
+		// only use local enemies for personal visibility
+		for (const FBotEnemyInfo& Info : LocalEnemyList)
 		{
-			return Info.IsCurrentlyVisible(GetWorld()->TimeSeconds);
+			if (Info.GetPawn() == TestEnemy)
+			{
+				return Info.IsCurrentlyVisible(GetWorld()->TimeSeconds);
+			}
 		}
 	}
 	return false;

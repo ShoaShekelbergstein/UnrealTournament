@@ -304,17 +304,18 @@ bool AUTAsymCTFSquadAI::HuntEnemyFlag(AUTBot* B)
 		// see if any defense points have sight to flag, use them (assume defense point is superior position to just running up near the flag)
 		for (AUTDefensePoint* DP : GameObjective->DefensePoints)
 		{
-			if ( DP->CurrentUser == nullptr && (DP->GetActorLocation() - Flag->GetActorLocation()).Size() < 3000.0f &&
+			if ( (DP->CurrentUser == nullptr || DP->CurrentUser == B) && (DP->GetActorLocation() - Flag->GetActorLocation()).Size() < 3000.0f &&
 				!GetWorld()->LineTraceTestByChannel(DP->GetActorLocation() + FVector(0.0f, 0.0f, B->GetPawn()->GetSimpleCollisionHalfHeight()), Flag->GetActorLocation(), ECC_Visibility, FCollisionQueryParams(NAME_None, false), WorldResponseParams) )
 			{
 				const FVector Diff = B->GetPawn()->GetActorLocation() - DP->GetActorLocation();
-				if (Diff.Size() < 500.0f && FMath::Abs<float>(Diff.Z) <= B->GetPawn()->GetSimpleCollisionHalfHeight())
+				if (Diff.Size() < 900.0f && FMath::Abs<float>(Diff.Z) <= B->GetPawn()->GetSimpleCollisionHalfHeight())
 				{
 					// fight here
 					return false;
 				}
 				else if (B->TryPathToward(DP, true, false, FString::Printf(TEXT("Monitor flag using defense point %s"), *DP->GetName())))
 				{
+					B->SetDefensePoint(DP);
 					return true;
 				}
 			}
@@ -481,7 +482,7 @@ bool AUTAsymCTFSquadAI::CheckSquadObjectives(AUTBot* B)
 		{
 			SetDefensePointFor(B);
 		}
-		else
+		else if (B->IsEnemyVisible(B->GetEnemy())) // don't abort initial positioning until fully engaged
 		{
 			B->SetDefensePoint(NULL);
 		}
