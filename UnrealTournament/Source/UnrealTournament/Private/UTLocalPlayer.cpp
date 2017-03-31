@@ -6969,6 +6969,21 @@ void UUTLocalPlayer::CheckLoadingMovie(const FString& GameMode)
 			
 	if (DesiredTutorial != 0x00)
 	{
+		if (CurrentProfileSettings && CurrentProfileSettings->TutorialVideoWatchCount.Contains(DesiredTutorial) )
+		{
+			if ( CurrentProfileSettings->TutorialVideoWatchCount[DesiredTutorial] > 3 )
+			{
+				return;
+			}
+			CurrentProfileSettings->TutorialVideoWatchCount[DesiredTutorial] = CurrentProfileSettings->TutorialVideoWatchCount[DesiredTutorial] + 1;
+			SaveProfileSettings();
+		}
+		else
+		{
+			CurrentProfileSettings->TutorialVideoWatchCount.Add(DesiredTutorial,1);
+			SaveProfileSettings();
+		}
+
 		// Look to see if this tutorial has been completed
 		if ((GetProfileSettings()->TutorialMask & DesiredTutorial) != DesiredTutorial)
 		{

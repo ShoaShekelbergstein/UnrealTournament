@@ -134,6 +134,7 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 
 		DefaultBotSkillLevel = 2;
 
+		TutorialVideoWatchCount.Empty();
 	}
 
 	if (SectionToReset == EProfileResetType::All || SectionToReset == EProfileResetType::Weapons)
