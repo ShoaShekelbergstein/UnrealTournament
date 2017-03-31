@@ -536,6 +536,7 @@ void SUTWeaponConfigDialog::ConstructPreviewWorld(FVector2D ViewportSize)
 		PreviewTexture->OnNonUObjectRenderTargetUpdate.BindSP(this, &SUTWeaponConfigDialog::UpdatePreviewRender);
 		PreviewMID = UMaterialInstanceDynamic::Create(PreviewBaseMat, PreviewWorld);
 		PreviewMID->SetTextureParameterValue(FName(TEXT("TheTexture")), PreviewTexture);
+		
 		PreviewBrush = new FSlateMaterialBrush(*PreviewMID, ViewportSize);
 	}
 	else
@@ -1007,7 +1008,9 @@ void SUTWeaponConfigDialog::RecreateWeaponPreview()
 				BasePickup->SetActorHiddenInGame(bShowingCrosshairs);
 				BasePickup->PrestreamTextures(0, true);
 				PickupPreviewActors.Add(BasePickup);
-				
+								
+				BasePickup->SetPickupSheen(0.0f);
+
 				WeaponPreviewActors.Add(BaseWeapon);
 				PreviewWeaponSkins.Add(nullptr);
 				SpawnLocation.Y += PREVIEW_Y_SPACING;

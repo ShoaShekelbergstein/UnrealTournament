@@ -40,6 +40,12 @@ public:
 		WeaponSkin = InWeaponSkin;
 		OnRepWeaponSkin();
 	}
+
+	inline UUTWeaponSkin* GetWeaponSkin() const
+	{
+		return WeaponSkin;
+	}
+
 	inline const UMeshComponent* GetMesh() const
 	{
 		return Mesh;
@@ -127,4 +133,8 @@ public:
 	*/
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = AI)
 	float DetourWeight(APawn* Asker, float PathDistance);
+
+	UFUNCTION(BlueprintCallable, Category = Pickup)
+	virtual void SetPickupSheen(float SheenValue);
+
 };

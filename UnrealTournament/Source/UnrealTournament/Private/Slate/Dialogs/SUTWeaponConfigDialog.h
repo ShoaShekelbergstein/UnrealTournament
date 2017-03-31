@@ -85,6 +85,7 @@ protected:
 	FSceneViewStateReference PreviewViewState;
 	class UUTCanvasRenderTarget2D* PreviewTexture;
 	class UMaterialInstanceDynamic* PreviewMID;
+
 	FSlateBrush* PreviewBrush;
 	AActor* PreviewEnvironment;
 
