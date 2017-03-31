@@ -10,12 +10,14 @@ AUTWeapAttachment_Enforcer::AUTWeapAttachment_Enforcer(const FObjectInitializer&
 : Super(OI)
 {
 	LeftMesh = OI.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("Mesh3P_Left"));
-
 	LeftMesh->SetupAttachment(RootComponent);
-
 	LeftMesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::OnlyTickPoseWhenRendered;
-	LeftAttachSocket = FName((TEXT("LeftWeaponPoint")));
+	LeftMesh->bLightAttachmentsAsGroup = true;
+	LeftMesh->bReceivesDecals = false;
+	LeftMesh->bUseAttachParentBound = true;
+	LeftMesh->LightingChannels.bChannel1 = true;
 
+	LeftAttachSocket = FName((TEXT("LeftWeaponPoint")));
 	BurstSize = 3;
 	AlternateCount = 0;
 }
