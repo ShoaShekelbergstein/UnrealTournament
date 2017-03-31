@@ -370,6 +370,7 @@ void AUTWeap_Enforcer::BecomeDual()
 
 	// pick up the second enforcer
 	AttachLeftMesh();
+	UpdateWeaponRenderScaleOnLeftMesh();
 
 	// the UneqippingState needs to be updated so that both guns are lowered during weapon switch
 	UnequippingState = EnforcerUnequippingState;
@@ -558,7 +559,6 @@ void AUTWeap_Enforcer::SetSkin(UMaterialInterface* NewSkin)
 	Super::SetSkin(NewSkin);
 }
 
-
 void AUTWeap_Enforcer::AttachLeftMesh()
 {
 	if (UTOwner == NULL)
@@ -575,16 +575,7 @@ void AUTWeap_Enforcer::AttachLeftMesh()
 			LeftMesh->LastRenderTime = GetWorld()->TimeSeconds;
 			LeftMesh->bRecentlyRendered = true;
 		}
-
-		static FName FNameScale = TEXT("Scale");
-		for (int i = 0; i < LeftMeshMIDs.Num(); i++)
-		{
-			if (LeftMeshMIDs[i])
-			{
-				LeftMeshMIDs[i]->SetScalarParameterValue(FNameScale, WeaponRenderScale);
-			}
-		}
-
+		
 		if (UTOwner != NULL && UTOwner->GetWeapon() == this)
 		{
 			if (Dual_BringUpLeftWeaponFirstAttach != NULL)
@@ -626,6 +617,18 @@ void AUTWeap_Enforcer::AttachLeftMesh()
 	}
 }
 
+void AUTWeap_Enforcer::UpdateWeaponRenderScaleOnLeftMesh()
+{
+	static FName FNameScale = TEXT("Scale");
+	for (int i = 0; i < LeftMeshMIDs.Num(); i++)
+	{
+		if (LeftMeshMIDs[i])
+		{
+			LeftMeshMIDs[i]->SetScalarParameterValue(FNameScale, WeaponRenderScale);
+		}
+	}
+}
+
 void AUTWeap_Enforcer::AttachToOwner_Implementation()
 {
 	if (UTOwner == NULL)
@@ -647,6 +650,11 @@ void AUTWeap_Enforcer::AttachToOwner_Implementation()
 	}
 
 	Super::AttachToOwner_Implementation();
+
+	if (bDualEnforcerMode)
+	{
+		UpdateWeaponRenderScaleOnLeftMesh();
+	}
 }
 
 void AUTWeap_Enforcer::DetachFromOwner_Implementation()

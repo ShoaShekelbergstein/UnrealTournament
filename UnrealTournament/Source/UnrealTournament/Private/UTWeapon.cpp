@@ -245,14 +245,6 @@ void AUTWeapon::BeginPlay()
 	{
 		GetMesh()->bCastCapsuleDirectShadow = true;
 	}
-
-	if (GetMesh())
-	{
-		for (int i = 0; i < GetMesh()->GetNumMaterials(); i++)
-		{
-			MeshMIDs.Add(GetMesh()->CreateAndSetMaterialInstanceDynamic(i));
-		}
-	}
 }
 
 void AUTWeapon::GotoState(UUTWeaponState* NewState)
@@ -924,6 +916,17 @@ void AUTWeapon::AttachToOwner_Implementation()
 		}
 	}
 
+	// register components now
+	bAttachingToOwner = true;
+	RegisterAllComponents();
+	RegisterAllActorTickFunctions(true, true); // 4.11 changed components to only get tick registered automatically if they're registered prior to BeginPlay()!
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		UpdateOverlays();
+		UpdateOutline();
+		SetSkin(UTOwner->GetSkin());
+	}
+
 	static FName FNameScale = TEXT("Scale");
 	for (int i = 0; i < MeshMIDs.Num(); i++)
 	{
@@ -938,17 +941,6 @@ void AUTWeapon::AttachToOwner_Implementation()
 		{
 			UTOwner->FirstPersonMeshMIDs[i]->SetScalarParameterValue(FNameScale, WeaponRenderScale);
 		}
-	}
-
-	// register components now
-	bAttachingToOwner = true;
-	RegisterAllComponents();
-	RegisterAllActorTickFunctions(true, true); // 4.11 changed components to only get tick registered automatically if they're registered prior to BeginPlay()!
-	if (GetNetMode() != NM_DedicatedServer)
-	{
-		UpdateOverlays();
-		UpdateOutline();
-		SetSkin(UTOwner->GetSkin());
 	}
 }
 
@@ -2973,6 +2965,15 @@ void AUTWeapon::SetSkin(UMaterialInterface* NewSkin)
 		for (int32 i = 0; i < Mesh->GetNumMaterials(); i++)
 		{
 			Mesh->SetMaterial(i, SavedMeshMaterials[i]);
+		}
+	}
+	
+	if (GetMesh())
+	{
+		MeshMIDs.Empty();
+		for (int i = 0; i < GetMesh()->GetNumMaterials(); i++)
+		{
+			MeshMIDs.Add(GetMesh()->CreateAndSetMaterialInstanceDynamic(i));
 		}
 	}
 }

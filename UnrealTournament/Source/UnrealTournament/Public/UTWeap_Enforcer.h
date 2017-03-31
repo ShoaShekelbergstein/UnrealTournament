@@ -158,6 +158,8 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 	virtual void FireShot() override;
 	virtual void StateChanged() override;
 	virtual void UpdateWeaponHand() override;
+
+	void UpdateWeaponRenderScaleOnLeftMesh();
 	
 	virtual void PlayWeaponAnim(UAnimMontage* WeaponAnim, UAnimMontage* HandsAnim = NULL, float RateOverride = 0.0f) override;
 
