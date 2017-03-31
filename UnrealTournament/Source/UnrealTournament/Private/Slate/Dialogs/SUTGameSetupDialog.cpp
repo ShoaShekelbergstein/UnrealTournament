@@ -361,6 +361,7 @@ FReply SUTGameSetupDialog::OnRuleClick(int32 RuleIndex)
 		}
 
 		cbRequireFull->SetIsChecked(SelectedRuleset->bCompetitiveMatch ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
+		cbUseBots->SetIsChecked(SelectedRuleset->bCompetitiveMatch ? ECheckBoxState::Unchecked : ECheckBoxState::Checked);
 	}
 
 	return FReply::Handled();
