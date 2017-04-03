@@ -858,7 +858,7 @@ AUTBotPlayer* AUTGameMode::AddBot(uint8 TeamNum)
 				for (const FAssetData& Asset : UTEngine->BotAssets)
 				{
 					UUTBotCharacter* EligibleCharacter = Cast<UUTBotCharacter>(Asset.GetAsset());
-					if (EligibleCharacter != NULL)
+					if (EligibleCharacter && (bUseProtoTeams || !EligibleCharacter->bProtoBot))
 					{
 						EligibleBots.Add(EligibleCharacter);
 					}

@@ -13,6 +13,10 @@ public:
 	UPROPERTY(EditAnywhere, AssetRegistrySearchable, Meta = (DisplayName = "Requires Online Item"))
 	bool bRequiresItem;
 
+	/** Available only if ?Proto=1. */
+	UPROPERTY(EditAnywhere, AssetRegistrySearchable)
+		bool bProtoBot;
+
 	/** Modifier to base game difficulty for this bot. */
 	UPROPERTY(EditAnywhere, AssetRegistrySearchable, Meta = (ClampMin = "-1.0", UIMin = "1.0", ClampMax = "1.5", UIMax = "1.5"), Category = Skill)
 		float SkillAdjust;
