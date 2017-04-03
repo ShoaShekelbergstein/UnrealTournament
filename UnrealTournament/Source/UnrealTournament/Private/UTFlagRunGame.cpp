@@ -1360,3 +1360,11 @@ void AUTFlagRunGame::PlayEndOfMatchMessage()
 {
 	// stub to not break the build
 }
+
+bool AUTFlagRunGame::PlayerWonChallenge()
+{
+	// make sure player is on best team
+	APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
+	AUTPlayerState* PS = LocalPC ? Cast<AUTPlayerState>(LocalPC->PlayerState) : NULL;
+	return PS && PS->Team && (PS->Team == UTGameState->WinningTeam);
+}

@@ -350,6 +350,9 @@ void AUTCTFRoundGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 	// Dont ever end the game in PIE
 	if (GetWorld()->WorldType == EWorldType::PIE) return;
 
+	UTGameState->WinningTeam = Winner;
+	EndTime = GetWorld()->TimeSeconds;
+
 	APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
 	UUTLocalPlayer* LP = LocalPC ? Cast<UUTLocalPlayer>(LocalPC->Player) : NULL;
 	if (LP)
@@ -361,9 +364,6 @@ void AUTCTFRoundGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 			LP->ChallengeCompleted(ChallengeTag, ChallengeDifficulty + 1);
 		}
 	}
-
-	UTGameState->WinningTeam = Winner;
-	EndTime = GetWorld()->TimeSeconds;
 
 	if (IsGameInstanceServer() && LobbyBeacon)
 	{

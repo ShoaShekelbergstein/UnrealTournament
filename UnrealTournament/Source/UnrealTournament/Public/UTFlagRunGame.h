@@ -96,6 +96,7 @@ public:
 	virtual bool IsTeamOnOffense(int32 TeamNumber) const override;
 	virtual AActor* SetIntermissionCameras(uint32 TeamToWatch) override;
 	virtual void SendRestartNotifications(AUTPlayerState* PS, AUTPlayerController* PC) override;
+	virtual bool PlayerWonChallenge() override;
 
 	virtual int32 GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPlayerController* Instigator, UWorld* World);
 	virtual void InitFlags() override;
