@@ -53,7 +53,6 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	LeftMesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::OnlyTickPoseWhenRendered;
 	LeftMesh->bSelfShadowOnly = true;
 	LeftMesh->bHiddenInGame = true;
-	FirstPLeftMeshOffset = FVector(0.f);
 
 	EnforcerEquippingState = ObjectInitializer.CreateDefaultSubobject<UUTWeaponStateEquipping_Enforcer>(this, TEXT("EnforcerEquippingState"));
 	EnforcerUnequippingState = ObjectInitializer.CreateDefaultSubobject<UUTWeaponStateUnequipping_Enforcer>(this, TEXT("EnforcerUnequippingState"));
@@ -72,6 +71,7 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	WeaponSkinCustomizationTag = EpicWeaponSkinCustomizationTags::Enforcer;
 
 	HighlightText = NSLOCTEXT("Weapon", "EnforcerHighlightText", "Gunslinger");
+	LowMeshOffset + FVector(0.f, 0.f, -7.f);
 }
 
 float AUTWeap_Enforcer::GetPutDownTime()
@@ -569,7 +569,7 @@ void AUTWeap_Enforcer::AttachLeftMesh()
 	if (LeftMesh != NULL && LeftMesh->SkeletalMesh != NULL)
 	{
 		LeftMesh->SetHiddenInGame(false);
-		LeftMesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, (GetWeaponHand() != EWeaponHand::HAND_Hidden) ? HandsAttachSocketLeft : NAME_None);
+		LeftMesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, HandsAttachSocketLeft);
 		if (Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
 		{
 			LeftMesh->LastRenderTime = GetWorld()->TimeSeconds;
@@ -687,30 +687,7 @@ void AUTWeap_Enforcer::UpdateWeaponHand()
 	Super::UpdateWeaponHand();
 	if (bDualEnforcerMode)
 	{
-		FirstPLeftMeshOffset = FVector::ZeroVector;
-		FirstPLeftMeshRotation = FRotator::ZeroRotator;
-		switch (GetWeaponHand())
-		{
-			case EWeaponHand::HAND_Center:
-				// TODO: not implemented, fallthrough
-				UE_LOG(UT, Warning, TEXT("HAND_Center is not implemented yet!"));
-			case EWeaponHand::HAND_Right:
-				LeftMesh->SetRelativeLocationAndRotation(GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->RelativeLocation, GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->RelativeRotation);
-				break;
-			case EWeaponHand::HAND_Left:
-			{
-				// swap
-				LeftMesh->SetRelativeLocationAndRotation(GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->Mesh->RelativeLocation, GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->Mesh->RelativeRotation);
-				Mesh->SetRelativeLocationAndRotation(GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->RelativeLocation, GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->RelativeRotation);
-				break;
-			}
-			case EWeaponHand::HAND_Hidden:
-			{
-				Mesh->SetRelativeLocationAndRotation(FVector(-50.0f, 20.0f, -50.0f), FRotator::ZeroRotator);
-				LeftMesh->SetRelativeLocationAndRotation(FVector(-50.0f, -20.0f, -50.0f), FRotator::ZeroRotator);
-				break;
-			}
-		}
+		LeftMesh->SetRelativeLocationAndRotation(GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->RelativeLocation, GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->RelativeRotation);
 	}
 }
 

@@ -65,6 +65,7 @@ AUTWeap_FlakCannon::AUTWeap_FlakCannon(const FObjectInitializer& ObjectInitializ
 	TutorialAnnouncements.Add(TEXT("SecFlak"));
 
 	HighlightText = NSLOCTEXT("Weapon", "FlakHighlightText", "Power Shredder");
+	LowMeshOffset + FVector(0.f, 0.f, -5.f);
 }
 
 FVector AUTWeap_FlakCannon::GetFireLocationForMultiShot_Implementation(int32 MultiShotIndex, const FVector& FireLocation, const FRotator& FireRotation)

@@ -2311,7 +2311,7 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 			}
 		}
 		// hide first person mesh (but not attachments) if hidden weapons
-		if (GetWeaponHand() == EWeaponHand::HAND_Hidden || (P->GetWeapon() != NULL && P->GetWeapon()->ZoomState != EZoomState::EZS_NotZoomed))
+		if (P->GetWeapon() != NULL && P->GetWeapon()->ZoomState != EZoomState::EZS_NotZoomed)
 		{
 			HiddenComponents.Add(P->FirstPersonMesh->ComponentId);
 			if (P->GetWeapon() != NULL)

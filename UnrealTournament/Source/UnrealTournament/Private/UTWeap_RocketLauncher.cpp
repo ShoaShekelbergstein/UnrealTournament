@@ -73,6 +73,7 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	TutorialAnnouncements.Add(TEXT("PriRocketLauncher"));
 	TutorialAnnouncements.Add(TEXT("SecRocketLauncher"));
 	HighlightText = NSLOCTEXT("Weapon", "RockerHighlightText", "I am the Rocketman");
+	LowMeshOffset + FVector(0.f, 0.f, -7.f);
 }
 
 void AUTWeap_RocketLauncher::Destroyed()
@@ -363,18 +364,15 @@ AUTProjectile* AUTWeap_RocketLauncher::FireProjectile()
 
 		//Adjust from the center of the gun to the barrel
 		EWeaponHand Hand = GetWeaponHand();
-		if (Hand != EWeaponHand::HAND_Hidden && Hand != EWeaponHand::HAND_Center)
+		FVector AdjustedSpawnLoc = SpawnLocation + FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::Z) * BarrelRadius; //Adjust rocket based on barrel size
+		FHitResult Hit;
+		if (GetWorld()->LineTraceSingleByChannel(Hit, SpawnLocation, AdjustedSpawnLoc, COLLISION_TRACE_WEAPON, FCollisionQueryParams(NAME_None, true, UTOwner)))
 		{
-			FVector AdjustedSpawnLoc = SpawnLocation + FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::Z) * BarrelRadius; //Adjust rocket based on barrel size
-			FHitResult Hit;
-			if (GetWorld()->LineTraceSingleByChannel(Hit, SpawnLocation, AdjustedSpawnLoc, COLLISION_TRACE_WEAPON, FCollisionQueryParams(NAME_None, true, UTOwner)))
-			{
-				SpawnLocation = Hit.Location - (AdjustedSpawnLoc - SpawnLocation).GetSafeNormal();
-			}
-			else
-			{
-				SpawnLocation = AdjustedSpawnLoc;
-			}
+			SpawnLocation = Hit.Location - (AdjustedSpawnLoc - SpawnLocation).GetSafeNormal();
+		}
+		else
+		{
+			SpawnLocation = AdjustedSpawnLoc;
 		}
 		AUTProjectile* SpawnedProjectile = SpawnNetPredictedProjectile(RocketFireModes[CurrentRocketFireMode].ProjClass, SpawnLocation, SpawnRotation);
 		AUTProj_Rocket* SpawnedRocket = Cast<AUTProj_Rocket>(SpawnedProjectile);

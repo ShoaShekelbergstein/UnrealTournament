@@ -56,6 +56,16 @@ UUTCheatManager::UUTCheatManager(const class FObjectInitializer& ObjectInitializ
 {
 }
 
+void UUTCheatManager::WOff(float F)
+{
+	AUTCharacter* MyPawn = Cast<AUTCharacter>(GetOuterAPlayerController()->GetPawn());
+	if (MyPawn)
+	{
+		UE_LOG(UT, Warning, TEXT("OFFSET %f"), F);
+		MyPawn->GetWeapon()->LowMeshOffset.Z = F;
+	}
+}
+
 void UUTCheatManager::Ann(int32 Switch)
 {
 	// play an announcement for testing

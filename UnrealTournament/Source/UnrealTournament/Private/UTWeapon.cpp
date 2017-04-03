@@ -900,7 +900,7 @@ void AUTWeapon::AttachToOwner_Implementation()
 	if (Mesh != NULL && Mesh->SkeletalMesh != NULL)
 	{
 		UpdateWeaponHand();
-		Mesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, (UTOwner->FirstPersonMesh->SkeletalMesh != nullptr && GetWeaponHand() != EWeaponHand::HAND_Hidden) ? HandsAttachSocket : NAME_None);
+		Mesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, (UTOwner->FirstPersonMesh->SkeletalMesh != nullptr) ? HandsAttachSocket : NAME_None);
 		if (ShouldPlay1PVisuals())
 		{
 			Mesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPose; // needed for anims to be ticked even if weapon is not currently displayed, e.g. sniper zoom
@@ -1012,21 +1012,7 @@ void AUTWeapon::UpdateWeaponHand()
 			}
 			case EWeaponHand::HAND_Hidden:
 			{
-				AdjustMesh->SetRelativeLocationAndRotation(FVector(-50.0f, 0.0f, -50.0f), FRotator::ZeroRotator);
-				if (AdjustMesh != Mesh)
-				{
-					Mesh->AttachToComponent(Mesh->GetAttachParent(), FAttachmentTransformRules::KeepRelativeTransform, NAME_None);
-					Mesh->SetRelativeLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
-				}
-				for (int32 i = 0; i < MuzzleFlash.Num() && i < MuzzleFlashDefaultTransforms.Num(); i++)
-				{
-					if (MuzzleFlash[i] != NULL)
-					{
-						MuzzleFlash[i]->AttachToComponent(MuzzleFlash[i]->GetAttachParent(), FAttachmentTransformRules::KeepRelativeTransform, NAME_None);
-						MuzzleFlash[i]->SetRelativeLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
-						MuzzleFlash[i]->bUseAttachParentBound = false;
-					}
-				}
+				AdjustMesh->SetRelativeLocationAndRotation(AdjustMeshArchetype->RelativeLocation + LowMeshOffset, AdjustMeshArchetype->RelativeRotation);
 				break;
 			}
 		}
@@ -1199,7 +1185,7 @@ void AUTWeapon::PlayFiringEffects()
 		{
 			PC->AddHUDImpulse(HUDViewKickback);
 		}
-		if (ShouldPlay1PVisuals() && GetWeaponHand() != EWeaponHand::HAND_Hidden)
+		if (ShouldPlay1PVisuals())
 		{
 			// try and play a firing animation if specified
 			PlayWeaponAnim(GetFiringAnim(EffectFiringMode, false), GetFiringAnim(EffectFiringMode, true));
@@ -1250,7 +1236,7 @@ FHitResult AUTWeapon::GetImpactEffectHit(APawn* Shooter, const FVector& StartLoc
 
 void AUTWeapon::GetImpactSpawnPosition(const FVector& TargetLoc, FVector& SpawnLocation, FRotator& SpawnRotation)
 {
-	if (UTOwner != NULL && (GetWeaponHand() == EWeaponHand::HAND_Hidden || ZoomState != EZoomState::EZS_NotZoomed))
+	if (UTOwner != NULL && (ZoomState != EZoomState::EZS_NotZoomed))
 	{
 		SpawnRotation = UTOwner->CharacterCameraComponent->GetComponentRotation();
 		SpawnLocation = UTOwner->CharacterCameraComponent->GetComponentLocation() + SpawnRotation.RotateVector(FVector(-50.0f, 0.0f, -50.0f));
@@ -2515,40 +2501,35 @@ void AUTWeapon::UpdateViewBob(float DeltaTime)
 			FirstPMeshOffset = BobbedMesh->GetRelativeTransform().GetLocation();
 			FirstPMeshRotation = BobbedMesh->GetRelativeTransform().Rotator();
 		}
-		if (GetWeaponHand() != EWeaponHand::HAND_Hidden)
+		FVector ScaledMeshOffset = FirstPMeshOffset;
+		const float FOVScaling = (MyPC != NULL) ? ((MyPC->PlayerCameraManager->GetFOVAngle() - 100.f) * 0.05f) : 1.0f;
+		if (FOVScaling > 0.f)
 		{
-			FVector ScaledMeshOffset = FirstPMeshOffset;
-			const float FOVScaling = (MyPC != NULL) ? ((MyPC->PlayerCameraManager->GetFOVAngle() - 100.f) * 0.05f) : 1.0f;
-			if (FOVScaling > 0.f)
-			{
-				ScaledMeshOffset.X *= (1.f + (FOVOffset.X - 1.f) * FOVScaling);
-				ScaledMeshOffset.Y *= (1.f + (FOVOffset.Y - 1.f) * FOVScaling);
-				ScaledMeshOffset.Z *= (1.f + (FOVOffset.Z - 1.f) * FOVScaling);
-			}
-
-			BobbedMesh->SetRelativeLocation(ScaledMeshOffset);
-			FVector BobOffset = UTOwner->GetWeaponBobOffset(DeltaTime, this);
-			BobbedMesh->SetWorldLocation(BobbedMesh->GetComponentLocation() + BobOffset);
-
-			FRotator NewRotation = UTOwner ? UTOwner->GetControlRotation() : FRotator(0.f, 0.f, 0.f);
-			FRotator FinalRotation = NewRotation;
-
-			// Add some rotation leading
-			if (UTOwner && UTOwner->Controller)
-			{
-				FinalRotation.Yaw = LagWeaponRotation(NewRotation.Yaw, LastRotation.Yaw, DeltaTime, MaxYawLag, 0);
-				FinalRotation.Pitch = LagWeaponRotation(NewRotation.Pitch, LastRotation.Pitch, DeltaTime, MaxPitchLag, 1);
-				FinalRotation.Roll = NewRotation.Roll;
-			}
-			LastRotation = NewRotation;
-			BobbedMesh->SetRelativeRotation(FinalRotation + FirstPMeshRotation);
+			ScaledMeshOffset.X *= (1.f + (FOVOffset.X - 1.f) * FOVScaling);
+			ScaledMeshOffset.Y *= (1.f + (FOVOffset.Y - 1.f) * FOVScaling);
+			ScaledMeshOffset.Z *= (1.f + (FOVOffset.Z - 1.f) * FOVScaling);
 		}
-		else
+
+		if (GetWeaponHand() == EWeaponHand::HAND_Hidden)
 		{
-			// for first person footsteps
-			UTOwner->GetWeaponBobOffset(DeltaTime, this);
-			BobbedMesh->SetRelativeLocation(FirstPMeshOffset + UTOwner->EyeOffset);
+			ScaledMeshOffset += LowMeshOffset;
 		}
+		BobbedMesh->SetRelativeLocation(ScaledMeshOffset);
+		FVector BobOffset = UTOwner->GetWeaponBobOffset(DeltaTime, this);
+		BobbedMesh->SetWorldLocation(BobbedMesh->GetComponentLocation() + BobOffset);
+
+		FRotator NewRotation = UTOwner ? UTOwner->GetControlRotation() : FRotator(0.f, 0.f, 0.f);
+		FRotator FinalRotation = NewRotation;
+
+		// Add some rotation leading
+		if (UTOwner && UTOwner->Controller)
+		{
+			FinalRotation.Yaw = LagWeaponRotation(NewRotation.Yaw, LastRotation.Yaw, DeltaTime, MaxYawLag, 0);
+			FinalRotation.Pitch = LagWeaponRotation(NewRotation.Pitch, LastRotation.Pitch, DeltaTime, MaxPitchLag, 1);
+			FinalRotation.Roll = NewRotation.Roll;
+		}
+		LastRotation = NewRotation;
+		BobbedMesh->SetRelativeRotation(FinalRotation + FirstPMeshRotation);
 	}
 }
 

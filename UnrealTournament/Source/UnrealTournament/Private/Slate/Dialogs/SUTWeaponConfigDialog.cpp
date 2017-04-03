@@ -1163,10 +1163,10 @@ void SUTWeaponConfigDialog::ZoomPreview(float WheelDelta)
 
 TSharedRef<SWidget> SUTWeaponConfigDialog::GenerateWeaponHand(UUTProfileSettings* Profile)
 {
-	WeaponHandDesc.Add(NSLOCTEXT("UT", "Right", "Right"));
+	WeaponHandDesc.Add(NSLOCTEXT("UT", "Normal", "Normal"));
 	WeaponHandDesc.Add(NSLOCTEXT("UT", "Left", "Left"));
 	WeaponHandDesc.Add(NSLOCTEXT("UT", "Center", "Center"));
-	WeaponHandDesc.Add(NSLOCTEXT("UT", "Hidden", "Hidden"));
+	WeaponHandDesc.Add(NSLOCTEXT("UT", "Lowered", "Lowered"));
 
 	WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[uint8(EWeaponHand::HAND_Right)])));
 	//WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[EWeaponHand::HAND_Left])));
@@ -1188,7 +1188,7 @@ TSharedRef<SWidget> SUTWeaponConfigDialog::GenerateWeaponHand(UUTProfileSettings
 	[
 		SNew(STextBlock)
 		.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tween")
-		.Text(NSLOCTEXT("SUTWeaponConfigDialog", "WeaponHand", "Weapon Hand"))
+		.Text(NSLOCTEXT("SUTWeaponConfigDialog", "WeaponHand", "Weapon Position"))
 	]
 	+ SHorizontalBox::Slot().FillWidth(1.0).HAlign(HAlign_Right).Padding(0.0f,0.0f,5.0f,0.0f)
 	[

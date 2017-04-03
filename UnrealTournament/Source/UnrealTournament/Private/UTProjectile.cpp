@@ -197,11 +197,6 @@ void AUTProjectile::OnRep_Instigator()
 				InitialVisualOffset.Y *= -1.f;
 				OffsetVisualComponent->RelativeLocation.Y *= -1.f;
 			}
-			else if (PC->GetWeaponHand() == EWeaponHand::HAND_Hidden)
-			{
-				InitialVisualOffset.Y = FinalVisualOffset.Y;
-				OffsetVisualComponent->RelativeLocation.Y = FinalVisualOffset.Y;
-			}
 		}
 	}
 

@@ -117,11 +117,6 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 
 	virtual float GetBringUpTime() override;
 	virtual float GetPutDownTime() override;
-
-	UPROPERTY()
-	FVector FirstPLeftMeshOffset;
-	UPROPERTY()
-	FRotator FirstPLeftMeshRotation;
 		
 	UPROPERTY()
 	int32 FireCount;
