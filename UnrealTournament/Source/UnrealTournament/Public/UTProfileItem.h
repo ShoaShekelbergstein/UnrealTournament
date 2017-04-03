@@ -4,7 +4,12 @@
 #include "EngineBuildSettings.h"
 #include "UTCharacterContent.h"
 #include "UTCosmetic.h"
+
+#if WITH_PROFILE
 #include "UtMcpDefinition.h"
+#else
+#include "GithubStubs.h"
+#endif
 
 #include "UTProfileItem.generated.h"
 
@@ -56,7 +61,9 @@ public:
 	: Super(OI)
 	{
 		bTradable = true;
+#if WITH_PROFILE
 		ItemType = EUtItemType::Item;
+#endif
 	}
 
 	/** whether this item can be traded to others */

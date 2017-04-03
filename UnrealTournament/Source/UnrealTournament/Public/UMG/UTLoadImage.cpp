@@ -7,7 +7,11 @@
 #include "UTLoadGuard.h"
 #include "UTGameUIData.h"
 
+#if WITH_PROFILE
 #include "UtMcpDefinition.h"
+#else
+#include "GithubStubs.h"
+#endif
 
 UUTLazyImage::UUTLazyImage(const FObjectInitializer& Initializer)
 	: Super(Initializer)
@@ -147,6 +151,7 @@ void UUTLazyImage::SetBrushFromLazyMaterial(const TAssetPtr<UMaterialInterface>&
 
 void UUTLazyImage::SetBrushFromItemDefinition(UUtMcpDefinition* ItemDefinition, bool bMatchTextureSize)
 {
+#if WITH_PROFILE
 	if (ItemDefinition)
 	{
 		SetBrushFromLazyDisplayAsset(ItemDefinition->GetIconAsset(), bMatchTextureSize);
@@ -155,10 +160,12 @@ void UUTLazyImage::SetBrushFromItemDefinition(UUtMcpDefinition* ItemDefinition, 
 	{
 		ShowDefaultTexture();
 	}
+#endif
 }
 
 void UUTLazyImage::SetBrushFromItemDefinition(const UUtMcpDefinition* ItemDefinition, bool bMatchTextureSize)
 {
+#if WITH_PROFILE
 	if (ItemDefinition)
 	{
 		SetBrushFromLazyDisplayAsset(ItemDefinition->GetIconAsset(), bMatchTextureSize);
@@ -167,10 +174,12 @@ void UUTLazyImage::SetBrushFromItemDefinition(const UUtMcpDefinition* ItemDefini
 	{
 		ShowDefaultTexture();
 	}
+#endif
 }
 
 void UUTLazyImage::SetBrushFromLazyDisplayAsset(const TAssetPtr<UObject>& LazyObject, bool bMatchTextureSize)
 {
+#if WITH_PROFILE
 	if (!LazyObject.IsNull())
 	{
 		// If the display asset is an item definition, we can expect that it's already loaded
@@ -211,10 +220,12 @@ void UUTLazyImage::SetBrushFromLazyDisplayAsset(const TAssetPtr<UObject>& LazyOb
 	{
 		ShowDefaultTexture();
 	}
+#endif
 }
 
 void UUTLazyImage::SetTextureParamFromLazyAsset(const FName& TextureParamName, const TAssetPtr<UObject>& LazyObject)
 {
+#if WITH_PROFILE
 	if (!LazyObject.IsNull())
 	{
 		// If the display asset is an item definition, we can expect that it's already loaded
@@ -251,6 +262,7 @@ void UUTLazyImage::SetTextureParamFromLazyAsset(const FName& TextureParamName, c
 	{
 		ShowDefaultTexture();
 	}
+#endif
 }
 
 void UUTLazyImage::ShowDefaultTexture()

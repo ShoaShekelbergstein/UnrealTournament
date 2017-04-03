@@ -3,3 +3,5 @@
 #pragma once
 
 #include "Engine.h"
+
+#include "McpStubs.h"

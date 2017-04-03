@@ -4,8 +4,13 @@
 #include "UTRewardImage.h"
 
 #include "UTLazyImage.h"
-#include "UtMcpTokenDefinition.h"
 #include "UTMcpTypeRewardImage.h"
+
+#if WITH_PROFILE
+#include "UtMcpTokenDefinition.h"
+#else
+#include "GithubStubs.h"
+#endif
 
 UUTRewardImage::UUTRewardImage(const FObjectInitializer& Initializer)
 	: Super(Initializer)
@@ -15,6 +20,7 @@ UUTRewardImage::UUTRewardImage(const FObjectInitializer& Initializer)
 
 void UUTRewardImage::SetData_Implementation(UObject* InData)
 {
+#if WITH_PROFILE
 	ItemDef = Cast<UUtMcpDefinition>(InData);
 
 	LazyImage_HeroPortrait->SetBrushFromItemDefinition(ItemDef);
@@ -51,6 +57,7 @@ void UUTRewardImage::SetData_Implementation(UObject* InData)
 
 		}
 	}
+#endif
 }
 
 void UUTRewardImage::Reset_Implementation()

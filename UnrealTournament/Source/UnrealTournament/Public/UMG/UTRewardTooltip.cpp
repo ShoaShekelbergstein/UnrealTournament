@@ -9,8 +9,12 @@
 #include "UTGameUIData.h"
 #include "UTGlobals.h"
 
+#if WITH_PROFILE
 #include "UtMcpDefinition.h"
 #include "UtMcpTokenDefinition.h"
+#else
+#include "GithubStubs.h"
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 // UUTRewardTooltipItem
@@ -35,6 +39,7 @@ void UUTRewardTooltipItem::SetRewardInfo(const UUtMcpDefinition* SpecificItem, c
 	UTexture2D* RewardIcon = nullptr;
 	if (SpecificItem)
 	{
+#if WITH_PROFILE
 		if (SpecificItem->IsA<UUtMcpTokenDefinition>())
 		{
 			const FString TokenName = SpecificItem->GetPersistentName();
@@ -52,7 +57,6 @@ void UUTRewardTooltipItem::SetRewardInfo(const UUtMcpDefinition* SpecificItem, c
 				return;
 			}
 		}
-		
 		FText DisplayName = SpecificItem->GetDisplayName(true);
 		RewardName = Quantity > 1 ? FText::Format(UTRewardConstants::QuantityFormat, FText::AsNumber(Quantity), DisplayName) : DisplayName;
 		RewardDesc = SpecificItem->GetDescription();
@@ -71,6 +75,7 @@ void UUTRewardTooltipItem::SetRewardInfo(const UUtMcpDefinition* SpecificItem, c
 				}
 			}
 		}
+#endif
 	}
 	else if (const FUTLootTierRewardInfo* LootRewardInfo = RewardData.GetLootTierRewardInfo(LootTierGroup))
 	{
