@@ -5151,31 +5151,31 @@ void AUTCharacter::PlayerCardUpdated()
 	if (PS && PS->PlayerCard && UTCharacterMovement)
 	{
 		UTCharacterMovement->MaxMultiJumpCount = PS->PlayerCard->MaxMultiJumpCount;
-		UTCharacterMovement->MaxWalkSpeed = PS->PlayerCard->MaxRunSpeed;
-		UTCharacterMovement->MultiJumpImpulse = PS->PlayerCard->MultiJumpImpulse;
-		UTCharacterMovement->DodgeJumpImpulse = PS->PlayerCard->MultiJumpImpulse;
+		UTCharacterMovement->MaxWalkSpeed = PS->PlayerCard->MaxRunSpeed * GetDefault<UUTCharacterMovement>()->MaxWalkSpeed;
+		UTCharacterMovement->MultiJumpImpulse = PS->PlayerCard->MultiJumpImpulse * GetDefault<UUTCharacterMovement>()->MultiJumpImpulse;
+		UTCharacterMovement->DodgeJumpImpulse = UTCharacterMovement->MultiJumpImpulse;
 		UTCharacterMovement->bCanDodge = PS->PlayerCard->bCanDodge;
 		UTCharacterMovement->MaxCustomMovementSpeed = UTCharacterMovement->MaxWalkSpeed;
-		UTCharacterMovement->AirControl = PS->PlayerCard->AirControl;
+		UTCharacterMovement->AirControl = PS->PlayerCard->AirControl * GetDefault<UUTCharacterMovement>()->AirControl;
 		UTCharacterMovement->MultiJumpAirControl = UTCharacterMovement->AirControl;
 		UTCharacterMovement->DodgeAirControl = UTCharacterMovement->AirControl * 0.41f/0.55f;
-		UTCharacterMovement->DodgeResetInterval = PS->PlayerCard->DodgeResetInterval;
+		UTCharacterMovement->DodgeResetInterval = PS->PlayerCard->DodgeResetInterval * GetDefault<UUTCharacterMovement>()->DodgeResetInterval;
 		UTCharacterMovement->DodgeJumpResetInterval = UTCharacterMovement->DodgeResetInterval;
-		UTCharacterMovement->JumpZVelocity = PS->PlayerCard->JumpImpulse;
-		UTCharacterMovement->MaxWallRunFallZ = PS->PlayerCard->MaxWallRunFallZ;
-		UTCharacterMovement->WallRunGravityScaling = PS->PlayerCard->WallRunGravityScaling;
-		UTCharacterMovement->MaxAdditiveDodgeJumpSpeed = PS->PlayerCard->MaxAdditiveDodgeJumpSpeed;
-		UTCharacterMovement->DodgeImpulseHorizontal = PS->PlayerCard->DodgeImpulseHorizontal;
-		UTCharacterMovement->DodgeImpulseVertical = PS->PlayerCard->DodgeImpulseVertical;
-		UTCharacterMovement->DodgeMaxHorizontalVelocity = PS->PlayerCard->DodgeMaxHorizontalVelocity;
-		UTCharacterMovement->WallDodgeSecondImpulseVertical = PS->PlayerCard->WallDodgeSecondImpulseVertical;
-		UTCharacterMovement->WallDodgeImpulseHorizontal = PS->PlayerCard->WallDodgeImpulseHorizontal;
-		UTCharacterMovement->WallDodgeImpulseVertical = PS->PlayerCard->WallDodgeImpulseVertical;
-		UTCharacterMovement->FloorSlideEndingSpeedFactor = PS->PlayerCard->FloorSlideEndingSpeedFactor;
-		UTCharacterMovement->FloorSlideAcceleration = PS->PlayerCard->FloorSlideAcceleration;
-		UTCharacterMovement->MaxFloorSlideSpeed = PS->PlayerCard->MaxFloorSlideSpeed;
-		UTCharacterMovement->MaxInitialFloorSlideSpeed = PS->PlayerCard->MaxInitialFloorSlideSpeed;
-		UTCharacterMovement->FloorSlideDuration = PS->PlayerCard->FloorSlideDuration;
+		UTCharacterMovement->JumpZVelocity = PS->PlayerCard->JumpImpulse * GetDefault<UUTCharacterMovement>()->JumpZVelocity;
+		UTCharacterMovement->MaxWallRunFallZ = PS->PlayerCard->MaxWallRunFallZ * GetDefault<UUTCharacterMovement>()->MaxWallRunFallZ;
+		UTCharacterMovement->WallRunGravityScaling = PS->PlayerCard->WallRunGravityScaling * GetDefault<UUTCharacterMovement>()->WallRunGravityScaling;
+		UTCharacterMovement->MaxAdditiveDodgeJumpSpeed = PS->PlayerCard->MaxAdditiveDodgeJumpSpeed * GetDefault<UUTCharacterMovement>()->MaxAdditiveDodgeJumpSpeed;
+		UTCharacterMovement->DodgeImpulseHorizontal = PS->PlayerCard->DodgeImpulseHorizontal * GetDefault<UUTCharacterMovement>()->DodgeImpulseHorizontal;
+		UTCharacterMovement->DodgeImpulseVertical = PS->PlayerCard->DodgeImpulseVertical * GetDefault<UUTCharacterMovement>()->DodgeImpulseVertical;
+		UTCharacterMovement->DodgeMaxHorizontalVelocity = PS->PlayerCard->DodgeMaxHorizontalVelocity * GetDefault<UUTCharacterMovement>()->DodgeMaxHorizontalVelocity;
+		UTCharacterMovement->WallDodgeSecondImpulseVertical = PS->PlayerCard->WallDodgeSecondImpulseVertical * GetDefault<UUTCharacterMovement>()->WallDodgeSecondImpulseVertical;
+		UTCharacterMovement->WallDodgeImpulseHorizontal = PS->PlayerCard->WallDodgeImpulseHorizontal * GetDefault<UUTCharacterMovement>()->WallDodgeImpulseHorizontal;
+		UTCharacterMovement->WallDodgeImpulseVertical = PS->PlayerCard->WallDodgeImpulseVertical * GetDefault<UUTCharacterMovement>()->WallDodgeImpulseVertical;
+		UTCharacterMovement->FloorSlideEndingSpeedFactor = PS->PlayerCard->FloorSlideEndingSpeedFactor * GetDefault<UUTCharacterMovement>()->FloorSlideEndingSpeedFactor;
+		UTCharacterMovement->FloorSlideAcceleration = PS->PlayerCard->FloorSlideAcceleration * GetDefault<UUTCharacterMovement>()->FloorSlideAcceleration;
+		UTCharacterMovement->MaxFloorSlideSpeed = PS->PlayerCard->MaxFloorSlideSpeed * GetDefault<UUTCharacterMovement>()->MaxFloorSlideSpeed;
+		UTCharacterMovement->MaxInitialFloorSlideSpeed = PS->PlayerCard->MaxInitialFloorSlideSpeed * GetDefault<UUTCharacterMovement>()->MaxInitialFloorSlideSpeed;
+		UTCharacterMovement->FloorSlideDuration = PS->PlayerCard->FloorSlideDuration * GetDefault<UUTCharacterMovement>()->FloorSlideDuration;
 	}
 }
 
