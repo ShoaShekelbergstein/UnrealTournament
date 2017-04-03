@@ -3098,6 +3098,20 @@ void AUTCharacter::InventoryEvent(FName EventName)
 	}
 }
 
+bool AUTCharacter::OverrideGiveTo(AUTPickup* Pickup)
+{
+	bool bOverrideGiveTo = false;
+	for (TInventoryIterator<> It(this); It; ++It)
+	{
+		if (It->bCallOwnerEvent && It->OverrideGiveTo(Pickup))
+		{
+			bOverrideGiveTo = true;
+		}
+	}
+	return bOverrideGiveTo;
+}
+
+
 void AUTCharacter::SwitchWeapon(AUTWeapon* NewWeapon)
 {
 	if (NewWeapon != NULL && !IsDead() && ((Weapon == nullptr) || !IsSwitchingDisabled()))

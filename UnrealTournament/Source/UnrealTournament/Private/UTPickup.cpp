@@ -160,7 +160,11 @@ void AUTPickup::ProcessTouch_Implementation(APawn* TouchedBy)
 {
 	if (Role == ROLE_Authority && State.bActive && TouchedBy->Controller != NULL && AllowPickupBy(TouchedBy, true))
 	{
-		GiveTo(TouchedBy);
+		AUTCharacter* UTC = Cast<AUTCharacter>(TouchedBy);
+		if (!UTC || !UTC->OverrideGiveTo(this))
+		{
+			GiveTo(TouchedBy);
+		}
 		AUTGameMode* UTGameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
 		if (UTGameMode != NULL)
 		{

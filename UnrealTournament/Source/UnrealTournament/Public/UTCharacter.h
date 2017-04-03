@@ -1980,6 +1980,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pawn")
 	TArray< TSubclassOf<AUTInventory> > DefaultCharacterInventory;
+
+	/** If true, pickup will not execute its giveto().  Gives inventory a chance to override. */
+	virtual bool OverrideGiveTo(class AUTPickup* Pickup);
+
 protected:
 
 	//================================

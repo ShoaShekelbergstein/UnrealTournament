@@ -143,8 +143,6 @@ public:
 	/** Called to stack pickup from a weapon locker. */
 	virtual bool StackLockerPickup(AUTInventory* ContainedInv);
 
-
-
 	/** if set, inventory gets the ModifyDamageTaken() and PreventHeadShot() functions/events when the holder takes damage */
 	UPROPERTY(EditDefaultsOnly, Category = Events)
 	uint32 bCallDamageEvents : 1;
@@ -188,8 +186,13 @@ public:
 	UFUNCTION(BlueprintNativeEvent)
 	int32 GetEffectiveHealthModifier(bool bOnlyVisible) const;
 
+	/** Called only is bCallOwnerEvent is true. */
 	UFUNCTION(BlueprintNativeEvent)
 	void OwnerEvent(FName EventName);
+
+	/** Called only is bCallOwnerEvent is true.  Tells inventory item about a pickup in progress.  Prevent the pickup giveto() by returning true.   */
+	UFUNCTION(BlueprintNativeEvent)
+		bool OverrideGiveTo(class AUTPickup* Pickup);
 
 	/** draws any relevant HUD that should be drawn whenever this item is held
 	 * NOTE: not called by default, generally a HUD widget will call this for item types that are relevant for its area
