@@ -2366,7 +2366,7 @@ void AUTWeapon::FireCone()
 	}
 	for (const FHitResult& Hit : RealHits)
 	{
-		if (Hit.Actor != NULL && Hit.Actor->bCanBeDamaged)
+		if (UTOwner && Hit.Actor != NULL && Hit.Actor->bCanBeDamaged)
 		{
 			if ((Role == ROLE_Authority) && PS && (HitsStatsName != NAME_None))
 			{
