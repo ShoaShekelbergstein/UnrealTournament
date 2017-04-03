@@ -260,8 +260,8 @@ bool UUTGameEngine::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Out)
 	}
 	else if (FParse::Command(&Cmd, TEXT("GAMEVER")) || FParse::Command(&Cmd, TEXT("GAMEVERSION")))
 	{
-		FString VersionString = FString::Printf(TEXT("GameVersion Date: %s Time: %s"),
-			TEXT(__DATE__), TEXT(__TIME__));
+		FString VersionString = FString::Printf(TEXT("GameVersion %d Date: %s Time: %s"),
+			BUILT_FROM_CHANGELIST, TEXT(__DATE__), TEXT(__TIME__));
 
 		Out.Logf(*VersionString);
 		FPlatformMisc::ClipboardCopy(*VersionString);
