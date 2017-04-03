@@ -3,7 +3,11 @@
 #pragma once
 
 #include "UMG.h"
+#if WITH_PROFILE
 #include "UTMcpProfile.h"
+#else
+#include "GithubStubs.h"
+#endif
 #include "UTUserWidgetBase.generated.h"
 
 /** 

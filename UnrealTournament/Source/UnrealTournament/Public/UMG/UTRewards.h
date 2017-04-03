@@ -1,7 +1,12 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
 
+#if WITH_PROFILE
 #include "UtMcpDefinition.h"
+#else
+#include "GithubStubs.h"
+#endif
+
 #include "UTRewards.generated.h"
 
 USTRUCT()

@@ -6,7 +6,12 @@
 #include "UTUITypes.h"
 
 #include "UTGlobals.h"
+
+#if WITH_PROFILE
 #include "UtMcpTokenDefinition.h"
+#else
+#include "GithubStubs.h"
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 // UUTRewardDisplayData
@@ -126,6 +131,7 @@ void UUTRewardDisplayData::GetRewardDisplayInfo(const FUTLevelUpData& LevelUpDat
 
 void UUTRewardDisplayData::GetSpecificItemDisplayInfo(const UUtMcpDefinition* SpecificItem, int32	Quantity, FText& DisplayName, FText& DisplayDesc, UTexture2D*& DisplayIcon) const
 {
+#if WITH_PROFILE
 	bool bIsCurrency = false;
 	if (SpecificItem->IsA<UUtMcpTokenDefinition>())
 	{
@@ -155,10 +161,12 @@ void UUTRewardDisplayData::GetSpecificItemDisplayInfo(const UUtMcpDefinition* Sp
 	{
 		DisplayIcon = Cast<UTexture2D>(UUTGlobals::Get().SynchronouslyLoadAsset(ItemDisplayAsset));
 	}
+#endif
 }
 
 void UUTRewardDisplayData::GetAllLootCrateRewardDisplays(TArray<FUTLootCrateRewardDisplay>& AllLootCrateRewards) const
 {
+#if WITH_PROFILE
 	TArray<FString> LootRewards;
 	UUTGlobals::Get().GetRewardsFromSameSource(TEXT("LootCrate"), LootRewards);
 
@@ -190,6 +198,7 @@ void UUTRewardDisplayData::GetAllLootCrateRewardDisplays(TArray<FUTLootCrateRewa
 			AllLootCrateRewards.Add(RewardDisplay);
 		}
 	}
+#endif
 }
 
 void UUTRewardDisplayData::FindLootCrateRewardById(const FMcpItemIdAndQuantity& Reward, UUtMcpDefinition*& OutReward) const
@@ -217,6 +226,7 @@ void UUTRewardDisplayData::FindLootCrateRewardById(const FMcpItemIdAndQuantity& 
 
 const FUTRewardTypeInfo* UUTRewardDisplayData::GetItemRewardTypeInfo(const UUtMcpDefinition* ItemDefinition) const
 {
+#if WITH_PROFILE
 	if (ItemDefinition)
 	{
 		if (const FUTItemRewardInfo* const* Info = ItemRewardsByClassName.Find(ItemDefinition->GetClass()->GetFName()))
@@ -230,7 +240,7 @@ const FUTRewardTypeInfo* UUTRewardDisplayData::GetItemRewardTypeInfo(const UUtMc
 			return &Currencies[TEnumValue(EUTCurrencyType::TimeCurrency)];
 		}
 	}
-
+#endif
 	return nullptr;
 }
 

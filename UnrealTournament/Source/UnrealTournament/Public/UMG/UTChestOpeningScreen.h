@@ -4,14 +4,18 @@
 
 #include "WidgetFactory.h"
 
-#include "McpSharedTypes.h"
-
 #include "UTUITypes.h"
 
 #include "UTActivatableWidget.h"
 
 #include "UTChestRewardCategory.h"
 #include "UTChestOpeningScreen.generated.h"
+
+#if WITH_PROFILE
+#include "McpSharedTypes.h"
+#else
+#include "GithubStubs.h"
+#endif
 
 class UUTTextBlock;
 class UUTDefaultButton;

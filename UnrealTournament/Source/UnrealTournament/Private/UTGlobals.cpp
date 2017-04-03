@@ -82,6 +82,7 @@ void UUTGlobals::GetRewardsFromSameSource(const FString& SourceName, TArray<FStr
 
 UUtMcpDefinition* UUTGlobals::FindItemInAssetLists(const FString& Ident)
 {
+#if WITH_PROFILE
 	for (int32 TypeIndex = 0; TypeIndex < TEnumValue(EUtItemType::Max_None); ++TypeIndex)
 	{
 		EUtItemType EachType = static_cast<EUtItemType>(TypeIndex);
@@ -99,6 +100,7 @@ UUtMcpDefinition* UUTGlobals::FindItemInAssetLists(const FString& Ident)
 			}
 		}
 	}
+#endif
 	return nullptr;
 }
 

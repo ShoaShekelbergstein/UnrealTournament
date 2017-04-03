@@ -6,9 +6,14 @@
 #include "UTLazyImage.h"
 #include "UTGlowingRarityText.h"
 #include "UTMcpTypeRewardImage.h"
-#include "UtMcpTokenDefinition.h"
 #include "UTChestOpeningScreen.h"
 #include "UTGameUIData.h"
+
+#if WITH_PROFILE
+#include "UtMcpTokenDefinition.h"
+#else
+#include "GithubStubs.h"
+#endif
 
 #if !UE_BUILD_SHIPPING
 static FAutoConsoleVariable CVarLootCrateRewardOverride(
@@ -112,6 +117,7 @@ void UUTChestOpeningScreen::ShuffleSpinnerRewardArray()
 
 void UUTChestOpeningScreen::ProcessNewCurrentlySelectedReward(FChestResultEntryRow& CurrentlySelectedReward)
 {
+#if WITH_PROFILE
 	if (CurrentlySelectedReward.Quantity > 1)
 	{
 		Text_RewardName->SetText(FText::Format(NSLOCTEXT("ChestOpeningScreen", "FinalCount", "{0} x {1}"), CurrentlySelectedReward.RewardItem->GetDisplayName(), FText::AsNumber(CurrentlySelectedReward.Quantity)));
@@ -167,6 +173,7 @@ void UUTChestOpeningScreen::ProcessNewCurrentlySelectedReward(FChestResultEntryR
 		Text_RewardType->SetText(NSLOCTEXT("ChestOpeningScreen", "Reward", "Reward"));
 		break;
 	}
+#endif
 }
 
 void UUTChestOpeningScreen::BeginOpen()
@@ -176,6 +183,7 @@ void UUTChestOpeningScreen::BeginOpen()
 
 void UUTChestOpeningScreen::FireSpinner(const UUtMcpCardPackItem* PackToOpen, const TArray<FMcpItemIdAndQuantity> RewardArray)
 {
+#if WITH_PROFILE
 	if (SpinnerState == EUTSpinState::Opening)
 	{
 		SpinnerState = EUTSpinState::Spinning;
@@ -265,6 +273,7 @@ void UUTChestOpeningScreen::FireSpinner(const UUtMcpCardPackItem* PackToOpen, co
 
 		GetWorld()->GetTimerManager().SetTimer(SpinnerTimerHandle, FTimerDelegate::CreateUObject(this, &UUTChestOpeningScreen::ShowNextImage), PictureFlipRate, true, 0.0f);
 	}
+#endif
 }
 
 void UUTChestOpeningScreen::BeginSpinnerSlowdown()
@@ -282,6 +291,7 @@ void UUTChestOpeningScreen::SetScreenState(EUTSpinState NewState)
 
 void UUTChestOpeningScreen::ShowNextImage()
 {
+#if WITH_PROFILE
 	const int32 ImageCount = SpinnerItemArray.Num();
 	FChestResultEntryRow* CurrentlySelectedReward = &SpinnerItemArray[SpinnerImageIdx];
 
@@ -357,6 +367,7 @@ void UUTChestOpeningScreen::ShowNextImage()
 			LoadFluffRewards();
 		}
 	}
+#endif
 }
 
 void UUTChestOpeningScreen::LoadFluffRewards()
@@ -383,6 +394,7 @@ void UUTChestOpeningScreen::LoadFluffRewards()
 
 void UUTChestOpeningScreen::LoadFluffRewardsInternal(TArray<FChestResultEntryRow>& RewardArray, int32 RewardCount)
 {
+#if WITH_PROFILE
 	const int32 ArraySize = RewardArray.Num();
 
 	// pull some random rewards in assuming there is at least one reward in this reward tier
@@ -416,10 +428,12 @@ void UUTChestOpeningScreen::LoadFluffRewardsInternal(TArray<FChestResultEntryRow
 
 		ShuffleSpinnerRewardArray();
 	}
+#endif
 }
 
 void UUTChestOpeningScreen::RemoveOwnedRewards()
 {
+#if WITH_PROFILE
 	if (UUtMcpProfile* McpProfileAccount = GetMcpProfileAccount())
 	{
 		for(int32 RewardIdx = PotentialRewardStruct.Num()-1; RewardIdx >= 0; RewardIdx--)
@@ -434,7 +448,7 @@ void UUTChestOpeningScreen::RemoveOwnedRewards()
 			}
 		}
 	}
-
+#endif
 }
 
 void UUTChestOpeningScreen::SortRewardsIntoArrays(TArray<FChestResultEntryRow>& CommonRewards, TArray<FChestResultEntryRow>& RareRewards, TArray<FChestResultEntryRow>& UltraRareRewards, TArray<FChestResultEntryRow>& EpicMegaRareRewards)
@@ -477,6 +491,7 @@ bool UUTChestOpeningScreen::OnHandleBackAction_Implementation()
 
 void UUTChestOpeningScreen::LoadPotentialRewards()
 {
+#if WITH_PROFILE
 	const UUTRewardDisplayData& RewardData = UUTGameUIData::Get().GetRewardDisplayData();
 
 	// probably only needs to actually do this once
@@ -535,4 +550,5 @@ void UUTChestOpeningScreen::LoadPotentialRewards()
 	Reward_Common->FillData(EUTItemRarity::Common);
 
 	RemoveOwnedRewards();
+#endif
 }

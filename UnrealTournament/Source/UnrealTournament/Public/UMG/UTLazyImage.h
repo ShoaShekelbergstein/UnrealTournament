@@ -4,7 +4,11 @@
 
 #include "UTLoadGuard.h"
 #include "UTUITypes.h"
+#if WITH_PROFILE
 #include "UtMcpDefinition.h"
+#else
+#include "GithubStubs.h"
+#endif
 #include "UTLazyImage.generated.h"
 
 class UUTLoadGuard;
