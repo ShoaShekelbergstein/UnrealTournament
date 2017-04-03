@@ -255,6 +255,7 @@ void AUTWeap_LightningRifle::FireShot()
 	}
 
 	AmmoCost[0] = bIsFullyPowered ? 2 : 1;
+	bool bFullPowerShot = bIsFullyPowered;
 	ConsumeAmmo(0);
 	if (!FireShotOverride() && GetUTOwner() != NULL) // script event may kill user
 	{
@@ -273,7 +274,7 @@ void AUTWeap_LightningRifle::FireShot()
 				FHitResult OutHit;
 				FireInstantHit(true, &OutHit);
 
-				if (Cast<AUTCharacter>(OutHit.Actor.Get()))
+				if (bFullPowerShot && Cast<AUTCharacter>(OutHit.Actor.Get()))
 				{
 					ChainLightning(OutHit);
 				}
