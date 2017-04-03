@@ -179,16 +179,16 @@ void SPropertyEditorAsset::Construct( const FArguments& InArgs, const TSharedPtr
 		if (bAllowActorPicker)
 		{
 			FObjectPropertyNode* RootObjectNode = PropertyEditor->GetPropertyNode()->FindRootObjectItemParent();
-			
-			check(RootObjectNode);
-			
-			// One of the object is an archetype, we can't allow actor picker
-			for (int32 i = 0; i < RootObjectNode->GetNumObjects(); ++i)
+			if (RootObjectNode)
 			{
-				if (RootObjectNode->GetUObject(i)->HasAnyFlags(RF_ArchetypeObject))
+				// One of the object is an archetype, we can't allow actor picker
+				for (int32 i = 0; i < RootObjectNode->GetNumObjects(); ++i)
 				{
-					bAllowActorPicker = false;
-					break;
+					if (RootObjectNode->GetUObject(i)->HasAnyFlags(RF_ArchetypeObject))
+					{
+						bAllowActorPicker = false;
+						break;
+					}
 				}
 			}
 		}
