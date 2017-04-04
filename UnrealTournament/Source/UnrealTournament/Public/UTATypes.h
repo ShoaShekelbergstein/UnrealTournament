@@ -286,6 +286,7 @@ namespace HighlightNames
 	const FName AllOutOfBubbleGum = FName(TEXT("AllOutOfBubbleGum"));
 	const FName GameOver = FName(TEXT("GameOver"));
 	const FName LikeTheWind = FName(TEXT("LikeTheWind"));
+	const FName DeliveryBoy = FName(TEXT("DeliveryBoy"));
 	const FName MoreThanAHandful = FName(TEXT("MoreThanAHandful"));
 	const FName ToughGuy = FName(TEXT("ToughGuy"));
 	const FName LargerThanLife = FName(TEXT("LargerThanLife"));
