@@ -20,6 +20,8 @@
 #include "UTWeap_Enforcer.h"
 #include "UTWeap_Translocator.h"
 
+DEFINE_LOG_CATEGORY_STATIC(LogUTLineUp, Log, All);
+
 AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -41,6 +43,8 @@ void AUTLineUpHelper::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 void AUTLineUpHelper::BeginPlay()
 {
+	Super::BeginPlay();
+	
 	BuildMapWeaponList();
 }
 
@@ -461,6 +465,21 @@ void AUTLineUpHelper::BuildMapWeaponList()
 		AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
 		if (GameMode)
 		{
+			//From Character BP
+			AUTCharacter* UTChar = Cast<AUTCharacter>(GameMode->DefaultPawnClass->GetDefaultObject());
+			if (UTChar)
+			{
+				for (TSubclassOf<AUTInventory>& Item : UTChar->DefaultCharacterInventory)
+				{
+					TSubclassOf<AUTWeapon> Weapon = Item.Get();
+					if (Weapon != NULL)
+					{
+						MapWeaponTypeList.AddUnique(Weapon);
+					}
+				}
+			}
+
+			//From GameMode
 			for (TSubclassOf<AUTInventory>& Item : GameMode->DefaultInventory)
 			{
 				TSubclassOf<AUTWeapon> Weapon = Item.Get();
@@ -473,13 +492,13 @@ void AUTLineUpHelper::BuildMapWeaponList()
 
 		//Remove invalid weapons for line-ups
 		AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
-		if (GameMode && GameMode->BaseMutator)
+		if (GameMode)
 		{
 			TArray<TSubclassOf<AUTWeapon>> InvalidWeaponsToRemove;
 			for (TSubclassOf<AUTWeapon>& Weapon : MapWeaponTypeList)
 			{
 				//Remove anything mutators won't allow
-				if (!GameMode->BaseMutator->CheckRelevance(Weapon->GetDefaultObject<AActor>()))
+				if ((GameMode->BaseMutator) && (!GameMode->BaseMutator->CheckRelevance(Weapon->GetDefaultObject<AActor>())))
 				{
 					InvalidWeaponsToRemove.Add(Weapon);
 				}
@@ -500,9 +519,38 @@ void AUTLineUpHelper::BuildMapWeaponList()
 				}
 			}
 
+			//If we are about to delete all the weapons, try and keep 1 in the list.
+			//For this to happen the mutator or map must lack all weapons but the Enforcer / Translocator / Redeemer. Lets try and re-validate 1 of those to show.
+			if ((InvalidWeaponsToRemove.Num() == MapWeaponTypeList.Num()) && (MapWeaponTypeList.Num() > 1))
+			{
+				TSubclassOf<AUTWeapon> RevalidateWeapon = nullptr;
+				for (TSubclassOf<AUTWeapon>& InvalidWeapon : InvalidWeaponsToRemove)
+				{
+					//Recheck if the item is ok with the mutator, if so, don't remove it
+					if ((GameMode->BaseMutator) && (GameMode->BaseMutator->CheckRelevance(InvalidWeapon->GetDefaultObject<AActor>())))
+					{
+						RevalidateWeapon = InvalidWeapon;
+						break;
+					}
+				}
+
+				if (RevalidateWeapon)
+				{
+					InvalidWeaponsToRemove.Remove(RevalidateWeapon);
+				}
+				else
+				{
+					UE_LOG(LogUTLineUp, Warning, TEXT("No valid weapons found for line-up!"));
+				}
+			}
+
 			for (TSubclassOf<AUTWeapon>& InvalidWeapon : InvalidWeaponsToRemove)
 			{
-				MapWeaponTypeList.Remove(InvalidWeapon);
+				// Make sure at least 1 weapon is always in the list
+				if (MapWeaponTypeList.Num() > 1)
+				{
+					MapWeaponTypeList.Remove(InvalidWeapon);
+				}
 			}
 		}
 	}
