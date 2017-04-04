@@ -64,7 +64,8 @@ AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 	TutorialAnnouncements.Add(TEXT("PriLinkGun"));
 	TutorialAnnouncements.Add(TEXT("SecLinkGun"));
 	HighlightText = NSLOCTEXT("Weapon", "LinkHighlightText", "Plasma Boy");
-	LowMeshOffset = FVector(0.f, 0.f, -5.f);
+	LowMeshOffset = FVector(0.f, 0.f, -3.f);
+	VeryLowMeshOffset = FVector(0.f, 0.f, -10.f);
 }
 
 void AUTWeap_LinkGun::AttachToOwner_Implementation()

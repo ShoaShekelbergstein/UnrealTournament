@@ -44,6 +44,7 @@ AUTWeap_BioRifle::AUTWeap_BioRifle(const class FObjectInitializer& ObjectInitial
 	TutorialAnnouncements.Add(TEXT("SecBioRifle"));
 
 	HighlightText = NSLOCTEXT("Weapon", "BioHighlightText", "So Much Snot");
+	VeryLowMeshOffset = FVector(0.f, 0.f, -3.f);
 }
 
 void AUTWeap_BioRifle::UpdateSqueeze()

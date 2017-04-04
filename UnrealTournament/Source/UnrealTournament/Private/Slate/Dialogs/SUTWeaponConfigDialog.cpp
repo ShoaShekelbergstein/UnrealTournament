@@ -1165,12 +1165,12 @@ TSharedRef<SWidget> SUTWeaponConfigDialog::GenerateWeaponHand(UUTProfileSettings
 {
 	WeaponHandDesc.Add(NSLOCTEXT("UT", "Normal", "Normal"));
 	WeaponHandDesc.Add(NSLOCTEXT("UT", "Left", "Left"));
-	WeaponHandDesc.Add(NSLOCTEXT("UT", "Center", "Center"));
 	WeaponHandDesc.Add(NSLOCTEXT("UT", "Lowered", "Lowered"));
+	WeaponHandDesc.Add(NSLOCTEXT("UT", "VeryLow", "VeryLow"));
 
 	WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[uint8(EWeaponHand::HAND_Right)])));
-	//WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[EWeaponHand::HAND_Left])));
-	//WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[EWeaponHand::HAND_Center])));
+	//WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[uint8(EWeaponHand::HAND_Left)])));
+	WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[uint8(EWeaponHand::HAND_Center)])));
 	WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[uint8(EWeaponHand::HAND_Hidden)])));
 
 	TSharedPtr<FText> InitiallySelectedHand = WeaponHandList[0];

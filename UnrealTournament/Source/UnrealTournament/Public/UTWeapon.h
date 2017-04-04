@@ -519,6 +519,9 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
 		FVector LowMeshOffset;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+		FVector VeryLowMeshOffset;
+
 	/** Base relative rotation of first person mesh, cached from offset set up in blueprint. */
 	UPROPERTY()
 	FRotator FirstPMeshRotation;

@@ -997,8 +997,8 @@ void AUTWeapon::UpdateWeaponHand()
 		switch (GetWeaponHand())
 		{
 			case EWeaponHand::HAND_Center:
-				// TODO: not implemented, fallthrough
-				UE_LOG(UT, Warning, TEXT("HAND_Center is not implemented yet!"));
+				AdjustMesh->SetRelativeLocationAndRotation(AdjustMeshArchetype->RelativeLocation + LowMeshOffset, AdjustMeshArchetype->RelativeRotation);
+				break;
 			case EWeaponHand::HAND_Right:
 				AdjustMesh->SetRelativeLocationAndRotation(AdjustMeshArchetype->RelativeLocation, AdjustMeshArchetype->RelativeRotation);
 				break;
@@ -1012,7 +1012,7 @@ void AUTWeapon::UpdateWeaponHand()
 			}
 			case EWeaponHand::HAND_Hidden:
 			{
-				AdjustMesh->SetRelativeLocationAndRotation(AdjustMeshArchetype->RelativeLocation + LowMeshOffset, AdjustMeshArchetype->RelativeRotation);
+				AdjustMesh->SetRelativeLocationAndRotation(AdjustMeshArchetype->RelativeLocation + VeryLowMeshOffset, AdjustMeshArchetype->RelativeRotation);
 				break;
 			}
 		}
@@ -2512,8 +2512,13 @@ void AUTWeapon::UpdateViewBob(float DeltaTime)
 
 		if (GetWeaponHand() == EWeaponHand::HAND_Hidden)
 		{
+			ScaledMeshOffset += VeryLowMeshOffset;
+		}
+		else if(GetWeaponHand() == EWeaponHand::HAND_Center)
+		{
 			ScaledMeshOffset += LowMeshOffset;
 		}
+
 		BobbedMesh->SetRelativeLocation(ScaledMeshOffset);
 		FVector BobOffset = UTOwner->GetWeaponBobOffset(DeltaTime, this);
 		BobbedMesh->SetWorldLocation(BobbedMesh->GetComponentLocation() + BobOffset);

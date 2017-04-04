@@ -48,6 +48,7 @@ AUTWeap_Sniper::AUTWeap_Sniper(const FObjectInitializer& ObjectInitializer)
 	TutorialAnnouncements.Add(TEXT("SecSniper"));
 	HighlightText = NSLOCTEXT("Weapon", "SniperHighlightText", "One Man One Bullet");
 	LowMeshOffset = FVector(0.f, 0.f, -5.f);
+	VeryLowMeshOffset = FVector(0.f, 0.f, -11.f);
 }
 
 float AUTWeap_Sniper::GetHeadshotScale(AUTCharacter* HeadshotTarget) const
