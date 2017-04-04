@@ -3402,7 +3402,7 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 		UTGameState->PlayersNeeded = FMath::Max(0, NeededPlayers - NumPlayers);
 		if (!bRequireReady && !bRequireFull && !bRankedSession && (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers))
 		{
-			int32 MinPlayersToStart = bIsQuickMatch ? 1 : 2;
+			int32 MinPlayersToStart = 1;
 			UTGameState->PlayersNeeded = FMath::Max(0, MinPlayersToStart - NumPlayers);
 		}
 		if (((GetNetMode() == NM_Standalone) || bDevServer || (UTGameState->PlayersNeeded == 0)) && (NumPlayers + NumSpectators > 0))
