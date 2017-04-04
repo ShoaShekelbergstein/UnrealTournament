@@ -6,7 +6,7 @@
 #include "StatNames.h"
 #include "UTRewardMessage.h"
 #include "UTGameMode.h"
-#include "UTProj_Transdisk.h"
+#include "UTProj_TransDisk.h"
 
 AUTProj_ShockBall::AUTProj_ShockBall(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
