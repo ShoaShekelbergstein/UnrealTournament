@@ -6240,10 +6240,10 @@ bool UUTLocalPlayer::IsMenuOptionEnabled(FName MenuCommand) const
 
 FText UUTLocalPlayer::GetMenuCommandTooltipText(FName MenuCommand) const 
 {
-	if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			return NSLOCTEXT("SUTHomePanel", "QuickPlayDM","Quickly find and join an online deathmatch game against players close to your skill level.");
-	else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTF","Quickly find and join an online capture the flag game against players close to your skill level");
-	else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrun","Quickly find and join an online FlagRun game against players close to your skill level.");
-	else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrunPVE","Quickly find and join an online coop FlagRun game against AI opponents.");
+	if (MenuCommand == EMenuCommand::MC_QuickPlayDM)			return NSLOCTEXT("SUTHomePanel", "QuickPlayDM","Join an online deathmatch game against players close to your skill level.");
+	else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTF","Join an online capture the flag game against players close to your skill level");
+	else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrun","Join an online Blitz game against players close to your skill level.");
+	else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrunPVE","Join an online co-op Blitz game against AI opponents.");
 	else if (MenuCommand == EMenuCommand::MC_Challenges)		return NSLOCTEXT("SUTHomePanel", "QuickPlayChallenges","Test your skills offline against our world class AI.");
 	else if (MenuCommand == EMenuCommand::MC_FindAMatch)		return NSLOCTEXT("SUTHomePanel", "QuickPlayFindAMatch","Head online and find games to play.");
 	return FText::GetEmpty();
