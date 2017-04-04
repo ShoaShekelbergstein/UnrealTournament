@@ -844,33 +844,11 @@ public:
 	UFUNCTION(Reliable, Server, WithValidation)
 	virtual void ServerSwitchTeam();
 
-protected:
-	EWeaponHand ReplicatedWeaponHand;
-
 public:
-	inline EWeaponHand GetWeaponHand()
-	{
-		//Spectators always see right handed weapons
-		bool bIsReallySpectating = false;
-		// this is detecting edge cases where we're transitioning to controlling a Pawn but not all the data has replicated and we're still in spectating state
-		if (IsInState(NAME_Spectating) && GetPawn() == nullptr)
-		{
-			APawn* P = Cast<APawn>(GetViewTarget());
-			if (P == nullptr || P->Controller != this)
-			{
-				bIsReallySpectating = true;
-			}
-		}
-		return bIsReallySpectating ? EWeaponHand::HAND_Right : GetPreferredWeaponHand();
-	}
-
-	EWeaponHand GetPreferredWeaponHand();
+	virtual EWeaponHand GetWeaponHand();
 
 	UFUNCTION(BlueprintCallable, Category = Weapon)
 	void SetWeaponHand(EWeaponHand NewHand);
-
-	UFUNCTION(Reliable, Server, WithValidation)
-	void ServerSetWeaponHand(EWeaponHand NewHand);
 
 	/** Last time PrevWeapon or NextWeapon was called. */
 	UPROPERTY(BluePrintReadWrite, Category = Input)

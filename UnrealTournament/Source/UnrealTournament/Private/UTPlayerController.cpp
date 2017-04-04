@@ -158,7 +158,6 @@ AUTPlayerController::AUTPlayerController(const class FObjectInitializer& ObjectI
 
 	LastComMessageSwitch = -1;
 	LastComMessageTime = 0.0f;
-	ReplicatedWeaponHand = EWeaponHand::HAND_Right;
 	MinNetUpdateFrequency = 100.0f;
 }
 
@@ -3578,29 +3577,11 @@ bool AUTPlayerController::ServerSuicide_Validate()
 
 void AUTPlayerController::SetWeaponHand(EWeaponHand NewHand)
 {
-	ReplicatedWeaponHand = NewHand;
-
-	AUTCharacter* UTCharTarget = Cast<AUTCharacter>(GetViewTarget());
+	AUTCharacter* UTCharTarget = Cast<AUTCharacter>(GetPawn());
 	if (UTCharTarget != NULL && UTCharTarget->GetWeapon() != NULL)
 	{
 		UTCharTarget->GetWeapon()->UpdateWeaponHand();
 	}
-	if (IsTemplate() || IsLocalPlayerController())
-	{
-		SaveConfig();
-	}
-	if (!IsTemplate() && Role < ROLE_Authority)
-	{
-		ServerSetWeaponHand(NewHand);
-	}
-}
-bool AUTPlayerController::ServerSetWeaponHand_Validate(EWeaponHand NewHand)
-{
-	return true;
-}
-void AUTPlayerController::ServerSetWeaponHand_Implementation(EWeaponHand NewHand)
-{
-	SetWeaponHand(NewHand);
 }
 
 void AUTPlayerController::Emote(int32 EmoteIndex)
@@ -3680,7 +3661,6 @@ void AUTPlayerController::ReceivedPlayer()
 	{
 		if (GetNetMode() != NM_Standalone)
 		{
-			ServerSetWeaponHand(GetWeaponHand());
 			if (FUTAnalytics::IsAvailable() && (GetWorld()->GetNetMode() != NM_Client || GetWorld()->GetNetDriver() != NULL)) // make sure we don't do analytics for demo playback
 			{
 				FString ServerInfo = (GetWorld()->GetNetMode() == NM_Client) ? GetWorld()->GetNetDriver()->ServerConnection->URL.ToString() : GEngine->GetWorldContextFromWorldChecked(GetWorld()).LastURL.ToString();
@@ -3716,6 +3696,13 @@ void AUTPlayerController::ReceivedPlayer()
 		}
 	}
 }
+
+EWeaponHand AUTPlayerController::GetWeaponHand()
+{
+	UUTProfileSettings* ProfileSettings = GetProfileSettings();
+	return ProfileSettings ? ProfileSettings->WeaponHand : EWeaponHand::HAND_Right;
+}
+
 
 bool AUTPlayerController::ServerReceiveCountryFlag_Validate(FName NewCountryFlag)
 {
@@ -5109,19 +5096,6 @@ bool AUTPlayerController::CanPerformRally() const
 {
 	AUTFlagRunGameState* GameState = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	return (GameState && UTPlayerState && UTPlayerState->bCanRally && UTPlayerState->Team && GameState->bAttackersCanRally && ((UTPlayerState->Team->TeamIndex == 0) == GameState->bRedToCap));
-}
-
-EWeaponHand AUTPlayerController::GetPreferredWeaponHand()
-{
-	if (GetNetMode() == NM_DedicatedServer)
-	{
-		return ReplicatedWeaponHand;
-	}
-	else
-	{
-		UUTProfileSettings* ProfileSettings = GetProfileSettings();
-		return ProfileSettings ? ProfileSettings->WeaponHand : ReplicatedWeaponHand;
-	}
 }
 
 void AUTPlayerController::ViewStartSpot()

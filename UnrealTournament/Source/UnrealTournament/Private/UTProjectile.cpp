@@ -189,15 +189,6 @@ void AUTProjectile::OnRep_Instigator()
 		{
 			((AUTCharacter*)(Instigator))->LastFiredProjectile = this;
 		}
-		AUTPlayerController* PC = Cast<AUTPlayerController>(InstigatorController);
-		if (OffsetVisualComponent && PC)
-		{
-			if (PC->GetWeaponHand() == EWeaponHand::HAND_Left)
-			{
-				InitialVisualOffset.Y *= -1.f;
-				OffsetVisualComponent->RelativeLocation.Y *= -1.f;
-			}
-		}
 	}
 
 	// turn off other player's projectile flight lights at low/medium effects quality
