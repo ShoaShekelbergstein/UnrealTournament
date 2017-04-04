@@ -6,6 +6,7 @@
 #include "StatNames.h"
 #include "UTRewardMessage.h"
 #include "UTGameMode.h"
+#include "UTProj_Transdisk.h"
 
 AUTProj_ShockBall::AUTProj_ShockBall(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -114,12 +115,11 @@ void AUTProj_ShockBall::ShutDown()
 	Super::ShutDown();
 }
 
-
 bool AUTProj_ShockBall::ShouldIgnoreHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp)
 {
 	if (Super::ShouldIgnoreHit_Implementation(OtherActor, OtherComp))
 	{
-		return (Cast<AUTProj_ShockBall>(OtherActor) == NULL);
+		return ((Cast<AUTProj_ShockBall>(OtherActor) == NULL) && (Cast<AUTProj_TransDisk>(OtherActor) == NULL));
 	}
 	return false;
 }

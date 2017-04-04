@@ -17,6 +17,7 @@ class UNREALTOURNAMENT_API AUTProj_Redeemer : public AUTProjectile
 	virtual float TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void NotifyClientSideHit(AUTPlayerController* InstigatedBy, FVector HitLocation, AActor* DamageCauser, int32 Damage) override;
 	virtual void Destroyed() override;
+	virtual bool ShouldIgnoreHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp) override;
 
 	virtual void ApplyDamage(float Damage, AController* EventInstigator);
 
