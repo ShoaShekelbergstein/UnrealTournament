@@ -36,7 +36,7 @@ AUTWeap_ShockRifle::AUTWeap_ShockRifle(const FObjectInitializer& ObjectInitializ
 	FiringViewKickback = -50.f;
 	FiringViewKickbackY = 0.f;
 	HighlightText = NSLOCTEXT("Weapon", "ShockHighlightText", "Don't Tase Me Bro");
-	LowMeshOffset + FVector(0.f, 0.f, -4.f);
+	LowMeshOffset = FVector(0.f, 0.f, -4.f);
 }
 
 void AUTWeap_ShockRifle::AttachToOwner_Implementation()

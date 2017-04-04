@@ -73,7 +73,7 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	TutorialAnnouncements.Add(TEXT("PriRocketLauncher"));
 	TutorialAnnouncements.Add(TEXT("SecRocketLauncher"));
 	HighlightText = NSLOCTEXT("Weapon", "RockerHighlightText", "I am the Rocketman");
-	LowMeshOffset + FVector(0.f, 0.f, -7.f);
+	LowMeshOffset = FVector(0.f, 0.f, -7.f);
 }
 
 void AUTWeap_RocketLauncher::Destroyed()

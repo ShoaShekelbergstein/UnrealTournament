@@ -15,7 +15,7 @@ AUTWeap_LightningRifle::AUTWeap_LightningRifle(const FObjectInitializer& ObjectI
 	ChainDamage = 30.f;
 	ChainRadius = 800.f;
 	bSniping = true;
-	LowMeshOffset + FVector(0.f, 0.f, -3.f);
+	LowMeshOffset = FVector(0.f, 0.f, -3.f);
 }
 
 void AUTWeap_LightningRifle::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

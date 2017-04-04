@@ -71,7 +71,7 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	WeaponSkinCustomizationTag = EpicWeaponSkinCustomizationTags::Enforcer;
 
 	HighlightText = NSLOCTEXT("Weapon", "EnforcerHighlightText", "Gunslinger");
-	LowMeshOffset + FVector(0.f, 0.f, -7.f);
+	LowMeshOffset = FVector(0.f, 0.f, -7.f);
 }
 
 float AUTWeap_Enforcer::GetPutDownTime()
