@@ -23,7 +23,9 @@
 #include "Widgets/SUTAspectPanel.h"
 #endif
 
-#if UE_SERVER
+#define USE_SQLITE UE_SERVER
+
+#if USE_SQLITE
 #include "ThirdParty/sqlite/sqlite3.h"
 #endif
 
@@ -37,7 +39,7 @@ UUTGameInstance::UUTGameInstance(const class FObjectInitializer& ObjectInitializ
 {
 	bLevelIsLoading = false;
 	bDisablePerformanceCounters = false;
-#if UE_SERVER
+#if USE_SQLITE
 	Database = nullptr;
 #endif
 }
@@ -75,19 +77,19 @@ void UUTGameInstance::Init()
 	else
 	{
 		PlaylistManager = NewObject<UUTPlaylistManager>(this);
-
-#if UE_SERVER
-		FString DatabasePath = FPaths::GameSavedDir() / "Mods.db";
-		if (sqlite3_open_v2(TCHAR_TO_ANSI(*DatabasePath), &Database, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX, nullptr) == SQLITE_OK)
-		{
-			UE_LOG(UT, Log, TEXT("SQL DB opened"));
-		}
-		else
-		{
-			UE_LOG(UT, Warning, TEXT("SQL DB failed to open"));
-		}
-#endif
 	}
+	
+#if USE_SQLITE
+	FString DatabasePath = FPaths::GameSavedDir() / "Mods.db";
+	if (sqlite3_open_v2(TCHAR_TO_ANSI(*DatabasePath), &Database, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX, nullptr) == SQLITE_OK)
+	{
+		UE_LOG(UT, Log, TEXT("SQL DB opened"));
+	}
+	else
+	{
+		UE_LOG(UT, Warning, TEXT("SQL DB failed to open"));
+	}
+#endif
 
 	if (!FParse::Param(FCommandLine::Get(), TEXT("server")))
 	{
@@ -98,7 +100,7 @@ void UUTGameInstance::Init()
 
 bool UUTGameInstance::ExecDatabaseCommand(const FString& DatabaseCommand, TArray<FDatabaseRow>& DatabaseRows)
 {
-#if UE_SERVER
+#if USE_SQLITE
 	int DBreturn = SQLITE_ERROR;
 
 	if (Database)
@@ -500,7 +502,7 @@ void UUTGameInstance::Shutdown()
 		Party->OnShutdown();
 	}
 	
-#if UE_SERVER
+#if USE_SQLITE
 	if (Database)
 	{
 		sqlite3_close(Database);
