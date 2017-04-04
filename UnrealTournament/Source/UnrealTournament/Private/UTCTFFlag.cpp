@@ -146,7 +146,7 @@ void AUTCTFFlag::SendHomeWithNotify()
 {
 	if (bGradualAutoReturn)
 	{
-		if (Role == ROLE_Authority)
+		if ((Role == ROLE_Authority) && bWaitForNearbyPlayer)
 		{
 			// if team member nearby, wait a bit longer
 			AUTCTFGameState* GameState = GetWorld()->GetGameState<AUTCTFGameState>();

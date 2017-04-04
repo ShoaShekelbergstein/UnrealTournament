@@ -390,6 +390,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category = GameObject)
 		bool bGradualAutoReturn;
 
+	/** If bGradualAutoReturn, don't move if player that can pick flag up is nearby. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category = GameObject)
+		bool bWaitForNearbyPlayer;
+
 	/** Minimum distance between adjacent gradual return points. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObject)
 		float MinGradualReturnDist;
