@@ -5437,7 +5437,7 @@ bool AUTGameMode::AttemptBoost(AUTPlayerState* Who)
 
 void AUTGameMode::SendComsMessage( AUTPlayerController* Sender, AUTPlayerState* Target, int32 Switch)
 {
-	AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(Sender->PlayerState);
+	AUTPlayerState* UTPlayerState = Sender ? Cast<AUTPlayerState>(Sender->PlayerState) : nullptr;
 
 	if (UTPlayerState != nullptr)
 	{
@@ -5462,20 +5462,14 @@ void AUTGameMode::SendComsMessage( AUTPlayerController* Sender, AUTPlayerState* 
 		}
 		else
 		{
+			AUTTeamInfo* CommTeam = UTPlayerState->Team;
 			for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 			{
 				AUTPlayerController* UTPlayerController = Cast<AUTPlayerController>(It->Get());
-				if (UTPlayerController != NULL)
+				AUTPlayerState* PS = UTPlayerController ? Cast<AUTPlayerState>(UTPlayerController->PlayerState) : nullptr;
+				if (UTPlayerController && (!bTeamGame || (PS && PS->Team && (PS->Team == CommTeam))))
 				{
 					UTPlayerController->ClientReceiveLocalizedMessage(UTPlayerState->GetCharacterVoiceClass(), Switch, UTPlayerState, nullptr, UTPlayerState->LastKnownLocation);
-				}
-				else
-				{
-					AUTBotPlayer* Bot = Cast<AUTBotPlayer>(Target->GetOwner());
-					if (Bot != nullptr)
-					{
-						SendBotVoiceOrder(Sender, Bot, Switch);
-					}
 				}
 			}
 		}
