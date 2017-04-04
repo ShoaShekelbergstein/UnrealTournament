@@ -316,6 +316,10 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	{
 		GameSession->MaxPlayers = DefaultMaxPlayers;
 	}
+	else if (UGameplayStatics::HasOption(Options, TEXT("LAN")))
+	{
+		BotFillCount = GameSession->MaxPlayers;
+	}
 
 	// alias for testing convenience
 	if (UGameplayStatics::HasOption(Options, TEXT("Bots")))
