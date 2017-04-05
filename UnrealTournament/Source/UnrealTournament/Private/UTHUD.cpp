@@ -1429,7 +1429,7 @@ EInputMode::Type AUTHUD::GetInputMode_Implementation() const
 				{
 					return EInputMode::EIM_GameOnly;
 				}
-				else
+				else if (!bShowScores)
 				{
 					return EInputMode::EIM_UIOnly;
 				}
