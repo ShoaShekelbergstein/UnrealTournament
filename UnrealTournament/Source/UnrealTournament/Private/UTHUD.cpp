@@ -862,7 +862,7 @@ void AUTHUD::DrawHUD()
 			}
 			else 
 			{
-				if (!UTPlayerOwner->IsBehindView() || !UTPlayerOwner->UTPlayerState || !UTPlayerOwner->UTPlayerState->bOnlySpectator)
+				if (!UTPlayerOwner->UTPlayerState || !UTPlayerOwner->UTPlayerState->bOnlySpectator)
 				{
 					DrawDamageIndicators();
 				}
@@ -1099,10 +1099,11 @@ void AUTHUD::PawnDamaged(uint8 ShotDirYaw, int32 DamageAmount, bool bFriendlyFir
 	AUTCharacter* UTC = Cast<AUTCharacter>(UTPlayerOwner->GetViewTarget());
 
 	// Calculate the rotation 	
-	if (UTC != NULL && !UTC->IsDead() && DamageAmount > 0)	// If have a pawn and it's alive...
+	if (UTC != NULL && DamageAmount > 0)
 	{
 		// Figure out Left/Right....
-		float FinalAng = (DamageTypeClass && DamageTypeClass->GetDefaultObject<UDamageType>()->bCausedByWorld) ? 0.f : FRotator::DecompressAxisFromByte(ShotDirYaw) - UTC->GetActorRotation().Yaw;
+		bool bCausedByWorld = DamageTypeClass && DamageTypeClass->GetDefaultObject<UDamageType>()->bCausedByWorld;
+		float FinalAng = bCausedByWorld ? 0.f : FRotator::DecompressAxisFromByte(ShotDirYaw);
 		int32 BestIndex = 0;
 		float BestTime = DamageIndicators[0].FadeTime;
 		for (int32 i = 0; i < MAX_DAMAGE_INDICATORS; i++)
@@ -1125,6 +1126,7 @@ void AUTHUD::PawnDamaged(uint8 ShotDirYaw, int32 DamageAmount, bool bFriendlyFir
 		DamageIndicators[BestIndex].RotationAngle = FinalAng + 180.f;
 		DamageIndicators[BestIndex].bFriendlyFire = bFriendlyFire;
 		DamageIndicators[BestIndex].DamageAmount = DamageAmount;
+		DamageIndicators[BestIndex].bCausedByWorld = bCausedByWorld;
 
 		if (DamageAmount > 0)
 		{
@@ -1135,6 +1137,7 @@ void AUTHUD::PawnDamaged(uint8 ShotDirYaw, int32 DamageAmount, bool bFriendlyFir
 
 void AUTHUD::DrawDamageIndicators()
 {
+	AUTCharacter* UTC = Cast<AUTCharacter>(UTPlayerOwner->GetViewTarget());
 	for (int32 i=0; i < DamageIndicators.Num(); i++)
 	{
 		if (DamageIndicators[i].FadeTime > 0.0f)
@@ -1146,7 +1149,8 @@ void AUTHUD::DrawDamageIndicators()
 			float Half = Size * 0.5f;
 
 			FCanvasTileItem ImageItem(FVector2D((Canvas->ClipX * 0.5f) - Half, (Canvas->ClipY * 0.5f) - Half), DamageIndicatorTexture->Resource, FVector2D(Size, Size), FVector2D(0.f,0.f), FVector2D(1.f,1.f), DrawColor);
-			ImageItem.Rotation = FRotator(0.f,DamageIndicators[i].RotationAngle,0.f);
+			float AngleAdjust = (DamageIndicators[i].bCausedByWorld || !UTC) ? 0 : UTC->GetActorRotation().Yaw;
+			ImageItem.Rotation = FRotator(0.f,DamageIndicators[i].RotationAngle - AngleAdjust,0.f);
 			ImageItem.PivotPoint = FVector2D(0.5f,0.5f);
 			ImageItem.BlendMode = ESimpleElementBlendMode::SE_BLEND_Translucent;
 			Canvas->DrawItem( ImageItem );

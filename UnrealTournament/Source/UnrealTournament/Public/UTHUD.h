@@ -32,8 +32,11 @@ struct FDamageHudIndicator
 	UPROPERTY()
 	bool bFriendlyFire;
 
+	UPROPERTY()
+		bool bCausedByWorld;
+
 	FDamageHudIndicator()
-		: RotationAngle(0.0f), DamageAmount(0.0f), FadeTime(0.0f), bFriendlyFire(false)
+		: RotationAngle(0.0f), DamageAmount(0.0f), FadeTime(0.0f), bFriendlyFire(false), bCausedByWorld(false)
 	{
 	}
 };
