@@ -648,7 +648,7 @@ void AUTHUD::NotifyMatchStateChange()
 		else if (GS->GetMatchState() == MatchState::WaitingPostMatch)
 		{
 			const AUTGameMode* DefaultGame = GS->GameModeClass ? Cast<AUTGameMode>(GS->GetDefaultGameMode()) : nullptr;
-			float MatchSummaryDelay = DefaultGame ? DefaultGame->EndScoreboardDelay + DefaultGame->MainScoreboardDisplayTime + DefaultGame->ScoringPlaysDisplayTime : 10.f;
+			float MatchSummaryDelay = DefaultGame ? DefaultGame->MatchSummaryDelay : 10.f;
 			GetWorldTimerManager().SetTimer(MatchSummaryHandle, this, &AUTHUD::OpenMatchSummary, MatchSummaryDelay*GetActorTimeDilation(), false);
 		}
 		else if (GS->GetMatchState() == MatchState::PlayerIntro)

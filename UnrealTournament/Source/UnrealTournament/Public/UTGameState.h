@@ -121,10 +121,6 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	/** Whether can display minimap. */
 	virtual bool AllowMinimapFor(AUTPlayerState* PS);
 
-	/** Number of winners to display in EOM summary. */
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = GameState)
-		uint8 NumWinnersToShow;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
 	TSubclassOf<UUTLocalMessage> MultiKillMessageClass;
 

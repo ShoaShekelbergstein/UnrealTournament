@@ -65,33 +65,13 @@ public:
 	UPROPERTY()
 	float GameDifficulty;		
 
-	/* How long after the end of the match before we display the scoreboard */
-	UPROPERTY(EditDefaultsOnly, Category=PostMatchTime)
-	float EndScoreboardDelay;			
-
-	/* How long to display the main scoreboard */
-	UPROPERTY(EditDefaultsOnly, Category = PostMatchTime)
-		float MainScoreboardDisplayTime;
-
 	/* How long to display the scoring summary */
 	UPROPERTY(EditDefaultsOnly, Category = PostMatchTime)
-		float ScoringPlaysDisplayTime;
-
-	/* How long to display personal match summary */
-	UPROPERTY(EditDefaultsOnly, Category = PostMatchTime)
-		float PersonalSummaryDisplayTime;
-
-	/* How long to display winner match summary */
-	UPROPERTY(EditDefaultsOnly, Category = PostMatchTime)
-		float WinnerSummaryDisplayTime;
+		float MatchSummaryDelay;
 
 	/* How long to display winning team match summary */
 	UPROPERTY(EditDefaultsOnly, Category = PostMatchTime)
-		float TeamSummaryDisplayTime;
-
-	/* How long to display intro */
-	UPROPERTY(EditDefaultsOnly, Category = PostMatchTime)
-		float IntroDisplayTime;
+		float MatchSummaryTime;
 
 	/** Return how long to wait after end of match before travelling to next map. */
 	virtual float GetTravelDelay();
@@ -563,9 +543,9 @@ public:
 	virtual void HandleEnteringOvertime();
 	virtual void HandleMatchInOvertime();
 
-	virtual void ShowFinalScoreboard();
 	UFUNCTION(BlueprintNativeEvent)
 	void TravelToNextMap();
+
 	virtual void StopReplayRecording();
 
 	virtual void RecreateLobbyBeacon();

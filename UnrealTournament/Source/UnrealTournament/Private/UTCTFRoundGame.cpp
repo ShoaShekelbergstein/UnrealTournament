@@ -68,9 +68,7 @@ AUTCTFRoundGame::AUTCTFRoundGame(const FObjectInitializer& ObjectInitializer)
 	bRollingAttackerSpawns = true;
 	ForceRespawnTime = 0.1f;
 	LimitedRespawnWaitTime = 6.f;
-
-	MainScoreboardDisplayTime = 7.5f;
-	EndScoreboardDelay = 8.7f;
+	MatchSummaryDelay = 20.f;
 
 	bSitOutDuringRound = false;
 	bSlowFlagCarrier = false;
@@ -420,10 +418,6 @@ void AUTCTFRoundGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 	FTimerHandle TempHandle;
 	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::HandleMatchHasEnded, 1.5f);
 	bGameEnded = true;
-
-	// Setup a timer to pop up the final scoreboard on everyone
-	FTimerHandle TempHandle2;
-	GetWorldTimerManager().SetTimer(TempHandle2, this, &AUTGameMode::ShowFinalScoreboard, EndScoreboardDelay*GetActorTimeDilation());
 
 	// Setup a timer to continue to the next map.  Need enough time for match summaries
 	EndTime = GetWorld()->TimeSeconds;

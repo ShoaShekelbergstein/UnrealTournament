@@ -108,13 +108,8 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	MaxWaitForPlayers = 180;
 	QuickWaitForPlayers = 120;
 	ShortWaitForPlayers = 60;
-	EndScoreboardDelay = 4.f;
-	MainScoreboardDisplayTime = 5.f;
-	ScoringPlaysDisplayTime = 0.f; 
-	PersonalSummaryDisplayTime = 8.f;
-	WinnerSummaryDisplayTime = 5.f;
-	IntroDisplayTime = 5.f;
-	TeamSummaryDisplayTime = 20.f;
+	MatchSummaryDelay = 9.f;
+	MatchSummaryTime = 20.f;
 	BotFillCount = 0;
 	bWeaponStayActive = true;
 	VictoryMessageClass = UUTVictoryMessage::StaticClass();
@@ -2427,10 +2422,6 @@ void AUTGameMode::EndGame(AUTPlayerState* Winner, FName Reason )
 	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::HandleMatchHasEnded, 1.5f);
 	bGameEnded = true;
 
-	// Setup a timer to pop up the final scoreboard on everyone
-	FTimerHandle TempHandle2;
-	GetWorldTimerManager().SetTimer(TempHandle2, this, &AUTGameMode::ShowFinalScoreboard, EndScoreboardDelay*GetActorTimeDilation());
-
 	// Setup a timer to continue to the next map.  Need enough time for match summaries
 	EndTime = GetWorld()->TimeSeconds;
 	float TravelDelay = GetTravelDelay();
@@ -2551,9 +2542,7 @@ void AUTGameMode::PickMostCoolMoments(bool bClearCoolMoments, int32 CoolMomentsT
 
 float AUTGameMode::GetTravelDelay()
 {
-	UTGameState->NumWinnersToShow = 0;
-	float MatchSummaryTime = PersonalSummaryDisplayTime + WinnerSummaryDisplayTime * UTGameState->NumWinnersToShow + TeamSummaryDisplayTime;
-	return EndScoreboardDelay + MainScoreboardDisplayTime + ScoringPlaysDisplayTime + MatchSummaryTime;
+	return MatchSummaryDelay + MatchSummaryTime;
 }
 
 void AUTGameMode::StopReplayRecording()
@@ -2580,10 +2569,6 @@ bool AUTGameMode::UTIsHandlingReplays()
 	return bRecordReplays && GetNetMode() == ENetMode::NM_DedicatedServer;
 }
 
-/**
- *	NOTE: This is a really simple map list.  It doesn't support multiple maps in the list, etc and is really dumb.  But it
- *  will work for now.
- **/
 void AUTGameMode::TravelToNextMap_Implementation()
 {
 	// Handle tutorial games first.
@@ -2826,18 +2811,6 @@ bool AUTGameMode::PrepareMapVote()
 	}
 
 	return (UTGameState->MapVoteList.Num() > 0);
-}
-
-void AUTGameMode::ShowFinalScoreboard()
-{
-	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
-	{
-		AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-		if (PC != NULL)
-		{
-			PC->ClientToggleScoreboard(true);
-		}
-	}
 }
 
 void AUTGameMode::SetEndGameFocus(AUTPlayerState* Winner)
