@@ -57,6 +57,7 @@ void AUTWeap_LightningRifle::ClearForRemoval()
 	bIsFullyPowered = false;
 	ChargePct = 0.0f;
 	bIsCharging = false;
+	ZoomState = EZoomState::EZS_NotZoomed;
 	if (UTOwner)
 	{
 		UTOwner->SetFlashExtra(0, CurrentFireMode);
