@@ -151,6 +151,7 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 	FullEyeOffsetLandBobVelZ = 750.f;
 	WeaponDirChangeDeflection = 4.f;
 	RagdollBlendOutTime = 0.75f;
+	RagdollPhysicsBlendOutTime = 0.75f;
 	bApplyWallSlide = false;
 	FeignNudgeMag = 100000.f;
 	bCanPickupItems = true;
@@ -1908,7 +1909,12 @@ void AUTCharacter::StopRagdoll()
 			FTransform RelativeTransform(DefaultMesh->RelativeRotation, DefaultMesh->RelativeLocation, DefaultMesh->RelativeScale3D);
 			GetMesh()->SetWorldTransform(RelativeTransform * GetCapsuleComponent()->GetComponentTransform(), false, nullptr, ETeleportType::TeleportPhysics);
 
-			RootBody->SetBodyTransform(GetMesh()->GetComponentTransform(), ETeleportType::TeleportPhysics);
+			if (RagdollRecoveryMontage)
+			{
+				GetMesh()->GetAnimInstance()->Montage_Play(RagdollRecoveryMontage);
+			}
+
+			//RootBody->SetBodyTransform(GetMesh()->GetComponentTransform(), ETeleportType::TeleportPhysics);
 			RootBody->PutInstanceToSleep();
 			RootBody->SetInstanceSimulatePhysics(false, true);
 			RootBody->PhysicsBlendWeight = 1.0f; // second parameter of SetInstanceSimulatePhysics() doesn't actually work at the moment...
@@ -1916,7 +1922,7 @@ void AUTCharacter::StopRagdoll()
 			{
 				if (GetMesh()->Bodies[i] != NULL && GetMesh()->Bodies[i] != RootBody)
 				{
-					GetMesh()->Bodies[i]->SetBodyTransform(BodyTransforms[i], ETeleportType::TeleportPhysics);
+					//GetMesh()->Bodies[i]->SetBodyTransform(BodyTransforms[i], ETeleportType::TeleportPhysics);
 					GetMesh()->Bodies[i]->PutInstanceToSleep();
 					//GetMesh()->Bodies[i]->SetInstanceSimulatePhysics(false, true);
 					//GetMesh()->Bodies[i]->PhysicsBlendWeight = 1.0f;
@@ -1926,6 +1932,7 @@ void AUTCharacter::StopRagdoll()
 		}
 	}
 
+	RagdollBlendOutTimeLeft = RagdollBlendOutTime;
 	bInRagdollRecovery = true;
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 }
@@ -4726,9 +4733,11 @@ void AUTCharacter::Tick(float DeltaTime)
 		}
 		else
 		{
-			GetMesh()->SetAllBodiesPhysicsBlendWeight(FMath::Max(0.0f, GetMesh()->Bodies[0]->PhysicsBlendWeight - (1.0f / FMath::Max(0.01f, RagdollBlendOutTime)) * DeltaTime));
+			GetMesh()->SetAllBodiesPhysicsBlendWeight(FMath::Max(0.0f, GetMesh()->Bodies[0]->PhysicsBlendWeight - (1.0f / FMath::Max(0.01f, RagdollPhysicsBlendOutTime)) * DeltaTime));
 			GetMesh()->PutAllRigidBodiesToSleep(); // make sure since we can't disable the physics without it breaking
-			if (GetMesh()->Bodies[0]->PhysicsBlendWeight == 0.0f)
+
+			RagdollBlendOutTimeLeft -= DeltaTime;
+			if (RagdollBlendOutTimeLeft <= 0)
 			{
 				bInRagdollRecovery = false;
 			}

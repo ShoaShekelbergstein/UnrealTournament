@@ -951,6 +951,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = Pawn)
 	bool bInRagdollRecovery;
 
+	UPROPERTY(EditDefaultsOnly)
+	UAnimMontage* RagdollRecoveryMontage;
+
 	/** top root speed during ragdoll, used for falling damage
 	 * this is needed because the velocity will have changed by the time we get the physics notify so it's too late to work off that
 	 */
@@ -1134,6 +1137,13 @@ public:
 	/** time between StopRagdoll() call and when physics has been fully blended out of our mesh */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ragdoll)
 	float RagdollBlendOutTime;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ragdoll)
+	float RagdollPhysicsBlendOutTime;
+
+	UPROPERTY()
+	float RagdollBlendOutTimeLeft;
+
 	/** player in feign death can't recover until world time reaches this */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ragdoll)
 	float FeignDeathRecoverStartTime;
