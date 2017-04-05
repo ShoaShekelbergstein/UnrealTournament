@@ -7,6 +7,7 @@
 #include "../Widgets/SUTImage.h"
 #include "SUTPartyWidget.h"
 #include "SUTPartyInviteWidget.h"
+#include "SUTServerBrowserPanel.h"
 
 #if !UE_SERVER
 
@@ -67,8 +68,16 @@ protected:
 	TArray<TSharedPtr<FServerData>> LanMatches;
 	TSharedPtr<SVerticalBox> LanBox;
 	FTimerHandle LanTimerHandle;
+	FTimerHandle LanPingHandle;
+	TArray<FServerPingTracker> PingTrackers;
 
 	void CheckForLanServers();
+	void RebuildLanBox();
+
+	void PingLanServers();
+	virtual void OnPingResult(AUTServerBeaconClient* Sender, FServerBeaconInfo ServerInfo);
+	virtual void OnPingFailure(AUTServerBeaconClient* Sender);
+
 
 	virtual FReply OnJoinLanClicked(TSharedPtr<FServerData> Server);
 	virtual FReply OnSpectateLanClicked(TSharedPtr<FServerData> Server);
