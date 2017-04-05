@@ -172,18 +172,6 @@ AUTProjectile* AUTWeap_LinkGun::FireProjectile()
 	return LinkProj;
 }
 
-UAnimMontage* AUTWeap_LinkGun::GetFiringAnim(uint8 FireMode, bool bOnHands) const
-{
-	if (FireMode == 0 && bIsInCoolDown && OverheatAnim && !bOnHands)
-	{
-		return OverheatAnim;
-	}
-	else
-	{
-		return Super::GetFiringAnim(FireMode, bOnHands);
-	}
-}
-
 void AUTWeap_LinkGun::PlayWeaponAnim(UAnimMontage* WeaponAnim, UAnimMontage* HandsAnim, float RateOverride)
 {
 	// give pull anim priority
@@ -212,11 +200,6 @@ void AUTWeap_LinkGun::Tick(float DeltaTime)
 			if (UTOwner)
 			{
 				UTOwner->SetAmbientSound(OverheatSound, true);
-				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-				if ((AnimInstance != NULL) && (EndOverheatAnimSection != NAME_None))
-				{
-					AnimInstance->Montage_JumpToSection(EndOverheatAnimSection, OverheatAnim);
-				}
 			}
 		}
 		else if (UTOwner && OverheatSound && (!IsFiring() || !FireLoopingSound.IsValidIndex(CurrentFireMode) || !FireLoopingSound[CurrentFireMode]))
