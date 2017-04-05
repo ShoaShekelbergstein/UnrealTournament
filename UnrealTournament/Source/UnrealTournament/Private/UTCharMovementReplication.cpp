@@ -179,6 +179,11 @@ bool UUTCharacterMovement::ClientUpdatePositionAfterServerUpdate()
 
 void UUTCharacterMovement::SimulateMovement(float DeltaSeconds)
 {
+	if (CharacterOwner->GetWorldSettings()->Pauser != NULL)
+	{
+		return;
+	}
+
 	if (!HasValidData() || UpdatedComponent->IsSimulatingPhysics())
 	{
 		return;

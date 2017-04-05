@@ -177,6 +177,7 @@ bool AGameModeBase::SetPause(APlayerController* PC, FCanUnpause CanUnpauseDelega
 		if (WorldSettings->Pauser == nullptr)
 		{
 			WorldSettings->Pauser = PC->PlayerState;
+			WorldSettings->ForceNetUpdate();
 		}
 		return true;
 	}

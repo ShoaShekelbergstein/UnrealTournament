@@ -26,6 +26,7 @@ AUTBasePlayerController::AUTBasePlayerController(const FObjectInitializer& Objec
 	ChatOverflowTime = 0.0f;
 	bOverflowed = false;
 	SpamText = NSLOCTEXT("AUTBasePlayerController", "SpamMessage", "You must wait a few seconds before sending another message.");
+	bShouldPerformFullTickWhenPaused=true;
 }
 
 void AUTBasePlayerController::Destroyed()
