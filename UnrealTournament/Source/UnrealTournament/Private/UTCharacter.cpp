@@ -1452,8 +1452,6 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 		float LastSniperWarningTime = bBlueTeamWarning ? GS->LastBlueSniperWarningTime : GS->LastRedSniperWarningTime;
 		if (UTPlayerState && TargeterChar->GetWeapon() && TargeterChar->GetController() && TargeterChar->GetWeapon()->bSniping && (GetWorld()->GetTimeSeconds() - LastSniperWarningTime > 10.f) && ((TargeterChar->GetActorLocation() - GetActorLocation()).Size() > 2000.f))
 		{
-			UTPlayerState->AnnounceStatus(StatusMessage::SniperSpotted);
-
 			UTPlayerState->GetCharacterVoiceClass();
 			if (UTPlayerState->CharacterVoice != NULL)
 			{
