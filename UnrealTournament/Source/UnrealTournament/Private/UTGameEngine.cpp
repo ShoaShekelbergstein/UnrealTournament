@@ -1104,6 +1104,7 @@ void UUTGameEngine::Start()
 				for (int32 i=0; i < JsonGameRules.Rules.Num(); i++)
 				{
 					GameRulesets[i] = JsonGameRules.Rules[i];
+					GameRulesets[i].UniqueTag = GameRulesets[i].UniqueTag.Replace(TEXT(" " ), TEXT("_"), ESearchCase::IgnoreCase);
 				}
 			}
 		}
@@ -1230,6 +1231,10 @@ void UUTGameEngine::ProcessMCPRulesetUpdate(FString MCPRulesetJson)
 				if ( GameRulesets[j] == JsonGameRules.Rules[i] )
 				{
 					GameRulesets[j].UniqueTag = JsonGameRules.Rules[i].UniqueTag;
+
+					// Remove spaces in the UniqueTag
+					GameRulesets[j].UniqueTag = GameRulesets[j].UniqueTag.Replace(TEXT(" " ), TEXT("_"), ESearchCase::IgnoreCase);
+
 					GameRulesets[j].Categories = JsonGameRules.Rules[i].Categories;
 					GameRulesets[j].Title = JsonGameRules.Rules[i].Title;
 					GameRulesets[j].Tooltip = JsonGameRules.Rules[i].Tooltip;
