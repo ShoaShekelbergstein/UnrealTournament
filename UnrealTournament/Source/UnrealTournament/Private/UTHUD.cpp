@@ -1175,9 +1175,12 @@ void AUTHUD::CausedDamage(AActor* HitActor, int32 Damage, bool bArmorDamage)
 					return;
 				}
 			}
-			// save amount, scale , 2D location
-			float HalfHeight = Cast<ACharacter>(HitActor) ? 1.15f * ((ACharacter *)(HitActor))->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 0.f;
-			DamageNumbers.Add(FEnemyDamageNumber(Cast<APawn>(HitActor), GetWorld()->GetTimeSeconds(), FMath::Min(Damage, 255), HitActor->GetActorLocation() + FVector(0.f, 0.f, HalfHeight), 0.75f, bArmorDamage));
+			if (Damage > 0)
+			{
+				// save amount, scale , 2D location
+				float HalfHeight = Cast<ACharacter>(HitActor) ? 1.15f * ((ACharacter *)(HitActor))->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 0.f;
+				DamageNumbers.Add(FEnemyDamageNumber(Cast<APawn>(HitActor), GetWorld()->GetTimeSeconds(), FMath::Min(Damage, 255), HitActor->GetActorLocation() + FVector(0.f, 0.f, HalfHeight), 0.75f, bArmorDamage));
+			}
 		}
 	}
 }
