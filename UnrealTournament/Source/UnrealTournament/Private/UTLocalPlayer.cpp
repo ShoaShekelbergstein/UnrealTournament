@@ -6873,6 +6873,11 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 
 		URL += TEXT("?MaxPlayerWait=180");
 
+		AUTPlayerState* PlayerState = Cast<AUTPlayerState>(PlayerController->PlayerState);
+		if (PlayerState)
+		{
+			URL += FString::Printf(TEXT("?HostId=%s"), *PlayerState->UniqueId.ToString());
+		}
 
 		FString ExecPath = TEXT("..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Shipping.exe");
 		if ( FParse::Param(FCommandLine::Get(), TEXT("localserver")))

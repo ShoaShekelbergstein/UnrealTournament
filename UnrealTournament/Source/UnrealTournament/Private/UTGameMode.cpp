@@ -2723,6 +2723,10 @@ void AUTGameMode::TravelToNextMap_Implementation()
 
 void AUTGameMode::KickIdlePlayers()
 {
+
+	// LAN games shouldn't kick idle players.
+	if (bIsLANGame) return;
+
 	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 	{
 		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
@@ -3902,6 +3906,19 @@ void AUTGameMode::Logout(AController* Exiting)
 	{
 		PS->RespawnChoiceA = NULL;
 		PS->RespawnChoiceB = NULL;
+
+		// If this is a lan game, and this is the host, kick everyone....
+
+		if (bIsLANGame && !HostIdString.IsEmpty())
+		{
+			if ( HostIdString.Equals(PS->UniqueId.ToString(), ESearchCase::IgnoreCase) )
+			{
+				SendEveryoneBackToLobby();
+				// Now exit in about a second to make sure everyone get's told to exit.
+				FTimerHandle TempHandle;
+				GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::ForceEndServer, 0.75f);
+			}
+		}
 	}
 	if (AntiCheatEngine)
 	{
@@ -3949,6 +3966,12 @@ void AUTGameMode::Logout(AController* Exiting)
 		UTGameState->LineUpHelper->OnPlayerChange();
 	}
 }
+
+void AUTGameMode::ForceEndServer()
+{
+	FPlatformMisc::RequestExit(false);
+}
+
 
 bool AUTGameMode::ModifyDamage_Implementation(int32& Damage, FVector& Momentum, APawn* Injured, AController* InstigatedBy, const FHitResult& HitInfo, AActor* DamageCauser, TSubclassOf<UDamageType> DamageType)
 {

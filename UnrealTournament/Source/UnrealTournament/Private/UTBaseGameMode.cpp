@@ -129,21 +129,39 @@ void AUTBaseGameMode::InitGame( const FString& MapName, const FString& Options, 
 
 	bIgnoreIdlePlayers = EvalBoolOptions(UGameplayStatics::ParseOption(Options, TEXT("IgnoreIdle")), bIgnoreIdlePlayers);
 	UE_LOG(UT,Log,TEXT("Password: %i %s"), bRequirePassword, ServerPassword.IsEmpty() ? TEXT("NONE") : *ServerPassword)
+
+	HostIdString = TEXT("");
+	if (UGameplayStatics::HasOption(Options, TEXT("HostId")))
+	{
+		HostIdString = UGameplayStatics::ParseOption(Options, TEXT("HostId"));
+	}
+
+	bIsLANGame = FParse::Param(FCommandLine::Get(), TEXT("lan"));
+
 }
 
 void AUTBaseGameMode::InitGameState()
 {
 	Super::InitGameState();
 	AUTGameState* GS = Cast<AUTGameState>(GameState);
-	if (GS && !ServerNameOverride.IsEmpty())
+	if (GS)
 	{
-		GS->ServerInstanceGUID = ServerInstanceGUID;
-		GS->ServerName = ServerNameOverride;
-
-		// If someone decides to set the server name black in the ini, stop them
-		if (GS->ServerName.IsEmpty())
+		if ( !ServerNameOverride.IsEmpty() )
 		{
-			GS->ServerName = TEXT("UT Server");
+			GS->ServerInstanceGUID = ServerInstanceGUID;
+			GS->ServerName = ServerNameOverride;
+
+			// If someone decides to set the server name black in the ini, stop them
+			if (GS->ServerName.IsEmpty())
+			{
+				GS->ServerName = TEXT("UT Server");
+			}
+		}
+
+		if (!HostIdString.IsEmpty())
+		{
+			GS->HostIdString = HostIdString;
+			UE_LOG(UT,Log,TEXT("This Server is hosted by %s"), *GS->HostIdString)
 		}
 	}
 

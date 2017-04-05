@@ -750,6 +750,10 @@ public:
 
 	virtual void RulesetsAreLoaded() {}
 
+	// Holds the Unique id of the host who started this match
+	UPROPERTY(Replicated)
+	FString HostIdString; 
+
 protected:
 	virtual AUTLineUpZone* CreateLineUpAtPlayerStart(LineUpTypes LineUpType, class APlayerStart* PlayerSpawn);
 };

@@ -353,6 +353,9 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME(AUTGameState, FCFriendlyLocCount);
 	DOREPLIFETIME(AUTGameState, FCEnemyLocCount);
 	DOREPLIFETIME(AUTGameState, bDebugHitScanReplication);
+
+	DOREPLIFETIME(AUTGameState, HostIdString);
+
 }
 
 void AUTGameState::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)

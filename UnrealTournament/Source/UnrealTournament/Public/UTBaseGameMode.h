@@ -268,11 +268,16 @@ protected:
 	UPROPERTY()
 	bool bIgnoreIdlePlayers;
 
+	FString HostIdString;
+
 public:
 	
 	/**
 	 *	Creates a Replicated ruleset for a custom game based on params passed in
 	 **/
 	static AUTReplicatedGameRuleset* CreateCustomReplicateGameRuleset(UWorld* World, AActor* Owner, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, int32 DesiredPlayerCount, bool bTeamGame);
+
+	UPROPERTY(BlueprintReadonly, Category=Game)
+	bool bIsLANGame;
 
 };
