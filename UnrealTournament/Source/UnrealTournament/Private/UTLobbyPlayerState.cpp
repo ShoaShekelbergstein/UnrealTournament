@@ -122,7 +122,7 @@ void AUTLobbyPlayerState::ClientConnectToInstance_Implementation(const FString& 
 	AUTBasePlayerController* BPC = Cast<AUTBasePlayerController>(GetOwner());
 	if (BPC)
 	{
-		BPC->ConnectToServerViaGUID(GameInstanceGUIDString, InDesiredTeam, bAsSpectator);
+		BPC->ConnectToServerViaGUID(GameInstanceGUIDString, -1, bAsSpectator);
 	}
 }
 
