@@ -818,7 +818,12 @@ void AUTHUD::DrawHUD()
 			}
 			else if (ViewedCharacter && (ViewedCharacter->Health <= 40))
 			{
-				Intensity = FMath::Max(Intensity, 0.4f);
+				const float Speed = 1.f;
+				float ScaleTime = Speed*GetWorld()->GetTimeSeconds() - int32(Speed*GetWorld()->GetTimeSeconds());
+				float Scaling = (ScaleTime < 0.5f)
+					? ScaleTime
+					: 1.f - ScaleTime;
+				Intensity = FMath::Max(Intensity, 0.5f*Scaling);
 			}
 			if (Intensity > 0.0f)
 			{
