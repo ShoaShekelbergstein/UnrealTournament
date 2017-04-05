@@ -73,6 +73,7 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	HighlightText = NSLOCTEXT("Weapon", "EnforcerHighlightText", "Gunslinger");
 	LowMeshOffset = FVector(0.f, 0.f, -7.f);
 	VeryLowMeshOffset = FVector(0.f, 0.f, -15.f);
+	MaxVerticalSpread = 2.5f;
 }
 
 float AUTWeap_Enforcer::GetPutDownTime()
@@ -111,7 +112,6 @@ void AUTWeap_Enforcer::FireShot()
 			FireCount = 0;
 		}
 	}
-
 }
 
 void AUTWeap_Enforcer::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
