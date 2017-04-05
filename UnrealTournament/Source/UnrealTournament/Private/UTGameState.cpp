@@ -468,10 +468,22 @@ bool AUTGameState::CanSpectate(APlayerController* Viewer, APlayerState* ViewTarg
 	return true;
 }
 
-
 void AUTGameState::Tick(float DeltaTime)
 {
 	ManageMusicVolume(DeltaTime);
+
+	if (bNeedToClearIntermission && !IsMatchIntermission())
+	{
+		bNeedToClearIntermission = false;
+		for (TObjectIterator<UParticleSystemComponent> It; It; ++It)
+		{
+			UParticleSystemComponent* PSC = *It;
+			if (PSC && !PSC->IsTemplate() && PSC->GetOwner() && (PSC->GetOwner()->GetWorld() == GetWorld()) && !Cast<AUTWeapon>(PSC->GetOwner()) && (PSC->CustomTimeDilation == 0.001f))
+			{
+				PSC->CustomTimeDilation = 1.f;
+			}
+		}
+	}
 }
 
 void AUTGameState::ManageMusicVolume(float DeltaTime)
@@ -2512,6 +2524,7 @@ void AUTGameState::PrepareForIntermission()
 			PSC->CustomTimeDilation = 0.001f;
 		}
 	}
+	bNeedToClearIntermission = true;
 }
 
 bool AUTGameState::HasMatchEnded() const

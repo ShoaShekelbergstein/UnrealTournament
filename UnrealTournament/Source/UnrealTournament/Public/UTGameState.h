@@ -233,6 +233,9 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	/** Returns time in seconds that should be displayed on game clock. */
 	virtual float GetClockTime();
 
+	UPROPERTY()
+		bool bNeedToClearIntermission;
+
 	/** Return remaining intermission time. */
 	virtual float GetIntermissionTime();
 

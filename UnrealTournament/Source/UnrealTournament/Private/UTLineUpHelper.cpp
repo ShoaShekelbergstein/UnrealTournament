@@ -206,22 +206,10 @@ void AUTLineUpHelper::SetupDelayedLineUp()
 {
 	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 	{
-		AController* C = Cast<AController>(*Iterator);
-		if (C)
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
+		if (UTPC)
 		{
-			AUTCharacter* UTChar = Cast<AUTCharacter>(C->GetPawn());
-			if (UTChar)
-			{
-				UTChar->TurnOff();
-				ForceCharacterAnimResetForLineUp(UTChar);
-			}
-
-			AUTPlayerController* UTPC = Cast<AUTPlayerController>(C);
-			if (UTPC)
-			{
-				UTPC->FlushPressedKeys();
-				UTPC->ClientPrepareForLineUp();
-			}
+			UTPC->FlushPressedKeys();
 		}
 	}
 }
@@ -247,6 +235,16 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 
 	if (GetWorld() && GetWorld()->GetAuthGameMode())
 	{
+		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+		{
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
+			if (UTPC)
+			{
+				UTPC->FlushPressedKeys();
+				UTPC->ClientPrepareForLineUp();
+			}
+		}
+
 		AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
 		
 		//Setup LineUp weapon. Favorite weapon if set, current weapon otherwise

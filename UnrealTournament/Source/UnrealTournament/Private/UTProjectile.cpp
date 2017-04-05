@@ -1113,7 +1113,7 @@ void AUTProjectile::PrepareForIntermission()
 	{
 		ProjectileMovement->StopMovementImmediately();
 	}
-
+	SetLifeSpan(10.f*GetLifeSpan());
 	TArray<USceneComponent*> Components;
 	GetComponents<USceneComponent>(Components);
 	for (int32 i = 0; i < Components.Num(); i++)
