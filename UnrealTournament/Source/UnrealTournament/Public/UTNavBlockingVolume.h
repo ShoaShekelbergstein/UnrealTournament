@@ -24,6 +24,7 @@ class UNREALTOURNAMENT_API AUTNavBlockingVolume : public AVolume, public INavRel
 		GetBrushComponent()->SetCanEverAffectNavigation(true);
 		GetBrushComponent()->SetCollisionProfileName(FName(TEXT("InvisibleWall")));
 		GetBrushComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); // should match default for bBlockSpecialMoveTests
+		GetBrushComponent()->SetCustomNavigableGeometry(EHasCustomNavigableGeometry::EvenIfNotCollidable);
 		// NOTE: this relies on no nav building during gameplay
 		GetBrushComponent()->bIsEditorOnly = true;
 		bNotForClientOrServer = true;
