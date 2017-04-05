@@ -808,12 +808,17 @@ void AUTHUD::DrawHUD()
 			{
 				if (Indicator.FadeTime > 0.0f && Indicator.DamageAmount > 0.0f)
 				{
-					Intensity = FMath::Max<float>(Intensity, FMath::Min<float>(1.0f, Indicator.FadeTime / DAMAGE_FADE_DURATION));
+					Intensity = FMath::Max<float>(Intensity, FMath::Min<float>(1.0f, 1.5f*Indicator.FadeTime / 1.5f*DAMAGE_FADE_DURATION));
 				}
 			}
-			if (Cast<AUTCharacter>(PlayerOwner->GetViewTarget()) != nullptr && PlayerOwner->GetViewTarget()->bTearOff)
+			AUTCharacter* ViewedCharacter = Cast<AUTCharacter>(PlayerOwner->GetViewTarget());
+			if (ViewedCharacter && ViewedCharacter->bTearOff)
 			{
-				Intensity = FMath::Max<float>(Intensity, 0.5f);
+				Intensity = 1.f;
+			}
+			else if (ViewedCharacter && (ViewedCharacter->Health <= 40))
+			{
+				Intensity = FMath::Max(Intensity, 0.4f);
 			}
 			if (Intensity > 0.0f)
 			{
@@ -1105,7 +1110,7 @@ void AUTHUD::PawnDamaged(uint8 ShotDirYaw, int32 DamageAmount, bool bFriendlyFir
 				}
 			}
 		}
-		DamageIndicators[BestIndex].FadeTime = DAMAGE_FADE_DURATION * FMath::Clamp(0.025f*DamageAmount, 0.7f, 2.f);
+		DamageIndicators[BestIndex].FadeTime = DAMAGE_FADE_DURATION * FMath::Clamp(0.025f*DamageAmount, 1.f, 2.f);
 		DamageIndicators[BestIndex].RotationAngle = FinalAng + 180.f;
 		DamageIndicators[BestIndex].bFriendlyFire = bFriendlyFire;
 		DamageIndicators[BestIndex].DamageAmount = DamageAmount;
