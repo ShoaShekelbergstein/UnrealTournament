@@ -6181,7 +6181,7 @@ bool UUTLocalPlayer::SkipTutorialCheck()
 {
 #if WITH_PROFILE
 	UUtMcpProfile* Profile = GetMcpProfileManager()->GetMcpProfileAs<UUtMcpProfile>(EUtMcpProfile::Profile);
-	if (Profile != NULL && Profile->GetXP() > 300)
+	if (Profile != NULL && Profile->GetXP() > 0)
 	{
 		return true;
 	}

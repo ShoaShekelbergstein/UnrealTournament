@@ -93,13 +93,11 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 	{
 		PC->ClientReturnedToMenus();
 		FURL& LastURL = GEngine->GetWorldContextFromWorld(GetWorld())->LastURL;
-
 		bool bReturnedFromChallenge = LastURL.HasOption(TEXT("showchallenge"));
 		PC->ShowMenu((bReturnedFromChallenge ? TEXT("showchallenge") : TEXT("")));
-
 		UUTProfileSettings* ProfileSettings = PC->GetProfileSettings();
-		bool bForceTutorialMenu = false;
 
+#if !PLATFORM_LINUX
 		if (!PC->SkipTutorialCheck())
 		{
 			if (ProfileSettings != nullptr && !FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")) && !FParse::Param(FCommandLine::Get(), TEXT("playoffline")) )
@@ -108,7 +106,6 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 				{
 					if ( !LastURL.HasOption(TEXT("tutorialmenu")) )
 					{
-	#if !PLATFORM_LINUX
 						if (FUTAnalytics::IsAvailable())
 						{
 							FUTAnalytics::FireEvent_UTTutorialStarted(Cast<AUTPlayerController>(PC),FString("Onboarding"));
@@ -116,14 +113,14 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 
 						if (PC->GetUTLocalPlayer())
 						{
-							PC->GetUTLocalPlayer()->LaunchTutorial(ETutorialTags::TUTTAG_Movement);
+							PC->GetUTLocalPlayer()->LaunchTutorial(ETutorialTags::TUTTAG_DM);
 						}
 						return;
-	#endif
 					}
 				}
 			}
 		}
+#endif
 
 #if !UE_SERVER
 		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(PC->Player);
