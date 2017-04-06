@@ -179,13 +179,13 @@ struct FFlashLocRep
 {
 	GENERATED_USTRUCT_BODY()
 
-		/** Position of player at time Time. */
-		UPROPERTY()
-		FVector_NetQuantize Position;
+	/** Position of player at time Time. */
+	UPROPERTY(BlueprintReadOnly)
+	FVector_NetQuantize Position;
 
 	/** Rotation of player at time Time. */
-	UPROPERTY()
-		uint8 Count;
+	UPROPERTY(BlueprintReadOnly)
+	uint8 Count;
 };
 
 UENUM(BlueprintType)
