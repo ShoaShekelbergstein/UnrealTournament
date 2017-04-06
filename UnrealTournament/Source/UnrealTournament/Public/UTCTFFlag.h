@@ -70,7 +70,7 @@ class UNREALTOURNAMENT_API AUTCTFFlag : public AUTCarriedObject
 
 	/** used to trigger the capture effect */
 	UPROPERTY(ReplicatedUsing = PlayCaptureEffect)
-	uint8 CaptureEffectCount;
+		FVector_NetQuantize CaptureEffectLoc;
 
 	UFUNCTION(BlueprintCallable, Category = Flag)
 	virtual void PlayCaptureEffect();
