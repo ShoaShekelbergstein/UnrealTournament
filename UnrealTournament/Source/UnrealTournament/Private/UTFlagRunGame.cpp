@@ -67,7 +67,7 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	bTrackKillAssists = true;
 	CTFScoringClass = AUTFlagRunScoring::StaticClass();
 	DefaultMaxPlayers = 10;
-	XPMultiplier = 4.0f;
+	XPMultiplier = 4.f;
 
 	ActivatedPowerupPlaceholderObject = FStringAssetReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_ActivatedPowerup_UDamage.BP_ActivatedPowerup_UDamage_C"));
 	RepulsorObject = FStringAssetReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_Repulsor.BP_Repulsor_C"));
@@ -110,6 +110,11 @@ void AUTFlagRunGame::InitGame(const FString& MapName, const FString& Options, FS
 	{
 		FlagPickupDelay = 3.f;
 	}
+}
+
+float AUTFlagRunGame::GetScoreForXP(AUTPlayerState* PS)
+{
+	return PS->Kills + PS->KillAssists + 5.f*PS->FlagCaptures;
 }
 
 int32 AUTFlagRunGame::GetFlagCapScore()
