@@ -2108,6 +2108,22 @@ AUTProjectile* AUTWeapon::SpawnNetPredictedProjectile(TSubclassOf<AUTProjectile>
 		: NULL;
 	if (NewProjectile)
 	{
+		if (NewProjectile->OffsetVisualComponent)
+		{
+			switch (GetWeaponHand())
+			{
+				case EWeaponHand::HAND_Center:
+					NewProjectile->InitialVisualOffset = NewProjectile->InitialVisualOffset + LowMeshOffset;
+					NewProjectile->OffsetVisualComponent->RelativeLocation = NewProjectile->InitialVisualOffset;
+					break;
+				case EWeaponHand::HAND_Hidden:
+				{
+					NewProjectile->InitialVisualOffset = NewProjectile->InitialVisualOffset + VeryLowMeshOffset;
+					NewProjectile->OffsetVisualComponent->RelativeLocation = NewProjectile->InitialVisualOffset;
+					break;
+				}
+			}
+		}
 		if (UTOwner)
 		{
 			UTOwner->LastFiredProjectile = NewProjectile;
