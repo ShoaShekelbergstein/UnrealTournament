@@ -967,7 +967,7 @@ void AUTHUD::DrawHUD()
 
 		if (GetWorldSettings() && GetWorldSettings()->Pauser != nullptr)
 		{
-			DrawString(NSLOCTEXT("Generic","Paused","GAME IS PAUSED"), Canvas->ClipX * 0.5f, Canvas->ClipY * 0.2f, ETextHorzPos::Center,ETextVertPos::Top, LargeFont, FLinearColor::Yellow, 1.0, true);
+			DrawString(NSLOCTEXT("Generic","Paused","GAME IS PAUSED"), Canvas->ClipX * 0.5f, Canvas->ClipY * 0.15f, ETextHorzPos::Center,ETextVertPos::Top, LargeFont, FLinearColor::Yellow, 1.0, true);
 		}
 
 		DrawWatermark();

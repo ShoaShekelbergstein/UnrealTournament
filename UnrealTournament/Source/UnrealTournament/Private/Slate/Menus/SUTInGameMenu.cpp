@@ -64,7 +64,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 			MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
 			[
 				SAssignNew(ChangeTeamButton, SUTButton)
-				.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton.SuperDark")
+				.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft")
 				.OnClicked(this, &SUTInGameMenu::OnTeamChangeClick)
 				.Visibility(this, &SUTInGameMenu::GetChangeTeamVisibility)
 				.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
@@ -89,7 +89,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 				MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
 				[
 					SAssignNew(MatchButton, SUTButton)
-					.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton.SuperDark")
+					.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
 					.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
 					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
 					[
@@ -110,7 +110,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 				MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
 				[
 					SAssignNew(MatchButton, SUTButton)
-					.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton.SuperDark")
+					.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
 					.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
 					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
 					[
@@ -131,7 +131,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 				MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
 				[
 					SAssignNew(MatchButton, SUTButton)
-					.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton.SuperDark")
+					.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
 					.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
 					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
 					[
@@ -646,24 +646,12 @@ void SUTInGameMenu::OnMenuClosed()
 
 FSlateColor SUTInGameMenu::GetChangeTeamLabelColor() const
 {
-	return ChangeTeamButton.IsValid() ? ChangeTeamButton->GetLabelColor() : FSlateColor(FLinearColor::White);
+	return FSlateColor(FLinearColor::White);
 }
 
 FSlateColor SUTInGameMenu::GetMatchLabelColor() const
 {
-	if (MatchButton.IsValid())
-	{
-		if (MatchButton->IsHovered())
-		{
-			return MatchButton->GetLabelColor();
-		}
-
-		float Alpha = FMath::Sin(PlayerOwner->GetWorld()->GetRealTimeSeconds() * 3.0f);
-		FLinearColor Final = FMath::Lerp<FLinearColor>(FLinearColor::Yellow, FLinearColor::White, Alpha);
-		return FSlateColor(Final);
-	}
-
-	return FSlateColor(FLinearColor::White);
+	return FSlateColor(FLinearColor::Yellow);
 }
 
 #endif

@@ -385,6 +385,26 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 		.SetPressedSound(ButtonPressSound)
 	);
 
+	Style.Set("UT.Button.Soft", FButtonStyle()
+		.SetNormal(BOX_BRUSH("UTStyle/Buttons/Button.Soft.White", FVector2D(64,32), FMargin(12.0f /64.0f, 12.0f/32.0f), FLinearColor(0.8f, 0.8f, 0.8f, 1.0f)))
+		.SetHovered(BOX_BRUSH("UTStyle/Buttons/Button.Soft.White.Highlighted", FVector2D(64,32), FMargin(12.0f /64.0f, 12.0f/32.0f), FLinearColor(0.9f, 0.9f, 0.9f, 1.0f)))
+		.SetPressed(BOX_BRUSH("UTStyle/Buttons/Button.Soft.White.Pressed", FVector2D(64,32), FMargin(12.0f /64.0f, 12.0f/32.0f)))
+		.SetDisabled(FSlateColorBrush(Disabled))
+		.SetHoveredSound(ButtonHoverSound)
+		.SetPressedSound(ButtonPressSound)
+	);
+
+	Style.Set("UT.Button.Soft.Gold", FButtonStyle()
+		.SetNormal(BOX_BRUSH("UTStyle/Buttons/Button.Soft.White", FVector2D(64,32), FMargin(12.0f /64.0f, 12.0f/32.0f), FLinearColor(1.0f, 1.0f, 0.0f, 1.0f)))
+		.SetHovered(BOX_BRUSH("UTStyle/Buttons/Button.Soft.White.Highlighted", FVector2D(64,32), FMargin(12.0f /64.0f, 12.0f/32.0f), FLinearColor(1.0f, 1.0f, 0.33f, 1.0f)))
+		.SetPressed(BOX_BRUSH("UTStyle/Buttons/Button.Soft.White.Pressed", FVector2D(64,32), FMargin(12.0f /64.0f, 12.0f/32.0f),FLinearColor(1.0f, 1.0f, 0.6f, 1.0f)))
+		.SetDisabled(FSlateColorBrush(Disabled))
+		.SetHoveredSound(ButtonHoverSound)
+		.SetPressedSound(ButtonPressSound)
+	);
+
+
+	//new BORDER_BRUSH( "Old/DashedBorder", FMargin(6.0f / 32.0f), FLinearColor(1, 1, 1, 0.5)));
 
 
 	Style.Set("UT.NoStyle", new FSlateNoResource(FVector2D(128.0f, 128.0f)));
