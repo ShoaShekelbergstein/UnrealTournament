@@ -4729,7 +4729,7 @@ void AUTBot::UpdateEnemyInfo(APawn* NewEnemy, EAIEnemyUpdateType UpdateType)
 		{
 			PickNewEnemy();
 			// maybe send voice message
-			if (Enemy == NewEnemy && (UpdateType == EUT_Seen || UpdateType == EUT_DealtDamage))
+			if (Enemy == NewEnemy && (UpdateType == EUT_Seen || UpdateType == EUT_DealtDamage) && (GetWorld()->GetAuthGameMode<AUTFlagRunGame>() == nullptr))
 			{
 				AUTCharacter* C = Cast<AUTCharacter>(NewEnemy);
 				if (C != NULL && C->GetCarriedObject() != NULL)
