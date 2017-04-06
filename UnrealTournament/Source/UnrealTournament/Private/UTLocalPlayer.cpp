@@ -1474,19 +1474,35 @@ void UUTLocalPlayer::ShowAdminMessage(FString Message)
 
 }
 
-void UUTLocalPlayer::ShowToast(FText ToastText, float Lifetime)
+void UUTLocalPlayer::ShowToast(FText ToastText, float Lifetime, bool Stack)
 {
 #if !UE_SERVER
 
 	if ((GetWorld() == nullptr) || (GetWorld()->GetNetMode() == ENetMode::NM_Client && bSuppressToastsInGame)) return;
 
-	// Build the Toast to Show...
-	UUTUMGWidget_Toast* Toast = Cast<UUTUMGWidget_Toast>(OpenUMGWidget(TEXT("/Game/RestrictedAssets/UI/UMGMenuElements/UTGenericToastWidget.UTGenericToastWidget")));
-	if (Toast != nullptr)
+	// Look at the toast stack and see if it already exists on it.
+
+	bool bFound = false;
+	for (int32 i=0; i < ToastStack.Num(); i++)
 	{
-		Toast->Message = ToastText;
-		Toast->Duration = Lifetime;
-		ToastStack.Add(Toast);
+		UUTUMGWidget_Toast* Toast = Cast<UUTUMGWidget_Toast>(ToastStack[i]);
+		if (Toast && Toast->Message.ToString().Equals(ToastText.ToString(), ESearchCase::IgnoreCase))
+		{
+			bFound = true;
+			break;
+		}
+	}
+
+	if (Stack || bFound == false)
+	{
+		// Build the Toast to Show...
+		UUTUMGWidget_Toast* Toast = Cast<UUTUMGWidget_Toast>(OpenUMGWidget(TEXT("/Game/RestrictedAssets/UI/UMGMenuElements/UTGenericToastWidget.UTGenericToastWidget")));
+		if (Toast != nullptr)
+		{
+			Toast->Message = ToastText;
+			Toast->Duration = Lifetime;
+			ToastStack.Add(Toast);
+		}
 	}
 #endif
 }
@@ -3312,14 +3328,14 @@ void UUTLocalPlayer::HandleFriendsActionNotification(TSharedRef<FFriendsAndChatM
 		(FriendsAndChatMessage->GetMessageType() == EMessageType::ChatMessage && !bShowingFriendsMenu))
 	{
 		bShowSocialNotification = FriendsAndChatMessage->GetMessageType() != EMessageType::FriendAccepted;
-		ShowToast(FText::FromString(FriendsAndChatMessage->GetMessage()));
+		ShowToast(FText::FromString(FriendsAndChatMessage->GetMessage()),1.5f, true);
 	}
 
 	// SUTPartyInviteWidget will show the invite if we're in menu game
 	if (FriendsAndChatMessage->GetMessageType() == EMessageType::GameInvite && !IsMenuGame())
 	{
 		bShowSocialNotification = true;
-		ShowToast(FText::FromString(FriendsAndChatMessage->GetMessage()));
+		ShowToast(FText::FromString(FriendsAndChatMessage->GetMessage()),1.5f, true);
 	}
 #endif
 }

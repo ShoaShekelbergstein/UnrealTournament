@@ -229,7 +229,7 @@ public:
 	virtual void ShowMenu(const FString& Parameters);
 	virtual void HideMenu();
 	virtual void OpenTutorialMenu();
-	virtual void ShowToast(FText ToastText, float Lifetime=1.5f);	// NOTE: Need to add a type/etc so that they can be skinned better.
+	virtual void ShowToast(FText ToastText, float Lifetime=1.5f, bool Stack=false);	// NOTE: Need to add a type/etc so that they can be skinned better.
 	virtual void ToastCompleted(UUTUMGWidget_Toast* Toast);
 	virtual void ShowAdminMessage(FString Message);
 
