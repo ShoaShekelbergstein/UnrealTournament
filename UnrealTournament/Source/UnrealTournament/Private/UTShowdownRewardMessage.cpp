@@ -29,7 +29,7 @@ UUTShowdownRewardMessage::UUTShowdownRewardMessage(const class FObjectInitialize
 
 float UUTShowdownRewardMessage::GetAnnouncementPriority(const FAnnouncementInfo AnnouncementInfo) const
 {
-	return 0.9f;
+	return (AnnouncementInfo.Switch == 4) ? 1.f : 0.9f;
 }
 
 void UUTShowdownRewardMessage::ClientReceive(const FClientReceiveData& ClientData) const
@@ -74,7 +74,7 @@ FText UUTShowdownRewardMessage::GetText(int32 Switch, bool bTargetsPlayerState1,
 
 bool UUTShowdownRewardMessage::ShouldPlayAnnouncement(const FClientReceiveData& ClientData) const
 {
-	return IsLocalForAnnouncement(ClientData, true, true) ||(ClientData.MessageIndex == 2) || (ClientData.MessageIndex == 3) || (ClientData.MessageIndex == 4);
+	return true;
 }
 
 FName UUTShowdownRewardMessage::GetAnnouncementName_Implementation(int32 Switch, const UObject* OptionalObject, const class APlayerState* RelatedPlayerState_1, const class APlayerState* RelatedPlayerState_2) const
