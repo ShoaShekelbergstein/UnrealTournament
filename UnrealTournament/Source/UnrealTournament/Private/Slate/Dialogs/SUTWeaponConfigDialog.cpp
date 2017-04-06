@@ -1166,7 +1166,7 @@ TSharedRef<SWidget> SUTWeaponConfigDialog::GenerateWeaponHand(UUTProfileSettings
 	WeaponHandDesc.Add(NSLOCTEXT("UT", "Normal", "Normal"));
 	WeaponHandDesc.Add(NSLOCTEXT("UT", "Left", "Left"));
 	WeaponHandDesc.Add(NSLOCTEXT("UT", "Lowered", "Lowered"));
-	WeaponHandDesc.Add(NSLOCTEXT("UT", "VeryLow", "VeryLow"));
+	WeaponHandDesc.Add(NSLOCTEXT("UT", "VeryLow", "Very Low"));
 
 	WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[uint8(EWeaponHand::HAND_Right)])));
 	//WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[uint8(EWeaponHand::HAND_Left)])));
