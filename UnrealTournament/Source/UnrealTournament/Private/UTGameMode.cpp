@@ -3677,11 +3677,25 @@ void AUTGameMode::CheckGameTime()
 		{
 			EndGame(Winner, FName(TEXT("TimeLimit")));			
 		}
-		else if (bAllowOvertime && !UTGameState->IsMatchInOvertime())
+		else if (bAllowOvertime)
 		{
-			// Stop the clock in Overtime. 
-			UTGameState->bStopGameClock = true;
-			SetMatchState(MatchState::MatchEnteringOvertime);
+			if (!UTGameState->IsMatchInOvertime())
+			{
+				// add 60 seconds for overtime
+				if (bTeamGame)
+				{
+					UTGameState->SetRemainingTime(60);
+				}
+				else
+				{
+					UTGameState->bStopGameClock = true;
+				}
+				SetMatchState(MatchState::MatchEnteringOvertime);
+			}
+			else if (bTeamGame)
+			{
+				UTGameState->SetRemainingTime(60);
+			}
 		}
 	}
 }

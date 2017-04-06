@@ -275,7 +275,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	MapVoteStatus = NSLOCTEXT("UTGameState", "Mapvote", "Map Vote");
 	PreGameStatus = NSLOCTEXT("UTGameState", "PreGame", "Pre-Game");
 	NeedPlayersStatus = NSLOCTEXT("UTGameState", "NeedPlayers", "Need {NumNeeded} More");
-	OvertimeStatus = NSLOCTEXT("UTCTFGameState", "Overtime", "Overtime!");
+	OvertimeStatus = NSLOCTEXT("UTCTFGameState", "Overtime", "Overtime");
 
 	BoostRechargeMaxCharges = 1;
 	BoostRechargeTime = 0.0f; // off by default
@@ -695,7 +695,7 @@ bool AUTGameState::IsSelectedBoostValid(AUTPlayerState* PlayerState) const
 
 float AUTGameState::GetClockTime()
 {
-	if (IsMatchInOvertime())
+	if (IsMatchInOvertime() && bStopGameClock)
 	{
 			return ElapsedTime-TimeLimit;
 	}

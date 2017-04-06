@@ -144,6 +144,10 @@ void AUTCTFGameMode::CheckGameTime()
 			{
 				EndOfHalf();
 			}
+			if (bAllowOvertime && !UTGameState->IsMatchInOvertime())
+			{
+				UTGameState->bStopGameClock = true;
+			}
 			if (!CTFGameState->bPlayingAdvantage)
 			{
 				// If we are in Overtime - Keep battling until one team wins. 
