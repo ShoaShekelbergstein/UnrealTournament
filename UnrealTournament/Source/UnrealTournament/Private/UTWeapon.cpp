@@ -1420,7 +1420,7 @@ bool AUTWeapon::IsFiring() const
 	// first person spectating needs to use the replicated info from the owner
 	if (Role < ROLE_Authority && UTOwner != nullptr && UTOwner->Role < ROLE_AutonomousProxy && UTOwner->Controller == nullptr && CurrentState == InactiveState)
 	{
-		return UTOwner->FlashCount > 0 || !UTOwner->FlashLocation.IsZero();
+		return UTOwner->FlashCount > 0 || !UTOwner->FlashLocation.Position.IsZero();
 	}
 	else
 	{

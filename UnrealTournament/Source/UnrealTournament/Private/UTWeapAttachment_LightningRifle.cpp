@@ -88,7 +88,7 @@ void AUTWeapAttachment_LightningRifle::ChainEffects()
 	static FName NAME_HitLocation(TEXT("HitLocation"));
 	static FName NAME_LocalHitLocation(TEXT("LocalHitLocation"));
 	static FName NAME_ChainEffects = FName(TEXT("ChainEffects"));
-	FVector BeamHitLocation = UTOwner->FlashLocation;
+	FVector BeamHitLocation = UTOwner->FlashLocation.Position;
 	FCollisionQueryParams SphereParams(NAME_ChainEffects, true, UTOwner);
 
 	// query scene to see what we hit

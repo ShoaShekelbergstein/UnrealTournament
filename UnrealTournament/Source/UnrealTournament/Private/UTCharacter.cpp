@@ -2660,13 +2660,8 @@ bool AUTCharacter::IsTriggerDown(uint8 InFireMode)
 void AUTCharacter::SetFlashLocation(const FVector& InFlashLoc, uint8 InFireMode)
 {
 	bLocalFlashLoc = IsLocallyControlled();
-	// make sure two consecutive shots don't set the same FlashLocation as that will prevent replication and thus clients won't see the shot
-	FlashLocation = ((FlashLocation - InFlashLoc).SizeSquared() >= 1.0f) ? InFlashLoc : (InFlashLoc + FVector(0.0f, 0.0f, 1.0f));
-	// we reserve the zero vector to stop firing, so make sure we aren't setting a value that would replicate that way
-	if (FlashLocation.IsNearlyZero(1.0f))
-	{
-		FlashLocation.Z += 1.1f;
-	}
+	FlashLocation.Position = InFlashLoc;
+	FlashLocation.Count++;
 	FireMode = InFireMode;
 	FiringInfoUpdated();
 }
@@ -2694,7 +2689,7 @@ void AUTCharacter::SetFlashExtra(uint8 NewFlashExtra, uint8 InFireMode)
 void AUTCharacter::ClearFiringInfo()
 {
 	bLocalFlashLoc = false;
-	FlashLocation = FVector::ZeroVector;
+	FlashLocation.Position = FVector::ZeroVector;
 	FlashCount = 0;
 	FlashExtra = 0;
 	FiringInfoUpdated();
@@ -2724,36 +2719,36 @@ void AUTCharacter::FiringInfoUpdated()
 	AUTPlayerController* UTPC = GetLocalViewer();
 	if ((bLocalFlashLoc || UTPC == NULL || UTPC->GetPredictionTime() == 0.f || !IsLocallyControlled()) && Weapon != NULL && Weapon->ShouldPlay1PVisuals())
 	{
-		if (!FlashLocation.IsZero())
+		if (!FlashLocation.Position.IsZero())
 		{
 			uint8 EffectFiringMode = Weapon->GetCurrentFireMode();
 			// if non-local first person spectator, also play firing effects from here
 			if (Controller == NULL)
 			{
 				EffectFiringMode = FireMode;
-				Weapon->FiringInfoUpdated(FireMode, FlashCount, FlashLocation);
-				Weapon->FiringEffectsUpdated(FireMode, FlashLocation);
+				Weapon->FiringInfoUpdated(FireMode, FlashCount, FlashLocation.Position);
+				Weapon->FiringEffectsUpdated(FireMode, FlashLocation.Position);
 			}
 			else
 			{
 				FVector SpawnLocation;
 				FRotator SpawnRotation;
-				Weapon->GetImpactSpawnPosition(FlashLocation, SpawnLocation, SpawnRotation);
-				Weapon->PlayImpactEffects(FlashLocation, EffectFiringMode, SpawnLocation, SpawnRotation);
+				Weapon->GetImpactSpawnPosition(FlashLocation.Position, SpawnLocation, SpawnRotation);
+				Weapon->PlayImpactEffects(FlashLocation.Position, EffectFiringMode, SpawnLocation, SpawnRotation);
 			}
 		}
 		else if (Controller == NULL)
 		{
-			Weapon->FiringInfoUpdated(FireMode, FlashCount, FlashLocation);
+			Weapon->FiringInfoUpdated(FireMode, FlashCount, FlashLocation.Position);
 		}
-		if (FlashCount == 0 && FlashLocation.IsZero() && WeaponAttachment != NULL)
+		if (FlashCount == 0 && FlashLocation.Position.IsZero() && WeaponAttachment != NULL)
 		{
 			WeaponAttachment->StopFiringEffects();
 		}
 	}
 	else if (WeaponAttachment != NULL)
 	{
-		if (FlashCount != 0 || !FlashLocation.IsZero())
+		if (FlashCount != 0 || !FlashLocation.Position.IsZero())
 		{
 			if ((!IsLocallyControlled() || UTPC == NULL || UTPC->IsBehindView()))
 			{

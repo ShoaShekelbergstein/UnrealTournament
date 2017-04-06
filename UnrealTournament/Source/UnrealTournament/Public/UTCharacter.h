@@ -174,6 +174,20 @@ struct FSavedPosition
 	float TimeStamp;
 };
 
+USTRUCT(BlueprintType)
+struct FFlashLocRep
+{
+	GENERATED_USTRUCT_BODY()
+
+		/** Position of player at time Time. */
+		UPROPERTY()
+		FVector_NetQuantize Position;
+
+	/** Rotation of player at time Time. */
+	UPROPERTY()
+		uint8 Count;
+};
+
 UENUM(BlueprintType)
 enum EAllowedSpecialMoveAnims
 {
@@ -689,8 +703,9 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	 */
 	UPROPERTY(BlueprintReadOnly, Replicated, ReplicatedUsing = FiringExtraUpdated, Category = "Weapon")
 	uint8 FlashExtra;
+
 	UPROPERTY(BlueprintReadOnly, Replicated, ReplicatedUsing = FiringInfoReplicated, Category = "Weapon")
-	FVector_NetQuantize FlashLocation;
+	FFlashLocRep FlashLocation;
 
 	/** Updated on client when FlashCount is replicated. */
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon")

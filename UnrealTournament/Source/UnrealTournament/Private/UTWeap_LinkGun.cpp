@@ -466,7 +466,7 @@ void AUTWeap_LinkGun::FiringExtraUpdated_Implementation(uint8 NewFlashExtra, uin
 			if (GuessTarget == NULL && UTOwner != NULL && Role < ROLE_Authority)
 			{
 				TArray<FOverlapResult> Hits;
-				GetWorld()->OverlapMultiByChannel(Hits, UTOwner->FlashLocation, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, true, UTOwner));
+				GetWorld()->OverlapMultiByChannel(Hits, UTOwner->FlashLocation.Position, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, true, UTOwner));
 				for (const FOverlapResult& Hit : Hits)
 				{
 					if (Cast<APawn>(Hit.Actor.Get()) != NULL)
