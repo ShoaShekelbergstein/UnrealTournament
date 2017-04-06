@@ -97,31 +97,6 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 		PC->ShowMenu((bReturnedFromChallenge ? TEXT("showchallenge") : TEXT("")));
 		UUTProfileSettings* ProfileSettings = PC->GetProfileSettings();
 
-#if !PLATFORM_LINUX
-		if (!PC->SkipTutorialCheck())
-		{
-			if (ProfileSettings != nullptr && !FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")) && !FParse::Param(FCommandLine::Get(), TEXT("playoffline")) )
-			{
-				if (ProfileSettings->TutorialMask == 0 )
-				{
-					if ( !LastURL.HasOption(TEXT("tutorialmenu")) )
-					{
-						if (FUTAnalytics::IsAvailable())
-						{
-							FUTAnalytics::FireEvent_UTTutorialStarted(Cast<AUTPlayerController>(PC),FString("Onboarding"));
-						}
-
-						if (PC->GetUTLocalPlayer())
-						{
-							PC->GetUTLocalPlayer()->LaunchTutorial(ETutorialTags::TUTTAG_DM);
-						}
-						return;
-					}
-				}
-			}
-		}
-#endif
-
 #if !UE_SERVER
 		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(PC->Player);
 		// start with tutorial menu if requested

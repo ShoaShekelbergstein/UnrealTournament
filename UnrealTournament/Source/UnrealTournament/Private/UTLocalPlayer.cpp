@@ -126,7 +126,6 @@ UUTLocalPlayer::UUTLocalPlayer(const class FObjectInitializer& ObjectInitializer
 	bSuppressDownloadDialog = false;
 
 	bQuickmatchOnLevelChange = false;
-
 	RankedEloRange = 20;
 	RankedMinEloRangeBeforeHosting = 100;
 	RankedMinEloSearchStep = 20;
@@ -146,6 +145,8 @@ UUTLocalPlayer::UUTLocalPlayer(const class FObjectInitializer& ObjectInitializer
 	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_CTF, TUTORIAL_CTF,TEXT("/Game/RestrictedAssets/Maps/CTF-Face"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTCTFGameMode_Tut.UTCTFGameMode_Tut_C?timelimit=10?GoalScore=0?botfill=10?Difficulty=2"), TEXT("TutorialMovies/ctf-tutorial"), TEXT("Capture the Flag Tutorial")));
 	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_TDM, TUTORIAL_TDM,TEXT("/Game/RestrictedAssets/Maps/DM-Outpost23"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTTeamDMGameMode_Tut.UTTeamDMGameMode_Tut_C?timelimit=10?GoalScore=0?botfill=10?Difficulty=2"), TEXT("TutorialMovies/tdm-tutorial"), TEXT("Team Deathmatch Tutorial")));
 	TutorialData.Add(FTutorialData(ETutorialTags::TUTTAG_Duel, TUTORIAL_Duel,TEXT("/Game/RestrictedAssets/Maps/WIP/DM-ASDF"), TEXT("?game=/Game/RestrictedAssets/Tutorials/Blueprints/UTDuelGame_Tut.UTDuelGame_Tut_C?timelimit=10?GoalScore=0?botfill=2?Difficulty=3"), TEXT("TutorialMovies/duel-tutorial"), TEXT("Duel Tutorial")));
+
+	bLaunchTutorialOnLogin = false;
 }
 
 UUTLocalPlayer::~UUTLocalPlayer()
@@ -1757,6 +1758,9 @@ void UUTLocalPlayer::OnReadProfileComplete(bool bWasSuccessful, const FUniqueNet
 		}
 		else 
 		{
+			// This player doesn't have a valid profile so assume a new player and send them through the tutorial
+			bLaunchTutorialOnLogin = true;
+
 			CurrentProfileSettings = NewObject<UUTProfileSettings>(GetTransientPackage(),UUTProfileSettings::StaticClass());
 			CurrentProfileSettings->ResetProfile(EProfileResetType::All);
 			ReadMMRFromBackend();
@@ -4859,7 +4863,7 @@ void UUTLocalPlayer::EnumerateTitleFiles()
 	}
 	else
 	{
-		LoginPhase = ELoginPhase::LoggedIn;
+		FinalizeLogin();
 	}
 }
 
@@ -5983,8 +5987,16 @@ void UUTLocalPlayer::LoginProcessComplete()
 
 		TSharedPtr<const FUniqueNetId> UserId = OnlineIdentityInterface->GetUniquePlayerId(GetControllerId());
 		ShowRankedReconnectDialog(UserId->ToString());
+
+		FinalizeLogin();
+
 	}
+}
+
+void UUTLocalPlayer::FinalizeLogin()
+{
 	LoginPhase = ELoginPhase::LoggedIn;
+	if (bLaunchTutorialOnLogin) LaunchTutorial(ETutorialTags::TUTTAG_DM, TEXT(""));
 }
 
 void UUTLocalPlayer::QoSComplete()

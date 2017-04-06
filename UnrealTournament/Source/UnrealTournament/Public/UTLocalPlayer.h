@@ -1410,5 +1410,10 @@ public:
 	virtual void CheckLoadingMovie(const FString& GameMode);
 
 
+protected:
+	bool bLaunchTutorialOnLogin;
+
+	virtual void FinalizeLogin();
+
 };
 
