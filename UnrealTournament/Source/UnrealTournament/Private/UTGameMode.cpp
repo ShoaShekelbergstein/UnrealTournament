@@ -5001,7 +5001,6 @@ void AUTGameMode::HandleMapVote()
  **/
 void AUTGameMode::CullMapVotes()
 {
-	TArray<AUTReplicatedMapInfo*> FinalList;
 	TArray<AUTReplicatedMapInfo*> Sorted;
 
 	for (int32 i=0; i< UTGameState->MapVoteList.Num(); i++)
@@ -5015,6 +5014,8 @@ void AUTGameMode::CullMapVotes()
 		Sorted.Insert(UTGameState->MapVoteList[i], InsertIndex);
 	}
 
+	UTGameState->MapVoteList.Empty();
+
 	if (Sorted.Num() > 0)
 	{
 		if (Sorted[0]->VoteCount == 0)	// Top map has 0 votes so no one has voted
@@ -5026,8 +5027,7 @@ void AUTGameMode::CullMapVotes()
 				if ( Sorted.Num() > 0 )
 				{
 					int32 RandIdx = FMath::RandRange(0, Sorted.Num()-1);
-					FinalList.Add(Sorted[RandIdx]);
-					Sorted.RemoveAt(RandIdx,1);
+					UTGameState->MapVoteList.Add(Sorted[RandIdx]);
 				}
 				else
 				{
@@ -5041,24 +5041,39 @@ void AUTGameMode::CullMapVotes()
 			{
 				if (Sorted.IsValidIndex(i))
 				{
-					FinalList.Add(Sorted[i]);
-					Sorted.RemoveAt(i,1);
+					if (Sorted[i]->VoteCount > 0)
+					{
+						UTGameState->MapVoteList.Add(Sorted[i]);
+					}
+					else
+					{
+						// Just randomly pick one, but cap it at 10 attempts
+
+						for (int32 j=0; j < 10; j++)
+						{
+							int32 RandIdx = FMath::RandRange(i, Sorted.Num()-1);
+							if (Sorted.IsValidIndex(RandIdx) && UTGameState->MapVoteList.Find(Sorted[RandIdx]) == INDEX_NONE)
+							{
+								UTGameState->MapVoteList.Add(Sorted[RandIdx]);
+								break;
+							}
+						}
+
+					}
 				}
 			}
 		}
 	}
 
-	UTGameState->MapVoteList.Empty();
-	for (int32 i=0; i < FinalList.Num(); i++)
-	{
-		UTGameState->MapVoteList.Add(FinalList[i]);
-	}
-	UTGameState->MapVoteListCount = FinalList.Num();
+	UTGameState->MapVoteListCount = UTGameState->MapVoteList.Num();
 
 	for (int32 i=0; i<Sorted.Num(); i++)
 	{
-		// Kill the actor
-		Sorted[i]->Destroy();
+		if (UTGameState->MapVoteList.Find(Sorted[i]) == INDEX_NONE)
+		{
+			// Kill the actor
+			Sorted[i]->Destroy();
+		}
 	}
 }
 
