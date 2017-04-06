@@ -32,6 +32,11 @@ void AUTDemoRecSpectator::PlayerTick(float DeltaTime)
 	{
 		ViewQueuedNetId();
 	}
+
+	if (IsKillcamSpectator() && !Cast<APawn>(GetViewTarget()))
+	{
+		Super::ChooseBestCamera();
+	}
 }
 
 void AUTDemoRecSpectator::ViewQueuedNetId()
@@ -64,16 +69,28 @@ void AUTDemoRecSpectator::ViewQueuedGuid()
 	AActor* ActorForGuid = GetWorld()->DemoNetDriver->GetActorForGUID(QueuedViewTargetGuid);
 	if (ActorForGuid)
 	{
-		APawn* KillcamPawn = Cast<APawn>(ActorForGuid);
-		if (KillcamPawn && GetViewTarget() != KillcamPawn)
+		APlayerState* PS = Cast<APlayerState>(ActorForGuid);
+		if (PS)
 		{
-			// If we're kill cam, just try to view this guid forever
-			if (!IsKillcamSpectator())
+			APawn* ViewedPawn = Cast<APawn>(GetViewTarget());
+			if (!ViewedPawn || (ViewedPawn->PlayerState != PS))
 			{
-				QueuedViewTargetGuid.Reset();
+				ViewPlayerState(PS);
 			}
-			ViewPawn(KillcamPawn);
-			UE_LOG(LogUTDemoRecSpectator, Log, TEXT("Found queued guid!"));
+		}
+		else
+		{
+			APawn* KillcamPawn = Cast<APawn>(ActorForGuid);
+			if (KillcamPawn && GetViewTarget() != KillcamPawn)
+			{
+				// If we're kill cam, just try to view this guid forever
+				if (!IsKillcamSpectator())
+				{
+					QueuedViewTargetGuid.Reset();
+				}
+				ViewPawn(KillcamPawn);
+				UE_LOG(LogUTDemoRecSpectator, Log, TEXT("Found queued guid!"));
+			}
 		}
 	}
 }
