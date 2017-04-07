@@ -564,11 +564,7 @@ void UUTLocalPlayer::ShowMenu(const FString& Parameters)
 
 					if (GetWorld()->GetNetMode() != NM_Client)
 					{
-						AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-						if (GameMode && GameMode->GetMatchState() != MatchState::PlayerIntro && GameMode->GetMatchState() != MatchState::WaitingPostMatch)
-						{
-							PlayerController->SetPause(true);
-						}
+						PlayerController->SetPause(true);
 					}
 				}
 			}
