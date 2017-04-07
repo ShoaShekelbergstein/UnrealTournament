@@ -174,10 +174,12 @@ void UUTRadialMenu_DropInventory::DrawMenu(FVector2D ScreenCenter, float RenderD
 						break;
 
 					case 2: 
+/*
 						// Armor
 						ArmorIcon.RenderOpacity = bHasArmor ? 1.0f : 0.25f;
 						RenderObj_TextureAt(ArmorIcon, IconRenderPosition.X, IconRenderPosition.Y, ArmorIcon.UVs.UL * 2.0f,  ArmorIcon.UVs.VL * 2.0f);
 						if (bHasArmor && bCurrent) Caption = NSLOCTEXT("Inventory","Armor","Armor");
+*/
 						break;
 
 					case 4: 
@@ -187,10 +189,12 @@ void UUTRadialMenu_DropInventory::DrawMenu(FVector2D ScreenCenter, float RenderD
 						break;
 
 					case 6: 
+/*
 						// Health
 						HealthIcon.RenderOpacity = bHasEnoughHealth ? 1.0f : 0.25f;
 						RenderObj_TextureAt(HealthIcon, IconRenderPosition.X, IconRenderPosition.Y, HealthIcon.UVs.UL * 2.0f,  HealthIcon.UVs.VL * 2.0f);
 						if (bHasEnoughHealth && bCurrent) Caption = NSLOCTEXT("Inventory","Health","Health");
+*/
 						break;
 
 					default:
@@ -254,7 +258,7 @@ void UUTRadialMenu_DropInventory::Execute()
 
 		case 2 : 
 			// Armor
-			UTCharacter->ServerDropArmor();
+			//UTCharacter->ServerDropArmor();
 			break;
 
 		case 4 : 
@@ -264,7 +268,7 @@ void UUTRadialMenu_DropInventory::Execute()
 
 		case 6 :
 			// Health
-			UTCharacter->ServerDropHealth();
+			//UTCharacter->ServerDropHealth();
 			break;
 
 		default:
