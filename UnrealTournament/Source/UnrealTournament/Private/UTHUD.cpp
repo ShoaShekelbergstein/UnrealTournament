@@ -1425,7 +1425,7 @@ EInputMode::Type AUTHUD::GetInputMode_Implementation() const
 			AUTPlayerState* UTPlayerState = UTPlayerOwner->UTPlayerState;
 			if (UTPlayerState && (UTPlayerState->bOnlySpectator || UTPlayerState->bOutOfLives) )
 			{
-				if (UTPlayerOwner->bSpectatorMouseChangesView)
+				if (bShowScores || UTPlayerOwner->bSpectatorMouseChangesView)
 				{
 					return EInputMode::EIM_GameOnly;
 				}
