@@ -88,6 +88,7 @@ public:
 	static void SetServerInitialParameters(TArray<FAnalyticsEventAttribute>& ParamArray);
 	static void SetClientInitialParameters(AUTBasePlayerController* UTPC, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime);
 	static void AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray);
+	static void AddPlayerStatsToParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray);
 
 private:
 	/** Initialize the FString Array of Analytic Parameters */
