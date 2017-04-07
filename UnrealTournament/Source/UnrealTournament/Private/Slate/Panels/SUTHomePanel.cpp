@@ -49,7 +49,7 @@ void SUTHomePanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
 	AnnouncmentTimer = 3.0;
 
 	PlayerOwner->GetWorld()->GetTimerManager().SetTimer(LanTimerHandle, FTimerDelegate::CreateSP(this, &SUTHomePanel::CheckForLanServers), 8.0f, true);
-	PlayerOwner->GetWorld()->GetTimerManager().SetTimer(LanPingHandle, FTimerDelegate::CreateSP(this, &SUTHomePanel::PingLanServers), 2.0f, true);
+	PlayerOwner->GetWorld()->GetTimerManager().SetTimer(LanPingHandle, FTimerDelegate::CreateSP(this, &SUTHomePanel::PingLanServers), 3.5f, true);
 	if (AnimWidget.IsValid())
 	{
 		AnimWidget->Animate(FVector2D(100.0f, 0.0f), FVector2D(0.0f, 0.0f), 0.0f, 1.0f, 0.3f);
@@ -299,7 +299,7 @@ void SUTHomePanel::PingLanServers()
 		AUTServerBeaconClient* Beacon = PlayerOwner->GetWorld()->SpawnActor<AUTServerBeaconClient>(AUTServerBeaconClient::StaticClass());
 		if (Beacon && !ServerToPing->BeaconIP.IsEmpty())
 		{
-			Beacon->SetBeaconConnectionTimeout(0.75f);
+			Beacon->SetBeaconConnectionTimeout(1.5f);
 			Beacon->OnServerRequestResults = FServerRequestResultsDelegate::CreateSP(this, &SUTHomePanel::OnPingResult );
 			Beacon->OnServerRequestFailure = FServerRequestFailureDelegate::CreateSP(this, &SUTHomePanel::OnPingFailure);
 			FURL BeaconURL(nullptr, *ServerToPing->BeaconIP, TRAVEL_Absolute);
