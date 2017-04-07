@@ -205,7 +205,7 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 	if (bFirstRoundInitialized)
 	{
 		// kick idlers
-		if (UTGameState && GameSession)
+		if (UTGameState && GameSession && !bIgnoreIdlePlayers && !bIsLANGame)
 		{
 			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 			{
