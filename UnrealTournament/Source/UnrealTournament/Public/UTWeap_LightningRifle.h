@@ -75,4 +75,5 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 	virtual void Removed() override;
 	virtual void ClientRemoved() override;
 	virtual void PlayImpactEffects_Implementation(const FVector& TargetLoc, uint8 FireMode, const FVector& SpawnLocation, const FRotator& SpawnRotation) override;
+	virtual void PlayFiringSound(uint8 EffectFiringMode) override;
 };

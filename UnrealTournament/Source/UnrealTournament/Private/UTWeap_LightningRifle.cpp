@@ -139,9 +139,22 @@ int32 AUTWeap_LightningRifle::GetHitScanDamage()
 	return InstantHitInfo[CurrentFireMode].Damage + (bIsFullyPowered ? FullPowerBonusDamage : 0.f);
 }
 
+void AUTWeap_LightningRifle::PlayFiringSound(uint8 EffectFiringMode)
+{
+	if (bIsFullyPowered && (Role == ROLE_Authority))
+	{
+		// will choose fire sound depending on hit or miss
+		return;
+	}
+	else
+	{
+		Super::PlayFiringSound(EffectFiringMode);
+	}
+}
+
 void AUTWeap_LightningRifle::SetFlashExtra(AActor* HitActor)
 {
-	if (UTOwner)
+	if (UTOwner && (Role == ROLE_Authority))
 	{
 		if (bIsFullyPowered)
 		{
@@ -149,18 +162,12 @@ void AUTWeap_LightningRifle::SetFlashExtra(AActor* HitActor)
 			if (Cast<AUTCharacter>(HitActor) && GS && !GS->OnSameTeam(UTOwner, HitActor))
 			{
 				UTOwner->SetFlashExtra(3, CurrentFireMode);
-				if (Cast<AUTPlayerController>(UTOwner->GetController()) && (Role == ROLE_Authority))
-				{
-					Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredHitEnemySound);
-				}
+				UUTGameplayStatics::UTPlaySound(GetWorld(), FullyPoweredHitEnemySound, UTOwner, SRT_All, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
 			}
 			else
 			{
 				UTOwner->SetFlashExtra(2, CurrentFireMode);
-				if (Cast<AUTPlayerController>(UTOwner->GetController()) && (Role == ROLE_Authority))
-				{
-					Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredNoHitEnemySound);
-				}
+				UUTGameplayStatics::UTPlaySound(GetWorld(), FullyPoweredNoHitEnemySound, UTOwner, SRT_All, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
 			}
 		}
 		else
