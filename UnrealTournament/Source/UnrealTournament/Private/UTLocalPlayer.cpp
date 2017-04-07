@@ -4882,7 +4882,10 @@ void UUTLocalPlayer::EnumerateTitleFiles()
 {
 	if (OnlineTitleFileInterface.IsValid())
 	{
-		LoginPhase = ELoginPhase::GettingTitleUpdate;
+		if (LoginPhase != ELoginPhase::LoggedIn)
+		{
+			LoginPhase = ELoginPhase::GettingTitleUpdate;
+		}
 
 		// We queue here what title files we want to read.  Once started, this step won't be skilled until the queue is empty.
 		TitleFileQueue.Add(GetMCPStorageFilename());
@@ -4892,7 +4895,7 @@ void UUTLocalPlayer::EnumerateTitleFiles()
 
 		OnlineTitleFileInterface->EnumerateFiles();
 	}
-	else
+	else if (LoginPhase != ELoginPhase::LoggedIn)
 	{
 		FinalizeLogin();
 	}
@@ -4934,6 +4937,8 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 				OnlineTitleFileInterface->GetFileContents(GetMCPStorageFilename(), FileContents);
 				FileContents.Add(0);
 				JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
+
+				UpdateCheck();
 			}
 		}
 
@@ -5028,7 +5033,7 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 
 	int32 Index = TitleFileQueue.Find(Filename);
 	if (Index != INDEX_NONE) TitleFileQueue.RemoveAt(Index);
-	if (TitleFileQueue.Num() == 0)
+	if (TitleFileQueue.Num() == 0 && LoginPhase != ELoginPhase::LoggedIn)
 	{
 		LoginProcessComplete();
 	}
@@ -6857,6 +6862,18 @@ FSceneView* UUTLocalPlayer::CalcSceneView(class FSceneViewFamily* ViewFamily, FV
 	}
 
 	return Super::CalcSceneView(ViewFamily, OutViewLocation, OutViewRotation, Viewport, ViewDrawer, StereoPass);
+}
+
+void UUTLocalPlayer::CheckForNewUpdate()
+{
+	if (LoginPhase == ELoginPhase::LoggedIn)
+	{
+		if (OnlineTitleFileInterface.IsValid())
+		{
+			TitleFileQueue.Add(GetMCPStorageFilename());
+			OnlineTitleFileInterface->EnumerateFiles();
+		}
+	}
 }
 
 void UUTLocalPlayer::UpdateCheck()

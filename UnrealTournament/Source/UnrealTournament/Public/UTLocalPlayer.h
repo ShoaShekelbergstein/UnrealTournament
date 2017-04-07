@@ -1362,12 +1362,17 @@ protected:
 	TSharedPtr<SUTDifficultyLevel> DifficultyLevelDialog;
 	void DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 
+	UFUNCTION()
+	void UpdateCheck();
+
 public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
 	void CloseSavingWidget();
 
+
+	// Looks for an update.  
 	UFUNCTION()
-	void UpdateCheck();
+	void CheckForNewUpdate();
 
 	FTimerHandle SocialInitializationTimerHandle;
 
