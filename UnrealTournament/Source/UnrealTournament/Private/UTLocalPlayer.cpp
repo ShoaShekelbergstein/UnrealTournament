@@ -541,7 +541,7 @@ void UUTLocalPlayer::ShowMenu(const FString& Parameters)
 		}
 		if (DesktopSlateWidget.IsValid())
 		{
-			GEngine->GameViewport->AddViewportWidgetContent( SNew(SWeakWidget).PossiblyNullContent(DesktopSlateWidget.ToSharedRef()),1);
+			GEngine->GameViewport->AddViewportWidgetContent( SNew(SWeakWidget).PossiblyNullContent(DesktopSlateWidget.ToSharedRef()),2);
 		}
 
 		// Make it visible.
