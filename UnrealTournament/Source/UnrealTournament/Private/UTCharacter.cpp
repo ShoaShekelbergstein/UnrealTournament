@@ -1912,7 +1912,7 @@ void AUTCharacter::StopRagdoll()
 				GetMesh()->GetAnimInstance()->Montage_Play(RagdollRecoveryMontage);
 			}
 
-			//RootBody->SetBodyTransform(GetMesh()->GetComponentTransform(), ETeleportType::TeleportPhysics);
+			RootBody->SetBodyTransform(GetMesh()->GetComponentTransform(), ETeleportType::TeleportPhysics);
 			RootBody->PutInstanceToSleep();
 			RootBody->SetInstanceSimulatePhysics(false, true);
 			RootBody->PhysicsBlendWeight = 1.0f; // second parameter of SetInstanceSimulatePhysics() doesn't actually work at the moment...
@@ -1920,7 +1920,7 @@ void AUTCharacter::StopRagdoll()
 			{
 				if (GetMesh()->Bodies[i] != NULL && GetMesh()->Bodies[i] != RootBody)
 				{
-					//GetMesh()->Bodies[i]->SetBodyTransform(BodyTransforms[i], ETeleportType::TeleportPhysics);
+					GetMesh()->Bodies[i]->SetBodyTransform(BodyTransforms[i], ETeleportType::TeleportPhysics);
 					GetMesh()->Bodies[i]->PutInstanceToSleep();
 					//GetMesh()->Bodies[i]->SetInstanceSimulatePhysics(false, true);
 					//GetMesh()->Bodies[i]->PhysicsBlendWeight = 1.0f;
