@@ -2914,13 +2914,17 @@ void UUTLocalPlayer::SetShowingFriendsPopup(bool bShowing)
 	bShowingFriendsMenu = bShowing;
 }
 
-void UUTLocalPlayer::ReturnToMainMenu()
+void UUTLocalPlayer::CancelQuickmatch()
 {
 	PendingQuickmatchType = TEXT("");
 	bQuickmatchOnLevelChange = false;
 
 	InvalidateLastSession();
+}
 
+void UUTLocalPlayer::ReturnToMainMenu()
+{
+	CancelQuickmatch();
 	HideMenu();
 
 #if !UE_SERVER
@@ -3569,6 +3573,33 @@ void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
 	{
 		MessageBox(NSLOCTEXT("Generic","LoginNeededTitle","Login Needed"), NSLOCTEXT("Generic","LoginNeededMessage","You need to login before you can do that."));
 	}
+}
+
+FText UUTLocalPlayer::PlayListIDToText(int32 PlayListId)
+{
+	//TODO: Extend the play list system to have a menu friendly name
+
+	UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(GetGameInstance());
+	if (UTGameInstance && UTGameInstance->GetPlaylistManager())
+	{
+		FString FriendlyName;
+		UTGameInstance->GetPlaylistManager()->GetPlaylistName(PlayListId, FriendlyName);
+		return FText::FromString(TEXT("a ") + FriendlyName + TEXT(" " ));
+	}
+
+	// Fallback...
+
+	if (PlayListId == 12) return NSLOCTEXT("PlayListNames","Deathmatch","a Deathmatch ");
+	if (PlayListId == 11) return NSLOCTEXT("PlayListNames","CTF","a Capture the Flag ");
+	if (PlayListId == 13) return NSLOCTEXT("PlayListNames","TSD","a Team Showdown ");
+	if (PlayListId == 14) return NSLOCTEXT("PlayListNames","Blitz","a Blitz ");
+	if (PlayListId == 15) return NSLOCTEXT("PlayListNames","BlitzVSa","a Blitz Co-Op (Normal) ");
+	if (PlayListId == 16) return NSLOCTEXT("PlayListNames","BlitzVSb","a Blitz Co-Op (Hard) ");
+	if (PlayListId == 17) return NSLOCTEXT("PlayListNames","BlitzVSc","a Blitz Co-Op (Hard) ");
+	if (PlayListId == 18) return NSLOCTEXT("PlayListNames","BlitzVSd","a Blitz Co-Op 3v5 ");
+
+	return FText::GetEmpty();
+
 }
 
 void UUTLocalPlayer::DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID)

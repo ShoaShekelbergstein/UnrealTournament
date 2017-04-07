@@ -1409,6 +1409,8 @@ public:
 	// Checks to see if the loading movie should be forced to a tutorial
 	virtual void CheckLoadingMovie(const FString& GameMode);
 
+	FText PlayListIDToText(int32 PlayListId);
+	void CancelQuickmatch();
 
 protected:
 	bool bLaunchTutorialOnLogin;
