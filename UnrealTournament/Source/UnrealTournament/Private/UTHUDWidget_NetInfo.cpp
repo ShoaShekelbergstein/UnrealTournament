@@ -20,6 +20,7 @@ UUTHUDWidget_NetInfo::UUTHUDWidget_NetInfo(const class FObjectInitializer& Objec
 	ValueHighlight[2] = FLinearColor::Red;
 	LastPacketsIn = 200;
 	LastPacketsOut = 200;
+	bShouldKickBack = false;
 }
 
 bool UUTHUDWidget_NetInfo::ShouldDraw_Implementation(bool bShowScores)
