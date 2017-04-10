@@ -297,15 +297,18 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 			AUTPlayerState* PS = ViewCharacter ? Cast<AUTPlayerState>(ViewCharacter->PlayerState) : NULL;
 			if (UTHUDOwner && UTHUDOwner->bDisplayMatchSummary)
 			{
-				const AUTGameMode* DefaultGame = UTGameState->GameModeClass ? Cast<AUTGameMode>(UTGameState->GetDefaultGameMode()) : nullptr;
-				if (DefaultGame && (DefaultGame->MatchSummaryTime - (GetWorld()->GetTimeSeconds() - UTHUDOwner->MatchSummaryTime) < 10))
+				if (UTGameState->GetNetMode() != NM_Standalone)
 				{
-					FFormatNamedArguments Args;
-					static const FNumberFormattingOptions RespawnTimeFormat = FNumberFormattingOptions()
-						.SetMinimumFractionalDigits(0)
-						.SetMaximumFractionalDigits(0);
-					Args.Add("TimeToMapVote", FText::AsNumber(DefaultGame->MatchSummaryTime - (GetWorld()->GetTimeSeconds() - UTHUDOwner->MatchSummaryTime), &RespawnTimeFormat));
-					SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "MapVoteWaitMessage", "Map Vote in {TimeToMapVote}..."), Args);
+					const AUTGameMode* DefaultGame = UTGameState->GameModeClass ? Cast<AUTGameMode>(UTGameState->GetDefaultGameMode()) : nullptr;
+					if (DefaultGame && (DefaultGame->MatchSummaryTime - (GetWorld()->GetTimeSeconds() - UTHUDOwner->MatchSummaryTime) < 10))
+					{
+						FFormatNamedArguments Args;
+						static const FNumberFormattingOptions RespawnTimeFormat = FNumberFormattingOptions()
+							.SetMinimumFractionalDigits(0)
+							.SetMaximumFractionalDigits(0);
+						Args.Add("TimeToMapVote", FText::AsNumber(DefaultGame->MatchSummaryTime - (GetWorld()->GetTimeSeconds() - UTHUDOwner->MatchSummaryTime), &RespawnTimeFormat));
+						SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "MapVoteWaitMessage", "Map Vote in {TimeToMapVote}..."), Args);
+					}
 				}
 			}
 			else if (PS)
