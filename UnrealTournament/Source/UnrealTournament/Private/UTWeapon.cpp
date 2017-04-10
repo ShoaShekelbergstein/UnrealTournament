@@ -2176,6 +2176,22 @@ void AUTWeapon::SpawnDelayedFakeProjectile()
 		{
 			NewProjectile->InitFakeProjectile(OwningPlayer);
 			NewProjectile->SetLifeSpan(FMath::Min(NewProjectile->GetLifeSpan(), 0.002f * FMath::Max(0.f, OwningPlayer->MaxPredictionPing + OwningPlayer->PredictionFudgeFactor)));
+			if (NewProjectile->OffsetVisualComponent)
+			{
+				switch (GetWeaponHand())
+				{
+				case EWeaponHand::HAND_Center:
+					NewProjectile->InitialVisualOffset = NewProjectile->InitialVisualOffset + LowMeshOffset;
+					NewProjectile->OffsetVisualComponent->RelativeLocation = NewProjectile->InitialVisualOffset;
+					break;
+				case EWeaponHand::HAND_Hidden:
+				{
+					NewProjectile->InitialVisualOffset = NewProjectile->InitialVisualOffset + VeryLowMeshOffset;
+					NewProjectile->OffsetVisualComponent->RelativeLocation = NewProjectile->InitialVisualOffset;
+					break;
+				}
+				}
+			}
 		}
 	}
 }
