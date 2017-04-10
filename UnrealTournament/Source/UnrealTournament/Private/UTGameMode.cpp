@@ -3966,6 +3966,12 @@ void AUTGameMode::Logout(AController* Exiting)
 	{
 		UTGameState->LineUpHelper->OnPlayerChange();
 	}
+
+	if (GetWorldSettings()->Pauser == Exiting->PlayerState)
+	{
+		ClearPause();
+	}
+
 }
 
 void AUTGameMode::ForceEndServer()
