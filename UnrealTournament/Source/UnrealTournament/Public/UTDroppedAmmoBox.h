@@ -8,7 +8,7 @@
 #include "UTDroppedAmmoBox.generated.h"
 
 UCLASS()
-class AUTDroppedAmmoBox : public AUTDroppedPickup
+class UNREALTOURNAMENT_API AUTDroppedAmmoBox : public AUTDroppedPickup
 {
 	GENERATED_BODY()
 public:

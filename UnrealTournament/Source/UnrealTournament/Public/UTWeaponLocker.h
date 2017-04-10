@@ -8,7 +8,7 @@
 #include "UTWeaponLocker.generated.h"
 
 USTRUCT(BlueprintType)
-struct FWeaponLockerItem
+struct UNREALTOURNAMENT_API FWeaponLockerItem
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -17,7 +17,7 @@ struct FWeaponLockerItem
 };
 
 UCLASS(Abstract)
-class AUTWeaponLocker : public AUTPickup
+class UNREALTOURNAMENT_API AUTWeaponLocker : public AUTPickup
 {
 	GENERATED_BODY()
 public:

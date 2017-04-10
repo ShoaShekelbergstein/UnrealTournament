@@ -8,7 +8,7 @@
 #include "UTFlagRunPvEGame.generated.h"
 
 UCLASS()
-class AUTFlagRunPvEGame : public AUTFlagRunGame
+class UNREALTOURNAMENT_API AUTFlagRunPvEGame : public AUTFlagRunGame
 {
 	GENERATED_BODY()
 public:

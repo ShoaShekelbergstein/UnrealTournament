@@ -7,7 +7,7 @@
 #include "UTReachSpec_WallDodge.generated.h"
 
 UCLASS()
-class UUTReachSpec_WallDodge : public UUTReachSpec
+class UNREALTOURNAMENT_API UUTReachSpec_WallDodge : public UUTReachSpec
 {
 	GENERATED_BODY()
 public:

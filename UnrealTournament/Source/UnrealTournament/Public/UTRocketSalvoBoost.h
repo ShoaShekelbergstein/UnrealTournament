@@ -7,7 +7,7 @@
 #include "UTRocketSalvoBoost.generated.h"
 
 UCLASS()
-class AUTRocketSalvoBoost : public AUTTimedPowerup
+class UNREALTOURNAMENT_API AUTRocketSalvoBoost : public AUTTimedPowerup
 {
 	GENERATED_BODY()
 public:

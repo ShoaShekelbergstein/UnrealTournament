@@ -7,7 +7,7 @@
 #include "UTDroppedPickupImportant.generated.h"
 
 UCLASS()
-class AUTDroppedPickupImportant : public AUTDroppedPickup
+class UNREALTOURNAMENT_API AUTDroppedPickupImportant : public AUTDroppedPickup
 {
 	GENERATED_BODY()
 public:

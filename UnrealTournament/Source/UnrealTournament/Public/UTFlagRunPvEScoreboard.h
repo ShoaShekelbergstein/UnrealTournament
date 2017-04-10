@@ -12,7 +12,7 @@
 #include "UTFlagRunPvEScoreboard.generated.h"
 
 UCLASS()
-class UUTFlagRunPvEScoreboard : public UUTFlagRunScoreboard
+class UNREALTOURNAMENT_API UUTFlagRunPvEScoreboard : public UUTFlagRunScoreboard
 {
 	GENERATED_BODY()
 public:

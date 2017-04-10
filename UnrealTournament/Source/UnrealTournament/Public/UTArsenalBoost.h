@@ -7,7 +7,7 @@
 #include "UTArsenalBoost.generated.h"
 
 UCLASS()
-class AUTArsenalBoost : public AUTInventory
+class UNREALTOURNAMENT_API AUTArsenalBoost : public AUTInventory
 {
 	GENERATED_BODY()
 public:
