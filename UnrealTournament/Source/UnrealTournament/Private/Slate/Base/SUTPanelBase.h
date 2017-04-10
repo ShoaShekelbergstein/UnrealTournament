@@ -48,6 +48,11 @@ public:
 	// Return true to show the back button in the conatining desktop
 	virtual bool ShouldShowBackButton()
 	{
+		if (PlayerOwner.IsValid() && PlayerOwner->IsKillcamReplayActive())
+		{
+			return false;
+		}
+
 		return true;
 	}
 
