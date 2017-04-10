@@ -392,7 +392,7 @@ void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalytic
 
 		if (UTGM->ServerInstanceGUID.IsValid())
 		{
-			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGM->UTGameState->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGM->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
 		}
 
 		if (UTGM->UTGameState)
