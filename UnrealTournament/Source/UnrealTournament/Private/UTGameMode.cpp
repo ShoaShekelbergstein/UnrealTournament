@@ -3786,7 +3786,14 @@ void AUTGameMode::PostLogin( APlayerController* NewPlayer )
 	}
 
 	Super::PostLogin(NewPlayer);
-
+	
+	// in case PlayerState got replaced with an inactive PlayerState
+	AUTPlayerState* PS = Cast<AUTPlayerState>(NewPlayer->PlayerState);
+	if (PS != NULL)
+	{
+		PS->NotIdle();
+	}
+	
 	NewPlayer->ClientSetLocation(NewPlayer->GetFocalLocation(), NewPlayer->GetControlRotation());
 	if (GameSession != NULL)
 	{
