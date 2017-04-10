@@ -2767,7 +2767,14 @@ bool AUTGameMode::PrepareMapVote()
 			FUTGameRuleset* ActiveRuleset = UTGameEngine->GetRuleset(ActiveRuleTag);
 			if (ActiveRuleset)
 			{
-				ActiveRuleset->GetCompleteMapList(MapList);
+				if (bIsQuickMatch)
+				{
+					ActiveRuleset->GetQuickMatchMapList(MapList);
+				}
+				else
+				{
+					ActiveRuleset->GetCompleteMapList(MapList);
+				}
 
 				// Now, ensure full names
 				for (FString& Map : MapList)

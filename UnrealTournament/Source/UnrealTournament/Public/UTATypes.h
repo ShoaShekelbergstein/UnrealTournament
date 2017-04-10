@@ -2544,6 +2544,16 @@ public:
 			OutMapList.Add(CustomMapList[i]);
 		}
 	}
+
+	void GetQuickMatchMapList(TArray<FString>& OutMapList)
+	{
+		OutMapList.Empty();
+		for (int32 i=0; i < QuickPlayMaps.Num(); i++)
+		{
+			OutMapList.Add(QuickPlayMaps[i]);
+		}
+	}
+
 };
 
 
