@@ -17,6 +17,7 @@ AUTWeap_LightningRifle::AUTWeap_LightningRifle(const FObjectInitializer& ObjectI
 	bSniping = true;
 	LowMeshOffset = FVector(0.f, 0.f, -3.f);
 	VeryLowMeshOffset = FVector(0.f, 0.f, -12.f);
+	ExtraFullPowerFireDelay = 0.3f;
 }
 
 void AUTWeap_LightningRifle::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -75,6 +76,40 @@ void AUTWeap_LightningRifle::ClientRemoved()
 {
 	ClearForRemoval();
 	Super::ClientRemoved();
+}
+
+float AUTWeap_LightningRifle::GetRefireTime(uint8 FireModeNum)
+{
+	if (FireInterval.IsValidIndex(FireModeNum))
+	{
+		float Result = FireInterval[FireModeNum];
+		bExtendedRefireDelay = false;
+		if (bIsFullyPowered)
+		{
+			Result += ExtraFullPowerFireDelay;
+			bExtendedRefireDelay = true;
+		}
+		if (UTOwner != NULL)
+		{
+			Result /= UTOwner->GetFireRateMultiplier();
+		}
+		bIsFullyPowered = false;
+		return FMath::Max<float>(0.01f, Result);
+	}
+	else
+	{
+		UE_LOG(UT, Warning, TEXT("Invalid firing mode %i in %s::GetRefireTime()"), int32(FireModeNum), *GetName());
+		return 0.1f;
+	}
+}
+
+bool AUTWeap_LightningRifle::HandleContinuedFiring()
+{
+	if (bExtendedRefireDelay)
+	{
+		UpdateTiming();
+	}
+	return Super::HandleContinuedFiring();
 }
 
 void AUTWeap_LightningRifle::OnRep_ZoomState_Implementation()
