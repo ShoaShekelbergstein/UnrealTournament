@@ -1358,7 +1358,6 @@ void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, con
 					Adjust *= 1.3f;
 				}
 				RedTeamSkill = FMath::Max(MinSkill, RedTeamSkill - Adjust / FMath::Min(4.f, 0.7f*float(RedTeamKills + RedTeamDeaths)));
-				UE_LOG(UT, Warning, TEXT("Reduce skill by %f to %f"), Adjust / FMath::Min(4.f, 0.7f*float(RedTeamKills + RedTeamDeaths)), RedTeamSkill);
 			}
 			AUTBot* Bot = Cast<AUTBot>(KillerPlayerState->GetOwner());
 			if (Bot)
@@ -1374,7 +1373,6 @@ void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, con
 			{
 				float Adjust = (RedTeamKills > RedTeamDeaths) ? 0.5f : 1.f;
 				RedTeamSkill = FMath::Min(MaxSkill, RedTeamSkill + Adjust / FMath::Min(4.f, 0.7f*float(RedTeamKills + RedTeamDeaths)));
-				UE_LOG(UT, Warning, TEXT("Increase skill by %f to %f"), Adjust / FMath::Min(4.f, 0.7f*float(RedTeamKills + RedTeamDeaths)), RedTeamSkill);
 			}
 			else
 			{
