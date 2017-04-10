@@ -299,15 +299,23 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 			{
 				if (UTGameState->GetNetMode() != NM_Standalone)
 				{
-					const AUTGameMode* DefaultGame = UTGameState->GameModeClass ? Cast<AUTGameMode>(UTGameState->GetDefaultGameMode()) : nullptr;
+					const AUTGameMode* DefaultGame = Cast<AUTGameMode>(UTGameState->GetDefaultGameMode());
 					if (DefaultGame && (DefaultGame->MatchSummaryTime - (GetWorld()->GetTimeSeconds() - UTHUDOwner->MatchSummaryTime) < 10))
 					{
-						FFormatNamedArguments Args;
-						static const FNumberFormattingOptions RespawnTimeFormat = FNumberFormattingOptions()
-							.SetMinimumFractionalDigits(0)
-							.SetMaximumFractionalDigits(0);
-						Args.Add("TimeToMapVote", FText::AsNumber(DefaultGame->MatchSummaryTime - (GetWorld()->GetTimeSeconds() - UTHUDOwner->MatchSummaryTime), &RespawnTimeFormat));
-						SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "MapVoteWaitMessage", "Map Vote in {TimeToMapVote}..."), Args);
+						int32 RemainingDelay = DefaultGame->MatchSummaryTime - (GetWorld()->GetTimeSeconds() - UTHUDOwner->MatchSummaryTime);
+						if (RemainingDelay <= 0)
+						{
+							SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "MapVoteInitMessage", "Initializing Map Vote");
+						}
+						else
+						{
+							FFormatNamedArguments Args;
+							static const FNumberFormattingOptions RespawnTimeFormat = FNumberFormattingOptions()
+								.SetMinimumFractionalDigits(0)
+								.SetMaximumFractionalDigits(0);
+							Args.Add("TimeToMapVote", FText::AsNumber(RemainingDelay, &RespawnTimeFormat));
+							SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "MapVoteWaitMessage", "Map Vote in {TimeToMapVote}..."), Args);
+						}
 					}
 				}
 			}
