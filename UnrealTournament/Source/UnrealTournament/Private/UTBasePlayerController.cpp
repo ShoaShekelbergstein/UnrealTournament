@@ -1576,7 +1576,6 @@ void AUTBasePlayerController::ExportGameRulesets(FString Filename)
 			case 7 : Tag = EEpicDefaultRuleTags::COMPCTF; break;
 			case 8 : Tag = EEpicDefaultRuleTags::SHOWDOWN; break;
 			case 9 : Tag = EEpicDefaultRuleTags::TEAMSHOWDOWN; break;
-			case 10: Tag = EEpicDefaultRuleTags::BigDM; break;
 			case 11: Tag = EEpicDefaultRuleTags::DUEL; break;
 			case 12: Tag = EEpicDefaultRuleTags::iDM; break;
 			case 13: Tag = EEpicDefaultRuleTags::iTDM; break;

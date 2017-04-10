@@ -22,7 +22,7 @@ AUTDroppedPickup::AUTDroppedPickup(const FObjectInitializer& ObjectInitializer)
 	Movement->OnProjectileStop.AddDynamic(this, &AUTDroppedPickup::PhysicsStopped);
 
 	//bCollideWhenPlacing = true; // causes too many false positives at the moment, re-evaluate later
-	InitialLifeSpan = 15.0f;
+	InitialLifeSpan = 20.0f;
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 

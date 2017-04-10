@@ -42,6 +42,7 @@ void AUTDuelGame::InitGameState()
 	{
 		UTGameState->bWeaponStay = false;
 		UTGameState->bAllowTeamSwitches = false;
+		UTGameState->SpawnProtectionTime = 0.f;
 	}
 }
 
@@ -65,18 +66,29 @@ bool AUTDuelGame::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroadcast
 
 bool AUTDuelGame::CheckRelevance_Implementation(AActor* Other)
 {
+	AUTPickupInventory* PickupInventory = Cast<AUTPickupInventory>(Other);
+	if (PickupInventory)
+	{
+		if (Cast<AUTTimedPowerup>(PickupInventory->GetInventoryType()))
+		{
+			PickupInventory->SetInventoryType(nullptr);
+		}
+		else
+		{
+			AUTPickupWeapon* PickupWeapon = Cast<AUTPickupWeapon>(Other);
+			if (PickupWeapon != NULL && PickupWeapon->WeaponType != NULL && !PickupWeapon->WeaponType.GetDefaultObject()->bMustBeHolstered)
+			{
+				PickupWeapon->SetInventoryType(nullptr);
+			}
+		}
+	}
+
 	AUTTimedPowerup* Powerup = Cast<AUTTimedPowerup>(Other);
 	if (Powerup)
 	{
 		Powerup->TimeRemaining = PowerupDuration;
 	}
 	
-	// @TODO FIXMESTEVE - don't check for weapon stay - once have deployable base class, remove all deployables from duel
-	AUTPickupWeapon* PickupWeapon = Cast<AUTPickupWeapon>(Other);
-	if (PickupWeapon != NULL && PickupWeapon->WeaponType != NULL && !PickupWeapon->WeaponType.GetDefaultObject()->bWeaponStay)
-	{
-		PickupWeapon->SetInventoryType(nullptr);
-	}
 
 	return Super::CheckRelevance_Implementation(Other);
 }

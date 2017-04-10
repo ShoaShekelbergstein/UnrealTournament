@@ -3703,7 +3703,7 @@ void AUTGameMode::CheckGameTime()
 			}
 			else if (bTeamGame)
 			{
-				UTGameState->SetRemainingTime(60);
+				UTGameState->SetRemainingTime(120);
 			}
 		}
 	}

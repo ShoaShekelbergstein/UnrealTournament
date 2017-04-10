@@ -35,6 +35,7 @@ class UNREALTOURNAMENT_API AUTPickupWeapon : public AUTPickupInventory
 	: Super(ObjectInitializer)
 	{
 		Collision->InitCapsuleSize(78.0f, 80.0f);
+		RespawnTime = 20.0f;
 	}
 
 protected:

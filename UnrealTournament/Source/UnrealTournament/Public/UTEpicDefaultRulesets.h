@@ -24,7 +24,6 @@ public:
 		Rules.Add(EEpicDefaultRuleTags::COMPCTF);
 		Rules.Add(EEpicDefaultRuleTags::SHOWDOWN);
 		Rules.Add(EEpicDefaultRuleTags::TEAMSHOWDOWN);
-		Rules.Add(EEpicDefaultRuleTags::BigDM);
 		Rules.Add(EEpicDefaultRuleTags::DUEL);
 		Rules.Add(EEpicDefaultRuleTags::iDM);
 		Rules.Add(EEpicDefaultRuleTags::iTDM);
@@ -77,37 +76,6 @@ public:
 			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/DM-Chill"));
 			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/DM-Outpost23"));
 			NewRuleset->QuickPlayMaps.Add(TEXT("/Game/RestrictedAssets/Maps/DM-Underland"));
-		}
-		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::BigDM, ESearchCase::IgnoreCase))
-		{
-			NewRuleset->Categories.Empty(); 
-			NewRuleset->Categories.Add(TEXT("Classic"));
-
-			NewRuleset->Title = TEXT("Big Deathmatch");
-			NewRuleset->Tooltip = TEXT("Deathmatch with large player counts on big maps.");
-			NewRuleset->Description = TEXT("Deathmatch with large player counts on big maps.\n\n<UT.Hub.RulesText_Small>TimeLimit : %timelimit% minutes</>\n<UT.Hub.RulesText_Small>Maximum players: %maxplayers%</>");
-			NewRuleset->MaxPlayers = 12;
-			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_LargeDM.GB_LargeDM'");
-			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTDMGameMode");
-			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=10?GoalScore=0"));
-			NewRuleset->bTeamGame = false;
-
-			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
-
-			NewRuleset->MaxMapsInList=16;
-
-			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/DM-Outpost23";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/DM-Chill";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Batrankus/DM-Batrankus";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Sand";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Spacer";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Cannon";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Deadfall";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Temple";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Focus";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Decktest";
-
-			NewRuleset->DefaultMap = "/Game/RestrictedAssets/Maps/DM-Chill";
 		}
 		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::TDM, ESearchCase::IgnoreCase))
 		{

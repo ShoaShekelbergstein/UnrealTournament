@@ -1228,7 +1228,6 @@ namespace EQuickMatchResults
 namespace EEpicDefaultRuleTags
 {
 	const FString Deathmatch = TEXT("DEATHMATCH");
-	const FString BigDM = TEXT("BIGDM");
 	const FString TDM = TEXT("TDM");
 	const FString DUEL = TEXT("DUEL");
 	const FString SHOWDOWN = TEXT("SHOWDOWN");
