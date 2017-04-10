@@ -404,4 +404,10 @@ private:
 
 	UPROPERTY()
 	int32 EstimatedWaitTime;
+
+	FMatchmakingParams PendingParams;
+	FDelegateHandle CancelFindHandle;
+
+	void OnCancelFind(bool bSuccessful);
+
 };

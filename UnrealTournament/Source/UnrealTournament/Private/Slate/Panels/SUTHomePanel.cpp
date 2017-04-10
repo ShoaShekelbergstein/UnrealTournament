@@ -93,7 +93,8 @@ void SUTHomePanel::CheckForLanServers()
 		return;
 	}
 
-	if (!PlayerOwner->LastRankedMatchSessionId.IsEmpty())
+	// Don't do the lan search if we are in a party and we are not the party leader
+	if (!PlayerOwner->LastRankedMatchSessionId.IsEmpty() || (PlayerOwner->IsInAnActiveParty() && !PlayerOwner->IsPartyLeader()) )
 	{
 		return;
 	}
