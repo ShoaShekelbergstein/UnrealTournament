@@ -1070,6 +1070,93 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Mesh)
 	TArray<UMeshComponent*> Get1PMeshes() const;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* idle;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* idle_pose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* idleOffset_pose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* idleEmpty_pose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* idleAlt_offset_pose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* idle_pose_zero;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* secondary_idle;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* secondary_idle_into;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* secondary_idle_out;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* secondary_idle_pose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* secondary_idleOffset_pose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* secondary_idleAlt_offset_pose;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* runForward;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* runForward_L;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* runForward_R;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* jump;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* fall;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* fall_long;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* land;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* land_soft;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* land_medium;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* land_heavy;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* slide;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* dodgeForward;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* dodgeBack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* dodgeLeft;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* dodgeRight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_L_into;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_L;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_L_out;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_R_into;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_R;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_R_out;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	float lagAO;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	class UBlendSpace* leanBS;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* inspect;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* accent_A;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* accent_B;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* fidget_A;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* fidget_B;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* fidget_C;
+
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
 	UUTWeaponState* CurrentState;
