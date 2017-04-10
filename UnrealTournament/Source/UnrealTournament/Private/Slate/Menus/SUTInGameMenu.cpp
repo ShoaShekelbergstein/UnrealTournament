@@ -39,148 +39,6 @@ void SUTInGameMenu::BuildLeftMenuBar()
 {
 	if (LeftMenuBar.IsValid())
 	{
-		AUTGameMode* Game = PlayerOwner->GetWorld()->GetAuthGameMode<AUTGameMode>();
-		AUTGameState* GS = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
-		AUTPlayerState* PS = PlayerOwner->PlayerController ? Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState) : NULL;
-		bool bIsSpectator = PS && PS->bOnlySpectator;
-
-		TSharedPtr<SVerticalBox> ChangeTeamBox;
-
-		TSharedPtr<SVerticalBox> MatchBox;
-		TSharedPtr<SHorizontalBox> MatchButtonBox;
-
-		SAssignNew(MatchBox, SVerticalBox)
-		+SVerticalBox::Slot().AutoHeight()
-		[
-			SNew(SBox).HeightOverride(52.0f)
-			[
-				SAssignNew(MatchButtonBox, SHorizontalBox)
-			]
-		];
-
-
-		if (GS && GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches)
-		{
-			MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
-			[
-				SAssignNew(ChangeTeamButton, SUTButton)
-				.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft")
-				.OnClicked(this, &SUTInGameMenu::OnTeamChangeClick)
-				.Visibility(this, &SUTInGameMenu::GetChangeTeamVisibility)
-				.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
-				[
-					SNew(SHorizontalBox)
-					+SHorizontalBox::Slot().AutoWidth()
-					.VAlign(VAlign_Center)
-					[
-						SNew(STextBlock)
-						.Text(NSLOCTEXT("SUTMenuBase","MenuBar_ChangeTeam","CHANGE TEAM"))
-						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-						.ColorAndOpacity(this, &SUTInGameMenu::GetChangeTeamLabelColor)
-					]
-				]
-			];
-		}			
-
-		if (GS && (GS->GetMatchState() == MatchState::WaitingToStart))
-		{
-			if (GS->GetNetMode() == NM_Standalone)
-			{
-				MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
-				[
-					SAssignNew(MatchButton, SUTButton)
-					.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
-					.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
-					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
-					[
-						SNew(SHorizontalBox)
-						+ SHorizontalBox::Slot().AutoWidth()
-						.VAlign(VAlign_Center)
-						[
-							SNew(STextBlock)
-							.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_StartMatch", "START MATCH"))
-							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-							.ColorAndOpacity(this, &SUTInGameMenu::GetMatchLabelColor)
-						]
-					]
-				];
-			}
-			else if (PS && PS->bIsWarmingUp)
-			{
-				MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
-				[
-					SAssignNew(MatchButton, SUTButton)
-					.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
-					.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
-					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
-					[
-						SNew(SHorizontalBox)
-						+ SHorizontalBox::Slot().AutoWidth()
-						.VAlign(VAlign_Center)
-						[
-							SNew(STextBlock)
-							.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_LeaveWarmup", "LEAVE WARM UP"))
-							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-							.ColorAndOpacity(this, &SUTInGameMenu::GetMatchLabelColor)
-						]
-					]
-				];
-			}
-			else if (!bIsSpectator)
-			{
-				MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
-				[
-					SAssignNew(MatchButton, SUTButton)
-					.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
-					.OnClicked(this, &SUTInGameMenu::OnReadyChangeClick)
-					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
-					[
-						SNew(SHorizontalBox)
-						+ SHorizontalBox::Slot().AutoWidth()
-						.VAlign(VAlign_Center)
-						[
-							SNew(STextBlock)
-							.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "JOIN WARM UP"))
-							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-							.ColorAndOpacity(this, &SUTInGameMenu::GetMatchLabelColor)
-						]
-					]
-				];
-			}
-		}
-
-
-		TSharedPtr<SHorizontalBox> FinalBox;
-
-		// Add some buttons over the main screen
-		if (DesktopOverlay.IsValid())
-		{
-			DesktopOverlay->AddSlot(255)
-			[
-				SNew(SVerticalBox)
-				+SVerticalBox::Slot().FillHeight(1.0f).VAlign(VAlign_Bottom).HAlign(HAlign_Center)
-				[
-					SAssignNew(FinalBox,SHorizontalBox)
-				]
-			];
-		}
-
-		if (FinalBox.IsValid() && ChangeTeamBox.IsValid())
-		{
-			FinalBox->AddSlot().Padding(10.0f,0.0f,10.0f,20.0f)
-			[
-				ChangeTeamBox.ToSharedRef()
-			];
-		}
-
-		if (FinalBox.IsValid() && MatchBox.IsValid())
-		{
-			FinalBox->AddSlot().Padding(10.0f,0.0f,10.0f,20.0f)
-			[
-				MatchBox.ToSharedRef()
-			];
-		}
-
 		LeftMenuBar->AddSlot()
 		.Padding(5.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
@@ -353,33 +211,6 @@ FReply SUTInGameMenu::OnReturnToMainMenu()
 	return FReply::Handled();
 }
 
-FReply SUTInGameMenu::OnTeamChangeClick()
-{
-	AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
-	if (PC)
-	{
-		PC->ServerSwitchTeam();
-	}
-	return FReply::Handled();
-}
-
-FReply SUTInGameMenu::OnReadyChangeClick()
-{
-	AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
-	if (PC)
-	{
-//		PC->PlayMenuSelectSound();
-		PC->ServerToggleWarmup();
-		PlayerOwner->HideMenu();
-	}
-	return FReply::Handled();
-}
-
-FReply SUTInGameMenu::OnSpectateClick()
-{
-	ConsoleCommand(TEXT("ChangeTeam 255"));
-	return FReply::Handled();
-}
 
 void SUTInGameMenu::SetInitialPanel()
 {
@@ -584,19 +415,6 @@ void SUTInGameMenu::BackResult(TSharedPtr<SCompoundWidget> Dialog, uint16 Button
 	}
 }
 
-EVisibility SUTInGameMenu::GetChangeTeamVisibility() const
-{
-	AUTGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
-	if (GameState && GameState->GetMatchState() != MatchState::WaitingPostMatch && GameState->GetMatchState() != MatchState::PlayerIntro && GameState->GetMatchState() != MatchState::MapVoteHappening)
-	{
-		return EVisibility::Visible;
-	}
-	else
-	{
-		return EVisibility::Collapsed;
-	}
-}
-
 EVisibility SUTInGameMenu::GetMapVoteVisibility() const
 {
 	AUTGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
@@ -642,16 +460,6 @@ void SUTInGameMenu::OnMenuClosed()
 	}
 
 	SUTMenuBase::OnMenuClosed();
-}
-
-FSlateColor SUTInGameMenu::GetChangeTeamLabelColor() const
-{
-	return FSlateColor(FLinearColor::White);
-}
-
-FSlateColor SUTInGameMenu::GetMatchLabelColor() const
-{
-	return FSlateColor(FLinearColor::Yellow);
 }
 
 #endif

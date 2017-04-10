@@ -57,6 +57,20 @@ protected:
 
 	FText GetMuteLabelText() const;
 
+	EVisibility GetChangeTeamVisibility() const;
+
+	TSharedPtr<SUTButton> ChangeTeamButton;
+	TSharedPtr<SUTButton> MatchButton;
+
+
+	FSlateColor GetChangeTeamLabelColor() const;
+	FSlateColor GetMatchLabelColor() const;
+
+	virtual FReply OnTeamChangeClick();
+	virtual FReply OnReadyChangeClick();
+	virtual FReply OnSpectateClick();
+
+
 };
 
 #endif

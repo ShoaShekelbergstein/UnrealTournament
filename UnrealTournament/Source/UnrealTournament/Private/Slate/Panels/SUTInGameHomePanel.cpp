@@ -29,6 +29,15 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 	Tag = FName(TEXT("InGameHomePanel"));
 	bCloseOnSubmit = false;
 
+
+	AUTGameMode* Game = PlayerOwner->GetWorld()->GetAuthGameMode<AUTGameMode>();
+	AUTGameState* GS = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
+	AUTPlayerState* PS = PlayerOwner->PlayerController ? Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState) : NULL;
+	bool bIsSpectator = PS && PS->bOnlySpectator;
+
+	TSharedPtr<SVerticalBox> MatchBox;
+	TSharedPtr<SHorizontalBox> MatchButtonBox;
+
 	bShowingContextMenu = false;
 	this->ChildSlot
 	.VAlign(VAlign_Fill)
@@ -60,6 +69,20 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 				] 
 			]
 		]
+		+SOverlay::Slot()
+		.VAlign(VAlign_Bottom)
+		.HAlign(HAlign_Center)
+		[
+			SAssignNew(MatchBox, SVerticalBox)
+			+SVerticalBox::Slot().AutoHeight().Padding(0.0f,0.0f,0.0f,16.0f)
+
+			[
+				SNew(SBox).HeightOverride(52.0f)
+				[
+					SAssignNew(MatchButtonBox, SHorizontalBox)
+				]
+			]
+		]
 	];
 
 	if (SubMenuOverlay.IsValid())
@@ -69,6 +92,96 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 			// Allow children to place things over chat....
 			SAssignNew(ChatArea,SVerticalBox)
 		];
+	}
+
+	if (GS && GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches)
+	{
+		MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
+		[
+			SAssignNew(ChangeTeamButton, SUTButton)
+			.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft")
+			.OnClicked(this, &SUTInGameHomePanel::OnTeamChangeClick)
+			.Visibility(this, &SUTInGameHomePanel::GetChangeTeamVisibility)
+			.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
+			[
+				SNew(SHorizontalBox)
+				+SHorizontalBox::Slot().AutoWidth()
+				.VAlign(VAlign_Center)
+				[
+					SNew(STextBlock)
+					.Text(NSLOCTEXT("SUTMenuBase","MenuBar_ChangeTeam","CHANGE TEAM"))
+					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+					.ColorAndOpacity(this, &SUTInGameHomePanel::GetChangeTeamLabelColor)
+				]
+			]
+		];
+	}			
+
+	if (GS && (GS->GetMatchState() == MatchState::WaitingToStart))
+	{
+		if (GS->GetNetMode() == NM_Standalone)
+		{
+			MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
+			[
+				SAssignNew(MatchButton, SUTButton)
+				.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
+				.OnClicked(this, &SUTInGameHomePanel::OnReadyChangeClick)
+				.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
+				[
+					SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot().AutoWidth()
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_StartMatch", "START MATCH"))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+						.ColorAndOpacity(this, &SUTInGameHomePanel::GetMatchLabelColor)
+					]
+				]
+			];
+		}
+		else if (PS && PS->bIsWarmingUp)
+		{
+			MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
+			[
+				SAssignNew(MatchButton, SUTButton)
+				.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
+				.OnClicked(this, &SUTInGameHomePanel::OnReadyChangeClick)
+				.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
+				[
+					SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot().AutoWidth()
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_LeaveWarmup", "LEAVE WARM UP"))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+						.ColorAndOpacity(this, &SUTInGameHomePanel::GetMatchLabelColor)
+					]
+				]
+			];
+		}
+		else if (!bIsSpectator)
+		{
+			MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
+			[
+				SAssignNew(MatchButton, SUTButton)
+				.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
+				.OnClicked(this, &SUTInGameHomePanel::OnReadyChangeClick)
+				.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
+				[
+					SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot().AutoWidth()
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "JOIN WARM UP"))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+						.ColorAndOpacity(this, &SUTInGameHomePanel::GetMatchLabelColor)
+					]
+				]
+			];
+		}
 	}
 }
 
@@ -551,5 +664,59 @@ FText SUTInGameHomePanel::GetMuteLabelText() const
 	bool bIsMuted = Id.IsValid() && PlayerOwner->PlayerController->IsPlayerMuted(Id.ToSharedRef().Get());
 	return bIsMuted ? NSLOCTEXT("SUTInGameHomePanel","Unmute","Unmute Player") : NSLOCTEXT("SUTInGameHomePanel","Mute","Mute Player");
 }
+
+
+FReply SUTInGameHomePanel::OnTeamChangeClick()
+{
+	AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+	if (PC)
+	{
+		PC->ServerSwitchTeam();
+	}
+	return FReply::Handled();
+}
+
+FReply SUTInGameHomePanel::OnReadyChangeClick()
+{
+	AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+	if (PC)
+	{
+//		PC->PlayMenuSelectSound();
+		PC->ServerToggleWarmup();
+		PlayerOwner->HideMenu();
+	}
+	return FReply::Handled();
+}
+
+FReply SUTInGameHomePanel::OnSpectateClick()
+{
+	ConsoleCommand(TEXT("ChangeTeam 255"));
+	return FReply::Handled();
+}
+		
+		
+EVisibility SUTInGameHomePanel::GetChangeTeamVisibility() const
+{
+	AUTGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
+	if (GameState && GameState->GetMatchState() != MatchState::WaitingPostMatch && GameState->GetMatchState() != MatchState::PlayerIntro && GameState->GetMatchState() != MatchState::MapVoteHappening)
+	{
+		return EVisibility::Visible;
+	}
+	else
+	{
+		return EVisibility::Collapsed;
+	}
+}
+		
+FSlateColor SUTInGameHomePanel::GetChangeTeamLabelColor() const
+{
+	return FSlateColor(FLinearColor::White);
+}
+
+FSlateColor SUTInGameHomePanel::GetMatchLabelColor() const
+{
+	return FSlateColor(FLinearColor::Yellow);
+}
+		
 
 #endif
