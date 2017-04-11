@@ -76,7 +76,7 @@ bool AUTDuelGame::CheckRelevance_Implementation(AActor* Other)
 		else
 		{
 			AUTPickupWeapon* PickupWeapon = Cast<AUTPickupWeapon>(Other);
-			if (PickupWeapon != NULL && PickupWeapon->WeaponType != NULL && !PickupWeapon->WeaponType.GetDefaultObject()->bMustBeHolstered)
+			if (PickupWeapon != NULL && PickupWeapon->WeaponType != NULL && PickupWeapon->WeaponType.GetDefaultObject()->bMustBeHolstered)
 			{
 				PickupWeapon->SetInventoryType(nullptr);
 			}
@@ -88,8 +88,6 @@ bool AUTDuelGame::CheckRelevance_Implementation(AActor* Other)
 	{
 		Powerup->TimeRemaining = PowerupDuration;
 	}
-	
-
 	return Super::CheckRelevance_Implementation(Other);
 }
 

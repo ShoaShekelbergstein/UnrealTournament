@@ -170,7 +170,7 @@ float AUTGameMode::OverrideRespawnTime(AUTPickupInventory* Pickup, TSubclassOf<A
 	{
 		return 2.f;
 	}
-	return Pickup && InventoryType ? InventoryType.GetDefaultObject()->RespawnTime : 0.f;
+	return (Pickup && InventoryType) ? InventoryType.GetDefaultObject()->RespawnTime : 0.f;
 }
 
 void AUTGameMode::NotifySpeedHack(ACharacter* Character)
