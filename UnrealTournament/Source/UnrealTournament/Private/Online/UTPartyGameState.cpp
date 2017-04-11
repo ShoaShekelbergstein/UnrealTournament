@@ -97,6 +97,10 @@ void UUTPartyGameState::OnPartyMatchmakingStarted(bool bRanked)
 
 void UUTPartyGameState::OnPartyMatchmakingComplete(EMatchmakingCompleteResult Result)
 {
+
+	UE_LOG(LogParty, Verbose, TEXT("OnPartyMatchmakingComplete: Result = %i, IsLocalPartyLeader = %i"), int32(Result), IsLocalPartyLeader());
+
+
 	if (IsLocalPartyLeader())
 	{
 		PartyState.MatchmakingResult = Result;
