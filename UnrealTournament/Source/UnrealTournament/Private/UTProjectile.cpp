@@ -338,10 +338,12 @@ void AUTProjectile::BeginPlay()
 				}
 			}
 		}
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 		else
 		{
 			UE_LOG(UT, Warning, TEXT("%s spawned with no local player found!"), *GetName());
 		}
+#endif
 	}
 }
 
