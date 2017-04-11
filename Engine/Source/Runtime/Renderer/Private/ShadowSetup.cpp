@@ -2991,7 +2991,19 @@ void FSceneRenderer::AllocatePerObjectShadowDepthTargets(FRHICommandListImmediat
 					}
 				}
 
-				check(ProjectedShadowInfo->bAllocated);
+				checkf(ProjectedShadowInfo->bAllocated, TEXT("CacheMode: %i, HasSubjectPrims: %i, ShadowDims: %i, %i, %i, %i, %i, ShadowBufferRes: %i, %i, bPreShadow: %i, bPerObjectShadow: %i, bWholeSceneShadow: %i"), 
+					ProjectedShadowInfo->CacheMode, 
+					ProjectedShadowInfo->HasSubjectPrims() ? 1 : 0,
+					ProjectedShadowInfo->X,
+					ProjectedShadowInfo->Y,
+					ProjectedShadowInfo->ResolutionX,
+					ProjectedShadowInfo->ResolutionY,
+					ProjectedShadowInfo->BorderSize,
+					ShadowBufferResolution.X,
+					ShadowBufferResolution.Y,
+					ProjectedShadowInfo->bPreShadow ? 1 : 0,
+					ProjectedShadowInfo->bPerObjectOpaqueShadow ? 1 : 0,
+					ProjectedShadowInfo->bWholeSceneShadow ? 1 : 0);
 
 				FSortedShadowMapAtlas& ShadowMapAtlas = SortedShadowsForShadowDepthPass.ShadowMapAtlases.Last();
 
