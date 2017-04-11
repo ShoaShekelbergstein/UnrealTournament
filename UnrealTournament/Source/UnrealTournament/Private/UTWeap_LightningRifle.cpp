@@ -93,7 +93,6 @@ float AUTWeap_LightningRifle::GetRefireTime(uint8 FireModeNum)
 		{
 			Result /= UTOwner->GetFireRateMultiplier();
 		}
-		bIsFullyPowered = false;
 		return FMath::Max<float>(0.01f, Result);
 	}
 	else
@@ -332,6 +331,7 @@ void AUTWeap_LightningRifle::FireShot()
 	{
 		GetUTOwner()->InventoryEvent(InventoryEventName::FiredWeapon);
 	}
+	bIsFullyPowered = false;
 	ChargePct = 0.f;
 	FireZOffsetTime = 0.f;
 }
