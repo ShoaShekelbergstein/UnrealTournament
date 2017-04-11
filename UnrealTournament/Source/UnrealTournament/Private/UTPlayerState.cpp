@@ -826,10 +826,10 @@ void AUTPlayerState::Tick(float DeltaTime)
 						}
 						if (GS && GS->CurrentRallyPoint && (GS->CurrentRallyPoint->LastRallyHot - GetWorld()->GetTimeSeconds() < 2.f))
 						{
-							int32 Switch = Speaker->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyHot);
-							if (Switch >= 0)
+							int32 RallyHotSwitch = Speaker->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyHot);
+							if (RallyHotSwitch >= 0)
 							{
-								MyPC->ClientReceiveLocalizedMessage(Speaker->CharacterVoice, Switch, Speaker, this, NULL);
+								MyPC->ClientReceiveLocalizedMessage(Speaker->CharacterVoice, RallyHotSwitch, Speaker, this, NULL);
 							}
 						}
 					}
