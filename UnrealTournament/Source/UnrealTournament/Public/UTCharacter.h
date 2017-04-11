@@ -1350,6 +1350,9 @@ public:
 	UPROPERTY(ReplicatedUsing=OnTriggerRallyEffect, BlueprintReadWrite)
 		bool bTriggerRallyEffect;
 
+	UPROPERTY()
+		float RallyCompleteTime;
+
 	UFUNCTION()
 	virtual void OnTriggerRallyEffect();
 

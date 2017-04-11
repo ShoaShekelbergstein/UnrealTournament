@@ -817,24 +817,20 @@ void AUTPlayerState::Tick(float DeltaTime)
 					if (MyPC != nullptr)
 					{
 						AUTPlayerState* FC = GS->GetFlagHolder(Team->TeamIndex);
-						if (FC)
+						AUTPlayerState* Speaker = FC ? FC : this;
+						Speaker->GetCharacterVoiceClass();
+						int32 Switch = Speaker->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyNow);
+						if (Switch >= 0)
 						{
-							FC->GetCharacterVoiceClass();
-							int32 Switch = FC->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyNow);
-							if (Switch >= 0)
-							{
-								MyPC->ClientReceiveLocalizedMessage(FC->CharacterVoice, Switch, FC, this, NULL);
-							}
+							MyPC->ClientReceiveLocalizedMessage(Speaker->CharacterVoice, Switch, Speaker, this, NULL);
 						}
-						else
+						if (GS && GS->CurrentRallyPoint && (GS->CurrentRallyPoint->LastRallyHot - GetWorld()->GetTimeSeconds() < 2.f))
 						{
-							GetCharacterVoiceClass();
-							int32 Switch = CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyNow);
+							int32 Switch = Speaker->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyHot);
 							if (Switch >= 0)
 							{
-								MyPC->ClientReceiveLocalizedMessage(CharacterVoice, Switch, this, this, NULL);
+								MyPC->ClientReceiveLocalizedMessage(Speaker->CharacterVoice, Switch, Speaker, this, NULL);
 							}
-
 						}
 					}
 				}

@@ -853,6 +853,7 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 			{
 				RequestingPC->UTClientSetRotation(WarpRotation);
 			}
+			UTCharacter->RallyCompleteTime = GetWorld()->GetTimeSeconds();
 			UTPlayerState->bRallyActivated = false;
 			UTPlayerState->ForceNetUpdate();
 			if (TranslocatorClass)

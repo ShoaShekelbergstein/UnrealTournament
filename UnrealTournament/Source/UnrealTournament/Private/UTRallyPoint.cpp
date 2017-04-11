@@ -595,6 +595,7 @@ void AUTRallyPoint::Tick(float DeltaTime)
 				}
 				else
 				{
+					LastRallyHot = FMath::Max(LastRallyHot, NearbyFC->LastTargetedTime);
 					UpdateRallyReadyCountdown(RallyReadyCountdown - DeltaTime);
 					if (RallyReadyCountdown <= 0.f)
 					{
@@ -668,6 +669,15 @@ void AUTRallyPoint::Tick(float DeltaTime)
 			}
 			else if (RallyPointState == RallyPointStates::Powered)
 			{
+				if (GetWorld()->GetTimeSeconds() - RallyStartTime < 0.7f)
+				{
+					AUTFlagRunGame* FlagRunGame = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
+					AUTCharacter* NearbyFC = FlagRunGame && FlagRunGame->ActiveFlag ? FlagRunGame->ActiveFlag->HoldingPawn : nullptr;
+					if (NearbyFC && (NearbyFC->LastTargetedTime > LastRallyHot))
+					{
+						LastRallyHot = NearbyFC->LastTargetedTime;
+					}
+				}
 				RallyTimeRemaining = MinimumRallyTime - (GetWorld()->GetTimeSeconds() - RallyStartTime);
 				if (int32(RallyTimeRemaining) != int32(RallyTimeRemaining + DeltaTime))
 				{

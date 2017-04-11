@@ -1445,6 +1445,10 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 	}
 
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+	if ((GetWorld()->GetTimeSeconds() - RallyCompleteTime < 1.f) && GS && GS->CurrentRallyPoint)
+	{
+		GS->CurrentRallyPoint->LastRallyHot = GetWorld()->GetTimeSeconds();
+	}
 	if (TargeterChar && GS && GS->bPlayStatusAnnouncements)
 	{
 		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(PlayerState);
