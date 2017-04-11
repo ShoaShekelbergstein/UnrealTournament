@@ -3379,6 +3379,25 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 			}
 		}
 
+		bool bHaveHost = false;
+		bool bHostIsReady = false;
+		if (!HostIdString.IsEmpty())
+		{
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				if (PS != NULL && !PS->bIsInactive && HostIdString.Equals(PS->UniqueId.ToString(), ESearchCase::IgnoreCase))
+				{
+					bHaveHost = true;
+					bHostIsReady = bCasterReady;
+					PS->bIsMatchHost = true;
+				}
+				else if (PS)
+				{
+					PS->bIsMatchHost = false;
+				}
+			}
+		}
 		StartPlayTime = (NumPlayers > 0) ? FMath::Min(StartPlayTime, GetWorld()->GetTimeSeconds()) : 10000000.f;
 		float ElapsedWaitTime = FMath::Max(0.f, GetWorld()->GetTimeSeconds() - StartPlayTime);
 
@@ -3389,10 +3408,14 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 			int32 MinPlayersToStart = 1;
 			UTGameState->PlayersNeeded = FMath::Max(0, MinPlayersToStart - NumPlayers);
 		}
-		if (((GetNetMode() == NM_Standalone) || bDevServer || (UTGameState->PlayersNeeded == 0)) && (NumPlayers + NumSpectators > 0))
+		if (((GetNetMode() == NM_Standalone) || bDevServer || bHostIsReady || (UTGameState->PlayersNeeded == 0)) && (NumPlayers + NumSpectators > 0))
 		{
 			bool bReadyFulfilled = true;
-			if (bRequireReady || (GetNetMode() == NM_Standalone) || bDevServer)
+			if (bHaveHost)
+			{
+				bReadyFulfilled = bHostIsReady;
+			}
+			else if (bRequireReady || (GetNetMode() == NM_Standalone) || bDevServer)
 			{
 				// Count how many ready players we have
 				int32 WarmupCount = 0;
@@ -3414,7 +3437,7 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 			float RemainingStartDelay = StartDelay;
 			if (bReadyFulfilled)
 			{
-				RemainingStartDelay -= (GetWorld()->GetTimeSeconds() - LastMatchNotReady);
+				RemainingStartDelay = bHaveHost ? 0 : StartDelay - (GetWorld()->GetTimeSeconds() - LastMatchNotReady);
 				if (GetNetMode() == NM_Standalone)
 				{
 					RemainingStartDelay = 0.f;

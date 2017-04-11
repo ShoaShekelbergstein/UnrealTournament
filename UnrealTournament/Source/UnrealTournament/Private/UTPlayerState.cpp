@@ -58,6 +58,7 @@ AUTPlayerState::AUTPlayerState(const class FObjectInitializer& ObjectInitializer
 	bIsWarmingUp = false;
 	bPendingTeamSwitch = false;
 	bCaster = false;
+	bIsMatchHost = false;
 	LastKillTime = 0.0f;
 	Kills = 0;
 	KillAssists = 0;
@@ -179,6 +180,7 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME(AUTPlayerState, SpectatingID);
 	DOREPLIFETIME(AUTPlayerState, SpectatingIDTeam);
 	DOREPLIFETIME(AUTPlayerState, bCaster);
+	DOREPLIFETIME(AUTPlayerState, bIsMatchHost);
 	DOREPLIFETIME_CONDITION(AUTPlayerState, bIsDemoRecording, COND_InitialOnly);
 	DOREPLIFETIME(AUTPlayerState, MatchHighlights);
 	DOREPLIFETIME(AUTPlayerState, MatchHighlightData);

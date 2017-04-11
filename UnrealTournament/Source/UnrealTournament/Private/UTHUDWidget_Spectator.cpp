@@ -181,6 +181,11 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 						? NSLOCTEXT("UUTHUDWidget_Spectator", "ClickLeave", "Click on LEAVE WARM UP to leave")
 						: NSLOCTEXT("UUTHUDWidget_Spectator", "PressEnter", "Press [ENTER] to leave");
 					SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "Warmup", "Warm Up");
+					if (UTHUDOwner->UTPlayerOwner->UTPlayerState->bIsMatchHost)
+					{ 
+						ShortMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "PressEnter", "Host, Press [ENTER] to");
+						SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "StartMatch", "START MATCH");
+					}
 				}
 			}
 			else if (UTPS && UTPS->bCaster)
@@ -188,6 +193,10 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 				SpectatorMessage = (UTGameState->AreAllPlayersReady())
 					? NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForCaster", "All players are ready. Press [Enter] to start match.")
 					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForReady", "Waiting for players to warm up.");
+			}
+			else if (UTPS && UTPS->bIsMatchHost)
+			{
+				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForHost", "Host, Press [ENTER] to start match.");
 			}
 			else if (UTPS && UTPS->bOnlySpectator)
 			{
@@ -199,7 +208,7 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 					? NSLOCTEXT("UUTHUDWidget_Spectator", "StartMatchFromMenu", "Click on START MATCH to begin.")
 					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayersMenu", "Click on JOIN WARM UP to join warm up.");
 			}
-			else
+			else if (UTHUDOwner->GetNetMode() == NM_Standalone)
 			{
 				SpectatorMessage = (UTHUDOwner->GetNetMode() == NM_Standalone)
 					? NSLOCTEXT("UUTHUDWidget_Spectator", "StartMatchFromFire", "Press [FIRE] to begin.")

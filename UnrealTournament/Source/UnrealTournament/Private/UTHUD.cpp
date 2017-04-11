@@ -123,6 +123,7 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 	CachedProfileSettings = nullptr;
 	BuildText = NSLOCTEXT("UTHUD", "info", "PRE-ALPHA Build 0.1.10");
 	WarmupText = NSLOCTEXT("UTHUD", "warmup", "You are in WARM UP");
+	MatchHostText = NSLOCTEXT("UTHUD", "warmup", "You are in WARM UP.  Press [ENTER] to start match.");
 	bShowVoiceDebug = false;
 	bDrawDamageNumbers = true;
 
@@ -960,7 +961,7 @@ void AUTHUD::DrawHUD()
 				float XL, YL;
 				Canvas->DrawColor = FColor(255, 255, 255, 255);
 				Canvas->TextSize(LargeFont, WarmupText.ToString(), XL, YL, 1.f, 1.f);
-				Canvas->DrawText(LargeFont, WarmupText, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
+				Canvas->DrawText(LargeFont, ViewedPS->bIsMatchHost ? MatchHostText : WarmupText, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
 			}
 		}
 		CachedProfileSettings = nullptr;

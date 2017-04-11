@@ -167,6 +167,10 @@ public:
 	UPROPERTY(replicated)
 	uint32 bCaster : 1;
 
+	/** True if is match host (controls match starting). */
+	UPROPERTY(replicated)
+		uint32 bIsMatchHost : 1;
+
 	/** Whether this player has a pending switch team request (waiting for swap partner) */
 	UPROPERTY(BlueprintReadWrite, replicated, Category = PlayerState)
 	uint32 bPendingTeamSwitch : 1;
