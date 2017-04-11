@@ -1091,7 +1091,7 @@ TSharedRef<class SWidget> SUTGameSetupDialog::BuildCustomButtonBar()
 		.VAlign(VAlign_Center)
 		[
 			SAssignNew(cbHostControl, SCheckBox)
-			.IsChecked(ECheckBoxState::Unchecked)
+			.IsChecked(ECheckBoxState::Checked)
 			.Style(SUTStyle::Get(), "UT.CheckBox")
 			.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","HostControlTT","If checked, you (the host) will be responsibile for starting the match once in game.")))
 			.Content()
