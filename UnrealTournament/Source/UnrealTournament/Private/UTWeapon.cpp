@@ -54,6 +54,7 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	FiringViewKickbackY = 6.f;
 	HUDViewKickback = FVector2D(0.03f, 0.1f);
 	bNetDelayedShot = false;
+	RespawnTime = 20.f;
 
 	bFPFireFromCenter = true;
 	bFPIgnoreInstantHitFireOffset = true;
