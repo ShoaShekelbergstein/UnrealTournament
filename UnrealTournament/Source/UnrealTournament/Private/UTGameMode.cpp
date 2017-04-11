@@ -3691,7 +3691,7 @@ void AUTGameMode::CheckGameTime()
 				// add 60 seconds for overtime
 				if (bTeamGame)
 				{
-					UTGameState->SetRemainingTime(60);
+					UTGameState->SetRemainingTime(120);
 				}
 				else
 				{
