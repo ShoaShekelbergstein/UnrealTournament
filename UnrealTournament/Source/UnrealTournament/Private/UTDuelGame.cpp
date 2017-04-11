@@ -69,7 +69,7 @@ bool AUTDuelGame::CheckRelevance_Implementation(AActor* Other)
 	AUTPickupInventory* PickupInventory = Cast<AUTPickupInventory>(Other);
 	if (PickupInventory)
 	{
-		if (Cast<AUTTimedPowerup>(PickupInventory->GetInventoryType()))
+		if (Cast<AUTTimedPowerup>(PickupInventory->GetInventoryType().GetDefaultObject()) != nullptr)
 		{
 			PickupInventory->SetInventoryType(nullptr);
 		}
