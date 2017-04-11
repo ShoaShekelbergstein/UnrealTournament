@@ -252,7 +252,7 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTWeapon
 	UAnimSequence* dual_wallRun_R_out;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
-	float dual_lagAO;
+	class UAimOffsetBlendSpace* dual_lagAO;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
 	class UBlendSpace* dual_leanBS;
 

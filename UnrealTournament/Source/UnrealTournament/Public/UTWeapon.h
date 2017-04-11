@@ -1070,6 +1070,18 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Mesh)
 	TArray<UMeshComponent*> Get1PMeshes() const;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation Toggles")
+	bool bSecondaryIdle;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation Toggles")
+	bool bWallRunFire;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation Toggles")
+	bool bIdleOffset;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation Toggles")
+	bool bIdleEmpty;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation Toggles")
+	bool bIdleAlt;
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
 	UAnimSequence* idle;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
@@ -1140,7 +1152,7 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UAnimSequence* wallRun_R_out;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
-	float lagAO;
+	class UAimOffsetBlendSpace* lagAO;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
 	class UBlendSpace* leanBS;
 

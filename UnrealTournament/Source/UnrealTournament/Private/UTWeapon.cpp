@@ -129,6 +129,12 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	WeaponSkinCustomizationTag = NAME_None;
 	VerticalSpreadScaling = 1.f;
 	MaxVerticalSpread = 1.f;
+
+	bSecondaryIdle = false;
+	bWallRunFire = false;
+	bIdleOffset = false;
+	bIdleEmpty = false;
+	bIdleAlt = false;
 }
 
 void AUTWeapon::PostInitProperties()
