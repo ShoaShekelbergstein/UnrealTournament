@@ -855,7 +855,7 @@ void UUTProfileSettings::ApplyInputSettings(UUTLocalPlayer* ProfilePlayer)
 
 	for (TObjectIterator<UUTPlayerInput> It(RF_NoFlags); It; ++It)
 	{
-		PlayerInput->SetMouseSensitivity(FMath::Max(0.1f, MouseSensitivity));
+		PlayerInput->SetMouseSensitivity(FMath::Max(0.005f, MouseSensitivity));
 		PlayerInput->AccelerationPower = MouseAccelerationPower;
 		PlayerInput->Acceleration = MouseAcceleration;
 		PlayerInput->AccelerationMax = MouseAccelerationMax;
