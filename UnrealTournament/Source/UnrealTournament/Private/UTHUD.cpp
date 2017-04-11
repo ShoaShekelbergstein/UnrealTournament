@@ -965,7 +965,7 @@ void AUTHUD::DrawHUD()
 		}
 		CachedProfileSettings = nullptr;
 
-		if (GetWorldSettings() && GetWorldSettings()->Pauser != nullptr)
+		if ((GetNetMode() != NM_Standalone) && GetWorldSettings() && GetWorldSettings()->Pauser != nullptr)
 		{
 			DrawString(NSLOCTEXT("Generic","Paused","GAME IS PAUSED"), Canvas->ClipX * 0.5f, Canvas->ClipY * 0.15f, ETextHorzPos::Center,ETextVertPos::Top, LargeFont, FLinearColor::Yellow, 1.0, true);
 		}
