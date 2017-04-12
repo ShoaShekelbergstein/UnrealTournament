@@ -146,6 +146,25 @@ void UAnimGraphNode_RotationOffsetBlendSpace::ValidateAnimNodeDuringCompilation(
 	if (BlendSpacePin != nullptr && BlendSpaceToCheck == nullptr)
 	{
 		BlendSpaceToCheck = Cast<UBlendSpaceBase>(BlendSpacePin->DefaultObject);
+		
+		//Need to check for connected pins
+		if (BlendSpaceToCheck == NULL)
+		{
+			for (UEdGraphPin* LinkPin : BlendSpacePin->LinkedTo)
+			{
+				//Try and get at default object for connecting pins
+				if (LinkPin->PinType.PinSubCategoryObject.IsValid())
+				{
+					UClass* PinClass = Cast<UClass>(LinkPin->PinType.PinSubCategoryObject.Get());
+					BlendSpaceToCheck = Cast<UBlendSpaceBase>(PinClass->GetDefaultObject());
+						
+					if (BlendSpaceToCheck != NULL)
+					{
+						break;
+					}	
+				}
+			}
+		}
 	}
 
 	if (BlendSpaceToCheck == NULL)
