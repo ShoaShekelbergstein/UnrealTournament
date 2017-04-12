@@ -123,7 +123,7 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 	CachedProfileSettings = nullptr;
 	BuildText = NSLOCTEXT("UTHUD", "info", "PRE-ALPHA Build 0.1.10");
 	WarmupText = NSLOCTEXT("UTHUD", "warmup", "You are in WARM UP");
-	MatchHostText = NSLOCTEXT("UTHUD", "warmup", "You are in WARM UP.  Press [ENTER] to start match.");
+	MatchHostText = NSLOCTEXT("UTHUD", "hostwarmup", "You are in WARM UP.  Press [ENTER] to start match.");
 	bShowVoiceDebug = false;
 	bDrawDamageNumbers = true;
 
