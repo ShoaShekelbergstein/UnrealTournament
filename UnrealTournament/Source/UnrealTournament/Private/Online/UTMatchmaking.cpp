@@ -1018,6 +1018,16 @@ void UUTMatchmaking::OnClientSessionIdChanged(const FString& SessionId)
 
 void UUTMatchmaking::OnCancelFind(bool bSuccessful)
 {
+	IOnlineSubsystem* OnlineSubsystem= IOnlineSubsystem::Get();
+	if (OnlineSubsystem) 
+	{
+		IOnlineSessionPtr OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
+		if (OnlineSessionInterface.IsValid())
+		{
+			OnlineSessionInterface->ClearOnCancelFindSessionsCompleteDelegate_Handle(CancelFindHandle);
+		}
+	}
+
 	bool bSuccess = FindSessionAsClient(PendingParams);
 }
 
