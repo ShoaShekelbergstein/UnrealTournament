@@ -6304,8 +6304,10 @@ FText UUTLocalPlayer::GetMenuCommandTooltipText(FName MenuCommand) const
 	else if (MenuCommand == EMenuCommand::MC_QuickPlayCTF)		return NSLOCTEXT("SUTHomePanel", "QuickPlayCTF","Join an online capture the flag game against players close to your skill level");
 	else if (MenuCommand == EMenuCommand::MC_QuickPlayFlagrun)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrun","Join an online Blitz game against players close to your skill level.");
 	else if (MenuCommand == EMenuCommand::MC_QuickPlayShowdown)	return NSLOCTEXT("SUTHomePanel", "QuickPlayFlagrunPVE","Join an online co-op Blitz game against AI opponents.");
-	else if (MenuCommand == EMenuCommand::MC_Challenges)		return NSLOCTEXT("SUTHomePanel", "QuickPlayChallenges","Test your skills offline against our world class AI.");
+	else if (MenuCommand == EMenuCommand::MC_Challenges)		return NSLOCTEXT("SUTHomePanel", "QuickPlayChallenges","Test your skills against bots in challenge matches and earn stars.");
 	else if (MenuCommand == EMenuCommand::MC_FindAMatch)		return NSLOCTEXT("SUTHomePanel", "QuickPlayFindAMatch","Head online and find games to play.");
+	else if (MenuCommand == EMenuCommand::MC_Tutorial)		return NSLOCTEXT("SUTHomePanel", "BasicTrainingPanel", "Improve your skills and learn new tactics in Basic Training.");
+	else if (MenuCommand == EMenuCommand::MC_InstantAction)		return NSLOCTEXT("SUTHomePanel", "InstantActionPanel", "Customize your own single player match experience vs. bots.");
 	return FText::GetEmpty();
 }
 
