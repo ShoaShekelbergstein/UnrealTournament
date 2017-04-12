@@ -737,7 +737,7 @@ TSharedRef<SWidget> SUTMenuBase::BuildOnlinePresence()
 				SNew(SUTButton)
 				.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
 				.OnClicked(this, &SUTMenuBase::OpenProfileItems)
-				.ToolTipText(NSLOCTEXT("ToolTips", "TPMyItems", "Show collectable items you own."))
+				.ToolTipText(NSLOCTEXT("ToolTips", "TPMyItems", "Show collectible items you own."))
 				[
 					SNew(SHorizontalBox)
 					+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)

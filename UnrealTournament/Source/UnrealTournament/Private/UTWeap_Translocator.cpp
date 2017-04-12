@@ -243,6 +243,7 @@ void AUTWeap_Translocator::FireShot()
 			{
 				TransDisk->ProjectileMovement->ProjectileGravityScale = DiskGravity;
 			}
+			PlayFiringEffects();
 		}
 		else if (TransDisk != NULL)
 		{
@@ -353,14 +354,13 @@ void AUTWeap_Translocator::FireShot()
 				FakeTransDisk->Destroy();
 				FakeTransDisk = nullptr;
 			}
+			PlayFiringEffects();
 		}
 		else if (FakeTransDisk != nullptr)
 		{
 			FakeTransDisk->Destroy();
 			FakeTransDisk = nullptr;
 		}
-
-		PlayFiringEffects();
 	}
 
 	if (GetUTOwner() != NULL)
