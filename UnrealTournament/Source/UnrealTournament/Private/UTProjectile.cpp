@@ -341,7 +341,14 @@ void AUTProjectile::BeginPlay()
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 		else
 		{
-			UE_LOG(UT, Warning, TEXT("%s spawned with no local player found!"), *GetName());
+			APlayerController* FirstPlayer = GEngine->GetFirstLocalPlayerController(GetWorld());
+			UE_LOG(UT, Warning, TEXT("%s spawned with no local player found!  Instigator %s First Local Player %s"), *GetName(), InstigatorController ? *InstigatorController->GetName() : TEXT("NONE"), FirstPlayer ? *FirstPlayer->GetName() : TEXT("NONE"));
+			TArray<APlayerController*> PlayerControllers;
+			GEngine->GetAllLocalPlayerControllers(PlayerControllers);
+			for (APlayerController* PlayerController : PlayerControllers)
+			{
+				UE_LOG(UT, Warning, TEXT("Found local player %s"), PlayerController ? *PlayerController->GetName() : TEXT("None"));
+			}
 		}
 #endif
 	}
