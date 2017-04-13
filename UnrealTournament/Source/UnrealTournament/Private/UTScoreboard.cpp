@@ -330,7 +330,7 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 				Args.Add("XPGained", FText::AsNumber(NewXP));
 				XPValueItem.Text = FText::Format(NSLOCTEXT("UTScoreboard", "XPGained", "+{XPGained}"), Args);
 				XPValueItem.SetColor(FLinearColor::Yellow);
-				XPValueItem.Position.X = XPBarX + CurrentXPWidth;
+				XPValueItem.Position.X = XPBarX + FMath::Max(CurrentXPWidth, 0.1f*XPBarWidth);
 				Canvas->DrawItem(XPValueItem);
 
 				if (!bGiveReward)
