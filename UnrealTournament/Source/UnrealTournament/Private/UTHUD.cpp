@@ -749,7 +749,8 @@ void AUTHUD::ShowHUD()
 bool AUTHUD::ScoreboardIsUp()
 {
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	bool bPreMatchScoreBoard = (GS && !GS->HasMatchStarted() && !GS->IsMatchInCountdown()) && (!UTPlayerOwner || !UTPlayerOwner->UTPlayerState || !UTPlayerOwner->UTPlayerState->bIsWarmingUp);
+	AUTPlayerState* PS = UTPlayerOwner ? UTPlayerOwner->UTPlayerState : nullptr;
+	bool bPreMatchScoreBoard = (GS && !GS->HasMatchStarted() && !GS->IsMatchInCountdown()) && PS && !PS->bIsWarmingUp && (!PS->bOnlySpectator || !Cast<AUTCharacter>(UTPlayerOwner->GetViewTarget()));
 	bShowScoresWhileDead = bShowScoresWhileDead && GS && GS->IsMatchInProgress() && !GS->IsMatchIntermission() && UTPlayerOwner && !UTPlayerOwner->GetPawn() && !UTPlayerOwner->IsInState(NAME_Spectating);
 	return bShowScores || bPreMatchScoreBoard || bForceScores || bShowScoresWhileDead || bDisplayMatchSummary;
 }
