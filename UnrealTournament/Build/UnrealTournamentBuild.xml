@@ -68,7 +68,7 @@
 	<Property Name="Products" Value="Editor" If="!$(Product_GameClient) And $(Product_Editor)"/>
 	<Property Name="Products" Value="GameClient,Editor" If="$(Product_GameClient) And $(Product_Editor)"/>
 
-	<Agent Name="Build UnrealTournament Editor Win64" Type="CompileWin64">
+	<Agent Name="Build UnrealTournament Editor Win64" Type="Win64">
 		<Node Name="Update Version Files">
 			<SetVersion Change="$(Change)" CompatibleChange="$(CodeChange)" Branch="$(EscapedBranch)" If="$(IsBuildMachine)"/>
 		</Node>
@@ -90,7 +90,7 @@
 	</Agent>
 
 	
-	<Agent Name="Tools Group Windows" Type="CompileWin64">
+	<Agent Name="Tools Group Windows" Type="Win64">
 		<Node Name="Compile Tools Windows" Requires="Compile UnrealTournamentEditor Win64">
 			<Compile Target="UnrealEngineLauncherProxy" Platform="Win32" Configuration="Shipping"/>
 			<Compile Target="UnrealEngineLauncherProxy" Platform="Win64" Configuration="Development"/>
@@ -119,7 +119,7 @@
 		</Node>
 	</Agent>
 	
-	<Agent Name="Tools Group Linux" Type="CompileWin64">
+	<Agent Name="Tools Group Linux" Type="Win64">
 		<Node Name="Compile Tools Linux" Requires="Compile UnrealTournamentEditor Win64">
 			<Compile Target="CrashReportClient" Platform="Linux" Configuration="Shipping"/>
 			<Compile Target="ShaderCompileWorker" Platform="Linux" Configuration="Development"/>
@@ -128,7 +128,7 @@
 		</Node>
 	</Agent>
 	
-	<Agent Name="Monolithics Windows" Type="CompileWin64">
+	<Agent Name="Monolithics Windows" Type="Win64">
 		<Node Name="Compile UT Client Win32" Requires="Compile Tools Windows">
 			<Compile Target="UnrealTournament" Platform="Win32" Tag="#BinaryFiles" Configuration="Shipping"/>
 			
@@ -155,7 +155,7 @@
 		</Node>
 	</Agent>
 	
-	<Agent Name="Monolithics Linux" Type="CompileWin64">
+	<Agent Name="Monolithics Linux" Type="Win64">
 		<Node Name="Compile UT Linux" Requires="Compile Tools Linux">
 			<Compile Target="UnrealTournament" Platform="Linux" Configuration="Shipping"/>
 		</Node>
@@ -479,7 +479,7 @@
 		</Node>
 	</Agent>
 	
-	<Agent Name="NonUnity Compile Win64" Type="CompileWin64">
+	<Agent Name="NonUnity Compile Win64" Type="Win64">
 		<Node Name="NonUnity Build Win64" Requires="Compile UnrealHeaderTool Win64" After="Stage WindowsNoEditor;Stage Windows Server Win64;EditorDDC Win64">
 			<Compile Target="UE4Editor" Platform="Win64" Configuration="Development" Arguments="-nodebuginfo -disableunity"/>
 			<Compile Target="UE4Game" Platform="Win64" Configuration="Development" Arguments="-nodebuginfo -disableunity"/>
@@ -499,7 +499,7 @@
 	</Agent>
 
 
-	<Agent Name="Promotion Agent Group" Type="CompileWin64">
+	<Agent Name="Promotion Agent Group" Type="Win64">
 		<Node Name="Promote Build">
 			<Error Message="Missing property 'ToAppName'" If="'$(ToAppName)' == ''"/>
 			<Error Message="No platforms configured to promote - Pick Windows, Win32, Mac, or All Three" If="'$(PromoteMac)' == false And '$(PromoteWindows)' == false And '$(PromoteWin32)' == false"/>
@@ -510,7 +510,7 @@
 	</Agent>
 
 	<!-- Chunk auditing -->
-	<Agent Name="Audit Chunked Builds" Type="CompileWin64" If="$(EnableMCP)">
+	<Agent Name="Audit Chunked Builds" Type="Win64" If="$(EnableMCP)">
 		<Node Name="Sync PortalPublishingTool">
 			<Spawn Exe="p4.exe" Arguments="print -o &quot;$(RootDir)\LocalBuilds\PortalPublishingTool.zip&quot; &quot;//depot/InternalTools/PortalPublishingTool/Latest.zip&quot;"/>
 			<Unzip ZipFile="$(RootDir)\LocalBuilds\PortalPublishingTool.zip" ToDir="$(RootDir)\LocalBuilds\PortalPublishingTool"/>
