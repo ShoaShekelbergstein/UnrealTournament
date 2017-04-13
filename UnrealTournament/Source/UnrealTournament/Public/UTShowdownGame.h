@@ -64,6 +64,10 @@ protected:
 	UPROPERTY()
 	AUTPickupInventory* BreakerPickup;
 
+	/** How long powerups last in Showdown */
+	UPROPERTY()
+		float PowerupDuration;
+
 	// true if map has UTPlayerStarts with AssociatedPickup filled in; if not we use slow fallback to try to figure out spawn auto select mechanics
 	bool bAssociatedPickupsSet;
 public:

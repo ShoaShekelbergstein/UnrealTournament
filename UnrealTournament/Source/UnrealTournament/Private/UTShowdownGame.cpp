@@ -186,9 +186,8 @@ bool AUTShowdownGame::CheckRelevance_Implementation(AActor* Other)
 	}
 	else
 	{
-		// @TODO FIXMESTEVE - don't check for weapon stay - once have deployable base class, remove all deployables from duel
 		AUTPickupWeapon* PickupWeapon = Cast<AUTPickupWeapon>(Other);
-		if (PickupWeapon != NULL && PickupWeapon->WeaponType != NULL && !PickupWeapon->WeaponType.GetDefaultObject()->bWeaponStay)
+		if (PickupWeapon != NULL && PickupWeapon->WeaponType != NULL && PickupWeapon->WeaponType.GetDefaultObject()->bMustBeHolstered)
 		{
 			TSubclassOf<AUTPickupInventory> ReplacementPickupClass = SuperweaponReplacementPickupClass.TryLoadClass<AUTPickupInventory>();
 			TSubclassOf<AUTInventory> ReplacementItemClass = SuperweaponReplacementItemClass.TryLoadClass<AUTInventory>();
@@ -211,7 +210,12 @@ bool AUTShowdownGame::CheckRelevance_Implementation(AActor* Other)
 			{
 				AmmoPack->RespawnTime *= 1.5f;
 			}
-			return Super::CheckRelevance_Implementation(Other);
+			AUTTimedPowerup* Powerup = Cast<AUTTimedPowerup>(Other);
+			if (Powerup)
+			{
+				Powerup->TimeRemaining = PowerupDuration;
+			}
+			return AUTTeamDMGameMode::CheckRelevance_Implementation(Other);
 		}
 	}
 }

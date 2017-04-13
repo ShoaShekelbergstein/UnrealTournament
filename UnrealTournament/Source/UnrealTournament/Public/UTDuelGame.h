@@ -28,10 +28,6 @@ class UNREALTOURNAMENT_API AUTDuelGame : public AUTTeamDMGameMode
 
 	virtual void FindAndMarkHighScorer() override;
 
-	/** How long powerups last in Duel */
-	UPROPERTY()
-	float PowerupDuration;
-
 	// Creates the URL options for custom games
 	virtual void CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps);
 

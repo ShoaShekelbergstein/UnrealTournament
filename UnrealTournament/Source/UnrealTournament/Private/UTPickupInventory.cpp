@@ -650,7 +650,7 @@ void AUTPickupInventory::AnnouncePickup(AUTCharacter* P)
 void AUTPickupInventory::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME_CONDITION(AUTPickupInventory, InventoryType, COND_None);
+	DOREPLIFETIME(AUTPickupInventory, InventoryType);
 }
 
 void AUTPickupInventory::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
