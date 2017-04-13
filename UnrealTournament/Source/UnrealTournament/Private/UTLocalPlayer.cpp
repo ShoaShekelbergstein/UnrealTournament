@@ -6879,7 +6879,6 @@ void UUTLocalPlayer::UpdateCheck()
 #if !UE_SERVER
 
 	uint32 MyVersion = FNetworkVersion::GetNetworkCompatibleChangelist();
-	UE_LOG(UT,Warning,TEXT("Compatible Network Version: %i"), MyVersion)
 
 	if ((uint32)MCPPulledData.CurrentVersionNumber > MyVersion )
 	{
