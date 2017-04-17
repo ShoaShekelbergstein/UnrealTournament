@@ -32,12 +32,33 @@ FText UAnimGraphNode_RotationOffsetBlendSpace::GetNodeTitle(ENodeTitleType::Type
 {
 	UBlendSpaceBase* BlendSpaceToCheck = Node.BlendSpace;
 	UEdGraphPin* BlendSpacePin = FindPin(GET_MEMBER_NAME_STRING_CHECKED(FAnimNode_RotationOffsetBlendSpace, BlendSpace));
+	FText BlendSpaceConnectedPinOverrideName = FText::GetEmpty();
 	if (BlendSpacePin != nullptr && BlendSpaceToCheck == nullptr)
 	{
 		BlendSpaceToCheck = Cast<UBlendSpaceBase>(BlendSpacePin->DefaultObject);
+	
+		//Need to check for connected pins
+		if (BlendSpacePin)
+		{
+			for (UEdGraphPin* LinkPin : BlendSpacePin->LinkedTo)
+			{
+				//Try and get at default object for connecting pins
+				if (LinkPin->PinType.PinSubCategoryObject.IsValid())
+				{
+					UClass* PinClass = Cast<UClass>(LinkPin->PinType.PinSubCategoryObject.Get());
+					BlendSpaceToCheck = Cast<UBlendSpaceBase>(PinClass->GetDefaultObject());
+
+					if (BlendSpaceToCheck != NULL)
+					{
+						BlendSpaceConnectedPinOverrideName = FText::FromString(LinkPin->PinName);
+						break;
+					}
+				}
+			}
+		}
 	}
 
-	if (BlendSpaceToCheck == nullptr)
+	if ((BlendSpaceToCheck == nullptr) && (BlendSpaceConnectedPinOverrideName.IsEmpty()))
 	{
 		if (TitleType == ENodeTitleType::ListView || TitleType == ENodeTitleType::MenuTitle)
 		{
@@ -52,7 +73,7 @@ FText UAnimGraphNode_RotationOffsetBlendSpace::GetNodeTitle(ENodeTitleType::Type
 	//        choose to mark this dirty when that happens for this to properly work
 	else //if (!CachedNodeTitles.IsTitleCached(TitleType, this))
 	{
-		const FText BlendSpaceName = FText::FromString(BlendSpaceToCheck->GetName());
+		const FText BlendSpaceName = BlendSpaceConnectedPinOverrideName.IsEmpty() ? FText::FromString(BlendSpaceToCheck->GetName()) : BlendSpaceConnectedPinOverrideName;
 
 		FFormatNamedArguments Args;
 		Args.Add(TEXT("BlendSpaceName"), BlendSpaceName);
