@@ -437,7 +437,7 @@ bool UUTLocalPlayer::IsMenuGame()
 }
 
 #if !UE_SERVER
-void UUTLocalPlayer::OpenWindow(TSharedPtr<SUTWindowBase> WindowToOpen)
+void UUTLocalPlayer::OpenWindow(TSharedPtr<SUTWindowBase> WindowToOpen, int32 ZOrder)
 {
 	// Make sure this window isn't already in the stack.
 	if (WindowStack.Find(WindowToOpen) == INDEX_NONE)
@@ -452,7 +452,7 @@ void UUTLocalPlayer::OpenWindow(TSharedPtr<SUTWindowBase> WindowToOpen)
 			}
 		}
 
-		GEngine->GameViewport->AddViewportWidgetContent(WindowToOpen.ToSharedRef(), 1);
+		GEngine->GameViewport->AddViewportWidgetContent(WindowToOpen.ToSharedRef(), ZOrder);
 		
 		WindowStack.Add(WindowToOpen);
 		WindowToOpen->Open();
@@ -4593,7 +4593,7 @@ void UUTLocalPlayer::AttemptJoinInstance(TSharedPtr<FServerData> ServerData, FSt
 
 	if (JoinInstanceDialog.IsValid())
 	{
-		OpenWindow(JoinInstanceDialog);
+		OpenWindow(JoinInstanceDialog,510);
 		JoinInstanceDialog->TellSlateIWantKeyboardFocus();
 	}
 #endif

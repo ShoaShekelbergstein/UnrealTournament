@@ -240,7 +240,7 @@ public:
 #if !UE_SERVER
 
 	TArray<TSharedPtr<SUTWindowBase>> WindowStack;
-	virtual void OpenWindow(TSharedPtr<SUTWindowBase> WindowToOpen);
+	virtual void OpenWindow(TSharedPtr<SUTWindowBase> WindowToOpen, int32 ZOrder = 1);
 	virtual bool CloseWindow(TSharedPtr<SUTWindowBase> WindowToClose);
 	virtual void WindowClosed(TSharedPtr<SUTWindowBase> WindowThatWasClosed);
 

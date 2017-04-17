@@ -163,7 +163,7 @@ void AUTLobbyPlayerState::ManageStartMatchUI(AUTLobbyPC* PC)
 		 
 					if (StartMatchWindow.IsValid())
 					{
-						UTLocalPlayer->OpenWindow(StartMatchWindow);
+						UTLocalPlayer->OpenWindow(StartMatchWindow,10);
 					}
 				}
 			}
