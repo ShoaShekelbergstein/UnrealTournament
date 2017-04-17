@@ -31,6 +31,9 @@ class UNREALTOURNAMENT_API UUTHUDWidget_FlagRunStatus : public UUTHUDWidget_CTFF
 	UPROPERTY()
 		FName LastFlagStatus;
 
+	UPROPERTY()
+		FText DeliveryPointText;
+
 	virtual void DrawStatusMessage(float DeltaTime) override;
 	virtual bool ShouldDraw_Implementation(bool bShowScores) override;
 
