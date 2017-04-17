@@ -1417,6 +1417,8 @@ public:
 	FText PlayListIDToText(int32 PlayListId);
 	void CancelQuickmatch();
 
+	void StopKillCam();
+
 protected:
 	bool bLaunchTutorialOnLogin;
 

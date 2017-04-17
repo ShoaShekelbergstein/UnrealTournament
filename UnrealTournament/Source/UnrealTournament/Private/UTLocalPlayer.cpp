@@ -2920,6 +2920,7 @@ void UUTLocalPlayer::CancelQuickmatch()
 
 void UUTLocalPlayer::ReturnToMainMenu()
 {
+	StopKillCam();
 	CancelQuickmatch();
 	HideMenu();
 
@@ -7098,3 +7099,12 @@ void UUTLocalPlayer::RegainFocus()
 	}
 #endif
 }
+
+void UUTLocalPlayer::StopKillCam()
+{
+	if (IsKillcamReplayActive() && KillcamPlayback )
+	{
+		KillcamPlayback->KillcamStop();
+	}
+}
+

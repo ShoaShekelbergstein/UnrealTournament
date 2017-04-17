@@ -337,6 +337,11 @@ void SUTInGameMenu::QuitConfirmation()
 
 void SUTInGameMenu::OnDestinationResult(int32 PickedIndex)
 {
+	if (PlayerOwner.IsValid())
+	{
+		PlayerOwner->StopKillCam();
+	}
+
 	switch(PickedIndex)
 	{
 		case 0: OnReturnToMainMenu(); break;
