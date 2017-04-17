@@ -961,8 +961,9 @@ void AUTHUD::DrawHUD()
 				float RenderScale = Canvas->ClipX / 1920.0f;
 				float XL, YL;
 				Canvas->DrawColor = FColor(255, 255, 255, 255);
-				Canvas->TextSize(LargeFont, WarmupText.ToString(), XL, YL, 1.f, 1.f);
-				Canvas->DrawText(LargeFont, ViewedPS->bIsMatchHost ? MatchHostText : WarmupText, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
+				FText WarmupMessage = ViewedPS->bIsMatchHost ? MatchHostText : WarmupText;
+				Canvas->TextSize(LargeFont, WarmupMessage.ToString(), XL, YL, 1.f, 1.f);
+				Canvas->DrawText(LargeFont, WarmupMessage, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
 			}
 		}
 		CachedProfileSettings = nullptr;
