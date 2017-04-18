@@ -141,6 +141,9 @@ public:
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerBlowUp();
 
+	UFUNCTION(Reliable, Server, WithValidation)
+		void ServerDriverLeave();
+
 	UPROPERTY()
 		float StatsHitCredit;
 

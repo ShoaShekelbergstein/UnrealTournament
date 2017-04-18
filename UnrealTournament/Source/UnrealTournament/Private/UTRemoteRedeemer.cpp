@@ -135,11 +135,6 @@ bool AUTRemoteRedeemer::DriverEnter(APawn* NewDriver)
 
 bool AUTRemoteRedeemer::DriverLeave(bool bForceLeave)
 {
-	if (!bShotDown)
-	{
-		BlowUp();
-	}
-
 	AController* C = Controller;
 	if (Driver && C)
 	{
@@ -489,10 +484,17 @@ void AUTRemoteRedeemer::GetActorEyesViewPoint(FVector& out_Location, FRotator& o
 
 void AUTRemoteRedeemer::PawnStartFire(uint8 FireModeNum)
 {
-	if (FireModeNum == 0)
+	if (GetWorld()->GetTimeSeconds() - CreationTime > 0.5f)
 	{
-		ServerBlowUp();
-		ProjectileMovement->SetActive(false);
+		if (FireModeNum == 0)
+		{
+			ServerBlowUp();
+			ProjectileMovement->SetActive(false);
+		}
+		else
+		{
+			ServerDriverLeave();
+		}
 	}
 }
 
@@ -508,6 +510,16 @@ void AUTRemoteRedeemer::ServerBlowUp_Implementation()
 	{
 		BlowUp();
 	}
+}
+
+bool AUTRemoteRedeemer::ServerDriverLeave_Validate()
+{
+	return true;
+}
+
+void AUTRemoteRedeemer::ServerDriverLeave_Implementation()
+{
+	DriverLeave(true);
 }
 
 void AUTRemoteRedeemer::OnRep_PlayerState()
@@ -542,7 +554,7 @@ void AUTRemoteRedeemer::ExplodeStage(float RangeMultiplier)
 			TArray<AActor*> IgnoreActors;
 			StatsHitCredit = 0.f;
 			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-			AUTPlayerState* StatusPS = ((Role == ROLE_Authority) && GetController() && GS && GS->bPlayStatusAnnouncements) ? Cast<AUTPlayerState>(GetController()->PlayerState) : nullptr;
+			AUTPlayerState* StatusPS = ((Role == ROLE_Authority) && DamageInstigator && GS && GS->bPlayStatusAnnouncements) ? Cast<AUTPlayerState>(DamageInstigator->PlayerState) : nullptr;
 			if (StatusPS)
 			{
 				int32 LiveEnemyCount = 0;
@@ -550,7 +562,7 @@ void AUTRemoteRedeemer::ExplodeStage(float RangeMultiplier)
 				{
 					AController* C = Iterator->Get();
 					AUTPlayerState* TeamPS = C ? Cast<AUTPlayerState>(C->PlayerState) : nullptr;
-					if (TeamPS && C->GetPawn() && !GS->OnSameTeam(GetController(), C))
+					if (TeamPS && C->GetPawn() && !GS->OnSameTeam(DamageInstigator, C))
 					{
 						LiveEnemyCount++;
 					}
@@ -569,7 +581,7 @@ void AUTRemoteRedeemer::ExplodeStage(float RangeMultiplier)
 				{
 					AController* C = Iterator->Get();
 					AUTPlayerState* TeamPS = C ? Cast<AUTPlayerState>(C->PlayerState) : nullptr;
-					if (TeamPS && C->GetPawn() && !GS->OnSameTeam(GetController(), C))
+					if (TeamPS && C->GetPawn() && !GS->OnSameTeam(DamageInstigator, C))
 					{
 						LiveEnemyCount++;
 					}
@@ -644,7 +656,7 @@ void AUTRemoteRedeemer::ExplodeStage5()
 }
 void AUTRemoteRedeemer::ExplodeStage6()
 {
-	AUTPlayerState* StatusPS = ((Role == ROLE_Authority) && GetController()) ? Cast<AUTPlayerState>(GetController()->PlayerState) : nullptr;
+	AUTPlayerState* StatusPS = ((Role == ROLE_Authority) && DamageInstigator) ? Cast<AUTPlayerState>(DamageInstigator->PlayerState) : nullptr;
 	if (Role == ROLE_Authority)
 	{
 		DriverLeave(true);
@@ -807,7 +819,7 @@ void AUTRemoteRedeemer::RedeemerDenied(AController* InstigatedBy)
 	AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
 	if (GM)
 	{
-		APlayerState* InstigatorPS = GetController() ? GetController()->PlayerState : NULL;;
+		APlayerState* InstigatorPS = DamageInstigator ? DamageInstigator->PlayerState : NULL;;
 		AUTPlayerState* InstigatedbyPS = InstigatedBy ? Cast<AUTPlayerState>(InstigatedBy->PlayerState) : NULL;
 		if (InstigatedbyPS)
 		{
@@ -979,6 +991,15 @@ void AUTRemoteRedeemer::PostRender(AUTHUD* HUD, UCanvas* C)
 		C->DrawText(HUD->TinyFont, FuelWarning, XPos - 0.5f*XL, YPos - 0.5f*YL, 1.f, 1.f, TextRenderInfo);
 	}
 	DrawTexture(C, HUD->HUDAtlas, XPos - 0.5f*WidthScale*Width, YPos, WidthScale*Width, HeightScale*Height, 127, 612, Width, Height, 1.f, FLinearColor::White, FVector2D(0.f, 0.5f));
+
+	if (GetWorld()->GetTimeSeconds() - CreationTime > 0.5f)
+	{
+		FText PrimaryText = NSLOCTEXT("Redeemer", "Primary", "Press [FIRE] to detonate the missile");
+		FText SecondaryText = NSLOCTEXT("Redeemer", "Secondary", "Press [ALTFIRE] to release missile guidance");
+		C->SetDrawColor(FLinearColor::White.ToFColor(false));
+		C->DrawText(HUD->TinyFont, PrimaryText, XPos + WidthScale*Width, YPos - YL, 1.f, 1.f, TextRenderInfo);
+		C->DrawText(HUD->TinyFont, SecondaryText, XPos + WidthScale*Width, YPos, 1.f, 1.f, TextRenderInfo);
+	}
 }
 
 void AUTRemoteRedeemer::PawnClientRestart()
