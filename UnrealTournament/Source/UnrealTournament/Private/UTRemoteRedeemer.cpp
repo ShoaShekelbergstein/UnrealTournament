@@ -741,7 +741,7 @@ void AUTRemoteRedeemer::Tick(float DeltaSeconds)
 			ProjectileMovement->Acceleration = FVector::ZeroVector;
 			ProjectileMovement->Velocity = FVector::ZeroVector;
 		}
-		else
+		else if (GetController())
 		{
 			FRotator Rotation = GetActorRotation();
 			FVector X, Y, Z;
