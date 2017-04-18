@@ -942,7 +942,7 @@ EVisibility UUTGameInstance::GetLevelLoadThrobberVisibility() const
 
 EVisibility UUTGameInstance::GetLevelLoadTextVisibility() const
 {
-	return EVisibility::Visible;
+	return (bLevelIsLoading && bSuppressLoadingText) ? EVisibility::Collapsed : EVisibility::Visible;
 }
 
 EVisibility UUTGameInstance::GetEpicLogoVisibility() const

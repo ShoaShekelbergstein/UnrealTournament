@@ -4934,8 +4934,6 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 				OnlineTitleFileInterface->GetFileContents(GetMCPStorageFilename(), FileContents);
 				FileContents.Add(0);
 				JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
-
-				UpdateCheck();
 			}
 		}
 
@@ -4960,6 +4958,8 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 				}
 			}
 		}
+
+		UpdateCheck();
 	}
 	else if (Filename == GetOnlineSettingsFilename())
 	{
@@ -5038,8 +5038,19 @@ void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString&
 
 bool UUTLocalPlayer::IsRankedMatchmakingEnabled(int32 PlaylistId)
 {
-	UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
-	return ActiveRankedPlaylists.Contains(PlaylistId) && GI && IsTutorialMaskCompleted(GI->GetPlaylistManager()->GetPlaylistRequireTutorialMask(PlaylistId));
+	int32 MatchesPlayed = 0;
+	if (PlayerController && PlayerController->PlayerState)
+	{
+		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(PlayerController->PlayerState);
+		if (UTPlayerState)
+		{
+
+			MatchesPlayed =	UTPlayerState->DuelMatchesPlayed + UTPlayerState->TDMMatchesPlayed + UTPlayerState->DMMatchesPlayed
+								+ UTPlayerState->CTFMatchesPlayed + UTPlayerState->ShowdownMatchesPlayed + UTPlayerState->FlagRunMatchesPlayed;
+		}
+	}
+
+	return ActiveRankedPlaylists.Contains(PlaylistId) && MatchesPlayed >= 10;
 }
 
 void UUTLocalPlayer::ShowAdminDialog(AUTRconAdminInfo* AdminInfo)
@@ -6875,6 +6886,17 @@ void UUTLocalPlayer::CheckForNewUpdate()
 	}
 }
 
+FString UUTLocalPlayer::GetBuildNotesURL()
+{
+	if (MCPPulledData.bValid)
+	{
+		return FString::Printf(TEXT("https://www.epicgames.com/unrealtournament/build-notes-%i"), MCPPulledData.CurrentVersionNumber);
+	}
+
+	return TEXT("http://epic.gm/ood");
+	
+}
+
 void UUTLocalPlayer::UpdateCheck()
 {
 #if !UE_SERVER
@@ -6893,8 +6915,9 @@ void UUTLocalPlayer::UpdateCheck()
 			FString WebCacheIndex = FPaths::GameSavedDir() + TEXT("/webcache/index");
 			FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*WebCacheIndex);
 
+			
 			// Open a Web page with better info
-			ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), TEXT("http://epic.gm/updt"));
+			ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), GetBuildNotesURL());
 					
 			LastLoadedVersionNumber = (uint32)MCPPulledData.CurrentVersionNumber;
 			SaveConfig();

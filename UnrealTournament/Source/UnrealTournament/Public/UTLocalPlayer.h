@@ -1419,6 +1419,8 @@ public:
 
 	void StopKillCam();
 
+	FString GetBuildNotesURL();
+
 protected:
 	bool bLaunchTutorialOnLogin;
 

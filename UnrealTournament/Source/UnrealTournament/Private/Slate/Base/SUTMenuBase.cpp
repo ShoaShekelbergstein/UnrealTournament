@@ -635,7 +635,7 @@ FReply SUTMenuBase::ClearCloud()
 
 FReply SUTMenuBase::OpenBuildNotes()
 {
-	PlayerOwner->ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), TEXT("http://epic.gm/updt"));
+	PlayerOwner->ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), PlayerOwner->GetBuildNotesURL());
 	return FReply::Handled();
 }
 
