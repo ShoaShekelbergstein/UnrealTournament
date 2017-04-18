@@ -26,8 +26,6 @@ void SUTWaitingForListenServerDialog::Construct(const FArguments& InArgs)
 							.OnDialogResult(InArgs._OnDialogResult)
 						);
 
-
-
 	// At this point, the DialogContent should be ready to have slots added.
 	if (DialogContent.IsValid())
 	{
@@ -44,7 +42,7 @@ void SUTWaitingForListenServerDialog::Construct(const FArguments& InArgs)
 				.Justification(ETextJustify::Center)
 				.DecoratorStyleSet(&SUWindowsStyle::Get())
 				.AutoWrapText(true)
-				.Text(NSLOCTEXT("SUTWaitingForListenServerDialog","Text","Waiting for your listen server to start..."))
+				.Text(NSLOCTEXT("SUTWaitingForListenServerDialog","Text","Waiting for your server to start..."))
 			]
 			+SVerticalBox::Slot()
 			.AutoHeight().HAlign(HAlign_Center)

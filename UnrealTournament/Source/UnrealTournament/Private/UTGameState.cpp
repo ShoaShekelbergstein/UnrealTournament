@@ -276,7 +276,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	PreGameStatus = NSLOCTEXT("UTGameState", "PreGame", "Pre-Game");
 	NeedPlayersStatus = NSLOCTEXT("UTGameState", "NeedPlayers", "Need {NumNeeded} More");
 	OvertimeStatus = NSLOCTEXT("UTCTFGameState", "Overtime", "Overtime");
-
+	HostStatus = NSLOCTEXT("UTCTFGameState", "HostStatus", "Waiting for Host");
 	BoostRechargeMaxCharges = 1;
 	BoostRechargeTime = 0.0f; // off by default
 	MusicVolume = 1.f;
@@ -336,6 +336,7 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME(AUTGameState, VoteTimer);
 
 	DOREPLIFETIME(AUTGameState, bForcedBalance);
+	DOREPLIFETIME(AUTGameState, bHaveMatchHost);
 
 	DOREPLIFETIME_CONDITION(AUTGameState, BoostRechargeTime, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, BoostRechargeMaxCharges, COND_InitialOnly);
@@ -1294,6 +1295,10 @@ FText AUTGameState::GetGameStatusText(bool bForScoreboard)
 		else if (GetMatchState() == MatchState::WaitingTravel)
 		{
 			return NSLOCTEXT("UTGameState","WaitingTravel","Waiting For Server"); 
+		}
+		else if ((GetNetMode() != NM_Standalone) && bHaveMatchHost)
+		{
+			return HostStatus;
 		}
 		else if ((PlayersNeeded > 0) && (GetNetMode() != NM_Standalone))
 		{

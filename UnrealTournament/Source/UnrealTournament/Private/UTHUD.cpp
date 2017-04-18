@@ -123,7 +123,8 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 	CachedProfileSettings = nullptr;
 	BuildText = NSLOCTEXT("UTHUD", "info", "PRE-ALPHA Build 0.1.10");
 	WarmupText = NSLOCTEXT("UTHUD", "warmup", "You are in WARM UP");
-	MatchHostText = NSLOCTEXT("UTHUD", "hostwarmup", "You are in WARM UP.  Press [ENTER] to start match.");
+	MatchHostText = NSLOCTEXT("UTHUD", "hostwarmup", "Press [ENTER] to start match.");
+	HaveHostText = NSLOCTEXT("UTHUD", "havehost", "Waiting for Host to start match.");
 	bShowVoiceDebug = false;
 	bDrawDamageNumbers = true;
 
@@ -959,11 +960,21 @@ void AUTHUD::DrawHUD()
 			if (GS && GS->GetMatchState() == MatchState::WaitingToStart)
 			{
 				float RenderScale = Canvas->ClipX / 1920.0f;
-				float XL, YL;
 				Canvas->DrawColor = FColor(255, 255, 255, 255);
-				FText WarmupMessage = ViewedPS->bIsMatchHost ? MatchHostText : WarmupText;
-				Canvas->TextSize(LargeFont, WarmupMessage.ToString(), XL, YL, 1.f, 1.f);
-				Canvas->DrawText(LargeFont, WarmupMessage, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
+
+				float BackgroundWidth = 512.f * RenderScale;
+				float BackgroundHeight = GS->bHaveMatchHost ? 0.095f*Canvas->ClipY : 0.05f*Canvas->ClipY;
+				Canvas->DrawTile(ScoreboardAtlas, 0.5f*Canvas->ClipX - 0.5f*BackgroundWidth, (0.82f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, BackgroundWidth, BackgroundHeight, 4.0f, 2.0f, 124.0f, 128.0f);
+
+				float XL, YL;
+				Canvas->TextSize(MediumFont, WarmupText.ToString(), XL, YL, 1.f, 1.f);
+				Canvas->DrawText(MediumFont, WarmupText, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.82f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
+				if (GS->bHaveMatchHost)
+				{
+					FText WarmupMessage = ViewedPS->bIsMatchHost ? MatchHostText : HaveHostText;
+					Canvas->TextSize(MediumFont, WarmupMessage.ToString(), XL, YL, 1.f, 1.f);
+					Canvas->DrawText(MediumFont, WarmupMessage, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
+				}
 			}
 		}
 		CachedProfileSettings = nullptr;

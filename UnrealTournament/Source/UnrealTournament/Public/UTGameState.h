@@ -102,6 +102,10 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = GameState)
 		uint32 bDebugHitScanReplication : 1;
 
+	/** If true, have match host controlling match start. */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
+		uint32 bHaveMatchHost : 1;
+
 	/** Replicated only for vs AI matches, 0 means not vs AI. */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
 		uint8 AIDifficulty;
@@ -144,6 +148,9 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
 		FText OvertimeStatus;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
+		FText HostStatus;
 
 	/** amount of time between kills to qualify as a multikill */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
