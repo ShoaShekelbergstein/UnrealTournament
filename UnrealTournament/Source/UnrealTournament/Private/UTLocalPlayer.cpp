@@ -6164,9 +6164,11 @@ void UUTLocalPlayer::InitializeSocial()
  	}
 	
 #endif
-	
-	GetWorld()->GetTimerManager().SetTimer(SocialInitializationTimerHandle, this, &UUTLocalPlayer::SocialInitialized, 0.25f, true);
 
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().SetTimer(SocialInitializationTimerHandle, this, &UUTLocalPlayer::SocialInitialized, 0.25f, true);
+	}
 }
 
 void UUTLocalPlayer::SocialInitialized()
