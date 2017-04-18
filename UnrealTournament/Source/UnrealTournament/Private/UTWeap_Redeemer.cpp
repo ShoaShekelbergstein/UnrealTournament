@@ -59,56 +59,43 @@ AUTProjectile* AUTWeap_Redeemer::FireProjectile()
 		UTOwner->bCanRally = true;
 		AUTPlayerState* PS = UTOwner->Controller ? Cast<AUTPlayerState>(UTOwner->Controller->PlayerState) : NULL;
 		LaunchTeam = PS && PS->Team ? PS->Team->TeamIndex : 255;
-		if (CurrentFireMode == 0)
+		const FVector SpawnLocation = GetFireStartLoc();
+		const FRotator SpawnRotation = GetAdjustedAim(SpawnLocation);
+		UTOwner->IncrementFlashCount(CurrentFireMode);
+		if (PS && (ShotsStatsName != NAME_None))
 		{
-			LaunchedMissile = Super::FireProjectile();
+			PS->ModifyStatsValue(ShotsStatsName, 1);
+		}
+
+		// spawn the projectile at the muzzle
+		FActorSpawnParameters Params;
+		Params.Instigator = UTOwner;
+		RemoteRedeemer = GetWorld()->SpawnActor<AUTRemoteRedeemer>(RemoteRedeemerClass, SpawnLocation, SpawnRotation, Params);
+		if (!RemoteRedeemer)
+		{
+			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			RemoteRedeemer = GetWorld()->SpawnActor<AUTRemoteRedeemer>(RemoteRedeemerClass, UTOwner->GetActorLocation(), SpawnRotation, Params);
+		}
+		if (RemoteRedeemer)
+		{
+			if (UTOwner && UTOwner->Controller)
+			{
+				RemoteRedeemer->SetOwner(UTOwner->Controller);
+				RemoteRedeemer->ForceReplication();
+				RemoteRedeemer->TryToDrive(UTOwner);
+			}
+
+			RemoteRedeemer->CollisionComp->bGenerateOverlapEvents = true;
+			LaunchedMissile = RemoteRedeemer;
 			if (LaunchedMissile != nullptr)
 			{
 				FTimerHandle TempHandle;
-				GetWorldTimerManager().SetTimer(TempHandle, this, &AUTWeap_Redeemer::AnnounceLaunch, 0.1f, false);
+				GetWorldTimerManager().SetTimer(TempHandle, this, &AUTWeap_Redeemer::AnnounceLaunch, 0.5f, false);
 			}
-			return Cast<AUTProjectile>(LaunchedMissile);
 		}
 		else
 		{
-			const FVector SpawnLocation = GetFireStartLoc();
-			const FRotator SpawnRotation = GetAdjustedAim(SpawnLocation);
-			UTOwner->IncrementFlashCount(CurrentFireMode);
-			if (PS && (ShotsStatsName != NAME_None))
-			{
-				PS->ModifyStatsValue(ShotsStatsName, 1);
-			}
-
-			// spawn the projectile at the muzzle
-			FActorSpawnParameters Params;
-			Params.Instigator = UTOwner;
-			RemoteRedeemer = GetWorld()->SpawnActor<AUTRemoteRedeemer>(RemoteRedeemerClass, SpawnLocation, SpawnRotation, Params);
-			if (!RemoteRedeemer)
-			{
-				Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-				RemoteRedeemer = GetWorld()->SpawnActor<AUTRemoteRedeemer>(RemoteRedeemerClass, UTOwner->GetActorLocation(), SpawnRotation, Params);
-			}
-			if (RemoteRedeemer)
-			{
-				if (UTOwner && UTOwner->Controller)
-				{
-					RemoteRedeemer->SetOwner(UTOwner->Controller);
-					RemoteRedeemer->ForceReplication();
-					RemoteRedeemer->TryToDrive(UTOwner);
-				}
-
-				RemoteRedeemer->CollisionComp->bGenerateOverlapEvents = true;
-				LaunchedMissile = RemoteRedeemer;
-				if (LaunchedMissile != nullptr)
-				{
-					FTimerHandle TempHandle;
-					GetWorldTimerManager().SetTimer(TempHandle, this, &AUTWeap_Redeemer::AnnounceLaunch, 0.5f, false);
-				}
-			}
-			else
-			{
-				UE_LOG(UT, Warning, TEXT("Could not spawn remote redeemer"));
-			}
+			UE_LOG(UT, Warning, TEXT("Could not spawn remote redeemer"));
 		}
 	}
 	return NULL;
