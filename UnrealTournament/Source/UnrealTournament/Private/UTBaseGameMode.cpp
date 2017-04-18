@@ -818,3 +818,33 @@ AUTReplicatedGameRuleset* AUTBaseGameMode::CreateCustomReplicateGameRuleset(UWor
 	return NewReplicatedRuleset;
 }
 
+void AUTBaseGameMode::ForceClearUnpauseDelegates(AActor* PauseActor)
+{
+	if (PauseActor != nullptr)
+	{
+		bool bClearPause = false;
+		for (int32 PauserIdx = Pausers.Num() - 1; PauserIdx >= 0; PauserIdx--)
+		{
+			FCanUnpause& CanUnpauseDelegate = Pausers[PauserIdx];
+			if (CanUnpauseDelegate.GetUObject() == PauseActor)
+			{
+				Pausers.RemoveAt(PauserIdx);
+				bClearPause = true;
+			}
+		}
+
+		APlayerController* PC = Cast<APlayerController>(PauseActor);
+		AWorldSettings * WorldSettings = GetWorldSettings();
+		if (PC != nullptr && PC->PlayerState != nullptr && WorldSettings != nullptr && WorldSettings->Pauser == PC->PlayerState)
+		{
+			bClearPause = true;
+		}
+
+		if (bClearPause)
+		{
+			ClearPause();
+		}
+
+	}
+}
+

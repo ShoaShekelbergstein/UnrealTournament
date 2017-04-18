@@ -280,4 +280,5 @@ public:
 	UPROPERTY(BlueprintReadonly, Category=Game)
 	bool bIsLANGame;
 
+	void ForceClearUnpauseDelegates(AActor* PauseActor);
 };

@@ -176,7 +176,7 @@ public:
 	 * Called when the player controller is being destroyed to prevent the game from being stuck in a paused state when a PC that
 	 * paused the game is destroyed before the game is unpaused.
 	 */
-	void ForceClearUnpauseDelegates(AActor* PauseActor);
+	virtual void ForceClearUnpauseDelegates(AActor* PauseActor);
 
 	/** Returns true if the player is allowed to pause the game */
 	virtual bool AllowPausing(APlayerController* PC = nullptr);
