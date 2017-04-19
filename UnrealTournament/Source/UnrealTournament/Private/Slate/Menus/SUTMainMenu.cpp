@@ -599,6 +599,11 @@ void SUTMainMenu::OnMenuOpened(const FString& Parameters)
 	{
 		ShowGamePanel();
 	}
+	if (Parameters.Equals(TEXT("showbrowser"), ESearchCase::IgnoreCase))
+	{
+		OnShowServerBrowser();
+	}
+
 }
 
 #endif

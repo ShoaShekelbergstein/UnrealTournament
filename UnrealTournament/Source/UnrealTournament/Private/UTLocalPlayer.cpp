@@ -2937,6 +2937,12 @@ void UUTLocalPlayer::ReturnToMainMenu()
 	if ( GetWorld() != nullptr )
 	{
 		FString URL = TEXT("ut-entry?closed");
+
+		if (GetWorld()->GetGameState<AUTLobbyGameState>() != nullptr)
+		{
+			URL += TEXT("?returnfromhub");
+		}
+
 		if ( GetWorld()->URL.HasOption(TEXT("tutorialmask")))
 		{
 			URL += TEXT("?tutorialmenu");

@@ -94,8 +94,14 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 		PC->ClientReturnedToMenus();
 		FURL& LastURL = GEngine->GetWorldContextFromWorld(GetWorld())->LastURL;
 		bool bReturnedFromChallenge = LastURL.HasOption(TEXT("showchallenge"));
-		PC->ShowMenu((bReturnedFromChallenge ? TEXT("showchallenge") : TEXT("")));
+		bool bReturnedFromHub = LastURL.HasOption(TEXT("returnfromhub"));
+
+		PC->ShowMenu((bReturnedFromChallenge ? TEXT("showchallenge") : ( bReturnedFromHub ? TEXT("showbrowser") : TEXT(""))));
 		UUTProfileSettings* ProfileSettings = PC->GetProfileSettings();
+
+		LastURL.RemoveOption(TEXT("showchallenge"));
+		LastURL.RemoveOption(TEXT("returnfromhub"));
+
 
 #if !UE_SERVER
 		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(PC->Player);
@@ -115,6 +121,9 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 			// make sure this doesn't get kept around
 			LastURL.RemoveOption(TEXT("tutorialmenu"));
 		}
+
+
+
 		LP->CheckForNewUpdate();
 #endif
 	}
