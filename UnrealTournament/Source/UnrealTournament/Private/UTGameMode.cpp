@@ -451,9 +451,9 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 		FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), FString::Printf(TEXT("Console - %s"), *DisplayName.ToString()));
 	}
 
-	if ((GetNetMode() == NM_Standalone) && (BotFillCount == 0) && !bRankedSession && !bOfflineChallenge && !bForceNoBots && !bDevServer && (GetWorld()->WorldType != EWorldType::PIE))
+	if (((GetNetMode() == NM_Standalone) || bIsLANGame) && (BotFillCount == 0) && !bRankedSession && !bOfflineChallenge && !bForceNoBots && !bDevServer && (GetWorld()->WorldType != EWorldType::PIE))
 	{
-		// if not competitive match, fill standalone match with bots
+		// if not competitive match, fill standalone/LAN match with bots
 		BotFillCount = FMath::Max(BotFillCount, AdjustedBotFillCount());
 	}
 
@@ -4132,7 +4132,7 @@ void AUTGameMode::GetGameURLOptions(const TArray<TSharedPtr<TAttributePropertyBa
 
 int32 AUTGameMode::AdjustedBotFillCount()
 {
-	if (GameSession && (GetNetMode() == NM_Standalone))
+	if (GameSession && ((GetNetMode() == NM_Standalone) || bIsLANGame))
 	{
 		return GameSession->MaxPlayers;
 	}
