@@ -20,7 +20,7 @@ UUTWeaponStateFiringBurstEnforcer::UUTWeaponStateFiringBurstEnforcer(const FObje
 
 void UUTWeaponStateFiringBurstEnforcer::BeginState(const UUTWeaponState* PrevState)
 {
-	if (GetRemainingCooldownTime() == 0.0f || (Cast<AUTWeap_Enforcer>(GetOuterAUTWeapon())->bDualEnforcerMode && !bSecondVolleyComplete))
+	if (GetRemainingCooldownTime() == 0.0f || (Cast<AUTWeap_Enforcer>(GetOuterAUTWeapon())->bDualWeaponMode && !bSecondVolleyComplete))
 	{
 		if (GetRemainingCooldownTime() == 0.0f)
 		{
@@ -64,8 +64,8 @@ void UUTWeaponStateFiringBurstEnforcer::EndState()
 
 void UUTWeaponStateFiringBurstEnforcer::IncrementShotTimer()
 {
-	if ((!Cast<AUTWeap_Enforcer>(GetOuterAUTWeapon())->bDualEnforcerMode && (CurrentShot == BurstSize)) 
-		|| (Cast<AUTWeap_Enforcer>(GetOuterAUTWeapon())->bDualEnforcerMode && (CurrentShot == BurstSize) && bFirstVolleyComplete))
+	if ((!Cast<AUTWeap_Enforcer>(GetOuterAUTWeapon())->bDualWeaponMode && (CurrentShot == BurstSize)) 
+		|| (Cast<AUTWeap_Enforcer>(GetOuterAUTWeapon())->bDualWeaponMode && (CurrentShot == BurstSize) && bFirstVolleyComplete))
 	{
 		GetOuterAUTWeapon()->GetWorldTimerManager().SetTimer(RefireCheckHandle, this, &UUTWeaponStateFiringBurstEnforcer::RefireCheckTimer, GetOuterAUTWeapon()->GetRefireTime(GetOuterAUTWeapon()->GetCurrentFireMode()) - (BurstSize - 1)*BurstInterval / GetUTOwner()->GetFireRateMultiplier(), true);
 	}
@@ -117,7 +117,7 @@ void UUTWeaponStateFiringBurstEnforcer::RefireCheckTimer()
 			}
 		}
 
-		bool bDualMode = Cast<AUTWeap_Enforcer>(GetOuterAUTWeapon())->bDualEnforcerMode;
+		bool bDualMode = Cast<AUTWeap_Enforcer>(GetOuterAUTWeapon())->bDualWeaponMode;
 
 		if ((bDualMode && !bSecondVolleyComplete) || (!bDualMode && !bFirstVolleyComplete) || GetRemainingCooldownTime() == 0.0f)
 		{
