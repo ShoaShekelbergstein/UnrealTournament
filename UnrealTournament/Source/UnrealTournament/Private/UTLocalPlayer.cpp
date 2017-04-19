@@ -21,7 +21,6 @@
 #include "SUTDialogBase.h"
 #include "SUTToastBase.h"
 #include "SUTWindowBase.h"
-#include "SUTAdminMessageToast.h"
 #include "SUTInputBoxDialog.h"
 #include "SUTLoginDialog.h"
 #include "SUTPlayerSettingsDialog.h"
@@ -1466,7 +1465,8 @@ void UUTLocalPlayer::RemoveChatArchiveChangedDelegate(FDelegateHandle DelegateHa
 void UUTLocalPlayer::ShowAdminMessage(FString Message)
 {
 #if !UE_SERVER
-	ShowToast(FText::FromString(Message), 10);
+	FText FinalMessage = FText::Format(NSLOCTEXT("UTLocalPlayer","AdminMessageFormat","Admin: {0}"), FText::FromString(Message));
+	ShowToast(FinalMessage, 6);
 #endif
 
 }
