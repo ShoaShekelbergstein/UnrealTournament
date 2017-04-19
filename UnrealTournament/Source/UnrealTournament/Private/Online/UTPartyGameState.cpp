@@ -78,6 +78,17 @@ void UUTPartyGameState::OnPartyMatchmakingStarted(bool bRanked)
 {
 	if (IsLocalPartyLeader())
 	{
+
+		UUTGameInstance* GameInstance = GetTypedOuter<UUTGameInstance>();
+		if (GameInstance)
+		{
+			UUTMatchmaking* Matchmaking = GameInstance->GetMatchmaking();
+			if (Matchmaking)
+			{
+				PartyState.PlaylistID = Matchmaking->GetPlaylistID();
+			}
+		}
+
 		PartyState.bRanked = bRanked;
 
 		if (bRanked)

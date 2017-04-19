@@ -57,6 +57,9 @@ struct FUTPartyRepState : public FPartyState
 	/** Will be true if the game is a ranked game */
 	UPROPERTY()
 	bool bRanked;
+	/** Will hold the current playlist ID */
+	UPROPERTY()
+	int32 PlaylistID;
 	
 	FUTPartyRepState()
 	{
@@ -65,6 +68,7 @@ struct FUTPartyRepState : public FPartyState
 		bLeaderFriendsOnly = false;
 		bLeaderInvitesOnly = false;
 		bRanked = false;
+		PlaylistID = 0;
 	}
 
 	/** Reset party back to defaults */
@@ -189,6 +193,11 @@ public:
 	bool IsMatchRanked()
 	{
 		return PartyState.bRanked;
+	}
+
+	int32 GetPlaylistID()
+	{
+		return PartyState.PlaylistID;
 	}
 
 };

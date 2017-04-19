@@ -140,7 +140,8 @@ FText SUTMatchmakingDialog::GetMatchmakingText() const
 	if (GameInstance)
 	{
 		UUTMatchmaking* Matchmaking = GameInstance->GetMatchmaking();
-		SearchType = PlayerOwner->PlayListIDToText(Matchmaking->GetPlaylistID());
+
+		int32 PlaylistID = INDEX_NONE;
 
 		UUTParty* Party = GameInstance->GetParties();
 		if (Party)
@@ -148,6 +149,7 @@ FText SUTMatchmakingDialog::GetMatchmakingText() const
 			UUTPartyGameState* PartyState = Party->GetUTPersistentParty();
 			if (PartyState)
 			{
+				PlaylistID = PartyState->GetPlaylistID();
 				switch (PartyState->GetPartyProgression())
 				{
 				case EUTPartyState::PostMatchmaking:
@@ -155,9 +157,14 @@ FText SUTMatchmakingDialog::GetMatchmakingText() const
 				}
 			}
 		}
+
+		SearchType = PlayerOwner->PlayListIDToText(PlaylistID);
 	}
 
-	return FText::Format(NSLOCTEXT("Generic", "SearchingForServer", "Searching for {0}Match..."), SearchType);
+	return PlayerOwner->IsPartyLeader()  
+				? FText::Format(NSLOCTEXT("Generic", "SearchingForServer", "Searching for {0}Match..."), SearchType) 
+				: FText::Format(NSLOCTEXT("Generic", "SearchingForServer", "Your leader is searching for {0}Match..."), SearchType);
+
 }
 
 
@@ -172,7 +179,7 @@ FText SUTMatchmakingDialog::GetMatchmakingTimeElapsedText() const
 			UUTPartyGameState* PartyState = Party->GetUTPersistentParty();
 			if (PartyState)
 			{
-				if (PlayerOwner->IsPartyLeader())
+				//if (PlayerOwner->IsPartyLeader())
 				{
 					int32 ElapsedTime = PlayerOwner->GetWorld()->RealTimeSeconds - TimeDialogOpened;
 					FTimespan TimeSpan(0, 0, ElapsedTime);
@@ -196,7 +203,7 @@ FText SUTMatchmakingDialog::GetMatchmakingEstimatedTimeText() const
 			UUTPartyGameState* PartyState = Party->GetUTPersistentParty();
 			if (PartyState)
 			{
-				if (PlayerOwner->IsPartyLeader())
+				//if (PlayerOwner->IsPartyLeader())
 				{
 					UUTMatchmaking* Matchmaking = GameInstance->GetMatchmaking();
 					if (Matchmaking)
