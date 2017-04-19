@@ -37,9 +37,14 @@ UUTCountDownMessage::UUTCountDownMessage(const class FObjectInitializer& ObjectI
 	bPlayDuringInstantReplay = false;
 }
 
+float UUTCountDownMessage::GetAnnouncementPriority(const FAnnouncementInfo AnnouncementInfo) const
+{
+	return (AnnouncementInfo.Switch <= 2000) ? 0.5f : 1.f;
+}
+
 bool UUTCountDownMessage::IsOptionalSpoken(int32 MessageIndex) const
 {
-	return (MessageIndex <= 2000) || (MessageIndex >=3000);
+	return (MessageIndex <= 2000);
 }
 
 void UUTCountDownMessage::ClientReceive(const FClientReceiveData& ClientData) const 

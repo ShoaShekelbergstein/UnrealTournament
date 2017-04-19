@@ -71,5 +71,6 @@ class UNREALTOURNAMENT_API UUTCountDownMessage : public UUTLocalMessage
 	virtual void GetEmphasisText(FText& PrefixText, FText& EmphasisText, FText& PostfixText, FLinearColor& EmphasisColor, int32 Switch, class APlayerState* RelatedPlayerState_1, class APlayerState* RelatedPlayerState_2, class UObject* OptionalObject) const override;
 	virtual void ClientReceive(const FClientReceiveData& ClientData) const override;
 	virtual bool IsOptionalSpoken(int32 MessageIndex) const override;
+	virtual float GetAnnouncementPriority(const FAnnouncementInfo AnnouncementInfo) const override;
 };
 
