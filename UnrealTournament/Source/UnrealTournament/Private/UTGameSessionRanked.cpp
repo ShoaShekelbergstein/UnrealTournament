@@ -87,7 +87,8 @@ void AUTGameSessionRanked::OnReadTitleFileComplete(bool bWasSuccessful, const FS
 						{
 							UTGameInstance->GetPlaylistManager()->UpdatePlaylistFromMCP(DownloadedPlaylists.PlaylistOverrides[i].Id,
 								DownloadedPlaylists.PlaylistOverrides[i].ExtraCommandline,
-								DownloadedPlaylists.PlaylistOverrides[i].MapNames);
+								DownloadedPlaylists.PlaylistOverrides[i].MapNames,
+								DownloadedPlaylists.PlaylistOverrides[i].bSkipEloChecks);
 
 						}
 					}

@@ -60,7 +60,7 @@ public:
 
 	bool GetTeamEloRatingForPlaylist(int32 PlaylistId, FString& TeamEloRating);
 
-	void UpdatePlaylistFromMCP(int32 PlaylistId, FString InExtraCommandline, TArray<FString>& InMapNames);
+	void UpdatePlaylistFromMCP(int32 PlaylistId, FString InExtraCommandline, TArray<FString>& InMapNames, bool bSkipEloChecks);
 
 	int32 GetNumPlaylists() { return Playlist.Num(); }
 

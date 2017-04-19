@@ -29,9 +29,13 @@ struct FUpdatedPlaylistEntry
 	UPROPERTY()
 	TArray<FString> MapNames;
 
+	UPROPERTY()
+	bool bSkipEloChecks;
+
 	FUpdatedPlaylistEntry()
 	{
 		Id = 0;
+		bSkipEloChecks = false;
 	}
 };
 
