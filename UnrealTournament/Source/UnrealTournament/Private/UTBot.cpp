@@ -156,6 +156,9 @@ void AUTBot::InitializeCharacter(UUTBotCharacter* NewCharacterData)
 	{
 		PS->SetCharacterVoice(CharacterData->CharacterVoice.ToString());
 		PS->SetCharacter(CharacterData->Character.ToString());
+		PS->SetPlayerName(CharacterData->GetName());
+		PS->PlayerCard = NewCharacterData;
+		PS->OnPlayerCardUpdated();
 		if (!CharacterData->HatType.ToString().IsEmpty())
 		{
 			PS->ServerReceiveHatClass(CharacterData->HatType.ToString());
@@ -182,8 +185,6 @@ void AUTBot::InitializeCharacter(UUTBotCharacter* NewCharacterData)
 			}
 		}
 	}
-
-	InitializeSkill(CharacterData->Skill);
 }
 
 float FBestInventoryEval::Eval(APawn* Asker, const FNavAgentProperties& AgentProps, AController* RequestOwner, const UUTPathNode* Node, const FVector& EntryLoc, int32 TotalDistance)
@@ -1506,7 +1507,7 @@ void AUTBot::ApplyWeaponAimAdjust(FVector TargetLoc, FVector& FocalPoint)
 
 					if ( MyWeap->bRecommendSplashDamage && EnemyChar != NULL && (Skill >= 4.0f + FMath::Max<float>(0.0f, Personality.Accuracy + Personality.Tactics) || bDefendMelee)
 						&& ( (EnemyChar->GetCharacterMovement()->MovementMode == MOVE_Falling && (GetPawn()->GetActorLocation().Z + 180.0f >= FocalPoint.Z))
-							|| (GetPawn()->GetActorLocation().Z + 40.0f >= FocalPoint.Z && (bDefendMelee || Skill > 6.5f * FMath::FRand() - 0.5f)) ) )
+							|| (GetPawn()->GetActorLocation().Z - 1.0f >= FocalPoint.Z && (bDefendMelee || Skill > 6.5f * FMath::FRand() - 0.5f)) ) )
 					{
 						FHitResult Hit;
 						bClean = !GetWorld()->LineTraceSingleByChannel(Hit, TargetLoc, TargetLoc - FVector(0.0f, 0.0f, TargetHeight + 13.0f), COLLISION_TRACE_WEAPONNOCHARACTER, Params);
@@ -2620,12 +2621,15 @@ FVector AUTBot::GetEnemyLocation(APawn* TestEnemy, bool bAllowPrediction)
 
 bool AUTBot::IsEnemyVisible(APawn* TestEnemy)
 {
-	// only use local enemies for personal visibility
-	for (const FBotEnemyInfo& Info : LocalEnemyList)
+	if (TestEnemy != nullptr)
 	{
-		if (Info.GetPawn() == TestEnemy)
+		// only use local enemies for personal visibility
+		for (const FBotEnemyInfo& Info : LocalEnemyList)
 		{
-			return Info.IsCurrentlyVisible(GetWorld()->TimeSeconds);
+			if (Info.GetPawn() == TestEnemy)
+			{
+				return Info.IsCurrentlyVisible(GetWorld()->TimeSeconds);
+			}
 		}
 	}
 	return false;
@@ -2826,6 +2830,18 @@ void AUTBot::ExecuteWhatToDoNext()
 		if (UTChar != nullptr && !UTChar->bDamageHurtsHealth && Enemy != nullptr && UTChar->LastGameVolume != nullptr && UTChar->LastGameVolume->bIsTeamSafeVolume && IsEnemyVisible(Enemy) && CanAttack(Enemy, Enemy->GetActorLocation(), true))
 		{
 			GoalString = TEXT("Stay in spawn protected volume and shoot spawn campers");
+			// randomly move around a little to make sure we don't get stuck
+			if (FMath::FRand() < 0.25f)
+			{
+				const FVector Forward = UTChar->GetActorRotation().Vector();
+				const FVector MoveAmt = Forward * (FMath::FRand() * -300.0f) + (Forward ^ FVector(0.0f, 0.0f, 1.0f)) * FMath::FRandRange(-500.0f, 500.0f);
+				FNavLocation Dest;
+				if (NavData->ProjectPoint(UTChar->GetNavAgentLocation() + MoveAmt, Dest, NavData->GetHumanPathSize().GetExtent()) && !NavData->RaycastWithZCheck(GetNavAgentLocation(), Dest.Location))
+				{
+					SetMoveTargetDirect(FRouteCacheItem(Dest.Location, Dest.NodeRef));
+					return;
+				}
+			}
 			DoRangedAttackOn(Enemy);
 			return;
 		}
@@ -3140,6 +3156,10 @@ void AUTBot::FightEnemy(bool bCanCharge, float EnemyStrength)
 		float AdjustedCombatStyle = Personality.Aggressiveness + MyWeap->SuggestAttackStyle();
 		CurrentAggression = 1.5f * FMath::FRand() - 0.8f + 2.0f * AdjustedCombatStyle - 0.5 * EnemyStrength
 								+ FMath::FRand() * ((Enemy->GetVelocity() - GetPawn()->GetVelocity()).GetSafeNormal() | (EnemyLoc - GetPawn()->GetActorLocation()).GetSafeNormal());
+		if (GetDefensePoint() != nullptr)
+		{
+			CurrentAggression -= 0.5f;
+		}
 		AUTWeapon* EnemyWeap = (Cast<AUTCharacter>(Enemy) != NULL) ? ((AUTCharacter*)Enemy)->GetWeapon() : NULL;
 		if (EnemyWeap != NULL)
 		{
@@ -4709,7 +4729,7 @@ void AUTBot::UpdateEnemyInfo(APawn* NewEnemy, EAIEnemyUpdateType UpdateType)
 		{
 			PickNewEnemy();
 			// maybe send voice message
-			if (Enemy == NewEnemy && (UpdateType == EUT_Seen || UpdateType == EUT_DealtDamage))
+			if (Enemy == NewEnemy && (UpdateType == EUT_Seen || UpdateType == EUT_DealtDamage) && (GetWorld()->GetAuthGameMode<AUTFlagRunGame>() == nullptr))
 			{
 				AUTCharacter* C = Cast<AUTCharacter>(NewEnemy);
 				if (C != NULL && C->GetCarriedObject() != NULL)

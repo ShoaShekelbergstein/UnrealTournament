@@ -9,7 +9,7 @@
 #include "UTAvoidMarker.generated.h"
 
 UCLASS()
-class AUTAvoidMarker : public AActor, public IUTTeamInterface
+class UNREALTOURNAMENT_API AUTAvoidMarker : public AActor, public IUTTeamInterface
 {
 	GENERATED_BODY()
 public:

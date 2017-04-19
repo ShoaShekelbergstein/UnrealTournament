@@ -7,7 +7,7 @@
 #include "UTDuelSquadAI.generated.h"
 
 UCLASS()
-class AUTDuelSquadAI : public AUTSquadAI
+class UNREALTOURNAMENT_API AUTDuelSquadAI : public AUTSquadAI
 {
 	GENERATED_BODY()
 public:

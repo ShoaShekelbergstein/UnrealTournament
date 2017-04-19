@@ -230,8 +230,8 @@ TSharedRef<SWidget> SUTMainMenu::AddPlayNow()
 	];
 
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayDM", "QuickPlay Deathmatch"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch,	EEpicDefaultRuleTags::Deathmatch));
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRun", "QuickPlay Flag Run"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRun));
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRunVSAI", "QuickPlay Flag Run Coop vs AI"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRunVSAI));
+	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRun", "QuickPlay Blitz"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRun));
+	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRunVSAI", "QuickPlay Blitz Coop vs AI"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRunVSAI));
 	DropDownButton->AddSpacer();
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_ChallengesGame", "Single Player Challenges"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowGamePanel));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_CreateGame", "Custom Single Player Match"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowCustomGamePanel));
@@ -325,74 +325,53 @@ void SUTMainMenu::OpenDelayedMenu()
 	{
 		bNeedToShowGamePanel = false;
 		AvailableGameRulesets.Empty();
-		TArray<FString> AllowedGameRulesets;
-
-		UUTEpicDefaultRulesets* DefaultRulesets = UUTEpicDefaultRulesets::StaticClass()->GetDefaultObject<UUTEpicDefaultRulesets>();
-		if (DefaultRulesets && DefaultRulesets->AllowedRulesets.Num() > 0)
-		{
-			AllowedGameRulesets.Append(DefaultRulesets->AllowedRulesets);
-		}
-
-		// If someone has screwed up the ini completely, just load all of the Epic defaults
-		if (AllowedGameRulesets.Num() <= 0)
-		{
-			UUTEpicDefaultRulesets::GetEpicRulesets(AllowedGameRulesets);
-		}
 
 		// Grab all of the available map assets.
 		TArray<FAssetData> MapAssets;
 		GetAllAssetData(UWorld::StaticClass(), MapAssets, false);
 
-		UE_LOG(UT,Verbose,TEXT("Loading Settings for %i Rules"), AllowedGameRulesets.Num())
-		for (int32 i=0; i < AllowedGameRulesets.Num(); i++)
+		UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
+
+		for (int32 i=0; i < UTGameEngine->GameRulesets.Num(); i++)
 		{
-			UE_LOG(UT,Verbose,TEXT("Loading Rule %s"), *AllowedGameRulesets[i])
-			if (!AllowedGameRulesets[i].IsEmpty())
+			UE_LOG(UT,Verbose,TEXT("Loading Rule %s"), *UTGameEngine->GameRulesets[i].UniqueTag)
+			if (!UTGameEngine->GameRulesets[i].bHideFromUI)
 			{
-				FName RuleName = FName(*AllowedGameRulesets[i]);
-				UUTGameRuleset* NewRuleset = NewObject<UUTGameRuleset>(GetTransientPackage(), RuleName, RF_Transient);
-				if (NewRuleset)
+				bool bExistsAlready = false;
+				for (int32 j=0; j < AvailableGameRulesets.Num(); j++)
 				{
-					NewRuleset->UniqueTag = AllowedGameRulesets[i];
-					bool bExistsAlready = false;
-					for (int32 j=0; j < AvailableGameRulesets.Num(); j++)
+					if ( AvailableGameRulesets[j]->UniqueTag.Equals(UTGameEngine->GameRulesets[i].UniqueTag, ESearchCase::IgnoreCase) || AvailableGameRulesets[j]->Title.ToLower() == UTGameEngine->GameRulesets[i].Title.ToLower() )
 					{
-						if ( AvailableGameRulesets[j]->UniqueTag.Equals(NewRuleset->UniqueTag, ESearchCase::IgnoreCase) || AvailableGameRulesets[j]->Title.ToLower() == NewRuleset->Title.ToLower() )
+						bExistsAlready = true;
+						break;
+					}
+				}
+
+				if ( !bExistsAlready )
+				{
+					FActorSpawnParameters Params;
+					Params.Owner = PlayerOwner->GetWorld()->GetGameState();
+					AUTReplicatedGameRuleset* NewReplicatedRuleset = PlayerOwner->GetWorld()->SpawnActor<AUTReplicatedGameRuleset>(Params);
+					if (NewReplicatedRuleset)
+					{
+						// Build out the map info
+						NewReplicatedRuleset->SetRules(UTGameEngine->GameRulesets[i], MapAssets);
+
+						// If this ruleset doesn't have any maps, then don't use it
+						if (NewReplicatedRuleset->MapList.Num() > 0)
 						{
-							bExistsAlready = true;
-							break;
+							AvailableGameRulesets.Add(NewReplicatedRuleset);
+						}
+						else
+						{
+							UE_LOG(UT,Warning,TEXT("Detected a ruleset [%s] that has no maps"), *UTGameEngine->GameRulesets[i].UniqueTag);
+							NewReplicatedRuleset->Destroy();
 						}
 					}
-
-					if ( !bExistsAlready )
-					{
-						// Before we create the replicated version of this rule.. if it's an epic rule.. insure they are using our defaults.
-						UUTEpicDefaultRulesets::InsureEpicDefaults(NewRuleset);
-
-						FActorSpawnParameters Params;
-						Params.Owner = PlayerOwner->GetWorld()->GetGameState();
-						AUTReplicatedGameRuleset* NewReplicatedRuleset = PlayerOwner->GetWorld()->SpawnActor<AUTReplicatedGameRuleset>(Params);
-						if (NewReplicatedRuleset)
-						{
-							// Build out the map info
-							NewReplicatedRuleset->SetRules(NewRuleset, MapAssets);
-
-							// If this ruleset doesn't have any maps, then don't use it
-							if (NewReplicatedRuleset->MapList.Num() > 0)
-							{
-								AvailableGameRulesets.Add(NewReplicatedRuleset);
-							}
-							else
-							{
-								UE_LOG(UT,Warning,TEXT("Detected a ruleset [%s] that has no maps"), *NewRuleset->UniqueTag);
-								NewReplicatedRuleset->Destroy();
-							}
-						}
-					}
-					else
-					{
-						UE_LOG(UT,Verbose,TEXT("Rule %s already exists."), *AllowedGameRulesets[i]);
-					}
+				}
+				else
+				{
+					UE_LOG(UT,Verbose,TEXT("Rule already exists."));
 				}
 			}
 		}
@@ -404,7 +383,6 @@ void SUTMainMenu::OpenDelayedMenu()
 
 		if (AvailableGameRulesets.Num() > 0)
 		{
-			
 			SAssignNew(CreateGameDialog, SUTGameSetupDialog)
 			.PlayerOwner(PlayerOwner)
 			.GameRuleSets(AvailableGameRulesets)

@@ -93,46 +93,14 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 	{
 		PC->ClientReturnedToMenus();
 		FURL& LastURL = GEngine->GetWorldContextFromWorld(GetWorld())->LastURL;
-
 		bool bReturnedFromChallenge = LastURL.HasOption(TEXT("showchallenge"));
 		PC->ShowMenu((bReturnedFromChallenge ? TEXT("showchallenge") : TEXT("")));
-
 		UUTProfileSettings* ProfileSettings = PC->GetProfileSettings();
-		bool bForceTutorialMenu = false;
-
-		if (!PC->SkipTutorialCheck())
-		{
-			if (ProfileSettings != nullptr && !FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")) && !FParse::Param(FCommandLine::Get(), TEXT("playoffline")) )
-			{
-				if (ProfileSettings->TutorialMask == 0 )
-				{
-					if ( !LastURL.HasOption(TEXT("tutorialmenu")) )
-					{
-	#if !PLATFORM_LINUX
-						if (FUTAnalytics::IsAvailable())
-						{
-							FUTAnalytics::FireEvent_UTTutorialStarted(Cast<AUTPlayerController>(PC),FString("Onboarding"));
-						}
-
-						if (PC->GetUTLocalPlayer())
-						{
-							PC->GetUTLocalPlayer()->LaunchTutorial(ETutorialTags::TUTTAG_Movement);
-						}
-						return;
-	#endif
-					}
-				}
-				else if ( ((ProfileSettings->TutorialMask & 0x07) != 0x07)  || (ProfileSettings->TutorialMask < 8) )
-				{
-					bForceTutorialMenu = true;
-				}
-			}
-		}
 
 #if !UE_SERVER
 		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(PC->Player);
 		// start with tutorial menu if requested
-		if (bForceTutorialMenu || LastURL.HasOption(TEXT("tutorialmenu")))
+		if (LastURL.HasOption(TEXT("tutorialmenu")))
 		{
 			// NOTE: If we are in a party, never return to the tutorial menu
 			if (LP != NULL && !LP->IsInAnActiveParty())
@@ -147,7 +115,7 @@ void AUTMenuGameMode::ShowMenu(AUTBasePlayerController* PC)
 			// make sure this doesn't get kept around
 			LastURL.RemoveOption(TEXT("tutorialmenu"));
 		}
-		LP->UpdateCheck();
+		LP->CheckForNewUpdate();
 #endif
 	}
 

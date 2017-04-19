@@ -239,6 +239,10 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 		float VerticalSpreadScaling;
 
+	/** Clamp randomized Vertical spread scaling to this value, used with VerticalSpreadScaling. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+		float MaxVerticalSpread;
+
 	/** First person, non attenuated sound to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 		TArray<USoundBase*> FPFireSound;
@@ -345,23 +349,17 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	bool bHideInCrosshairMenu;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
-		FText HighlightText;
+	FText HighlightText;
 
 	/** Hack for adjusting first person weapon mesh at different FOVs (until we have separate render pass for first person weapon. */
 	UPROPERTY(EditDefaultsOnly, Category="Weapon")
 	FVector FOVOffset;
-
+	
 	UPROPERTY()
 	TArray<UMaterialInstanceDynamic*> MeshMIDs;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Panini")
-	float Panini_d;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Panini")
-	float Panini_PushMax;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Panini")
-	float Panini_PushMin;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float WeaponRenderScale;
 
 	UPROPERTY()
 	UUTWeaponSkin* WeaponSkin;
@@ -521,6 +519,12 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	/** Base offset of first person mesh, cached from offset set up in blueprint. */
 	UPROPERTY()
 	FVector FirstPMeshOffset;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+		FVector LowMeshOffset;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+		FVector VeryLowMeshOffset;
 
 	/** Base relative rotation of first person mesh, cached from offset set up in blueprint. */
 	UPROPERTY()
@@ -916,6 +920,12 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
 	TArray<struct FParticleSysParam> OverlayEffectParams;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+		UParticleSystem* UDamageOverrideEffect1P;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+		UParticleSystem* UDamageOverrideEffect3P;
+
 	/** helper for shared overlay code between UTWeapon and UTWeaponAttachment
 	 * NOTE: can called on default object!
 	 */
@@ -1059,6 +1069,105 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Mesh)
 	TArray<UMeshComponent*> Get1PMeshes() const;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation Toggles")
+	bool bSecondaryIdle;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation Toggles")
+	bool bWallRunFire;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation Toggles")
+	bool bIdleOffset;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation Toggles")
+	bool bIdleEmpty;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation Toggles")
+	bool bIdleAlt;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* idle;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* idle_pose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* idleOffset_pose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* idleEmpty_pose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* idleAlt_offset_pose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* idle_pose_zero;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* secondary_idle;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* secondary_idle_into;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* secondary_idle_out;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* secondary_idle_pose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* secondary_idleOffset_pose;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* secondary_idleAlt_offset_pose;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* runForward;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* runForward_L;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* runForward_R;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* jump;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* fall;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* fall_long;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* land;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* land_soft;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* land_medium;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* land_heavy;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* slide;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* dodgeForward;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* dodgeBack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* dodgeLeft;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* dodgeRight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_L_into;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_L;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_L_out;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_R_into;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_R;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_R_out;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	class UAimOffsetBlendSpace* lagAO;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	class UBlendSpace* leanBS;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* inspect;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* accent_A;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* accent_B;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* fidget_A;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* fidget_B;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* fidget_C;
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon")

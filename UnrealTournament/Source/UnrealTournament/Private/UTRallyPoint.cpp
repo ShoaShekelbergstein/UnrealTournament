@@ -562,7 +562,7 @@ void AUTRallyPoint::OnRallyTimeRemaining()
 	RallyTimeRemaining = ReplicatedRallyTimeRemaining;
 }
 
-// flag run game has pointer to active flag, use this to determine distance. base on flag, not carrier
+// Blitz game has pointer to active flag, use this to determine distance. base on flag, not carrier
 void AUTRallyPoint::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -595,6 +595,7 @@ void AUTRallyPoint::Tick(float DeltaTime)
 				}
 				else
 				{
+					LastRallyHot = FMath::Max(LastRallyHot, NearbyFC->LastTargetedTime);
 					UpdateRallyReadyCountdown(RallyReadyCountdown - DeltaTime);
 					if (RallyReadyCountdown <= 0.f)
 					{
@@ -624,6 +625,15 @@ void AUTRallyPoint::Tick(float DeltaTime)
 											}
 										}
 									}
+								}
+
+								// tell bots about FC position
+								// technically this should happen only after someone uses the rally point (since that's when the defender HUD shows up)
+								// but we don't have a "tell bot we realized they were here X seconds ago" function and anyway in the majority of cases the rally point used is not a surprise
+								AUTBot* B = Cast<AUTBot>(Iterator->Get());
+								if (B != NULL && !B->IsTeammate(NearbyFC))
+								{
+									B->UpdateEnemyInfo(NearbyFC, EUT_HeardExact);
 								}
 							}
 						}
@@ -659,6 +669,15 @@ void AUTRallyPoint::Tick(float DeltaTime)
 			}
 			else if (RallyPointState == RallyPointStates::Powered)
 			{
+				if (GetWorld()->GetTimeSeconds() - RallyStartTime < 0.7f)
+				{
+					AUTFlagRunGame* FlagRunGame = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
+					AUTCharacter* NearbyFC = FlagRunGame && FlagRunGame->ActiveFlag ? FlagRunGame->ActiveFlag->HoldingPawn : nullptr;
+					if (NearbyFC && (NearbyFC->LastTargetedTime > LastRallyHot))
+					{
+						LastRallyHot = NearbyFC->LastTargetedTime;
+					}
+				}
 				RallyTimeRemaining = MinimumRallyTime - (GetWorld()->GetTimeSeconds() - RallyStartTime);
 				if (int32(RallyTimeRemaining) != int32(RallyTimeRemaining + DeltaTime))
 				{

@@ -103,6 +103,8 @@ protected:
 	TSharedPtr<SGridPanel> TopPanel;
 	TSharedPtr<SGridPanel> MapPanel;
 	
+	FReply ReturnToMainMenu();
+
 	void TextureLoadComplete(const FName& InPackageName, UPackage* LoadedPackage, EAsyncLoadingResult::Type Result);
 	void LeaderTextureLoadComplete(const FName& InPackageName, UPackage* LoadedPackage, EAsyncLoadingResult::Type Result);
 	FReply OnLeadingMapClick(int32 ButtonIndex);
@@ -126,6 +128,8 @@ protected:
 	}
 
 	virtual FReply OnButtonClick(uint16 ButtonID) override;
+	virtual FReply OnKeyUp(const FGeometry& MyGeometry, const FKeyEvent& InKeyboardEvent) override;
+	void AddButtonsToLeftOfButtonBar(uint32& ButtonCount) override;
 
 };
 

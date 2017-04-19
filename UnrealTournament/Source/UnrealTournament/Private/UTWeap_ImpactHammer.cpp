@@ -46,6 +46,8 @@ AUTWeap_ImpactHammer::AUTWeap_ImpactHammer(const FObjectInitializer& ObjectIniti
 	TutorialAnnouncements.Add(TEXT("PriFireImpactHammer"));
 	TutorialAnnouncements.Add(TEXT("SecFireImpactHammer"));
 	HighlightText = NSLOCTEXT("Weapon", "ImpactHighlightText", "Hammer Time");
+	LowMeshOffset = FVector(0.f, 0.f, -5.f);
+	VeryLowMeshOffset = FVector(0.f, 0.f, -7.f);
 }
 
 void AUTWeap_ImpactHammer::DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHudWidget, float RenderDelta)

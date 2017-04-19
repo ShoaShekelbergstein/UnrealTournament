@@ -244,3 +244,8 @@ void AUTServerBeaconClient::ClientRequestInstanceResult_Implementation(EInstance
 	}
 }
 
+void AUTServerBeaconClient::SetBeaconConnectionTimeout(float NewBeaconConnectionTimeout)
+{
+	BeaconConnectionTimeout = NewBeaconConnectionTimeout;	
+	BeaconConnectionInitialTimeout = NewBeaconConnectionTimeout;	
+}

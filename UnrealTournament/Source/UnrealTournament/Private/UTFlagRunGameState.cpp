@@ -70,6 +70,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	HighlightMap.Add(HighlightNames::RallyPointPowered, NSLOCTEXT("AUTGameMode", "RallyPointPowered", "{0} RallyPoints Powered"));
 	HighlightMap.Add(HighlightNames::HatTrick, NSLOCTEXT("AUTGameMode", "HatTrick", "3 Flag Caps"));
 	HighlightMap.Add(HighlightNames::LikeTheWind, NSLOCTEXT("AUTGameMode", "LikeTheWind", "\u2605 \u2605 \u2605 Cap"));
+	HighlightMap.Add(HighlightNames::DeliveryBoy, NSLOCTEXT("AUTGameMode", "DeliveryBoy", "Capped the Flag"));
 
 	ShortHighlightMap.Add(HighlightNames::BadMF, NSLOCTEXT("AUTGameMode", "BadMF", "Bad to the Bone"));
 	ShortHighlightMap.Add(HighlightNames::BadAss, NSLOCTEXT("AUTGameMode", "BadAss", "Superior Genetics"));
@@ -105,6 +106,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	ShortHighlightMap.Add(HighlightNames::RallyPointPowered, NSLOCTEXT("AUTGameMode", "ShortRallyPointPowered", "Power Source"));
 	ShortHighlightMap.Add(HighlightNames::HatTrick, NSLOCTEXT("AUTGameMode", "ShortHatTrick", "Hat Trick"));
 	ShortHighlightMap.Add(HighlightNames::LikeTheWind, NSLOCTEXT("AUTGameMode", "ShortLikeTheWind", "Run Like the Wind"));
+	ShortHighlightMap.Add(HighlightNames::DeliveryBoy, NSLOCTEXT("AUTGameMode", "ShortDeliveryBoy", "Delivery Boy"));
 }
 
 void AUTFlagRunGameState::BeginPlay()
@@ -770,6 +772,10 @@ void AUTFlagRunGameState::AddMinorRoundHighlights(AUTPlayerState* PS)
 		{
 			PS->MatchHighlights[0] = HighlightNames::MoreThanAHandful;
 		}
+		else if (PS->CarriedObject != nullptr)
+		{
+			PS->AddMatchHighlight(HighlightNames::DeliveryBoy, 0);
+		}
 		else if (PS->MatchHighlightData[0] > 4)
 		{
 			FName HappyNames[2] = { HighlightNames::BobLife, HighlightNames::GameOver };
@@ -793,6 +799,10 @@ void AUTFlagRunGameState::AddMinorRoundHighlights(AUTPlayerState* PS)
 			PS->MatchHighlights[0] = HappyNames[HappyCount % 2];
 			HappyCount++;
 		}
+	}
+	else if (PS->CarriedObject != nullptr)
+	{
+		PS->AddMatchHighlight(HighlightNames::DeliveryBoy, 0);
 	}
 	else
 	{

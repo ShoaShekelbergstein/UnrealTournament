@@ -612,10 +612,7 @@ public:
 	 * @return A normalized copy if safe, (0,0,0) otherwise.
 	 */
 	FVector GetSafeNormal(float Tolerance=SMALL_NUMBER) const;
-
-	DEPRECATED(4.7, "Deprecated due to unclear name, use GetSafeNormal instead.")
-	FVector SafeNormal(float Tolerance = SMALL_NUMBER) const;
-
+	
 	/**
 	 * Gets a normalized copy of the 2D components of the vector, checking it is safe to do so. Z is set to zero. 
 	 * Returns zero vector if vector length is too small to normalize.
@@ -624,10 +621,7 @@ public:
 	 * @return Normalized copy if safe, otherwise returns zero vector.
 	 */
 	FVector GetSafeNormal2D(float Tolerance=SMALL_NUMBER) const;
-
-	DEPRECATED(4.7, "Deprecated due to unclear name, use GetSafeNormal2D instead.")
-	FVector SafeNormal2D(float Tolerance = SMALL_NUMBER) const;
-
+	
 	/**
 	 * Returns the cosine of the angle between this vector and another projected onto the XY plane (no Z).
 	 *
@@ -1723,11 +1717,6 @@ FORCEINLINE FVector FVector::GetSafeNormal(float Tolerance) const
 	return FVector(X*Scale, Y*Scale, Z*Scale);
 }
 
-FORCEINLINE FVector FVector::SafeNormal(float Tolerance) const
-{
-	return GetSafeNormal(Tolerance);
-}
-
 FORCEINLINE FVector FVector::GetSafeNormal2D(float Tolerance) const
 {
 	const float SquareSum = X*X + Y*Y;
@@ -1751,11 +1740,6 @@ FORCEINLINE FVector FVector::GetSafeNormal2D(float Tolerance) const
 
 	const float Scale = FMath::InvSqrt(SquareSum);
 	return FVector(X*Scale, Y*Scale, 0.f);
-}
-
-FORCEINLINE FVector FVector::SafeNormal2D(float Tolerance) const
-{
-	return GetSafeNormal2D(Tolerance);
 }
 
 FORCEINLINE float FVector::CosineAngle2D(FVector B) const

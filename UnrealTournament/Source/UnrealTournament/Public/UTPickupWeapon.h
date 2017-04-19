@@ -35,6 +35,8 @@ class UNREALTOURNAMENT_API AUTPickupWeapon : public AUTPickupInventory
 	: Super(ObjectInitializer)
 	{
 		Collision->InitCapsuleSize(78.0f, 80.0f);
+		RespawnTime = 20.0f;
+		NextPickupTime = 30.f;
 	}
 
 protected:
@@ -58,6 +60,10 @@ public:
 	/** list of characters that have picked up this weapon recently, used when weapon stay is on to avoid repeats */
 	UPROPERTY(BlueprintReadWrite, Category = PickupWeapon)
 	TArray<FWeaponPickupCustomer> Customers;
+
+	/** Next pickup time with weapon stay */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Weapon)
+		float NextPickupTime;
 
 	virtual bool IsTaken(APawn* TestPawn) override;
 	virtual void AddHiddenComponents(bool bTaken, TSet<FPrimitiveComponentId>& HiddenComponents) override

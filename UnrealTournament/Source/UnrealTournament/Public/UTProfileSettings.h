@@ -416,4 +416,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = Onboarding)
 	uint32 SkipOnboarding : 1;
 
+	// Holds the number of times a tutorial movie has been watched.  After a cut off point,
+	// the tutorial movie won't be played when starting a single player match
+	UPROPERTY()
+	TMap<int32, int32> TutorialVideoWatchCount;
+
 };

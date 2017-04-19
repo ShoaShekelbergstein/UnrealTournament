@@ -33,7 +33,6 @@ public:
 	virtual FReply OnButtonClick(uint16 ButtonID);
 
 	FText GetMatchmakingText() const;
-	FText GetMatchmakingText2() const;
 	FText GetMatchmakingTimeElapsedText() const;
 	FText GetMatchmakingEstimatedTimeText() const;
 	FText GetRegionText() const;

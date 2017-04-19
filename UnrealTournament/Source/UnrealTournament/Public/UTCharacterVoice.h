@@ -51,6 +51,7 @@ const int32 GOING_IN_SWITCH_INDEX = 10800;
 const int32 ON_OFFENSE_SWITCH_INDEX = 10900;
 const int32 SPREAD_OUT_SWITCH_INDEX = 11000;
 const int32 BASE_UNDER_ATTACK_SWITCH_INDEX = 11100;
+const int32 DROP_FLAG_SWITCH_INDEX = 11200;
 const int32 KEY_CALLOUTS = 100000;
 const int32 FIRSTGAMEVOLUMESPEECH = KEY_CALLOUTS + 299;
 const int32 LASTGAMEVOLUMESPEECH = KEY_CALLOUTS + 4999;
@@ -172,6 +173,9 @@ class UNREALTOURNAMENT_API UUTCharacterVoice : public UUTLocalMessage
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
 		TArray<FCharacterSpeech> SniperSpottedMessages;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
+		TArray<FCharacterSpeech> RallyHotMessages;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
 		FGameVolumeSpeech BridgeLines;

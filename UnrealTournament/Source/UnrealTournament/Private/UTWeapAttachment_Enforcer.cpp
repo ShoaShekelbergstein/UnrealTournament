@@ -10,12 +10,14 @@ AUTWeapAttachment_Enforcer::AUTWeapAttachment_Enforcer(const FObjectInitializer&
 : Super(OI)
 {
 	LeftMesh = OI.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("Mesh3P_Left"));
-
 	LeftMesh->SetupAttachment(RootComponent);
-
 	LeftMesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::OnlyTickPoseWhenRendered;
-	LeftAttachSocket = FName((TEXT("LeftWeaponPoint")));
+	LeftMesh->bLightAttachmentsAsGroup = true;
+	LeftMesh->bReceivesDecals = false;
+	LeftMesh->bUseAttachParentBound = true;
+	LeftMesh->LightingChannels.bChannel1 = true;
 
+	LeftAttachSocket = FName((TEXT("LeftWeaponPoint")));
 	BurstSize = 3;
 	AlternateCount = 0;
 }
@@ -115,29 +117,29 @@ void AUTWeapAttachment_Enforcer::PlayFiringEffects()
 
 		if (FireEffect.IsValidIndex(CalculatedMuzzleFlashIndex) && FireEffect[CalculatedMuzzleFlashIndex] != NULL)
 		{
-			UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), FireEffect[CalculatedMuzzleFlashIndex], SpawnLocation, (UTOwner->FlashLocation - SpawnLocation).Rotation(), true);
-			PSC->SetVectorParameter(NAME_HitLocation, UTOwner->FlashLocation);
-			PSC->SetVectorParameter(NAME_LocalHitLocation, PSC->ComponentToWorld.InverseTransformPosition(UTOwner->FlashLocation));
+			UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), FireEffect[CalculatedMuzzleFlashIndex], SpawnLocation, (UTOwner->FlashLocation.Position - SpawnLocation).Rotation(), true);
+			PSC->SetVectorParameter(NAME_HitLocation, UTOwner->FlashLocation.Position);
+			PSC->SetVectorParameter(NAME_LocalHitLocation, PSC->ComponentToWorld.InverseTransformPosition(UTOwner->FlashLocation.Position));
 		}
 
 		// perhaps the muzzle flash also contains hit effect (constant beam, etc) so set the parameter on it instead
 		else if (MuzzleFlash.IsValidIndex(CalculatedMuzzleFlashIndex) && MuzzleFlash[CalculatedMuzzleFlashIndex] != NULL)
 		{
-			MuzzleFlash[CalculatedMuzzleFlashIndex]->SetVectorParameter(NAME_HitLocation, UTOwner->FlashLocation);
-			MuzzleFlash[CalculatedMuzzleFlashIndex]->SetVectorParameter(NAME_LocalHitLocation, MuzzleFlash[CalculatedMuzzleFlashIndex]->ComponentToWorld.InverseTransformPosition(UTOwner->FlashLocation));
+			MuzzleFlash[CalculatedMuzzleFlashIndex]->SetVectorParameter(NAME_HitLocation, UTOwner->FlashLocation.Position);
+			MuzzleFlash[CalculatedMuzzleFlashIndex]->SetVectorParameter(NAME_LocalHitLocation, MuzzleFlash[CalculatedMuzzleFlashIndex]->ComponentToWorld.InverseTransformPosition(UTOwner->FlashLocation.Position));
 		}
 
-		if ((UTOwner->FlashLocation - LastImpactEffectLocation).Size() >= ImpactEffectSkipDistance || GetWorld()->TimeSeconds - LastImpactEffectTime >= MaxImpactEffectSkipTime)
+		if ((UTOwner->FlashLocation.Position - LastImpactEffectLocation).Size() >= ImpactEffectSkipDistance || GetWorld()->TimeSeconds - LastImpactEffectTime >= MaxImpactEffectSkipTime)
 		{
 			if (ImpactEffect.IsValidIndex(UTOwner->FireMode) && ImpactEffect[UTOwner->FireMode] != NULL)
 			{
-				FHitResult ImpactHit = AUTWeapon::GetImpactEffectHit(UTOwner, SpawnLocation, UTOwner->FlashLocation);
+				FHitResult ImpactHit = AUTWeapon::GetImpactEffectHit(UTOwner, SpawnLocation, UTOwner->FlashLocation.Position);
 				if (!CancelImpactEffect(ImpactHit))
 				{
 					ImpactEffect[UTOwner->FireMode].GetDefaultObject()->SpawnEffect(GetWorld(), FTransform(ImpactHit.Normal.Rotation(), ImpactHit.Location), ImpactHit.Component.Get(), NULL, UTOwner->Controller);
 				}
 			}
-			LastImpactEffectLocation = UTOwner->FlashLocation;
+			LastImpactEffectLocation = UTOwner->FlashLocation.Position;
 			LastImpactEffectTime = GetWorld()->TimeSeconds;
 		}
 

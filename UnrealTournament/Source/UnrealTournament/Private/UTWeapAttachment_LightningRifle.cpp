@@ -88,41 +88,44 @@ void AUTWeapAttachment_LightningRifle::ChainEffects()
 	static FName NAME_HitLocation(TEXT("HitLocation"));
 	static FName NAME_LocalHitLocation(TEXT("LocalHitLocation"));
 	static FName NAME_ChainEffects = FName(TEXT("ChainEffects"));
-	FVector BeamHitLocation = UTOwner->FlashLocation;
+	FVector BeamHitLocation = UTOwner->FlashLocation.Position;
 	FCollisionQueryParams SphereParams(NAME_ChainEffects, true, UTOwner);
 
 	// query scene to see what we hit
 	TArray<FOverlapResult> Overlaps;
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	GetWorld()->OverlapMultiByChannel(Overlaps, BeamHitLocation, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeSphere(ChainRadius), SphereParams);
-
-	// collate into per-actor list of hit components
-	TMap< AActor*, TArray<FHitResult> > OverlapComponentMap;
-	for (int32 Idx = 0; Idx < Overlaps.Num(); ++Idx)
+	if (GS)
 	{
-		FOverlapResult const& Overlap = Overlaps[Idx];
-		AUTCharacter* const OverlapChar = Cast<AUTCharacter>(Overlap.GetActor());
+		GetWorld()->OverlapMultiByChannel(Overlaps, BeamHitLocation, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeSphere(ChainRadius), SphereParams);
 
-		if (OverlapChar && !OverlapChar->IsDead() && !GS->OnSameTeam(UTOwner, OverlapChar) && Overlap.Component.IsValid())
+		// collate into per-actor list of hit components
+		TMap< AActor*, TArray<FHitResult> > OverlapComponentMap;
+		for (int32 Idx = 0; Idx < Overlaps.Num(); ++Idx)
 		{
-			FHitResult Hit(OverlapChar, Overlap.Component.Get(), OverlapChar->GetActorLocation(), FVector(0, 0, 1.f));
-			if (UUTGameplayStatics::ComponentIsVisibleFrom(Overlap.Component.Get(), BeamHitLocation, UTOwner, Hit, nullptr))
+			FOverlapResult const& Overlap = Overlaps[Idx];
+			AUTCharacter* const OverlapChar = Cast<AUTCharacter>(Overlap.GetActor());
+
+			if (OverlapChar && !OverlapChar->IsDead() && !GS->OnSameTeam(UTOwner, OverlapChar) && Overlap.Component.IsValid())
 			{
-				TArray<FHitResult>& HitList = OverlapComponentMap.FindOrAdd(OverlapChar);
-				HitList.Add(Hit);
+				FHitResult Hit(OverlapChar, Overlap.Component.Get(), OverlapChar->GetActorLocation(), FVector(0, 0, 1.f));
+				if (UUTGameplayStatics::ComponentIsVisibleFrom(Overlap.Component.Get(), BeamHitLocation, UTOwner, Hit, nullptr))
+				{
+					TArray<FHitResult>& HitList = OverlapComponentMap.FindOrAdd(OverlapChar);
+					HitList.Add(Hit);
+				}
 			}
 		}
-	}
 
-	for (TMap<AActor*, TArray<FHitResult> >::TIterator It(OverlapComponentMap); It; ++It)
-	{
-		AActor* const Victim = It.Key();
-		AUTCharacter* const VictimPawn = Cast<AUTCharacter>(Victim);
-		FVector BeamSpawn = VictimPawn->GetActorLocation();
-		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), RealFireEffect, BeamHitLocation, (BeamSpawn - BeamHitLocation).Rotation(), true);
-		PSC->SetVectorParameter(NAME_HitLocation, BeamSpawn);
-		PSC->SetVectorParameter(NAME_LocalHitLocation, PSC->ComponentToWorld.InverseTransformPosition(BeamSpawn));
-		PSC->CustomTimeDilation = 0.2f;
+		for (TMap<AActor*, TArray<FHitResult> >::TIterator It(OverlapComponentMap); It; ++It)
+		{
+			AActor* const Victim = It.Key();
+			AUTCharacter* const VictimPawn = Cast<AUTCharacter>(Victim);
+			FVector BeamSpawn = VictimPawn->GetActorLocation();
+			UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), RealFireEffect, BeamHitLocation, (BeamSpawn - BeamHitLocation).Rotation(), true);
+			PSC->SetVectorParameter(NAME_HitLocation, BeamSpawn);
+			PSC->SetVectorParameter(NAME_LocalHitLocation, PSC->ComponentToWorld.InverseTransformPosition(BeamSpawn));
+			PSC->CustomTimeDilation = 0.2f;
+		}
 	}
 }
 

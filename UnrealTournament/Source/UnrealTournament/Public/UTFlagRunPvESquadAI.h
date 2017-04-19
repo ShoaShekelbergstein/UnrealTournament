@@ -5,7 +5,7 @@
 #include "UTFlagRunPvESquadAI.generated.h"
 
 UCLASS()
-class AUTFlagRunPvESquadAI : public AUTAsymCTFSquadAI
+class UNREALTOURNAMENT_API AUTFlagRunPvESquadAI : public AUTAsymCTFSquadAI
 {
 	GENERATED_BODY()
 public:

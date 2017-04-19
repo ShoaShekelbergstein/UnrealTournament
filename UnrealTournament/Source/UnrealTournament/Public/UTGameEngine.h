@@ -3,6 +3,10 @@
 
 #include "UTVideoRecordingFeature.h"
 #include "UTChallengeManager.h"
+#include "../../Engine/Source/Runtime/AssetRegistry/Public/AssetData.h"
+#include "Online.h"
+#include "OnlineSubsystemTypes.h"
+#include "OnlineTitleFileInterface.h"
 #include "UTGameEngine.generated.h"
 
 
@@ -19,6 +23,11 @@ private:
 	TArray< TSubclassOf<AUTWeapon> > AlwaysLoadedWeapons;
 
 public:
+	/** cached list of UTBotCharacter assets from the asset registry, so we don't need to query the registry every time we add a bot */
+	TArray<FAssetData> BotAssets;
+
+	virtual class UUTBotCharacter* FindBotAsset(const FString& BotName);
+
 	/** default screenshot used for levels when none provided in the level itself */
 	UPROPERTY()
 	UTexture2D* DefaultLevelScreenshot;
@@ -224,6 +233,33 @@ public:
 	// Holds a list of the unique ids of the non-idle players in the last match
 	UPROPERTY()
 	TArray<FString> PlayerReservations;
+
+	// Takes a given ruleset, and make sure it conforms to Epic's default rules if it's using one of the Epic rule tags.  NOTE this will
+	// utilize the DefaultEpicRuleDataJson that is pushed from the MCP if it's available, otherwise it will use the UTEpicDefaultRuleset object.
+	void InsureEpicDefaults(FUTGameRuleset* NewRuleset);
+
+	FUTGameRuleset* GetRuleset(const FString& RulesetTag);
+
+	void ProcessMCPRulesetUpdate(FString MCPRulesetJson);
+	virtual void Start() override;
+
+	/**
+	 *	Holds a list of rulesets that are available.  The list is initially seeded during initialization via the UTGameRules.json file
+	 *	and it's then updated when an MCP connection is made.
+	 **/
+	UPROPERTY(BlueprintReadOnly, category = Ruleset)
+	TArray<FUTGameRuleset> GameRulesets;
+
+	bool bReceivedTitleFiles;
+
+protected:
+
+	FDelegateHandle OnReadTitleFileCompleteDelegate;
+	FDelegateHandle OnEnumerateTitleFilesCompleteDelegate;
+
+	virtual void OnReadTitleFileComplete(bool bWasSuccessful, const FString& Filename);
+	virtual void OnEnumerateTitleFilesComplete(bool bWasSuccessful);
+
 
 };
 

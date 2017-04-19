@@ -8,7 +8,7 @@
 #include "UTShockComboEffect.generated.h"
 
 UCLASS(Abstract)
-class AUTShockComboEffect : public AUTPhysicsVortex
+class UNREALTOURNAMENT_API AUTShockComboEffect : public AUTPhysicsVortex
 {
 	GENERATED_BODY()
 public:

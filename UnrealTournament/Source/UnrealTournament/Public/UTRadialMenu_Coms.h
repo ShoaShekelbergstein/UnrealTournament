@@ -59,6 +59,9 @@ public:
 	FHUDRenderObject_Text ToolTipTemplate;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RenderObject")
+	FHUDRenderObject_Text TargetTextTemplate;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RenderObject")
 	float ForcedCancelDist;
 protected:
 
@@ -70,6 +73,9 @@ protected:
 	FComMenuCommandList CommandList;
 	FRadialSegment YesZone;
 	FRadialSegment NoZone;
+
+	UPROPERTY()
+	UTexture2D* AltIconAtlas;
 
 	virtual bool IsYesSelected();
 	virtual bool IsNoSelected();

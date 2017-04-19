@@ -292,6 +292,9 @@ public:
 	UFUNCTION(exec)
 	virtual void ToggleScoreboard(bool bShow);
 
+	UFUNCTION(BlueprintCallable, Category = LineUp)
+	virtual bool IsLineUpActive() const;
+
 	UFUNCTION(client, reliable)
 	virtual void ClientPrepareForLineUp();
 
@@ -489,7 +492,7 @@ public:
 	 * note that HitPawn may be NULL if it is not currently relevant to the client
 	 */
 	UFUNCTION(Client, Unreliable)
-	void ClientNotifyCausedHit(APawn* HitPawn, uint8 Damage, bool bArmorDamage);
+	void ClientNotifyCausedHit(AActor* HitActor, uint8 Damage, bool bArmorDamage);
 
 	/** blueprint hook */
 	UFUNCTION(BlueprintCallable, Category = Message)
@@ -841,33 +844,11 @@ public:
 	UFUNCTION(Reliable, Server, WithValidation)
 	virtual void ServerSwitchTeam();
 
-protected:
-	EWeaponHand ReplicatedWeaponHand;
-
 public:
-	inline EWeaponHand GetWeaponHand()
-	{
-		//Spectators always see right handed weapons
-		bool bIsReallySpectating = false;
-		// this is detecting edge cases where we're transitioning to controlling a Pawn but not all the data has replicated and we're still in spectating state
-		if (IsInState(NAME_Spectating) && GetPawn() == nullptr)
-		{
-			APawn* P = Cast<APawn>(GetViewTarget());
-			if (P == nullptr || P->Controller != this)
-			{
-				bIsReallySpectating = true;
-			}
-		}
-		return bIsReallySpectating ? EWeaponHand::HAND_Right : GetPreferredWeaponHand();
-	}
-
-	EWeaponHand GetPreferredWeaponHand();
+	virtual EWeaponHand GetWeaponHand();
 
 	UFUNCTION(BlueprintCallable, Category = Weapon)
 	void SetWeaponHand(EWeaponHand NewHand);
-
-	UFUNCTION(Reliable, Server, WithValidation)
-	void ServerSetWeaponHand(EWeaponHand NewHand);
 
 	/** Last time PrevWeapon or NextWeapon was called. */
 	UPROPERTY(BluePrintReadWrite, Category = Input)
@@ -879,6 +860,9 @@ public:
 	/** Switches weapons using modern groups. */
 	UFUNCTION(Exec)
 	virtual void SwitchWeaponGroup(int32 Group);
+
+	UFUNCTION(Reliable, Server, WithValidation)
+	virtual void ServerThrowWeapon();
 
 protected:
 	UPROPERTY(BluePrintReadOnly, Category = Dodging)
@@ -921,9 +905,7 @@ protected:
 
 	UFUNCTION(exec)
 	void SelectTranslocator();
-		
-	UFUNCTION(Reliable, Server, WithValidation)
-	virtual void ServerThrowWeapon();
+	
 
 	int32 PreviousWeaponGroup;
 
@@ -1046,8 +1028,6 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation)
 	virtual void ServerReceiveCountryFlag(FName NewCountryFlag);
 
-	virtual void DebugTest(FString TestCommand) override;
-
         // deprecated
 	UFUNCTION(BlueprintCallable, Category = PlayerController)
 	virtual void SkullPickedUp();
@@ -1072,6 +1052,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float BuyMenuToggleDelay;
 
+	// The time when a drop began.  If the drop ends before a short period, then
+	// it just uses the default code.
+	float DropStartTime;
+
 public:
 	FUniqueNetIdRepl GetGameAccountId() const;
 
@@ -1085,14 +1069,16 @@ public:
 	
 	virtual void UpdateRotation(float DeltaTime) override;
 
-	UFUNCTION(client, reliable)
-	void ClientOpenLoadout(bool bBuyMenu);
-
-	UFUNCTION(Exec)
-	void ShowBuyMenu();
-
 	UFUNCTION(Exec)
 	void DropCarriedObject();
+
+	UFUNCTION()
+	void ShowDropMenu();
+
+	UFUNCTION(Exec)
+	void StopDropCarriedObject();
+
+	FTimerHandle DropTimerHandle;
 
 	/** send localized message to this PC's client and to spectators of this PC's pawn. */
 	virtual void SendPersonalMessage(TSubclassOf<ULocalMessage> Message, int32 Switch = 0, class APlayerState* RelatedPlayerState_1 = NULL, class APlayerState* RelatedPlayerState_2 = NULL, class UObject* OptionalObject = NULL);
@@ -1227,8 +1213,6 @@ public:
 
 	UFUNCTION(exec)
 	virtual void HideWeaponWheel();
-
-	void ServerDebugTest_Implementation(const FString& TestCommand) override;
 
 	UFUNCTION(exec)
 	virtual void FlushVOIP();

@@ -68,12 +68,12 @@ void AUTCTFFlag::PlayCaptureEffect()
 {
 	if (Role == ROLE_Authority)
 	{
-		CaptureEffectCount++;
+		CaptureEffectLoc = GetActorLocation();
 		ForceNetUpdate();
 	}
 	if (GetNetMode() != NM_DedicatedServer)
 	{
-		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(this, CaptureEffect, GetActorLocation() - FVector(0.0f, 0.0f, Collision->GetUnscaledCapsuleHalfHeight()), GetActorRotation());
+		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(this, CaptureEffect, CaptureEffectLoc - FVector(0.0f, 0.0f, Collision->GetUnscaledCapsuleHalfHeight()), GetActorRotation());
 		if (PSC != NULL)
 		{
 			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
@@ -146,7 +146,7 @@ void AUTCTFFlag::SendHomeWithNotify()
 {
 	if (bGradualAutoReturn)
 	{
-		if (Role == ROLE_Authority)
+		if ((Role == ROLE_Authority) && bWaitForNearbyPlayer)
 		{
 			// if team member nearby, wait a bit longer
 			AUTCTFGameState* GameState = GetWorld()->GetGameState<AUTCTFGameState>();
@@ -517,7 +517,7 @@ void AUTCTFFlag::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AUTCTFFlag, CaptureEffectCount);
+	DOREPLIFETIME(AUTCTFFlag, CaptureEffectLoc);
 }
 
 static FName SavedObjectState;

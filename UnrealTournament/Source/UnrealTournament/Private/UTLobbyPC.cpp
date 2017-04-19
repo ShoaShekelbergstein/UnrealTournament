@@ -239,7 +239,7 @@ void AUTLobbyPC::RequestServerSendAllRedirects()
 	}
 	else
 	{
-		ShowMessage(NSLOCTEXT("UTLocalPlayer", "HasAllContentTitle", "Acquire Content"), NSLOCTEXT("UTLobbyPC", "HasAllMessage", "You have already request all of the content on this server."), UTDIALOG_BUTTON_OK, NULL);
+		ShowMessage(NSLOCTEXT("UTLocalPlayer", "HasAllContentTitle", "Acquire Content"), NSLOCTEXT("UTLobbyPC", "HasAllMessage", "You have already requested all of the content on this server."), UTDIALOG_BUTTON_OK, NULL);
 	}
 }
 #endif

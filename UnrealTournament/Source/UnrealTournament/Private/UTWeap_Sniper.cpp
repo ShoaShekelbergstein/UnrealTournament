@@ -47,6 +47,8 @@ AUTWeap_Sniper::AUTWeap_Sniper(const FObjectInitializer& ObjectInitializer)
 	TutorialAnnouncements.Add(TEXT("PriSniper"));
 	TutorialAnnouncements.Add(TEXT("SecSniper"));
 	HighlightText = NSLOCTEXT("Weapon", "SniperHighlightText", "One Man One Bullet");
+	LowMeshOffset = FVector(0.f, 0.f, -5.f);
+	VeryLowMeshOffset = FVector(0.f, 0.f, -11.f);
 }
 
 float AUTWeap_Sniper::GetHeadshotScale(AUTCharacter* HeadshotTarget) const
@@ -91,11 +93,11 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 
 	FHitResult Hit;
 	AUTPlayerController* UTPC = UTOwner ? Cast<AUTPlayerController>(UTOwner->Controller) : NULL;
-	AUTPlayerState* PS = UTOwner->Controller ? Cast<AUTPlayerState>(UTOwner->Controller->PlayerState) : NULL;
+	AUTPlayerState* PS = (UTOwner && UTOwner->Controller) ? Cast<AUTPlayerState>(UTOwner->Controller->PlayerState) : NULL;
 	float PredictionTime = UTPC ? UTPC->GetPredictionTime() : 0.f;
 	HitScanTrace(SpawnLocation, EndTrace, InstantHitInfo[CurrentFireMode].TraceHalfSize, Hit, PredictionTime);
 
-	if (Cast<AUTCharacter>(Hit.Actor.Get()) == NULL)
+	if (UTOwner && Cast<AUTCharacter>(Hit.Actor.Get()) == NULL)
 	{
 		// in some cases the head sphere is partially outside the capsule
 		// so do a second search just for that
@@ -133,7 +135,7 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 		}
 		else if (bDealDamage)
 		{
-			AUTBot* B = Cast<AUTBot>(UTOwner->Controller);
+			AUTBot* B = UTOwner ? Cast<AUTBot>(UTOwner->Controller) : nullptr;
 			if (B != NULL)
 			{
 				APawn* PawnTarget = Cast<APawn>(Hit.Actor.Get());
@@ -174,7 +176,7 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 			}
 			else
 			{
-				AUTBot* B = Cast<AUTBot>(UTOwner->Controller);
+				AUTBot* B = UTOwner ? Cast<AUTBot>(UTOwner->Controller) : nullptr;
 				if (!B || (B->Skill + B->Personality.Accuracy > 3.5f))
 				{
 					Damage = HeadshotDamage;
@@ -186,7 +188,7 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 			}
 		}
 		OnHitScanDamage(Hit, FireDir);
-		Hit.Actor->TakeDamage(Damage, FUTPointDamageEvent(Damage, Hit, FireDir, DamageType, FireDir * InstantHitInfo[CurrentFireMode].Momentum), UTOwner->Controller, this);
+		Hit.Actor->TakeDamage(Damage, FUTPointDamageEvent(Damage, Hit, FireDir, DamageType, FireDir * InstantHitInfo[CurrentFireMode].Momentum), (UTOwner ? UTOwner->Controller : nullptr), this);
 
 		if ((Role == ROLE_Authority) && bIsHeadShot && C && (C->Health > 0) && (bBlockedHeadshot || (Damage >= 100)))
 		{
@@ -197,7 +199,7 @@ void AUTWeap_Sniper::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
 			PS->ModifyStatsValue(HitsStatsName, 1);
 		}
 	}
-	if (Role == ROLE_Authority)
+	if (UTOwner && (Role == ROLE_Authority))
 	{
 		SetFlashExtra(Hit.Actor.Get());
 		UTOwner->SetFlashLocation(Hit.Location, CurrentFireMode);

@@ -7,6 +7,7 @@
 #include "../Widgets/SUTImage.h"
 #include "SUTPartyWidget.h"
 #include "SUTPartyInviteWidget.h"
+#include "SUTServerBrowserPanel.h"
 
 #if !UE_SERVER
 
@@ -32,15 +33,8 @@ protected:
 	virtual void OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow);
 	virtual void OnHidePanel();
 
-	TSharedRef<SWidget> BuildMainButtonContent();
-
-	FReply BasicTraining_Click();
+	FReply MainButtonClick(FName ButtonTag);
 	FReply OfflineAction_Click();
-	FReply FindAMatch_Click();
-	FReply FragCenter_Click();
-	FReply RecentMatches_Click();
-	FReply WatchLive_Click();
-	FReply TrainingVideos_Click();
 
 	virtual FLinearColor GetFadeColor() const;
 	virtual FSlateColor GetFadeBKColor() const;
@@ -59,12 +53,13 @@ protected:
 
 	EVisibility ShowNewChallengeImage() const;
 
-	FSlateColor GetFragCenterWatchNowColorAndOpacity() const;
-
 	TSharedPtr<SUTBorder> AnimWidget;
 
 	virtual void AnimEnd();
 	virtual void BuildQuickplayButton(TSharedPtr<SHorizontalBox> QuickPlayBox, FName BackgroundTexture, FText Caption, FName QuickMatchType, float Padding=0.0f);
+	
+	virtual TSharedRef<SBox> BuildHomePanelButton(FName ButtonTag, FName BackgroundTexture, const FText& Caption);
+
 	FReply QuickPlayClick(FName QuickMatchType);
 
 	TSharedRef<SWidget> BuildRankedPlaylist();
@@ -73,8 +68,16 @@ protected:
 	TArray<TSharedPtr<FServerData>> LanMatches;
 	TSharedPtr<SVerticalBox> LanBox;
 	FTimerHandle LanTimerHandle;
+	FTimerHandle LanPingHandle;
+	TArray<FServerPingTracker> PingTrackers;
 
 	void CheckForLanServers();
+	void RebuildLanBox();
+
+	void PingLanServers();
+	virtual void OnPingResult(AUTServerBeaconClient* Sender, FServerBeaconInfo ServerInfo);
+	virtual void OnPingFailure(AUTServerBeaconClient* Sender);
+
 
 	virtual FReply OnJoinLanClicked(TSharedPtr<FServerData> Server);
 	virtual FReply OnSpectateLanClicked(TSharedPtr<FServerData> Server);

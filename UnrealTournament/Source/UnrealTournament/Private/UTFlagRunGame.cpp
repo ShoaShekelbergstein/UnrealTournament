@@ -50,7 +50,7 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	SilverScore = 2;
 	BronzeScore = 1;
 	DefenseScore = 1;
-	DisplayName = NSLOCTEXT("UTGameMode", "FLAGRUN", "Flag Run");
+	DisplayName = NSLOCTEXT("UTGameMode", "Blitz", "Blitz");
 	bHideInUI = false;
 	bWeaponStayActive = false;
 	bAllowPickupAnnouncements = true;
@@ -67,7 +67,7 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	bTrackKillAssists = true;
 	CTFScoringClass = AUTFlagRunScoring::StaticClass();
 	DefaultMaxPlayers = 10;
-	XPMultiplier = 4.0f;
+	XPMultiplier = 3.5f;
 
 	ActivatedPowerupPlaceholderObject = FStringAssetReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_ActivatedPowerup_UDamage.BP_ActivatedPowerup_UDamage_C"));
 	RepulsorObject = FStringAssetReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_Repulsor.BP_Repulsor_C"));
@@ -110,6 +110,11 @@ void AUTFlagRunGame::InitGame(const FString& MapName, const FString& Options, FS
 	{
 		FlagPickupDelay = 3.f;
 	}
+}
+
+float AUTFlagRunGame::GetScoreForXP(AUTPlayerState* PS)
+{
+	return PS->Kills + PS->KillAssists + 5.f*PS->FlagCaptures;
 }
 
 int32 AUTFlagRunGame::GetFlagCapScore()
@@ -313,23 +318,7 @@ void AUTFlagRunGame::NotifyFirstPickup(AUTCarriedObject* Flag)
 void AUTFlagRunGame::IntermissionSwapSides()
 {
 	// swap sides, if desired
-	AUTWorldSettings* Settings = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
-	if (Settings != NULL && Settings->bAllowSideSwitching)
-	{
-		CTFGameState->ChangeTeamSides(1);
-	}
-	else
-	{
-		// force update of flags since defender flag gets destroyed
-		for (AUTCTFFlagBase* Base : CTFGameState->FlagBases)
-		{
-			IUTTeamInterface* TeamObj = Cast<IUTTeamInterface>(Base);
-			if (TeamObj != NULL)
-			{
-				TeamObj->Execute_SetTeamForSideSwap(Base, Base->TeamNum);
-			}
-		}
-	}
+	CTFGameState->ChangeTeamSides(1);
 }
 
 void AUTFlagRunGame::InitFlags()
@@ -864,6 +853,7 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 			{
 				RequestingPC->UTClientSetRotation(WarpRotation);
 			}
+			UTCharacter->RallyCompleteTime = GetWorld()->GetTimeSeconds();
 			UTPlayerState->bRallyActivated = false;
 			UTPlayerState->ForceNetUpdate();
 			if (TranslocatorClass)
@@ -964,7 +954,7 @@ void AUTFlagRunGame::HandleMatchIntermission()
 	{
 		GS->UpdateRoundHighlights();
 	}
-	if ((GS == nullptr) || (GS->CTFRound < GS->NumRounds - 2))
+	if ((GS == nullptr) || (GS->CTFRound < GS->NumRounds - 3))
 	{
 		return;
 	}
@@ -976,7 +966,28 @@ void AUTFlagRunGame::HandleMatchIntermission()
 	RequiredTime = FMath::Max(RequiredTime, 0);
 	GS->FlagRunMessageTeam = nullptr;
 	GS->EarlyEndTime = 0;
-	if (GS->CTFRound == GS->NumRounds - 2)
+	if (GS->CTFRound == GS->NumRounds - 3)
+	{
+		if (NextAttacker->Score > NextDefender->Score - 1)
+		{
+			GS->FlagRunMessageTeam = NextDefender;
+			GS->FlagRunMessageSwitch = FMath::Clamp(5 - (NextAttacker->Score - NextDefender->Score), 1, 3);
+		}
+		else if (NextAttacker->Score < NextDefender->Score - 4)
+		{
+			GS->FlagRunMessageTeam = NextAttacker;
+			int32 BonusType = NextDefender->Score - 4 - NextAttacker->Score;
+			if (RequiredTime > 60)
+			{
+				BonusType++;
+				RequiredTime = 0;
+			}
+			BonusType = FMath::Min(BonusType, 3);
+			GS->FlagRunMessageSwitch = 100 * RequiredTime + BonusType + 3;
+			GS->EarlyEndTime = 60 * (BonusType - 1) + RequiredTime;
+		}
+	}
+	else if (GS->CTFRound == GS->NumRounds - 2)
 	{
 		if (NextAttacker->Score > NextDefender->Score)
 		{
@@ -1354,4 +1365,12 @@ void AUTFlagRunGame::HandleRollingAttackerRespawn(AUTPlayerState* OtherPS)
 void AUTFlagRunGame::PlayEndOfMatchMessage()
 {
 	// stub to not break the build
+}
+
+bool AUTFlagRunGame::PlayerWonChallenge()
+{
+	// make sure player is on best team
+	APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
+	AUTPlayerState* PS = LocalPC ? Cast<AUTPlayerState>(LocalPC->PlayerState) : NULL;
+	return PS && PS->Team && (PS->Team == UTGameState->WinningTeam);
 }

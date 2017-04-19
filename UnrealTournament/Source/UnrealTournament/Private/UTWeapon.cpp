@@ -54,6 +54,7 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	FiringViewKickbackY = 6.f;
 	HUDViewKickback = FVector2D(0.03f, 0.1f);
 	bNetDelayedShot = false;
+	RespawnTime = 20.f;
 
 	bFPFireFromCenter = true;
 	bFPIgnoreInstantHitFireOffset = true;
@@ -99,9 +100,7 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 	AnimLagMultiplier = -4.f;;
 	AnimLagSpeedReturn = 2.f;
 
-	Panini_d = 1.0f;
-	Panini_PushMax = -100.0f;
-	Panini_PushMin = 0;
+	WeaponRenderScale = 0.8f;
 
 	// default icon texture
 	static ConstructorHelpers::FObjectFinder<UTexture> WeaponTexture(TEXT("Texture2D'/Game/RestrictedAssets/Proto/UI/HUD/Elements/UI_HUD_BaseB.UI_HUD_BaseB'"));
@@ -129,6 +128,13 @@ AUTWeapon::AUTWeapon(const FObjectInitializer& ObjectInitializer)
 
 	WeaponSkinCustomizationTag = NAME_None;
 	VerticalSpreadScaling = 1.f;
+	MaxVerticalSpread = 1.f;
+
+	bSecondaryIdle = false;
+	bWallRunFire = false;
+	bIdleOffset = false;
+	bIdleEmpty = false;
+	bIdleAlt = false;
 }
 
 void AUTWeapon::PostInitProperties()
@@ -246,14 +252,6 @@ void AUTWeapon::BeginPlay()
 	if (GetMesh() && Settings->bUseCapsuleDirectShadowsForCharacter)
 	{
 		GetMesh()->bCastCapsuleDirectShadow = true;
-	}
-
-	if (GetMesh())
-	{
-		for (int i = 0; i < GetMesh()->GetNumMaterials(); i++)
-		{
-			MeshMIDs.Add(GetMesh()->CreateAndSetMaterialInstanceDynamic(i));
-		}
 	}
 }
 
@@ -910,7 +908,7 @@ void AUTWeapon::AttachToOwner_Implementation()
 	if (Mesh != NULL && Mesh->SkeletalMesh != NULL)
 	{
 		UpdateWeaponHand();
-		Mesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, (UTOwner->FirstPersonMesh->SkeletalMesh != nullptr && GetWeaponHand() != EWeaponHand::HAND_Hidden) ? HandsAttachSocket : NAME_None);
+		Mesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, (UTOwner->FirstPersonMesh->SkeletalMesh != nullptr) ? HandsAttachSocket : NAME_None);
 		if (ShouldPlay1PVisuals())
 		{
 			Mesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPose; // needed for anims to be ticked even if weapon is not currently displayed, e.g. sniper zoom
@@ -924,29 +922,8 @@ void AUTWeapon::AttachToOwner_Implementation()
 			}
 			UpdateViewBob(0.0f);
 		}
-
-		static FName FNamePanini_d = TEXT("d");
-		static FName FNamePanini_PushMax = TEXT("Push Max");
-		static FName FNamePanini_PushMin = TEXT("Push Min");
-		for (int i = 0; i < MeshMIDs.Num(); i++)
-		{
-			if (MeshMIDs[i])
-			{
-				MeshMIDs[i]->SetScalarParameterValue(FNamePanini_d, Panini_d);
-				MeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMax, Panini_PushMax);
-				MeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMin, Panini_PushMin);
-			}
-		}
-		for (int i = 0; i < UTOwner->FirstPersonMeshMIDs.Num(); i++)
-		{
-			if (UTOwner->FirstPersonMeshMIDs[i])
-			{
-				UTOwner->FirstPersonMeshMIDs[i]->SetScalarParameterValue(FNamePanini_d, Panini_d);
-				UTOwner->FirstPersonMeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMax, Panini_PushMax);
-				UTOwner->FirstPersonMeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMin, Panini_PushMin);
-			}
-		}
 	}
+
 	// register components now
 	bAttachingToOwner = true;
 	RegisterAllComponents();
@@ -956,6 +933,22 @@ void AUTWeapon::AttachToOwner_Implementation()
 		UpdateOverlays();
 		UpdateOutline();
 		SetSkin(UTOwner->GetSkin());
+	}
+
+	static FName FNameScale = TEXT("Scale");
+	for (int i = 0; i < MeshMIDs.Num(); i++)
+	{
+		if (MeshMIDs[i])
+		{
+			MeshMIDs[i]->SetScalarParameterValue(FNameScale, WeaponRenderScale);
+		}
+	}
+	for (int i = 0; i < UTOwner->FirstPersonMeshMIDs.Num(); i++)
+	{
+		if (UTOwner->FirstPersonMeshMIDs[i])
+		{
+			UTOwner->FirstPersonMeshMIDs[i]->SetScalarParameterValue(FNameScale, WeaponRenderScale);
+		}
 	}
 }
 
@@ -1012,8 +1005,8 @@ void AUTWeapon::UpdateWeaponHand()
 		switch (GetWeaponHand())
 		{
 			case EWeaponHand::HAND_Center:
-				// TODO: not implemented, fallthrough
-				UE_LOG(UT, Warning, TEXT("HAND_Center is not implemented yet!"));
+				AdjustMesh->SetRelativeLocationAndRotation(AdjustMeshArchetype->RelativeLocation + LowMeshOffset, AdjustMeshArchetype->RelativeRotation);
+				break;
 			case EWeaponHand::HAND_Right:
 				AdjustMesh->SetRelativeLocationAndRotation(AdjustMeshArchetype->RelativeLocation, AdjustMeshArchetype->RelativeRotation);
 				break;
@@ -1027,21 +1020,7 @@ void AUTWeapon::UpdateWeaponHand()
 			}
 			case EWeaponHand::HAND_Hidden:
 			{
-				AdjustMesh->SetRelativeLocationAndRotation(FVector(-50.0f, 0.0f, -50.0f), FRotator::ZeroRotator);
-				if (AdjustMesh != Mesh)
-				{
-					Mesh->AttachToComponent(Mesh->GetAttachParent(), FAttachmentTransformRules::KeepRelativeTransform, NAME_None);
-					Mesh->SetRelativeLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
-				}
-				for (int32 i = 0; i < MuzzleFlash.Num() && i < MuzzleFlashDefaultTransforms.Num(); i++)
-				{
-					if (MuzzleFlash[i] != NULL)
-					{
-						MuzzleFlash[i]->AttachToComponent(MuzzleFlash[i]->GetAttachParent(), FAttachmentTransformRules::KeepRelativeTransform, NAME_None);
-						MuzzleFlash[i]->SetRelativeLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
-						MuzzleFlash[i]->bUseAttachParentBound = false;
-					}
-				}
+				AdjustMesh->SetRelativeLocationAndRotation(AdjustMeshArchetype->RelativeLocation + VeryLowMeshOffset, AdjustMeshArchetype->RelativeRotation);
 				break;
 			}
 		}
@@ -1214,7 +1193,7 @@ void AUTWeapon::PlayFiringEffects()
 		{
 			PC->AddHUDImpulse(HUDViewKickback);
 		}
-		if (ShouldPlay1PVisuals() && GetWeaponHand() != EWeaponHand::HAND_Hidden)
+		if (ShouldPlay1PVisuals())
 		{
 			// try and play a firing animation if specified
 			PlayWeaponAnim(GetFiringAnim(EffectFiringMode, false), GetFiringAnim(EffectFiringMode, true));
@@ -1265,7 +1244,7 @@ FHitResult AUTWeapon::GetImpactEffectHit(APawn* Shooter, const FVector& StartLoc
 
 void AUTWeapon::GetImpactSpawnPosition(const FVector& TargetLoc, FVector& SpawnLocation, FRotator& SpawnRotation)
 {
-	if (UTOwner != NULL && (GetWeaponHand() == EWeaponHand::HAND_Hidden || ZoomState != EZoomState::EZS_NotZoomed))
+	if (UTOwner != NULL && (ZoomState != EZoomState::EZS_NotZoomed))
 	{
 		SpawnRotation = UTOwner->CharacterCameraComponent->GetComponentRotation();
 		SpawnLocation = UTOwner->CharacterCameraComponent->GetComponentLocation() + SpawnRotation.RotateVector(FVector(-50.0f, 0.0f, -50.0f));
@@ -1448,7 +1427,7 @@ bool AUTWeapon::IsFiring() const
 	// first person spectating needs to use the replicated info from the owner
 	if (Role < ROLE_Authority && UTOwner != nullptr && UTOwner->Role < ROLE_AutonomousProxy && UTOwner->Controller == nullptr && CurrentState == InactiveState)
 	{
-		return UTOwner->FlashCount > 0 || !UTOwner->FlashLocation.IsZero();
+		return UTOwner->FlashCount > 0 || !UTOwner->FlashLocation.Position.IsZero();
 	}
 	else
 	{
@@ -1663,7 +1642,7 @@ FRotator AUTWeapon::GetAdjustedAim_Implementation(FVector StartFireLoc)
 		NetSynchRandomSeed();
 		float RandY = 0.5f * (FMath::FRand() + FMath::FRand() - 1.f);
 		float RandZ = FMath::Sqrt(0.25f - FMath::Square(RandY)) * (FMath::FRand() + FMath::FRand() - 1.f);
-		return (X + RandY * Spread[CurrentFireMode] * Y + RandZ * VerticalSpreadScaling * Spread[CurrentFireMode] * Z).Rotation();
+		return (X + RandY * Spread[CurrentFireMode] * Y + FMath::Clamp(RandZ * VerticalSpreadScaling, -1.f*MaxVerticalSpread, MaxVerticalSpread) * Spread[CurrentFireMode] * Z).Rotation();
 	}
 	else
 	{
@@ -2136,6 +2115,22 @@ AUTProjectile* AUTWeapon::SpawnNetPredictedProjectile(TSubclassOf<AUTProjectile>
 		: NULL;
 	if (NewProjectile)
 	{
+		if (NewProjectile->OffsetVisualComponent)
+		{
+			switch (GetWeaponHand())
+			{
+				case EWeaponHand::HAND_Center:
+					NewProjectile->InitialVisualOffset = NewProjectile->InitialVisualOffset + LowMeshOffset;
+					NewProjectile->OffsetVisualComponent->RelativeLocation = NewProjectile->InitialVisualOffset;
+					break;
+				case EWeaponHand::HAND_Hidden:
+				{
+					NewProjectile->InitialVisualOffset = NewProjectile->InitialVisualOffset + VeryLowMeshOffset;
+					NewProjectile->OffsetVisualComponent->RelativeLocation = NewProjectile->InitialVisualOffset;
+					break;
+				}
+			}
+		}
 		if (UTOwner)
 		{
 			UTOwner->LastFiredProjectile = NewProjectile;
@@ -2188,6 +2183,22 @@ void AUTWeapon::SpawnDelayedFakeProjectile()
 		{
 			NewProjectile->InitFakeProjectile(OwningPlayer);
 			NewProjectile->SetLifeSpan(FMath::Min(NewProjectile->GetLifeSpan(), 0.002f * FMath::Max(0.f, OwningPlayer->MaxPredictionPing + OwningPlayer->PredictionFudgeFactor)));
+			if (NewProjectile->OffsetVisualComponent)
+			{
+				switch (GetWeaponHand())
+				{
+				case EWeaponHand::HAND_Center:
+					NewProjectile->InitialVisualOffset = NewProjectile->InitialVisualOffset + LowMeshOffset;
+					NewProjectile->OffsetVisualComponent->RelativeLocation = NewProjectile->InitialVisualOffset;
+					break;
+				case EWeaponHand::HAND_Hidden:
+				{
+					NewProjectile->InitialVisualOffset = NewProjectile->InitialVisualOffset + VeryLowMeshOffset;
+					NewProjectile->OffsetVisualComponent->RelativeLocation = NewProjectile->InitialVisualOffset;
+					break;
+				}
+				}
+			}
 		}
 	}
 }
@@ -2381,7 +2392,7 @@ void AUTWeapon::FireCone()
 	}
 	for (const FHitResult& Hit : RealHits)
 	{
-		if (Hit.Actor != NULL && Hit.Actor->bCanBeDamaged)
+		if (UTOwner && Hit.Actor != NULL && Hit.Actor->bCanBeDamaged)
 		{
 			if ((Role == ROLE_Authority) && PS && (HitsStatsName != NAME_None))
 			{
@@ -2421,7 +2432,7 @@ bool AUTWeapon::StackLockerPickup(AUTInventory* ContainedInv)
 	int32 DefaultAmmo = GetClass()->GetDefaultObject<AUTWeapon>()->Ammo;
 	int32 Amount = Cast<AUTWeapon>(ContainedInv) ? Cast<AUTWeapon>(ContainedInv)->Ammo : DefaultAmmo;
 	Amount = FMath::Min(Amount, DefaultAmmo - Ammo);
-	Amount = FMath::Max(Amount, 1);
+	Amount = FMath::Max(Amount, 0);
 	AddAmmo(Amount);
 	return true;
 }
@@ -2530,40 +2541,40 @@ void AUTWeapon::UpdateViewBob(float DeltaTime)
 			FirstPMeshOffset = BobbedMesh->GetRelativeTransform().GetLocation();
 			FirstPMeshRotation = BobbedMesh->GetRelativeTransform().Rotator();
 		}
-		if (GetWeaponHand() != EWeaponHand::HAND_Hidden)
+		FVector ScaledMeshOffset = FirstPMeshOffset;
+		const float FOVScaling = (MyPC != NULL) ? ((MyPC->PlayerCameraManager->GetFOVAngle() - 100.f) * 0.05f) : 1.0f;
+		if (FOVScaling > 0.f)
 		{
-			FVector ScaledMeshOffset = FirstPMeshOffset;
-			const float FOVScaling = (MyPC != NULL) ? ((MyPC->PlayerCameraManager->GetFOVAngle() - 100.f) * 0.05f) : 1.0f;
-			if (FOVScaling > 0.f)
-			{
-				ScaledMeshOffset.X *= (1.f + (FOVOffset.X - 1.f) * FOVScaling);
-				ScaledMeshOffset.Y *= (1.f + (FOVOffset.Y - 1.f) * FOVScaling);
-				ScaledMeshOffset.Z *= (1.f + (FOVOffset.Z - 1.f) * FOVScaling);
-			}
-
-			BobbedMesh->SetRelativeLocation(ScaledMeshOffset);
-			FVector BobOffset = UTOwner->GetWeaponBobOffset(DeltaTime, this);
-			BobbedMesh->SetWorldLocation(BobbedMesh->GetComponentLocation() + BobOffset);
-
-			FRotator NewRotation = UTOwner ? UTOwner->GetControlRotation() : FRotator(0.f, 0.f, 0.f);
-			FRotator FinalRotation = NewRotation;
-
-			// Add some rotation leading
-			if (UTOwner && UTOwner->Controller)
-			{
-				FinalRotation.Yaw = LagWeaponRotation(NewRotation.Yaw, LastRotation.Yaw, DeltaTime, MaxYawLag, 0);
-				FinalRotation.Pitch = LagWeaponRotation(NewRotation.Pitch, LastRotation.Pitch, DeltaTime, MaxPitchLag, 1);
-				FinalRotation.Roll = NewRotation.Roll;
-			}
-			LastRotation = NewRotation;
-			BobbedMesh->SetRelativeRotation(FinalRotation + FirstPMeshRotation);
+			ScaledMeshOffset.X *= (1.f + (FOVOffset.X - 1.f) * FOVScaling);
+			ScaledMeshOffset.Y *= (1.f + (FOVOffset.Y - 1.f) * FOVScaling);
+			ScaledMeshOffset.Z *= (1.f + (FOVOffset.Z - 1.f) * FOVScaling);
 		}
-		else
+
+		if (GetWeaponHand() == EWeaponHand::HAND_Hidden)
 		{
-			// for first person footsteps
-			UTOwner->GetWeaponBobOffset(DeltaTime, this);
-			BobbedMesh->SetRelativeLocation(FirstPMeshOffset + UTOwner->EyeOffset);
+			ScaledMeshOffset += VeryLowMeshOffset;
 		}
+		else if(GetWeaponHand() == EWeaponHand::HAND_Center)
+		{
+			ScaledMeshOffset += LowMeshOffset;
+		}
+
+		BobbedMesh->SetRelativeLocation(ScaledMeshOffset);
+		FVector BobOffset = UTOwner->GetWeaponBobOffset(DeltaTime, this);
+		BobbedMesh->SetWorldLocation(BobbedMesh->GetComponentLocation() + BobOffset);
+
+		FRotator NewRotation = UTOwner ? UTOwner->GetControlRotation() : FRotator(0.f, 0.f, 0.f);
+		FRotator FinalRotation = NewRotation;
+
+		// Add some rotation leading
+		if (UTOwner && UTOwner->Controller)
+		{
+			FinalRotation.Yaw = LagWeaponRotation(NewRotation.Yaw, LastRotation.Yaw, DeltaTime, MaxYawLag, 0);
+			FinalRotation.Pitch = LagWeaponRotation(NewRotation.Pitch, LastRotation.Pitch, DeltaTime, MaxPitchLag, 1);
+			FinalRotation.Roll = NewRotation.Roll;
+		}
+		LastRotation = NewRotation;
+		BobbedMesh->SetRelativeRotation(FinalRotation + FirstPMeshRotation);
 	}
 }
 
@@ -2813,12 +2824,26 @@ void AUTWeapon::UpdateOverlaysShared(AActor* WeaponActor, AUTCharacter* InOwner,
 					PSC->RegisterComponent();
 				}
 				PSC->AttachToComponent(InOverlayMesh, FAttachmentTransformRules::KeepRelativeTransform, TopOverlay.ParticleAttachPoint);
-				PSC->SetTemplate(TopOverlay.Particles);
-				PSC->InstanceParameters = InOverlayEffectParams;
-				static FName NAME_Weapon(TEXT("Weapon"));
-				static FName NAME_1PWeapon(TEXT("1PWeapon"));
-				PSC->SetActorParameter(NAME_Weapon, WeaponActor);
-				PSC->SetActorParameter(NAME_1PWeapon, WeaponActor);
+
+				UParticleSystem* OverrideParticles = nullptr;
+				if (true) // fixmesteve only for Udamage
+				{
+					OverrideParticles = Cast<AUTWeaponAttachment>(WeaponActor) ? UDamageOverrideEffect3P : UDamageOverrideEffect1P;
+				}
+				if (OverrideParticles != nullptr)
+				{
+					PSC->SetTemplate(OverrideParticles);
+					PSC->InstanceParameters = InOverlayEffectParams;
+				}
+				else
+				{
+					PSC->SetTemplate(TopOverlay.Particles);
+					PSC->InstanceParameters = InOverlayEffectParams;
+					static FName NAME_Weapon(TEXT("Weapon"));
+					static FName NAME_1PWeapon(TEXT("1PWeapon"));
+					PSC->SetActorParameter(NAME_Weapon, WeaponActor);
+					PSC->SetActorParameter(NAME_1PWeapon, WeaponActor);
+				}
 			}
 			else
 			{
@@ -2968,6 +2993,15 @@ void AUTWeapon::SetSkin(UMaterialInterface* NewSkin)
 			Mesh->SetMaterial(i, SavedMeshMaterials[i]);
 		}
 	}
+	
+	if (GetMesh())
+	{
+		MeshMIDs.Empty();
+		for (int i = 0; i < GetMesh()->GetNumMaterials(); i++)
+		{
+			MeshMIDs.Add(GetMesh()->CreateAndSetMaterialInstanceDynamic(i));
+		}
+	}
 }
 
 float AUTWeapon::GetDamageRadius_Implementation(uint8 TestMode) const
@@ -3099,24 +3133,17 @@ bool AUTWeapon::CanAttack_Implementation(AActor* Target, const FVector& TargetLo
 	if (B != NULL)
 	{
 		APawn* TargetPawn = Cast<APawn>(Target);
-		if (TargetPawn != NULL && TargetLoc == Target->GetActorLocation() && B->IsEnemyVisible(TargetPawn))
+		// by default bots do not try shooting enemies when the enemy info is stale
+		// since even if the target location is visible the enemy is probably not near there anymore
+		// subclasses can override if their fire mode(s) are suitable for speculative or predictive firing
+		const FBotEnemyInfo* EnemyInfo = (TargetPawn != NULL) ? B->GetEnemyInfo(TargetPawn, true) : NULL;
+		if (EnemyInfo != NULL && GetWorld()->TimeSeconds - EnemyInfo->LastFullUpdateTime > 1.0f)
 		{
-			bVisible = true;
+			bVisible = false;
 		}
 		else
 		{
-			// by default bots do not try shooting enemies when the enemy info is stale
-			// since even if the target location is visible the enemy is probably not near there anymore
-			// subclasses can override if their fire mode(s) are suitable for speculative or predictive firing
-			const FBotEnemyInfo* EnemyInfo = (TargetPawn != NULL) ? B->GetEnemyInfo(TargetPawn, true) : NULL;
-			if (EnemyInfo != NULL && GetWorld()->TimeSeconds - EnemyInfo->LastFullUpdateTime > 1.0f)
-			{
-				bVisible = false;
-			}
-			else
-			{
-				bVisible = B->UTLineOfSightTo(Target, FVector::ZeroVector, false, TargetLoc);
-			}
+			bVisible = B->UTLineOfSightTo(Target, GetFireStartLoc(), false, TargetLoc);
 		}
 	}
 	else

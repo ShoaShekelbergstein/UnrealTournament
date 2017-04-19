@@ -857,6 +857,11 @@ float AUTRemoteRedeemer::TakeDamage(float Damage, const FDamageEvent& DamageEven
 				if (EventInstigator != NULL)
 				{
 					EventInstigator->InstigatedAnyDamage(ActualDamage, DamageTypeCDO, this, DamageCauser);
+					AUTPlayerController* InstigatedByPC = Cast<AUTPlayerController>(EventInstigator);
+					if (InstigatedByPC != NULL)
+					{
+						InstigatedByPC->ClientNotifyCausedHit(this, FMath::Clamp(ResultDamage, 0, 255), false); 
+					}
 				}
 				ProjHealth -= ActualDamage;
 				UUTGameplayStatics::UTPlaySound(GetWorld(), HitSound, this, SRT_All, false, FVector::ZeroVector, Cast<AUTPlayerController>(EventInstigator), NULL, false, SAT_PainSound);

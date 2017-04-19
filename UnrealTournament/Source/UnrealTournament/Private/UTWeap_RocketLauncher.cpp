@@ -50,7 +50,7 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	BarrelRadius = 9.0f;
 
 	GracePeriod = 0.6f;
-	BurstInterval = 0.06f;
+	BurstInterval = 0.f;
 	GrenadeBurstInterval = 0.1f;
 	FullLoadSpread = 5.f;
 	SeekingLoadSpread = 12.f;
@@ -73,6 +73,8 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	TutorialAnnouncements.Add(TEXT("PriRocketLauncher"));
 	TutorialAnnouncements.Add(TEXT("SecRocketLauncher"));
 	HighlightText = NSLOCTEXT("Weapon", "RockerHighlightText", "I am the Rocketman");
+	LowMeshOffset = FVector(0.f, 0.f, -7.f);
+	VeryLowMeshOffset = FVector(0.f, 0.f, -15.f);
 }
 
 void AUTWeap_RocketLauncher::Destroyed()
@@ -362,25 +364,36 @@ AUTProjectile* AUTWeap_RocketLauncher::FireProjectile()
 		FRotator SpawnRotation = GetAdjustedAim(SpawnLocation);
 
 		//Adjust from the center of the gun to the barrel
-		EWeaponHand Hand = GetWeaponHand();
-		if (Hand != EWeaponHand::HAND_Hidden && Hand != EWeaponHand::HAND_Center)
+		FVector AdjustedSpawnLoc = SpawnLocation + FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::Z) * BarrelRadius; //Adjust rocket based on barrel size
+		FHitResult Hit;
+		if (GetWorld()->LineTraceSingleByChannel(Hit, SpawnLocation, AdjustedSpawnLoc, COLLISION_TRACE_WEAPON, FCollisionQueryParams(NAME_None, true, UTOwner)))
 		{
-			FVector AdjustedSpawnLoc = SpawnLocation + FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::Z) * BarrelRadius; //Adjust rocket based on barrel size
-			FHitResult Hit;
-			if (GetWorld()->LineTraceSingleByChannel(Hit, SpawnLocation, AdjustedSpawnLoc, COLLISION_TRACE_WEAPON, FCollisionQueryParams(NAME_None, true, UTOwner)))
-			{
-				SpawnLocation = Hit.Location - (AdjustedSpawnLoc - SpawnLocation).GetSafeNormal();
-			}
-			else
-			{
-				SpawnLocation = AdjustedSpawnLoc;
-			}
+			SpawnLocation = Hit.Location - (AdjustedSpawnLoc - SpawnLocation).GetSafeNormal();
+		}
+		else
+		{
+			SpawnLocation = AdjustedSpawnLoc;
 		}
 		AUTProjectile* SpawnedProjectile = SpawnNetPredictedProjectile(RocketFireModes[CurrentRocketFireMode].ProjClass, SpawnLocation, SpawnRotation);
 		AUTProj_Rocket* SpawnedRocket = Cast<AUTProj_Rocket>(SpawnedProjectile);
 		NumLoadedRockets = 0;
 		NumLoadedBarrels = 0;
 		return SpawnedProjectile;
+	}
+}
+
+void AUTWeap_RocketLauncher::PlayDelayedFireSound()
+{
+	if (UTOwner && RocketFireModes.IsValidIndex(0) && RocketFireModes[0].FireSound != NULL)
+	{
+		if (RocketFireModes[0].FPFireSound != NULL && Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), RocketFireModes[0].FPFireSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
+		}
+		else
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), RocketFireModes[0].FireSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
+		}
 	}
 }
 
@@ -397,16 +410,14 @@ void AUTWeap_RocketLauncher::PlayFiringEffects()
 		}
 
 		// try and play the sound if specified
-		if (RocketFireModes.IsValidIndex(CurrentRocketFireMode) && RocketFireModes[CurrentRocketFireMode].FireSound != NULL)
+		if (NumLoadedRockets > 0)
 		{
-			if (RocketFireModes[CurrentRocketFireMode].FPFireSound != NULL && Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
-			{
-				UUTGameplayStatics::UTPlaySound(GetWorld(), RocketFireModes[CurrentRocketFireMode].FPFireSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
-			}
-			else
-			{
-				UUTGameplayStatics::UTPlaySound(GetWorld(), RocketFireModes[CurrentRocketFireMode].FireSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, SAT_WeaponFire);
-			}
+			FTimerHandle TempHandle;
+			GetWorld()->GetTimerManager().SetTimer(TempHandle, this, &AUTWeap_RocketLauncher::PlayDelayedFireSound, 0.1f * NumLoadedRockets);
+		}
+		else
+		{
+			PlayDelayedFireSound();
 		}
 
 		if (ShouldPlay1PVisuals())

@@ -32,8 +32,11 @@ struct FDamageHudIndicator
 	UPROPERTY()
 	bool bFriendlyFire;
 
+	UPROPERTY()
+		bool bCausedByWorld;
+
 	FDamageHudIndicator()
-		: RotationAngle(0.0f), DamageAmount(0.0f), FadeTime(0.0f), bFriendlyFire(false)
+		: RotationAngle(0.0f), DamageAmount(0.0f), FadeTime(0.0f), bFriendlyFire(false), bCausedByWorld(false)
 	{
 	}
 };
@@ -72,6 +75,7 @@ struct FEnemyDamageNumber
 class UUTRadialMenu;
 class UUTRadialMenu_Coms;
 class UUTRadialMenu_WeaponWheel;
+class UUTRadialMenu_DropInventory;
 
 class UUTUMGHudWidget;
 
@@ -313,7 +317,7 @@ public:
 	virtual void DrawDamageIndicators();
 
 	/** called when PlayerOwner caused damage to HitPawn */
-	virtual void CausedDamage(APawn* HitPawn, int32 Damage, bool bArmorDamage);
+	virtual void CausedDamage(AActor *HitActor, int32 Damage, bool bArmorDamage);
 
 	virtual class UFont* GetFontFromSizeIndex(int32 FontSize) const;
 
@@ -566,6 +570,9 @@ public:
 		FText WarmupText;
 
 	UPROPERTY()
+		FText MatchHostText;
+
+	UPROPERTY()
 		float BuildTextWidth;
 
 	void DrawString(FText Text, float X, float Y, ETextHorzPos::Type HorzAlignment, ETextVertPos::Type VertAlignment, UFont* Font, FLinearColor Color, float Scale=1.0, bool bOutline=false);
@@ -678,6 +685,15 @@ public:
 	bool bShowWeaponWheel;
 	virtual void ToggleWeaponWheel(bool bShow);
 
+	bool bShowDropMenu;
+	virtual void ToggleDropMenu(bool bShow);
+
+	/** 
+	 * returns the item that the drop menu wants you to drop or
+	 * nullptr to cancel 
+	 **/
+	virtual AUTInventory* GetDropItem();
+
 	bool bShowVoiceDebug;
 
 protected:
@@ -688,6 +704,9 @@ protected:
 	UUTRadialMenu_Coms* ComsMenu;
 	UPROPERTY()
 	UUTRadialMenu_WeaponWheel* WeaponWheel;
+	UPROPERTY()
+	UUTRadialMenu_DropInventory* DropMenu;
+
 
 public:
 

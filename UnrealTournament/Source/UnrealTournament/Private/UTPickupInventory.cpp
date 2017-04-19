@@ -55,10 +55,24 @@ void AUTPickupInventory::BeginPlay()
 		InventoryTypeUpdated();
 	}
 
-	AUTRecastNavMesh* NavData = GetUTNavData(GetWorld());
-	if (NavData != NULL)
+	if (!IsPendingKillPending())
 	{
-		NavData->AddToNavigation(this);
+		AUTRecastNavMesh* NavData = GetUTNavData(GetWorld());
+		if (NavData != NULL)
+		{
+			NavData->AddToNavigation(this);
+		}
+
+		if (BeaconDist > 0.0f)
+		{
+			for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+			{
+				if (It->PlayerController != nullptr && It->PlayerController->MyHUD != nullptr)
+				{
+					It->PlayerController->MyHUD->AddPostRenderedActor(this);
+				}
+			}
+		}
 	}
 }
 
@@ -641,6 +655,7 @@ void AUTPickupInventory::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & 
 
 void AUTPickupInventory::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
 {
+	Super::PostRenderFor(PC, Canvas, CameraPosition, CameraDir);
 	if (!InventoryType || !InventoryType.GetDefaultObject()->PickupSpawnAnnouncement || !State.bActive)
 	{
 		return;

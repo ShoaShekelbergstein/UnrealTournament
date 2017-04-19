@@ -195,10 +195,13 @@ void AGameMode::StartMatch()
 		return;
 	}
 
-	//Let the game session override the StartMatch function, in case it wants to wait for arbitration
-	if (GameSession->HandleStartMatchRequest())
+	if (GameSession)
 	{
-		return;
+		//Let the game session override the StartMatch function, in case it wants to wait for arbitration
+		if (GameSession->HandleStartMatchRequest())
+		{
+			return;
+		}
 	}
 
 	SetMatchState(MatchState::InProgress);

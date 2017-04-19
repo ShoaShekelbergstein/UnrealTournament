@@ -144,6 +144,10 @@ void AUTCTFGameMode::CheckGameTime()
 			{
 				EndOfHalf();
 			}
+			if (bAllowOvertime && !UTGameState->IsMatchInOvertime())
+			{
+				UTGameState->bStopGameClock = true;
+			}
 			if (!CTFGameState->bPlayingAdvantage)
 			{
 				// If we are in Overtime - Keep battling until one team wins. 
@@ -502,123 +506,6 @@ void AUTCTFGameMode::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpac
 }
 
 #endif
-int32 AUTCTFGameMode::GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPlayerController* InInstigator, UWorld* World)
-{
-	if (World == nullptr) return INDEX_NONE;
-
-	AUTCTFGameState* UTCTFGameState = World->GetGameState<AUTCTFGameState>();
-
-	if (InInstigator == nullptr || UTCTFGameState == nullptr)
-	{
-		return Super::GetComSwitch(CommandTag, ContextActor, InInstigator, World);
-	}
-
-	AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(InInstigator->PlayerState);
-	AUTCharacter* ContextCharacter = ContextActor != nullptr ? Cast<AUTCharacter>(ContextActor) : nullptr;
-	AUTPlayerState* ContextPlayerState = ContextCharacter != nullptr ? Cast<AUTPlayerState>(ContextCharacter->PlayerState) : nullptr;
-
-	if (ContextCharacter)
-	{
-		bool bContextOnSameTeam = ContextCharacter != nullptr ? World->GetGameState<AUTGameState>()->OnSameTeam(InInstigator, ContextCharacter) : false;
-		bool bContextIsFlagCarrier = ContextPlayerState != nullptr && ContextPlayerState->CarriedObject != nullptr;
-
-		if (bContextIsFlagCarrier)
-		{
-			if ( bContextOnSameTeam )
-			{
-				if ( CommandTag == CommandTags::Intent )
-				{
-					return GOT_YOUR_BACK_SWITCH_INDEX;
-				}
-
-				else if (CommandTag == CommandTags::Attack)
-				{
-					return GET_FLAG_BACK_SWITCH_INDEX;
-				}
-
-				else if (CommandTag == CommandTags::Defend)
-				{
-					return DEFEND_FLAG_CARRIER_SWITCH_INDEX;
-				}
-			}
-			else
-			{
-				if (CommandTag == CommandTags::Intent)
-				{
-					return ENEMY_FC_HERE_SWITCH_INDEX;
-				}
-				else if (CommandTag == CommandTags::Attack)
-				{
-					return GET_FLAG_BACK_SWITCH_INDEX;
-				}
-				else if (CommandTag == CommandTags::Defend)
-				{
-					return BASE_UNDER_ATTACK_SWITCH_INDEX;
-				}
-			}
-		}
-	}
-
-	AUTCharacter* InstCharacter = Cast<AUTCharacter>(InInstigator->GetCharacter());
-	if (InstCharacter != nullptr && !InstCharacter->IsDead())
-	{
-		// We aren't dead, look to see if we have the flag...
-			
-		if (UTPlayerState->CarriedObject != nullptr)
-		{
-			if (CommandTag == CommandTags::Intent)			
-			{
-				return GOT_FLAG_SWITCH_INDEX;
-			}
-			if (CommandTag == CommandTags::Attack)			
-			{
-				return ATTACK_THEIR_BASE_SWITCH_INDEX;
-			}
-			if (CommandTag == CommandTags::Defend)			
-			{
-				return DEFEND_FLAG_CARRIER_SWITCH_INDEX;
-			}
-		}
-	}
-
-	uint8 EnemyTeamNum = 1 - InInstigator->GetTeamNum();
-
-	if (CommandTag == CommandTags::Intent)
-	{
-		// If my flag is out
-
-		if (UTCTFGameState->GetFlagState(InInstigator->GetTeamNum()) != CarriedObjectState::Home)
-		{
-			return GET_FLAG_BACK_SWITCH_INDEX;
-		}
-		else if (UTCTFGameState->GetFlagState(EnemyTeamNum) != CarriedObjectState::Home) 
-		{
-			return DEFEND_FLAG_CARRIER_SWITCH_INDEX;
-		}
-		else
-		{
-			return AREA_SECURE_SWITCH_INDEX;
-		}
-	}
-
-	if (CommandTag == CommandTags::Attack)
-	{
-		return ON_OFFENSE_SWITCH_INDEX;
-	}
-
-	if (CommandTag == CommandTags::Defend)
-	{
-		return ON_DEFENSE_SWITCH_INDEX;
-	}
-
-
-	if (CommandTag == CommandTags::Distress)
-	{
-		return UNDER_HEAVY_ATTACK_SWITCH_INDEX;  
-	}
-
-	return Super::GetComSwitch(CommandTag, ContextActor, InInstigator, World);
-}
 
 void AUTCTFGameMode::HandleDefaultLineupSpawns(LineUpTypes LineUpType, TArray<AUTCharacter*>& PlayersSpawned, TArray<AUTCharacter*>& PlayersNotSpawned)
 {

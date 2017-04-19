@@ -9,6 +9,7 @@
 #include "UTDemoRecSpectator.h"
 #include "UTGameMessage.h"
 #include "UTReplicatedGameRuleset.h"
+#include "UTEpicDefaultRulesets.h"
 #include "UTAnalytics.h"
 #if WITH_PROFILE
 #include "UtMcpProfileManager.h"
@@ -128,21 +129,39 @@ void AUTBaseGameMode::InitGame( const FString& MapName, const FString& Options, 
 
 	bIgnoreIdlePlayers = EvalBoolOptions(UGameplayStatics::ParseOption(Options, TEXT("IgnoreIdle")), bIgnoreIdlePlayers);
 	UE_LOG(UT,Log,TEXT("Password: %i %s"), bRequirePassword, ServerPassword.IsEmpty() ? TEXT("NONE") : *ServerPassword)
+
+	HostIdString = TEXT("");
+	if (UGameplayStatics::HasOption(Options, TEXT("HostId")))
+	{
+		HostIdString = UGameplayStatics::ParseOption(Options, TEXT("HostId"));
+	}
+
+	bIsLANGame = FParse::Param(FCommandLine::Get(), TEXT("lan"));
+
 }
 
 void AUTBaseGameMode::InitGameState()
 {
 	Super::InitGameState();
 	AUTGameState* GS = Cast<AUTGameState>(GameState);
-	if (GS && !ServerNameOverride.IsEmpty())
+	if (GS)
 	{
-		GS->ServerInstanceGUID = ServerInstanceGUID;
-		GS->ServerName = ServerNameOverride;
-
-		// If someone decides to set the server name black in the ini, stop them
-		if (GS->ServerName.IsEmpty())
+		if ( !ServerNameOverride.IsEmpty() )
 		{
-			GS->ServerName = TEXT("UT Server");
+			GS->ServerInstanceGUID = ServerInstanceGUID;
+			GS->ServerName = ServerNameOverride;
+
+			// If someone decides to set the server name black in the ini, stop them
+			if (GS->ServerName.IsEmpty())
+			{
+				GS->ServerName = TEXT("UT Server");
+			}
+		}
+
+		if (!HostIdString.IsEmpty())
+		{
+			GS->HostIdString = HostIdString;
+			UE_LOG(UT,Log,TEXT("This Server is hosted by %s"), *GS->HostIdString)
 		}
 	}
 
@@ -244,21 +263,20 @@ APlayerController* AUTBaseGameMode::Login(class UPlayer* NewPlayer, ENetRole InR
 	}
 
 	APlayerController* PC = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
-
+	AUTPlayerState * PS = PC ? Cast<AUTPlayerState>(PC->PlayerState) : nullptr;
 	// Init player's ClanTag
-	if (PC && Cast<AUTPlayerState>(PC->PlayerState))
+	if (PS)
 	{
 		FString InName = UGameplayStatics::ParseOption(Options, TEXT("Clan")).Left(8);
 		if (!InName.IsEmpty())
 		{
-			((AUTPlayerState*)(PC->PlayerState))->ClanName = InName;
+			PS->ClanName = InName;
 		}
 	}
 
 #if WITH_PROFILE
 	if (PC != NULL)
 	{
-		AUTPlayerState* PS = Cast<AUTPlayerState>(PC->PlayerState);
 		if (PS != NULL && PS->UniqueId.IsValid())
 		{
 			UMcpProfileGroup* Group = GetMcpProfileManager()->CreateProfileGroup(UniqueId, UniqueId.GetUniqueNetId(), true, false);

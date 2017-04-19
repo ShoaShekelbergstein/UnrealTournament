@@ -203,9 +203,9 @@ void AUTWeaponAttachment::PlayFiringEffects()
 
 	AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
 	bool bEffectsRelevant = (WS == NULL || WS->EffectIsRelevant(UTOwner, UTOwner->GetActorLocation(), true, Cast<APlayerController>(UTOwner->GetController()) != nullptr, 50000.0f, 2000.0f));
-	if (!bEffectsRelevant && !UTOwner->FlashLocation.IsZero())
+	if (!bEffectsRelevant && !UTOwner->FlashLocation.Position.IsZero())
 	{
-		bEffectsRelevant = WS->EffectIsRelevant(UTOwner, UTOwner->FlashLocation, true, Cast<APlayerController>(UTOwner->GetController()) != nullptr, 50000.0f, 2000.0f);
+		bEffectsRelevant = WS->EffectIsRelevant(UTOwner, UTOwner->FlashLocation.Position, true, Cast<APlayerController>(UTOwner->GetController()) != nullptr, 50000.0f, 2000.0f);
 		if (!bEffectsRelevant)
 		{
 			// do frustum check versus fire line; can't use simple vis to location because the fire line may be visible while both endpoints are not
@@ -221,8 +221,8 @@ void AUTWeaponAttachment::PlayFiringEffects()
 						FPoly TestPoly;
 						TestPoly.Init();
 						TestPoly.InsertVertex(0, UTOwner->GetActorLocation());
-						TestPoly.InsertVertex(1, UTOwner->FlashLocation);
-						TestPoly.InsertVertex(2, (UTOwner->GetActorLocation() + UTOwner->FlashLocation) * 0.5f + FVector(0.0f, 0.0f, 1.0f));
+						TestPoly.InsertVertex(1, UTOwner->FlashLocation.Position);
+						TestPoly.InsertVertex(2, (UTOwner->GetActorLocation() + UTOwner->FlashLocation.Position) * 0.5f + FVector(0.0f, 0.0f, 1.0f));
 						if (Frustum.ClipPolygon(TestPoly))
 						{
 							bEffectsRelevant = true;
@@ -272,29 +272,29 @@ void AUTWeaponAttachment::PlayFiringEffects()
 	const FVector SpawnLocation = (MuzzleFlash.IsValidIndex(UTOwner->FireMode) && MuzzleFlash[UTOwner->FireMode] != NULL) ? MuzzleFlash[UTOwner->FireMode]->GetComponentLocation() : UTOwner->GetActorLocation() + UTOwner->GetActorRotation().RotateVector(FVector(UTOwner->GetSimpleCollisionCylinderExtent().X, 0.0f, 0.0f));
 	if (FireEffect.IsValidIndex(UTOwner->FireMode) && FireEffect[UTOwner->FireMode] != NULL)
 	{
-		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), FireEffect[UTOwner->FireMode], SpawnLocation, (UTOwner->FlashLocation - SpawnLocation).Rotation(), true);
-		PSC->SetVectorParameter(NAME_HitLocation, UTOwner->FlashLocation);
-		PSC->SetVectorParameter(NAME_LocalHitLocation, PSC->ComponentToWorld.InverseTransformPosition(UTOwner->FlashLocation));
+		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), FireEffect[UTOwner->FireMode], SpawnLocation, (UTOwner->FlashLocation.Position - SpawnLocation).Rotation(), true);
+		PSC->SetVectorParameter(NAME_HitLocation, UTOwner->FlashLocation.Position);
+		PSC->SetVectorParameter(NAME_LocalHitLocation, PSC->ComponentToWorld.InverseTransformPosition(UTOwner->FlashLocation.Position));
 		ModifyFireEffect(PSC);
 	}
 	// perhaps the muzzle flash also contains hit effect (constant beam, etc) so set the parameter on it instead
 	else if (MuzzleFlash.IsValidIndex(UTOwner->FireMode) && MuzzleFlash[UTOwner->FireMode] != NULL)
 	{
-		MuzzleFlash[UTOwner->FireMode]->SetVectorParameter(NAME_HitLocation, UTOwner->FlashLocation);
-		MuzzleFlash[UTOwner->FireMode]->SetVectorParameter(NAME_LocalHitLocation, MuzzleFlash[UTOwner->FireMode]->ComponentToWorld.InverseTransformPosition(UTOwner->FlashLocation));
+		MuzzleFlash[UTOwner->FireMode]->SetVectorParameter(NAME_HitLocation, UTOwner->FlashLocation.Position);
+		MuzzleFlash[UTOwner->FireMode]->SetVectorParameter(NAME_LocalHitLocation, MuzzleFlash[UTOwner->FireMode]->ComponentToWorld.InverseTransformPosition(UTOwner->FlashLocation.Position));
 	}
 
-	if (!UTOwner->FlashLocation.IsZero() && ((UTOwner->FlashLocation - LastImpactEffectLocation).Size() >= ImpactEffectSkipDistance || GetWorld()->TimeSeconds - LastImpactEffectTime >= MaxImpactEffectSkipTime))
+	if (!UTOwner->FlashLocation.Position.IsZero() && ((UTOwner->FlashLocation.Position - LastImpactEffectLocation).Size() >= ImpactEffectSkipDistance || GetWorld()->TimeSeconds - LastImpactEffectTime >= MaxImpactEffectSkipTime))
 	{
 		if (ImpactEffect.IsValidIndex(UTOwner->FireMode) && ImpactEffect[UTOwner->FireMode] != NULL)
 		{
-			FHitResult ImpactHit = AUTWeapon::GetImpactEffectHit(UTOwner, SpawnLocation, UTOwner->FlashLocation);
+			FHitResult ImpactHit = AUTWeapon::GetImpactEffectHit(UTOwner, SpawnLocation, UTOwner->FlashLocation.Position);
 			if (!CancelImpactEffect(ImpactHit))
 			{
 				ImpactEffect[UTOwner->FireMode].GetDefaultObject()->SpawnEffect(GetWorld(), FTransform(ImpactHit.Normal.Rotation(), ImpactHit.Location), ImpactHit.Component.Get(), NULL, UTOwner->Controller);
 			}
 		}
-		LastImpactEffectLocation = UTOwner->FlashLocation;
+		LastImpactEffectLocation = UTOwner->FlashLocation.Position;
 		LastImpactEffectTime = GetWorld()->TimeSeconds;
 	}
 
@@ -303,7 +303,7 @@ void AUTWeaponAttachment::PlayFiringEffects()
 
 void AUTWeaponAttachment::PlayBulletWhip()
 {
-	if (BulletWhip != NULL && !UTOwner->FlashLocation.IsZero())
+	if (BulletWhip != NULL && !UTOwner->FlashLocation.Position.IsZero())
 	{
 		// delay bullet whip to better separate sound from shot
 		if (GetWorld()->GetTimerManager().IsTimerActive(BulletWhipHandle))
@@ -311,7 +311,7 @@ void AUTWeaponAttachment::PlayBulletWhip()
 			DelayedBulletWhip();
 		}
 		BulletWhipStart = UTOwner->GetActorLocation();
-		BulletWhipEnd = UTOwner->FlashLocation;
+		BulletWhipEnd = UTOwner->FlashLocation.Position;
 		BulletWhipHearers.Empty();
 
 		const FVector Dir = (BulletWhipEnd - BulletWhipStart).GetSafeNormal();

@@ -41,6 +41,8 @@ AUTWeap_Translocator::AUTWeap_Translocator(const class FObjectInitializer& Objec
 	TutorialAnnouncements.Add(TEXT("TransRapidly"));
 	TutorialAnnouncements.Add(TEXT("TeleFrag"));
 	HighlightText = NSLOCTEXT("Weapon", "TranslocHighlightText", "Telefragger");
+	LowMeshOffset = FVector(0.f, 0.f, -5.f);
+	VeryLowMeshOffset = FVector(0.f, 0.f, -12.f);
 }
 
 void AUTWeap_Translocator::PostInitProperties()

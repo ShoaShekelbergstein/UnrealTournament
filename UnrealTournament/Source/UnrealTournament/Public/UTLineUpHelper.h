@@ -39,6 +39,8 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 	/*Handles all the clean up for a particular player when a line-up is ending*/
 	static void CleanUpPlayerAfterLineUp(AUTPlayerController* UTPC);
 
+	virtual void BeginPlay() override;
+
 protected:
 
 	void ClientUpdatePlayerClones();
@@ -74,6 +76,9 @@ protected:
 	UFUNCTION()
 	void FlagFixUp();
 
+	UFUNCTION()
+	void BuildMapWeaponList();
+
 	TWeakPtr<AUTCharacter> SelectedCharacter;
 
 	float TimerDelayForIntro;
@@ -94,4 +99,8 @@ protected:
 
 	UPROPERTY()
 	TArray<class UAnimationAsset*> PreviewAnimations;
+
+	UPROPERTY()
+	TArray<TSubclassOf<AUTWeapon>> MapWeaponTypeList;
+
 };

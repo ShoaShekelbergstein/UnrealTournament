@@ -11,6 +11,7 @@
 #include "UTMenuGameMode.h"
 #include "UTLobbyGameState.h"
 #include "UTDemoRecSpectator.h"
+#include "UTMatchmaking.h"
 
 UUTHeartbeatManager::UUTHeartbeatManager(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -86,6 +87,8 @@ void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 			UUTGameInstance* GameInstance = Cast<UUTGameInstance>(UTPC->GetGameInstance());
 			if (GameInstance && GameInstance->GetParties())
 			{
+				int32 PlaylistID = INDEX_NONE;
+
 				// Check to see if we are in a social party
 				int32 NumPartyMembers = 0;
 				if (UUTPartyGameState* SocialParty = Cast<UUTPartyGameState>(GameInstance->GetParties()->GetPersistentParty()))
@@ -105,11 +108,21 @@ void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 					if (UTGS->bIsQuickMatch)
 					{
 						PlayerConxtextLocation.Append(TEXT(" - Quickmatch"));
+						
+						if (GameInstance->GetMatchmaking())
+						{
+							PlaylistID = GameInstance->GetMatchmaking()->GetPlaylistID();
+						}
 					}
 
 					if (UTGS->bRankedSession)
 					{
 						PlayerConxtextLocation.Append(TEXT(" - Ranked"));
+
+						if (GameInstance->GetMatchmaking())
+						{
+							PlaylistID = GameInstance->GetMatchmaking()->GetPlaylistID();
+						}
 					}
 					
 					if (UTGS->HubGuid.IsValid())
@@ -145,7 +158,7 @@ void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 					}
 				}
 
-				FUTAnalytics::FireEvent_PlayerContextLocationPerMinute(UTPC, PlayerConxtextLocation, NumPartyMembers);
+				FUTAnalytics::FireEvent_PlayerContextLocationPerMinute(UTPC, PlayerConxtextLocation, NumPartyMembers, PlaylistID);
 			}
 		}
 	}

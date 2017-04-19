@@ -29,16 +29,16 @@ class UNREALTOURNAMENT_API UUTTimerMessage : public UUTLocalMessage
 		bOptionalSpoken = true; 
 		bPlayDuringInstantReplay = false;
 
-		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text1","1..."));
-		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text2","2..."));
-		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text3","3..."));
-		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text4","4..."));
-		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text5","5..."));
-		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text6","6..."));
-		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text7","7..."));
-		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text8","8..."));
-		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text9","9..."));
-		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text10","10..."));
+		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text1",""));
+		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text2",""));
+		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text3",""));
+		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text4",""));
+		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text5",""));
+		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text6",""));
+		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text7",""));
+		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text8",""));
+		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text9",""));
+		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text10",""));
 		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text30Secs","30 seconds left! {0}"));
 		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text1Min","One minute remains! {0}"));
 		CountDownText.Add( NSLOCTEXT("UTTimerMessage","Text3Min","Three minutes remain! {0}"));

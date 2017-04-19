@@ -123,6 +123,10 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 
 	AddGenericParamName(PlayerGUID);
 	AddGenericParamName(PlayerList);
+	AddGenericParamName(PlayerKills);
+	AddGenericParamName(PlayerDeaths);
+	AddGenericParamName(BotList);
+	AddGenericParamName(BotSkill);
 	AddGenericParamName(InactivePlayerList);
 	AddGenericParamName(ServerInstanceGUID);
 	AddGenericParamName(ServerMatchGUID);
@@ -175,6 +179,9 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(NumKills);
 	AddGenericParamName(UTServerWeaponKills);
 	AddGenericParamName(WeaponInfo);
+
+	AddGenericParamName(NumDeaths);
+	AddGenericParamName(NumAssists);
 
 	AddGenericParamName(UTFPSCharts);
 	AddGenericParamName(UTServerFPSCharts);
@@ -342,11 +349,6 @@ void FUTAnalytics::SetClientInitialParameters(AUTBasePlayerController* UTPC, TAr
 			AUTGameState* UTGS = UTPC->GetWorld()->GetGameState<AUTGameState>();
 			if (UTGS)
 			{
-				if (UTGS->ServerInstanceGUID.IsValid())
-				{
-					ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGS->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
-				}
-
 				if (UTGS->ReplayID.IsEmpty())
 				{
 					ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGS->ReplayID));
@@ -388,13 +390,13 @@ void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalytic
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), UTGM->DisplayName.ToString()));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ContextGUID), UTGM->ContextGUID));
 
+		if (UTGM->ServerInstanceGUID.IsValid())
+		{
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGM->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
+		}
+
 		if (UTGM->UTGameState)
 		{
-			if (UTGM->UTGameState->ServerInstanceGUID.IsValid())
-			{
-				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), UTGM->UTGameState->ServerInstanceGUID.ToString(EGuidFormats::Digits)));
-			}
-
 			if (!UTGM->UTGameState->ReplayID.IsEmpty())
 			{
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGM->UTGameState->ReplayID));
@@ -457,16 +459,27 @@ void FUTAnalytics::AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalytic
 	{
 		TMap<FString,int32> PlayerGUIDs;
 		TArray<FString> InactivePlayerGUIDS;
-
+		TMap<FString, int32> BotTeamNums;
+		TMap<FString, float> BotSkillLevels;
+		
 		for (FConstControllerIterator It = UTGM->GetWorld()->GetControllerIterator(); It; ++It)
 		{
 			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*It);
 			if (UTPC && UTPC->PlayerState && !UTPC->PlayerState->bOnlySpectator)
 			{
-				PlayerGUIDs.Add(GetEpicAccountName(UTPC),UTPC->GetTeamNum());
+				PlayerGUIDs.Add(GetEpicAccountName(UTPC), UTPC->GetTeamNum());
+			}
+
+			AUTBot* UTBotC = Cast<AUTBot>(*It);
+			if (UTBotC && UTBotC->PlayerState)
+			{
+				BotTeamNums.Add(UTBotC->PlayerState->PlayerName, UTBotC->GetTeamNum());
+				BotSkillLevels.Add(UTBotC->PlayerState->PlayerName, UTBotC->Skill);
 			}
 		}
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerList), PlayerGUIDs));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::BotList), BotTeamNums));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::BotSkill), BotSkillLevels));
 
 		for (APlayerState* PS : UTGM->InactivePlayerArray)
 		{
@@ -477,6 +490,43 @@ void FUTAnalytics::AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalytic
 			}
 		}
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::InactivePlayerList), InactivePlayerGUIDS));
+	}
+}
+
+void FUTAnalytics::AddPlayerStatsToParameters(AUTGameMode* UTGM, TArray <FAnalyticsEventAttribute>& ParamArray)
+{
+	TMap<FString, int32> PlayerKills;
+	TMap<FString, int32> PlayerDeaths;
+	TMap<FString, int32> PlayerAssists;
+	TMap<FString, int32> PlayerScore;
+
+	if (UTGM && UTGM->GetWorld())
+	{
+		for (FConstControllerIterator It = UTGM->GetWorld()->GetControllerIterator(); It; ++It)
+		{
+			AUTPlayerState* UTPS = Cast<AUTPlayerState>((*It)->PlayerState);
+			if (UTPS)
+			{
+				FString PlayerName = UTPS->PlayerName;
+			
+				//try and pull Epic Account Name
+				AUTPlayerController* UTPC = Cast<AUTPlayerController>(*It);
+				if (UTPC && UTPS->bOnlySpectator)
+				{
+					PlayerName = GetEpicAccountName(UTPC);
+				}
+
+				PlayerKills.Add(PlayerName, UTPS->Kills);
+				PlayerDeaths.Add(PlayerName, UTPS->Deaths);
+				PlayerAssists.Add(PlayerName, UTPS->Assists);
+				PlayerScore.Add(PlayerName, UTPS->Score);
+			}
+		}
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerKills), PlayerKills));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerDeaths), PlayerDeaths));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::NumAssists), PlayerAssists));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PointsScored), PlayerScore));
 	}
 }
 
@@ -893,10 +943,11 @@ void FUTAnalytics::FireEvent_UTServerWeaponKills(AUTGameMode* UTGM, TMap<TSubcla
 * @EventParam Location string The context location of the player
 * @EventParam SocialPartyCount int32 The number of people in a players social party (counts the player as a party member)
 * @EventParam RegionId the region reported by the user (automatic from ping, or self selected in settings)
+* @EventParam PlaylistId int32 The playlist ID that the user is currently in a game for. This only exists when the player is in a Quickplay or Ranked match.
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_PlayerContextLocationPerMinute(AUTBasePlayerController* UTPC, FString& PlayerContextLocation, const int32 NumSocialPartyMembers)
+void FUTAnalytics::FireEvent_PlayerContextLocationPerMinute(AUTBasePlayerController* UTPC, FString& PlayerContextLocation, const int32 NumSocialPartyMembers, int32 PlaylistID)
 {
 	if (UTPC)
 	{
@@ -928,6 +979,19 @@ void FUTAnalytics::FireEvent_PlayerContextLocationPerMinute(AUTBasePlayerControl
 			else
 			{
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RegionId), FQosInterface::Get()->GetRegionId()));
+			}
+
+			if (PlaylistID != INDEX_NONE)
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlaylistId), PlaylistID));
+			}
+
+			if (UTPC->UTPlayerState)
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::NumKills), UTPC->UTPlayerState->Kills));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::NumDeaths), UTPC->UTPlayerState->Deaths));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::NumAssists), UTPC->UTPlayerState->Assists));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PointsScored), UTPC->UTPlayerState->Score));
 			}
 
 			AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::PlayerContextLocationPerMinute), ParamArray);
@@ -1054,7 +1118,7 @@ void FUTAnalytics::FireEvent_UTMatchMakingFailed(AUTBasePlayerController* UTPC, 
 /*
 * @EventName FlagRunRoundEnd
 *
-* @Trigger Fires at the end of each round of Flag Run
+* @Trigger Fires at the end of each round of Blitz
 *
 * @Type Sent by the Server
 *
@@ -1087,6 +1151,7 @@ void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDef
 				TArray<FAnalyticsEventAttribute> ParamArray;
 				
 				SetMatchInitialParameters(UTGame, ParamArray, true);
+				AddPlayerStatsToParameters(UTGame, ParamArray);
 
 				int LivesRemaining = 0;
 				int PlayersEliminated = 0;
@@ -1333,7 +1398,7 @@ void FUTAnalytics::FireEvent_UTTutorialPlayInstruction(AUTPlayerController* UTPC
 * @EventParam TDMTutorialCompleted If the TDM tutorial has been previously completed
 * @EventParam CTFTutorialCompleted If the CTF tutorial has been previously completed
 * @EventParam DuelTutorialCompleted If the Duel tutorial has been previously completed
-* @EventParam FlagRunTutorialCompleted If the Flag Run tutorial has been previously completed
+* @EventParam FlagRunTutorialCompleted If the Blitz tutorial has been previously completed
 * @EventParam ShowdownTutorialCompleted If the Showdown tutorial has been previously completed
 *
 * @Comments
@@ -1657,6 +1722,7 @@ void FUTAnalytics::FireEvent_UTEndMatch(AUTGameMode* UTGM)
 		TArray<FAnalyticsEventAttribute> ParamArray;
 		
 		SetMatchInitialParameters(UTGM, ParamArray, true, (UTGM->UTGameState) ? UTGM->UTGameState->bRankedSession : false);
+		AddPlayerStatsToParameters(UTGM, ParamArray);
 
 		if (UTGM->UTGameState)
 		{

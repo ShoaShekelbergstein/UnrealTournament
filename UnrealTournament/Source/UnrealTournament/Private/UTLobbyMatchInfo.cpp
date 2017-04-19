@@ -316,7 +316,7 @@ FText AUTLobbyMatchInfo::GetActionText()
 
 
 
-void AUTLobbyMatchInfo::LaunchMatch(bool bAllowBots, int32 BotDifficulty, bool bRequireFilled)
+void AUTLobbyMatchInfo::LaunchMatch(bool bAllowBots, int32 BotDifficulty, bool bRequireFilled, bool bHostControl)
 {
 	if (CheckLobbyGameState() && CurrentRuleset.IsValid() && InitialMapInfo.IsValid())
 	{
@@ -326,6 +326,10 @@ void AUTLobbyMatchInfo::LaunchMatch(bool bAllowBots, int32 BotDifficulty, bool b
 
 		if (!bSpectatable) GameURL += TEXT("?MaxSpectators=0");
 		if (!bJoinAnytime && GameURL.Find(TEXT("NoJIP"), ESearchCase::IgnoreCase) == INDEX_NONE) GameURL += TEXT("?NoJIP");
+		if (bHostControl) 
+		{
+			GameURL += FString::Printf(TEXT("?HostId=%s"), *OwnerId.ToString());
+		}
 
 		LobbyGameState->LaunchGameInstance(this, GameURL);
 	}

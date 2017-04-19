@@ -229,7 +229,7 @@ public:
 	virtual void ShowMenu(const FString& Parameters);
 	virtual void HideMenu();
 	virtual void OpenTutorialMenu();
-	virtual void ShowToast(FText ToastText, float Lifetime=1.5f);	// NOTE: Need to add a type/etc so that they can be skinned better.
+	virtual void ShowToast(FText ToastText, float Lifetime=1.5f, bool Stack=false);	// NOTE: Need to add a type/etc so that they can be skinned better.
 	virtual void ToastCompleted(UUTUMGWidget_Toast* Toast);
 	virtual void ShowAdminMessage(FString Message);
 
@@ -862,14 +862,10 @@ public:
 
 protected:
 #if !UE_SERVER
-	TSharedPtr<SUTMenuBase> LoadoutMenu;
 	TSharedPtr<SUTMapVoteDialog> MapVoteMenu;
 #endif
 
 public:
-	virtual void OpenLoadout(bool bBuyMenu = false);
-	virtual void CloseLoadout();
-
 	virtual void OpenMapVote(AUTGameState* GameState);
 	virtual void CloseMapVote();
 
@@ -1041,6 +1037,14 @@ public:
 		const static FString OnlineSettingsFilename = "UnrealTournamentOnlineSettings.json";
 		return OnlineSettingsFilename;
 	}
+
+	static const FString& GetMCPGameRulesUpdateFilename()
+	{
+		const static FString MCPAnnouncementFilename = "UnrealTournmentMCPGameRulesets.json";
+		return MCPAnnouncementFilename;
+	}
+
+
 	bool IsRankedMatchmakingEnabled(int32 PlaylistId);
 	TArray<int32> ActiveRankedPlaylists;
 	int32 RankedEloRange;
@@ -1358,12 +1362,17 @@ protected:
 	TSharedPtr<SUTDifficultyLevel> DifficultyLevelDialog;
 	void DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID);
 
+	UFUNCTION()
+	void UpdateCheck();
+
 public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
 	void CloseSavingWidget();
 
+
+	// Looks for an update.  
 	UFUNCTION()
-	void UpdateCheck();
+	void CheckForNewUpdate();
 
 	FTimerHandle SocialInitializationTimerHandle;
 
@@ -1395,6 +1404,23 @@ public:
 
 	void RegainFocus();
 
+	/**
+	 *	Get's a rules update from the MCP
+	 **/
+	void GetRulesUpdateFromMCP();
+
+	TArray<FString> TitleFileQueue;
+
+	// Checks to see if the loading movie should be forced to a tutorial
+	virtual void CheckLoadingMovie(const FString& GameMode);
+
+	FText PlayListIDToText(int32 PlayListId);
+	void CancelQuickmatch();
+
+protected:
+	bool bLaunchTutorialOnLogin;
+
+	virtual void FinalizeLogin();
 
 };
 

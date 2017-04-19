@@ -536,6 +536,7 @@ void SUTWeaponConfigDialog::ConstructPreviewWorld(FVector2D ViewportSize)
 		PreviewTexture->OnNonUObjectRenderTargetUpdate.BindSP(this, &SUTWeaponConfigDialog::UpdatePreviewRender);
 		PreviewMID = UMaterialInstanceDynamic::Create(PreviewBaseMat, PreviewWorld);
 		PreviewMID->SetTextureParameterValue(FName(TEXT("TheTexture")), PreviewTexture);
+		
 		PreviewBrush = new FSlateMaterialBrush(*PreviewMID, ViewportSize);
 	}
 	else
@@ -1007,7 +1008,9 @@ void SUTWeaponConfigDialog::RecreateWeaponPreview()
 				BasePickup->SetActorHiddenInGame(bShowingCrosshairs);
 				BasePickup->PrestreamTextures(0, true);
 				PickupPreviewActors.Add(BasePickup);
-				
+								
+				BasePickup->SetPickupSheen(0.0f);
+
 				WeaponPreviewActors.Add(BaseWeapon);
 				PreviewWeaponSkins.Add(nullptr);
 				SpawnLocation.Y += PREVIEW_Y_SPACING;
@@ -1160,14 +1163,14 @@ void SUTWeaponConfigDialog::ZoomPreview(float WheelDelta)
 
 TSharedRef<SWidget> SUTWeaponConfigDialog::GenerateWeaponHand(UUTProfileSettings* Profile)
 {
-	WeaponHandDesc.Add(NSLOCTEXT("UT", "Right", "Right"));
+	WeaponHandDesc.Add(NSLOCTEXT("UT", "Normal", "Normal"));
 	WeaponHandDesc.Add(NSLOCTEXT("UT", "Left", "Left"));
-	WeaponHandDesc.Add(NSLOCTEXT("UT", "Center", "Center"));
-	WeaponHandDesc.Add(NSLOCTEXT("UT", "Hidden", "Hidden"));
+	WeaponHandDesc.Add(NSLOCTEXT("UT", "Lowered", "Lowered"));
+	WeaponHandDesc.Add(NSLOCTEXT("UT", "VeryLow", "Very Low"));
 
 	WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[uint8(EWeaponHand::HAND_Right)])));
-	//WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[EWeaponHand::HAND_Left])));
-	//WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[EWeaponHand::HAND_Center])));
+	//WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[uint8(EWeaponHand::HAND_Left)])));
+	WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[uint8(EWeaponHand::HAND_Center)])));
 	WeaponHandList.Add(MakeShareable(new FText(WeaponHandDesc[uint8(EWeaponHand::HAND_Hidden)])));
 
 	TSharedPtr<FText> InitiallySelectedHand = WeaponHandList[0];
@@ -1185,7 +1188,7 @@ TSharedRef<SWidget> SUTWeaponConfigDialog::GenerateWeaponHand(UUTProfileSettings
 	[
 		SNew(STextBlock)
 		.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tween")
-		.Text(NSLOCTEXT("SUTWeaponConfigDialog", "WeaponHand", "Weapon Hand"))
+		.Text(NSLOCTEXT("SUTWeaponConfigDialog", "WeaponHand", "Weapon Position"))
 	]
 	+ SHorizontalBox::Slot().FillWidth(1.0).HAlign(HAlign_Right).Padding(0.0f,0.0f,5.0f,0.0f)
 	[

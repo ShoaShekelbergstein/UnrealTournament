@@ -253,13 +253,13 @@ FSlateDrawBuffer& FSlateRHIRenderer::GetDrawBuffer()
 			// this happens if the render thread becomes completely blocked by expensive tasks when the Slate thread is running
 			// in this case we cannot tick Slate.
 			FPlatformProcess::Sleep(0.001f);
-			UE_LOG(LogSlate, Warning, TEXT("Slate: Had to block on waiting for a draw buffer (slate thread)"));
+			UE_LOG(LogSlate, Verbose, TEXT("Slate: Had to block on waiting for a draw buffer (slate thread)"));
 			FreeBufferIndex = (FreeBufferIndex + 1) % NumDrawBuffers;
 		}
 		else
 		{
 			FlushCommands();
-			UE_LOG(LogSlate, Warning, TEXT("Slate: Had to block on waiting for a draw buffer"));
+			UE_LOG(LogSlate, Verbose, TEXT("Slate: Had to block on waiting for a draw buffer"));
 			FreeBufferIndex = (FreeBufferIndex + 1) % NumDrawBuffers;
 		}
 	

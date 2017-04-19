@@ -27,6 +27,7 @@
 #include "UTRadialMenu.h"
 #include "UTRadialMenu_Coms.h"
 #include "UTRadialMenu_WeaponWheel.h"
+#include "UTRadialMenu_DropInventory.h"
 #include "OnlineSubsystemTypes.h"
 #include "OnlineSubsystemUtils.h"
 #include "UTUMGHudWidget.h"
@@ -120,8 +121,9 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 	SuffixNth = NSLOCTEXT("UTHUD", "NthPlaceSuffix", "th");
 
 	CachedProfileSettings = nullptr;
-	BuildText = NSLOCTEXT("UTHUD", "info", "PRE-ALPHA Build 0.1.9");
+	BuildText = NSLOCTEXT("UTHUD", "info", "PRE-ALPHA Build 0.1.10");
 	WarmupText = NSLOCTEXT("UTHUD", "warmup", "You are in WARM UP");
+	MatchHostText = NSLOCTEXT("UTHUD", "hostwarmup", "You are in WARM UP.  Press [ENTER] to start match.");
 	bShowVoiceDebug = false;
 	bDrawDamageNumbers = true;
 
@@ -239,8 +241,11 @@ void AUTHUD::BeginPlay()
 	// Add the Coms Menu
 	ComsMenu = Cast<UUTRadialMenu_Coms>(AddHudWidget(UUTRadialMenu_Coms::StaticClass()));
 	WeaponWheel = Cast<UUTRadialMenu_WeaponWheel>(AddHudWidget(UUTRadialMenu_WeaponWheel::StaticClass()));
+	DropMenu = Cast<UUTRadialMenu_DropInventory>(AddHudWidget(UUTRadialMenu_DropInventory::StaticClass()));
+
 	RadialMenus.Add(ComsMenu);
 	RadialMenus.Add(WeaponWheel);
+	RadialMenus.Add(DropMenu);
 
 	if (DamageScreenMat != nullptr)
 	{
@@ -615,7 +620,6 @@ void AUTHUD::NotifyMatchStateChange()
 	{
 		if (GS->GetMatchState() == MatchState::InProgress)
 		{
-			bShowScores = false;
 			bForceScores = false;
 
 			if (bFirstPlay)
@@ -645,7 +649,7 @@ void AUTHUD::NotifyMatchStateChange()
 		else if (GS->GetMatchState() == MatchState::WaitingPostMatch)
 		{
 			const AUTGameMode* DefaultGame = GS->GameModeClass ? Cast<AUTGameMode>(GS->GetDefaultGameMode()) : nullptr;
-			float MatchSummaryDelay = DefaultGame ? DefaultGame->EndScoreboardDelay + DefaultGame->MainScoreboardDisplayTime + DefaultGame->ScoringPlaysDisplayTime : 10.f;
+			float MatchSummaryDelay = DefaultGame ? DefaultGame->MatchSummaryDelay : 10.f;
 			GetWorldTimerManager().SetTimer(MatchSummaryHandle, this, &AUTHUD::OpenMatchSummary, MatchSummaryDelay*GetActorTimeDilation(), false);
 		}
 		else if (GS->GetMatchState() == MatchState::PlayerIntro)
@@ -805,12 +809,22 @@ void AUTHUD::DrawHUD()
 			{
 				if (Indicator.FadeTime > 0.0f && Indicator.DamageAmount > 0.0f)
 				{
-					Intensity = FMath::Max<float>(Intensity, FMath::Min<float>(1.0f, Indicator.FadeTime / DAMAGE_FADE_DURATION));
+					Intensity = FMath::Max<float>(Intensity, FMath::Min<float>(1.0f, 1.5f*Indicator.FadeTime / 1.5f*DAMAGE_FADE_DURATION));
 				}
 			}
-			if (Cast<AUTCharacter>(PlayerOwner->GetViewTarget()) != nullptr && PlayerOwner->GetViewTarget()->bTearOff)
+			AUTCharacter* ViewedCharacter = Cast<AUTCharacter>(PlayerOwner->GetViewTarget());
+			if (ViewedCharacter && ViewedCharacter->bTearOff)
 			{
-				Intensity = FMath::Max<float>(Intensity, 0.5f);
+				Intensity = 1.f;
+			}
+			else if (ViewedCharacter && (ViewedCharacter->Health <= 40))
+			{
+				const float Speed = 1.f;
+				float ScaleTime = Speed*GetWorld()->GetTimeSeconds() - int32(Speed*GetWorld()->GetTimeSeconds());
+				float Scaling = (ScaleTime < 0.5f)
+					? ScaleTime
+					: 1.f - ScaleTime;
+				Intensity = FMath::Max(Intensity, 0.5f*Scaling);
 			}
 			if (Intensity > 0.0f)
 			{
@@ -849,7 +863,7 @@ void AUTHUD::DrawHUD()
 			}
 			else 
 			{
-				if (!UTPlayerOwner->IsBehindView() || !UTPlayerOwner->UTPlayerState || !UTPlayerOwner->UTPlayerState->bOnlySpectator)
+				if (!UTPlayerOwner->UTPlayerState || !UTPlayerOwner->UTPlayerState->bOnlySpectator)
 				{
 					DrawDamageIndicators();
 				}
@@ -947,10 +961,16 @@ void AUTHUD::DrawHUD()
 				float XL, YL;
 				Canvas->DrawColor = FColor(255, 255, 255, 255);
 				Canvas->TextSize(LargeFont, WarmupText.ToString(), XL, YL, 1.f, 1.f);
-				Canvas->DrawText(LargeFont, WarmupText, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
+				Canvas->DrawText(LargeFont, ViewedPS->bIsMatchHost ? MatchHostText : WarmupText, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
 			}
 		}
 		CachedProfileSettings = nullptr;
+
+		if ((GetNetMode() != NM_Standalone) && GetWorldSettings() && GetWorldSettings()->Pauser != nullptr)
+		{
+			DrawString(NSLOCTEXT("Generic","Paused","GAME IS PAUSED"), Canvas->ClipX * 0.5f, Canvas->ClipY * 0.15f, ETextHorzPos::Center,ETextVertPos::Top, LargeFont, FLinearColor::Yellow, 1.0, true);
+		}
+
 		DrawWatermark();
 	}
 }
@@ -1080,10 +1100,11 @@ void AUTHUD::PawnDamaged(uint8 ShotDirYaw, int32 DamageAmount, bool bFriendlyFir
 	AUTCharacter* UTC = Cast<AUTCharacter>(UTPlayerOwner->GetViewTarget());
 
 	// Calculate the rotation 	
-	if (UTC != NULL && !UTC->IsDead() && DamageAmount > 0)	// If have a pawn and it's alive...
+	if (UTC != NULL && DamageAmount > 0)
 	{
 		// Figure out Left/Right....
-		float FinalAng = (DamageTypeClass && DamageTypeClass->GetDefaultObject<UDamageType>()->bCausedByWorld) ? 0.f : FRotator::DecompressAxisFromByte(ShotDirYaw) - UTC->GetActorRotation().Yaw;
+		bool bCausedByWorld = DamageTypeClass && DamageTypeClass->GetDefaultObject<UDamageType>()->bCausedByWorld;
+		float FinalAng = bCausedByWorld ? 0.f : FRotator::DecompressAxisFromByte(ShotDirYaw);
 		int32 BestIndex = 0;
 		float BestTime = DamageIndicators[0].FadeTime;
 		for (int32 i = 0; i < MAX_DAMAGE_INDICATORS; i++)
@@ -1102,10 +1123,11 @@ void AUTHUD::PawnDamaged(uint8 ShotDirYaw, int32 DamageAmount, bool bFriendlyFir
 				}
 			}
 		}
-		DamageIndicators[BestIndex].FadeTime = DAMAGE_FADE_DURATION * FMath::Clamp(0.025f*DamageAmount, 0.7f, 2.f);
+		DamageIndicators[BestIndex].FadeTime = DAMAGE_FADE_DURATION * FMath::Clamp(0.025f*DamageAmount, 1.f, 2.f);
 		DamageIndicators[BestIndex].RotationAngle = FinalAng + 180.f;
 		DamageIndicators[BestIndex].bFriendlyFire = bFriendlyFire;
 		DamageIndicators[BestIndex].DamageAmount = DamageAmount;
+		DamageIndicators[BestIndex].bCausedByWorld = bCausedByWorld;
 
 		if (DamageAmount > 0)
 		{
@@ -1116,6 +1138,7 @@ void AUTHUD::PawnDamaged(uint8 ShotDirYaw, int32 DamageAmount, bool bFriendlyFir
 
 void AUTHUD::DrawDamageIndicators()
 {
+	AUTCharacter* UTC = Cast<AUTCharacter>(UTPlayerOwner->GetViewTarget());
 	for (int32 i=0; i < DamageIndicators.Num(); i++)
 	{
 		if (DamageIndicators[i].FadeTime > 0.0f)
@@ -1127,7 +1150,8 @@ void AUTHUD::DrawDamageIndicators()
 			float Half = Size * 0.5f;
 
 			FCanvasTileItem ImageItem(FVector2D((Canvas->ClipX * 0.5f) - Half, (Canvas->ClipY * 0.5f) - Half), DamageIndicatorTexture->Resource, FVector2D(Size, Size), FVector2D(0.f,0.f), FVector2D(1.f,1.f), DrawColor);
-			ImageItem.Rotation = FRotator(0.f,DamageIndicators[i].RotationAngle,0.f);
+			float AngleAdjust = (DamageIndicators[i].bCausedByWorld || !UTC) ? 0 : UTC->GetActorRotation().Yaw;
+			ImageItem.Rotation = FRotator(0.f,DamageIndicators[i].RotationAngle - AngleAdjust,0.f);
 			ImageItem.PivotPoint = FVector2D(0.5f,0.5f);
 			ImageItem.BlendMode = ESimpleElementBlendMode::SE_BLEND_Translucent;
 			Canvas->DrawItem( ImageItem );
@@ -1135,30 +1159,33 @@ void AUTHUD::DrawDamageIndicators()
 	}
 }
 
-void AUTHUD::CausedDamage(APawn* HitPawn, int32 Damage, bool bArmorDamage)
+void AUTHUD::CausedDamage(AActor* HitActor, int32 Damage, bool bArmorDamage)
 {
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if ((HitPawn != UTPlayerOwner->GetViewTarget()) && (GS == NULL || !GS->OnSameTeam(HitPawn, PlayerOwner)))
+	if (HitActor && (HitActor != UTPlayerOwner->GetViewTarget()) && (GS == NULL || !GS->OnSameTeam(HitActor, PlayerOwner)))
 	{
 		LastConfirmedHitDamage = (GetWorld()->GetTimeSeconds() - LastConfirmedHitTime < 0.05f) ? LastConfirmedHitDamage + Damage : Damage;
 		LastConfirmedHitTime = GetWorld()->TimeSeconds;
-		AUTCharacter* Char = Cast<AUTCharacter>(HitPawn);
+		AUTCharacter* Char = Cast<AUTCharacter>(HitActor);
 		LastConfirmedHitWasAKill = (Char && (Char->IsDead() || Char->Health <= 0));
 
-		if (bDrawDamageNumbers && (HitPawn != nullptr))
+		if (bDrawDamageNumbers && (HitActor != nullptr))
 		{
 			// add to current hit if there
 			for (int32 i = 0; i < DamageNumbers.Num(); i++)
 			{
-				if ((DamageNumbers[i].DamagedPawn == HitPawn) && (GetWorld()->GetTimeSeconds() - DamageNumbers[i].DamageTime < 0.04f))
+				if ((DamageNumbers[i].DamagedPawn == HitActor) && (GetWorld()->GetTimeSeconds() - DamageNumbers[i].DamageTime < 0.04f))
 				{
 					DamageNumbers[i].DamageAmount = FMath::Min(255, Damage + int32(DamageNumbers[i].DamageAmount));
 					return;
 				}
 			}
-			// save amount, scale , 2D location
-			float HalfHeight = Cast<ACharacter>(HitPawn) ? 1.15f * ((ACharacter *)(HitPawn))->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 0.f;
-			DamageNumbers.Add(FEnemyDamageNumber(HitPawn, GetWorld()->GetTimeSeconds(), FMath::Min(Damage, 255), HitPawn->GetActorLocation() + FVector(0.f, 0.f, HalfHeight), 0.75f, bArmorDamage));
+			if (Damage > 0)
+			{
+				// save amount, scale , 2D location
+				float HalfHeight = Cast<ACharacter>(HitActor) ? 1.15f * ((ACharacter *)(HitActor))->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 0.f;
+				DamageNumbers.Add(FEnemyDamageNumber(Cast<APawn>(HitActor), GetWorld()->GetTimeSeconds(), FMath::Min(Damage, 255), HitActor->GetActorLocation() + FVector(0.f, 0.f, HalfHeight), 0.75f, bArmorDamage));
+			}
 		}
 	}
 }
@@ -1399,11 +1426,11 @@ EInputMode::Type AUTHUD::GetInputMode_Implementation() const
 			AUTPlayerState* UTPlayerState = UTPlayerOwner->UTPlayerState;
 			if (UTPlayerState && (UTPlayerState->bOnlySpectator || UTPlayerState->bOutOfLives) )
 			{
-				if (UTPlayerOwner->bSpectatorMouseChangesView)
+				if (bShowScores || UTPlayerOwner->bSpectatorMouseChangesView)
 				{
 					return EInputMode::EIM_GameOnly;
 				}
-				else
+				else if (!bShowScores)
 				{
 					return EInputMode::EIM_UIOnly;
 				}
@@ -2037,6 +2064,28 @@ void AUTHUD::ToggleWeaponWheel(bool bShow)
 	{
 		WeaponWheel->BecomeNonInteractive();
 	}
+}
+
+void AUTHUD::ToggleDropMenu(bool bShow)
+{
+	if (DropMenu != nullptr)
+	{
+		bShowDropMenu = bShow;
+		AUTCharacter* UTCharacter = UTPlayerOwner ? UTPlayerOwner->GetUTCharacter() : nullptr;
+		if (bShow && UTCharacter && !UTCharacter->IsDead())
+		{
+			DropMenu->BecomeInteractive();
+		}
+		else
+		{
+			DropMenu->BecomeNonInteractive();
+		}
+	}
+}
+
+AUTInventory* AUTHUD::GetDropItem()
+{
+	return nullptr;
 }
 
 UUTUMGHudWidget* AUTHUD::ActivateUMGHudWidget(FString UMGHudWidgetClassName, bool bUnique)

@@ -10,6 +10,7 @@
 #include "StatNames.h"
 #include "UTCTFFlag.h"
 #include "PhysicsEngine/PhysicsSettings.h"
+#include "UTCustomMovementTypes.h"
 
 const float MAX_STEP_SIDE_Z = 0.08f;	// maximum z value for the normal on the vertical side of steps
 
@@ -27,7 +28,7 @@ UUTCharacterMovement::UUTCharacterMovement(const class FObjectInitializer& Objec
 	MinAdditiveDodgeFallSpeed = -5000.f;  
 	MaxAdditiveDodgeJumpSpeed = 700.f;  
 	MaxMultiJumpCount = 0;
-	bAllowDodgeMultijumps = false;
+	bAllowDodgeMultijumps = true;
 	bAllowJumpMultijumps = true;
 	bIsDoubleJumpAvailableForFlagCarrier = true;
 	MultiJumpImpulse = 600.f;
@@ -38,7 +39,6 @@ UUTCharacterMovement::UUTCharacterMovement(const class FObjectInitializer& Objec
 	DodgeResetInterval = 0.35f;
 	DodgeJumpResetInterval = 0.35f;
 	WallDodgeResetInterval = 0.2f;
-	MaxSlideSpeed = 1230.f;
 	LandingStepUp = 40.f;
 	LandingAssistBoost = 430.f;
 	CrouchedSpeedMultiplier_DEPRECATED = 0.31f;
@@ -71,7 +71,8 @@ UUTCharacterMovement::UUTCharacterMovement(const class FObjectInitializer& Objec
 	SlopeDodgeScaling = 0.93f;
 	bSlideFromGround = false;
 	bHasPlayedWallHitSound = false;
-	DodgeLandingTimeAdjust = -0.15f;
+	DodgeLandingTimeAdjust = -0.25f;
+	DodgeLandingAcceleration = 1000.f;
 
 	FastInitialAcceleration = 12000.f;
 	MaxFastAccelSpeed = 200.f;
@@ -98,9 +99,9 @@ UUTCharacterMovement::UUTCharacterMovement(const class FObjectInitializer& Objec
 	WallDodgeImpulseHorizontal = 1300.f; 
 	WallDodgeImpulseVertical = 470.f; 
 
-	MaxSlideRiseZ = 650.f; 
-	MaxSlideFallZ = -120.f;
-	SlideGravityScaling = 0.08f;
+	MaxWallRunRiseZ = 650.f; 
+	MaxWallRunFallZ = -120.f;
+	WallRunGravityScaling = 0.08f;
 	MinWallSlideSpeed = 500.f;
 	MaxSlideWallDist = 20.f;
 	FloorSlideJumpZ = 50.f;
@@ -353,6 +354,16 @@ void UUTCharacterMovement::OnMovementModeChanged(EMovementMode PreviousMovementM
 				UTCharOwner->InventoryEvent(InventoryEventName::LandedWater);
 			}
 		}
+	}
+	else if ((MovementMode == MOVE_Custom) && (CustomMovementMode == CUSTOMMOVE_LineUp))
+	{
+		//not falling
+		Velocity.Z = 0.f;
+		
+		// make sure we update our new floor/base on initial entry
+		FindFloor(UpdatedComponent->GetComponentLocation(), CurrentFloor, false);
+		AdjustFloorHeight();
+		SetBaseFromFloor(CurrentFloor);
 	}
 }
 
@@ -1160,9 +1171,13 @@ void UUTCharacterMovement::UpdateMovementStats(const FVector& StartLocation)
 float UUTCharacterMovement::GetMaxAcceleration() const
 {
 	float Result;
-	if (bIsFloorSliding || bIsDodgeLanding)
+	if (bIsFloorSliding)
 	{
 		Result = FloorSlideAcceleration;
+	}
+	else if (bIsDodgeLanding)
+	{
+		Result = DodgeLandingAcceleration;
 	}
 	else if (MovementMode == MOVE_Falling)
 	{
@@ -1694,7 +1709,7 @@ void UUTCharacterMovement::CheckWallSlide(FHitResult const& Impact)
 	if (UTCharOwner)
 	{
 		UTCharOwner->bApplyWallSlide = false;
-		if (bWantsWallSlide && (Impact.ImpactNormal.Z > -0.1f) && (Velocity.Z < MaxSlideRiseZ) && (Velocity.Z > MaxSlideFallZ) && !Acceleration.IsZero() && !UTCharOwner->IsThirdPersonTaunting())
+		if (bWantsWallSlide && (Impact.ImpactNormal.Z > -0.1f) && (Velocity.Z < MaxWallRunRiseZ) && (Velocity.Z > MaxWallRunFallZ) && !Acceleration.IsZero() && !UTCharOwner->IsThirdPersonTaunting())
 		{
 			FVector VelocityAlongWall = Velocity + FMath::Abs(Velocity | Impact.ImpactNormal) * Impact.ImpactNormal;
 			UTCharOwner->bApplyWallSlide = (VelocityAlongWall.Size2D() >= MinWallSlideSpeed);
@@ -1768,7 +1783,7 @@ float UUTCharacterMovement::GetGravityZ() const
 	AUTCharacter* UTCharOwner = Cast<AUTCharacter>(CharacterOwner);
 	if (UTCharOwner && UTCharOwner->bApplyWallSlide && (Velocity.Z < 0.f))
 	{
-		return Super::GetGravityZ() * SlideGravityScaling * (1.f - FMath::Square(0.5f + 0.5f*WallSlideNormal.Z));
+		return Super::GetGravityZ() * WallRunGravityScaling * (1.f - FMath::Square(0.5f + 0.5f*WallSlideNormal.Z));
 	}
 	return Super::GetGravityZ();
 }

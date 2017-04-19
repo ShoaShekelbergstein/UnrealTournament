@@ -8,6 +8,7 @@
 #include "UTEmptyServerGameMode.h"
 #include "UTGameInstance.h"
 #include "UTPlaylistManager.h"
+#include "UTGameEngine.h"
 
 static const float IdleServerTimeout = 30.0f * 60.0f;
 
@@ -39,17 +40,15 @@ void AUTGameSessionRanked::RegisterServer()
 
 void AUTGameSessionRanked::StartServer()
 {
-	// Download any playlist updates before we start server
-
-	const auto OnlineSub = IOnlineSubsystem::Get();
-	if (OnlineSub)
+	// Dedicated server now enumerates on startup, just wait for it to be done
+	UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
+	if (UTEngine && UTEngine->bReceivedTitleFiles)
 	{
-		IOnlineTitleFilePtr OnlineTitleFileInterface = OnlineSub->GetTitleFileInterface();
-		if (OnlineTitleFileInterface.IsValid())
-		{
-			OnEnumerateTitleFilesCompleteDelegate = OnlineTitleFileInterface->AddOnEnumerateFilesCompleteDelegate_Handle(FOnEnumerateFilesCompleteDelegate::CreateUObject(this, &AUTGameSessionRanked::OnEnumerateTitleFilesComplete));
-			OnlineTitleFileInterface->EnumerateFiles();
-		}
+		OnEnumerateTitleFilesComplete(true);
+	}
+	else
+	{
+		GetWorldTimerManager().SetTimer(StartServerTimerHandle, this, &ThisClass::StartServer, 0.1f);
 	}
 }
 

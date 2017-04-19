@@ -7,7 +7,7 @@
 #include "UTRecallBoost.generated.h"
 
 UCLASS()
-class AUTRecallBoost : public AUTArsenalBoost
+class UNREALTOURNAMENT_API AUTRecallBoost : public AUTArsenalBoost
 {
 	GENERATED_BODY()
 public:

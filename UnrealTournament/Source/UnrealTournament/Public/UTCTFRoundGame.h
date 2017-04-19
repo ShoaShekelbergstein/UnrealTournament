@@ -157,6 +157,8 @@ class UNREALTOURNAMENT_API AUTCTFRoundGame : public AUTCTFBaseGame
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
+	virtual uint8 GetWinningTeamForLineUp() const override;
+
 protected:
 	virtual bool IsTeamOnOffense(int32 TeamNumber) const;
 	virtual bool IsTeamOnDefense(int32 TeamNumber) const;

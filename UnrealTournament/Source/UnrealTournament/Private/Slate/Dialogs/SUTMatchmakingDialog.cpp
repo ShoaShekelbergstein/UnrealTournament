@@ -6,9 +6,11 @@
 #include "UTParty.h"
 #include "UTMatchmaking.h"
 #include "UTPartyGameState.h"
-#include "../SUWindowsStyle.h"
+#include "../SUTStyle.h"
 
 #if !UE_SERVER
+#include "SlateBasics.h"
+#include "SlateExtras.h"
 
 void SUTMatchmakingDialog::Construct(const FArguments& InArgs)
 {
@@ -35,50 +37,57 @@ void SUTMatchmakingDialog::Construct(const FArguments& InArgs)
 		DialogContent->AddSlot()
 		[
 			SNew(SVerticalBox)
+
+			// Status
+
 			+ SVerticalBox::Slot()
-			.Padding(0.0f, 5.0f, 0.0f, 5.0f)
-			.AutoHeight()
-			.VAlign(VAlign_Center)
-			.HAlign(HAlign_Center)
-			[
-				SNew(STextBlock)
-				.Text(this, &SUTMatchmakingDialog::GetRegionText)
-				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
-				.ColorAndOpacity(FLinearColor::Gray)
-			]
-			+ SVerticalBox::Slot()
-			.Padding(0.0f, 5.0f, 0.0f, 5.0f)
+			.Padding(0.0f, 50.0f, 0.0f, 10.0f)
 			.AutoHeight()
 			.VAlign(VAlign_Center)
 			.HAlign(HAlign_Center)
 			[
 				SNew(STextBlock)
 				.Text(this, &SUTMatchmakingDialog::GetMatchmakingText)
-				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
-				.ColorAndOpacity(FLinearColor::Gray)
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Medium.Orange")
 			]
+
+			// Region
+
 			+ SVerticalBox::Slot()
-			.Padding(0.0f, 5.0f, 0.0f, 5.0f)
+			.Padding(0.0f, 5.0f, 0.0f, 0.0f)
 			.AutoHeight()
 			.VAlign(VAlign_Center)
 			.HAlign(HAlign_Center)
 			[
 				SNew(STextBlock)
-				.Text(this, &SUTMatchmakingDialog::GetMatchmakingText2)
-				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
-				.ColorAndOpacity(FLinearColor::Gray)
+				.Text(this, &SUTMatchmakingDialog::GetRegionText)
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small.Gray")
 			]
+
+			// Throbber
+			+SVerticalBox::Slot()
+			.Padding(0.0f, 5.0f, 0.0f, 0.0f)
+			.AutoHeight()
+			.VAlign(VAlign_Center)
+			.HAlign(HAlign_Center)
+			[
+				SNew(SThrobber)
+			]
+
+
+			// Elapsed Time
 			+ SVerticalBox::Slot()
-			.Padding(0.0f, 15.0f, 0.0f, 5.0f)
+			.Padding(0.0f, 45.0f, 0.0f, 5.0f)
 			.AutoHeight()
 			.VAlign(VAlign_Center)
 			.HAlign(HAlign_Center)
 			[
 				SNew(STextBlock)
 				.Text(this, &SUTMatchmakingDialog::GetMatchmakingTimeElapsedText)
-				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
-				.ColorAndOpacity(FLinearColor::Gray)
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small.Gray")
 			]
+
+			// Estimated Time
 			+ SVerticalBox::Slot()
 			.Padding(0.0f, 5.0f, 0.0f, 5.0f)
 			.AutoHeight()
@@ -87,8 +96,7 @@ void SUTMatchmakingDialog::Construct(const FArguments& InArgs)
 			[
 				SNew(STextBlock)
 				.Text(this, &SUTMatchmakingDialog::GetMatchmakingEstimatedTimeText)
-				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.White")
-				.ColorAndOpacity(FLinearColor::Gray)
+				.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small.Gray")
 			]
 		];
 	}
@@ -116,14 +124,7 @@ FText SUTMatchmakingDialog::GetRegionText() const
 					MatchMakingRegion = TEXT("Europe");
 				}
 
-				if (PartyState->GetPartyProgression() == EUTPartyState::QuickMatching)
-				{
-					return FText::Format(NSLOCTEXT("Generic", "QuickMatching", "Searching for a match in Region: {0}"), FText::FromString(MatchMakingRegion));
-				}
-				else
-				{
-					return FText::Format(NSLOCTEXT("Generic", "Region", "Region: {0}"), FText::FromString(MatchMakingRegion));
-				}
+				return FText::Format(NSLOCTEXT("Generic", "Region", "Region: {0}"), FText::FromString(MatchMakingRegion));
 			}
 		}
 	}
@@ -133,10 +134,14 @@ FText SUTMatchmakingDialog::GetRegionText() const
 
 FText SUTMatchmakingDialog::GetMatchmakingText() const
 {
+	FText SearchType = FText::GetEmpty();
+
 	UUTGameInstance* GameInstance = Cast<UUTGameInstance>(GetPlayerOwner()->GetGameInstance());
 	if (GameInstance)
 	{
 		UUTMatchmaking* Matchmaking = GameInstance->GetMatchmaking();
+		SearchType = PlayerOwner->PlayListIDToText(Matchmaking->GetPlaylistID());
+
 		UUTParty* Party = GameInstance->GetParties();
 		if (Party)
 		{
@@ -146,57 +151,15 @@ FText SUTMatchmakingDialog::GetMatchmakingText() const
 				switch (PartyState->GetPartyProgression())
 				{
 				case EUTPartyState::PostMatchmaking:
-					return NSLOCTEXT("Generic", "JoiningServer", "Match Found! Joining...");
-				}
-			}
-		}
-
-		// Only party leader has the correct team elo
-		if (PlayerOwner->IsPartyLeader())
-		{
-			if (Matchmaking && Matchmaking->IsMatchmaking() && !Matchmaking->IsSkipEloChecksForMatchmaking())
-			{
-				int32 MatchmakingTeamElo = Matchmaking->GetMatchmakingTeamElo();
-				if (MatchmakingTeamElo > 0)
-				{
-					return FText::Format(NSLOCTEXT("Generic", "SearchingTeamElo", "Your Team ELO is {0}."), FText::AsNumber(MatchmakingTeamElo));
+					return NSLOCTEXT("Generic", "JoiningServer", "Match found!  Joining...");
 				}
 			}
 		}
 	}
 
-	return NSLOCTEXT("Generic", "SearchingForServer", "Searching For Server...");
+	return FText::Format(NSLOCTEXT("Generic", "SearchingForServer", "Searching for {0}Match..."), SearchType);
 }
 
-FText SUTMatchmakingDialog::GetMatchmakingText2() const
-{
-	UUTGameInstance* GameInstance = Cast<UUTGameInstance>(GetPlayerOwner()->GetGameInstance());
-	if (GameInstance)
-	{
-		UUTParty* Party = GameInstance->GetParties();
-		if (Party)
-		{
-			UUTPartyGameState* PartyState = Party->GetUTPersistentParty();
-			if (PartyState && PartyState->GetPartyProgression() == EUTPartyState::PostMatchmaking)
-			{
-				return FText::GetEmpty();
-			}
-		}
-
-		UUTMatchmaking* Matchmaking = GameInstance->GetMatchmaking();
-		if (Matchmaking && Matchmaking->IsMatchmaking() && !Matchmaking->IsSkipEloChecksForMatchmaking())
-		{
-			int32 MatchmakingTeamElo = Matchmaking->GetMatchmakingTeamElo();
-			int32 MatchmakingEloRange = Matchmaking->GetMatchmakingEloRange();
-			if (MatchmakingEloRange > 0 && MatchmakingTeamElo > 0)
-			{
-				return FText::Format(NSLOCTEXT("Generic", "SearchingForServerWithEloRange", "Searching For Server Within ELO Between {0} and {1}..."), FText::AsNumber(FMath::Max(MatchmakingTeamElo - MatchmakingEloRange, 0)), FText::AsNumber(MatchmakingTeamElo + MatchmakingEloRange));
-			}
-		}
-	}
-
-	return FText::GetEmpty();
-}
 
 FText SUTMatchmakingDialog::GetMatchmakingTimeElapsedText() const
 {
@@ -242,7 +205,7 @@ FText SUTMatchmakingDialog::GetMatchmakingEstimatedTimeText() const
 						if (EstimatedWaitTime > 0 && EstimatedWaitTime < 60*10)
 						{
 							FTimespan TimeSpan(0, 0, EstimatedWaitTime);
-							return FText::Format(NSLOCTEXT("Generic", "EstimateMatchMakingTime", "Estimated Wait {0}"), FText::AsTimespan(TimeSpan));
+							return FText::Format(NSLOCTEXT("Generic", "EstimateMatchMakingTime", "Estimated wait {0}"), FText::AsTimespan(TimeSpan));
 						}
 					}
 				}
@@ -257,8 +220,16 @@ FReply SUTMatchmakingDialog::OnButtonClick(uint16 ButtonID)
 {
 	OnDialogResult.ExecuteIfBound(SharedThis(this), UTDIALOG_BUTTON_CANCEL);
 	PlayerOwner->CloseDialog(SharedThis(this));
-	PlayerOwner->ReturnToMainMenu();
 
+	if (PlayerOwner->IsMenuGame())
+	{
+		PlayerOwner->CancelQuickmatch();
+	}
+	else
+	{
+		PlayerOwner->ReturnToMainMenu();
+	}
+	
 	return FReply::Handled();
 }
 

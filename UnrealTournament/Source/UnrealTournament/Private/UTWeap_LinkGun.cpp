@@ -64,6 +64,8 @@ AUTWeap_LinkGun::AUTWeap_LinkGun(const FObjectInitializer& OI)
 	TutorialAnnouncements.Add(TEXT("PriLinkGun"));
 	TutorialAnnouncements.Add(TEXT("SecLinkGun"));
 	HighlightText = NSLOCTEXT("Weapon", "LinkHighlightText", "Plasma Boy");
+	LowMeshOffset = FVector(0.f, 0.f, -3.f);
+	VeryLowMeshOffset = FVector(0.f, 0.f, -10.f);
 }
 
 void AUTWeap_LinkGun::AttachToOwner_Implementation()
@@ -170,18 +172,6 @@ AUTProjectile* AUTWeap_LinkGun::FireProjectile()
 	return LinkProj;
 }
 
-UAnimMontage* AUTWeap_LinkGun::GetFiringAnim(uint8 FireMode, bool bOnHands) const
-{
-	if (FireMode == 0 && bIsInCoolDown && OverheatAnim && !bOnHands)
-	{
-		return OverheatAnim;
-	}
-	else
-	{
-		return Super::GetFiringAnim(FireMode, bOnHands);
-	}
-}
-
 void AUTWeap_LinkGun::PlayWeaponAnim(UAnimMontage* WeaponAnim, UAnimMontage* HandsAnim, float RateOverride)
 {
 	// give pull anim priority
@@ -210,11 +200,6 @@ void AUTWeap_LinkGun::Tick(float DeltaTime)
 			if (UTOwner)
 			{
 				UTOwner->SetAmbientSound(OverheatSound, true);
-				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-				if ((AnimInstance != NULL) && (EndOverheatAnimSection != NAME_None))
-				{
-					AnimInstance->Montage_JumpToSection(EndOverheatAnimSection, OverheatAnim);
-				}
 			}
 		}
 		else if (UTOwner && OverheatSound && (!IsFiring() || !FireLoopingSound.IsValidIndex(CurrentFireMode) || !FireLoopingSound[CurrentFireMode]))
@@ -481,7 +466,7 @@ void AUTWeap_LinkGun::FiringExtraUpdated_Implementation(uint8 NewFlashExtra, uin
 			if (GuessTarget == NULL && UTOwner != NULL && Role < ROLE_Authority)
 			{
 				TArray<FOverlapResult> Hits;
-				GetWorld()->OverlapMultiByChannel(Hits, UTOwner->FlashLocation, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, true, UTOwner));
+				GetWorld()->OverlapMultiByChannel(Hits, UTOwner->FlashLocation.Position, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeSphere(10.0f), FCollisionQueryParams(NAME_None, true, UTOwner));
 				for (const FOverlapResult& Hit : Hits)
 				{
 					if (Cast<APawn>(Hit.Actor.Get()) != NULL)

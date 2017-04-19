@@ -86,6 +86,7 @@ UUTCharacterVoice::UUTCharacterVoice(const FObjectInitializer& ObjectInitializer
 	StatusOffsets.Add(StatusMessage::RallyNow, KEY_CALLOUTS + 5011);
 	StatusOffsets.Add(StatusMessage::DoorRally, KEY_CALLOUTS + 5012);
 	StatusOffsets.Add(StatusMessage::SniperSpotted, KEY_CALLOUTS + 5013);
+	StatusOffsets.Add(StatusMessage::RallyHot, KEY_CALLOUTS + 5014);
 
 	//FIRSTPICKUPSPEECH = KEY_CALLOUTS + 5099;
 	StatusOffsets.Add(PickupSpeechType::RedeemerPickup, KEY_CALLOUTS + 5100);
@@ -127,14 +128,27 @@ int32 UUTCharacterVoice::GetDestinationIndex(int32 MessageIndex) const
 
 FText UUTCharacterVoice::GetText(int32 Switch, bool bTargetsPlayerState1, class APlayerState* RelatedPlayerState_1, class APlayerState* RelatedPlayerState_2, class UObject* OptionalObject) const
 {
-	// @TOOD FIXMESTEVE option to turn these on
-	return FText::GetEmpty();
+	// hack for comms menu
+	if (Switch < 0)
+	{
+		Switch = -Switch;
+	}
+	else
+	{
+		// @TOOD FIXMESTEVE option to turn these on
+		return FText::GetEmpty();
+	}
 
 	FFormatNamedArguments Args;
 	if (!RelatedPlayerState_1)
 	{
 		UE_LOG(UT, Warning, TEXT("Character voice w/ no playerstate index %d"), Switch);
 		return FText::GetEmpty();
+	}
+
+	if (Switch == DROP_FLAG_SWITCH_INDEX)
+	{
+		return NSLOCTEXT("CharacterVoice", "DropFlag", "Drop the flag!");
 	}
 
 	UUTGameUserSettings* GS = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
@@ -500,6 +514,10 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 			else if (Switch == GetStatusIndex(StatusMessage::SniperSpotted))
 			{
 				return (SniperSpottedMessages.Num() == 0) ? EmptySpeech : SniperSpottedMessages[FMath::RandRange(0, SniperSpottedMessages.Num() - 1)];
+			}
+			else if (Switch == GetStatusIndex(StatusMessage::RallyHot))
+			{
+				return (RallyHotMessages.Num() == 0) ? EmptySpeech : RallyHotMessages[FMath::RandRange(0, RallyHotMessages.Num() - 1)];
 			}
 			else if (Switch == GetStatusIndex(StatusMessage::FindFC))
 			{

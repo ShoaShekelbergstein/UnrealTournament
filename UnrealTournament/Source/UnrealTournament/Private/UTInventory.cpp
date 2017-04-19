@@ -331,6 +331,11 @@ void AUTInventory::OwnerEvent_Implementation(FName EventName)
 {
 }
 
+bool AUTInventory::OverrideGiveTo_Implementation(AUTPickup* Pickup)
+{
+	return false;
+}
+
 bool AUTInventory::HUDShouldRender_Implementation(UUTHUDWidget* TargetWidget)
 {
 	return false;

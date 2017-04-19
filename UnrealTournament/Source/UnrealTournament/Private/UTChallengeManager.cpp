@@ -3,11 +3,6 @@
 #include "UTChallengeManager.h"
 #include "UTBotCharacter.h"
 #include "UTProgressionStorage.h"
-/*
-rename Kryss (too close to Cryss) - new Solace
-remove Lauren
-Get rid of UTBotConfig ini
-*/
 
 UUTChallengeManager::UUTChallengeManager(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -124,7 +119,7 @@ UUTChallengeManager::UUTChallengeManager(const FObjectInitializer& ObjectInitial
 			0, 5, NAME_EasyFFATeam, NAME_MediumFFATeam, NAME_HardFFATeam, NAME_ChallengeSlateBadgeName_DM_OP23, NAME_REWARD_GoldStars));
 
 	Challenges.Add(NAME_ChallengeFlagRunOne,
-		FUTChallengeInfo(NAME_ChallengeFlagRunOne, TEXT("Flag Run in Fort"), TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Fort"),
+		FUTChallengeInfo(NAME_ChallengeFlagRunOne, TEXT("Blitz in Fort"), TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Fort"),
 			TEXT("?Game=FlagRun"),
 			TEXT(""),
 			4, 5, NAME_EasyNecrisTeam, NAME_MediumNecrisTeam, NAME_HardNecrisTeam, NAME_ChallengeSlateBadgeName_CTF, NAME_REWARD_GoldStars));
@@ -142,7 +137,7 @@ UUTChallengeManager::UUTChallengeManager(const FObjectInitializer& ObjectInitial
 			1, 2, NAME_EasyNecrisTeam, NAME_MediumMixedTeam, NAME_HardMixedTeamB, NAME_ChallengeSlateBadgeName_Underland_TDM, NAME_REWARD_GoldStars));
 
 	Challenges.Add(NAME_ChallengeFlagRunTwo,
-		FUTChallengeInfo(NAME_ChallengeFlagRunTwo, TEXT("Flag Run in MeltDown"), TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Meltdown"),
+		FUTChallengeInfo(NAME_ChallengeFlagRunTwo, TEXT("Blitz in MeltDown"), TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Meltdown"),
 			TEXT("?Game=FlagRun"),
 			TEXT(""),
 			4, 5, NAME_EasyNecrisTeam, NAME_MediumMixedTeam, NAME_HardMixedTeamA, NAME_ChallengeSlateBadgeName_CTF, NAME_REWARD_GoldStars));
@@ -166,7 +161,7 @@ UUTChallengeManager::UUTChallengeManager(const FObjectInitializer& ObjectInitial
 			0, 1, NAME_EasyNecrisTeam, NAME_MediumMixedTeam, NAME_HardMixedTeamA, NAME_ChallengeSlateBadgeName_Underland_SD, NAME_REWARD_GoldStars));
 
 	Challenges.Add(NAME_ChallengeFlagRunThree,
-		FUTChallengeInfo(NAME_ChallengeFlagRunThree, TEXT("Flag Run in Loh"), TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Loh"),
+		FUTChallengeInfo(NAME_ChallengeFlagRunThree, TEXT("Blitz in Loh"), TEXT("/Game/RestrictedAssets/Maps/WIP/FR-Loh"),
 			TEXT("?Game=FlagRun"),
 			TEXT(""),
 			4, 5, NAME_EasyNecrisTeam, NAME_MediumMixedTeam, NAME_HardMixedTeamB, NAME_ChallengeSlateBadgeName_CTF, NAME_REWARD_GoldStars));

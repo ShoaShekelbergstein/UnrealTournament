@@ -119,9 +119,6 @@ void AUTCTFGameState::SetMaxNumberOfTeams(int32 TeamCount)
 
 void AUTCTFGameState::CacheFlagBase(AUTCTFFlagBase* BaseToCache)
 {
-	// With Gauntlet, it's possible to have flag bases with team num = 255 and or
-	// flag bases without flags.
-
 	uint8 TeamNum = BaseToCache->GetTeamNum();
 	if (FlagBases.IsValidIndex(TeamNum))
 	{

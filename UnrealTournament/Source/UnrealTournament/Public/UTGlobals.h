@@ -109,6 +109,8 @@ class UNREALTOURNAMENT_API UUTGlobals : public UObject
 	/** Gets the list of MCP Items depending on type */
 	void GetItemData(EUtItemType ItemType, TArray<FAssetData> &AssetList);
 
+	bool GetIsUsingGamepad() const { return false; }
+
 	/** Asset to load as the default WidgetData */
 	UPROPERTY(config, EditAnywhere, Category = "Widget Data", meta = (AllowedClasses = "UTWidgetData", DisplayName = "WidgetDataName"))
 	FStringAssetReference WidgetDataNameRef;

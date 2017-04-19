@@ -119,7 +119,7 @@ public:
 	UPROPERTY()
 	TArray<FUniqueNetIdRepl> BannedIDs;
 
-	virtual void LaunchMatch(bool bAllowBots, int32 BotDifficulty, bool bRequireFilled);
+	virtual void LaunchMatch(bool bAllowBots, int32 BotDifficulty, bool bRequireFilled, bool bHostControl);
 
 	virtual void SetLobbyMatchState(FName NewMatchState);
 	virtual void GameInstanceReady(FGuid inGameInstanceGUID);

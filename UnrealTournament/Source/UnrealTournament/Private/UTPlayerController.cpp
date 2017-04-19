@@ -49,14 +49,12 @@
 #include "UTFlagRunGameState.h"
 #include "UTRemoteRedeemer.h"
 #include "UTKillerTarget.h"
-#include "UTGauntletFlag.h"
 #include "UTTutorialAnnouncement.h"
 #include "UTLineUpHelper.h"
 #include "UTRallyPoint.h"
 #include "UTDemoRecSpectator.h"
 #include "UTFlagRunScoreboard.h"
 #include "UTFlagRunPvEHUD.h"
-#include "UTGauntletGameMessage.h"
 #include "BlueprintContextLibrary.h"
 #include "PartyContext.h"
 
@@ -160,7 +158,6 @@ AUTPlayerController::AUTPlayerController(const class FObjectInitializer& ObjectI
 
 	LastComMessageSwitch = -1;
 	LastComMessageTime = 0.0f;
-	ReplicatedWeaponHand = EWeaponHand::HAND_Right;
 	MinNetUpdateFrequency = 100.0f;
 }
 
@@ -495,9 +492,8 @@ void AUTPlayerController::SetupInputComponent()
 	InputComponent->BindAction("PlayTaunt2", IE_Pressed, this, &AUTPlayerController::PlayTaunt2);
 	InputComponent->BindAction("PlayGroupTaunt", IE_Pressed, this, &AUTPlayerController::PlayGroupTaunt);
 
-	InputComponent->BindAction("ShowBuyMenu", IE_Pressed, this, &AUTPlayerController::ShowBuyMenu);
-
 	InputComponent->BindAction("DropCarriedObject", IE_Pressed, this, &AUTPlayerController::DropCarriedObject);
+	InputComponent->BindAction("DropCarriedObject", IE_Released, this, &AUTPlayerController::StopDropCarriedObject);
 
 	InputComponent->BindAction("ToggleComMenu", IE_Pressed, this, &AUTPlayerController::ShowComsMenu);
 	InputComponent->BindAction("ToggleComMenu", IE_Released, this, &AUTPlayerController::HideComsMenu);
@@ -817,7 +813,7 @@ bool AUTPlayerController::InputKey(FKey Key, EInputEvent EventType, float Amount
 	if (Key.GetFName() == NAME_Enter && (EventType == IE_Pressed) && UTPlayerState != nullptr)
 	{
 		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-		if (UTPlayerState->bCaster)
+		if (UTPlayerState->bCaster || UTPlayerState->bIsMatchHost)
 		{
 			ServerCasterReady();
 			return true;
@@ -1157,17 +1153,7 @@ void AUTPlayerController::SwitchWeapon(int32 Group)
 {
 	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
 	int32 AdjustedGroup = Group -1;
-	if ( UTGameState && UTPlayerState && 
-		(UTPlayerState->bOutOfLives || (UTCharacter ? UTCharacter->IsDead() : (GetPawn() == NULL))) &&
-		(AdjustedGroup >= 0 && UTGameState->SpawnPacks.IsValidIndex(AdjustedGroup)) )
-	{
-		UE_LOG(UT,Log,TEXT("ServerSetLoadoutPack %s"),*UTGameState->SpawnPacks[AdjustedGroup].PackTag.ToString());
-		UTPlayerState->ServerSetLoadoutPack(UTGameState->SpawnPacks[AdjustedGroup].PackTag);
-	}
-	else
-	{
-		SwitchWeaponGroup(Group);
-	}
+	SwitchWeaponGroup(Group);
 }
 
 void AUTPlayerController::DemoRestart()
@@ -2324,7 +2310,7 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 			}
 		}
 		// hide first person mesh (but not attachments) if hidden weapons
-		if (GetWeaponHand() == EWeaponHand::HAND_Hidden || (P->GetWeapon() != NULL && P->GetWeapon()->ZoomState != EZoomState::EZS_NotZoomed))
+		if (P->GetWeapon() != NULL && P->GetWeapon()->ZoomState != EZoomState::EZS_NotZoomed)
 		{
 			HiddenComponents.Add(P->FirstPersonMesh->ComponentId);
 			if (P->GetWeapon() != NULL)
@@ -3519,14 +3505,14 @@ void AUTPlayerController::ClientNotifyTakeHit_Implementation(bool bFriendlyFire,
 	}
 }
 
-void AUTPlayerController::ClientNotifyCausedHit_Implementation(APawn* HitPawn, uint8 Damage, bool bArmorDamage)
+void AUTPlayerController::ClientNotifyCausedHit_Implementation(AActor* HitActor, uint8 Damage, bool bArmorDamage)
 {
 	// by default we only show HUD hitconfirms for hits that the player could conceivably see (i.e. target is in LOS)
-	if (HitPawn != NULL && HitPawn->GetRootComponent() != NULL && GetPawn() != NULL && MyUTHUD != NULL)
+	if (HitActor != NULL && HitActor->GetRootComponent() != NULL && GetPawn() != NULL && MyUTHUD != NULL)
 	{
 		float VictimLastRenderTime = -1.0f;
 		TArray<USceneComponent*> Components;
-		HitPawn->GetRootComponent()->GetChildrenComponents(true, Components);
+		HitActor->GetRootComponent()->GetChildrenComponents(true, Components);
 		for (int32 i = 0; i < Components.Num(); i++)
 		{
 			UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Components[i]);
@@ -3537,7 +3523,7 @@ void AUTPlayerController::ClientNotifyCausedHit_Implementation(APawn* HitPawn, u
 		}
 		if (GetWorld()->TimeSeconds - VictimLastRenderTime < 0.15f)
 		{
-			MyUTHUD->CausedDamage(HitPawn, Damage, bArmorDamage);
+			MyUTHUD->CausedDamage(HitActor, Damage, bArmorDamage);
 		}
 	}
 }
@@ -3591,29 +3577,11 @@ bool AUTPlayerController::ServerSuicide_Validate()
 
 void AUTPlayerController::SetWeaponHand(EWeaponHand NewHand)
 {
-	ReplicatedWeaponHand = NewHand;
-
-	AUTCharacter* UTCharTarget = Cast<AUTCharacter>(GetViewTarget());
+	AUTCharacter* UTCharTarget = Cast<AUTCharacter>(GetPawn());
 	if (UTCharTarget != NULL && UTCharTarget->GetWeapon() != NULL)
 	{
 		UTCharTarget->GetWeapon()->UpdateWeaponHand();
 	}
-	if (IsTemplate() || IsLocalPlayerController())
-	{
-		SaveConfig();
-	}
-	if (!IsTemplate() && Role < ROLE_Authority)
-	{
-		ServerSetWeaponHand(NewHand);
-	}
-}
-bool AUTPlayerController::ServerSetWeaponHand_Validate(EWeaponHand NewHand)
-{
-	return true;
-}
-void AUTPlayerController::ServerSetWeaponHand_Implementation(EWeaponHand NewHand)
-{
-	SetWeaponHand(NewHand);
 }
 
 void AUTPlayerController::Emote(int32 EmoteIndex)
@@ -3693,7 +3661,6 @@ void AUTPlayerController::ReceivedPlayer()
 	{
 		if (GetNetMode() != NM_Standalone)
 		{
-			ServerSetWeaponHand(GetWeaponHand());
 			if (FUTAnalytics::IsAvailable() && (GetWorld()->GetNetMode() != NM_Client || GetWorld()->GetNetDriver() != NULL)) // make sure we don't do analytics for demo playback
 			{
 				FString ServerInfo = (GetWorld()->GetNetMode() == NM_Client) ? GetWorld()->GetNetDriver()->ServerConnection->URL.ToString() : GEngine->GetWorldContextFromWorldChecked(GetWorld()).LastURL.ToString();
@@ -3729,6 +3696,13 @@ void AUTPlayerController::ReceivedPlayer()
 		}
 	}
 }
+
+EWeaponHand AUTPlayerController::GetWeaponHand()
+{
+	UUTProfileSettings* ProfileSettings = GetProfileSettings();
+	return ProfileSettings ? ProfileSettings->WeaponHand : EWeaponHand::HAND_Right;
+}
+
 
 bool AUTPlayerController::ServerReceiveCountryFlag_Validate(FName NewCountryFlag)
 {
@@ -4284,20 +4258,6 @@ void AUTPlayerController::ClientPumpkinPickedUp_Implementation(float GainedAmoun
 	UUTGameplayStatics::SetBestTime(GetWorld(), FacePumpkins, TotalPumpkins);
 }
 
-void AUTPlayerController::DebugTest(FString TestCommand)
-{
-
-	int32 Index = FCString::Atoi(*TestCommand);
-
-	ClientReceiveLocalizedMessage(UUTGauntletGameMessage::StaticClass(), Index, PlayerState, nullptr, nullptr);
-	Super::DebugTest(TestCommand);
-
-}
-
-void AUTPlayerController::ServerDebugTest_Implementation(const FString& TestCommand)
-{
-}
-
 void AUTPlayerController::ClientRequireContentItemListComplete_Implementation()
 {
 	UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
@@ -4437,7 +4397,7 @@ void AUTPlayerController::ServerRegisterBanVote_Implementation(AUTPlayerState* B
 
 FRotator AUTPlayerController::GetControlRotation() const
 {
-	if (UTPlayerState && (UTPlayerState->bOnlySpectator || UTPlayerState->bOutOfLives) && !IsBehindView() && (GetViewTarget() != GetSpectatorPawn()) && (GetViewTarget() != GetPawn()))
+	if (UTPlayerState && (UTPlayerState->bOnlySpectator || UTPlayerState->bOutOfLives) && !IsBehindView() && (GetViewTarget() != GetSpectatorPawn()) && (GetViewTarget() != GetPawn()) && (!IsLineUpActive()))
 	{
 		return BlendedTargetViewRotation;
 	}
@@ -4447,6 +4407,12 @@ FRotator AUTPlayerController::GetControlRotation() const
 
 void AUTPlayerController::UpdateRotation(float DeltaTime)
 {
+	if (IsLineUpActive())
+	{
+		//Don't update any controller rotation during a line-up
+		return;
+	}
+
 	UUTPlayerInput* Input = Cast<UUTPlayerInput>(PlayerInput);
 	if (Input)
 	{
@@ -4479,43 +4445,44 @@ void AUTPlayerController::UpdateRotation(float DeltaTime)
 	Super::UpdateRotation(DeltaTime);
 }
 
-void AUTPlayerController::ClientOpenLoadout_Implementation(bool bBuyMenu)
-{
-	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
-	if (LocalPlayer)
-	{
-		LocalPlayer->OpenLoadout(bBuyMenu);
-	}
-}
-
-void AUTPlayerController::ShowBuyMenu()
-{
-	//Prevents the menu from opening/closing by rapid inputs
-	if (((GetWorld()->GetTimeSeconds() - LastBuyMenuOpenTime) >= BuyMenuToggleDelay) || (LastBuyMenuOpenTime <= SMALL_NUMBER))
-	{
-		LastBuyMenuOpenTime = GetWorld()->GetTimeSeconds();
-
-		// It's silly to send this to the server before handling it here.  I probably should just for safe keepeing but for now
-		// just locally.
-
-		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS && GS->AvailableLoadout.Num() > 0)
-		{
-			if (GetPawn() == nullptr || !GS->HasMatchStarted() || GS->IsMatchIntermission())
-			{
-				ClientOpenLoadout_Implementation(true);
-			}
-		}
-	}
-}
-
 void AUTPlayerController::DropCarriedObject()
 {
 	if (UTCharacter && !UTCharacter->IsFiringDisabled())
 	{
-		UTCharacter->DropCarriedObject();
+		if (MyUTHUD != nullptr)
+		{
+			DropStartTime = GetWorld()->GetRealTimeSeconds();
+			GetWorld()->GetTimerManager().SetTimer(DropTimerHandle, this, &AUTPlayerController::ShowDropMenu, 0.2f, false);
+		}
 	}
 }
+
+void AUTPlayerController::ShowDropMenu()
+{
+	if (UTCharacter && !UTCharacter->IsFiringDisabled())
+	{
+		if (MyUTHUD != nullptr)
+		{
+			MyUTHUD->ToggleDropMenu(true);
+		}
+	}
+}
+
+void AUTPlayerController::StopDropCarriedObject()
+{
+	GWorld->GetTimerManager().ClearTimer(DropTimerHandle);
+	if (UTCharacter && !UTCharacter->IsFiringDisabled())
+	{
+		if (MyUTHUD == nullptr || !MyUTHUD->bShowDropMenu)
+		{
+			UTCharacter->DropCarriedObject();
+			return;
+		}
+	}
+
+	if (MyUTHUD != nullptr) MyUTHUD->ToggleDropMenu(false);
+}
+
 
 void AUTPlayerController::SetViewedScorePS(AUTPlayerState* NewViewedPS, uint8 NewStatsPage)
 {
@@ -5093,7 +5060,7 @@ bool AUTPlayerController::ServerSendComsMessage_Validate(AUTPlayerState* Target,
 void AUTPlayerController::ServerSendComsMessage_Implementation(AUTPlayerState* Target, int32 Switch)
 {
 	// Spam protection
-	if (GetWorld()->GetRealTimeSeconds() - LastComMessageTime < (Switch == LastComMessageSwitch ? 5.0f : 1.5f))
+	if (GetWorld()->GetRealTimeSeconds() - LastComMessageTime < (Switch == LastComMessageSwitch ? 5.0f : 1.5f) && (Target == nullptr || Cast<AUTBot>(Target->GetOwner()) == nullptr))
 	{
 		return;
 	}
@@ -5131,19 +5098,6 @@ bool AUTPlayerController::CanPerformRally() const
 	return (GameState && UTPlayerState && UTPlayerState->bCanRally && UTPlayerState->Team && GameState->bAttackersCanRally && ((UTPlayerState->Team->TeamIndex == 0) == GameState->bRedToCap));
 }
 
-EWeaponHand AUTPlayerController::GetPreferredWeaponHand()
-{
-	if (GetNetMode() == NM_DedicatedServer)
-	{
-		return ReplicatedWeaponHand;
-	}
-	else
-	{
-		UUTProfileSettings* ProfileSettings = GetProfileSettings();
-		return ProfileSettings ? ProfileSettings->WeaponHand : ReplicatedWeaponHand;
-	}
-}
-
 void AUTPlayerController::ViewStartSpot()
 {
 	if (StartSpot != nullptr)
@@ -5173,6 +5127,12 @@ void AUTPlayerController::PlayTutorialAnnouncement(int32 Index, UObject* Optiona
 			FUTAnalytics::FireEvent_UTTutorialPlayInstruction(this, NewAnnName.ToString(), Index, OptionalObject ? OptionalObject->GetName() : FString());
 		}
 	}
+}
+
+bool AUTPlayerController::IsLineUpActive() const
+{
+	AUTGameState* UTGS = GetWorld() ? Cast<AUTGameState>(GetWorld()->GetGameState()) : nullptr;
+	return (UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive) ? true : false;
 }
 
 void AUTPlayerController::ClientPrepareForLineUp_Implementation()

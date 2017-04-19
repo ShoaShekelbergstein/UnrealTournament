@@ -38,6 +38,9 @@ public:
 	/** optional item drop beyond any droppable inventory (note: must have a valid DroppedPickupClass) */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TSubclassOf<AUTInventory> ExtraDropType;
+	/** optional item drop as a raw DroppedPickup (i.e. that doesn't need an inventory item, like ammo boxes) */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TSubclassOf<AUTDroppedPickup> ExtraRawDropType;
 	/** chance to drop */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float DropChance;
@@ -96,6 +99,15 @@ public:
 			{
 				AUTInventory* Inv = CreateInventory<AUTInventory>(ExtraDropType, false);
 				TossInventory(Inv);
+			}
+			if (ExtraRawDropType != nullptr && FMath::FRand() < DropChance)
+			{
+				AUTDroppedPickup* NewDrop = GetWorld()->SpawnActor<AUTDroppedPickup>(ExtraRawDropType, GetActorLocation(), GetActorRotation());
+				if (NewDrop != nullptr)
+				{
+					NewDrop->Movement->Velocity = FMath::VRand().GetSafeNormal2D() * 300.0f;
+					NewDrop->Movement->Velocity.Z = 500.0f;
+				}
 			}
 			if (HealthDropType != nullptr)
 			{

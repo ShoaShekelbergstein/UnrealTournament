@@ -57,9 +57,8 @@ UUTTextBlock::UUTTextBlock(const FObjectInitializer& ObjectInitializer)
 	, FontAlpha(1.f)
 	, bPlaying(true)
 {
-	// todo PLK - setup text styles
-	//static ConstructorHelpers::FClassFinder<UUTTextStyle> BaseTextStyleClassFinder(TEXT("/Game/UI/Text/TextStyle-Body"));
-	//Style = BaseTextStyleClassFinder.Class;
+	static ConstructorHelpers::FClassFinder<UUTTextStyle> BaseTextStyleClassFinder(TEXT("/Game/RestrictedAssets/UI/Text/TextStyle-Body"));
+	Style = BaseTextStyleClassFinder.Class;
 
 	Visiblity_DEPRECATED = Visibility = ESlateVisibility::SelfHitTestInvisible;
 }

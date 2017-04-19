@@ -10,7 +10,6 @@
 #include "UTGameMessage.h"
 #include "Net/UnrealNetwork.h"
 #include "UTTimerMessage.h"
-#include "UTReplicatedLoadoutInfo.h"
 #include "UTMutator.h"
 #include "UTReplicatedMapInfo.h"
 #include "UTPickup.h"
@@ -276,9 +275,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	MapVoteStatus = NSLOCTEXT("UTGameState", "Mapvote", "Map Vote");
 	PreGameStatus = NSLOCTEXT("UTGameState", "PreGame", "Pre-Game");
 	NeedPlayersStatus = NSLOCTEXT("UTGameState", "NeedPlayers", "Need {NumNeeded} More");
-	OvertimeStatus = NSLOCTEXT("UTCTFGameState", "Overtime", "Overtime!");
-
-	bWeightedCharacter = false;
+	OvertimeStatus = NSLOCTEXT("UTCTFGameState", "Overtime", "Overtime");
 
 	BoostRechargeMaxCharges = 1;
 	BoostRechargeTime = 0.0f; // off by default
@@ -318,7 +315,6 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME_CONDITION(AUTGameState, bIsInstanceServer, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, AIDifficulty, COND_InitialOnly);
 	DOREPLIFETIME(AUTGameState, PlayersNeeded);
-	DOREPLIFETIME(AUTGameState, AvailableLoadout);
 	DOREPLIFETIME(AUTGameState, HubGuid);
 
 	DOREPLIFETIME_CONDITION(AUTGameState, bAllowTeamSwitches, COND_InitialOnly);
@@ -334,16 +330,12 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME_CONDITION(AUTGameState, ServerMOTD, COND_InitialOnly);
 
 	DOREPLIFETIME(AUTGameState, ServerSessionId);
-	DOREPLIFETIME(AUTGameState, NumWinnersToShow);
 
 	DOREPLIFETIME(AUTGameState, MapVoteList);
 	DOREPLIFETIME(AUTGameState, MapVoteListCount);
 	DOREPLIFETIME(AUTGameState, VoteTimer);
 
 	DOREPLIFETIME(AUTGameState, bForcedBalance);
-
-	DOREPLIFETIME(AUTGameState, SpawnPacks);
-	DOREPLIFETIME_CONDITION(AUTGameState, bWeightedCharacter, COND_InitialOnly);
 
 	DOREPLIFETIME_CONDITION(AUTGameState, BoostRechargeTime, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, BoostRechargeMaxCharges, COND_InitialOnly);
@@ -360,6 +352,9 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME(AUTGameState, FCFriendlyLocCount);
 	DOREPLIFETIME(AUTGameState, FCEnemyLocCount);
 	DOREPLIFETIME(AUTGameState, bDebugHitScanReplication);
+
+	DOREPLIFETIME(AUTGameState, HostIdString);
+
 }
 
 void AUTGameState::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
@@ -475,10 +470,22 @@ bool AUTGameState::CanSpectate(APlayerController* Viewer, APlayerState* ViewTarg
 	return true;
 }
 
-
 void AUTGameState::Tick(float DeltaTime)
 {
 	ManageMusicVolume(DeltaTime);
+
+	if (bNeedToClearIntermission && !IsMatchIntermission())
+	{
+		bNeedToClearIntermission = false;
+		for (TObjectIterator<UParticleSystemComponent> It; It; ++It)
+		{
+			UParticleSystemComponent* PSC = *It;
+			if (PSC && !PSC->IsTemplate() && PSC->GetOwner() && (PSC->GetOwner()->GetWorld() == GetWorld()) && !Cast<AUTWeapon>(PSC->GetOwner()) && (PSC->CustomTimeDilation == 0.001f))
+			{
+				PSC->CustomTimeDilation = 1.f;
+			}
+		}
+	}
 }
 
 void AUTGameState::ManageMusicVolume(float DeltaTime)
@@ -688,7 +695,7 @@ bool AUTGameState::IsSelectedBoostValid(AUTPlayerState* PlayerState) const
 
 float AUTGameState::GetClockTime()
 {
-	if (IsMatchInOvertime())
+	if (IsMatchInOvertime() && bStopGameClock)
 	{
 			return ElapsedTime-TimeLimit;
 	}
@@ -1493,49 +1500,6 @@ int32 AUTGameState::GetMaxTeamSpectatingId(int32 TeamNum)
 	}
 	return MaxSpectatingID;
 
-}
-
-void AUTGameState::AddLoadoutItem(const FLoadoutInfo& Item)
-{
-	FActorSpawnParameters Params;
-	Params.Owner = this;
-	AUTReplicatedLoadoutInfo* NewLoadoutInfo = GetWorld()->SpawnActor<AUTReplicatedLoadoutInfo>(Params);
-	if (NewLoadoutInfo)
-	{
-		NewLoadoutInfo->ItemTag = Item.ItemTag;
-		NewLoadoutInfo->ItemClass = Item.ItemClass;	
-		NewLoadoutInfo->RoundMask = Item.RoundMask;
-		NewLoadoutInfo->CurrentCost = Item.InitialCost;
-		NewLoadoutInfo->bDefaultInclude = Item.bDefaultInclude;
-		NewLoadoutInfo->bPurchaseOnly = Item.bPurchaseOnly;
-		NewLoadoutInfo->LoadItemImage();
-		AvailableLoadout.Add(NewLoadoutInfo);
-	}
-}
-
-AUTReplicatedLoadoutInfo* AUTGameState::FindLoadoutItem(const FName& ItemTag)
-{
-	for (int32 i=0; i < AvailableLoadout.Num();i++)
-	{
-		if (AvailableLoadout[i]->ItemTag == ItemTag)
-		{
-			return AvailableLoadout[i];
-		}
-	}
-
-	return nullptr;
-}
-
-void AUTGameState::AdjustLoadoutCost(TSubclassOf<AUTInventory> ItemClass, float NewCost)
-{
-	for (int32 i=0; i < AvailableLoadout.Num(); i++)
-	{
-		if (AvailableLoadout[i]->ItemClass == ItemClass)
-		{
-			AvailableLoadout[i]->CurrentCost = NewCost;
-			return;
-		}
-	}
 }
 
 bool AUTGameState::IsTempBanned(const FUniqueNetIdRepl& UniqueId)
@@ -2405,19 +2369,19 @@ AUTLineUpZone* AUTGameState::CreateLineUpAtPlayerStart(LineUpTypes LineUpType, A
 			NewZone->DefaultCreateForOnly1Character();
 
 			NewZone->AttachToActor(PlayerSpawn, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		}
 
-		SpawnedLineUps.Add(NewZone);
+			SpawnedLineUps.Add(NewZone);
 
-		//See if the new zone's camera is stuck inside of a wall
-		if (GetWorld())
-		{
-			FHitResult CameraCollision;
-			GetWorld()->SweepSingleByChannel(CameraCollision, NewZone->GetActorLocation(), NewZone->Camera->GetComponentLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
-
-			if (CameraCollision.bBlockingHit)
+			//See if the new zone's camera is stuck inside of a wall
+			if (GetWorld())
 			{
-				NewZone->Camera->SetWorldLocation(CameraCollision.ImpactPoint);
+				FHitResult CameraCollision;
+				GetWorld()->SweepSingleByChannel(CameraCollision, NewZone->GetActorLocation(), NewZone->Camera->GetComponentLocation(), FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
+
+				if (CameraCollision.bBlockingHit)
+				{
+					NewZone->Camera->SetWorldLocation(CameraCollision.ImpactPoint);
+				}
 			}
 		}
 	}
@@ -2428,39 +2392,52 @@ void AUTGameState::SpawnDefaultLineUpZones()
 {
 	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
 	const bool bIsTeamGame = (Teams.Num() > 0) ? true : false;
+	bool bIsTutorialGame = false;
 
-	APlayerStart* PlayerStartToSpawnOn = nullptr;
-	
-	for (TActorIterator<AUTTeamPlayerStart> It(GetWorld()); It; ++It)
+	if ((GetNetMode() == NM_Standalone) && GetWorld())
 	{
-		PlayerStartToSpawnOn = *It;
-		break;
+		AUTGameMode* UTGM = GetWorld()->GetAuthGameMode<AUTGameMode>();
+		if (UTGM)
+		{
+			bIsTutorialGame = UTGM->bBasicTrainingGame;
+		}
 	}
-	
-	if (!bIsTeamGame || (PlayerStartToSpawnOn == nullptr))
+
+	if (!bIsTutorialGame)
 	{
-		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		APlayerStart* PlayerStartToSpawnOn = nullptr;
+
+		for (TActorIterator<AUTTeamPlayerStart> It(GetWorld()); It; ++It)
 		{
 			PlayerStartToSpawnOn = *It;
 			break;
 		}
-	}
 
-	if (PlayerStartToSpawnOn)
-	{
-		if (GetAppropriateSpawnList(LineUpTypes::Intro) == nullptr)
+		if (!bIsTeamGame || (PlayerStartToSpawnOn == nullptr))
 		{
-			AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::Intro, PlayerStartToSpawnOn);
+			for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+			{
+				PlayerStartToSpawnOn = *It;
+				break;
+			}
 		}
 
-		if (GetAppropriateSpawnList(LineUpTypes::Intermission) == nullptr)
+		if (PlayerStartToSpawnOn)
 		{
-			AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::Intermission, PlayerStartToSpawnOn);
-		}
+			if (GetAppropriateSpawnList(LineUpTypes::Intro) == nullptr)
+			{
+				AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::Intro, PlayerStartToSpawnOn);
+			}
 
-		if (GetAppropriateSpawnList(LineUpTypes::PostMatch) == nullptr)
-		{
-			AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::PostMatch, PlayerStartToSpawnOn);
+			if (GetAppropriateSpawnList(LineUpTypes::Intermission) == nullptr)
+			{
+				AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::Intermission, PlayerStartToSpawnOn);
+			}
+
+			if (GetAppropriateSpawnList(LineUpTypes::PostMatch) == nullptr)
+			{
+				AUTLineUpZone* NewZone = CreateLineUpAtPlayerStart(LineUpTypes::PostMatch, PlayerStartToSpawnOn);
+			}
 		}
 	}
 }
@@ -2549,6 +2526,7 @@ void AUTGameState::PrepareForIntermission()
 			PSC->CustomTimeDilation = 0.001f;
 		}
 	}
+	bNeedToClearIntermission = true;
 }
 
 bool AUTGameState::HasMatchEnded() const

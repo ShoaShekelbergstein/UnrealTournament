@@ -22,7 +22,7 @@ AUTDroppedPickup::AUTDroppedPickup(const FObjectInitializer& ObjectInitializer)
 	Movement->OnProjectileStop.AddDynamic(this, &AUTDroppedPickup::PhysicsStopped);
 
 	//bCollideWhenPlacing = true; // causes too many false positives at the moment, re-evaluate later
-	InitialLifeSpan = 15.0f;
+	InitialLifeSpan = 20.0f;
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
@@ -78,7 +78,11 @@ void AUTDroppedPickup::SetInventory(AUTInventory* NewInventory)
 void AUTDroppedPickup::InventoryTypeUpdated_Implementation()
 {
 	AUTPickupInventory::CreatePickupMesh(this, Mesh, InventoryType, 0.0f, FRotator::ZeroRotator, false);
+	SetPickupSheen(1.0f);
+}
 
+void AUTDroppedPickup::SetPickupSheen(float SheenValue)
+{
 	if (Mesh)
 	{
 		for (int i = 0; i < Mesh->GetNumMaterials(); i++)
@@ -87,7 +91,7 @@ void AUTDroppedPickup::InventoryTypeUpdated_Implementation()
 			if (MID)
 			{
 				static FName PickupSheen = TEXT("PickupSheen");
-				MID->SetScalarParameterValue(PickupSheen, 1.0f);
+				MID->SetScalarParameterValue(PickupSheen, SheenValue);
 			}
 		}
 	}

@@ -40,6 +40,8 @@ class UNREALTOURNAMENT_API AUTDemoRecSpectator : public AUTPlayerController
 
 	virtual void ClientGameEnded_Implementation(AActor* EndGameFocus, bool bIsWinner) override;
 
+	virtual void ClientUpdateSkillRating_Implementation(const FString& MatchRatingType) override;
+
 	virtual void InitPlayerState() override;
 	virtual void CleanupPlayerState() override
 	{

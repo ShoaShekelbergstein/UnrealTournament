@@ -68,9 +68,7 @@ AUTCTFRoundGame::AUTCTFRoundGame(const FObjectInitializer& ObjectInitializer)
 	bRollingAttackerSpawns = true;
 	ForceRespawnTime = 0.1f;
 	LimitedRespawnWaitTime = 6.f;
-
-	MainScoreboardDisplayTime = 7.5f;
-	EndScoreboardDelay = 8.7f;
+	MatchSummaryDelay = 20.f;
 
 	bSitOutDuringRound = false;
 	bSlowFlagCarrier = false;
@@ -207,7 +205,7 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 	if (bFirstRoundInitialized)
 	{
 		// kick idlers
-		if (UTGameState && GameSession)
+		if (UTGameState && GameSession && !bIgnoreIdlePlayers && !bIsLANGame)
 		{
 			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 			{
@@ -350,6 +348,9 @@ void AUTCTFRoundGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 	// Dont ever end the game in PIE
 	if (GetWorld()->WorldType == EWorldType::PIE) return;
 
+	UTGameState->WinningTeam = Winner;
+	EndTime = GetWorld()->TimeSeconds;
+
 	APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
 	UUTLocalPlayer* LP = LocalPC ? Cast<UUTLocalPlayer>(LocalPC->Player) : NULL;
 	if (LP)
@@ -361,9 +362,6 @@ void AUTCTFRoundGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 			LP->ChallengeCompleted(ChallengeTag, ChallengeDifficulty + 1);
 		}
 	}
-
-	UTGameState->WinningTeam = Winner;
-	EndTime = GetWorld()->TimeSeconds;
 
 	if (IsGameInstanceServer() && LobbyBeacon)
 	{
@@ -420,10 +418,6 @@ void AUTCTFRoundGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 	FTimerHandle TempHandle;
 	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::HandleMatchHasEnded, 1.5f);
 	bGameEnded = true;
-
-	// Setup a timer to pop up the final scoreboard on everyone
-	FTimerHandle TempHandle2;
-	GetWorldTimerManager().SetTimer(TempHandle2, this, &AUTGameMode::ShowFinalScoreboard, EndScoreboardDelay*GetActorTimeDilation());
 
 	// Setup a timer to continue to the next map.  Need enough time for match summaries
 	EndTime = GetWorld()->TimeSeconds;
@@ -1315,7 +1309,7 @@ void AUTCTFRoundGame::CheckRoundTimeVictory()
 void AUTCTFRoundGame::CheckGameTime()
 {
 	AUTCTFRoundGameState* RCTFGameState = Cast<AUTCTFRoundGameState>(CTFGameState);
-	if (CTFGameState->IsMatchIntermission())
+	if (CTFGameState && CTFGameState->IsMatchIntermission())
 	{
 		if (RCTFGameState && (RCTFGameState->IntermissionTime <= 0))
 		{
@@ -1350,6 +1344,29 @@ bool AUTCTFRoundGame::IsPlayerOnLifeLimitedTeam(AUTPlayerState* PlayerState) con
 		return false;
 	}
 	return PlayerState && PlayerState->Team && IsTeamOnOffense(PlayerState->Team->TeamIndex) ? RCTFGameState->bAttackerLivesLimited : RCTFGameState->bDefenderLivesLimited;
+}
+
+uint8 AUTCTFRoundGame::GetWinningTeamForLineUp() const
+{
+	uint8 Result = Super::GetWinningTeamForLineUp();
+	if (Result == 255)
+	{
+		if (FlagScorer != nullptr)
+		{
+			Result = FlagScorer->GetTeamNum();
+		}
+		else if (CTFGameState != nullptr && CTFGameState->GetScoringPlays().Num() > 0)
+		{
+			const TArray<const FCTFScoringPlay>& ScoringPlays = CTFGameState->GetScoringPlays();
+			const FCTFScoringPlay& WinningPlay = ScoringPlays.Last();
+
+			if (WinningPlay.Team)
+			{
+				Result = WinningPlay.Team->GetTeamNum();
+			}
+		}
+	}
+	return Result;
 }
 
 float AUTCTFRoundGame::GetScoreForXP(AUTPlayerState* PS)

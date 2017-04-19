@@ -843,7 +843,7 @@ void SUTControlSettingsDialog::SaveControlSettings()
 			GameAction->SecondaryKey = BindList[i]->SecondaryKeyBindWidget->GetKey();
 		}
 
-		ProfileSettings->MouseSensitivity = FMath::Max(0.01f, 0.1f * MouseSensitivity->GetValue());
+		ProfileSettings->MouseSensitivity = FMath::Max(0.0005f, 0.1f * MouseSensitivity->GetValue());
 		UE_LOG(UT, Warning, TEXT("Saved as %f"), ProfileSettings->MouseSensitivity);
 		ProfileSettings->MouseAcceleration = MouseAcceleration->GetValue() * (MouseAccelerationRange.Y - MouseAccelerationRange.X) + MouseAccelerationRange.X;
 		ProfileSettings->MouseAccelerationMax = MouseAccelerationMax->GetValue() * (MouseAccelerationMaxRange.Y - MouseAccelerationMaxRange.X) + MouseAccelerationMaxRange.X;

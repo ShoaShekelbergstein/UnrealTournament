@@ -48,6 +48,7 @@ AUTCarriedObject::AUTCarriedObject(const FObjectInitializer& ObjectInitializer)
 	bSlowsMovement = false;
 	bSingleGhostFlag = true;
 	bWaitingForFirstPickup = true;
+	bWaitForNearbyPlayer = true;
 }
 
 void AUTCarriedObject::Destroyed()
@@ -994,7 +995,10 @@ void AUTCarriedObject::FellOutOfWorld(const UDamageType& dmgType)
 {
 	if (Role == ROLE_Authority)
 	{
+		bool bRealWaitForNearby = bWaitForNearbyPlayer;
+		bWaitForNearbyPlayer = false;
 		SendHomeWithNotify();
+		bWaitForNearbyPlayer = bRealWaitForNearby;
 	}
 	else
 	{

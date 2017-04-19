@@ -15,6 +15,9 @@ AUTWeap_LightningRifle::AUTWeap_LightningRifle(const FObjectInitializer& ObjectI
 	ChainDamage = 30.f;
 	ChainRadius = 800.f;
 	bSniping = true;
+	LowMeshOffset = FVector(0.f, 0.f, -3.f);
+	VeryLowMeshOffset = FVector(0.f, 0.f, -12.f);
+	ExtraFullPowerFireDelay = 0.3f;
 }
 
 void AUTWeap_LightningRifle::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -55,6 +58,7 @@ void AUTWeap_LightningRifle::ClearForRemoval()
 	bIsFullyPowered = false;
 	ChargePct = 0.0f;
 	bIsCharging = false;
+	ZoomState = EZoomState::EZS_NotZoomed;
 	if (UTOwner)
 	{
 		UTOwner->SetFlashExtra(0, CurrentFireMode);
@@ -72,6 +76,39 @@ void AUTWeap_LightningRifle::ClientRemoved()
 {
 	ClearForRemoval();
 	Super::ClientRemoved();
+}
+
+float AUTWeap_LightningRifle::GetRefireTime(uint8 FireModeNum)
+{
+	if (FireInterval.IsValidIndex(FireModeNum))
+	{
+		float Result = FireInterval[FireModeNum];
+		bExtendedRefireDelay = false;
+		if (bIsFullyPowered)
+		{
+			Result += ExtraFullPowerFireDelay;
+			bExtendedRefireDelay = true;
+		}
+		if (UTOwner != NULL)
+		{
+			Result /= UTOwner->GetFireRateMultiplier();
+		}
+		return FMath::Max<float>(0.01f, Result);
+	}
+	else
+	{
+		UE_LOG(UT, Warning, TEXT("Invalid firing mode %i in %s::GetRefireTime()"), int32(FireModeNum), *GetName());
+		return 0.1f;
+	}
+}
+
+bool AUTWeap_LightningRifle::HandleContinuedFiring()
+{
+	if (bExtendedRefireDelay)
+	{
+		UpdateTiming();
+	}
+	return Super::HandleContinuedFiring();
 }
 
 void AUTWeap_LightningRifle::OnRep_ZoomState_Implementation()
@@ -136,9 +173,22 @@ int32 AUTWeap_LightningRifle::GetHitScanDamage()
 	return InstantHitInfo[CurrentFireMode].Damage + (bIsFullyPowered ? FullPowerBonusDamage : 0.f);
 }
 
+void AUTWeap_LightningRifle::PlayFiringSound(uint8 EffectFiringMode)
+{
+	if (bIsFullyPowered && (Role == ROLE_Authority))
+	{
+		// will choose fire sound depending on hit or miss
+		return;
+	}
+	else
+	{
+		Super::PlayFiringSound(EffectFiringMode);
+	}
+}
+
 void AUTWeap_LightningRifle::SetFlashExtra(AActor* HitActor)
 {
-	if (UTOwner)
+	if (UTOwner && (Role == ROLE_Authority))
 	{
 		if (bIsFullyPowered)
 		{
@@ -146,18 +196,12 @@ void AUTWeap_LightningRifle::SetFlashExtra(AActor* HitActor)
 			if (Cast<AUTCharacter>(HitActor) && GS && !GS->OnSameTeam(UTOwner, HitActor))
 			{
 				UTOwner->SetFlashExtra(3, CurrentFireMode);
-				if (Cast<AUTPlayerController>(UTOwner->GetController()) && (Role == ROLE_Authority))
-				{
-					Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredHitEnemySound);
-				}
+				UUTGameplayStatics::UTPlaySound(GetWorld(), FullyPoweredHitEnemySound, UTOwner, SRT_All, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
 			}
 			else
 			{
 				UTOwner->SetFlashExtra(2, CurrentFireMode);
-				if (Cast<AUTPlayerController>(UTOwner->GetController()) && (Role == ROLE_Authority))
-				{
-					Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredNoHitEnemySound);
-				}
+				UUTGameplayStatics::UTPlaySound(GetWorld(), FullyPoweredNoHitEnemySound, UTOwner, SRT_All, false, FVector::ZeroVector, GetCurrentTargetPC(), NULL, true, FireSoundAmp);
 			}
 		}
 		else
@@ -255,6 +299,7 @@ void AUTWeap_LightningRifle::FireShot()
 	}
 
 	AmmoCost[0] = bIsFullyPowered ? 2 : 1;
+	bool bFullPowerShot = bIsFullyPowered;
 	ConsumeAmmo(0);
 	if (!FireShotOverride() && GetUTOwner() != NULL) // script event may kill user
 	{
@@ -273,7 +318,7 @@ void AUTWeap_LightningRifle::FireShot()
 				FHitResult OutHit;
 				FireInstantHit(true, &OutHit);
 
-				if (Cast<AUTCharacter>(OutHit.Actor.Get()))
+				if (bFullPowerShot && Cast<AUTCharacter>(OutHit.Actor.Get()))
 				{
 					ChainLightning(OutHit);
 				}
@@ -286,6 +331,7 @@ void AUTWeap_LightningRifle::FireShot()
 	{
 		GetUTOwner()->InventoryEvent(InventoryEventName::FiredWeapon);
 	}
+	bIsFullyPowered = false;
 	ChargePct = 0.f;
 	FireZOffsetTime = 0.f;
 }

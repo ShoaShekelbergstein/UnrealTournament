@@ -629,6 +629,10 @@ FText SUTLoginDialog::GetLoginPhaseMessage() const
 		{
 			return NSLOCTEXT("Login","LoadingMMR",".. Loading MMR .. ");
 		}
+		else if (PlayerOwner->LoginPhase == ELoginPhase::GettingTitleUpdate)
+		{
+			return NSLOCTEXT("Login","LoadingMMR",".. Receiving Title Update .. ");
+		}
 		else if (PlayerOwner->LoginPhase == ELoginPhase::LoggedIn)
 		{
 			return NSLOCTEXT("Login","LoadingLoggedIn",".. Finalizing .. ");

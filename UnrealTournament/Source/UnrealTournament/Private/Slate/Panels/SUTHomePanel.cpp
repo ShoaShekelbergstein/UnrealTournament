@@ -48,7 +48,8 @@ void SUTHomePanel::OnShowPanel(TSharedPtr<SUTMenuBase> inParentWindow)
 
 	AnnouncmentTimer = 3.0;
 
-	PlayerOwner->GetWorld()->GetTimerManager().SetTimer(LanTimerHandle, FTimerDelegate::CreateSP(this, &SUTHomePanel::CheckForLanServers), 30.0f, true);
+	PlayerOwner->GetWorld()->GetTimerManager().SetTimer(LanTimerHandle, FTimerDelegate::CreateSP(this, &SUTHomePanel::CheckForLanServers), 8.0f, true);
+	PlayerOwner->GetWorld()->GetTimerManager().SetTimer(LanPingHandle, FTimerDelegate::CreateSP(this, &SUTHomePanel::PingLanServers), 3.5f, true);
 	if (AnimWidget.IsValid())
 	{
 		AnimWidget->Animate(FVector2D(100.0f, 0.0f), FVector2D(0.0f, 0.0f), 0.0f, 1.0f, 0.3f);
@@ -78,7 +79,7 @@ void SUTHomePanel::Tick( const FGeometry& AllottedGeometry, const double InCurre
 	{
 		if (NewChallengeImage.IsValid())
 		{
-			float Scale = 1.0f + (0.1 * FMath::Sin(PlayerOwner->GetWorld()->GetTimeSeconds() * 10.0f));
+			float Scale = 1.0f + (0.1 * FMath::Sin(PlayerOwner->GetWorld()->GetTimeSeconds() * 30.0f));
 			NewChallengeImage->SetRenderTransform(FSlateRenderTransform(Scale));
 		}
 	}
@@ -92,7 +93,8 @@ void SUTHomePanel::CheckForLanServers()
 		return;
 	}
 
-	if (!PlayerOwner->LastRankedMatchSessionId.IsEmpty())
+	// Don't do the lan search if we are in a party and we are not the party leader
+	if (!PlayerOwner->LastRankedMatchSessionId.IsEmpty() || (PlayerOwner->IsInAnActiveParty()) || PlayerOwner->MatchmakingDialog.IsValid() )
 	{
 		return;
 	}
@@ -126,6 +128,125 @@ void SUTHomePanel::CheckForLanServers()
 	}
 }
 
+void SUTHomePanel::RebuildLanBox()
+{
+	LanBox->ClearChildren();		
+	for (int32 ServerIndex = 0; ServerIndex < LanMatches.Num(); ServerIndex++)
+	{
+		TSharedPtr<FServerData> NewServer = LanMatches[ServerIndex];
+
+		if (NewServer.IsValid() && NewServer->Version == FString::FromInt(FNetworkVersion::GetLocalNetworkVersion()))
+		{
+			FText ServerName = NewServer->GetBrowserName();
+			FText ServerInfo = FText::Format(NSLOCTEXT("SUTHomePanel","LanServerFormat","Game: {0}  Map: {1}   # Players: {2}   # Friends: {3}"),
+												NewServer->GetBrowserGameMode(),
+												NewServer->GetBrowserMapName(),
+												NewServer->GetBrowserNumPlayers(),
+												NewServer->GetBrowserNumFriends());
+			LanBox->AddSlot().AutoHeight()
+			[
+
+				SNew(SVerticalBox)
+				+SVerticalBox::Slot().AutoHeight().Padding(0.0f,10.0f,0.0f,0.0f)
+				[
+					SNew(SBorder)
+					.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.SuperDark"))
+					.ColorAndOpacity(this, &SUTHomePanel::GetFadeColor)
+					.BorderBackgroundColor(this, &SUTHomePanel::GetFadeBKColor)
+					.HAlign(HAlign_Right)
+					[
+						SNew(STextBlock)
+						.Text(NSLOCTEXT("SUTHomePanel","LanServerTitle","...Found a LAN Server"))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tiny.Bold")
+						.ColorAndOpacity(FLinearColor::Yellow)
+					]
+				]
+				+SVerticalBox::Slot().AutoHeight()
+				[
+					SNew(SBorder)
+					.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Dark"))
+					.ColorAndOpacity(this, &SUTHomePanel::GetFadeColor)
+					.BorderBackgroundColor(this, &SUTHomePanel::GetFadeBKColor)
+					[
+						SNew(SHorizontalBox)
+						+SHorizontalBox::Slot().AutoWidth()
+						[
+							SNew(SBox).WidthOverride(940)
+							[
+								SNew(SHorizontalBox)
+								+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+								[
+									SNew(SVerticalBox)
+									+SVerticalBox::Slot().AutoHeight()
+									[
+										SNew(SUTImage)
+										.WidthOverride(90)
+										.HeightOverride(64)
+										.Image(SUTStyle::Get().GetBrush("UT.Icon.Lan.Big"))
+									]
+								]
+								+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+								[
+									SNew(SBox).WidthOverride(115).HeightOverride(86)
+									[
+										SNew(SUTButton)
+										.ButtonStyle(SUTStyle::Get(),"UT.ClearButton")
+										[
+											SNew(SVerticalBox)
+											+SVerticalBox::Slot()
+											.Padding(0.0,4.0,0.0,0.0)
+											.AutoHeight()
+											[
+												SNew(SUTButton)
+												.ButtonStyle(SUTStyle::Get(),"UT.SimpleButton.Medium")
+												.Text(NSLOCTEXT("SUTMatchPanel","JoinText","JOIN"))
+												.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
+												.CaptionHAlign(HAlign_Center)
+												.OnClicked(this, &SUTHomePanel::OnJoinLanClicked, NewServer)
+												//.IsEnabled(TAttribute<bool>::Create(TAttribute<bool>::FGetter::CreateSP(InItem.Get(), &FTrackedMatch::CanJoin, PlayerOwner)))
+											]
+											+SVerticalBox::Slot()
+											.Padding(0.0,10.0,0.0,0.0)
+											.AutoHeight()
+											[
+												SNew(SUTButton)
+												.ButtonStyle(SUTStyle::Get(),"UT.SimpleButton.Medium")
+												.Text(NSLOCTEXT("SUTMatchPanel","SpectateText","SPECTATE"))
+												.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
+												.CaptionHAlign(HAlign_Center)
+												.OnClicked(this, &SUTHomePanel::OnSpectateLanClicked, NewServer)
+												//.IsEnabled(TAttribute<bool>::Create(TAttribute<bool>::FGetter::CreateSP(InItem.Get(), &FTrackedMatch::CanSpectate, PlayerOwner)))
+											]
+										]
+									]
+								]
+								+SHorizontalBox::Slot().FillWidth(1.0)
+								[
+									SNew(SVerticalBox)
+									+SVerticalBox::Slot().AutoHeight()
+									[
+										SNew(STextBlock)
+										.Text(ServerName)
+										.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+										.ColorAndOpacity(FLinearColor(1.0f, 0.412f, 0.027f, 1.0f))
+									]
+									+SVerticalBox::Slot().AutoHeight()
+									[									
+										SNew(STextBlock)
+										.Text(ServerInfo)
+										.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tiny")
+									]
+								]
+
+							]
+						]
+					]
+				]
+			];
+		}
+	}
+}
+
 
 void SUTHomePanel::OnFindLANSessionsComplete(bool bWasSuccessful)
 {
@@ -139,129 +260,102 @@ void SUTHomePanel::OnFindLANSessionsComplete(bool bWasSuccessful)
 		OnlineSessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(OnFindLanSessionCompleteDelegate);
 	}
 
-	LanBox->ClearChildren();		
-	LanMatches.Empty();
-
-
 	if (bWasSuccessful)
 	{
+		bool bNeedsRefresh = false;
 		for (int32 ServerIndex = 0; ServerIndex < LanSearchSettings->SearchResults.Num(); ServerIndex++)
 		{
 			TSharedPtr<FServerData> NewServer = SUTServerBrowserPanel::CreateNewServerData(LanSearchSettings->SearchResults[ServerIndex]);
-			if (NewServer.IsValid())
+			bool bFound = false;
+			for (int32 i = 0; i < LanMatches.Num(); i++)
 			{
-				FText ServerName = NewServer->GetBrowserName();
-				FText ServerInfo = FText::Format(NSLOCTEXT("SUTHomePanel","LanServerFormat","Game: {0}  Map: {1}   # Players: {2}   # Friends: {3}"),
-													NewServer->GetBrowserGameMode(),
-													NewServer->GetBrowserMapName(),
-													NewServer->GetBrowserNumPlayers(),
-													NewServer->GetBrowserNumFriends());
-				LanMatches.Add(NewServer);
-				LanBox->AddSlot().AutoHeight()
-				[
-
-					SNew(SVerticalBox)
-					+SVerticalBox::Slot().AutoHeight().Padding(0.0f,10.0f,0.0f,0.0f)
-					[
-						SNew(SBorder)
-						.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.SuperDark"))
-						.ColorAndOpacity(this, &SUTHomePanel::GetFadeColor)
-						.BorderBackgroundColor(this, &SUTHomePanel::GetFadeBKColor)
-						.HAlign(HAlign_Right)
-						[
-							SNew(STextBlock)
-							.Text(NSLOCTEXT("SUTHomePanel","LanServerTitle","...Found a LAN Server"))
-							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tiny.Bold")
-							.ColorAndOpacity(FLinearColor::Yellow)
-						]
-					]
-					+SVerticalBox::Slot().AutoHeight()
-					[
-						SNew(SBorder)
-						.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Dark"))
-						.ColorAndOpacity(this, &SUTHomePanel::GetFadeColor)
-						.BorderBackgroundColor(this, &SUTHomePanel::GetFadeBKColor)
-						[
-							SNew(SHorizontalBox)
-							+SHorizontalBox::Slot().AutoWidth()
-							[
-								SNew(SBox).WidthOverride(940)
-								[
-									SNew(SHorizontalBox)
-									+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
-									[
-										SNew(SVerticalBox)
-										+SVerticalBox::Slot().AutoHeight()
-										[
-											SNew(SUTImage)
-											.WidthOverride(90)
-											.HeightOverride(64)
-											.Image(SUTStyle::Get().GetBrush("UT.Icon.Lan.Big"))
-										]
-									]
-									+SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
-									[
-										SNew(SBox).WidthOverride(115).HeightOverride(86)
-										[
-											SNew(SUTButton)
-											.ButtonStyle(SUTStyle::Get(),"UT.ClearButton")
-											[
-												SNew(SVerticalBox)
-												+SVerticalBox::Slot()
-												.Padding(0.0,4.0,0.0,0.0)
-												.AutoHeight()
-												[
-													SNew(SUTButton)
-													.ButtonStyle(SUTStyle::Get(),"UT.SimpleButton.Medium")
-													.Text(NSLOCTEXT("SUTMatchPanel","JoinText","JOIN"))
-													.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
-													.CaptionHAlign(HAlign_Center)
-													.OnClicked(this, &SUTHomePanel::OnJoinLanClicked, NewServer)
-													//.IsEnabled(TAttribute<bool>::Create(TAttribute<bool>::FGetter::CreateSP(InItem.Get(), &FTrackedMatch::CanJoin, PlayerOwner)))
-												]
-												+SVerticalBox::Slot()
-												.Padding(0.0,10.0,0.0,0.0)
-												.AutoHeight()
-												[
-													SNew(SUTButton)
-													.ButtonStyle(SUTStyle::Get(),"UT.SimpleButton.Medium")
-													.Text(NSLOCTEXT("SUTMatchPanel","SpectateText","SPECTATE"))
-													.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
-													.CaptionHAlign(HAlign_Center)
-													.OnClicked(this, &SUTHomePanel::OnSpectateLanClicked, NewServer)
-													//.IsEnabled(TAttribute<bool>::Create(TAttribute<bool>::FGetter::CreateSP(InItem.Get(), &FTrackedMatch::CanSpectate, PlayerOwner)))
-												]
-											]
-										]
-									]
-									+SHorizontalBox::Slot().FillWidth(1.0)
-									[
-										SNew(SVerticalBox)
-										+SVerticalBox::Slot().AutoHeight()
-										[
-											SNew(STextBlock)
-											.Text(ServerName)
-											.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-											.ColorAndOpacity(FLinearColor(1.0f, 0.412f, 0.027f, 1.0f))
-										]
-										+SVerticalBox::Slot().AutoHeight()
-										[									
-											SNew(STextBlock)
-											.Text(ServerInfo)
-											.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tiny")
-										]
-									]
-
-								]
-							]
-						]
-					]
-				];
+				if (NewServer->GetId() == LanMatches[i]->GetId())
+				{
+					bFound = true;
+					break;
+				}
 			}
+
+			if (!bFound)
+			{
+				LanMatches.Add(NewServer);
+				bNeedsRefresh = true;
+			}
+		}
+
+		if (bNeedsRefresh)
+		{
+			RebuildLanBox();
 		}
 	}
 }
 
+void SUTHomePanel::PingLanServers()
+{
+	for (int32 ServerIndex =0; ServerIndex < LanMatches.Num(); ServerIndex++)
+	{
+		UE_LOG(UT,Log,TEXT("PING"));
+		// Build the beacon
+		TSharedPtr<FServerData> ServerToPing = LanMatches[ServerIndex];
+		AUTServerBeaconClient* Beacon = PlayerOwner->GetWorld()->SpawnActor<AUTServerBeaconClient>(AUTServerBeaconClient::StaticClass());
+		if (Beacon && !ServerToPing->BeaconIP.IsEmpty())
+		{
+			Beacon->SetBeaconConnectionTimeout(1.5f);
+			Beacon->OnServerRequestResults = FServerRequestResultsDelegate::CreateSP(this, &SUTHomePanel::OnPingResult );
+			Beacon->OnServerRequestFailure = FServerRequestFailureDelegate::CreateSP(this, &SUTHomePanel::OnPingFailure);
+			FURL BeaconURL(nullptr, *ServerToPing->BeaconIP, TRAVEL_Absolute);
+			Beacon->InitClient(BeaconURL);
+			PingTrackers.Add(FServerPingTracker(ServerToPing, Beacon));
+		}
+
+	}
+}
+
+void SUTHomePanel::OnPingResult(AUTServerBeaconClient* Sender, FServerBeaconInfo ServerInfo)
+{
+	for (int32 i=0; i < PingTrackers.Num(); i++)
+	{
+		UE_LOG(UT,Log,TEXT("PONG"));
+
+		if (PingTrackers[i].Beacon == Sender)
+		{
+			PingTrackers.RemoveAt(i);
+			break;
+		}
+	}
+
+	// TODO: Add code to update stats..
+}
+
+void SUTHomePanel::OnPingFailure(AUTServerBeaconClient* Sender)
+{
+	bool bNeedsRefresh = false;
+	for (int32 i=0; i < PingTrackers.Num(); i++)
+	{
+		UE_LOG(UT,Log,TEXT("BAM"));
+
+		if (PingTrackers[i].Beacon == Sender)
+		{
+			// Remove the server
+			for (int32 j = 0; j < LanMatches.Num(); j++)
+			{
+				if (PingTrackers[i].Server->GetId() == LanMatches[j]->GetId())
+				{
+					LanMatches.RemoveAt(j);
+					bNeedsRefresh = true;
+					break;
+				}
+			}
+			PingTrackers.RemoveAt(i);
+			break;
+		}
+	}
+
+	if (bNeedsRefresh)
+	{
+		RebuildLanBox();
+	}
+}
 
 
 FLinearColor SUTHomePanel::GetFadeColor() const
@@ -453,16 +547,48 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 			.AutoHeight()
 			[
 				SNew(SHorizontalBox)
-				+SHorizontalBox::Slot()
+				+ SHorizontalBox::Slot()
 				.AutoWidth()
 				[
-					SNew(SBox).WidthOverride(800).HeightOverride(220)
+					SNew(SBox).WidthOverride(800).HeightOverride(270)
 					[
-						BuildMainButtonContent()
+						SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot()
+						[
+							BuildHomePanelButton(EMenuCommand::MC_Tutorial, TEXT("UT.HomePanel.BasicTraining"), NSLOCTEXT("SUTHomePanel","BasicTraining","Basic Training"))
+						]
+						+ SHorizontalBox::Slot().Padding(25.0f,0.0f,25.0f,0.0f)
+						[
+							SNew(SOverlay)
+							+SOverlay::Slot()
+							[
+								BuildHomePanelButton(EMenuCommand::MC_Challenges, TEXT("UT.HomePanel.Challenges"), NSLOCTEXT("SUTHomePanel","Challenges","Challenges"))
+							]
+							+SOverlay::Slot()
+							[
+								SAssignNew(NewChallengeBox, SVerticalBox)
+								.Visibility(this, &SUTHomePanel::ShowNewChallengeImage)
+								+SVerticalBox::Slot()
+								.AutoHeight()
+								[
+									SNew(SHorizontalBox)
+									+SHorizontalBox::Slot().HAlign(HAlign_Center)
+									[
+										SAssignNew(NewChallengeImage, SUTImage)
+										.Image(SUTStyle::Get().GetBrush("UT.HomePanel.ChallengesNewIcon"))
+										.WidthOverride(72.0f).HeightOverride(72.0f)
+										.RenderTransformPivot(FVector2D(0.5f, 0.5f))
+									]
+								]
+							]
+						]
+						+ SHorizontalBox::Slot()
+						[
+							BuildHomePanelButton(EMenuCommand::MC_InstantAction, TEXT("UT.HomePanel.vsBots"), NSLOCTEXT("SUTHomePanel","InstantAction","vs. Bots"))
+						]
 					]
 				]
 			]
-
 
 			// PLAY
 
@@ -482,7 +608,7 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 			]
 
 			+ SVerticalBox::Slot()
-			.Padding(0.0,30.0)
+			.Padding(0.0,0.0)
 			.AutoHeight()
 			[
 				BuildRankedPlaylist()
@@ -514,153 +640,11 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 		];
 
 
-		BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.TeamShowdownBadge"), NSLOCTEXT("SUTHomePanel", "QP_FlagRunVSAI", "FLAG RUN COOP VS AI"), EMenuCommand::MC_QuickPlayShowdown);
-		BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.CTFBadge"), NSLOCTEXT("SUTHomePanel", "QP_FlagRun", "FLAG RUN"), EMenuCommand::MC_QuickPlayFlagrun, 25.0f);
-	BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.DMBadge"), NSLOCTEXT("SUTHomePanel","QP_DM","DEATHMATCH"), EMenuCommand::MC_QuickPlayDM);
+	BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.TeamShowdownBadge"), NSLOCTEXT("SUTHomePanel", "QP_FlagRunVSAI", "Blitz Co-Op"), EMenuCommand::MC_QuickPlayShowdown);
+	BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.CTFBadge"), NSLOCTEXT("SUTHomePanel", "QP_FlagRun", "Blitz"), EMenuCommand::MC_QuickPlayFlagrun, 25.0f);
+	BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.DMBadge"), NSLOCTEXT("SUTHomePanel","QP_DM","Deathmatch"), EMenuCommand::MC_QuickPlayDM);
 
 	return Final.ToSharedRef();
-}
-
-TSharedRef<SWidget> SUTHomePanel::BuildMainButtonContent()
-{
-	if (PlayerOwner->HasProgressionKeys({ FName(TEXT("PROGRESSION_KEY_NoLongerANoob")) }))
-	{
-		return SNew(SUTButton)
-			.ButtonStyle(SUTStyle::Get(), "UT.HomePanel.Button")
-			.OnClicked(this, &SUTHomePanel::OfflineAction_Click)
-			.ToolTipText( TAttribute<FText>::Create(TAttribute<FText>::FGetter::CreateUObject(PlayerOwner.Get(), &UUTLocalPlayer::GetMenuCommandTooltipText, EMenuCommand::MC_Challenges) ))
-			.bSpringButton(true)
-			[
-				SNew(SOverlay)
-				+SOverlay::Slot()
-				[
-					SNew(SUTImage)
-					.Image(SUTStyle::Get().GetBrush("UT.HomePanel.Challenges"))
-					.WidthOverride(250)
-					.HeightOverride(270)
-				]
-				+SOverlay::Slot()
-				.VAlign(VAlign_Bottom)
-				[
-					SNew(SVerticalBox)
-					+SVerticalBox::Slot().AutoHeight().Padding(0.0f,130.0f,0.0f,0.0f)
-					[
-						SNew(SBorder)
-						.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Shaded"))
-						[
-							SNew(SHorizontalBox)
-							+SHorizontalBox::Slot()
-							.Padding(10.0f,5.0f)
-							.AutoWidth()
-							[
-								SAssignNew(NewChallengeBox, SVerticalBox)
-								.Visibility(this, &SUTHomePanel::ShowNewChallengeImage)
-								+SVerticalBox::Slot()
-								.AutoHeight()
-								[
-									SAssignNew(NewChallengeImage, SUTImage)
-									.Image(SUTStyle::Get().GetBrush("UT.HomePanel.ChallengesNewIcon"))
-									.WidthOverride(72.0f).HeightOverride(72.0f)
-									.RenderTransformPivot(FVector2D(0.5f, 0.5f))
-								]
-							]
-							+SHorizontalBox::Slot()
-							.Padding(20.0f,5.0f,0.0,0.0)
-							[
-								SNew(SVerticalBox)
-								+SVerticalBox::Slot()
-								.AutoHeight()
-								[
-									SNew(STextBlock)
-									.Text(FText::FromString(TEXT("SINGLE PLAYER CHALLENGES")))
-									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large")
-								]
-								+ SVerticalBox::Slot()
-								.AutoHeight()
-								[
-									SNew(STextBlock)
-									.Text(FText::FromString(TEXT("Play against bots and earn rewards in a variety of challenge matches.")))
-									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small.Bold")
-									.ColorAndOpacity(FLinearColor(1.0f, 0.412f, 0.027f, 1.0f))
-								]
-							]
-						]
-
-					]
-				]
-			];
-	}
-	else
-	{
-		return SNew(SUTButton)
-			.ButtonStyle(SUTStyle::Get(), "UT.HomePanel.Button")
-			.OnClicked(this, &SUTHomePanel::BasicTraining_Click)
-			.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTHomePanel","BasicTrainingTT","Complete several training sessions to lean all of the skills needed to compete in the tournament.")))
-			.bSpringButton(true)
-			[
-				SNew(SOverlay)
-				+SOverlay::Slot()
-				[
-					SNew(SUTImage)
-					.Image(SUTStyle::Get().GetBrush("UT.HomePanel.BasicTraining"))
-					.WidthOverride(250)
-					.HeightOverride(270)
-				]
-				+SOverlay::Slot()
-				.VAlign(VAlign_Bottom)
-				[
-					SNew(SVerticalBox)
-					+SVerticalBox::Slot().AutoHeight().Padding(0.0f,130.0f,0.0f,0.0f)
-					[
-						SNew(SBorder)
-						.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Shaded"))
-						[
-							SNew(SOverlay)
-							+SOverlay::Slot()
-							[
-								SNew(SHorizontalBox)
-								+SHorizontalBox::Slot()
-								.Padding(10.0f,5.0f)
-								.AutoWidth()
-								[
-									SNew(SVerticalBox)
-									+SVerticalBox::Slot()
-									.AutoHeight()
-									[
-										SNew(SBox).WidthOverride(72).HeightOverride(72)
-										[
-											SNew(SImage)
-											.Image(SUTStyle::Get().GetBrush("UT.HomePanel.TutorialLogo"))
-										]
-									]
-								]
-							]
-							+SOverlay::Slot()
-							.Padding(100.0f,5.0f,0.0,0.0)
-							[
-								SNew(SVerticalBox)
-								+SVerticalBox::Slot()
-								.AutoHeight()
-								[
-									SNew(STextBlock)
-									.Text(FText::FromString(TEXT("BASIC TRAINING")))
-									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large")
-								]
-								+ SVerticalBox::Slot()
-								.AutoHeight()
-								[
-									SNew(STextBlock)
-									.Text(FText::FromString(TEXT("Train to become the ultimate Unreal Tournament warrior!")))
-									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small.Bold")
-									.ColorAndOpacity(FLinearColor(1.0f, 0.412f, 0.027f, 1.0f))
-								]
-							]
-						]
-
-					]
-				]
-			];
-	}
 }
 
 void SUTHomePanel::BuildQuickplayButton(TSharedPtr<SHorizontalBox> QuickPlayBox, FName BackgroundTexture, FText Caption, FName QuickMatchType, float Padding)
@@ -703,7 +687,7 @@ void SUTHomePanel::BuildQuickplayButton(TSharedPtr<SHorizontalBox> QuickPlayBox,
 								[
 									SNew(STextBlock)
 									.Text(FText::FromString(TEXT("QUICK PLAY")))
-									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
+									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small.Bold")
 								]
 								+SVerticalBox::Slot()
 								.AutoHeight()
@@ -711,8 +695,8 @@ void SUTHomePanel::BuildQuickplayButton(TSharedPtr<SHorizontalBox> QuickPlayBox,
 								[
 									SNew(STextBlock)
 									.Text(Caption)
-									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small.Bold")
 									.ColorAndOpacity(FLinearColor(1.0f, 0.412f, 0.027f, 1.0f))
+									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
 								]
 							]
 						]
@@ -721,6 +705,66 @@ void SUTHomePanel::BuildQuickplayButton(TSharedPtr<SHorizontalBox> QuickPlayBox,
 			]
 		];
 }
+
+TSharedRef<SBox> SUTHomePanel::BuildHomePanelButton(FName ButtonTag, FName BackgroundTexture, const FText& Caption)
+{
+	TSharedPtr<SBox> Box;
+	SAssignNew(Box, SBox).WidthOverride(250)
+	[
+		SNew(SUTButton)
+		.ButtonStyle(SUTStyle::Get(), "UT.HomePanel.Button")
+		.bSpringButton(true)
+		.OnClicked(this, &SUTHomePanel::MainButtonClick, ButtonTag)
+		.ToolTipText( TAttribute<FText>::Create(TAttribute<FText>::FGetter::CreateUObject(PlayerOwner.Get(), &UUTLocalPlayer::GetMenuCommandTooltipText, ButtonTag) ) )
+		.ContentPadding(FMargin(2.0f, 2.0f, 2.0f, 2.0f))
+		[
+			SNew(SOverlay)
+			+SOverlay::Slot()
+			[
+				SNew(SUTImage)
+				.Image(SUTStyle::Get().GetBrush(BackgroundTexture))
+				.WidthOverride(250)
+				.HeightOverride(270)
+			]
+			+SOverlay::Slot()
+			.VAlign(VAlign_Bottom)
+			[
+				SNew(SVerticalBox)
+				+SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Fill)
+				[
+					SNew(SBorder)
+					.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Shaded"))
+					.Padding(FMargin(0.0f,0.0f,0.0f,0.0f))
+					[
+						SNew(SVerticalBox)
+						+SVerticalBox::Slot()
+						.AutoHeight()
+						.HAlign(HAlign_Center)
+						[
+							SNew(STextBlock)
+							.Text(FText::FromString(TEXT("SINGLE PLAYER")))
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small.Bold")
+						]
+
+						+SVerticalBox::Slot()
+						.AutoHeight()
+						.HAlign(HAlign_Center)
+						[
+							SNew(STextBlock)
+							.Text(Caption)
+							.ColorAndOpacity(FLinearColor(1.0f, 0.412f, 0.027f, 1.0f))
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
+						]
+					]
+				]
+			]
+		]
+	];
+
+	return Box.ToSharedRef();
+}
+
+
 
 FReply SUTHomePanel::QuickPlayClick(FName QuickMatchType)
 {
@@ -735,69 +779,16 @@ FReply SUTHomePanel::QuickPlayClick(FName QuickMatchType)
 	return FReply::Handled();
 }
 
-FReply SUTHomePanel::BasicTraining_Click()
-{
-	TSharedPtr<SUTMainMenu> MainMenu = StaticCastSharedPtr<SUTMainMenu>(GetParentWindow());
-	if (MainMenu.IsValid()) MainMenu->OpenTutorialMenu();
-	return FReply::Handled();
-}
-
-
-FReply SUTHomePanel::OfflineAction_Click()
+FReply SUTHomePanel::MainButtonClick(FName ButtonTag)
 {
 	TSharedPtr<SUTMainMenu> MainMenu = StaticCastSharedPtr<SUTMainMenu>(GetParentWindow());
 	if (MainMenu.IsValid())
 	{
-		MainMenu->ShowGamePanel();
+		if (ButtonTag == EMenuCommand::MC_Tutorial) MainMenu->OpenTutorialMenu();
+		else if (ButtonTag == EMenuCommand::MC_Challenges) MainMenu->ShowGamePanel();
+		else if (ButtonTag == EMenuCommand::MC_InstantAction) MainMenu->ShowCustomGamePanel();
 	}
-	return FReply::Handled();
-}
 
-FReply SUTHomePanel::FindAMatch_Click()
-{
-	TSharedPtr<SUTMainMenu> MainMenu = StaticCastSharedPtr<SUTMainMenu>(GetParentWindow());
-	if (MainMenu.IsValid())
-	{
-		if (PlayerOwner->IsMenuOptionLocked(EMenuCommand::MC_FindAMatch))
-		{
-			PlayerOwner->LaunchTutorial(ETutorialTags::TUTTAG_Progress);
-		}
-		else
-		{
-			MainMenu->OnShowServerBrowserPanel();
-		}
-	}
-	return FReply::Handled();
-}
-
-FReply SUTHomePanel::FragCenter_Click()
-{
-
-	PlayerOwner->UpdateFragCenter();
-
-	TSharedPtr<SUTMainMenu> MainMenu = StaticCastSharedPtr<SUTMainMenu>(GetParentWindow());
-	if (MainMenu.IsValid()) MainMenu->ShowFragCenter();
-	return FReply::Handled();
-}
-
-FReply SUTHomePanel::RecentMatches_Click()
-{
-	TSharedPtr<SUTMainMenu> MainMenu = StaticCastSharedPtr<SUTMainMenu>(GetParentWindow());
-	if (MainMenu.IsValid()) MainMenu->RecentReplays();
-	return FReply::Handled();
-}
-
-FReply SUTHomePanel::WatchLive_Click()
-{
-	TSharedPtr<SUTMainMenu> MainMenu = StaticCastSharedPtr<SUTMainMenu>(GetParentWindow());
-	if (MainMenu.IsValid()) MainMenu->ShowLiveGameReplays();
-	return FReply::Handled();
-}
-
-FReply SUTHomePanel::TrainingVideos_Click()
-{
-	TSharedPtr<SUTMainMenu> MainMenu = StaticCastSharedPtr<SUTMainMenu>(GetParentWindow());
-	if (MainMenu.IsValid()) MainMenu->ShowCommunity();
 	return FReply::Handled();
 }
 
@@ -807,22 +798,14 @@ EVisibility SUTHomePanel::ShowNewChallengeImage() const
 	{
 		if (PlayerOwner->ChallengeRevisionNumber< PlayerOwner->MCPPulledData.ChallengeRevisionNumber)
 		{
-			return EVisibility::Visible;
+			return EVisibility::HitTestInvisible;
 		}
 	}
 
 	return EVisibility::Collapsed;
 }
 
-FSlateColor SUTHomePanel::GetFragCenterWatchNowColorAndOpacity() const
-{
-	if (PlayerOwner->IsFragCenterNew())
-	{
-		float Alpha = 0.5 + (0.5 * FMath::Abs<float>(FMath::Sin(PlayerOwner->GetWorld()->GetTimeSeconds() * 3)));
-		return FSlateColor(FLinearColor(1.0,1.0,1.0, Alpha));
-	}
-	return FSlateColor(FLinearColor(1.0,1.0,1.0,0.0));
-}
+
 
 void SUTHomePanel::OnHidePanel()
 {
@@ -908,7 +891,7 @@ TSharedRef<SWidget> SUTHomePanel::BuildRankedPlaylist()
 				+SVerticalBox::Slot().AutoHeight()
 				[
 					SNew(STextBlock)
-					.Text(FText::FromString(TEXT("- Ranked Matches -")))
+					.Text(FText::FromString(TEXT("League Matches")))
 					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
 
 				]

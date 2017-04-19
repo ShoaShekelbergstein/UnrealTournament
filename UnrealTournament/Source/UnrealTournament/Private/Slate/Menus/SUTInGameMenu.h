@@ -26,11 +26,7 @@ protected:
 	virtual FReply OnCloseMenu();
 	virtual void OnMenuClosed();
 
-
-	virtual FReply OnTeamChangeClick();
-	virtual FReply OnReadyChangeClick();
 	virtual FReply OnMapVoteClick();
-	virtual FReply OnSpectateClick();
 	virtual void SetInitialPanel();
 	
 	virtual FReply OpenHUDSettings();
@@ -43,15 +39,10 @@ protected:
 	void ShowHomePanel();
 	void BackResult(TSharedPtr<SCompoundWidget> Dialog, uint16 ButtonPressed);
 
-	EVisibility GetChangeTeamVisibility() const;
 	EVisibility GetMapVoteVisibility() const;
 
 	TSharedPtr<SUTMessageBoxDialog> MessageDialog;
-	TSharedPtr<SUTButton> ChangeTeamButton;
-	TSharedPtr<SUTButton> MatchButton;
 
-	FSlateColor GetChangeTeamLabelColor() const;
-	FSlateColor GetMatchLabelColor() const;
 
 public:
 	virtual bool SkipWorldRender();

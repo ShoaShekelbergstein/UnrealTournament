@@ -229,6 +229,7 @@ namespace StatusMessage
 	const FName GetTheFlag = FName(TEXT("GetTheFlag"));
 	const FName DoorRally = FName(TEXT("DoorRally"));
 	const FName SniperSpotted = FName(TEXT("SniperSpotted"));
+	const FName RallyHot = FName(TEXT("RallyHot"));
 }
 
 namespace HighlightNames
@@ -286,6 +287,7 @@ namespace HighlightNames
 	const FName AllOutOfBubbleGum = FName(TEXT("AllOutOfBubbleGum"));
 	const FName GameOver = FName(TEXT("GameOver"));
 	const FName LikeTheWind = FName(TEXT("LikeTheWind"));
+	const FName DeliveryBoy = FName(TEXT("DeliveryBoy"));
 	const FName MoreThanAHandful = FName(TEXT("MoreThanAHandful"));
 	const FName ToughGuy = FName(TEXT("ToughGuy"));
 	const FName LargerThanLife = FName(TEXT("LargerThanLife"));
@@ -1227,7 +1229,6 @@ namespace EQuickMatchResults
 namespace EEpicDefaultRuleTags
 {
 	const FString Deathmatch = TEXT("DEATHMATCH");
-	const FString BigDM = TEXT("BIGDM");
 	const FString TDM = TEXT("TDM");
 	const FString DUEL = TEXT("DUEL");
 	const FString SHOWDOWN = TEXT("SHOWDOWN");
@@ -1720,21 +1721,6 @@ namespace AchievementIDs
 	const FName FacePumpkins(TEXT("FacePumpkins"));
 };
 
-USTRUCT()
-struct FLoadoutPackReplicatedInfo
-{
-	GENERATED_USTRUCT_BODY()
-
-public:
-	// Holds the name of of this pack
-	UPROPERTY()
-	FName PackTag;
-
-	// The description for this pack
-	UPROPERTY()
-	FString PackTitle;
-};
-
 namespace EQuickStatsLayouts
 {
 	const FName Arc = FName(TEXT("Arc"));
@@ -1757,6 +1743,7 @@ namespace CommandTags
 	const FName Defend = FName(TEXT("Defend"));
 	const FName Distress = FName(TEXT("Distress"));
 	const FName Attack = FName(TEXT("Attack"));
+	const FName DropFlag = FName(TEXT("DropFlag"));
 	const FName Yes = FName(TEXT("Yes"));
 	const FName No = FName(TEXT("No"));
 }
@@ -1793,6 +1780,7 @@ public:
 	FComMenuCommand Attack;
 	FComMenuCommand Defend;
 	FComMenuCommand Distress;
+	FComMenuCommand DropFlag;
 };
 
 USTRUCT()
@@ -2166,6 +2154,7 @@ namespace ELoginPhase
 		GettingProfile,
 		GettingProgression,		
 		GettingMMR,
+		GettingTitleUpdate,
 		LoggedIn,
 		MAX,
 	};
@@ -2207,6 +2196,8 @@ namespace EMenuCommand
 	const FName MC_QuickPlayFlagrun = FName(TEXT("MenuOption_QuickPlayFlagrun"));
 	const FName MC_QuickPlayShowdown = FName(TEXT("MenuOption_QuickPlayShowdown"));
 	const FName MC_Challenges = FName(TEXT("MenuOption_QuickPlayChallenges"));
+	const FName MC_Tutorial = FName(TEXT("MenuOption_Tutorial"));
+	const FName MC_InstantAction = FName(TEXT("MenuOption_InstantAction"));
 	const FName MC_FindAMatch = FName(TEXT("MenuOption_FindAMatch"));
 }
 
@@ -2426,3 +2417,156 @@ struct FMCPAnnouncementBlob
 };
 
 
+USTRUCT()
+struct UNREALTOURNAMENT_API FUTGameRuleset
+{
+	GENERATED_USTRUCT_BODY()
+public:
+	// Holds the name of this rule set.  NOTE it must be unique on this server.  
+	UPROPERTY()
+	FString UniqueTag;
+
+	// Holds a list of Ruleset Categories this rule set should show up in.  This determines which tabs this rule is sorted in to
+	UPROPERTY()
+	TArray<FName> Categories;
+
+	// Holds the of this rule set.  It will be displayed over the badge
+	UPROPERTY()
+	FString Title;
+
+	// Holds the description for this Ruleset.  It will be displayed above the rules selection window.
+	UPROPERTY()
+	FString Tooltip;
+
+	// Holds the description for this Ruleset.  It will be displayed above the rules selection window.
+	UPROPERTY()
+	FString Description;
+
+	UPROPERTY()
+	TArray<FString> MapPrefixes;
+
+	// Holds the Max # of maps available in this maplist or 0 for no maximum
+	UPROPERTY()
+	int32 MaxMapsInList;
+	
+	// Which epic maps to include.  This can't be adjusted via the ini and will be added
+	// to the map list before the custom maps.
+	UPROPERTY()
+	FString EpicMaps;	
+
+	// The default map to use
+	UPROPERTY()
+	FString DefaultMap;
+
+	UPROPERTY()
+	TArray<FString> QuickPlayMaps;
+
+	UPROPERTY(Config)
+	TArray<FString> CustomMapList;
+
+	// The number of players allowed in this match.  NOTE: it must be duplicated in the GameOptions string.
+	UPROPERTY()
+	int32 MaxPlayers;
+
+	// Holds a string reference to the material to display that represents this rule
+	UPROPERTY()
+	FString DisplayTexture;
+
+	// Not displayed, this holds the game type that will be passed to the server via the URL.  
+	UPROPERTY()
+	FString GameMode;
+	
+	// Hold the ?xxxx options that will be used to start the server.  NOTE: this set of options will be parsed for display.
+	UPROPERTY()
+	FString GameOptions;
+	
+	UPROPERTY()
+	TArray<FString> RequiredPackages;
+
+	UPROPERTY()
+	bool bTeamGame;
+
+	/** If competitive, no join in progress allowed, and all players must ready up for match to start. */
+	UPROPERTY()
+	bool bCompetitiveMatch;
+
+	UPROPERTY()
+	uint32 OptionFlags;
+
+	/** If true, this ruleset will not be shown in the UI.  This this is used for rulesets associated with quick play. */
+	UPROPERTY()
+	bool bHideFromUI;
+
+	/** This will allow Epic to override any UI visibility of a rule.  If it's < 0 then the rule will be removed.  If it's > 0 then it will be displayed.  Leave at 0 to use the original settings. */
+	UPROPERTY()
+	int32 EpicForceUIVisibility;
+	
+	FUTGameRuleset()
+		: UniqueTag(TEXT(""))
+		, Title(TEXT(""))
+		, Tooltip(TEXT(""))
+		, Description(TEXT(""))
+		, EpicMaps(TEXT(""))
+		, DefaultMap(TEXT(""))
+		, MaxPlayers(0)
+		, DisplayTexture(TEXT(""))
+		, GameMode(TEXT(""))
+		, GameOptions(TEXT(""))
+		, bTeamGame(false)
+		, bCompetitiveMatch(false)
+		, OptionFlags(GAME_OPTION_FLAGS_All)
+		, bHideFromUI(false)
+		, EpicForceUIVisibility(0)
+	{
+		Categories.Empty();
+		MapPrefixes.Empty();
+		QuickPlayMaps.Empty();
+		CustomMapList.Empty();
+		RequiredPackages.Empty();
+	}
+
+	bool operator == (const FUTGameRuleset& Other) const 
+	{ 
+		return UniqueTag.Compare(Other.UniqueTag, ESearchCase::IgnoreCase) == 0; 
+	}
+
+	void GetCompleteMapList(TArray<FString>& OutMapList, bool bInsureNew = false)
+	{
+		if (bInsureNew) OutMapList.Empty();
+
+		if (!EpicMaps.IsEmpty())
+		{
+			EpicMaps.ParseIntoArray(OutMapList, TEXT(","), true);
+		}
+
+		for (int32 i=0; i < CustomMapList.Num(); i++)
+		{
+			OutMapList.Add(CustomMapList[i]);
+		}
+	}
+
+	void GetQuickMatchMapList(TArray<FString>& OutMapList)
+	{
+		OutMapList.Empty();
+		for (int32 i=0; i < QuickPlayMaps.Num(); i++)
+		{
+			OutMapList.Add(QuickPlayMaps[i]);
+		}
+	}
+
+};
+
+
+USTRUCT()
+struct UNREALTOURNAMENT_API FUTGameRulesetStorage
+{
+	GENERATED_USTRUCT_BODY()
+public:
+	
+	UPROPERTY()
+	TArray<FUTGameRuleset> Rules;
+
+	FUTGameRulesetStorage()
+	{
+	}
+};

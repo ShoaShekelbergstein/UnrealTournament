@@ -84,7 +84,7 @@ bool UUTFlagRunScoreboard::ShowScorePanel()
 {
 	if (UTHUDOwner && UTHUDOwner->bShowScores)
 	{
-		return !bHasAnnouncedWin;
+		return true;
 	}
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	if (GS == nullptr || (GS->GetMatchState() == MatchState::CountdownToBegin) || (GS->GetMatchState() == MatchState::PlayerIntro) || bHasAnnouncedWin)
@@ -537,7 +537,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 			if (GetWorld()->DemoNetDriver && (GetWorld()->GetTimeSeconds() - UTPlayerOwner->CreationTime > 15.0f + ScoreInfoDuration))
 			{
 				AUTCharacter* PawnToFocus = GS->ScoringPlayerState->GetUTCharacter();
-				FNetworkGUID FocusPawnGuid = GetWorld()->DemoNetDriver->GetGUIDForActor(PawnToFocus);
+				FNetworkGUID FocusPawnGuid = PawnToFocus ? GetWorld()->DemoNetDriver->GetGUIDForActor(PawnToFocus) : GetWorld()->DemoNetDriver->GetGUIDForActor(GS->ScoringPlayerState);
 				UTPlayerOwner->OnKillcamStart(FocusPawnGuid, 8.0f + ScoreInfoDuration);
 				GetWorld()->GetTimerManager().SetTimer(
 					UTPlayerOwner->KillcamStopHandle,

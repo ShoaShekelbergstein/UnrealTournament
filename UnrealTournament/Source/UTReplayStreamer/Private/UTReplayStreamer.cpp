@@ -14,14 +14,10 @@ DEFINE_LOG_CATEGORY_STATIC( LogUTReplay, Log, All );
 FUTReplayStreamer::FUTReplayStreamer()
 {
 	FString McpConfigOverride;
-	FParse::Value( FCommandLine::Get(), TEXT( "EPICENV=" ), McpConfigOverride );
-	if (McpConfigOverride.IsEmpty())
-	{
-		FParse::Value( FCommandLine::Get(), TEXT( "MCPCONFIG=" ), McpConfigOverride );
-	}
+	FParse::Value( FCommandLine::Get(), TEXT( "EPICAPP=" ), McpConfigOverride );
 
-	const bool bCmdProductionEnvironment	= McpConfigOverride.Equals( TEXT( "prod" ), ESearchCase::IgnoreCase );
-	const bool bCmdGamedevEnvironment		= McpConfigOverride.Equals( TEXT( "gamedev" ), ESearchCase::IgnoreCase );
+	const bool bCmdProductionEnvironment	= McpConfigOverride.Equals( TEXT( "Dev" ), ESearchCase::IgnoreCase ) || McpConfigOverride.Equals(TEXT("PublicTest"), ESearchCase::IgnoreCase);
+	const bool bCmdGamedevEnvironment		= McpConfigOverride.Equals( TEXT( "DevLatest" ), ESearchCase::IgnoreCase );
 	const bool bCmdLocalhostEnvironment		= McpConfigOverride.Equals( TEXT( "localhost" ), ESearchCase::IgnoreCase );
 
 	const TCHAR* ProdURL	= TEXT( "https://utreplay-public-service-prod10.ol.epicgames.com/replay/v2/" );

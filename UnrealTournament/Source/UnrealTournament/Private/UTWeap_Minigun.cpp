@@ -34,6 +34,7 @@ AUTWeap_Minigun::AUTWeap_Minigun(const FObjectInitializer& ObjectInitializer)
 	WeaponCustomizationTag = EpicWeaponCustomizationTags::Minigun;
 	WeaponSkinCustomizationTag = EpicWeaponSkinCustomizationTags::Minigun;
 	HighlightText = NSLOCTEXT("Weapon", "StingerHighlightText", "Sting Like a Bee");
+	VeryLowMeshOffset = FVector(0.f, 0.f, -7.f);
 }
 
 float AUTWeap_Minigun::GetAISelectRating_Implementation()

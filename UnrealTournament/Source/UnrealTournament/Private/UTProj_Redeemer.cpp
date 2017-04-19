@@ -9,6 +9,7 @@
 #include "UTRedeemerLaunchAnnounce.h"
 #include "UTDemoNetDriver.h"
 #include "UTDemoRecSpectator.h"
+#include "UTProj_TransDisk.h"
 
 AUTProj_Redeemer::AUTProj_Redeemer(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -118,6 +119,12 @@ void AUTProj_Redeemer::ApplyDamage(float Damage, AController* EventInstigator)
 			RedeemerDenied(EventInstigator);
 		}
 	}
+
+	AUTPlayerController* InstigatedByPC = Cast<AUTPlayerController>(EventInstigator);
+	if (InstigatedByPC != NULL)
+	{
+		InstigatedByPC->ClientNotifyCausedHit(this, 30, false); 
+	}
 }
 
 void AUTProj_Redeemer::NotifyClientSideHit(AUTPlayerController* InstigatedBy, FVector HitLocation, AActor* DamageCauser, int32 Damage)
@@ -153,6 +160,15 @@ void AUTProj_Redeemer::TornOff()
 	{
 		Explode(GetActorLocation(), FVector(0.0f, 0.0f, 1.0f));
 	}
+}
+
+bool AUTProj_Redeemer::ShouldIgnoreHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp)
+{
+	if (Super::ShouldIgnoreHit_Implementation(OtherActor, OtherComp))
+	{
+		return ((Cast<AUTProj_Redeemer>(OtherActor) == NULL) && (Cast<AUTProj_TransDisk>(OtherActor) == NULL));
+	}
+	return false;
 }
 
 void AUTProj_Redeemer::OnShotDown()

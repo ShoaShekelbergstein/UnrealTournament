@@ -92,9 +92,24 @@ void AUTGameSession::InitOptions( const FString& Options )
 
 void AUTGameSession::ValidatePlayer(const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage, bool bValidateAsSpectator)
 {
+
 	if ( !bValidateAsSpectator && (UniqueId.IsValid() && AllowedAdmins.Find(UniqueId->ToString()) == INDEX_NONE) && bNoJoinInProgress && UTBaseGameMode->HasMatchStarted() )
 	{
-		ErrorMessage = TEXT("CANTJOININPROGRESS");
+		bool bPlayerWasInMatchAlready = false;
+		AUTBaseGameMode* UTGameMode = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
+		if (UTGameMode)
+		{
+			for (int32 i=0; i < UTGameMode->InactivePlayerArray.Num(); i++)
+			{
+				if (UTGameMode->InactivePlayerArray[i] != nullptr && UTGameMode->InactivePlayerArray[i]->UniqueId == UniqueId)
+				{
+					bPlayerWasInMatchAlready = true;
+					break;
+				}
+			}
+		}
+
+		if (!bPlayerWasInMatchAlready) ErrorMessage = TEXT("CANTJOININPROGRESS");
 		return;
 	}
 	

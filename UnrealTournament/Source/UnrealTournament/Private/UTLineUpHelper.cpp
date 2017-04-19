@@ -12,6 +12,15 @@
 #include "UTCTFGameMode.h"
 #include "UTFlagRunGameState.h"
 #include "UTPlayerState.h"
+#include "UTCustomMovementTypes.h"
+#include "UTPickupWeapon.h"
+#include "UTSupplyChest.h"
+#include "UTMutator.h"
+#include "UTWeap_Redeemer.h"
+#include "UTWeap_Enforcer.h"
+#include "UTWeap_Translocator.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogUTLineUp, Log, All);
 
 AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -30,6 +39,13 @@ void AUTLineUpHelper::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 	DOREPLIFETIME(AUTLineUpHelper, bIsActive);
 	DOREPLIFETIME(AUTLineUpHelper, LastActiveType);
+}
+
+void AUTLineUpHelper::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	BuildMapWeaponList();
 }
 
 void AUTLineUpHelper::HandleLineUp(LineUpTypes ZoneType)
@@ -79,6 +95,12 @@ void AUTLineUpHelper::CleanUp()
 		{
 			for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 			{
+				AUTPlayerState* UTPS = Cast<AUTPlayerState>((*Iterator)->PlayerState);
+				if (UTPS)
+				{
+					UTPS->LineUpLocation = INDEX_NONE;
+				}
+
 				AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
 				if (UTPC)
 				{
@@ -187,16 +209,7 @@ void AUTLineUpHelper::SetupDelayedLineUp()
 		AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
 		if (UTPC)
 		{
-			AUTCharacter* UTChar = Cast<AUTCharacter>(UTPC->GetPawn());
-			if (UTChar)
-			{
-				UTChar->TurnOff();
-				ForceCharacterAnimResetForLineUp(UTChar);
-			}
-
 			UTPC->FlushPressedKeys();
-
-			UTPC->ClientPrepareForLineUp();
 		}
 	}
 }
@@ -222,19 +235,35 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 
 	if (GetWorld() && GetWorld()->GetAuthGameMode())
 	{
-		AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
-		
-		//Setup LineUp weapon. Favorite weapon if set, current weapon otherwise
 		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 		{
 			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
 			if (UTPC)
 			{
-				AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTPC->PlayerState);
-				AUTCharacter* UTChar = Cast<AUTCharacter>(UTPC->GetPawn());
-				if (UTPS && UTChar)
+				UTPC->FlushPressedKeys();
+				UTPC->ClientPrepareForLineUp();
+			}
+		}
+
+		AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
+		
+		//Setup LineUp weapon. Favorite weapon if set, current weapon otherwise
+		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+		{
+			AController* C = Cast<AController>(*Iterator);
+			if (C)
+			{
+				AUTPlayerState* UTPS = Cast<AUTPlayerState>(C->PlayerState);
+				if (UTPS)
 				{
-					UTPS->LineUpWeapon = (UTPS->FavoriteWeapon != NULL)? UTPS->FavoriteWeapon : UTChar->GetWeaponClass();
+					UTPS->LineUpWeapon = (UTPS->FavoriteWeapon != NULL)? UTPS->FavoriteWeapon : NULL;
+					
+					//Either we didn't have an existing favorite weapon, or its not valid in this map
+					if (UTPS->LineUpWeapon == NULL || (!MapWeaponTypeList.Contains(UTPS->LineUpWeapon)))
+					{
+						AUTCharacter* UTChar = Cast<AUTCharacter>(C->GetPawn());
+						UTPS->LineUpWeapon = (UTChar) ? UTChar->GetWeaponClass() : nullptr;
+					}
 				}
 			}
 		}
@@ -286,12 +315,23 @@ void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
 		}
 
 		//Go back through characters now that they are moved and turn them off
-		for (AUTCharacter* UTChar : PlayerPreviewCharacters)
+		for (int32 PlayerIndex = 0; PlayerIndex < PlayerPreviewCharacters.Num(); ++PlayerIndex)
 		{
-			UTChar->TurnOff();
-			UTChar->DeactivateSpawnProtection();
-			ForceCharacterAnimResetForLineUp(UTChar);
-			SpawnPlayerWeapon(UTChar);
+			AUTCharacter* UTChar = PlayerPreviewCharacters[PlayerIndex];
+			if (UTChar)
+			{
+				UTChar->TurnOff();
+				UTChar->DeactivateSpawnProtection();
+				ForceCharacterAnimResetForLineUp(UTChar);
+				SpawnPlayerWeapon(UTChar);
+
+				//Set each player's position in the line up
+				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTChar->PlayerState);
+				if (UTPlayerState)
+				{
+					UTPlayerState->LineUpLocation = PlayerIndex;
+				}
+			}
 		}
 	}
 
@@ -339,7 +379,6 @@ void AUTLineUpHelper::FlagFixUp()
 
 void AUTLineUpHelper::SpawnPlayerWeapon(AUTCharacter* UTChar)
 {
-	//If we already have a weapon attachment, keep that
 	if (UTChar)
 	{
 		AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTChar->PlayerState);
@@ -350,10 +389,19 @@ void AUTLineUpHelper::SpawnPlayerWeapon(AUTCharacter* UTChar)
 			WeaponClass = UTPS->LineUpWeapon ? UTPS->LineUpWeapon->GetDefaultObject<AUTWeapon>()->GetClass() : NULL;
 		}
 
-		//Default to Link Gun
+		//If we already have a weapon attachment, keep that
 		if (!WeaponClass)
 		{
-			WeaponClass = LoadClass<AUTWeapon>(NULL, TEXT("/Game/RestrictedAssets/Weapons/LinkGun/BP_LinkGun.BP_LinkGun_C"), NULL, LOAD_None, NULL);
+			//Try and pick a random weapon available on the map for pickup
+			if (MapWeaponTypeList.Num() > 0)
+			{
+				int32 WeaponIndex = FMath::RandHelper(MapWeaponTypeList.Num());
+
+				if (MapWeaponTypeList[WeaponIndex] != NULL)
+				{
+					WeaponClass = MapWeaponTypeList[WeaponIndex];
+				}
+			}
 		}
 		
 		//Remove all inventory so that when we add this weapon in, it is equipped.
@@ -383,11 +431,149 @@ void AUTLineUpHelper::SpawnPlayerWeapon(AUTCharacter* UTChar)
 	}
 }
 
+void AUTLineUpHelper::BuildMapWeaponList()
+{
+	//All weapon spawning is on the server, so Clients don't need a MapWeaponList
+	if (GetNetMode() != NM_Client)
+	{
+		for (FActorIterator It(GetWorld()); It; ++It)
+		{
+			//Weapon Pickups
+			AUTPickupWeapon* Pickup = Cast<AUTPickupWeapon>(*It);
+			if (Pickup && (Pickup->WeaponType != NULL))
+			{
+				MapWeaponTypeList.AddUnique(Pickup->WeaponType);
+			}
+
+			//Supply Chest Weapons
+			AUTSupplyChest* UTSupplyChest = Cast<AUTSupplyChest>(*It);
+			if (UTSupplyChest && UTSupplyChest->bIsActive && (UTSupplyChest->Weapons.Num() > 0))
+			{
+				for (TSubclassOf<AUTWeapon>& Weapon : UTSupplyChest->Weapons)
+				{
+					if (Weapon != NULL)
+					{
+						MapWeaponTypeList.AddUnique(Weapon);
+					}
+				}
+			}
+		}
+
+		//Default Inventory Weapons
+		AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+		if (GameMode)
+		{
+			//From Character BP
+			AUTCharacter* UTChar = Cast<AUTCharacter>(GameMode->DefaultPawnClass->GetDefaultObject());
+			if (UTChar)
+			{
+				for (TSubclassOf<AUTInventory>& Item : UTChar->DefaultCharacterInventory)
+				{
+					TSubclassOf<AUTWeapon> Weapon = Item.Get();
+					if (Weapon != NULL)
+					{
+						MapWeaponTypeList.AddUnique(Weapon);
+					}
+				}
+			}
+
+			//From GameMode
+			for (TSubclassOf<AUTInventory>& Item : GameMode->DefaultInventory)
+			{
+				TSubclassOf<AUTWeapon> Weapon = Item.Get();
+				if (Weapon != NULL)
+				{
+					MapWeaponTypeList.AddUnique(Weapon);
+				}
+			}
+		}
+
+		//Remove invalid weapons for line-ups
+		AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
+		if (GameMode)
+		{
+			TArray<TSubclassOf<AUTWeapon>> InvalidWeaponsToRemove;
+			for (TSubclassOf<AUTWeapon>& Weapon : MapWeaponTypeList)
+			{
+				//Remove anything mutators won't allow
+				if ((GameMode->BaseMutator) && (!GameMode->BaseMutator->CheckRelevance(Weapon->GetDefaultObject<AActor>())))
+				{
+					InvalidWeaponsToRemove.Add(Weapon);
+				}
+				//Translocator
+				else if (Weapon->IsChildOf(AUTWeap_Translocator::StaticClass()))
+				{
+					InvalidWeaponsToRemove.Add(Weapon);
+				}
+				//Enforcer
+				else if (Weapon->IsChildOf(AUTWeap_Enforcer::StaticClass()))
+				{
+					InvalidWeaponsToRemove.Add(Weapon);
+				}
+				//Redeemer
+				else if (Weapon->IsChildOf(AUTWeap_Redeemer::StaticClass()))
+				{
+					InvalidWeaponsToRemove.Add(Weapon);
+				}
+			}
+
+			//If we are about to delete all the weapons, try and keep 1 in the list.
+			//For this to happen the mutator or map must lack all weapons but the Enforcer / Translocator / Redeemer. Lets try and re-validate 1 of those to show.
+			if ((InvalidWeaponsToRemove.Num() == MapWeaponTypeList.Num()) && (MapWeaponTypeList.Num() > 1))
+			{
+				TSubclassOf<AUTWeapon> RevalidateWeapon = nullptr;
+				for (TSubclassOf<AUTWeapon>& InvalidWeapon : InvalidWeaponsToRemove)
+				{
+					//Recheck if the item is ok with the mutator, if so, don't remove it
+					if ((GameMode->BaseMutator) && (GameMode->BaseMutator->CheckRelevance(InvalidWeapon->GetDefaultObject<AActor>())))
+					{
+						RevalidateWeapon = InvalidWeapon;
+						break;
+					}
+				}
+
+				if (RevalidateWeapon)
+				{
+					InvalidWeaponsToRemove.Remove(RevalidateWeapon);
+				}
+				else
+				{
+					UE_LOG(LogUTLineUp, Warning, TEXT("No valid weapons found for line-up!"));
+				}
+			}
+
+			for (TSubclassOf<AUTWeapon>& InvalidWeapon : InvalidWeaponsToRemove)
+			{
+				// Make sure at least 1 weapon is always in the list
+				if (MapWeaponTypeList.Num() > 1)
+				{
+					MapWeaponTypeList.Remove(InvalidWeapon);
+				}
+			}
+		}
+	}
+}
 
 void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
 {
 	if (UTChar)
 	{
+		UUTCharacterMovement* UTCM = Cast<UUTCharacterMovement>(UTChar->GetMovementComponent());
+		if (UTCM)
+		{
+			UTCM->OnLineUp();
+
+			//Need to turn on collision so that the line-up movement mode can find the floor and reset it
+			bool bOriginalCollisionSetting = UTChar->GetActorEnableCollision();
+			UTChar->SetActorEnableCollision(true);
+
+			// This movement mode is tied to LineUp specific anims.
+			UTCM->SetMovementMode(MOVE_Custom, CUSTOMMOVE_LineUp);
+		
+			//Reset collision to whatever it was before line-up
+			UTChar->SetActorEnableCollision(bOriginalCollisionSetting);
+		}
+
 		if (UTChar->GetMesh())
 		{
 			//Want to still update the animations and bones even though we have turned off the Pawn, so re-enable those.
@@ -398,31 +584,6 @@ void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
 			UTChar->GetMesh()->SetSimulatePhysics(false);
 			UTChar->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
-
-		// Teleport non-local players up to better align them with the local player.
-		if (UTChar->GetWorld())
-		{
-			AUTPlayerController* UTPC = Cast<AUTPlayerController>(UTChar->GetWorld()->GetFirstPlayerController());
-			if (UTPC)
-			{
-				if (UTChar != Cast<AUTCharacter>(UTPC->GetPawn()))
-				{
-					FVector Offset(0.0f, 0.0f, 5.0f);
-					FVector TeleportLoc = UTChar->GetActorLocation() + Offset;
-					UTChar->TeleportTo(TeleportLoc, UTChar->GetActorRotation(), false, true);
-				}
-			}
-		}
-
-		UUTCharacterMovement* UTCM = Cast<UUTCharacterMovement>(UTChar->GetMovementComponent());
-		if (UTCM)
-		{
-			UTCM->OnLineUp();
-
-			//Avoid falling anims if we are in the air with our line-up spawn point
-			UTCM->SetMovementMode(MOVE_Walking);
-		}
-		
 	}
 }
 
@@ -451,31 +612,11 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 		//Spawn using Winning / Losing teams instead of team color based teams. This means the red list = winning team and blue list = losing team.
 		if (TeamGM && TeamGM->UTGameState && (LineUpType == LineUpTypes::PostMatch || LineUpType == LineUpTypes::Intermission))
 		{
-			if (TeamGM->UTGameState->WinningTeam)
+			uint8 WinningTeamNum = TeamGM->GetWinningTeamForLineUp();
+			if (WinningTeamNum != 255)
 			{
-				RedOrWinningTeamNumber = TeamGM->UTGameState->WinningTeam->GetTeamNum();
+				RedOrWinningTeamNumber = WinningTeamNum;
 				BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
-			}
-			else if (TeamGM->UTGameState->ScoringPlayerState)
-			{
-				RedOrWinningTeamNumber = TeamGM->UTGameState->ScoringPlayerState->GetTeamNum();
-				BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
-			}
-			else if (CTFGM && CTFGM->FlagScorer)
-			{
-				RedOrWinningTeamNumber = CTFGM->FlagScorer->GetTeamNum();
-				BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
-			}
-			else if (CTFGS && CTFGS->GetScoringPlays().Num() > 0)
-			{
-				const TArray<const FCTFScoringPlay>& ScoringPlays = CTFGS->GetScoringPlays();
-				const FCTFScoringPlay& WinningPlay = ScoringPlays.Last();
-
-				if (WinningPlay.Team)
-				{
-					RedOrWinningTeamNumber = WinningPlay.Team->GetTeamNum();
-					BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
-				}
 			}
 		}
 

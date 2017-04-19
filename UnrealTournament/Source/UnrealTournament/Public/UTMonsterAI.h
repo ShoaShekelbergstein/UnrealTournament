@@ -6,7 +6,7 @@
 #include "UTMonsterAI.generated.h"
 
 UCLASS()
-class AUTMonsterAI : public AUTBot
+class UNREALTOURNAMENT_API AUTMonsterAI : public AUTBot
 {
 	GENERATED_BODY()
 public:

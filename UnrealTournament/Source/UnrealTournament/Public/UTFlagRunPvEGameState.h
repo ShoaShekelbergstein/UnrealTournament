@@ -6,7 +6,7 @@
 #include "UTFlagRunPvEGameState.generated.h"
 
 UCLASS()
-class AUTFlagRunPvEGameState : public AUTFlagRunGameState
+class UNREALTOURNAMENT_API AUTFlagRunPvEGameState : public AUTFlagRunGameState
 {
 	GENERATED_BODY()
 public:

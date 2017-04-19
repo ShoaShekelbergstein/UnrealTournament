@@ -123,6 +123,8 @@ class UNREALTOURNAMENT_API AUTServerBeaconClient : public AOnlineBeaconClient
 	virtual void ClientRequestInstanceResult(EInstanceJoinResult::Type JoinResult, const FString& Params);
 
 
+	void SetBeaconConnectionTimeout(float NewBeaconConnectionTimeout);
+
 protected:
 	FServerBeaconInfo HostServerInfo;
 	

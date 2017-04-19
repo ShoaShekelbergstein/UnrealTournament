@@ -15,7 +15,7 @@
 
 class UUTLocalPlayer;
 class AUTReplicatedGameRuleset;
-
+	
 USTRUCT()
 struct FEpicMapData
 {
@@ -259,13 +259,25 @@ private:
 	TArray<FEpicMapData> EpicMapList;
 
 protected:
+	/** map prefix for valid maps (not including the dash); you can create more broad handling by overriding SupportsMap() */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Game)
+	FString MapPrefix;
+
 	FString ServerNameOverride;
 
 	UPROPERTY()
 	bool bIgnoreIdlePlayers;
 
-public:
+	FString HostIdString;
 
+public:
+	
+	/**
+	 *	Creates a Replicated ruleset for a custom game based on params passed in
+	 **/
 	static AUTReplicatedGameRuleset* CreateCustomReplicateGameRuleset(UWorld* World, AActor* Owner, const FString& GameMode, const FString& StartingMap, const FString& Description, const TArray<FString>& GameOptions, int32 DesiredPlayerCount, bool bTeamGame);
+
+	UPROPERTY(BlueprintReadonly, Category=Game)
+	bool bIsLANGame;
 
 };

@@ -67,14 +67,7 @@ class UNREALTOURNAMENT_API AUTWeap_LinkGun : public AUTWeapon
 		USoundBase* NormalFPFireSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LinkGun)
-		UAnimMontage* OverheatAnim;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LinkGun)
 		USoundBase* OverheatSound;
-
-	/** jump loop anim to this section when stopping overheat anim */
-	UPROPERTY(EditDefaultsOnly, Category = Effects)
-		FName EndOverheatAnimSection;
 
 	/** kickback when firing beam*/
 	UPROPERTY(EditDefaultsOnly, Category = Effects)
@@ -128,8 +121,6 @@ class UNREALTOURNAMENT_API AUTWeap_LinkGun : public AUTWeapon
 	/** material instance showing the side screen */
 	UPROPERTY(BlueprintReadWrite, Category = Mesh)
 		UMaterialInstanceDynamic* SideScreenMI;
-
-	virtual UAnimMontage* GetFiringAnim(uint8 FireMode, bool bOnHands = false) const override;
 
 	virtual void AttachToOwner_Implementation() override;
 

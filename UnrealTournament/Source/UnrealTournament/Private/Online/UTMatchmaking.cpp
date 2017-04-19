@@ -943,6 +943,20 @@ bool UUTMatchmaking::IsSkipEloChecksForMatchmaking()
 	return false;
 }
 
+int32 UUTMatchmaking::GetPlaylistID()
+{
+	if (Matchmaking && (Matchmaking->GetMatchmakingParams().PlaylistId != INDEX_NONE))
+	{
+		return Matchmaking->GetMatchmakingParams().PlaylistId;
+	}
+	else if (CachedMatchmakingSearchParams.IsValid())
+	{
+		return CachedMatchmakingSearchParams.GetMatchmakingParams().PlaylistId;
+	}
+
+	return INDEX_NONE;
+}
+
 void UUTMatchmaking::TravelToServer()
 {
 	bool bWillTravel = false;
@@ -978,18 +992,43 @@ void UUTMatchmaking::OnClientSessionIdChanged(const FString& SessionId)
 
 	if (!SessionId.IsEmpty())
 	{
-		FMatchmakingParams MMParams;
-		MMParams.ControllerId = ControllerId;
-		MMParams.SessionId = SessionId;
-		MMParams.StartWith = EMatchmakingStartLocation::FindSingle;
-		MMParams.Flags = EMatchmakingFlags::NoReservation;
+		PendingParams.ControllerId = ControllerId;
+		PendingParams.SessionId = SessionId;
+		PendingParams.StartWith = EMatchmakingStartLocation::FindSingle;
+		PendingParams.Flags = EMatchmakingFlags::NoReservation;
 
-		bool bSuccess = FindSessionAsClient(MMParams);
+		IOnlineSubsystem* OnlineSubsystem= IOnlineSubsystem::Get();
+		if (OnlineSubsystem) 
+		{
+			IOnlineSessionPtr OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
+			if (OnlineSessionInterface.IsValid())
+			{
+				FOnCancelFindSessionsCompleteDelegate Delegate;
+				Delegate = FOnCancelFindSessionsCompleteDelegate::CreateUObject(this, &UUTMatchmaking::OnCancelFind);
+				CancelFindHandle = OnlineSessionInterface->AddOnCancelFindSessionsCompleteDelegate_Handle(Delegate);
+				OnlineSessionInterface->CancelFindSessions();
+			}
+		}
 	}
 	else
 	{
 		CancelMatchmaking();
 	}
+}
+
+void UUTMatchmaking::OnCancelFind(bool bSuccessful)
+{
+	IOnlineSubsystem* OnlineSubsystem= IOnlineSubsystem::Get();
+	if (OnlineSubsystem) 
+	{
+		IOnlineSessionPtr OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
+		if (OnlineSessionInterface.IsValid())
+		{
+			OnlineSessionInterface->ClearOnCancelFindSessionsCompleteDelegate_Handle(CancelFindHandle);
+		}
+	}
+
+	bool bSuccess = FindSessionAsClient(PendingParams);
 }
 
 bool UUTMatchmaking::IsMatchmaking()

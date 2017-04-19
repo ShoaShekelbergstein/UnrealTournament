@@ -22,7 +22,7 @@ struct FDatabaseRow
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TArray<FString> Text;
 };
 

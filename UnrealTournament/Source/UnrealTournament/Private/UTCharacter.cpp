@@ -46,8 +46,16 @@
 #include "Engine/DemoNetDriver.h"
 #include "UTPowerupUseMessage.h"
 #include "UTPlaceablePowerup.h"
+#include "UTDroppedHealth.h"
+#include "UTDroppedArmor.h"
+#include "UTJumpBoots.h"
+#include "UTBotCharacter.h"
 
 static FName NAME_HatSocket(TEXT("HatSocket"));
+
+static TAutoConsoleVariable<int32> CVarFeignDeath(
+	TEXT("ut.RagdollFeignDeath"), 1,
+	TEXT("Debug way to not feign death on ragdoll."));
 
 UUTMovementBaseInterface::UUTMovementBaseInterface(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -63,6 +71,9 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 {
 	static ConstructorHelpers::FObjectFinder<UClass> DefaultCharContentRef(TEXT("Class'/Game/RestrictedAssets/Character/Malcom_New/Malcolm_New.Malcolm_New_C'"));
 	CharacterData = DefaultCharContentRef.Object;
+
+	static ConstructorHelpers::FObjectFinder<UClass> DefaultHealthDropRef(TEXT("Class'/Game/RestrictedAssets/Monsters/MonsterHealthDropMedium.MonsterHealthDropMedium_C'"));
+	HealthDropType = DefaultHealthDropRef.Object;
 
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(40.f, 108.0f);
@@ -140,6 +151,7 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 	FullEyeOffsetLandBobVelZ = 750.f;
 	WeaponDirChangeDeflection = 4.f;
 	RagdollBlendOutTime = 0.75f;
+	RagdollPhysicsBlendOutTime = 0.75f;
 	bApplyWallSlide = false;
 	FeignNudgeMag = 100000.f;
 	bCanPickupItems = true;
@@ -189,6 +201,7 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 
 	GhostComponent = ObjectInitializer.CreateDefaultSubobject<UUTGhostComponent>(this, TEXT("GhostComp"));
 	FFAColor = 0;
+	bForceNoOutline = false;
 
 	MaxSpeedPctModifier = 1.0f;
 	MinNetUpdateFrequency = 100.0f;
@@ -1432,6 +1445,10 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 	}
 
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+	if ((GetWorld()->GetTimeSeconds() - RallyCompleteTime < 1.f) && GS && GS->CurrentRallyPoint)
+	{
+		GS->CurrentRallyPoint->LastRallyHot = GetWorld()->GetTimeSeconds();
+	}
 	if (TargeterChar && GS && GS->bPlayStatusAnnouncements)
 	{
 		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(PlayerState);
@@ -1439,8 +1456,6 @@ void AUTCharacter::TargetedBy(APawn* Targeter, AUTPlayerState* PS)
 		float LastSniperWarningTime = bBlueTeamWarning ? GS->LastBlueSniperWarningTime : GS->LastRedSniperWarningTime;
 		if (UTPlayerState && TargeterChar->GetWeapon() && TargeterChar->GetController() && TargeterChar->GetWeapon()->bSniping && (GetWorld()->GetTimeSeconds() - LastSniperWarningTime > 10.f) && ((TargeterChar->GetActorLocation() - GetActorLocation()).Size() > 2000.f))
 		{
-			UTPlayerState->AnnounceStatus(StatusMessage::SniperSpotted);
-
 			UTPlayerState->GetCharacterVoiceClass();
 			if (UTPlayerState->CharacterVoice != NULL)
 			{
@@ -1896,6 +1911,11 @@ void AUTCharacter::StopRagdoll()
 			FTransform RelativeTransform(DefaultMesh->RelativeRotation, DefaultMesh->RelativeLocation, DefaultMesh->RelativeScale3D);
 			GetMesh()->SetWorldTransform(RelativeTransform * GetCapsuleComponent()->GetComponentTransform(), false, nullptr, ETeleportType::TeleportPhysics);
 
+			if (RagdollRecoveryMontage)
+			{
+				GetMesh()->GetAnimInstance()->Montage_Play(RagdollRecoveryMontage);
+			}
+
 			RootBody->SetBodyTransform(GetMesh()->GetComponentTransform(), ETeleportType::TeleportPhysics);
 			RootBody->PutInstanceToSleep();
 			RootBody->SetInstanceSimulatePhysics(false, true);
@@ -1914,6 +1934,7 @@ void AUTCharacter::StopRagdoll()
 		}
 	}
 
+	RagdollBlendOutTimeLeft = RagdollBlendOutTime;
 	bInRagdollRecovery = true;
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 }
@@ -1950,33 +1971,43 @@ void AUTCharacter::PlayDying()
 	TimeOfDeath = GetWorld()->TimeSeconds;
 
 	SetOutlineLocal(false);
-	SpawnBloodDecal(GetActorLocation() - FVector(0.0f, 0.0f, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()), FVector(0.0f, 0.0f, -1.0f));
-	LastDeathDecalTime = GetWorld()->TimeSeconds;
 
-	// Set the hair back to normal because hats are being removed
-	if (GetMesh())
+	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+	bool bIsInLineUp = UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive;
+	if (!bIsInLineUp)
 	{
-		GetMesh()->SetMorphTarget(FName(TEXT("HatHair")), 0.0f);
-	}
+		SpawnBloodDecal(GetActorLocation() - FVector(0.0f, 0.0f, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()), FVector(0.0f, 0.0f, -1.0f));
+		LastDeathDecalTime = GetWorld()->TimeSeconds;
 
-	if (LeaderHat && LeaderHat->GetAttachParentActor())
-	{
-		LeaderHat->OnWearerDeath(LastTakeHitInfo.DamageType);
-	}
-	else if (Hat && Hat->GetAttachParentActor())
-	{
-		Hat->OnWearerDeath(LastTakeHitInfo.DamageType);
-	}
+		// Set the hair back to normal because hats are being removed
+		if (GetMesh())
+		{
+			GetMesh()->SetMorphTarget(FName(TEXT("HatHair")), 0.0f);
+		}
 
-	if (Eyewear && Eyewear->GetAttachParentActor())
-	{
-		Eyewear->OnWearerDeath(LastTakeHitInfo.DamageType);
+		if (LeaderHat && LeaderHat->GetAttachParentActor())
+		{
+			LeaderHat->OnWearerDeath(LastTakeHitInfo.DamageType);
+		}
+		else if (Hat && Hat->GetAttachParentActor())
+		{
+			Hat->OnWearerDeath(LastTakeHitInfo.DamageType);
+		}
+
+		if (Eyewear && Eyewear->GetAttachParentActor())
+		{
+			Eyewear->OnWearerDeath(LastTakeHitInfo.DamageType);
+		}
 	}
 
 	if (GetNetMode() != NM_DedicatedServer && !IsPendingKillPending() && (GetWorld()->TimeSeconds - GetLastRenderTime() < 3.0f || IsLocallyViewed()))
 	{
 		TSubclassOf<UUTDamageType> UTDmg(*LastTakeHitInfo.DamageType);
-		if (UTDmg != NULL && UTDmg.GetDefaultObject()->ShouldGib(this))
+		if (bIsInLineUp)
+		{
+			Destroy();
+		}
+		else if (UTDmg != NULL && UTDmg.GetDefaultObject()->ShouldGib(this))
 		{
 			GibExplosion();
 		}
@@ -2040,7 +2071,7 @@ void AUTCharacter::PlayDying()
 	{
 		Hat->DetachRootComponentFromParent(true);
 
-		if (Hat->bDontDropOnDeath)
+		if (bIsInLineUp || Hat->bDontDropOnDeath)
 		{
 			Hat->Destroy();
 		}
@@ -2054,7 +2085,7 @@ void AUTCharacter::PlayDying()
 	{
 		LeaderHat->DetachRootComponentFromParent(true);
 
-		if (LeaderHat->bDontDropOnDeath)
+		if (bIsInLineUp || LeaderHat->bDontDropOnDeath)
 		{
 			LeaderHat->Destroy();
 		}
@@ -2067,6 +2098,10 @@ void AUTCharacter::PlayDying()
 	if (Eyewear && Eyewear->GetAttachParentActor())
 	{
 		Eyewear->DetachRootComponentFromParent(true);
+		if (bIsInLineUp)
+		{
+			Eyewear->Destroy();
+		}
 	}
 }
 
@@ -2286,7 +2321,22 @@ void AUTCharacter::PlayFeignDeath()
 		{
 			WeaponAttachment->SetActorHiddenInGame(true);
 		}
-		StartRagdoll();
+
+#if !UE_BUILD_SHIPPING
+		if (CVarFeignDeath.GetValueOnGameThread() == 1)
+		{
+#endif
+			StartRagdoll();
+#if !UE_BUILD_SHIPPING
+		}
+		else
+		{
+			// Anim BP is going to handle the ragdoll
+			StopFiring();
+			DisallowWeaponFiring(true);
+			bApplyWallSlide = false;
+		}
+#endif
 	}
 	else
 	{
@@ -2294,7 +2344,15 @@ void AUTCharacter::PlayFeignDeath()
 		{
 			WeaponAttachment->SetActorHiddenInGame(false);
 		}
-		StopRagdoll();
+
+#if !UE_BUILD_SHIPPING
+		if (CVarFeignDeath.GetValueOnGameThread() == 1)
+		{
+#endif
+			StopRagdoll();
+#if !UE_BUILD_SHIPPING
+		}
+#endif
 	}
 }
 
@@ -2606,13 +2664,8 @@ bool AUTCharacter::IsTriggerDown(uint8 InFireMode)
 void AUTCharacter::SetFlashLocation(const FVector& InFlashLoc, uint8 InFireMode)
 {
 	bLocalFlashLoc = IsLocallyControlled();
-	// make sure two consecutive shots don't set the same FlashLocation as that will prevent replication and thus clients won't see the shot
-	FlashLocation = ((FlashLocation - InFlashLoc).SizeSquared() >= 1.0f) ? InFlashLoc : (InFlashLoc + FVector(0.0f, 0.0f, 1.0f));
-	// we reserve the zero vector to stop firing, so make sure we aren't setting a value that would replicate that way
-	if (FlashLocation.IsNearlyZero(1.0f))
-	{
-		FlashLocation.Z += 1.1f;
-	}
+	FlashLocation.Position = InFlashLoc;
+	FlashLocation.Count++;
 	FireMode = InFireMode;
 	FiringInfoUpdated();
 }
@@ -2640,7 +2693,7 @@ void AUTCharacter::SetFlashExtra(uint8 NewFlashExtra, uint8 InFireMode)
 void AUTCharacter::ClearFiringInfo()
 {
 	bLocalFlashLoc = false;
-	FlashLocation = FVector::ZeroVector;
+	FlashLocation.Position = FVector::ZeroVector;
 	FlashCount = 0;
 	FlashExtra = 0;
 	FiringInfoUpdated();
@@ -2670,36 +2723,36 @@ void AUTCharacter::FiringInfoUpdated()
 	AUTPlayerController* UTPC = GetLocalViewer();
 	if ((bLocalFlashLoc || UTPC == NULL || UTPC->GetPredictionTime() == 0.f || !IsLocallyControlled()) && Weapon != NULL && Weapon->ShouldPlay1PVisuals())
 	{
-		if (!FlashLocation.IsZero())
+		if (!FlashLocation.Position.IsZero())
 		{
 			uint8 EffectFiringMode = Weapon->GetCurrentFireMode();
 			// if non-local first person spectator, also play firing effects from here
 			if (Controller == NULL)
 			{
 				EffectFiringMode = FireMode;
-				Weapon->FiringInfoUpdated(FireMode, FlashCount, FlashLocation);
-				Weapon->FiringEffectsUpdated(FireMode, FlashLocation);
+				Weapon->FiringInfoUpdated(FireMode, FlashCount, FlashLocation.Position);
+				Weapon->FiringEffectsUpdated(FireMode, FlashLocation.Position);
 			}
 			else
 			{
 				FVector SpawnLocation;
 				FRotator SpawnRotation;
-				Weapon->GetImpactSpawnPosition(FlashLocation, SpawnLocation, SpawnRotation);
-				Weapon->PlayImpactEffects(FlashLocation, EffectFiringMode, SpawnLocation, SpawnRotation);
+				Weapon->GetImpactSpawnPosition(FlashLocation.Position, SpawnLocation, SpawnRotation);
+				Weapon->PlayImpactEffects(FlashLocation.Position, EffectFiringMode, SpawnLocation, SpawnRotation);
 			}
 		}
 		else if (Controller == NULL)
 		{
-			Weapon->FiringInfoUpdated(FireMode, FlashCount, FlashLocation);
+			Weapon->FiringInfoUpdated(FireMode, FlashCount, FlashLocation.Position);
 		}
-		if (FlashCount == 0 && FlashLocation.IsZero() && WeaponAttachment != NULL)
+		if (FlashCount == 0 && FlashLocation.Position.IsZero() && WeaponAttachment != NULL)
 		{
 			WeaponAttachment->StopFiringEffects();
 		}
 	}
 	else if (WeaponAttachment != NULL)
 	{
-		if (FlashCount != 0 || !FlashLocation.IsZero())
+		if (FlashCount != 0 || !FlashLocation.Position.IsZero())
 		{
 			if ((!IsLocallyControlled() || UTPC == NULL || UTPC->IsBehindView()))
 			{
@@ -2713,6 +2766,8 @@ void AUTCharacter::FiringInfoUpdated()
 			WeaponAttachment->StopFiringEffects();
 		}
 	}
+
+	K2_FiringInfoUpdated();
 }
 
 void AUTCharacter::FiringExtraUpdated()
@@ -3046,6 +3101,20 @@ void AUTCharacter::InventoryEvent(FName EventName)
 		}
 	}
 }
+
+bool AUTCharacter::OverrideGiveTo(AUTPickup* Pickup)
+{
+	bool bOverrideGiveTo = false;
+	for (TInventoryIterator<> It(this); It; ++It)
+	{
+		if (It->bCallOwnerEvent && It->OverrideGiveTo(Pickup))
+		{
+			bOverrideGiveTo = true;
+		}
+	}
+	return bOverrideGiveTo;
+}
+
 
 void AUTCharacter::SwitchWeapon(AUTWeapon* NewWeapon)
 {
@@ -3471,66 +3540,9 @@ void AUTCharacter::PostNetReceive()
 
 void AUTCharacter::AddDefaultInventory(const TArray<TSubclassOf<AUTInventory>>& DefaultInventoryToAdd)
 {
-	// Check to see if this player has an active loadout.  If they do, apply it.  NOTE: Loadouts are 100% authoratative.  So if we apply any type of loadout, then end the AddDefaultInventory 
-	// call right there.  If you are using the loadout system and want to insure a player has some default items, use bDefaultInclude and make sure their cost is 0.
-
 	AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(PlayerState);
 	if (UTPlayerState)
 	{
-		if (UTPlayerState->PrimarySpawnInventory || UTPlayerState->SecondarySpawnInventory)
-		{
-			// Use the Spawn Inventory
-			if (UTPlayerState->PrimarySpawnInventory)
-			{
-				CreateInventory(UTPlayerState->PrimarySpawnInventory->ItemClass);
-			}
-
-			// Use the Spawn Inventory
-			if (UTPlayerState->SecondarySpawnInventory)
-			{
-				CreateInventory(UTPlayerState->SecondarySpawnInventory->ItemClass);
-			}
-
-			return;
-		}
-
-		if ( UTPlayerState->Loadout.Num() > 0 )
-		{
-			for (int32 i=0; i < UTPlayerState->Loadout.Num(); i++)
-			{
-				if (UTPlayerState->GetAvailableCurrency() >= UTPlayerState->Loadout[i]->CurrentCost)
-				{
-					CreateInventory(UTPlayerState->Loadout[i]->ItemClass);
-					UTPlayerState->AdjustCurrency(UTPlayerState->Loadout[i]->CurrentCost * -1);
-				}
-			}
-
-			return;
-		}
-
-		if (UTPlayerState->CurrentLoadoutPackTag != NAME_None)
-		{
-			// Verify it's valid.
-			AUTGameMode* UTGameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-			if ( UTGameMode )
-			{
-				int32 PackIndex = UTGameMode->LoadoutPackIsValid(UTPlayerState->CurrentLoadoutPackTag);
-				if (PackIndex != INDEX_NONE && PackIndex < UTGameMode->AvailableLoadoutPacks.Num())
-				{
-					for (int32 i=0; i < UTGameMode->AvailableLoadoutPacks[PackIndex].LoadoutCache.Num(); i++)
-					{
-						AUTReplicatedLoadoutInfo* Info = UTGameMode->AvailableLoadoutPacks[PackIndex].LoadoutCache[i];
-						CreateInventory(Info->ItemClass);
-					}
-
-					Health += UTGameMode->AvailableLoadoutPacks[PackIndex].SpawnHealthModifier;
-					OnHealthUpdated();
-					return;
-				}
-			}
-		
-		}
-
 		if (UTPlayerState->PreservedKeepOnDeathInventoryList.Num() > 0)
 		{
 			for(AUTInventory* PreservedItem : UTPlayerState->PreservedKeepOnDeathInventoryList)
@@ -3539,6 +3551,13 @@ void AUTCharacter::AddDefaultInventory(const TArray<TSubclassOf<AUTInventory>>& 
 			}
 
 			UTPlayerState->PreservedKeepOnDeathInventoryList.Empty();
+		}
+		if (UTPlayerState->PlayerCard)
+		{
+			for (int32 i = 0; i<UTPlayerState->PlayerCard->CardInventory.Num(); i++)
+			{
+				CreateInventory(UTPlayerState->PlayerCard->CardInventory[i]);
+			}
 		}
 	}
 
@@ -3558,22 +3577,6 @@ void AUTCharacter::AddDefaultInventory(const TArray<TSubclassOf<AUTInventory>>& 
 void AUTCharacter::SetInitialHealth_Implementation()
 {
 	Health = HealthMax;
-	AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(PlayerState);
-
-	if (UTPlayerState && UTPlayerState->CurrentLoadoutPackTag != NAME_None)
-	{
-		// Verify it's valid.
-		AUTGameMode* UTGameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-		if ( UTGameMode )
-		{
-			int32 PackIndex = UTGameMode->LoadoutPackIsValid(UTPlayerState->CurrentLoadoutPackTag);
-			if (PackIndex != INDEX_NONE && PackIndex < UTGameMode->AvailableLoadoutPacks.Num())
-			{
-				Health += UTGameMode->AvailableLoadoutPacks[PackIndex].SpawnHealthModifier;
-				OnHealthUpdated();
-			}
-		}
-	}
 }
 
 bool AUTCharacter::CanSlide() const
@@ -4375,6 +4378,26 @@ void AUTCharacter::SetOutlineLocal(bool bNowOutlined, bool bWhenUnoccluded)
 	}
 }
 
+bool AUTCharacter::IsOutlined(uint8 TestTeam) const
+{
+	if (IsDead() || bForceNoOutline || (GetWorld()->GetGameState<AUTGameState>() && GetWorld()->GetGameState<AUTGameState>()->IsMatchIntermission()))
+	{
+		return false;
+	}
+	else if (bLocalOutline)
+	{
+		return true;
+	}
+	else if (bServerOutline)
+	{
+		return (TestTeam > 7 || ServerOutlineTeamMask == 0 || (ServerOutlineTeamMask & (1 << TestTeam)));
+	}
+	else
+	{
+		return false;
+	}
+}
+
 void AUTCharacter::UpdateOutline()
 {
 	const bool bOutlined = IsOutlined();
@@ -4458,13 +4481,22 @@ void AUTCharacter::UpdateSkin()
 {
 	if (ReplicatedBodyMaterial != NULL)
 	{
+		if (OverrideBodyMaterialMID == nullptr || OverrideBodyMaterialMID->Parent != ReplicatedBodyMaterial)
+		{
+			OverrideBodyMaterialMID = UMaterialInstanceDynamic::Create(ReplicatedBodyMaterial, this);
+		}
 		for (int32 i = 0; i < GetMesh()->GetNumMaterials(); i++)
 		{
-			GetMesh()->SetMaterial(i, ReplicatedBodyMaterial);
+			GetMesh()->SetMaterial(i, OverrideBodyMaterialMID);
+		}
+		UMaterialInterface* Skin1P = (ReplicatedBodyMaterial1P != NULL) ? ReplicatedBodyMaterial1P : ReplicatedBodyMaterial;
+		if (OverrideBodyMaterial1PMID == nullptr || OverrideBodyMaterial1PMID->Parent != Skin1P)
+		{
+			OverrideBodyMaterial1PMID = UMaterialInstanceDynamic::Create(Skin1P, this);
 		}
 		for (int32 i = 0; i < FirstPersonMesh->GetNumMaterials(); i++)
 		{
-			FirstPersonMesh->SetMaterial(i, (ReplicatedBodyMaterial1P != NULL) ? ReplicatedBodyMaterial1P : ReplicatedBodyMaterial);
+			FirstPersonMesh->SetMaterial(i, OverrideBodyMaterial1PMID);
 		}
 	}
 	else
@@ -4698,9 +4730,11 @@ void AUTCharacter::Tick(float DeltaTime)
 		}
 		else
 		{
-			GetMesh()->SetAllBodiesPhysicsBlendWeight(FMath::Max(0.0f, GetMesh()->Bodies[0]->PhysicsBlendWeight - (1.0f / FMath::Max(0.01f, RagdollBlendOutTime)) * DeltaTime));
+			GetMesh()->SetAllBodiesPhysicsBlendWeight(FMath::Max(0.0f, GetMesh()->Bodies[0]->PhysicsBlendWeight - (1.0f / FMath::Max(0.01f, RagdollPhysicsBlendOutTime)) * DeltaTime));
 			GetMesh()->PutAllRigidBodiesToSleep(); // make sure since we can't disable the physics without it breaking
-			if (GetMesh()->Bodies[0]->PhysicsBlendWeight == 0.0f)
+
+			RagdollBlendOutTimeLeft -= DeltaTime;
+			if (RagdollBlendOutTimeLeft <= 0)
 			{
 				bInRagdollRecovery = false;
 			}
@@ -5060,6 +5094,7 @@ void AUTCharacter::PossessedBy(AController* NewController)
 
 	Super::PossessedBy(NewController);
 	NotifyTeamChanged();
+	PlayerCardUpdated();
 	NewController->ClientSetRotation(GetActorRotation());
 	if (UTCharacterMovement)
 	{
@@ -5123,10 +5158,45 @@ void AUTCharacter::OnRep_PlayerState()
 	if (PlayerState != NULL)
 	{
 		NotifyTeamChanged();
+		PlayerCardUpdated();
 		OldPlayerState = Cast<AUTPlayerState>(PlayerState);
 	}
 
 	SetCosmeticsFromPlayerState();
+}
+
+void AUTCharacter::PlayerCardUpdated()
+{
+	AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+	if (PS && PS->PlayerCard && UTCharacterMovement)
+	{
+		UTCharacterMovement->MaxMultiJumpCount = PS->PlayerCard->MaxMultiJumpCount;
+		UTCharacterMovement->MaxWalkSpeed = PS->PlayerCard->MaxRunSpeed * GetDefault<UUTCharacterMovement>()->MaxWalkSpeed;
+		UTCharacterMovement->MultiJumpImpulse = PS->PlayerCard->MultiJumpImpulse * GetDefault<UUTCharacterMovement>()->MultiJumpImpulse;
+		UTCharacterMovement->DodgeJumpImpulse = UTCharacterMovement->MultiJumpImpulse;
+		UTCharacterMovement->bCanDodge = PS->PlayerCard->bCanDodge;
+		UTCharacterMovement->MaxCustomMovementSpeed = UTCharacterMovement->MaxWalkSpeed;
+		UTCharacterMovement->AirControl = PS->PlayerCard->AirControl * GetDefault<UUTCharacterMovement>()->AirControl;
+		UTCharacterMovement->MultiJumpAirControl = UTCharacterMovement->AirControl;
+		UTCharacterMovement->DodgeAirControl = UTCharacterMovement->AirControl * 0.41f/0.55f;
+		UTCharacterMovement->DodgeResetInterval = PS->PlayerCard->DodgeResetInterval * GetDefault<UUTCharacterMovement>()->DodgeResetInterval;
+		UTCharacterMovement->DodgeJumpResetInterval = UTCharacterMovement->DodgeResetInterval;
+		UTCharacterMovement->JumpZVelocity = PS->PlayerCard->JumpImpulse * GetDefault<UUTCharacterMovement>()->JumpZVelocity;
+		UTCharacterMovement->MaxWallRunFallZ = PS->PlayerCard->MaxWallRunFallZ * GetDefault<UUTCharacterMovement>()->MaxWallRunFallZ;
+		UTCharacterMovement->WallRunGravityScaling = PS->PlayerCard->WallRunGravityScaling * GetDefault<UUTCharacterMovement>()->WallRunGravityScaling;
+		UTCharacterMovement->MaxAdditiveDodgeJumpSpeed = PS->PlayerCard->MaxAdditiveDodgeJumpSpeed * GetDefault<UUTCharacterMovement>()->MaxAdditiveDodgeJumpSpeed;
+		UTCharacterMovement->DodgeImpulseHorizontal = PS->PlayerCard->DodgeImpulseHorizontal * GetDefault<UUTCharacterMovement>()->DodgeImpulseHorizontal;
+		UTCharacterMovement->DodgeImpulseVertical = PS->PlayerCard->DodgeImpulseVertical * GetDefault<UUTCharacterMovement>()->DodgeImpulseVertical;
+		UTCharacterMovement->DodgeMaxHorizontalVelocity = PS->PlayerCard->DodgeMaxHorizontalVelocity * GetDefault<UUTCharacterMovement>()->DodgeMaxHorizontalVelocity;
+		UTCharacterMovement->WallDodgeSecondImpulseVertical = PS->PlayerCard->WallDodgeSecondImpulseVertical * GetDefault<UUTCharacterMovement>()->WallDodgeSecondImpulseVertical;
+		UTCharacterMovement->WallDodgeImpulseHorizontal = PS->PlayerCard->WallDodgeImpulseHorizontal * GetDefault<UUTCharacterMovement>()->WallDodgeImpulseHorizontal;
+		UTCharacterMovement->WallDodgeImpulseVertical = PS->PlayerCard->WallDodgeImpulseVertical * GetDefault<UUTCharacterMovement>()->WallDodgeImpulseVertical;
+		UTCharacterMovement->FloorSlideEndingSpeedFactor = PS->PlayerCard->FloorSlideEndingSpeedFactor * GetDefault<UUTCharacterMovement>()->FloorSlideEndingSpeedFactor;
+		UTCharacterMovement->FloorSlideAcceleration = PS->PlayerCard->FloorSlideAcceleration * GetDefault<UUTCharacterMovement>()->FloorSlideAcceleration;
+		UTCharacterMovement->MaxFloorSlideSpeed = PS->PlayerCard->MaxFloorSlideSpeed * GetDefault<UUTCharacterMovement>()->MaxFloorSlideSpeed;
+		UTCharacterMovement->MaxInitialFloorSlideSpeed = PS->PlayerCard->MaxInitialFloorSlideSpeed * GetDefault<UUTCharacterMovement>()->MaxInitialFloorSlideSpeed;
+		UTCharacterMovement->FloorSlideDuration = PS->PlayerCard->FloorSlideDuration * GetDefault<UUTCharacterMovement>()->FloorSlideDuration;
+	}
 }
 
 void AUTCharacter::SetCosmeticsFromPlayerState()
@@ -5278,7 +5348,11 @@ void AUTCharacter::PlayerSuicide()
 	{
 		FHitResult FakeHit(this, NULL, GetActorLocation(), GetActorRotation().Vector());
 		FUTPointDamageEvent FakeDamageEvent(0, FakeHit, FVector(0, 0, 0), UUTDmgType_Suicide::StaticClass());
-		UUTGameplayStatics::UTPlaySound(GetWorld(), CharacterData.GetDefaultObject()->PainSound, this, SRT_All, false, FVector::ZeroVector, Cast<AUTPlayerController>(Controller), NULL, false, SAT_PainSound);
+		AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+		if (!UTGS || !UTGS->LineUpHelper || !UTGS->LineUpHelper->bIsActive)
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), CharacterData.GetDefaultObject()->PainSound, this, SRT_All, false, FVector::ZeroVector, Cast<AUTPlayerController>(Controller), NULL, false, SAT_PainSound);
+		}
 		Died(NULL, FakeDamageEvent);
 	}
 }
@@ -5334,11 +5408,17 @@ void AUTCharacter::GiveArmor(AUTArmor* ArmorClass)
 		}
 	}
 
-	ArmorType = ArmorClass;
-	ArmorAmount = FMath::Max(FMath::Max(ArmorAmount, ArmorClass->ArmorAmount), FMath::Min(100, ArmorAmount + ArmorClass->ArmorAmount));
+	SetArmorAmount(ArmorClass, FMath::Max(FMath::Max(ArmorAmount, ArmorClass->ArmorAmount), FMath::Min(100, ArmorAmount + ArmorClass->ArmorAmount)) );
+}
+
+void AUTCharacter::SetArmorAmount(class AUTArmor* inArmorType, int32 Amount)
+{
+	ArmorType = inArmorType;
+	ArmorAmount = Amount;
 	ArmorRemovalAssists.Empty();
 	OnArmorUpdated();
 }
+
 
 void AUTCharacter::RemoveArmor(int32 Amount)
 {
@@ -7083,20 +7163,9 @@ void AUTCharacter::RemoveVisibilityMask(int32 Channel)
 	VisibilityMask &= ~(1 << Channel);
 }
 
-
 void AUTCharacter::ResetMaxSpeedPctModifier()
 {
-	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-	if (UTGameState && UTGameState->bWeightedCharacter)
-	{
-		AUTCarriedObject* CarriedObject = GetCarriedObject();
-		MaxSpeedPctModifier = (CarriedObject) ? CarriedObject->WeightSpeedPctModifier : 1.0f;
-		MaxSpeedPctModifier = (MaxSpeedPctModifier == 1.0 && Weapon) ? Weapon->WeightSpeedPctModifier : MaxSpeedPctModifier;
-	}
-	else
-	{
-		MaxSpeedPctModifier = 1.0f;
-	}
+	MaxSpeedPctModifier = 1.0f;
 }
 
 void AUTCharacter::BoostSpeedForTime(float SpeedBoostPct, float TimeToBoost)
@@ -7114,7 +7183,7 @@ AActor* AUTCharacter::GetCurrentAimContext()
 
 	float PickupAim = 0.f;
 	float PickupDist = 0.f;
-	AUTPickup* BestPickup = Cast<AUTPickup>(UUTGameplayStatics::GetCurrentAimContext(this, 0.9f, MaxRange, AUTPickup::StaticClass(), &PickupAim, &PickupAim));
+	AUTPickup* BestPickup = Cast<AUTPickup>(UUTGameplayStatics::GetCurrentAimContext(this, 0.9f, MaxRange, AUTPickup::StaticClass(), &PickupAim, &PickupDist));
 	
 	if (BestPickup == nullptr || PawnAim > PickupAim || PawnDist < PickupDist) 
 	{
@@ -7164,6 +7233,7 @@ void AUTCharacter::TriggerBoostPower()
 		}
 	}
 }
+
 void AUTCharacter::TeamNotifyBoostPowerUse()
 {
 	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
@@ -7235,3 +7305,58 @@ void AUTCharacter::PrepareForIntermission()
 	SetStatusAmbientSound(NULL);
 	TurnOff();
 }
+
+bool AUTCharacter::ServerDropHealth_Validate() { return true; }
+void AUTCharacter::ServerDropHealth_Implementation()
+{
+	if (Health >= 50.0f)
+	{
+		FVector Loc = GetActorLocation() + GetActorRotation().Vector() * (GetSimpleCollisionCylinderExtent().X * 3.0f);
+		FVector Vel = GetVelocity() + GetActorRotation().RotateVector(FVector(300.0f, 0.0f, 150.0f));
+		AUTDroppedHealth* DroppedHealth = GetWorld()->SpawnActor<AUTDroppedHealth>(HealthDropType, Loc, GetActorRotation());
+		if (DroppedHealth != nullptr )
+		{
+			DroppedHealth->Movement->Velocity = Vel;
+			Health -= DroppedHealth->HealAmount;
+		}
+	}
+}
+bool AUTCharacter::ServerDropArmor_Validate(){ return true; }
+void AUTCharacter::ServerDropArmor_Implementation()
+{
+	if ( ArmorAmount > 0 )
+	{
+		FVector Loc = GetActorLocation() + GetActorRotation().Vector() * (GetSimpleCollisionCylinderExtent().X * 3.0f);
+		FVector Vel = GetVelocity() + GetActorRotation().RotateVector(FVector(300.0f, 0.0f, 150.0f));
+		AUTDroppedArmor* DroppedArmor = GetWorld()->SpawnActor<AUTDroppedArmor>(AUTDroppedArmor::StaticClass(), Loc, GetActorRotation());
+		if (DroppedArmor != nullptr )
+		{
+			DroppedArmor->Movement->Velocity = Vel;
+			DroppedArmor->SetArmorAmount(ArmorType, ArmorAmount);
+		
+			ArmorAmount = 0;
+			ArmorType = nullptr;
+		}
+	}
+}
+bool AUTCharacter::ServerDropPowerup_Validate(AUTTimedPowerup* Powerup){ return true; }
+void AUTCharacter::ServerDropPowerup_Implementation(AUTTimedPowerup* Powerup)
+{
+	TossInventory(Powerup);
+}
+
+bool AUTCharacter::ServerDropBoots_Validate(){ return true; }
+void AUTCharacter::ServerDropBoots_Implementation()
+{
+	for (TInventoryIterator<> It(this); It; ++It)
+	{
+		AUTJumpBoots* Boots = Cast<AUTJumpBoots>(*It);
+		if (Boots != nullptr)
+		{
+			TossInventory(Boots);
+			return;
+		}
+	}
+}
+
+

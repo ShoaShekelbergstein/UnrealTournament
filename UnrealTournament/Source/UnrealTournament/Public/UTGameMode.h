@@ -3,7 +3,6 @@
 
 #include "TAttributeProperty.h"
 #include "UTServerBeaconLobbyClient.h"
-#include "UTReplicatedLoadoutInfo.h"
 #include "UTAntiCheatModularFeature.h"
 #include "UTBotPlayer.h"
 #include "UTGameMode.generated.h"
@@ -26,74 +25,7 @@ namespace MatchState
 
 }
 
-USTRUCT()
-struct FLoadoutInfo
-{
-	GENERATED_USTRUCT_BODY()
-
-	// Holds a descriptor for this loadout.  It will be used to look things up
-	UPROPERTY()
-	FName ItemTag;
-
-	// The class of the weapon to include
-	UPROPERTY()
-	FString ItemClassStringRef;
-
-	// The class of the weapon to include
-	UPROPERTY()
-	TSubclassOf<AUTInventory> ItemClass;
-
-	// What rounds should this weapon be available
-	UPROPERTY()
-	uint8 RoundMask;
-
-	// How much should this weapon cost to be included in the loadout
-	UPROPERTY()
-	float InitialCost;
-
-	// If true, this item will always be included in the loadout.
-	UPROPERTY()
-	uint32 bDefaultInclude:1;
-
-	// If true, this item is only available for purchase
-	UPROPERTY()
-	uint32 bPurchaseOnly:1;
-
-	FLoadoutInfo()
-		: ItemTag(NAME_None)
-		, ItemClass(nullptr)
-		, RoundMask(0x00)
-		, InitialCost(0.0f)
-		, bDefaultInclude(false)
-		, bPurchaseOnly(false)
-	{}
-};
-
-class AUTReplicatedLoadoutInfo;
 class AUTPlayerController;
-
-USTRUCT()
-struct FLoadoutPack
-{
-	GENERATED_USTRUCT_BODY()
-
-public:
-	UPROPERTY()
-	FLoadoutPackReplicatedInfo PackInfo;
-
-	// Holds a list of items in this pack
-	UPROPERTY()
-	TArray<FName> ItemsInPack;
-
-	// Holds a reference to the replicated loadout info for each item in this pack
-	UPROPERTY()
-	TArray<AUTReplicatedLoadoutInfo*> LoadoutCache;
-
-	// This value will be added to the default health of a new character
-	UPROPERTY()
-	int32 SpawnHealthModifier;
-
-};
 
 /** list of bots user asked to put into the game */
 USTRUCT()
@@ -133,33 +65,13 @@ public:
 	UPROPERTY()
 	float GameDifficulty;		
 
-	/* How long after the end of the match before we display the scoreboard */
-	UPROPERTY(EditDefaultsOnly, Category=PostMatchTime)
-	float EndScoreboardDelay;			
-
-	/* How long to display the main scoreboard */
-	UPROPERTY(EditDefaultsOnly, Category = PostMatchTime)
-		float MainScoreboardDisplayTime;
-
 	/* How long to display the scoring summary */
 	UPROPERTY(EditDefaultsOnly, Category = PostMatchTime)
-		float ScoringPlaysDisplayTime;
-
-	/* How long to display personal match summary */
-	UPROPERTY(EditDefaultsOnly, Category = PostMatchTime)
-		float PersonalSummaryDisplayTime;
-
-	/* How long to display winner match summary */
-	UPROPERTY(EditDefaultsOnly, Category = PostMatchTime)
-		float WinnerSummaryDisplayTime;
+		float MatchSummaryDelay;
 
 	/* How long to display winning team match summary */
 	UPROPERTY(EditDefaultsOnly, Category = PostMatchTime)
-		float TeamSummaryDisplayTime;
-
-	/* How long to display intro */
-	UPROPERTY(EditDefaultsOnly, Category = PostMatchTime)
-		float IntroDisplayTime;
+		float MatchSummaryTime;
 
 	/** Return how long to wait after end of match before travelling to next map. */
 	virtual float GetTravelDelay();
@@ -394,19 +306,27 @@ public:
 	UPROPERTY(Config)
 	FString UILastStartingMap;
 
-	UPROPERTY(Config)
-	TArray<FString> MapRotation;
-
-	// These maps will be added to the map rotation list.  This is to get around ini parser limitations
-	UPROPERTY(Config)
-	TArray<FString> UserMapRotation;
-
 	UPROPERTY()
 	FString RconNextMapName;
 
 	/** How long should the server wait when there is no one on it before auto-restarting */
 	UPROPERTY(Config)
 	int32 AutoRestartTime;
+
+	UPROPERTY(GlobalConfig)
+		TArray<FString> ProtoRed;
+
+	UPROPERTY(GlobalConfig)
+		TArray<FString> ProtoBlue;
+
+	UPROPERTY()
+		bool bUseProtoTeams;
+
+	UPROPERTY()
+		int32 RedProtoIndex;
+
+	UPROPERTY()
+		int32 BlueProtoIndex;
 
 	/** How long has the server been empty */
 	int32 EmptyServerTime;
@@ -439,9 +359,6 @@ public:
 	/** class used for AI bots */
 	UPROPERTY(EditAnywhere, NoClear, BlueprintReadWrite, Category = Classes)
 	TSubclassOf<class AUTBotPlayer> BotClass;
-
-	/** cached list of UTBotCharacter assets from the asset registry, so we don't need to query the registry every time we add a bot */
-	TArray<FAssetData> BotAssets;
 
 	/** Sorted array of remaining eligible bot characters to select from. */
 	UPROPERTY()
@@ -626,9 +543,9 @@ public:
 	virtual void HandleEnteringOvertime();
 	virtual void HandleMatchInOvertime();
 
-	virtual void ShowFinalScoreboard();
 	UFUNCTION(BlueprintNativeEvent)
 	void TravelToNextMap();
+
 	virtual void StopReplayRecording();
 
 	virtual void RecreateLobbyBeacon();
@@ -679,8 +596,6 @@ protected:
 	 */
 	virtual bool AllowRemovingBot(AUTBotPlayer* B);
 
-	/** give bot a unique name based on the possible names in the given BotData */
-	virtual void SetUniqueBotName(AUTBotPlayer* B, const class UUTBotCharacter* BotData);
 public:
 	/** adds a bot to the game, ignoring game settings */
 	UFUNCTION(Exec, BlueprintCallable, Category = AI)
@@ -809,11 +724,6 @@ public:
 
 protected:
 
-
-	/** map prefix for valid maps (not including the dash); you can create more broad handling by overriding SupportsMap() */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Game)
-	FString MapPrefix;
-
 	/** checks whether the mutator is allowed in this gametype and doesn't conflict with any existing mutators */
 	virtual bool AllowMutator(TSubclassOf<AUTMutator> MutClass);
 
@@ -927,14 +837,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Game")
 	bool bNoDefaultLeaderHat;
 
-	// Holds a list of items that are available for loadouts in this mode
-	UPROPERTY(Config)
-	TArray<FLoadoutInfo> AvailableLoadout;
-
-	// Holds a collection of potential loadout packs available in this mode.
-	UPROPERTY(Config)
-	TArray<FLoadoutPack> AvailableLoadoutPacks;
-
 	// Called when the player attempts to restart using AltFire
 	UFUNCTION(BlueprintNativeEvent, Category="Game")
 	bool PlayerCanAltRestart( APlayerController* Player );
@@ -1010,9 +912,6 @@ public:
 	// ?RankCheck=xxxxx
 	int32 RankCheck;
 
-	// Return INDEX_NONE if thbe pack is invalid, otherwise returns the index of the pack
-	virtual int32 LoadoutPackIsValid(const FName& PackTag);
-
 #if !UE_SERVER
 	// The hud will create a spawn window that is displayed when the player has died.  
 	virtual TSharedPtr<SUTHUDWindow> CreateSpawnWindow(TWeakObjectPtr<UUTLocalPlayer> PlayerOwner);
@@ -1047,6 +946,8 @@ public:
 	 **/
 	virtual void SendComsMessage( AUTPlayerController* Sender, AUTPlayerState* Target, int32 Switch = 0);
 
+	virtual void SendBotVoiceOrder(AUTPlayerController* Sender, AUTBot* Target, int32 Switch = 0);
+
 	/** Holds the tutorial mask to set when this game completes.  */
 	UPROPERTY(BlueprintReadOnly, Category=Onboarding)
 	int32 TutorialMask;
@@ -1066,5 +967,28 @@ public:
 	// Holds the game time at which returning players are no longer guarenteed a spot.
 	UPROPERTY()
 	float ReturningPlayerGraceCutoff;
+
+	/**
+	 *	Kick any players who have been idle from the match
+	 **/
+	UFUNCTION(BlueprintCallable, Category = Game)
+	void KickIdlePlayers();
+
+	/**
+	 *	Creates all of the replicated data needed for map voting
+	 **/
+	virtual bool PrepareMapVote();
+
+	/**
+	 *	Shuts down a game instance
+	 **/
+	virtual void ShutdownGameInstance();
+
+	virtual void ForceEndServer();
+
+public:
+	// If this is a single player game, or an instance server, this will hold the unique tag of the ruleset being used if relevant
+	UPROPERTY(BlueprintReadOnly,Category = Game)
+	FString ActiveRuleTag;
 };
 

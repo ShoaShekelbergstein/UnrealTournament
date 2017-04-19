@@ -8,7 +8,7 @@
 #include "UTFlagRunPvEHUD.generated.h"
 
 UCLASS()
-class AUTFlagRunPvEHUD : public AUTFlagRunHUD
+class UNREALTOURNAMENT_API AUTFlagRunPvEHUD : public AUTFlagRunHUD
 {
 	GENERATED_BODY()
 public:

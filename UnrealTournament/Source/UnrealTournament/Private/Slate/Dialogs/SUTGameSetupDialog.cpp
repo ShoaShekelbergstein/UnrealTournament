@@ -118,31 +118,7 @@ void SUTGameSetupDialog::BuildCategories()
 	static FName CustomCategory = FName(TEXT("Custom"));
 
 	TArray<FName> Categories;
-	UUTEpicDefaultRulesets* DefaultRules = UUTEpicDefaultRulesets::StaticClass()->GetDefaultObject<UUTEpicDefaultRulesets>();
-	if (DefaultRules != nullptr)
-	{
-		for (int32 i=0; i < DefaultRules->RuleCategories.Num(); i++)
-		{
-			if (DefaultRules->RuleCategories[i].CategoryName == CustomCategory) continue;
-			Categories.Add(DefaultRules->RuleCategories[i].CategoryName);
-			TabButtonPanel->AddSlot()
-			.Padding(FMargin(25.0f,0.0f,0.0f,0.0f))
-			.AutoWidth()
-			[
-				SAssignNew(Button, SUTTabButton)
-				.ContentPadding(FMargin(15.0f, 10.0f, 15.0f, 0.0f))
-				.Text(FText::FromString(DefaultRules->RuleCategories[i].CategoryButtonText))
-				.ButtonStyle(SUTStyle::Get(), "UT.TabButton")
-				.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium")
-				.IsToggleButton(true)
-				.OnClicked(this, &SUTGameSetupDialog::OnTabButtonClick, i)
-			];
-			Tabs.Add(FTabButtonInfo(Button, DefaultRules->RuleCategories[i].CategoryName));
-		}
-	}
-
-	int32 TabIndex = Tabs.Num();
-
+	int32 TabIndex = 0;
 	for (int32 i=0; i < GameRulesets.Num(); i++)
 	{
 		for (int32 CatIndex = 0; CatIndex < GameRulesets[i]->Categories.Num(); CatIndex++)
@@ -385,6 +361,7 @@ FReply SUTGameSetupDialog::OnRuleClick(int32 RuleIndex)
 		}
 
 		cbRequireFull->SetIsChecked(SelectedRuleset->bCompetitiveMatch ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
+		cbUseBots->SetIsChecked(SelectedRuleset->bCompetitiveMatch ? ECheckBoxState::Unchecked : ECheckBoxState::Checked);
 	}
 
 	return FReply::Handled();
@@ -1058,11 +1035,11 @@ void SUTGameSetupDialog::ConfigureMatch(ECreateInstanceTypes::Type InstanceType)
 
 			if ( IsCustomSettings() )
 			{
-				LobbyPlayerState->ServerCreateCustomInstance(GetGameNameText().ToString(), GameMode, StartingMap, bIsInParty, Description, GameOptions, DesiredPlayerCount, bTeamGame != 0, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);
+				LobbyPlayerState->ServerCreateCustomInstance(GetGameNameText().ToString(), GameMode, StartingMap, bIsInParty, Description, GameOptions, DesiredPlayerCount, bTeamGame != 0, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled, cbHostControl->IsChecked());
 			}
 			else
 			{
-				LobbyPlayerState->ServerCreateInstance(GetGameNameText().ToString(), SelectedRuleset->UniqueTag, StartingMap, bIsInParty, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled);					
+				LobbyPlayerState->ServerCreateInstance(GetGameNameText().ToString(), SelectedRuleset->UniqueTag, StartingMap, bIsInParty, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled, cbHostControl->IsChecked());					
 			}
 		}
 	}
@@ -1101,6 +1078,32 @@ FText SUTGameSetupDialog::GetGameNameText() const
 void SUTGameSetupDialog::OnGameNameTextCommited(const FText &NewText,ETextCommit::Type CommitType)
 {
 	GameName = NewText;
+}
+
+TSharedRef<class SWidget> SUTGameSetupDialog::BuildCustomButtonBar()
+{
+	TSharedPtr<SHorizontalBox> Box;
+	SAssignNew(Box, SHorizontalBox);
+	if (bHubMenu)
+	{
+		Box->AddSlot()
+		.AutoWidth()
+		.VAlign(VAlign_Center)
+		[
+			SAssignNew(cbHostControl, SCheckBox)
+			.IsChecked(ECheckBoxState::Checked)
+			.Style(SUTStyle::Get(), "UT.CheckBox")
+			.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","HostControlTT","If checked, you (the host) will be responsibile for starting the match once in game.")))
+			.Content()
+			[
+				SNew(STextBlock)
+				.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small.Bold")
+				.Text(NSLOCTEXT("SULobbySetup", "HostControl", " Host Controlled Start"))
+			]
+		];
+	}
+
+	return Box.ToSharedRef();
 }
 
 

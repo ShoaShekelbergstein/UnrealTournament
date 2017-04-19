@@ -202,7 +202,7 @@ void AUTPickupWeapon::ProcessTouch_Implementation(APawn* TouchedBy)
 
 void AUTPickupWeapon::LocalPickupHandling(APawn* TouchedBy)
 {
-	new(Customers) FWeaponPickupCustomer(TouchedBy, GetWorld()->TimeSeconds + RespawnTime);
+	new(Customers) FWeaponPickupCustomer(TouchedBy, GetWorld()->TimeSeconds + NextPickupTime);
 	PlayTakenEffects(false);
 	UUTGameplayStatics::UTPlaySound(GetWorld(), TakenSound, TouchedBy, SRT_IfSourceNotReplicated, false, FVector::ZeroVector, NULL, NULL, false);
 	if (TouchedBy->IsLocallyControlled())
@@ -218,7 +218,7 @@ void AUTPickupWeapon::LocalPickupHandling(APawn* TouchedBy)
 			if (TimerEffect != NULL)
 			{
 				TimerEffect->SetFloatParameter(NAME_Progress, 0.0f);
-				TimerEffect->SetFloatParameter(NAME_RespawnTime, RespawnTime);
+				TimerEffect->SetFloatParameter(NAME_RespawnTime, NextPickupTime);
 				TimerEffect->SetHiddenInGame(false);
 			}
 			PC->AddPerPlayerPickup(this);

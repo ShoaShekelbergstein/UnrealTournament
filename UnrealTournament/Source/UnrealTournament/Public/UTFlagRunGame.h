@@ -75,6 +75,7 @@ public:
 	virtual class AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = TEXT("")) override;
 	virtual void AnnounceWin(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 Reason) override;
 	virtual void NotifyFirstPickup(AUTCarriedObject* Flag) override;
+	virtual float GetScoreForXP(class AUTPlayerState* PS) override;
 
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	virtual float OverrideRespawnTime(AUTPickupInventory* Pickup, TSubclassOf<AUTInventory> InventoryType) override;
@@ -96,6 +97,7 @@ public:
 	virtual bool IsTeamOnOffense(int32 TeamNumber) const override;
 	virtual AActor* SetIntermissionCameras(uint32 TeamToWatch) override;
 	virtual void SendRestartNotifications(AUTPlayerState* PS, AUTPlayerController* PC) override;
+	virtual bool PlayerWonChallenge() override;
 
 	virtual int32 GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPlayerController* Instigator, UWorld* World);
 	virtual void InitFlags() override;

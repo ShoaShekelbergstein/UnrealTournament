@@ -53,7 +53,6 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	LeftMesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::OnlyTickPoseWhenRendered;
 	LeftMesh->bSelfShadowOnly = true;
 	LeftMesh->bHiddenInGame = true;
-	FirstPLeftMeshOffset = FVector(0.f);
 
 	EnforcerEquippingState = ObjectInitializer.CreateDefaultSubobject<UUTWeaponStateEquipping_Enforcer>(this, TEXT("EnforcerEquippingState"));
 	EnforcerUnequippingState = ObjectInitializer.CreateDefaultSubobject<UUTWeaponStateUnequipping_Enforcer>(this, TEXT("EnforcerUnequippingState"));
@@ -72,6 +71,9 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	WeaponSkinCustomizationTag = EpicWeaponSkinCustomizationTags::Enforcer;
 
 	HighlightText = NSLOCTEXT("Weapon", "EnforcerHighlightText", "Gunslinger");
+	LowMeshOffset = FVector(0.f, 0.f, -7.f);
+	VeryLowMeshOffset = FVector(0.f, 0.f, -15.f);
+	MaxVerticalSpread = 2.5f;
 }
 
 float AUTWeap_Enforcer::GetPutDownTime()
@@ -110,7 +112,6 @@ void AUTWeap_Enforcer::FireShot()
 			FireCount = 0;
 		}
 	}
-
 }
 
 void AUTWeap_Enforcer::FireInstantHit(bool bDealDamage, FHitResult* OutHit)
@@ -370,6 +371,7 @@ void AUTWeap_Enforcer::BecomeDual()
 
 	// pick up the second enforcer
 	AttachLeftMesh();
+	UpdateWeaponRenderScaleOnLeftMesh();
 
 	// the UneqippingState needs to be updated so that both guns are lowered during weapon switch
 	UnequippingState = EnforcerUnequippingState;
@@ -548,6 +550,7 @@ void AUTWeap_Enforcer::SetSkin(UMaterialInterface* NewSkin)
 			}
 		}
 
+		LeftMeshMIDs.Empty();
 		for (int i = 0; i < LeftMesh->GetNumMaterials(); i++)
 		{
 			LeftMeshMIDs.Add(LeftMesh->CreateAndSetMaterialInstanceDynamic(i));
@@ -556,7 +559,6 @@ void AUTWeap_Enforcer::SetSkin(UMaterialInterface* NewSkin)
 
 	Super::SetSkin(NewSkin);
 }
-
 
 void AUTWeap_Enforcer::AttachLeftMesh()
 {
@@ -568,26 +570,13 @@ void AUTWeap_Enforcer::AttachLeftMesh()
 	if (LeftMesh != NULL && LeftMesh->SkeletalMesh != NULL)
 	{
 		LeftMesh->SetHiddenInGame(false);
-		LeftMesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, (GetWeaponHand() != EWeaponHand::HAND_Hidden) ? HandsAttachSocketLeft : NAME_None);
+		LeftMesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, HandsAttachSocketLeft);
 		if (Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
 		{
 			LeftMesh->LastRenderTime = GetWorld()->TimeSeconds;
 			LeftMesh->bRecentlyRendered = true;
 		}
-
-		static FName FNamePanini_d = TEXT("d");
-		static FName FNamePanini_PushMax = TEXT("Push Max");
-		static FName FNamePanini_PushMin = TEXT("Push Min");
-		for (int i = 0; i < LeftMeshMIDs.Num(); i++)
-		{
-			if (LeftMeshMIDs[i])
-			{
-				LeftMeshMIDs[i]->SetScalarParameterValue(FNamePanini_d, Panini_d);
-				LeftMeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMax, Panini_PushMax);
-				LeftMeshMIDs[i]->SetScalarParameterValue(FNamePanini_PushMin, Panini_PushMin);
-			}
-		}
-
+		
 		if (UTOwner != NULL && UTOwner->GetWeapon() == this)
 		{
 			if (Dual_BringUpLeftWeaponFirstAttach != NULL)
@@ -629,6 +618,18 @@ void AUTWeap_Enforcer::AttachLeftMesh()
 	}
 }
 
+void AUTWeap_Enforcer::UpdateWeaponRenderScaleOnLeftMesh()
+{
+	static FName FNameScale = TEXT("Scale");
+	for (int i = 0; i < LeftMeshMIDs.Num(); i++)
+	{
+		if (LeftMeshMIDs[i])
+		{
+			LeftMeshMIDs[i]->SetScalarParameterValue(FNameScale, WeaponRenderScale);
+		}
+	}
+}
+
 void AUTWeap_Enforcer::AttachToOwner_Implementation()
 {
 	if (UTOwner == NULL)
@@ -650,6 +651,11 @@ void AUTWeap_Enforcer::AttachToOwner_Implementation()
 	}
 
 	Super::AttachToOwner_Implementation();
+
+	if (bDualEnforcerMode)
+	{
+		UpdateWeaponRenderScaleOnLeftMesh();
+	}
 }
 
 void AUTWeap_Enforcer::DetachFromOwner_Implementation()
@@ -682,30 +688,7 @@ void AUTWeap_Enforcer::UpdateWeaponHand()
 	Super::UpdateWeaponHand();
 	if (bDualEnforcerMode)
 	{
-		FirstPLeftMeshOffset = FVector::ZeroVector;
-		FirstPLeftMeshRotation = FRotator::ZeroRotator;
-		switch (GetWeaponHand())
-		{
-			case EWeaponHand::HAND_Center:
-				// TODO: not implemented, fallthrough
-				UE_LOG(UT, Warning, TEXT("HAND_Center is not implemented yet!"));
-			case EWeaponHand::HAND_Right:
-				LeftMesh->SetRelativeLocationAndRotation(GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->RelativeLocation, GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->RelativeRotation);
-				break;
-			case EWeaponHand::HAND_Left:
-			{
-				// swap
-				LeftMesh->SetRelativeLocationAndRotation(GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->Mesh->RelativeLocation, GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->Mesh->RelativeRotation);
-				Mesh->SetRelativeLocationAndRotation(GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->RelativeLocation, GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->RelativeRotation);
-				break;
-			}
-			case EWeaponHand::HAND_Hidden:
-			{
-				Mesh->SetRelativeLocationAndRotation(FVector(-50.0f, 20.0f, -50.0f), FRotator::ZeroRotator);
-				LeftMesh->SetRelativeLocationAndRotation(FVector(-50.0f, -20.0f, -50.0f), FRotator::ZeroRotator);
-				break;
-			}
-		}
+		LeftMesh->SetRelativeLocationAndRotation(GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->RelativeLocation, GetClass()->GetDefaultObject<AUTWeap_Enforcer>()->LeftMesh->RelativeRotation);
 	}
 }
 

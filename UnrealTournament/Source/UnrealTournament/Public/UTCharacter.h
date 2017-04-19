@@ -12,6 +12,9 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCharacterDiedSignature, class AController*, Killer, const class UDamageType*, DamageType);
 
+class AUTDroppedHealth;
+class AUTDroppedArmor;
+
 /** Replicated movement data of our RootComponent.
 * More efficient than engine's FRepMovement
 */
@@ -171,6 +174,20 @@ struct FSavedPosition
 	float TimeStamp;
 };
 
+USTRUCT(BlueprintType)
+struct FFlashLocRep
+{
+	GENERATED_USTRUCT_BODY()
+
+	/** Position of player at time Time. */
+	UPROPERTY(BlueprintReadOnly)
+	FVector_NetQuantize Position;
+
+	/** Rotation of player at time Time. */
+	UPROPERTY(BlueprintReadOnly)
+	uint8 Count;
+};
+
 UENUM(BlueprintType)
 enum EAllowedSpecialMoveAnims
 {
@@ -310,7 +327,7 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	//====================================
 
 	/** Pawn mesh: 1st person view (arms; seen only by self) */
-	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category=Mesh)
 	class USkeletalMeshComponent* FirstPersonMesh;
 	
 	UPROPERTY(BlueprintReadOnly, Category = Mesh)
@@ -686,8 +703,9 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	 */
 	UPROPERTY(BlueprintReadOnly, Replicated, ReplicatedUsing = FiringExtraUpdated, Category = "Weapon")
 	uint8 FlashExtra;
+
 	UPROPERTY(BlueprintReadOnly, Replicated, ReplicatedUsing = FiringInfoReplicated, Category = "Weapon")
-	FVector_NetQuantize FlashLocation;
+	FFlashLocRep FlashLocation;
 
 	/** Updated on client when FlashCount is replicated. */
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
@@ -725,6 +743,9 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 
 	/** called when firing variables are updated to trigger/stop effects */
 	virtual void FiringInfoUpdated();
+	/** blueprint hook into FiringInfoUpdated() - called AFTER normal weapon effects */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon", meta = (DisplayName = "Firing Info Updated"))
+	void K2_FiringInfoUpdated();
 	/** called when FlashExtra is updated; routes call to weapon attachment */
 	UFUNCTION()
 	virtual void FiringExtraUpdated();
@@ -945,6 +966,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = Pawn)
 	bool bInRagdollRecovery;
 
+	UPROPERTY(EditDefaultsOnly)
+	UAnimMontage* RagdollRecoveryMontage;
+
 	/** top root speed during ragdoll, used for falling damage
 	 * this is needed because the velocity will have changed by the time we get the physics notify so it's too late to work off that
 	 */
@@ -983,6 +1007,9 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void UnPossessed() override;
 	virtual void Restart() override;
+
+	/** Called when PlayerCard is updated */
+	virtual void PlayerCardUpdated();
 
 	virtual bool ShouldTakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) const override
 	{
@@ -1125,6 +1152,13 @@ public:
 	/** time between StopRagdoll() call and when physics has been fully blended out of our mesh */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ragdoll)
 	float RagdollBlendOutTime;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ragdoll)
+	float RagdollPhysicsBlendOutTime;
+
+	UPROPERTY()
+	float RagdollBlendOutTimeLeft;
+
 	/** player in feign death can't recover until world time reaches this */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ragdoll)
 	float FeignDeathRecoverStartTime;
@@ -1315,6 +1349,9 @@ public:
 
 	UPROPERTY(ReplicatedUsing=OnTriggerRallyEffect, BlueprintReadWrite)
 		bool bTriggerRallyEffect;
+
+	UPROPERTY()
+		float RallyCompleteTime;
 
 	UFUNCTION()
 	virtual void OnTriggerRallyEffect();
@@ -1971,6 +2008,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pawn")
 	TArray< TSubclassOf<AUTInventory> > DefaultCharacterInventory;
+
+	/** If true, pickup will not execute its giveto().  Gives inventory a chance to override. */
+	virtual bool OverrideGiveTo(class AUTPickup* Pickup);
+
 protected:
 
 	//================================
@@ -2074,26 +2115,11 @@ protected:
 	virtual void UpdateOutline();
 
 public:
+	UPROPERTY(BlueprintReadWrite)
+		bool bForceNoOutline;
+
 	UFUNCTION(BlueprintCallable, Category = UTCharacter, BlueprintPure)
-	bool IsOutlined(uint8 TestTeam = 255) const
-	{
-		if (IsDead())
-		{
-			return false;
-		}
-		else if (bLocalOutline)
-		{
-			return true;
-		}
-		else if (bServerOutline)
-		{
-			return (TestTeam > 7 || ServerOutlineTeamMask == 0 || (ServerOutlineTeamMask & (1 << TestTeam)));
-		}
-		else
-		{
-			return false;
-		}
-	}
+		bool IsOutlined(uint8 TestTeam = 255) const;
 	inline bool GetOutlineWhenUnoccluded() const
 	{
 		return bOutlineWhenUnoccluded;
@@ -2133,6 +2159,10 @@ protected:
 	UMaterialInterface* ReplicatedBodyMaterial;
 	UPROPERTY(Replicated, ReplicatedUsing = UpdateSkin)
 	UMaterialInterface* ReplicatedBodyMaterial1P;
+	UPROPERTY(BlueprintReadOnly)
+	UMaterialInstanceDynamic* OverrideBodyMaterialMID;
+	UPROPERTY(BlueprintReadOnly)
+	UMaterialInstanceDynamic* OverrideBodyMaterial1PMID;
 
 	/** runtime material instance for setting body material parameters (team color, etc) */
 	UPROPERTY(BlueprintReadOnly, Category = Pawn)
@@ -2222,8 +2252,28 @@ public:
 	virtual void TriggerBoostPower();
 	virtual void TeamNotifyBoostPowerUse();
 
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerDropHealth();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerDropArmor();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerDropPowerup(AUTTimedPowerup* Powerup);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerDropBoots();
+
+	virtual void SetArmorAmount(class AUTArmor* inArmorType, int32 Amount);
+
+
 private:
 	FTimerHandle SpeedBoostTimerHandle;
+
+protected:
+	TSubclassOf<AUTDroppedHealth> HealthDropType;
+		
 };
 
 inline bool AUTCharacter::IsDead() const

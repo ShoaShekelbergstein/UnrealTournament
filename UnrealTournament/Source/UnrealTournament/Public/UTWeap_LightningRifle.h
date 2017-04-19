@@ -33,6 +33,10 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
 		float ChargeSpeed;
 
+	/** Extra refire delay after fire fully powered shot. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
+		float ExtraFullPowerFireDelay;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = LightningRifle)
 		USoundBase* FullyPoweredHitEnemySound;
 
@@ -55,6 +59,9 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = LightningRifle)
 		bool bZoomHeld;
 
+	UPROPERTY()
+		bool bExtendedRefireDelay;
+
 	UFUNCTION()
 		void OnRepCharging();
 
@@ -75,4 +82,7 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 	virtual void Removed() override;
 	virtual void ClientRemoved() override;
 	virtual void PlayImpactEffects_Implementation(const FVector& TargetLoc, uint8 FireMode, const FVector& SpawnLocation, const FRotator& SpawnRotation) override;
+	virtual void PlayFiringSound(uint8 EffectFiringMode) override;
+	virtual float GetRefireTime(uint8 FireModeNum) override;
+	virtual bool HandleContinuedFiring() override;
 };

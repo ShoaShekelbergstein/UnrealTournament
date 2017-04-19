@@ -6,7 +6,7 @@
 #include "UTProj_BioLauncherShot.generated.h"
 
 UCLASS()
-class AUTProj_BioLauncherShot : public AUTProj_BioShot
+class UNREALTOURNAMENT_API AUTProj_BioLauncherShot : public AUTProj_BioShot
 {
 	GENERATED_BODY()
 public:

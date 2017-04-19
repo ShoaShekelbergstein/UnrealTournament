@@ -4,6 +4,10 @@ namespace EGenericAnalyticParam
 	{
 		PlayerGUID,
 		PlayerList,
+		PlayerKills,
+		PlayerDeaths,
+		BotList,
+		BotSkill,
 		InactivePlayerList,
 		ServerInstanceGUID,
 		ServerMatchGUID,
@@ -52,6 +56,10 @@ namespace EGenericAnalyticParam
 		UTServerWeaponKills,
 		WeaponInfo,
 
+		//NumKills above as part of weapon analytics
+		NumDeaths,
+		NumAssists,
+		
 		UTFPSCharts,
 		UTServerFPSCharts,
 

@@ -54,26 +54,26 @@ int32 AUTReplicatedGameRuleset::AddMapAssetToMapList(const FAssetData& Asset)
 	return INDEX_NONE;
 }
 
-void AUTReplicatedGameRuleset::SetRules(UUTGameRuleset* NewRules, const TArray<FAssetData>& MapAssets)
+void AUTReplicatedGameRuleset::SetRules(const FUTGameRuleset& NewRules, const TArray<FAssetData>& MapAssets)
 {
-	UniqueTag			= NewRules->UniqueTag;
-	Categories			= NewRules->Categories;
-	Title				= NewRules->Title;
-	Tooltip				= NewRules->Tooltip;
-	Description			= Fixup(NewRules->Description);
-	MaxPlayers			= NewRules->MaxPlayers;
-	bTeamGame			= NewRules->bTeamGame;
-	DefaultMap			= NewRules->DefaultMap;
-	QuickPlayMaps		= NewRules->QuickPlayMaps;
-	bCompetitiveMatch	= NewRules->bCompetitiveMatch;
-	MaxMapsInList		= NewRules->MaxMapsInList;
-	OptionFlags			= NewRules->OptionFlags;
+	UniqueTag			= NewRules.UniqueTag;
+	Categories			= NewRules.Categories;
+	Title				= NewRules.Title;
+	Tooltip				= NewRules.Tooltip;
+	Description			= Fixup(NewRules.Description);
+	MaxPlayers			= NewRules.MaxPlayers;
+	bTeamGame			= NewRules.bTeamGame;
+	DefaultMap			= NewRules.DefaultMap;
+	QuickPlayMaps		= NewRules.QuickPlayMaps;
+	bCompetitiveMatch	= NewRules.bCompetitiveMatch;
+	MaxMapsInList		= NewRules.MaxMapsInList;
+	OptionFlags			= NewRules.OptionFlags;
 
 	// First add the Epic maps.
-	if (!NewRules->EpicMaps.IsEmpty())
+	if (!NewRules.EpicMaps.IsEmpty())
 	{
 		TArray<FString> EpicMapList;
-		NewRules->EpicMaps.ParseIntoArray(EpicMapList,TEXT(","), true);
+		NewRules.EpicMaps.ParseIntoArray(EpicMapList,TEXT(","), true);
 		for (int32 i = 0 ; i < EpicMapList.Num(); i++)
 		{
 			FString MapName = EpicMapList[i];
@@ -101,11 +101,11 @@ void AUTReplicatedGameRuleset::SetRules(UUTGameRuleset* NewRules, const TArray<F
 	}
 
 	// Now add the custom maps..
-	for (int32 i = 0; i < NewRules->CustomMapList.Num(); i++)
+	for (int32 i = 0; i < NewRules.CustomMapList.Num(); i++)
 	{
 		if (MaxMapsInList > 0 && MapList.Num() >= MaxMapsInList) break;
 
-		FString MapPackageName = NewRules->CustomMapList[i];
+		FString MapPackageName = NewRules.CustomMapList[i];
 		if ( FPackageName::IsShortPackageName(MapPackageName) )
 		{
 			if (!FPackageName::SearchForPackageOnDisk(MapPackageName, &MapPackageName))
@@ -129,7 +129,7 @@ void AUTReplicatedGameRuleset::SetRules(UUTGameRuleset* NewRules, const TArray<F
 					// Look to see if there are redirects for this map
 					
 					FPackageRedirectReference Redirect;
-					if ( DefaultBaseGameMode->FindRedirect(NewRules->CustomMapList[i], Redirect) )
+					if ( DefaultBaseGameMode->FindRedirect(NewRules.CustomMapList[i], Redirect) )
 					{
 						MapList[Idx]->Redirect = Redirect;
 					}
@@ -144,14 +144,14 @@ void AUTReplicatedGameRuleset::SetRules(UUTGameRuleset* NewRules, const TArray<F
 		// Last ditch.. I DO NOT LIKE THIS.. but if there are no maps, fill it with all of the maps from the
 		// Asset list.
 	
-		for (int32 i=0; i < NewRules->MapPrefixes.Num(); i++)
+		for (int32 i=0; i < NewRules.MapPrefixes.Num(); i++)
 		{
-			if ( NewRules->MapPrefixes[i] == TEXT("") ) continue;
+			if ( NewRules.MapPrefixes[i] == TEXT("") ) continue;
 
 			for (const FAssetData& Asset : MapAssets)
 			{
 				FString AssetPackageName = Asset.PackageName.ToString();
-				if ( Asset.AssetName.ToString().StartsWith(NewRules->MapPrefixes[i], ESearchCase::IgnoreCase) )
+				if ( Asset.AssetName.ToString().StartsWith(NewRules.MapPrefixes[i], ESearchCase::IgnoreCase) )
 				{
 					// Found the asset data for this map.  Build the FMapListInfo.
 					int32 Idx = AddMapAssetToMapList(Asset);
@@ -172,10 +172,10 @@ void AUTReplicatedGameRuleset::SetRules(UUTGameRuleset* NewRules, const TArray<F
 		}
 	}
 
-	RequiredPackages = NewRules->RequiredPackages;
-	DisplayTexture = NewRules->DisplayTexture;
-	GameMode = NewRules->GameMode;
-	GameOptions = NewRules->GameOptions;
+	RequiredPackages = NewRules.RequiredPackages;
+	DisplayTexture = NewRules.DisplayTexture;
+	GameMode = NewRules.GameMode;
+	GameOptions = NewRules.GameOptions;
 	BuildSlateBadge();
 
 	// Fix up the Description
@@ -355,5 +355,7 @@ FString AUTReplicatedGameRuleset::GenerateURL(const FString& StartingMap, bool b
 	if (bRequireFilled) URL += TEXT("?RequireFull=1");
 	if (bCompetitiveMatch) URL += TEXT("?NoJIP");
 
+	// Let the game know what ruleset this is.
+	URL += FString::Printf(TEXT("?ART=%s"), *UniqueTag );
 	return URL;
 }

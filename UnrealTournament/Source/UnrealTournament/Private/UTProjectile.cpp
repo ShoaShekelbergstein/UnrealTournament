@@ -189,20 +189,6 @@ void AUTProjectile::OnRep_Instigator()
 		{
 			((AUTCharacter*)(Instigator))->LastFiredProjectile = this;
 		}
-		AUTPlayerController* PC = Cast<AUTPlayerController>(InstigatorController);
-		if (OffsetVisualComponent && PC)
-		{
-			if (PC->GetWeaponHand() == EWeaponHand::HAND_Left)
-			{
-				InitialVisualOffset.Y *= -1.f;
-				OffsetVisualComponent->RelativeLocation.Y *= -1.f;
-			}
-			else if (PC->GetWeaponHand() == EWeaponHand::HAND_Hidden)
-			{
-				InitialVisualOffset.Y = FinalVisualOffset.Y;
-				OffsetVisualComponent->RelativeLocation.Y = FinalVisualOffset.Y;
-			}
-		}
 	}
 
 	// turn off other player's projectile flight lights at low/medium effects quality
@@ -352,10 +338,12 @@ void AUTProjectile::BeginPlay()
 				}
 			}
 		}
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 		else
 		{
 			UE_LOG(UT, Warning, TEXT("%s spawned with no local player found!"), *GetName());
 		}
+#endif
 	}
 }
 
@@ -1127,7 +1115,7 @@ void AUTProjectile::PrepareForIntermission()
 	{
 		ProjectileMovement->StopMovementImmediately();
 	}
-
+	SetLifeSpan(10.f*GetLifeSpan());
 	TArray<USceneComponent*> Components;
 	GetComponents<USceneComponent>(Components);
 	for (int32 i = 0; i < Components.Num(); i++)

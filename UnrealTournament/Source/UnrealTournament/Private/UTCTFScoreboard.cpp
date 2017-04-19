@@ -264,7 +264,7 @@ void UUTCTFScoreboard::DrawScoringPlayInfo(const FCTFScoringPlay& Play, float Cu
 	Canvas->TextSize(UTHUDOwner->MediumFont, FText::Format(ScoringPlayScore, Args).ToString(), ScoringOffsetX, ScoringOffsetY, RenderScale, RenderScale);
 	float SingleXL, SingleYL;
 	float ScoreX = XOffset + 0.98f*ScoreWidth - ScoringOffsetX;
-	Canvas->SetLinearDrawColor(CTFState->Teams[0]->TeamColor);
+	Canvas->SetLinearDrawColor(REDHUDCOLOR);
 	FString SingleScorePart = FString::Printf(TEXT(" %i"), Play.TeamScores[0]);
 	Canvas->TextSize(UTHUDOwner->MediumFont, SingleScorePart, SingleXL, SingleYL, RenderScale, RenderScale);
 	Canvas->DrawText(UTHUDOwner->MediumFont, SingleScorePart, ScoreX, ScorerNameYOffset, RenderScale, RenderScale, TextRenderInfo);
@@ -273,7 +273,7 @@ void UUTCTFScoreboard::DrawScoringPlayInfo(const FCTFScoringPlay& Play, float Cu
 	Canvas->TextSize(UTHUDOwner->MediumFont, "-", SingleXL, SingleYL, RenderScale, RenderScale);
 	ScoreX += SingleXL;
 	Canvas->DrawText(UTHUDOwner->MediumFont, "-", ScoreX, ScorerNameYOffset, RenderScale, RenderScale, TextRenderInfo);
-	Canvas->SetLinearDrawColor(CTFState->Teams[1]->TeamColor);
+	Canvas->SetLinearDrawColor(BLUEHUDCOLOR);
 	ScoreX += SingleXL;
 	Canvas->DrawText(UTHUDOwner->MediumFont, FString::Printf(TEXT(" %i"), Play.TeamScores[1]), ScoreX, ScorerNameYOffset, RenderScale, RenderScale, TextRenderInfo);
 }

@@ -6,7 +6,7 @@
 #include "UTMutator_GameSpeed.generated.h"
 
 UCLASS()
-class AUTMutator_GameSpeed : public AUTMutator
+class UNREALTOURNAMENT_API AUTMutator_GameSpeed : public AUTMutator
 {
 	GENERATED_BODY()
 public:

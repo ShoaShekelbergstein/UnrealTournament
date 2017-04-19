@@ -55,6 +55,10 @@ class UNREALTOURNAMENT_API AUTTeamInfo : public AInfo, public IUTTeamInterface
 	UPROPERTY()
 	TArray<FPickupClaim> PickupClaims;
 
+	/** used when human gives an AI a "drop the flag" order to make sure bots don't immediately go pick it up again */
+	UPROPERTY()
+	float BotIgnoreFlagUntil;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = Team)
 	FText TeamName;
 
@@ -63,7 +67,7 @@ class UNREALTOURNAMENT_API AUTTeamInfo : public AInfo, public IUTTeamInterface
 	int32 Score;
 
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = Team)
-		int32 RoundBonus;
+	int32 RoundBonus;
 
 	/** For team stats. */
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = Team)

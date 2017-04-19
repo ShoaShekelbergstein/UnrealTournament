@@ -104,29 +104,6 @@ void UUTHUDWidget_Spectator::DrawSimpleMessage(FText SimpleMessage, float DeltaT
 	DrawText(SimpleMessage, TextPosition, YOffset + 20.f*RenderScale, UTHUDOwner->MediumFont, RenderScale, 1.f, GetMessageColor(), ETextHorzPos::Left, ETextVertPos::Center);
 }
 
-void UUTHUDWidget_Spectator::DrawSpawnPacks(float DeltaTime)
-{
-	if (UTGameState && UTGameState->SpawnPacks.Num() > 0 )
-	{
-		FVector2D TextSize = DrawText(NSLOCTEXT("UUTHUDWidget_Spectator","SpawnPackTitle","Loadouts:"), 20.0f, -50.0f, UTHUDOwner->MediumFont, 1.0, 1.f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
-
-		float XPos = 60 + TextSize.X;
-		AUTPlayerState* PlayerState = UTHUDOwner->UTPlayerOwner->UTPlayerState;
-		for (int32 i = 0 ; i < UTGameState->SpawnPacks.Num(); i++)
-		{
-			FLinearColor DrawColor = UTGameState->SpawnPacks[i].PackTag == PlayerState->CurrentLoadoutPackTag ? FLinearColor(0.0f,0.5f,1.0f,1.0f) : FLinearColor::White;
-			TArray<FString> Keys;
-			UTHUDOwner->UTPlayerOwner->ResolveKeybind(FString::Printf(TEXT("switchweapon %i"), i+1), Keys, false, false);
-			if (Keys.Num() > 0)
-			{
-				FText OutputText = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator","TitleTextFormat","({0}) {1}"), FText::FromString(UTHUDOwner->UTPlayerOwner->FixedupKeyname(Keys[0])), FText::FromString(UTGameState->SpawnPacks[i].PackTitle));
-				TextSize = DrawText(OutputText, XPos, -50.0f, UTHUDOwner->MediumFont, 1.0, 1.f, DrawColor, ETextHorzPos::Left, ETextVertPos::Center);		
-				XPos += 400 - TextSize.X;
-			}
-		}
-	}
-}
-
 void UUTHUDWidget_Spectator::Draw_Implementation(float DeltaTime)
 {
 	Super::Draw_Implementation(DeltaTime);
@@ -134,7 +111,6 @@ void UUTHUDWidget_Spectator::Draw_Implementation(float DeltaTime)
 	FText ShortMessage;
 	FText SpectatorMessage = GetSpectatorMessageText(ShortMessage);
 	DrawSimpleMessage(SpectatorMessage, DeltaTime, ShortMessage);
-	DrawSpawnPacks(DeltaTime);
 }
 
 FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
@@ -205,6 +181,11 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 						? NSLOCTEXT("UUTHUDWidget_Spectator", "ClickLeave", "Click on LEAVE WARM UP to leave")
 						: NSLOCTEXT("UUTHUDWidget_Spectator", "PressEnter", "Press [ENTER] to leave");
 					SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "Warmup", "Warm Up");
+					if (UTHUDOwner->UTPlayerOwner->UTPlayerState->bIsMatchHost)
+					{ 
+						ShortMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "PressEnter", "Host, Press [ENTER] to");
+						SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "StartMatch", "START MATCH");
+					}
 				}
 			}
 			else if (UTPS && UTPS->bCaster)
@@ -212,6 +193,10 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 				SpectatorMessage = (UTGameState->AreAllPlayersReady())
 					? NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForCaster", "All players are ready. Press [Enter] to start match.")
 					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForReady", "Waiting for players to warm up.");
+			}
+			else if (UTPS && UTPS->bIsMatchHost)
+			{
+				SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForHost", "Host, Press [ENTER] to start match.");
 			}
 			else if (UTPS && UTPS->bOnlySpectator)
 			{
@@ -223,7 +208,7 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 					? NSLOCTEXT("UUTHUDWidget_Spectator", "StartMatchFromMenu", "Click on START MATCH to begin.")
 					: NSLOCTEXT("UUTHUDWidget_Spectator", "WaitingForPlayersMenu", "Click on JOIN WARM UP to join warm up.");
 			}
-			else
+			else if (UTHUDOwner->GetNetMode() == NM_Standalone)
 			{
 				SpectatorMessage = (UTHUDOwner->GetNetMode() == NM_Standalone)
 					? NSLOCTEXT("UUTHUDWidget_Spectator", "StartMatchFromFire", "Press [FIRE] to begin.")
@@ -319,7 +304,31 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 		{
 			AUTCharacter* ViewCharacter = Cast<AUTCharacter>(UTHUDOwner->UTPlayerOwner->GetViewTarget());
 			AUTPlayerState* PS = ViewCharacter ? Cast<AUTPlayerState>(ViewCharacter->PlayerState) : NULL;
-			if (PS)
+			if (UTHUDOwner && UTHUDOwner->bDisplayMatchSummary)
+			{
+				if (UTGameState->GetNetMode() != NM_Standalone)
+				{
+					const AUTGameMode* DefaultGame = Cast<AUTGameMode>(UTGameState->GetDefaultGameMode());
+					if (DefaultGame && (DefaultGame->MatchSummaryTime - (GetWorld()->GetTimeSeconds() - UTHUDOwner->MatchSummaryTime) < 10))
+					{
+						int32 RemainingDelay = DefaultGame->MatchSummaryTime - (GetWorld()->GetTimeSeconds() - UTHUDOwner->MatchSummaryTime);
+						if (RemainingDelay <= 0)
+						{
+							SpectatorMessage = NSLOCTEXT("UUTHUDWidget_Spectator", "MapVoteInitMessage", "Initializing Map Vote");
+						}
+						else
+						{
+							FFormatNamedArguments Args;
+							static const FNumberFormattingOptions RespawnTimeFormat = FNumberFormattingOptions()
+								.SetMinimumFractionalDigits(0)
+								.SetMaximumFractionalDigits(0);
+							Args.Add("TimeToMapVote", FText::AsNumber(RemainingDelay, &RespawnTimeFormat));
+							SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "MapVoteWaitMessage", "Map Vote in {TimeToMapVote}..."), Args);
+						}
+					}
+				}
+			}
+			else if (PS)
 			{
 				FFormatNamedArguments Args;
 				Args.Add("PlayerName", FText::AsCultureInvariant(PS->PlayerName));

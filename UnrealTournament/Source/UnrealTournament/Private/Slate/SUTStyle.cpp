@@ -142,6 +142,7 @@ void SUTStyle::SetFonts(TSharedRef<FSlateStyleSet> StyleRef)
 
 	Style.Set("UT.Font.NormalText.Small", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Regular", FONT_SIZE_Small)).SetColorAndOpacity(FLinearColor::White));
 	Style.Set("UT.Font.NormalText.Small.Bold", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Bold", FONT_SIZE_Small)).SetColorAndOpacity(FLinearColor::White));
+	Style.Set("UT.Font.NormalText.Small.Gray", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Bold", FONT_SIZE_Small)).SetColorAndOpacity(FLinearColor::Gray));
 
 	Style.Set("UT.Font.Chat.Text", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Regular", FONT_SIZE_Small)).SetColorAndOpacity(FLinearColor(0.7,0.7,0.7,1.0)));
 	Style.Set("UT.Font.Chat.Text.Whisper", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-LightItalic", FONT_SIZE_Small)).SetColorAndOpacity(FLinearColor(0.7,0.7,0.7,1.0)));
@@ -156,6 +157,7 @@ void SUTStyle::SetFonts(TSharedRef<FSlateStyleSet> StyleRef)
 	Style.Set("UT.Font.NormalText.Medium.Gray", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Bold", FONT_SIZE_Medium)).SetColorAndOpacity(FLinearColor::Gray));
 	Style.Set("UT.Font.NormalText.Medium.Error", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Bold", FONT_SIZE_Medium)).SetColorAndOpacity(FLinearColor::Red));
 	Style.Set("UT.Font.NormalText.Medium.Link", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Bold", FONT_SIZE_Medium)).SetColorAndOpacity(FLinearColor(0.0f,0.0f,0.6f,1.0f)));
+	Style.Set("UT.Font.NormalText.Medium.Orange", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Bold", FONT_SIZE_Medium)).SetColorAndOpacity(FLinearColor(1.0f, 0.412f, 0.027f, 1.0f)));
 
 	Style.Set("UT.Font.NormalText.Large", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Regular", FONT_SIZE_Large)).SetColorAndOpacity(FLinearColor::White));
 	Style.Set("UT.Font.NormalText.Large.Bold", FTextBlockStyle().SetFont(TTF_FONT("/UTStyle/Fonts/Lato/Lato-Bold", FONT_SIZE_Large)).SetColorAndOpacity(FLinearColor::White));
@@ -385,6 +387,26 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 		.SetPressedSound(ButtonPressSound)
 	);
 
+	Style.Set("UT.Button.Soft", FButtonStyle()
+		.SetNormal(BOX_BRUSH("UTStyle/Buttons/Button.Soft.White", FVector2D(64,32), FMargin(12.0f /64.0f, 12.0f/32.0f), FLinearColor(0.8f, 0.8f, 0.8f, 1.0f)))
+		.SetHovered(BOX_BRUSH("UTStyle/Buttons/Button.Soft.White.Highlighted", FVector2D(64,32), FMargin(12.0f /64.0f, 12.0f/32.0f), FLinearColor(0.9f, 0.9f, 0.9f, 1.0f)))
+		.SetPressed(BOX_BRUSH("UTStyle/Buttons/Button.Soft.White.Pressed", FVector2D(64,32), FMargin(12.0f /64.0f, 12.0f/32.0f)))
+		.SetDisabled(FSlateColorBrush(Disabled))
+		.SetHoveredSound(ButtonHoverSound)
+		.SetPressedSound(ButtonPressSound)
+	);
+
+	Style.Set("UT.Button.Soft.Gold", FButtonStyle()
+		.SetNormal(BOX_BRUSH("UTStyle/Buttons/Button.Soft.White", FVector2D(64,32), FMargin(12.0f /64.0f, 12.0f/32.0f), FLinearColor(1.0f, 1.0f, 0.0f, 1.0f)))
+		.SetHovered(BOX_BRUSH("UTStyle/Buttons/Button.Soft.White.Highlighted", FVector2D(64,32), FMargin(12.0f /64.0f, 12.0f/32.0f), FLinearColor(1.0f, 1.0f, 0.33f, 1.0f)))
+		.SetPressed(BOX_BRUSH("UTStyle/Buttons/Button.Soft.White.Pressed", FVector2D(64,32), FMargin(12.0f /64.0f, 12.0f/32.0f),FLinearColor(1.0f, 1.0f, 0.6f, 1.0f)))
+		.SetDisabled(FSlateColorBrush(Disabled))
+		.SetHoveredSound(ButtonHoverSound)
+		.SetPressedSound(ButtonPressSound)
+	);
+
+
+	//new BORDER_BRUSH( "Old/DashedBorder", FMargin(6.0f / 32.0f), FLinearColor(1, 1, 1, 0.5)));
 
 
 	Style.Set("UT.NoStyle", new FSlateNoResource(FVector2D(128.0f, 128.0f)));
@@ -607,8 +629,12 @@ void SUTStyle::SetCommonStyle(TSharedRef<FSlateStyleSet> StyleRef)
 	Style.Set("UT.HomePanel.Replays", new IMAGE_BRUSH( "UTStyle/MainPanel/Replays", FVector2D(180,180), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
 	Style.Set("UT.HomePanel.Live", new IMAGE_BRUSH( "UTStyle/MainPanel/Live", FVector2D(180,180), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
 	Style.Set("UT.HomePanel.BasicTraining", new IMAGE_BRUSH( "UTStyle/MainPanel/BasicTraining", FVector2D(800,220), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
-	Style.Set("UT.HomePanel.Challenges", new IMAGE_BRUSH( "UTStyle/MainPanel/ChallangesBackground", FVector2D(800,220), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
 	Style.Set("UT.HomePanel.ChallengesNewIcon", new IMAGE_BRUSH( "UTStyle/MainPanel/NewChallenge72x72", FVector2D(72,72), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
+
+	Style.Set("UT.HomePanel.BasicTraining", new IMAGE_BRUSH( "UTStyle/MainPanel/NewBadge4", FVector2D(250,270), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
+	Style.Set("UT.HomePanel.Challenges", new IMAGE_BRUSH( "UTStyle/MainPanel/NewBadge2", FVector2D(250,270), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
+	Style.Set("UT.HomePanel.vsBots", new IMAGE_BRUSH( "UTStyle/MainPanel/NewBadge3", FVector2D(250,270), FLinearColor(1.0f, 1.0f, 1.0f, 1.0f) ));
+
 
 	Style.Set("UT.HomePanel.Button", FButtonStyle()
 		.SetNormal( FSlateNoResource(FVector2D(256.0f, 256.0f) ))

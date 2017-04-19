@@ -46,6 +46,10 @@ class UNREALTOURNAMENT_API AUTRallyPoint : public AUTGameObjective, public IUTRe
 	UPROPERTY(BlueprintReadOnly, Category = Objective)
 		float RallyReadyCountdown;
 
+	/** Last time enemy combat associated with this Rally Point. */
+	UPROPERTY(BlueprintReadWrite, Category = Objective)
+		float LastRallyHot;
+
 	/** Replicate 10 * RallyReadyCountdown */
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnReplicatedCountdown, Category = RallyPoint)
 		int32 ReplicatedCountdown;

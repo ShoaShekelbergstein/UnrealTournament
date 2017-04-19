@@ -16,7 +16,7 @@ enum class LineUpTypes : uint8
 
 /**This class represents a collection of spawn points to use for an In Game Intro Zone based on a particular TeamNum. Note multiple AUTInGameIntroZones might use the same TeamSpawnPointList. **/
 UCLASS()
-class AUTLineUpZone : public AActor
+class UNREALTOURNAMENT_API AUTLineUpZone : public AActor
 {
 	GENERATED_UCLASS_BODY()
 

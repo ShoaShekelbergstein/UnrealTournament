@@ -375,6 +375,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	FText GetPrevTutorialName();
 
+	UFUNCTION(exec)
+	void ExportGameRulesets(FString Filename);
 
 protected:
 	FTimerHandle AuthKickHandle;
