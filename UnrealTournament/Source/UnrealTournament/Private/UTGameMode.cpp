@@ -3228,7 +3228,7 @@ float AUTGameMode::RatePlayerStart(APlayerStart* P, AController* Player)
 				}
 				Score += AdjustNearbyPlayerStartScore(Player, OtherController, OtherCharacter, StartLoc, P);
 			}
-			if (bHasRespawnChoices && bCheckAgainstPotentialStarts && OtherController->PlayerState && !OtherController->PlayerState->bOnlySpectator)
+			if (bHasRespawnChoices && (bCheckAgainstPotentialStarts || !OtherCharacter) && OtherController->PlayerState && !OtherController->PlayerState->bOnlySpectator)
 			{
 				// make sure no one else has this start as a pending choice
 				AUTPlayerState* OtherUTPS = Cast<AUTPlayerState>(OtherController->PlayerState);
