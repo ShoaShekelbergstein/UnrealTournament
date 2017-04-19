@@ -6164,10 +6164,10 @@ void UUTLocalPlayer::InitializeSocial()
  	}
 	
 #endif
-
-	if (GetWorld())
+		
+	if (GetGameInstance())
 	{
-		GetWorld()->GetTimerManager().SetTimer(SocialInitializationTimerHandle, this, &UUTLocalPlayer::SocialInitialized, 0.25f, true);
+		GetGameInstance()->GetTimerManager().SetTimer(SocialInitializationTimerHandle, this, &UUTLocalPlayer::SocialInitialized, 0.25f, true);
 	}
 }
 
