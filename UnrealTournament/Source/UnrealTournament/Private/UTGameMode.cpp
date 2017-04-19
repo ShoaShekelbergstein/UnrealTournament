@@ -5063,12 +5063,12 @@ void AUTGameMode::CullMapVotes()
 			{
 				if ( Sorted.Num() > 0 )
 				{
-					int32 RandIdx = FMath::RandRange(0, Sorted.Num()-1);
-					UTGameState->MapVoteList.Add(Sorted[RandIdx]);
-				}
-				else
-				{
-					break;
+					int32 RandIdx = FMath::RandRange(i, Sorted.Num()-1);
+					if (Sorted.IsValidIndex(RandIdx) && UTGameState->MapVoteList.Find(Sorted[RandIdx]) == INDEX_NONE)
+					{
+						UTGameState->MapVoteList.Add(Sorted[RandIdx]);
+						Sorted.RemoveAt(RandIdx);
+					}
 				}
 			}
 		}
@@ -5076,24 +5076,20 @@ void AUTGameMode::CullMapVotes()
 		{
 			for (int32 i=0; i < 3; i++)
 			{
-				if (Sorted.IsValidIndex(i))
+				if (Sorted.Num() > 0)
 				{
-					if (Sorted[i]->VoteCount > 0)
+					if (Sorted[0]->VoteCount > 0)
 					{
-						UTGameState->MapVoteList.Add(Sorted[i]);
+						UTGameState->MapVoteList.Add(Sorted[0]);
+						Sorted.RemoveAt(0);
 					}
 					else
 					{
-						// Just randomly pick one, but cap it at 10 attempts
-
-						for (int32 j=0; j < 10; j++)
+						int32 RandIdx = FMath::RandRange(i, Sorted.Num()-1);
+						if (Sorted.IsValidIndex(RandIdx) && UTGameState->MapVoteList.Find(Sorted[RandIdx]) == INDEX_NONE)
 						{
-							int32 RandIdx = FMath::RandRange(i, Sorted.Num()-1);
-							if (Sorted.IsValidIndex(RandIdx) && UTGameState->MapVoteList.Find(Sorted[RandIdx]) == INDEX_NONE)
-							{
-								UTGameState->MapVoteList.Add(Sorted[RandIdx]);
-								break;
-							}
+							UTGameState->MapVoteList.Add(Sorted[RandIdx]);
+							Sorted.RemoveAt(RandIdx);
 						}
 
 					}
