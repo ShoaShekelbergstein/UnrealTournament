@@ -495,7 +495,7 @@ public:
 	bool IsTempBanned(const FUniqueNetIdRepl& UniqueId);
 
 	// Registers a vote for temp banning a player.  If the player goes above the threashhold, they will be banned for the remainder of the match
-	void VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter);
+	bool VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter);
 
 	UPROPERTY(Config)
 	float KickThreshold;

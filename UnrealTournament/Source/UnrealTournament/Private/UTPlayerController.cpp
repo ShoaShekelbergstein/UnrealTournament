@@ -4391,7 +4391,21 @@ void AUTPlayerController::ServerRegisterBanVote_Implementation(AUTPlayerState* B
 	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
 	if (GameState && UTPlayerState && BadGuy && !UTPlayerState->bOnlySpectator)
 	{
-		GameState->VoteForTempBan(BadGuy, UTPlayerState);
+		if ( GameState->VoteForTempBan(BadGuy, UTPlayerState) )
+		{
+			if (FUTAnalytics::IsAvailable())
+			{
+				TArray<FAnalyticsEventAttribute> ParamArray;
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("TrollName"), BadGuy->PlayerName));
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("TrollID"), BadGuy->UniqueId.ToString()));
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("ReportName"), UTPlayerState->PlayerName));
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("ReportID"), UTPlayerState->UniqueId.ToString()));
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("DemoIKD"), GameState->ReplayID));
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("Abuse"), TEXT("KickVote")));
+				FUTAnalytics::SetClientInitialParameters(this, ParamArray, false);
+				FUTAnalytics::GetProvider().RecordEvent( TEXT("AbuseReport"), ParamArray );
+			}
+		}
 	}
 }
 

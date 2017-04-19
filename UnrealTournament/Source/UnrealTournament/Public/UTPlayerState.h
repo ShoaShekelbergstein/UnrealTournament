@@ -1099,7 +1099,7 @@ protected:
 	TArray<FTempBanInfo> BanVotes;
 
 public:
-	void LogBanRequest(AUTPlayerState* Voter);
+	bool LogBanRequest(AUTPlayerState* Voter);
 	int32 CountBanVotes();
 
 	UPROPERTY(Replicated)

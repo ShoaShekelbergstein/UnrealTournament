@@ -3371,12 +3371,12 @@ void AUTPlayerState::OnRepOverrideHat()
 	}
 }
 
-void AUTPlayerState::LogBanRequest(AUTPlayerState* Voter)
+bool AUTPlayerState::LogBanRequest(AUTPlayerState* Voter)
 {
 	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
 	if (UTGameState->bDisableVoteKick || (UTGameState->bOnlyTeamCanVoteKick && GetTeamNum() != Voter->GetTeamNum())) 
 	{
-		return;
+		return false;
 	}
 
 	float CurrentTime = GetWorld()->GetRealTimeSeconds();
@@ -3389,11 +3389,12 @@ void AUTPlayerState::LogBanRequest(AUTPlayerState* Voter)
 				// Update the ban
 				BanVotes[i].BanTime = CurrentTime;
 			}
-			return;
+			return false;
 		}
 	}
 
 	BanVotes.Add(FTempBanInfo(Voter->UniqueId.GetUniqueNetId(), CurrentTime));
+	return true;
 }
 
 int32 AUTPlayerState::CountBanVotes()

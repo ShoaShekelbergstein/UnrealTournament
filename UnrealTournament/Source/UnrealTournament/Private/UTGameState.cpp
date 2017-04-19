@@ -1520,8 +1520,9 @@ bool AUTGameState::IsTempBanned(const FUniqueNetIdRepl& UniqueId)
 	return false;
 }
 
-void AUTGameState::VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter)
+bool AUTGameState::VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter)
 {
+	bool bResult = false;
 	AUTGameMode* Game = GetWorld()->GetAuthGameMode<AUTGameMode>();
 
 	if (Game && Game->NumPlayers > 0)
@@ -1529,10 +1530,10 @@ void AUTGameState::VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter)
 		// Quick out.
 		if (bDisableVoteKick || (bOnlyTeamCanVoteKick && !OnSameTeam(BadGuy, Voter)))
 		{
-			return;
+			return false;
 		}
 		
-		BadGuy->LogBanRequest(Voter);
+		bResult = BadGuy->LogBanRequest(Voter);
 		Game->BroadcastLocalized(Voter, UUTGameMessage::StaticClass(), 13, Voter, BadGuy);
 
 		int32 NumPlayers = 0;
@@ -1565,6 +1566,8 @@ void AUTGameState::VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter)
 			}
 		}
 	}
+
+	return bResult;
 }
 
 void AUTGameState::GetAvailableGameData(TArray<UClass*>& GameModes, TArray<UClass*>& MutatorList)
