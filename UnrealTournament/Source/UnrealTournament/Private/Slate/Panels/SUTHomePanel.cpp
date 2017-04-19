@@ -868,129 +868,125 @@ TSharedRef<SWidget> SUTHomePanel::BuildRankedPlaylist()
 	UUTGameInstance* UTGameInstance = CastChecked<UUTGameInstance>(PlayerOwner->GetGameInstance());
 	if (UTGameInstance && UTGameInstance->GetPlaylistManager() && PlayerOwner->IsLoggedIn())
 	{
-		int32 NumPlaylists = UTGameInstance->GetPlaylistManager()->GetNumPlaylists();
-		if (NumPlaylists > 0)
-		{
-			TSharedPtr<SHorizontalBox> FinalBox;
-			TSharedPtr<SHorizontalBox> RankedBox;
+		TSharedPtr<SHorizontalBox> FinalBox;
+		SAssignNew(FinalBox, SHorizontalBox);
 
-			SAssignNew(FinalBox, SHorizontalBox);
+		FinalBox->AddSlot()
+		.AutoWidth()
+		.Padding(FMargin(2.0f, 0.0f))
+		[
+			SNew(SUTImage)
+			.Image(SUTStyle::Get().GetBrush("UT.HomePanel.NewFragCenter.Transparent"))
+			.WidthOverride(196).HeightOverride(196)
+		];
 
-			FinalBox->AddSlot()
-			.AutoWidth()
-			.Padding(FMargin(2.0f, 0.0f))
+		FinalBox->AddSlot().AutoWidth().VAlign(VAlign_Bottom)
+		[
+			SNew(SVerticalBox)
+			+SVerticalBox::Slot().AutoHeight()
 			[
-				SNew(SUTImage)
-				.Image(SUTStyle::Get().GetBrush("UT.HomePanel.NewFragCenter.Transparent"))
-				.WidthOverride(196).HeightOverride(196)
-			];
+				SNew(STextBlock)
+				.Text(FText::FromString(TEXT("League Matches")))
+				.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
 
-			FinalBox->AddSlot().AutoWidth().VAlign(VAlign_Bottom)
+			]
+			+SVerticalBox::Slot().AutoHeight().Padding(0.0f,5.0f,0.0f,0.0f)
 			[
-				SNew(SVerticalBox)
-				+SVerticalBox::Slot().AutoHeight()
-				[
-					SNew(STextBlock)
-					.Text(FText::FromString(TEXT("League Matches")))
-					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
-
-				]
-				+SVerticalBox::Slot().AutoHeight().Padding(0.0f,5.0f,0.0f,0.0f)
-				[
-					SAssignNew(RankedBox, SHorizontalBox)
-				]
-			];
+				SAssignNew(RankedBox, SHorizontalBox)
+				.Visibility(this, &SUTHomePanel::RankedBoxVisibile)
+			]
+		];
 			
-			int32 ButtonCount = 0;
-			for (int32 i = 0; i < NumPlaylists; i++)
+		int32 ButtonCount = 0;
+		int32 NumPlaylists = UTGameInstance->GetPlaylistManager()->GetNumPlaylists();
+
+		for (int32 i = 0; i < NumPlaylists; i++)
+		{
+			FString PlaylistName;
+			int32 MaxTeamCount, MaxTeamSize, MaxPartySize, PlaylistId;
+
+			if (UTGameInstance->GetPlaylistManager()->GetPlaylistId(i, PlaylistId) &&
+				UTGameInstance->GetPlaylistManager()->GetPlaylistName(PlaylistId, PlaylistName) &&
+				UTGameInstance->GetPlaylistManager()->GetMaxTeamInfoForPlaylist(PlaylistId, MaxTeamCount, MaxTeamSize, MaxPartySize))
 			{
-				FString PlaylistName;
-				int32 MaxTeamCount, MaxTeamSize, MaxPartySize, PlaylistId;
+				FString PlaylistPlayerCount = FString::Printf(TEXT("%dv%d"), MaxTeamSize, MaxTeamSize);
+				FName SlateBadgeName = UTGameInstance->GetPlaylistManager()->GetPlaylistSlateBadge(PlaylistId);
+				if (SlateBadgeName == NAME_None) SlateBadgeName = FName(TEXT("UT.HomePanel.DMBadge"));
 
-				if (UTGameInstance->GetPlaylistManager()->GetPlaylistId(i, PlaylistId) &&
-					PlayerOwner->IsRankedMatchmakingEnabled(PlaylistId) &&
-					UTGameInstance->GetPlaylistManager()->GetPlaylistName(PlaylistId, PlaylistName) &&
-					UTGameInstance->GetPlaylistManager()->GetMaxTeamInfoForPlaylist(PlaylistId, MaxTeamCount, MaxTeamSize, MaxPartySize))
-				{
-					FString PlaylistPlayerCount = FString::Printf(TEXT("%dv%d"), MaxTeamSize, MaxTeamSize);
-					FName SlateBadgeName = UTGameInstance->GetPlaylistManager()->GetPlaylistSlateBadge(PlaylistId);
-					if (SlateBadgeName == NAME_None) SlateBadgeName = FName(TEXT("UT.HomePanel.DMBadge"));
+				ButtonCount++;
+				RankedBox->AddSlot()
+				.AutoWidth()
 
-					ButtonCount++;
-					RankedBox->AddSlot()
-					.AutoWidth()
-
-					.Padding(FMargin(2.0f, 0.0f))
+				.Padding(FMargin(2.0f, 0.0f))
+				[
+					SNew(SUTButton)
+					.ButtonStyle(SUTStyle::Get(), "UT.HomePanel.Button")
+					.bSpringButton(true)
+					.OnClicked(FOnClicked::CreateSP(this, &SUTHomePanel::OnStartRankedPlaylist, PlaylistId))
+					.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTHomePanel","Ranked","Play a ranked match and earn XP.")))
+					.Visibility(this, &SUTHomePanel::RankedButtonVis, PlaylistId)
 					[
-						SNew(SUTButton)
-						.ButtonStyle(SUTStyle::Get(), "UT.HomePanel.Button")
-						.bSpringButton(true)
-						.OnClicked(FOnClicked::CreateSP(this, &SUTHomePanel::OnStartRankedPlaylist, PlaylistId))
-						.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTHomePanel","Ranked","Play a ranked match and earn XP.")))
-						[
 
-							SNew(SOverlay)
-							+ SOverlay::Slot()
+						SNew(SOverlay)
+						+ SOverlay::Slot()
+						[
+							SNew(SBox)
+							.WidthOverride(128)
+							.HeightOverride(128)
 							[
-								SNew(SBox)
-								.WidthOverride(128)
-								.HeightOverride(128)
-								[
-									SNew(SImage)
-									.Image(SUTStyle::Get().GetBrush(SlateBadgeName))
-								]
+								SNew(SImage)
+								.Image(SUTStyle::Get().GetBrush(SlateBadgeName))
 							]
-							+ SOverlay::Slot()
+						]
+						+ SOverlay::Slot()
+						[
+							SNew(SBox)
+							.WidthOverride(128)
+							.HeightOverride(128)
 							[
-								SNew(SBox)
-								.WidthOverride(128)
-								.HeightOverride(128)
+								SNew(SVerticalBox)
+								+SVerticalBox::Slot()
+								.HAlign(HAlign_Center)
+								.VAlign(VAlign_Top)
+								.FillHeight(1.0f)
 								[
-									SNew(SVerticalBox)
-									+SVerticalBox::Slot()
-									.HAlign(HAlign_Center)
-									.VAlign(VAlign_Top)
-									.FillHeight(1.0f)
+									SNew(STextBlock)
+									.Text(FText::FromString(PlaylistName))
+									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small.Bold")
+								]
+								+SVerticalBox::Slot()
+								.HAlign(HAlign_Fill)
+								.VAlign(VAlign_Center)
+								.AutoHeight()
+								[
+									SNew(SBorder)
+									.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Shaded"))
 									[
-										SNew(STextBlock)
-										.Text(FText::FromString(PlaylistName))
-										.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small.Bold")
-									]
-									+SVerticalBox::Slot()
-									.HAlign(HAlign_Fill)
-									.VAlign(VAlign_Center)
-									.AutoHeight()
-									[
-										SNew(SBorder)
-										.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Shaded"))
+										SNew(SVerticalBox)
+										+SVerticalBox::Slot()
+										.AutoHeight()
+										.HAlign(HAlign_Center)
+										.VAlign(VAlign_Center)
+										.Padding(0.0f, 0.0f, 0.0f, 2.0f)
 										[
-											SNew(SVerticalBox)
-											+SVerticalBox::Slot()
-											.AutoHeight()
-											.HAlign(HAlign_Center)
-											.VAlign(VAlign_Center)
-											.Padding(0.0f, 0.0f, 0.0f, 2.0f)
-											[
-												SNew(STextBlock)
-												.Text(FText::FromString(PlaylistPlayerCount))
-												.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
-											]
+											SNew(STextBlock)
+											.Text(FText::FromString(PlaylistPlayerCount))
+											.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
 										]
 									]
 								]
 							]
 						]
-					];					
-				}
+					]
+				];					
 			}
-
-			if (ButtonCount > 0)
-			{
-				return FinalBox.ToSharedRef();
-			}
-
-			FinalBox->ClearChildren();
 		}
+
+		if (ButtonCount > 0)
+		{
+			return FinalBox.ToSharedRef();
+		}
+		FinalBox->ClearChildren();
 	}
 	return SNullWidget::NullWidget;
 }
@@ -1039,5 +1035,24 @@ FReply SUTHomePanel::OnSpectateLanClicked(TSharedPtr<FServerData> Server)
 
 }
 
+EVisibility SUTHomePanel::RankedBoxVisibile() const
+{
+	UUTGameInstance* UTGameInstance = CastChecked<UUTGameInstance>(PlayerOwner->GetGameInstance());
+	if (UTGameInstance && UTGameInstance->GetPlaylistManager() && PlayerOwner->IsLoggedIn())
+	{
+		int32 NumPlaylists = UTGameInstance->GetPlaylistManager()->GetNumPlaylists();
+		if (NumPlaylists > 0)
+		{
+			return EVisibility::Visible;
+		}
+	}
+
+	return EVisibility::Collapsed;
+}
+
+EVisibility SUTHomePanel::RankedButtonVis(int32 PlaylistId) const
+{
+	return ( PlayerOwner->IsRankedMatchmakingEnabled(PlaylistId) ) ? EVisibility::Visible : EVisibility::Collapsed;
+}
 
 #endif
