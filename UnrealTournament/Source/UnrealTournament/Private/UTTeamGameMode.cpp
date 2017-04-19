@@ -852,7 +852,7 @@ bool AUTTeamGameMode::CheckScore_Implementation(AUTPlayerState* Scorer)
 
 	if (MercyScore > 0)
 	{
-		int32 Spread = Scorer->Team->Score;
+		int32 Spread = MercyScore;
 		for (AUTTeamInfo* OtherTeam : Teams)
 		{
 			if (OtherTeam != Scorer->Team)
