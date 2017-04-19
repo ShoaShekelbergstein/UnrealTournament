@@ -1230,16 +1230,20 @@ TSharedPtr<FServerData> SUTServerBrowserPanel::CreateNewServerData(FOnlineSessio
 void SUTServerBrowserPanel::FoundServer(FOnlineSessionSearchResult& Result)
 {
 	TSharedPtr<FServerData> NewServer = CreateNewServerData(Result);
-	if (PingList.Num() == 0 || NewServer->GameModePath != LOBBY_GAME_PATH )
-	{
-		PingList.Add( NewServer );
-	}
-	else
-	{
-		PingList.Insert(NewServer,0);
-	}
 
-	TotalPlayersPlaying += NewServer->NumPlayers + NewServer->NumSpectators;
+	if (NewServer->Version == FString::FromInt(FNetworkVersion::GetLocalNetworkVersion()))
+	{
+		if (PingList.Num() == 0 || NewServer->GameModePath != LOBBY_GAME_PATH )
+		{
+			PingList.Add( NewServer );
+		}
+		else
+		{
+			PingList.Insert(NewServer,0);
+		}
+
+		TotalPlayersPlaying += NewServer->NumPlayers + NewServer->NumSpectators;
+	}
 
 }
 
