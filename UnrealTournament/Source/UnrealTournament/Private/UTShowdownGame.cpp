@@ -1091,7 +1091,7 @@ void AUTShowdownGame::CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpa
 				.WidthOverride(350)
 				[
 					SNew(STextBlock)
-					.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+					.Text(NSLOCTEXT("UTGameMode", "GoalScore", "Goal Score"))
 					.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Tween")
 				]
 			]
