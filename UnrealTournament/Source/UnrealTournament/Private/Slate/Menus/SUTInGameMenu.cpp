@@ -39,6 +39,36 @@ void SUTInGameMenu::BuildLeftMenuBar()
 {
 	if (LeftMenuBar.IsValid())
 	{
+		AUTGameState* GS = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
+		AUTPlayerState* PS = PlayerOwner->PlayerController ? Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState) : NULL;
+		bool bIsSpectator = PS && PS->bOnlySpectator;
+
+		if (GS && GS->GetMatchState() != MatchState::WaitingToStart && GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches)
+		{
+		
+			LeftMenuBar->AddSlot()
+			.Padding(5.0f,0.0f,0.0f,0.0f)
+			.AutoWidth()
+			[
+				SAssignNew(ChangeTeamButton, SUTButton)
+				.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
+				.OnClicked(this, &SUTInGameMenu::OnTeamChangeClick)
+				.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
+				[
+					SNew(SHorizontalBox)
+					+SHorizontalBox::Slot().AutoWidth()
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text(NSLOCTEXT("SUTMenuBase","MenuBar_ChangeTeam","CHANGE TEAM"))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+						.ColorAndOpacity(this, &SUTInGameMenu::GetChangeTeamLabelColor)
+					]
+				]
+			];
+		}
+
+
 		LeftMenuBar->AddSlot()
 		.Padding(5.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
@@ -466,5 +496,21 @@ void SUTInGameMenu::OnMenuClosed()
 
 	SUTMenuBase::OnMenuClosed();
 }
+
+FReply SUTInGameMenu::OnTeamChangeClick()
+{
+	AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+	if (PC)
+	{
+		PC->ServerSwitchTeam();
+	}
+	return FReply::Handled();
+}
+
+FSlateColor SUTInGameMenu::GetChangeTeamLabelColor() const
+{
+	return ChangeTeamButton.IsValid() ? ChangeTeamButton->GetLabelColor() : FSlateColor(FLinearColor::White);
+}
+
 
 #endif

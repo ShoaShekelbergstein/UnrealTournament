@@ -43,7 +43,9 @@ protected:
 
 	TSharedPtr<SUTMessageBoxDialog> MessageDialog;
 
-
+	virtual FReply OnTeamChangeClick();
+	FSlateColor GetChangeTeamLabelColor() const;
+	TSharedPtr<SUTButton> ChangeTeamButton;
 public:
 	virtual bool SkipWorldRender();
 

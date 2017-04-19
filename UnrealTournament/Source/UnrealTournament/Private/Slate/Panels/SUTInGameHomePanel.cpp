@@ -94,31 +94,31 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 		];
 	}
 
-	if (GS && GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches)
-	{
-		MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
-		[
-			SAssignNew(ChangeTeamButton, SUTButton)
-			.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft")
-			.OnClicked(this, &SUTInGameHomePanel::OnTeamChangeClick)
-			.Visibility(this, &SUTInGameHomePanel::GetChangeTeamVisibility)
-			.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
-			[
-				SNew(SHorizontalBox)
-				+SHorizontalBox::Slot().AutoWidth()
-				.VAlign(VAlign_Center)
-				[
-					SNew(STextBlock)
-					.Text(NSLOCTEXT("SUTMenuBase","MenuBar_ChangeTeam","CHANGE TEAM"))
-					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-					.ColorAndOpacity(this, &SUTInGameHomePanel::GetChangeTeamLabelColor)
-				]
-			]
-		];
-	}			
-
 	if (GS && (GS->GetMatchState() == MatchState::WaitingToStart))
 	{
+		if (GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches)
+		{
+			MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
+			[
+				SAssignNew(ChangeTeamButton, SUTButton)
+				.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft")
+				.OnClicked(this, &SUTInGameHomePanel::OnTeamChangeClick)
+				.Visibility(this, &SUTInGameHomePanel::GetChangeTeamVisibility)
+				.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
+				[
+					SNew(SHorizontalBox)
+					+SHorizontalBox::Slot().AutoWidth()
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text(NSLOCTEXT("SUTMenuBase","MenuBar_ChangeTeam","CHANGE TEAM"))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+						.ColorAndOpacity(this, &SUTInGameHomePanel::GetChangeTeamLabelColor)
+					]
+				]
+			];
+		}			
+
 		if (GS->GetNetMode() == NM_Standalone)
 		{
 			MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
