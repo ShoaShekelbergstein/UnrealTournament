@@ -2543,7 +2543,7 @@ bool AUTPlayerController::ServerCasterReady_Validate()
 void AUTPlayerController::ServerCasterReady_Implementation()
 {
 	AUTGameMode* UTGM = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (UTGM)
+	if (UTGM && UTGM->UTGameState && (!UTGM->bRequireReady || (UTGM->UTGameState->PlayersNeeded == 0)))
 	{
 		UTGM->bCasterReady = true;
 	}

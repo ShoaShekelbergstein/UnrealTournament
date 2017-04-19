@@ -124,6 +124,7 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 	BuildText = NSLOCTEXT("UTHUD", "info", "PRE-ALPHA Build 0.1.10");
 	WarmupText = NSLOCTEXT("UTHUD", "warmup", "You are in WARM UP");
 	MatchHostText = NSLOCTEXT("UTHUD", "hostwarmup", "Press [ENTER] to start match.");
+	NeedFullText = NSLOCTEXT("UTHUD", "NeedFullText", "Waiting for match to fill.");
 	HaveHostText = NSLOCTEXT("UTHUD", "havehost", "Waiting for Host to start match.");
 	bShowVoiceDebug = false;
 	bDrawDamageNumbers = true;
@@ -972,6 +973,10 @@ void AUTHUD::DrawHUD()
 				if (GS->bHaveMatchHost)
 				{
 					FText WarmupMessage = ViewedPS->bIsMatchHost ? MatchHostText : HaveHostText;
+					if (GS->bRequireFull && (GS->PlayersNeeded > 0))
+					{
+						WarmupMessage = NeedFullText;
+					}
 					Canvas->TextSize(MediumFont, WarmupMessage.ToString(), XL, YL, 1.f, 1.f);
 					Canvas->DrawText(MediumFont, WarmupMessage, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
 				}

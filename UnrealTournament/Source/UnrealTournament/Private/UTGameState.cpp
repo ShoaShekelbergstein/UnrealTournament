@@ -337,6 +337,7 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 
 	DOREPLIFETIME(AUTGameState, bForcedBalance);
 	DOREPLIFETIME(AUTGameState, bHaveMatchHost);
+	DOREPLIFETIME(AUTGameState, bRequireFull);
 
 	DOREPLIFETIME_CONDITION(AUTGameState, BoostRechargeTime, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, BoostRechargeMaxCharges, COND_InitialOnly);

@@ -593,6 +593,7 @@ void AUTGameMode::InitGameState()
 		UTGameState->bWeaponStay = bWeaponStayActive;
 		UTGameState->bIsInstanceServer = IsGameInstanceServer();
 		UTGameState->bDebugHitScanReplication = bDebugHitScanReplication;
+		UTGameState->bRequireFull = bRequireFull;
 		if (bOfflineChallenge || bUseMatchmakingSession || bBasicTrainingGame || bIsVSAI)
 		{
 			UTGameState->bAllowTeamSwitches = false;
@@ -3379,6 +3380,8 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 			}
 		}
 
+		int32 NeededPlayers = GameSession ? GameSession->MaxPlayers : DefaultMaxPlayers;
+		UTGameState->PlayersNeeded = FMath::Max(0, NeededPlayers - NumPlayers);
 		UTGameState->bHaveMatchHost = false;
 		bool bHostIsReady = false;
 		if (!HostIdString.IsEmpty())
@@ -3389,7 +3392,7 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 				if (PS != NULL && !PS->bIsInactive && HostIdString.Equals(PS->UniqueId.ToString(), ESearchCase::IgnoreCase))
 				{
 					UTGameState->bHaveMatchHost = true;
-					bHostIsReady = bCasterReady;
+					bHostIsReady = bCasterReady && (!bRequireFull || (UTGameState->PlayersNeeded == 0));
 					PS->bIsMatchHost = true;
 				}
 				else if (PS)
@@ -3401,8 +3404,6 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 		StartPlayTime = (NumPlayers > 0) ? FMath::Min(StartPlayTime, GetWorld()->GetTimeSeconds()) : 10000000.f;
 		float ElapsedWaitTime = FMath::Max(0.f, GetWorld()->GetTimeSeconds() - StartPlayTime);
 
-		int32 NeededPlayers = GameSession ? GameSession->MaxPlayers : DefaultMaxPlayers;
-		UTGameState->PlayersNeeded = FMath::Max(0, NeededPlayers - NumPlayers);
 		if (!bRequireReady && !bRequireFull && !bRankedSession && (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers))
 		{
 			int32 MinPlayersToStart = 1;

@@ -106,6 +106,10 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
 		uint32 bHaveMatchHost : 1;
 
+	/** If true, match must be full to start. */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
+		uint32 bRequireFull : 1;
+
 	/** Replicated only for vs AI matches, 0 means not vs AI. */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
 		uint8 AIDifficulty;
