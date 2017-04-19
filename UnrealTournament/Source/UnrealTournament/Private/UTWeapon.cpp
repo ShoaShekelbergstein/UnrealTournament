@@ -2999,7 +2999,10 @@ void AUTWeapon::SetSkin(UMaterialInterface* NewSkin)
 		MeshMIDs.Empty();
 		for (int i = 0; i < GetMesh()->GetNumMaterials(); i++)
 		{
-			MeshMIDs.Add(GetMesh()->CreateAndSetMaterialInstanceDynamic(i));
+			if (GetMesh()->GetMaterial(i))
+			{
+				MeshMIDs.Add(GetMesh()->CreateAndSetMaterialInstanceDynamic(i));
+			}
 		}
 	}
 }
