@@ -197,6 +197,10 @@ void UUTFlagRunScoreboard::AnnounceRoundScore(AUTTeamInfo* InScoringTeam, APlaye
 		{
 			PendingTiebreak = FMath::Min(int32(RoundBonus), 59);
 		}
+		else if (Reason == 2)
+		{
+			PendingScore = 0;
+		}
 		if (ScoringTeam->TeamIndex == 1)
 		{
 			PendingTiebreak *= -1;
@@ -298,6 +302,10 @@ void UUTFlagRunScoreboard::GetScoringStars(int32& NumStars, FLinearColor& StarCo
 				NumStars = 2;
 				StarColor = SILVERCOLOR;
 			}
+		}
+		else if (Reason == 2)
+		{
+			NumStars = 0;
 		}
 	}
 }
