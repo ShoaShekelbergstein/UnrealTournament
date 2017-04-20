@@ -1421,6 +1421,9 @@ public:
 
 	FString GetBuildNotesURL();
 
+	UFUNCTION()
+	void SetPartyType(EPartyType InPartyType, bool bLeaderFriendsOnly, bool bLeaderInvitesOnly);
+
 protected:
 	bool bLaunchTutorialOnLogin;
 

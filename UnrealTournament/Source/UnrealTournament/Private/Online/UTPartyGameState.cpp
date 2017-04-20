@@ -326,5 +326,26 @@ bool UUTPartyGameState::IsInJoinableGameState() const
 		return false;
 	}
 
+	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
+	if (GameState && GameState->bRestrictPartyJoin)
+	{
+		return false;
+	}
+
 	return Super::IsInJoinableGameState();
+}
+
+EApprovalAction UUTPartyGameState::ProcessJoinRequest(const FUniqueNetId& RecipientId, const FUniqueNetId& SenderId, EJoinPartyDenialReason& DenialReason)
+{
+	EApprovalAction Result = Super::ProcessJoinRequest(RecipientId, SenderId, DenialReason);
+	if ( Result == EApprovalAction::Approve)
+	{
+		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
+		if (UTGameState->bRestrictPartyJoin)
+		{
+			DenialReason = EJoinPartyDenialReason::Busy;
+			return EApprovalAction::Deny;
+		}
+	}
+	return Result;
 }

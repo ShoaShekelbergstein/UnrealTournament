@@ -200,4 +200,6 @@ public:
 		return PartyState.PlaylistID;
 	}
 
+	virtual EApprovalAction ProcessJoinRequest(const FUniqueNetId& RecipientId, const FUniqueNetId& SenderId, EJoinPartyDenialReason& DenialReason) override;
+
 };

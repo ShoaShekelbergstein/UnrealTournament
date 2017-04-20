@@ -3254,8 +3254,7 @@ void UUTLocalPlayer::UpdatePresence(FString NewPresenceString, bool bAllowInvite
 						if (PartyGameState)
 						{
 							UE_LOG(UT,Log,TEXT("Calling UpdateAcceptingMembers %i"),bAllowJoinViaPresence);
-							PartyGameState->UpdateAcceptingMembers();
-
+							PartyGameState->SetAcceptingMembers(bAllowJoinViaPresence, EJoinPartyDenialReason::Busy);
 						}
 					}
 				}
@@ -7139,3 +7138,19 @@ void UUTLocalPlayer::StopKillCam()
 	}
 }
 
+void UUTLocalPlayer::SetPartyType(EPartyType InPartyType, bool bLeaderFriendsOnly, bool bLeaderInvitesOnly)
+{
+	UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(GetGameInstance());
+	if (UTGameInstance)
+	{
+		UUTParty* Party = UTGameInstance->GetParties();
+		if ( Party && IsPartyLeader() )
+		{
+			UUTPartyGameState* PartyGameState = Party->GetUTPersistentParty();
+			if (PartyGameState)
+			{
+				PartyGameState->SetPartyType(InPartyType, bLeaderFriendsOnly, bLeaderInvitesOnly);		
+			}
+		}
+	}
+}
