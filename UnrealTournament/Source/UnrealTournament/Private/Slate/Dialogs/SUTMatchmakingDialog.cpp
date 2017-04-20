@@ -89,7 +89,7 @@ void SUTMatchmakingDialog::Construct(const FArguments& InArgs)
 
 			// Estimated Time
 			+ SVerticalBox::Slot()
-			.Padding(0.0f, 5.0f, 0.0f, 5.0f)
+			.Padding(0.0f, 10.0f, 0.0f, 5.0f)
 			.AutoHeight()
 			.VAlign(VAlign_Center)
 			.HAlign(HAlign_Center)
