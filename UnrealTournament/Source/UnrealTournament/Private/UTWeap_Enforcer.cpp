@@ -193,7 +193,7 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 
 	if (UTOwner != NULL)
 	{
-		if (!BurstFireMode)
+		if (!BurstFireMode || (BurstFireMode->CurrentShot == 0))
 		{
 			Super::PlayFiringEffects();
 		}
@@ -201,11 +201,7 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 		{
 			if (!bDualWeaponMode)
 			{
-				if (BurstFireMode->CurrentShot == 0)
-				{
-					Super::PlayFiringEffects();
-				}
-				else if (ShouldPlay1PVisuals())
+				if (ShouldPlay1PVisuals())
 				{
 					UTOwner->TargetEyeOffset.X = FiringViewKickback;
 					AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
@@ -222,20 +218,6 @@ void AUTWeap_Enforcer::PlayFiringEffects()
 							MuzzleFlash[CurrentFireMode]->ActivateSystem();
 						}
 					}
-				}
-			}
-			else
-			{
-				//Going to let AUTDualWeapon handle the fire, but it will try and alternate. Since we are bursting
-				//we want to override bFireLeftSide to keep firing on the same weapon until the burst ends.
-				const bool origFireLeftSide = bFireLeftSide;
-				Super::PlayFiringEffects();
-				bFireLeftSide = origFireLeftSide;
-
-				//Alternate every volley in burst mode. Check to see if we are at the end of a burst, and if so switch weapon sides
-				if (((BurstFireMode->CurrentShot + 1) / BurstFireMode->BurstSize) > 0)
-				{
-					bFireLeftSide = !bFireLeftSide;
 				}
 			}
 		}
