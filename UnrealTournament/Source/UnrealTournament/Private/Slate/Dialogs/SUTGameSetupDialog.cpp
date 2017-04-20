@@ -652,7 +652,7 @@ FReply SUTGameSetupDialog::OnMapClick(int32 MapIndex)
 
 		PlayerOwner->ShowMessage(
 			NSLOCTEXT("SUTGameSetupDialog", "RightsTitle", "Epic Store"), 
-			NSLOCTEXT("SUTGameSetupDialog", "RightText", "The map you have selected is available in the Epic Store.  Do you wish to load the store to accquire the map?"), 
+			NSLOCTEXT("SUTGameSetupDialog", "RightText", "The map you have selected is available in the Epic Store.  Do you wish to load the store to acquire the map?"), 
 			UTDIALOG_BUTTON_YES + UTDIALOG_BUTTON_NO, 
 			FDialogResultDelegate::CreateRaw(this, &SUTGameSetupDialog::OnStoreDialogResult));								
 	}
