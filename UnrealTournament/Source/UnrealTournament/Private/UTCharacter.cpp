@@ -1882,10 +1882,9 @@ void AUTCharacter::StopRagdoll()
 	FVector AdjustedLoc = GetActorLocation() + FVector(0.0f, 0.0f, GetCharacterMovement()->CrouchedHalfHeight);
 	GetWorld()->FindTeleportSpot(this, AdjustedLoc, GetActorRotation());
 	GetCapsuleComponent()->SetWorldLocation(AdjustedLoc);
-	
+
 	if (UTCharacterMovement)
 	{
-		UTCharacterMovement->UpdatedComponent->UpdatePhysicsVolume(true);
 		UTCharacterMovement->NeedsClientAdjustment();
 	}
 
@@ -1939,6 +1938,10 @@ void AUTCharacter::StopRagdoll()
 	RagdollBlendOutTimeLeft = RagdollBlendOutTime;
 	bInRagdollRecovery = true;
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	if (UTCharacterMovement)
+	{
+		UTCharacterMovement->UpdatedComponent->UpdatePhysicsVolume(true);
+	}
 }
 
 void AUTCharacter::SetRagdollGravityScale(float NewScale)
