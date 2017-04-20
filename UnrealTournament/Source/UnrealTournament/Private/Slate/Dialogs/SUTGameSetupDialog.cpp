@@ -979,7 +979,7 @@ void SUTGameSetupDialog::AddButtonsToLeftOfButtonBar(uint32& ButtonCount)
 		SAssignNew(cbPrivateMatch, SCheckBox)
 		.IsChecked(ECheckBoxState::Unchecked)
 		.Style(SUTStyle::Get(), "UT.CheckBox")
-		.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","PrivateTT","If checked only friends that you personally invite in to this match will be able to join it.")))
+		.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","PrivateTT","If checked, only friends that you personally invite in to this match will be able to join it.")))
 		.Content()
 		[
 			SNew(STextBlock)
