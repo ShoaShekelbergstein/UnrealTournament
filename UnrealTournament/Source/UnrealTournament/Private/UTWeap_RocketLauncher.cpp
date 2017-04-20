@@ -111,14 +111,6 @@ void AUTWeap_RocketLauncher::BeginLoadRocket()
 			GetUTOwner()->FirstPersonMesh->GetAnimInstance()->Montage_Play(PickedHandHanim, PickedHandHanim->SequenceLength / GetLoadTime(NumLoadedBarrels));
 		}
 	}
-
-	//Replicate the loading sound to other players 
-	//Local players will use the sounds synced to the animation
-	AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
-	if (PC != NULL && !PC->IsLocalPlayerController() && (NumLoadedRockets == NumLoadedBarrels) && LoadingSounds.IsValidIndex(NumLoadedRockets))
-	{
-		UUTGameplayStatics::UTPlaySound(GetWorld(), LoadingSounds[NumLoadedRockets], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, NULL, NULL, true, SAT_WeaponFoley);
-	}
 }
 
 void AUTWeap_RocketLauncher::EndLoadRocket()
@@ -145,6 +137,13 @@ void AUTWeap_RocketLauncher::EndLoadRocket()
 	LastLoadTime = GetWorld()->TimeSeconds;
 
 	UUTGameplayStatics::UTPlaySound(GetWorld(), RocketLoadedSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, NULL, NULL, true, SAT_WeaponFoley);
+	//Replicate the loading sound to other players 
+	//Local players will use the sounds synced to the animation
+	AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
+	if (PC != NULL && !PC->IsLocalPlayerController() && (NumLoadedRockets == NumLoadedBarrels) && LoadingSounds.IsValidIndex(NumLoadedRockets))
+	{
+		UUTGameplayStatics::UTPlaySound(GetWorld(), LoadingSounds[NumLoadedRockets], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, NULL, NULL, true, SAT_WeaponFoley);
+	}
 
 	// bot maybe shoots rockets from here
 	AUTBot* B = Cast<AUTBot>(UTOwner->Controller);
