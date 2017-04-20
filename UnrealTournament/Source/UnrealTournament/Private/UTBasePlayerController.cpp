@@ -198,7 +198,7 @@ void AUTBasePlayerController::TeamTalk()
 	}
 }
 
-bool AUTBasePlayerController::AllowTextMessage(const FString& Msg)
+bool AUTBasePlayerController::AllowTextMessage(FString& Msg, bool bIsTeamMessage)
 {
 	const float TIME_PER_MSG = 2.0f;
 	const float MAX_OVERFLOW = 4.0f;
@@ -206,6 +206,18 @@ bool AUTBasePlayerController::AllowTextMessage(const FString& Msg)
 	if (GetNetMode() == NM_Standalone || (GetNetMode() == NM_ListenServer && Role == ROLE_Authority))
 	{
 		return true;
+	}
+
+	if (Role == ROLE_Authority)
+	{
+		// Give the game mode a chance to adjust/deny the message.
+
+		AUTBaseGameMode* BaseGameMode = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
+		if ( BaseGameMode && !BaseGameMode->AllowTextMessage(Msg, bIsTeamMessage, this) )
+		{
+			return false;
+		}
+	
 	}
 
 	ChatOverflowTime = FMath::Max(ChatOverflowTime, GetWorld()->RealTimeSeconds);
@@ -234,7 +246,7 @@ void AUTBasePlayerController::Say(FString Message)
 {
 	// clamp message length; aside from troll prevention this is needed for networking reasons
 	Message = Message.Left(MAX_CHAT_TEXT_SIZE);
-	if (AllowTextMessage(Message))
+	if (AllowTextMessage(Message, false))
 	{
 		ServerSay(Message, false);
 	}
@@ -249,7 +261,7 @@ void AUTBasePlayerController::TeamSay(FString Message)
 {
 	// clamp message length; aside from troll prevention this is needed for networking reasons
 	Message = Message.Left(MAX_CHAT_TEXT_SIZE);
-	if (AllowTextMessage(Message))
+	if (AllowTextMessage(Message, true))
 	{
 		ServerSay(Message, true);
 	}
@@ -262,9 +274,10 @@ void AUTBasePlayerController::TeamSay(FString Message)
 
 bool AUTBasePlayerController::ServerSay_Validate(const FString& Message, bool bTeamMessage) { return true; }
 
-void AUTBasePlayerController::ServerSay_Implementation(const FString& Message, bool bTeamMessage)
+void AUTBasePlayerController::ServerSay_Implementation(const FString& inMessage, bool bTeamMessage)
 {
-	if (AllowTextMessage(Message) && PlayerState != nullptr)
+	FString Message = inMessage;
+	if (AllowTextMessage(Message, bTeamMessage) && PlayerState != nullptr)
 	{
 		// Look to see if this message is a direct message to a given player.
 
@@ -1289,7 +1302,7 @@ void AUTBasePlayerController::LobbySay(FString Message)
 {
 	// clamp message length; aside from troll prevention this is needed for networking reasons
 	Message = Message.Left(MAX_CHAT_TEXT_SIZE);
-	if (AllowTextMessage(Message))
+	if (AllowTextMessage(Message, false))
 	{
 		ServerLobbySay(Message);
 	}
@@ -1301,10 +1314,11 @@ void AUTBasePlayerController::LobbySay(FString Message)
 }
 
 bool AUTBasePlayerController::ServerLobbySay_Validate(const FString& Message) { return true; }
-void AUTBasePlayerController::ServerLobbySay_Implementation(const FString& Message)
+void AUTBasePlayerController::ServerLobbySay_Implementation(const FString& inMessage)
 {
 	AUTGameMode * GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (GameMode && GameMode->IsGameInstanceServer()  && AllowTextMessage(Message) && PlayerState != nullptr)
+	FString Message = inMessage;
+	if (GameMode && GameMode->IsGameInstanceServer()  && AllowTextMessage(Message, false) && PlayerState != nullptr)
 	{
 		GameMode->SendLobbyMessage(Message, Cast<AUTPlayerState>(PlayerState));
 	}

@@ -990,5 +990,8 @@ public:
 	// If this is a single player game, or an instance server, this will hold the unique tag of the ruleset being used if relevant
 	UPROPERTY(BlueprintReadOnly,Category = Game)
 	FString ActiveRuleTag;
+
+	virtual bool AllowTextMessage_Implementation(FString& Msg, bool bIsTeamMessage, AUTBasePlayerController* Sender);
+
 };
 

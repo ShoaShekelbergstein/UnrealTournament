@@ -154,6 +154,9 @@ class UNREALTOURNAMENT_API AUTMutator : public AInfo
 	UFUNCTION(BlueprintNativeEvent)
 	void GetGameURLOptions(UPARAM(ref) TArray<FString>& OptionsList) const;
 
+	UFUNCTION(BlueprintNativeEvent, Category = Chat)
+	bool AllowTextMessage(FString& Msg, bool bIsTeamMessage, AUTBasePlayerController* Sender);
+
 protected:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category=Parse)
 	FString ParseOption( const FString& Options, const FString& InKey );

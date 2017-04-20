@@ -5643,3 +5643,13 @@ void AUTGameMode::HandleDefaultLineupSpawns(LineUpTypes LineUpType, TArray<AUTCh
 	}
 }
 
+bool AUTGameMode::AllowTextMessage_Implementation(FString& Msg, bool bIsTeamMessage, AUTBasePlayerController* Sender)
+{
+	if (BaseMutator && !BaseMutator->AllowTextMessage(Msg, bIsTeamMessage, Sender))
+	{
+		return false;
+	}
+
+	return Super::AllowTextMessage_Implementation(Msg, bIsTeamMessage, Sender);
+}
+

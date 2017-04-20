@@ -254,7 +254,7 @@ public:
 	virtual void HandleNetworkFailureMessage(enum ENetworkFailure::Type FailureType, const FString& ErrorString);
 
 	/**Check to see if this PC can chat. Called on Client and server independantly*/
-	bool AllowTextMessage(const FString& Msg);
+	bool AllowTextMessage(FString& Msg, bool bIsTeamMessage);
 
 	/**The accumulation of time added per message. Once overflowed the player must wait for this to return to 0*/
 	float ChatOverflowTime;

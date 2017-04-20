@@ -281,4 +281,9 @@ public:
 	bool bIsLANGame;
 
 	void ForceClearUnpauseDelegates(AActor* PauseActor);
+
+public:
+	UFUNCTION(BlueprintNativeEvent, Category = Chat)
+	bool AllowTextMessage(FString& Msg, bool bIsTeamMessage, AUTBasePlayerController* Sender);
+
 };

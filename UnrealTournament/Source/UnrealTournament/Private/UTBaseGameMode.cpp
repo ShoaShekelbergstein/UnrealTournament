@@ -848,3 +848,7 @@ void AUTBaseGameMode::ForceClearUnpauseDelegates(AActor* PauseActor)
 	}
 }
 
+bool AUTBaseGameMode::AllowTextMessage_Implementation(FString& Msg, bool bIsTeamMessage, AUTBasePlayerController* Sender)
+{
+	return true;
+}
