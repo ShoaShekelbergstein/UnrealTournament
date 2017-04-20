@@ -238,6 +238,10 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 				RenderObj_Texture(DetectedIcon);
 			}
 		}
+		if ((bPlayerCanRally || bShowTimer) && GameState && GameState->CurrentRallyPoint && (GameState->CurrentRallyPoint->LastRallyHot - GetWorld()->GetTimeSeconds() < 1.5f))
+		{
+			RenderObj_Texture(CombatIcon);
+		}
 	}
 }
 
