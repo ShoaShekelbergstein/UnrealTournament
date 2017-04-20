@@ -2234,6 +2234,11 @@ bool AUTCharacter::ServerFeignDeath_Validate()
 }
 void AUTCharacter::ServerFeignDeath_Implementation()
 {
+	if (bInRagdollRecovery)
+	{
+		return;
+	}
+
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
 	if (Role == ROLE_Authority && 
