@@ -1752,7 +1752,7 @@ void AUTCharacter::AnnounceShred(AUTPlayerController *KillerPC)
 
 void AUTCharacter::StartRagdoll()
 {
-	if (IsActorBeingDestroyed() || !GetMesh()->IsRegistered())
+	if (IsActorBeingDestroyed() || !GetMesh()->IsRegistered() || bInRagdollRecovery)
 	{
 		return;
 	}
@@ -1882,8 +1882,10 @@ void AUTCharacter::StopRagdoll()
 	FVector AdjustedLoc = GetActorLocation() + FVector(0.0f, 0.0f, GetCharacterMovement()->CrouchedHalfHeight);
 	GetWorld()->FindTeleportSpot(this, AdjustedLoc, GetActorRotation());
 	GetCapsuleComponent()->SetWorldLocation(AdjustedLoc);
+	
 	if (UTCharacterMovement)
 	{
+		UTCharacterMovement->UpdatedComponent->UpdatePhysicsVolume(true);
 		UTCharacterMovement->NeedsClientAdjustment();
 	}
 
