@@ -210,6 +210,9 @@ public:
 	UPROPERTY()
 	float StartPlayTime;
 
+	UPROPERTY()
+		float MatchIntroTime;
+
 	/** add bots until NumPlayers + NumBots is this number */
 	UPROPERTY(BlueprintReadWrite, Category = "MatchStart")
 	int32 BotFillCount;

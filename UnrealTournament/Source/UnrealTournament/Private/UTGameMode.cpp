@@ -97,6 +97,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	TimeLimit = 15;
 	bUseSeamlessTravel = false;
 	CountDown = 3;
+	MatchIntroTime = 7.f;
 	bPauseable = false;
 	RespawnWaitTime = 2.f;
 	ForceRespawnTime = 5.f;
@@ -3621,7 +3622,7 @@ void AUTGameMode::HandlePlayerIntro()
 	}
 
 	FTimerHandle TempHandle;
-	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::EndPlayerIntro, 7.5f*GetActorTimeDilation(), false);
+	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::EndPlayerIntro, MatchIntroTime*GetActorTimeDilation(), false);
 }
 
 void AUTGameMode::EndPlayerIntro()

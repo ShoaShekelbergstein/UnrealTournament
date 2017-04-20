@@ -177,8 +177,13 @@ void AUTCTFRoundGame::BeginGame()
 		}
 	}
 
+	if (GetNetMode() == NM_Standalone)
+	{
+		IntermissionDuration = 15.f;
+	}
+
 	float RealIntermissionDuration = IntermissionDuration;
-	IntermissionDuration = 10.f;
+	IntermissionDuration = 6.f;
 	SetMatchState(MatchState::MatchIntermission);
 	IntermissionDuration = RealIntermissionDuration;
 	

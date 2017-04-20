@@ -561,7 +561,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 		FVector2D LeftCorner = FVector2D(MinimapCenter.X*Canvas->ClipX - 0.5f*MapSize, MapYPos);
 		if ((EndIntermissionTime < GetWorld()->GetTimeSeconds()) && (GS->IntermissionTime < 8.f) && (GS->IntermissionTime > 0.f) && !bHasAnnouncedWin)
 		{
-			EndIntermissionTime = GetWorld()->GetTimeSeconds() + (GS->HasMatchEnded() ? 11.2f : 8.3f);
+			EndIntermissionTime = GetWorld()->GetTimeSeconds() + (GS->HasMatchEnded() ? 11.2f : 6.f);
 			OldDisplayedParagraphs = 0;
 			bFullListPlayed = false;
 			bool bIsOnDefense = UTPS && UTPS->Team && GS->IsTeamOnDefenseNextRound(UTPS->Team->TeamIndex);
@@ -596,7 +596,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 				float TextXPos = 0.5f*Canvas->ClipX - 0.47f*Width;
 				TextYPos += 44.f*RenderScale;
 
-				int32 DisplayedParagraphs = 8 - int32(EndIntermissionTime - GetWorld()->GetTimeSeconds());
+				int32 DisplayedParagraphs = 7 - int32(EndIntermissionTime - GetWorld()->GetTimeSeconds());
 				int32 CountedParagraphs = 0;
 				int32 LastParStart = 0;
 				bool bFullList = true;
