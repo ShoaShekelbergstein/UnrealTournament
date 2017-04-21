@@ -559,11 +559,12 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 		const float MapSize = FMath::Min(Canvas->ClipX - 2.f*ScaledEdgeSize - 2.f*ScaledCellWidth, 0.9f*Canvas->ClipY - 120.f * RenderScale);
 		float MapYPos = (LastScorePanelYOffset > 0.f) ? LastScorePanelYOffset - 2.f : 0.25f*Canvas->ClipY;
 		FVector2D LeftCorner = FVector2D(MinimapCenter.X*Canvas->ClipX - 0.5f*MapSize, MapYPos);
-		if ((EndIntermissionTime < GetWorld()->GetTimeSeconds()) && (GS->IntermissionTime < 8.f) && (GS->IntermissionTime > 0.f) && !bHasAnnouncedWin)
+		if (!bHasAnnouncedNextRound && (GS->IntermissionTime < 8.f) && (GS->IntermissionTime > 0.f) && !bHasAnnouncedWin)
 		{
 			EndIntermissionTime = GetWorld()->GetTimeSeconds() + (GS->HasMatchEnded() ? 11.2f : 6.f);
 			OldDisplayedParagraphs = 0;
 			bFullListPlayed = false;
+			bHasAnnouncedNextRound = true;
 			bool bIsOnDefense = UTPS && UTPS->Team && GS->IsTeamOnDefenseNextRound(UTPS->Team->TeamIndex);
 			int32 MessageIndex = IsBeforeFirstRound() ? 2001 : GS->CTFRound + 2001;
 			UTPlayerOwner->ClientReceiveLocalizedMessage(UUTCountDownMessage::StaticClass(), MessageIndex);
@@ -573,7 +574,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 				UTPlayerOwner->ClientReceiveLocalizedMessage(UUTFlagRunMessage::StaticClass(), GS->FlagRunMessageSwitch, nullptr, nullptr, GS->FlagRunMessageTeam);
 			}
 		}
-		if (UTPS && UTPS->Team && (EndIntermissionTime > GetWorld()->GetTimeSeconds()) && UTHUDOwner && UTHUDOwner->UTPlayerOwner)
+		if (UTPS && UTPS->Team && bHasAnnouncedNextRound && UTHUDOwner && UTHUDOwner->UTPlayerOwner)
 		{
 			AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
 			if (IsBeforeFirstRound() && GM && GM->bBasicTrainingGame )
@@ -640,7 +641,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 				LeftCorner.Y += 0.15f*Canvas->ClipY;
 			}
 		}
-		else if (GS->GetScoringPlays().Num() > 0)
+		else if ((GS->GetScoringPlays().Num() > 0) && !bHasAnnouncedNextRound)
 		{
 			// draw scoring plays
 			float ScoreWidth = 0.5f*MapSize;
@@ -662,6 +663,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 	}
 	else
 	{
+		bHasAnnouncedNextRound = false;
 		Super::DrawMinimap(RenderDelta);
 	}
 }

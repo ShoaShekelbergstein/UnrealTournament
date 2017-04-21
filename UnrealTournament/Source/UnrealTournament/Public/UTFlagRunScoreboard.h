@@ -115,6 +115,9 @@ class UNREALTOURNAMENT_API UUTFlagRunScoreboard : public UUTCTFScoreboard
 	UPROPERTY()
 		bool bHasAnnouncedWin;
 
+	UPROPERTY()
+		bool bHasAnnouncedNextRound;
+
 	virtual void AnnounceRoundScore(AUTTeamInfo* InScoringTeam, APlayerState* InScoringPlayer, uint8 InRoundBonus, uint8 InReason);
 
 	virtual void NotifyMatchStateChange() override;
