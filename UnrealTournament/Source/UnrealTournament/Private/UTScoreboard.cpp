@@ -263,10 +263,6 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 			int32 CurrentXP = LP->GetOnlineXP();
 			FXPBreakdown XPBreakdown = UTHUDOwner->UTPlayerOwner->XPBreakdown;
 			int32 NewXP = XPBreakdown.Total();  //28 FIXMESTEVE
-			if (bGiveReward)
-			{
-				CurrentXP += NewXP;
-			}
 			int32 Level = GetLevelForXP(CurrentXP);
 			int32 LevelXPStart = GetXPForLevel(Level);
 			int32 LevelXPEnd = FMath::Max(GetXPForLevel(Level + 1), LevelXPStart+1);
@@ -333,17 +329,14 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 				XPValueItem.Position.X = XPBarX + FMath::Max(CurrentXPWidth, 0.1f*XPBarWidth);
 				Canvas->DrawItem(XPValueItem);
 
-				if (!bGiveReward)
-				{
-					float GlowTime = SummaryTime - XPUpdateStart;
-					float XPSize = XPBarWidth* float(NewXP) / float(LevelXP);
-					DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth, XPBarY + 2.f*RenderScale, FMath::Min(XPSize, XPBarWidth - CurrentXPWidth - 4.f*RenderScale), XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Yellow);
+				float GlowTime = SummaryTime - XPUpdateStart;
+				float XPSize = XPBarWidth* float(NewXP) / float(LevelXP);
+				DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth, XPBarY + 2.f*RenderScale, FMath::Min(XPSize, XPBarWidth - CurrentXPWidth - 4.f*RenderScale), XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Yellow);
 
-					FLinearColor XPGlow = FLinearColor::Yellow;
-					XPGlow.A = 0.3f;
-					float GlowScale = (GlowTime < 0.1f) ? (1.f + 30.f*GlowTime) : FMath::Max(1.f, 4.f - 5.f*(GlowTime - 0.1f));
-					DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth - 0.5f * XPSize * (GlowScale - 1.f), XPBarY + 2.f*RenderScale - 0.5f * XPBarHeight * (GlowScale - 1.f), XPSize * GlowScale, (XPBarHeight*GlowScale) - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 0.2f, XPGlow);
-				}
+				FLinearColor XPGlow = FLinearColor::Yellow;
+				XPGlow.A = 0.3f;
+				float GlowScale = (GlowTime < 0.1f) ? (1.f + 30.f*GlowTime) : FMath::Max(1.f, 4.f - 5.f*(GlowTime - 0.1f));
+				DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth - 0.5f * XPSize * (GlowScale - 1.f), XPBarY + 2.f*RenderScale - 0.5f * XPBarHeight * (GlowScale - 1.f), XPSize * GlowScale, (XPBarHeight*GlowScale) - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 0.2f, XPGlow);
 
 				OldLevel = GetLevelForXP(CurrentXP - NewXP);
 				if (bGiveReward && (Level != OldLevel))

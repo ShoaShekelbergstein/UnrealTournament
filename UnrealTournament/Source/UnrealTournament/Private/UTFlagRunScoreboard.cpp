@@ -630,7 +630,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 					TextYPos += NextLine.IsEmpty() ? 12.f*RenderScale : 32.f*RenderScale;
 				}
 			}
-			else if (DefaultGame)// && (GS->GetScoringPlays().Num() > 0))
+			else if (DefaultGame)
 			{
 				float Height = 0.5f*Canvas->ClipY;
 				float ScoreWidth = 0.8f*MapSize;
