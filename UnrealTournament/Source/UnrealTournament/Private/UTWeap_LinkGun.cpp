@@ -509,7 +509,7 @@ void AUTWeap_LinkGun::DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHud
 		}
 		WeaponHudWidget->DrawTexture(WeaponHudWidget->UTHUDOwner->HUDAtlas, 0.f, 32.f, WidthScale*Width, HeightScale*Height, 127, 612, Width, Height, 1.f, FLinearColor::White, FVector2D(0.5f, 0.5f));
 	}
-	if (bReadyToPull  && WeaponHudWidget && WeaponHudWidget->UTHUDOwner)
+	if (bReadyToPull && (Ammo > 0) && WeaponHudWidget && WeaponHudWidget->UTHUDOwner)
 	{
 		float CircleSize = 76.f;
 		float CrosshairScale = GetCrosshairScale(WeaponHudWidget->UTHUDOwner);
