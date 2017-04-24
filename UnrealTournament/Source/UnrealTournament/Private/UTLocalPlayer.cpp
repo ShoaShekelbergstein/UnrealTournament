@@ -2973,22 +2973,33 @@ void UUTLocalPlayer::InvalidateLastSession()
 	LastSession.Session.SessionInfo.Reset();
 }
 
+#if !UE_SERVER
+void UUTLocalPlayer::ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID, bool bSpectatorPassword)
+{
+	if (ButtonID == UTDIALOG_BUTTON_OK)
+	{
+		TSharedPtr<SUTInputBoxDialog> Box = StaticCastSharedPtr<SUTInputBoxDialog>(Widget);
+		if (Box.IsValid())
+		{
+			PendingJoinSessionPassword = Box->GetInputText();
+			JoinSession(LastSession, bSpectatorPassword, ConnectDesiredTeam, PendingInstanceID );
+		}
+	}
+}
+#endif
+
 bool UUTLocalPlayer::JoinSession(const FOnlineSessionSearchResult& SearchResult, bool bSpectate, int32 DesiredTeam, FString InstanceId)
 {
 	UE_LOG(UT,Log, TEXT("##########################"));
 	UE_LOG(UT,Log, TEXT("Joining a New Session"));
 	UE_LOG(UT,Log, TEXT("##########################"));
 
+	// If this server is passworded, prompt before hand
+	int32 ServerFlags = 0x0000;
+	SearchResult.Session.SessionSettings.Get(SETTING_SERVERFLAGS, ServerFlags);
+
 	LastSession = SearchResult;
 	bLastSessionWasASpectator = bSpectate;
-
-	UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(GetGameInstance());
-	if (UTGameInstance)
-	{
-		FString ServerName;
-		SearchResult.Session.SessionSettings.Get(SETTING_SERVERNAME,ServerName);
-		UTGameInstance->LevelLoadText = FText::Format(NSLOCTEXT("UTLocalPlayer","ConnectingText","Connecting to {0}..."), FText::FromString(ServerName));
-	}	
 
 	SearchResult.Session.SessionSettings.Get(SETTING_GAMEMODE,PendingGameMode);
 	PendingInstanceID = InstanceId;
@@ -2996,6 +3007,29 @@ bool UUTLocalPlayer::JoinSession(const FOnlineSessionSearchResult& SearchResult,
 	ConnectDesiredTeam = DesiredTeam;
 	bCancelJoinSession = false;
 	FUniqueNetIdRepl UniqueId = OnlineIdentityInterface->GetUniquePlayerId(0);
+
+#if !UE_SERVER
+	if ( (ServerFlags & SERVERFLAG_RequiresPassword) == SERVERFLAG_RequiresPassword && PendingJoinSessionPassword.IsEmpty())
+	{
+	
+		OpenDialog(SNew(SUTInputBoxDialog)
+			.OnDialogResult( FDialogResultDelegate::CreateUObject(this, &UUTLocalPlayer::ConnectPasswordResult, bSpectate))
+			.PlayerOwner(this)
+			.DialogTitle(NSLOCTEXT("UTGameViewportClient", "PasswordRequireTitle", "Password is Required"))
+			.MessageText(NSLOCTEXT("UTGameViewportClient", "PasswordRequiredText", "This server requires a password:"))
+			);
+		
+		return false;
+	}
+#endif
+
+UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(GetGameInstance());
+	if (UTGameInstance)
+	{
+		FString ServerName;
+		SearchResult.Session.SessionSettings.Get(SETTING_SERVERNAME,ServerName);
+		UTGameInstance->LevelLoadText = FText::Format(NSLOCTEXT("UTLocalPlayer","ConnectingText","Connecting to {0}..."), FText::FromString(ServerName));
+	}	
 
 	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UPartyContext::StaticClass()));
 	if (IsLoggedIn() && PartyContext)
@@ -3109,8 +3143,20 @@ void UUTLocalPlayer::OnJoinSessionComplete(FName SessionName, EOnJoinSessionComp
 		{
 			int32 Index = 0;
 			FString HostAddress = ConnectionString.FindChar(':',Index) ? ConnectionString.Left(Index) : ConnectionString;
-			FString Password = bWantsToConnectAsSpectator ? "?specpassword=" : "?password=";
-			Password = Password + RetrievePassword(HostAddress, bWantsToConnectAsSpectator);
+
+			FString Password = TEXT("");
+			if (PendingJoinSessionPassword.IsEmpty())
+			{
+				Password = bWantsToConnectAsSpectator ? TEXT("?specpassword=") : TEXT("?password=");
+				Password = Password + RetrievePassword(HostAddress, bWantsToConnectAsSpectator);
+			}
+			else
+			{
+				Password = (bWantsToConnectAsSpectator ? TEXT("?specpassword=") : TEXT("?password=")) + PendingJoinSessionPassword;
+				CachedPasswords.Add(HostAddress, PendingJoinSessionPassword);
+				PendingJoinSessionPassword = TEXT("");
+			}
+
 			ConnectionString += Password;
 
 			if (PendingFriendInviteFriendId != TEXT(""))

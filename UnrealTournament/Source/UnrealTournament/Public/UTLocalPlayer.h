@@ -1428,6 +1428,13 @@ protected:
 	bool bLaunchTutorialOnLogin;
 
 	virtual void FinalizeLogin();
+	// If we are attempting to join a private server, this will hold the url option to add the password
+	FString PendingJoinSessionPassword;
+
+#if !UE_SERVER
+	void ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID, bool bSpectatorPassword);
+#endif
+
 
 };
 
