@@ -193,7 +193,7 @@ public:
 			NewRuleset->MaxPlayers = 2;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_Duel.GB_Duel'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTShowdownGame");
-			NewRuleset->GameOptions = FString(TEXT("?Timelimit=2?GoalScore=5?RequireFull=1"));
+			NewRuleset->GameOptions = FString(TEXT("?Timelimit=2?GoalScore=5"));
 			NewRuleset->bTeamGame = true;
 
 			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
@@ -279,7 +279,7 @@ public:
 			NewRuleset->MaxPlayers = 10;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
-			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?RequireReady=1?MercyScore=0"));
+			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?MercyScore=0"));
 			NewRuleset->bCompetitiveMatch = true;
 			NewRuleset->bTeamGame = true;
 			NewRuleset->MaxMapsInList = 16;
