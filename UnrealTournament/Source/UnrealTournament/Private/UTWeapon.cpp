@@ -1404,7 +1404,6 @@ bool AUTWeapon::ServerHitScanHit_Validate(AUTCharacter* HitScanChar, uint8 HitSc
 
 void AUTWeapon::ServerHitScanHit_Implementation(AUTCharacter* HitScanChar, uint8 HitScanEventIndex)
 {
-	UE_LOG(UT, Warning, TEXT("Received ServerHitScanHit %d"), HitScanEventIndex);
 	ReceivedHitScanHitChar = HitScanChar;
 	ReceivedHitScanIndex = HitScanEventIndex;
 }
