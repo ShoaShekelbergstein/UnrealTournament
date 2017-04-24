@@ -763,6 +763,10 @@ void AUTRemoteRedeemer::Tick(float DeltaSeconds)
 			RolledRotation.Roll = RolledRotation.Roll * SmoothRoll + Rotation.Roll * (1.0f - SmoothRoll);
 			SetActorRotation(RolledRotation);
 		}
+		else if (!ProjectileMovement->Velocity.IsZero())
+		{
+			SetActorRotation(ProjectileMovement->Velocity.ToOrientationRotator());
+		}
 	}
 
 	// check outline
