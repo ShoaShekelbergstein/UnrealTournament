@@ -972,7 +972,7 @@ void AUTHUD::DrawHUD()
 				Canvas->DrawText(MediumFont, WarmupText, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.82f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
 				if (GS->bHaveMatchHost)
 				{
-					FText WarmupMessage = ViewedPS->bIsMatchHost ? MatchHostText : HaveHostText;
+					FText WarmupMessage = UTPlayerOwner && UTPlayerOwner->UTPlayerState && UTPlayerOwner->UTPlayerState->bIsMatchHost ? MatchHostText : HaveHostText;
 					if (GS->bRequireFull && (GS->PlayersNeeded > 0))
 					{
 						WarmupMessage = NeedFullText;
