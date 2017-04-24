@@ -67,8 +67,8 @@ void UUTHUDWidget_Paperdoll::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCan
 	AUTGameState* UTGS = InUTHUDOwner->GetWorld()->GetGameState<AUTGameState>();
 	if (UTGS)
 	{
-		HealthBackground.bUseTeamColors = false;	//UTGameState->bTeamGame;	
-		ArmorBackground.bUseTeamColors = false;		//UTGameState->bTeamGame;	
+		HealthBackground.bUseTeamColors = false;
+		ArmorBackground.bUseTeamColors = false;		
 	}
 
 	Super::PreDraw(DeltaTime, InUTHUDOwner, InCanvas, InCanvasCenter);
@@ -238,7 +238,7 @@ void UUTHUDWidget_Paperdoll::Draw_Implementation(float DeltaTime)
 				RenderObj_Texture(DetectedIcon);
 			}
 		}
-		if ((bPlayerCanRally || bShowTimer) && GameState && GameState->CurrentRallyPoint && (GameState->CurrentRallyPoint->LastRallyHot - GetWorld()->GetTimeSeconds() < 1.5f))
+		if (GameState && GameState->CurrentRallyPoint && (GetWorld()->GetTimeSeconds() - GameState->CurrentRallyPoint->LastRallyHot < 1.5f))
 		{
 			RenderObj_Texture(CombatIcon);
 		}

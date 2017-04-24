@@ -826,7 +826,7 @@ void AUTPlayerState::Tick(float DeltaTime)
 						{
 							MyPC->ClientReceiveLocalizedMessage(Speaker->CharacterVoice, Switch, Speaker, this, NULL);
 						}
-						if (GS && GS->CurrentRallyPoint && (GS->CurrentRallyPoint->LastRallyHot - GetWorld()->GetTimeSeconds() < 2.f))
+						if (GS && GS->CurrentRallyPoint && (GetWorld()->GetTimeSeconds() - GS->CurrentRallyPoint->LastRallyHot < 2.f))
 						{
 							int32 RallyHotSwitch = Speaker->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyHot);
 							if (RallyHotSwitch >= 0)
