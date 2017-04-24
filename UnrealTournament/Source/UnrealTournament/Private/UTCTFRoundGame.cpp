@@ -183,7 +183,7 @@ void AUTCTFRoundGame::BeginGame()
 	}
 
 	float RealIntermissionDuration = IntermissionDuration;
-	IntermissionDuration = 6.f;
+	IntermissionDuration = bBasicTrainingGame ? 12.f : 6.f;
 	SetMatchState(MatchState::MatchIntermission);
 	IntermissionDuration = RealIntermissionDuration;
 	
