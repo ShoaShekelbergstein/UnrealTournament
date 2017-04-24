@@ -22,7 +22,7 @@ public:
 		Rules.Add(EEpicDefaultRuleTags::TDM);
 		Rules.Add(EEpicDefaultRuleTags::BIGCTF);
 		Rules.Add(EEpicDefaultRuleTags::COMPCTF);
-		Rules.Add(EEpicDefaultRuleTags::SHOWDOWN);
+//		Rules.Add(EEpicDefaultRuleTags::SHOWDOWN);
 		Rules.Add(EEpicDefaultRuleTags::TEAMSHOWDOWN);
 		Rules.Add(EEpicDefaultRuleTags::DUEL);
 		Rules.Add(EEpicDefaultRuleTags::iDM);
