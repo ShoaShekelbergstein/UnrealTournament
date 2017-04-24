@@ -542,16 +542,15 @@ void UUTCharacterMovement::TickComponent(float DeltaTime, enum ELevelTick TickTy
 	}
 
 	// FIXMESTEVE do when character gets team, not every tick
-	// FIXMESTEVE TODO - need to check overlaps and push apart
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (GS && !GS->bTeamCollision && !bForceTeamCollision && UTOwner && Cast<UPrimitiveComponent>(UpdatedComponent))
 	{
 		for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
 		{
 			AUTCharacter* Char = It->IsValid() ? Cast<AUTCharacter>((*It).Get()) : nullptr;
-			if (Char && UTOwner != Char && !Char->IsDead())
+			if (Char)
 			{
-				((UPrimitiveComponent *)(UpdatedComponent))->IgnoreActorWhenMoving(Char, GS->OnSameTeam(UTOwner, Char));
+				((UPrimitiveComponent *)(UpdatedComponent))->IgnoreActorWhenMoving(Char, GS->OnSameTeam(UTOwner, Char) && (UTOwner != Char) && !Char->IsPendingKillPending() && !Char->IsDead() && !Char->IsRagdoll());
 			}
 		}
 	}
