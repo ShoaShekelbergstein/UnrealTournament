@@ -74,7 +74,7 @@ FVector AUTWeap_FlakCannon::GetFireLocationForMultiShot_Implementation(int32 Mul
 	if (MultiShotIndex > 0 && MultiShotLocationSpread.IsValidIndex(CurrentFireMode))
 	{
 		// Randomize each projectile's spawn location if needed.
-		return FireLocation + FireRotation.RotateVector(FMath::VRand() * MultiShotLocationSpread[CurrentFireMode]);
+		return FireLocation + FireRotation.RotateVector((FVector(0.25f, 0.25f, 0.25f) + 0.5f*FMath::VRand()) * MultiShotLocationSpread[CurrentFireMode]);
 	}
 
 	// Main projectile fires straight from muzzle center
