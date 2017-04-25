@@ -2605,25 +2605,27 @@ void FAudioDevice::HandlePause(bool bGameTicking, bool bGlobalPause)
 	// Handles the global pause/unpause feature
 
 	// Pause all sounds if transitioning to pause mode.
-	if (!bGameTicking && (bGameWasTicking || bGlobalPause))
+	if (!bGameTicking)
 	{
 		for (int32 i = 0; i < Sources.Num(); i++)
 		{
 			FSoundSource* Source = Sources[ i ];
-			if (!Source->IsPausedByGame() && (bGlobalPause || Source->IsGameOnly()))
+			if (!Source->IsPausedByGame() ) 
 			{
+				UE_LOG(LogAudio, Warning, TEXT("Pausing Source %i"),i);
 				Source->SetPauseByGame(true);
 			}
 		}
 	}
 	// Unpause all sounds if transitioning back to game.
-	else if (bGameTicking && (!bGameWasTicking || bGlobalPause))
+	else if (bGameTicking )
 	{
 		for (int32 i = 0; i < Sources.Num(); i++)
 		{
 			FSoundSource* Source = Sources[ i ];
-			if (Source->IsPausedByGame() && (bGlobalPause || Source->IsGameOnly()))
+			if ( Source->IsPausedByGame() )
 			{
+				UE_LOG(LogAudio, Warning, TEXT("UnPausing Source %i"),i);
 				Source->SetPauseByGame(false);
 			}
 		}
