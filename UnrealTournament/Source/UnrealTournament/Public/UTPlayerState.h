@@ -1222,28 +1222,7 @@ public:
 	// The time at which the player that owns this PlayerState was active in real time seconds.  This should be set by calling NotActive()
 	UPROPERTY(BlueprintReadWrite)
 	float LastActiveTime;
-
-	UPROPERTY()
-	bool bVoiceChatSentLogin;
-
-	UFUNCTION()
-	void OnRepVoiceChatLoginToken();
-
-	UFUNCTION()
-	void OnRepVoiceChatJoinToken();
-
-	UPROPERTY(replicatedUsing=OnRepVoiceChatLoginToken)
-	FString VoiceChatLoginToken;
-
-	UPROPERTY(replicatedUsing=OnRepVoiceChatJoinToken)
-	FString VoiceChatJoinToken;
-
-	UPROPERTY(replicatedUsing = OnRepVoiceChatJoinToken)
-	FString VoiceChatChannel;
-
-	UPROPERTY()
-	FString VoiceChatChannelCurrent;
-
+	
 protected:
 
 

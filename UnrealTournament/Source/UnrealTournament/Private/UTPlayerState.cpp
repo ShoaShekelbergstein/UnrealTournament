@@ -40,7 +40,6 @@
 #include "UTRallyPoint.h"
 #include "Panels/SUTWebBrowserPanel.h"
 #include "UTBotCharacter.h"
-#include "UTVoiceChatFeature.h"
 
 #if !UE_SERVER
 #include "SlateBasics.h"
@@ -194,10 +193,6 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 
 	DOREPLIFETIME(AUTPlayerState, LineUpLocation);
 
-	DOREPLIFETIME_CONDITION(AUTPlayerState, VoiceChatLoginToken, COND_OwnerOnly);
-	DOREPLIFETIME_CONDITION(AUTPlayerState, VoiceChatJoinToken, COND_OwnerOnly);
-	DOREPLIFETIME_CONDITION(AUTPlayerState, VoiceChatChannel, COND_OwnerOnly);
-
 	// Allow "displayall UTPlayerState CurrentCoolFactor" in development builds
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	DOREPLIFETIME_CONDITION(AUTPlayerState, CurrentCoolFactor, COND_OwnerOnly);
@@ -206,16 +201,6 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 
 void AUTPlayerState::Destroyed()
 {
-	if (bVoiceChatSentLogin)
-	{
-		static const FName VoiceChatFeatureName("VoiceChat");
-		if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
-		{
-			UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
-			VoiceChat->Disconnect(PlayerName);
-		}
-	}
-
 	Super::Destroyed();
 	GetWorldTimerManager().ClearAllTimersForObject(this);
 }
@@ -4075,38 +4060,4 @@ void AUTPlayerState::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVect
 void AUTPlayerState::NotIdle()
 {
 	LastActiveTime = GetWorld()->GetTimeSeconds();
-}
-
-void AUTPlayerState::OnRepVoiceChatLoginToken()
-{
-	static const FName VoiceChatFeatureName("VoiceChat");
-	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
-	{
-		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
-		VoiceChat->LoginUsingToken(PlayerName, VoiceChatLoginToken);
-		bVoiceChatSentLogin = true;
-	}
-}
-
-void AUTPlayerState::OnRepVoiceChatJoinToken()
-{
-	static const FName VoiceChatFeatureName("VoiceChat");
-	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName) &&
-		!VoiceChatJoinToken.IsEmpty() && !VoiceChatChannel.IsEmpty())
-	{
-		if (!bVoiceChatSentLogin)
-		{
-			// retry in a bit
-			return;
-		}
-
-		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
-		if (!VoiceChatChannelCurrent.IsEmpty())
-		{
-			VoiceChat->LeaveChannel(PlayerName, VoiceChatChannelCurrent);
-			VoiceChatChannelCurrent.Empty();
-		}
-		VoiceChat->JoinChannelUsingToken(PlayerName, VoiceChatChannel, VoiceChatJoinToken);
-		VoiceChatChannelCurrent = VoiceChatChannel;
-	}
 }

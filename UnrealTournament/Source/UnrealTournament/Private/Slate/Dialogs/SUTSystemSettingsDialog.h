@@ -176,6 +176,14 @@ protected:
 	TSharedPtr<STextBlock> SelectedBotSpeech;
 	void OnBotSpeechSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo);
 
+	TSharedPtr<SCheckBox> VoiceChatCheckBox;
+	TSharedPtr<SSlider> VoiceChatRecordVolume;
+	TSharedPtr<STextBlock> VoiceChatRecordVolumeLabel;
+	TSharedPtr<SSlider> VoiceChatPlaybackVolume;
+	TSharedPtr<STextBlock> VoiceChatPlaybackVolumeLabel;
+	void OnVoiceChatRecordVolumeChanged(float NewValue);
+	void OnVoiceChatPlaybackVolumeChanged(float NewValue);
+
 	TSharedPtr<SCheckBox> HRTFCheckBox;
 	TSharedPtr<SSlider> SoundVolumes[EUTSoundClass::MAX];
 	TSharedPtr<STextBlock> SoundVolumesLabels[EUTSoundClass::MAX];

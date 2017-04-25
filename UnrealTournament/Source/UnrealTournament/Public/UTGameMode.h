@@ -990,7 +990,7 @@ public:
 
 	virtual void ForceEndServer();
 	
-	virtual void SendVoiceChatToken(AUTPlayerState* PS);
+	virtual void SendVoiceChatLoginToken(AUTPlayerController* PC);
 
 public:
 	// If this is a single player game, or an instance server, this will hold the unique tag of the ruleset being used if relevant

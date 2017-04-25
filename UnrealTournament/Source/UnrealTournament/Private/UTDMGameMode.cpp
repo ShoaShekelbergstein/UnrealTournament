@@ -32,10 +32,10 @@ APlayerController* AUTDMGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRol
 	APlayerController* Result = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
 	if (Result != NULL)
 	{
-		AUTPlayerState* PS = Cast<AUTPlayerState>(Result->PlayerState);
-		if (PS != NULL && !PS->bIsABot && !PS->bOnlySpectator)
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(Result);
+		if (UTPC != NULL)
 		{
-			PS->VoiceChatChannel = DMVoiceChatChannel;
+			UTPC->VoiceChatChannel = DMVoiceChatChannel;
 		}
 	}
 

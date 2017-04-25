@@ -57,6 +57,7 @@
 #include "UTFlagRunPvEHUD.h"
 #include "BlueprintContextLibrary.h"
 #include "PartyContext.h"
+#include "UTVoiceChatFeature.h"
 
 static TAutoConsoleVariable<float> CVarUTKillcamStartDelay(
 	TEXT("UT.KillcamStartDelay"),
@@ -203,6 +204,11 @@ void AUTPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 	DOREPLIFETIME_CONDITION(AUTPlayerController, bCastingGuide, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerController, CastingGuideViewIndex, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerController, HUDClass, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AUTPlayerController, VoiceChatPlayerName, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AUTPlayerController, VoiceChatLoginToken, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AUTPlayerController, VoiceChatJoinToken, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AUTPlayerController, VoiceChatChannel, COND_OwnerOnly);
+
 }
 void AUTPlayerController::ClientSetSpectatorLocation_Implementation(FVector NewLocation, FRotator NewRotation)
 {
@@ -5306,6 +5312,16 @@ void AUTPlayerController::PreClientTravel(const FString& PendingURL, ETravelType
 		GameState->VoteTimer = 0;
 		GameState->SetMatchState(MatchState::WaitingTravel);
 	}
+
+	if (bVoiceChatSentLogin)
+	{
+		static const FName VoiceChatFeatureName("VoiceChat");
+		if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+		{
+			UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+			VoiceChat->Logout(VoiceChatPlayerName);
+		}
+	}
 	
 	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
 }
@@ -5367,5 +5383,63 @@ void AUTPlayerController::SetMouseAccelOffset(float NewAccelOffset)
 	if (Input)
 	{
 		Input->AccelerationOffset = NewAccelOffset;
+	}
+}
+
+void AUTPlayerController::OnRepVoiceChatLoginToken()
+{
+	UUTGameUserSettings* GS = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
+	if (GS)
+	{
+		if (!GS->IsVoiceChatEnabled())
+		{
+			return;
+		}
+	}
+
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName) && 
+		!VoiceChatPlayerName.IsEmpty() && !VoiceChatLoginToken.IsEmpty())
+	{
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		VoiceChat->LoginUsingToken(VoiceChatPlayerName, VoiceChatLoginToken);
+		bVoiceChatSentLogin = true;
+
+		if (!VoiceChatJoinToken.IsEmpty() && !VoiceChatChannel.IsEmpty())
+		{
+			OnRepVoiceChatJoinToken();
+		}
+	}
+}
+
+void AUTPlayerController::OnRepVoiceChatJoinToken()
+{
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName) &&
+		!VoiceChatJoinToken.IsEmpty() && !VoiceChatChannel.IsEmpty())
+	{
+		if (!bVoiceChatSentLogin)
+		{
+			// retry in a bit
+			return;
+		}
+
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		if (!VoiceChatChannelCurrent.IsEmpty())
+		{
+			VoiceChat->LeaveChannel(VoiceChatPlayerName, VoiceChatChannelCurrent);
+			VoiceChatChannelCurrent.Empty();
+		}
+		
+		VoiceChat->JoinChannelUsingToken(VoiceChatPlayerName, VoiceChatChannel, VoiceChatJoinToken);
+		VoiceChatChannelCurrent = VoiceChatChannel;
+
+		// I believe we need to do this every channel join
+		UUTGameUserSettings* GS = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
+		if (GS)
+		{
+			GS->SetVoiceChatPlaybackVolume(GS->GetVoiceChatPlaybackVolume());
+			GS->SetVoiceChatRecordVolume(GS->GetVoiceChatRecordVolume());
+		}
 	}
 }

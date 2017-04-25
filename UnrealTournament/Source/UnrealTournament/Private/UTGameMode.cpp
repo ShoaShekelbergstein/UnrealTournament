@@ -756,6 +756,8 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 				UChildConnection* ChildConn = Cast<UChildConnection>(NewPlayer);
 				UTPC->CastingGuideViewIndex = (ChildConn != NULL) ? (ChildConn->Parent->Children.Find(ChildConn) + 1) : 0;
 			}
+
+			SendVoiceChatLoginToken(UTPC);
 		}
 		AUTPlayerState* PS = Cast<AUTPlayerState>(Result->PlayerState);
 		if (PS != NULL)
@@ -800,8 +802,6 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 			PS->PartyLeader = UGameplayStatics::ParseOption(Options, TEXT("PartyLeader"));
 
 			UE_LOG(LogOnlineParty, Display, TEXT("%s joined with Party Leader %s"), *PS->PlayerName, *PS->PartyLeader);
-			
-			SendVoiceChatToken(PS);
 		}
 	}
 
@@ -813,13 +813,20 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 	return Result;
 }
 
-void AUTGameMode::SendVoiceChatToken(AUTPlayerState* PS)
+void AUTGameMode::SendVoiceChatLoginToken(AUTPlayerController* PC)
 {
 	static const FName VoiceChatTokenFeatureName("VoiceChatToken");
 	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
 	{
 		UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
-		VoiceChatToken->GenerateClientLoginToken(PS->PlayerName, PS->VoiceChatLoginToken);
+
+		AUTPlayerState* PS = Cast<AUTPlayerState>(PC->PlayerState);
+		if (PS)
+		{
+			PC->VoiceChatPlayerName = FString::Printf(TEXT(".%s."), *PS->PlayerName);
+
+			VoiceChatToken->GenerateClientLoginToken(PC->VoiceChatPlayerName, PC->VoiceChatLoginToken);
+		}
 	}
 }
 

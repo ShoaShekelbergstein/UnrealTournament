@@ -1035,7 +1035,47 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildAudioTab()
 			.Style(SUWindowsStyle::Get(), "UT.Common.CheckBox")
 			.IsChecked(UserSettings->IsHRTFEnabled() ? ESlateCheckBoxState::Checked : ESlateCheckBoxState::Unchecked)
 		]
-	];
+	]
+	
+	+ SVerticalBox::Slot()
+	.AutoHeight()
+	.Padding(FMargin(10.0f, 10.0f, 10.0f, 0.0f))
+	[
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		[
+			SNew(SBox)
+			.WidthOverride(650)
+			[
+				SNew(STextBlock)
+				.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+				.Text(NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatText", "Voice Chat"))
+				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChat_Tooltip", "Enable Voice Chat")))
+			]
+		]
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		[
+			SAssignNew(VoiceChatCheckBox, SCheckBox)
+			.Style(SUWindowsStyle::Get(), "UT.Common.CheckBox")
+			.IsChecked(UserSettings->IsVoiceChatEnabled() ? ESlateCheckBoxState::Checked : ESlateCheckBoxState::Unchecked)
+		]
+	]
+
+	+AddGeneralSliderWithLabelWidget(VoiceChatPlaybackVolume, 
+		VoiceChatPlaybackVolumeLabel, 
+		&SUTSystemSettingsDialog::OnVoiceChatPlaybackVolumeChanged, 
+		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatPlaybackVolume", "Voice Chat Playback Volume").ToString(), 
+		UserSettings->GetVoiceChatPlaybackVolume(),
+		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatPlaybackVolume_Tooltip", "Controls the voice chat playback volume."))
+		
+	+AddGeneralSliderWithLabelWidget(VoiceChatRecordVolume, 
+		VoiceChatRecordVolumeLabel, 
+		&SUTSystemSettingsDialog::OnVoiceChatRecordVolumeChanged, 
+		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume", "Voice Chat Record Volume").ToString(), 
+		UserSettings->GetVoiceChatRecordVolume(),
+		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume_Tooltip", "Controls the voice chat record volume."));
 /*
 	+ SVerticalBox::Slot()
 	.AutoHeight()
@@ -1256,6 +1296,10 @@ FReply SUTSystemSettingsDialog::OKClick()
 			UserSettings->SetSoundClassVolume(EUTSoundClass::Type(i), SoundVolumes[i]->GetValue());
 		}
 	}
+
+	UserSettings->SetVoiceChatEnabled(VoiceChatCheckBox->IsChecked());
+	UserSettings->SetVoiceChatPlaybackVolume(VoiceChatPlaybackVolume->GetValue());
+	UserSettings->SetVoiceChatRecordVolume(VoiceChatRecordVolume->GetValue());
 
 	//UserSettings->SetSoundClassVolume(EUTSoundClass::VOIP, SoundVolumes[EUTSoundClass::VOIP]->GetValue() * 2.0f);
 
@@ -1511,5 +1555,14 @@ void SUTSystemSettingsDialog::OnVOIPChanged(TSharedPtr<FString> NewSelection, ES
 	}
 }
 
+void SUTSystemSettingsDialog::OnVoiceChatRecordVolumeChanged(float NewValue)
+{
+
+}
+
+void SUTSystemSettingsDialog::OnVoiceChatPlaybackVolumeChanged(float NewValue)
+{
+
+}
 
 #endif

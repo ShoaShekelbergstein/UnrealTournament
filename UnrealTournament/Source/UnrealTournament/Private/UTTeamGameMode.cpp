@@ -332,12 +332,13 @@ bool AUTTeamGameMode::MovePlayerToTeam(AController* Player, AUTPlayerState* PS, 
 		Teams[NewTeam]->AddToTeam(Player);
 		PS->bPendingTeamSwitch = false;
 
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(Player);
 		static const FName VoiceChatTokenFeatureName("VoiceChatToken");
-		if (!PS->bIsABot && !PS->bOnlySpectator && IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
+		if (UTPC && PS && PS->Team && !PS->bOnlySpectator && IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
 		{
 			UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
-			PS->VoiceChatChannel = PS->Team->VoiceChatChannel;
-			VoiceChatToken->GenerateClientJoinToken(PS->PlayerName, PS->VoiceChatChannel, PS->VoiceChatJoinToken);
+			UTPC->VoiceChatChannel = PS->Team->VoiceChatChannel;
+			VoiceChatToken->GenerateClientJoinToken(UTPC->VoiceChatPlayerName, UTPC->VoiceChatChannel, UTPC->VoiceChatJoinToken);
 		}
 
 		PS->ForceNetUpdate();
