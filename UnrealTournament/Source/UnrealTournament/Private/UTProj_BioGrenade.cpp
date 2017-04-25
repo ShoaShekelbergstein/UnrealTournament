@@ -63,6 +63,29 @@ void AUTProj_BioGrenade::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(AUTProj_BioGrenade, bBeginFuseWarning);
 }
 
+void AUTProj_BioGrenade::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (bBeginFuseWarning && GetWorldTimerManager().IsTimerActive(FuseTimerHandle))
+	{
+		FRotator NewRotation(0.f, 0.f, 0.f);
+		NewRotation.Yaw = GetActorRotation().Yaw + 100.f*DeltaTime + 2000.f*(FuseTime - GetWorldTimerManager().GetTimerRemaining(FuseTimerHandle))*DeltaTime;
+		SetActorRotation(NewRotation);
+	}
+	if (GetVelocity().IsNearlyZero() && !FlightAudioComponent)
+	{
+		// deactivate flight audio
+		TArray<UAudioComponent*> SCs;
+		GetComponents<UAudioComponent>(SCs);
+		FlightAudioComponent = SCs.Num() > 0 ? SCs[0] : nullptr;
+		if (FlightAudioComponent)
+		{
+			FlightAudioComponent->Deactivate();
+		}
+	}
+}
+
 void AUTProj_BioGrenade::StartFuseTimed()
 {
 	if (!bBeginFuseWarning)
@@ -75,7 +98,7 @@ void AUTProj_BioGrenade::StartFuse()
 	bBeginFuseWarning = true;
 	
 	ProjectileMovement->bRotationFollowsVelocity = false;
-	SetTimerUFunc(this, FName(TEXT("FuseExpired")), FuseTime, false);
+	GetWorldTimerManager().SetTimer(FuseTimerHandle, this, &AUTProj_BioGrenade::FuseExpired, FuseTime, false);
 	PlayFuseBeep();
 	ClearTimerUFunc(this, FName(TEXT("StartFuseTimed")));
 }
