@@ -80,6 +80,7 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 				SNew(SBox).HeightOverride(52.0f)
 				[
 					SAssignNew(MatchButtonBox, SHorizontalBox)
+					.Visibility(this, &SUTInGameHomePanel::GetMatchButtonVis)
 				]
 			]
 		]
@@ -718,5 +719,17 @@ FSlateColor SUTInGameHomePanel::GetMatchLabelColor() const
 	return FSlateColor(FLinearColor::Yellow);
 }
 		
+EVisibility SUTInGameHomePanel::GetMatchButtonVis() const
+{
+	AUTPlayerState* PS = PlayerOwner->PlayerController ? Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState) : NULL;
+	bool bIsSpectator = PS && PS->bOnlySpectator;
+	if (PS && !PS->bOnlySpectator)
+	{
+		return EVisibility::Visible;
+	}
+
+	return EVisibility::Collapsed;
+}
+
 
 #endif

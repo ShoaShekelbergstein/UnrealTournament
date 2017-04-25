@@ -69,7 +69,8 @@ protected:
 	virtual FReply OnTeamChangeClick();
 	virtual FReply OnReadyChangeClick();
 	virtual FReply OnSpectateClick();
-
+	
+	EVisibility GetMatchButtonVis() const;
 
 };
 
