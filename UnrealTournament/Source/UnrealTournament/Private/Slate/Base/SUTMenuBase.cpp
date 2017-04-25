@@ -127,7 +127,11 @@ FReply SUTMenuBase::OnKeyUp( const FGeometry& MyGeometry, const FKeyEvent& InKey
 		}
 		else if (GWorld->GetWorld()->GetMapName().ToLower() != TEXT("ut-entry"))
 		{
-			CloseMenus();
+			AUTGameState* UTGameState = (PlayerOwner.IsValid() && PlayerOwner->GetWorld() != nullptr) ? PlayerOwner->GetWorld()->GetGameState<AUTGameState>() : nullptr;
+			if (UTGameState && UTGameState->HasMatchStarted())
+			{
+				CloseMenus();
+			}
 		}
 		else
 		{
