@@ -566,6 +566,10 @@ void UUTLocalPlayer::ShowMenu(const FString& Parameters)
 						PlayerController->SetPause(true);
 					}
 				}
+				else
+				{
+					PlayerController->SetPause(false);
+				}
 			}
 			DesktopSlateWidget->OnMenuOpened(Parameters);
 		}

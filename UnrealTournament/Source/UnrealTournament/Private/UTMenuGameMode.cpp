@@ -42,6 +42,8 @@ void AUTMenuGameMode::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
+	ClearPause();
+
 	AUTWorldSettings* WorldSettings;
 	WorldSettings = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
 	if (WorldSettings)
@@ -51,15 +53,12 @@ void AUTMenuGameMode::PostInitializeComponents()
 		
 		if ( MenuMusicAssetName != TEXT("") )
 		{
-
 			MenuMusic = LoadObject<USoundBase>(NULL, *MenuMusicPath, NULL, LOAD_NoWarn | LOAD_Quiet);
 			if (MenuMusic)
 			{
-				UGameplayStatics::SpawnSoundAtLocation( this, MenuMusic, FVector(0,0,0), FRotator::ZeroRotator, 1.0, 1.0 );
+				MenuMusicAC = UGameplayStatics::SpawnSoundAtLocation( this, MenuMusic, FVector(0,0,0), FRotator::ZeroRotator, 1.0, 1.0 );
 			}
-			
 		}
-	
 	}
 	return;
 }
