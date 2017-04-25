@@ -19,6 +19,7 @@
 #include "BlueprintContextLibrary.h"
 #include "PartyContext.h"
 #include "SUTQuickChatWindow.h"
+#include "UTVoiceChatFeature.h"
 
 AUTBasePlayerController::AUTBasePlayerController(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -1365,6 +1366,13 @@ void AUTBasePlayerController::StartVOIPTalking()
 	if (ProfileSettings && ProfileSettings->bPushToTalk)
 	{
 		ToggleSpeaking(true);
+		
+		static const FName VoiceChatFeatureName("VoiceChat");
+		if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+		{
+			UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+			VoiceChat->SetAudioInputDeviceMuted(false);
+		}
 	}
 }
 
@@ -1374,6 +1382,13 @@ void AUTBasePlayerController::StopVOIPTalking()
 	if (ProfileSettings && ProfileSettings->bPushToTalk)
 	{
 		ToggleSpeaking(false);
+
+		static const FName VoiceChatFeatureName("VoiceChat");
+		if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+		{
+			UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+			VoiceChat->SetAudioInputDeviceMuted(true);
+		}
 	}
 }
 

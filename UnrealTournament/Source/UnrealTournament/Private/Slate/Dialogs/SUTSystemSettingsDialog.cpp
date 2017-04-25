@@ -9,6 +9,7 @@
 #include "Scalability.h"
 #include "UTWorldSettings.h"
 #include "UTGameEngine.h"
+#include "UTVoiceChatFeature.h"
 
 #if !UE_SERVER
 
@@ -1075,8 +1076,8 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildAudioTab()
 		&SUTSystemSettingsDialog::OnVoiceChatRecordVolumeChanged, 
 		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume", "Voice Chat Record Volume").ToString(), 
 		UserSettings->GetVoiceChatRecordVolume(),
-		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume_Tooltip", "Controls the voice chat record volume."));
-/*
+		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume_Tooltip", "Controls the voice chat record volume."))
+
 	+ SVerticalBox::Slot()
 	.AutoHeight()
 	.Padding(FMargin(10.0f, 50.0f, 10.0f, 5.0f))
@@ -1111,7 +1112,7 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildAudioTab()
 			]
 		]
 	];
-*/
+
 }
 
 void SUTSystemSettingsDialog::OnBotSpeechSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
@@ -1377,15 +1378,23 @@ FReply SUTSystemSettingsDialog::OKClick()
 			bProfileNeedsUpdate = true;
 		}
 
-/*
+
 		bool bWantsPushToTalk = PushToTalkCombo->GetSelectedItem()->Equals(*VOIPOptions[1].Get(),ESearchCase::IgnoreCase);
 		if (ProfileSettings->bPushToTalk != bWantsPushToTalk)
 		{
 			ProfileSettings->bPushToTalk = bWantsPushToTalk;
 			GetPlayerOwner()->PlayerController->ToggleSpeaking(!ProfileSettings->bPushToTalk);
 			bProfileNeedsUpdate = true;
+
+			// If we're push to talk now, mute the mic. If we are clearing it, unmute the mic.
+			static const FName VoiceChatFeatureName("VoiceChat");
+			if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+			{
+				UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+				VoiceChat->SetAudioInputDeviceMuted(ProfileSettings->bPushToTalk);
+			}
 		}
-*/
+
 
 		if (bProfileNeedsUpdate) GetPlayerOwner()->SaveProfileSettings();
 	}

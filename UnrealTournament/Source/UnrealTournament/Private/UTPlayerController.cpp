@@ -5441,5 +5441,11 @@ void AUTPlayerController::OnRepVoiceChatJoinToken()
 			GS->SetVoiceChatPlaybackVolume(GS->GetVoiceChatPlaybackVolume());
 			GS->SetVoiceChatRecordVolume(GS->GetVoiceChatRecordVolume());
 		}
+		UUTProfileSettings* ProfileSettings = GetProfileSettings();
+		if (ProfileSettings)
+		{
+			// If we're PushToTalk, mute the mic. If we're not, unmute to be sure.
+			VoiceChat->SetAudioInputDeviceMuted(ProfileSettings->bPushToTalk);
+		}
 	}
 }

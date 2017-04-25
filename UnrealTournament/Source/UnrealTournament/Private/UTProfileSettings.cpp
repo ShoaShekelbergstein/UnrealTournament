@@ -348,6 +348,10 @@ void UUTProfileSettings::GetDefaultGameActions(TArray<FKeyConfigurationInfo>& ou
 	Key = FKeyConfigurationInfo("RequestRally", EControlCategory::Misc, EKeys::E, EKeys::Invalid, EKeys::Gamepad_FaceButton_Top, NSLOCTEXT("Keybinds", "RequestRally", "Request Rally"), false);
 	Key.AddActionMapping("RequestRally");
 	outGameActions.Add(Key);
+
+	Key = FKeyConfigurationInfo("PushToTalk", EControlCategory::Misc, EKeys::B, EKeys::Invalid, EKeys::Invalid, NSLOCTEXT("Keybinds", "PushToTalk", "Push to Talk"), false);
+	Key.AddActionMapping("PushToTalk");
+	outGameActions.Add(Key);
 }
 
 bool UUTProfileSettings::ValidateGameActions()

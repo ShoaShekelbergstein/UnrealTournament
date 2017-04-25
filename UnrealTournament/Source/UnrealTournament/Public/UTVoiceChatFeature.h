@@ -17,4 +17,6 @@ public:
 
 	virtual void SetPlaybackVolume(float InVolume) = 0;
 	virtual void SetRecordVolume(float InVolume) = 0;
+
+	virtual void SetAudioInputDeviceMuted(bool bIsMuted) = 0;
 };
