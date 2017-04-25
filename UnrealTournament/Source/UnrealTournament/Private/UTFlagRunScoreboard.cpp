@@ -106,12 +106,13 @@ void UUTFlagRunScoreboard::DrawTeamPanel(float RenderDelta, float& YOffset)
 	{
 		return;
 	}
-	if (IsBeforeFirstRound() && (EndIntermissionTime > GetWorld()->GetTimeSeconds()) && UTHUDOwner && UTHUDOwner->UTPlayerOwner)
+	if (IsBeforeFirstRound() && bHasAnnouncedNextRound)
 	{
-	//	float Width = 0.35f * Canvas->ClipX;
-	//	DrawFramedBackground(0.5f * (Canvas->ClipX - Width), LeftCorner.Y, Width, Height);
-	//	Super::DrawTeamPanel(RenderDelta, YOffset);
-		return;
+		AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
+		if (GM && GM->bBasicTrainingGame)
+		{
+			return;
+		}
 	}
 
 	// allow pending score to count up
@@ -139,9 +140,7 @@ void UUTFlagRunScoreboard::DrawTeamPanel(float RenderDelta, float& YOffset)
 		FLinearColor TiebreakColor = (CurrentTiebreakValue > 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
 		float ChargeOffset = (ChargePct < 0.f) ? 0.f : ChargePct;
 		DrawTexture(UTHUDOwner->HUDAtlas, 0.5f*Canvas->ClipX - ChargeOffset, BackgroundY, FMath::Abs(ChargePct), Height, 127.f, 641, 150.f, 21.f, 1.f, TiebreakColor, FVector2D(0.f, 0.5f));
-
 		DrawTexture(UTHUDOwner->HUDAtlas, 0.5f*Canvas->ClipX, BackgroundY, Width, Height, 127, 612, 150, 21.f, 1.f, FLinearColor::White, FVector2D(0.5f, 0.5f));
-
 		DrawText(NSLOCTEXT("FlagRun", "Tiebreak", "TIEBREAKER"), 0.5f*Canvas->ClipX, BackgroundY + Height, UTHUDOwner->TinyFont, FVector2D(1.f,1.f), FLinearColor::Black, FLinearColor::Black, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
 
 		if (CurrentTiebreakValue != 0)
