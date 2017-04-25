@@ -1,6 +1,7 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #include "UnrealTournament.h"
+
 #include "GameFramework/GameMode.h"
 #include "UTDeathMessage.h"
 #include "UTGameMessage.h"
@@ -55,6 +56,7 @@
 #include "UTLineUpZone.h"
 #include "UTLineUpHelper.h"
 #include "UTRewardMessage.h"
+#include "UTVoiceChatTokenFeature.h"
 
 DEFINE_LOG_CATEGORY(LogUTGame);
 
@@ -798,6 +800,8 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 			PS->PartyLeader = UGameplayStatics::ParseOption(Options, TEXT("PartyLeader"));
 
 			UE_LOG(LogOnlineParty, Display, TEXT("%s joined with Party Leader %s"), *PS->PlayerName, *PS->PartyLeader);
+			
+			SendVoiceChatToken(PS);
 		}
 	}
 
@@ -805,8 +809,18 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 	{
 		AntiCheatEngine->OnPlayerLogin(Result, Options, UniqueId.GetUniqueNetId());
 	}
-
+	
 	return Result;
+}
+
+void AUTGameMode::SendVoiceChatToken(AUTPlayerState* PS)
+{
+	static const FName VoiceChatTokenFeatureName("VoiceChatToken");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
+	{
+		UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
+		VoiceChatToken->GenerateClientLoginToken(PS->PlayerName, PS->VoiceChatLoginToken);
+	}
 }
 
 void AUTGameMode::EntitlementQueryComplete(bool bWasSuccessful, const FUniqueNetId& UniqueId, const FString& Namespace, const FString& ErrorMessage)

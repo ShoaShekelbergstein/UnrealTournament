@@ -267,4 +267,7 @@ public:
 	void SetStatsValue(FName StatsName, float NewValue);
 	void ModifyStatsValue(FName StatsName, float Change);
 
+	UPROPERTY()
+	FString VoiceChatChannel;
+
 };

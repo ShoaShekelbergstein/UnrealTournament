@@ -5,6 +5,7 @@
 #include "UTServerBeaconLobbyClient.h"
 #include "UTAntiCheatModularFeature.h"
 #include "UTBotPlayer.h"
+
 #include "UTGameMode.generated.h"
 
 UNREALTOURNAMENT_API DECLARE_LOG_CATEGORY_EXTERN(LogUTGame, Log, All);
@@ -988,6 +989,8 @@ public:
 	virtual void ShutdownGameInstance();
 
 	virtual void ForceEndServer();
+	
+	virtual void SendVoiceChatToken(AUTPlayerState* PS);
 
 public:
 	// If this is a single player game, or an instance server, this will hold the unique tag of the ruleset being used if relevant

@@ -18,10 +18,15 @@ class UNREALTOURNAMENT_API AUTDMGameMode : public AUTGameMode
 	UPROPERTY()
 	uint32 bPlayedOneKillRemains:1;
 
+	UPROPERTY()
+	FString DMVoiceChatChannel;
+
 	virtual uint8 GetNumMatchesFor(AUTPlayerState* PS, bool bRankedSession) const override;
 	virtual int32 GetEloFor(AUTPlayerState* PS, bool bRankedSession) const override;
 	virtual void SetEloFor(AUTPlayerState* PS, bool bRankedSession, int32 NewELoValue, bool bIncrementMatchCount) override;
 
+	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
+	virtual APlayerController* Login(class UPlayer* NewPlayer, ENetRole RemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 protected:
 	virtual void UpdateSkillRating() override;
 	virtual void PrepareRankedMatchResultGameCustom(FRankedMatchResult& MatchResult) override;

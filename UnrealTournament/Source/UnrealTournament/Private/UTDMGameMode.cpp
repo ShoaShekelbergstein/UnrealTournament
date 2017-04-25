@@ -5,6 +5,7 @@
 #include "StatNames.h"
 #include "UTMcpUtils.h"
 #include "UTDMGameMode.h"
+#include "Misc/Base64.h"
 
 
 AUTDMGameMode::AUTDMGameMode(const class FObjectInitializer& ObjectInitializer)
@@ -19,6 +20,27 @@ AUTDMGameMode::AUTDMGameMode(const class FObjectInitializer& ObjectInitializer)
 	bTrackKillAssists = false;
 }
 
+void AUTDMGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+	Super::InitGame(MapName, Options, ErrorMessage);
+
+	DMVoiceChatChannel = FBase64::Encode(FGuid::NewGuid().ToString());
+}
+
+APlayerController* AUTDMGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+	APlayerController* Result = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
+	if (Result != NULL)
+	{
+		AUTPlayerState* PS = Cast<AUTPlayerState>(Result->PlayerState);
+		if (PS != NULL && !PS->bIsABot && !PS->bOnlySpectator)
+		{
+			PS->VoiceChatChannel = DMVoiceChatChannel;
+		}
+	}
+
+	return Result;
+}
 
 void AUTDMGameMode::UpdateSkillRating()
 {

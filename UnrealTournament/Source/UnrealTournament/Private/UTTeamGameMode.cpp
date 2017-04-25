@@ -19,6 +19,8 @@
 #include "AnalyticsEventAttribute.h"
 #include "IAnalyticsProvider.h"
 #include "UTATypes.h"
+#include "Misc/Base64.h"
+#include "UTVoiceChatTokenFeature.h"
 
 UUTTeamInterface::UUTTeamInterface(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -83,6 +85,8 @@ void AUTTeamGameMode::InitGame(const FString& MapName, const FString& Options, F
 
 		Teams.Add(NewTeam);
 		checkSlow(Teams[i] == NewTeam);
+
+		NewTeam->VoiceChatChannel = FBase64::Encode(FGuid::NewGuid().ToString());
 	}
 
 	MercyScore = FMath::Max(0, UGameplayStatics::GetIntOption(Options, TEXT("MercyScore"), MercyScore));
@@ -327,6 +331,15 @@ bool AUTTeamGameMode::MovePlayerToTeam(AController* Player, AUTPlayerState* PS, 
 		}
 		Teams[NewTeam]->AddToTeam(Player);
 		PS->bPendingTeamSwitch = false;
+
+		static const FName VoiceChatTokenFeatureName("VoiceChatToken");
+		if (!PS->bIsABot && !PS->bOnlySpectator && IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
+		{
+			UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
+			PS->VoiceChatChannel = PS->Team->VoiceChatChannel;
+			VoiceChatToken->GenerateClientJoinToken(PS->PlayerName, PS->VoiceChatChannel, PS->VoiceChatJoinToken);
+		}
+
 		PS->ForceNetUpdate();
 
 		// Clear the player's gameplay mute list.
