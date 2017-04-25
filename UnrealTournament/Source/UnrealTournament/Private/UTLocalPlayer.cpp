@@ -3093,6 +3093,9 @@ void UUTLocalPlayer::CancelJoinSession()
 
 void UUTLocalPlayer::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
+	// Kill any active replays.
+	StopKillCam();
+
 	bDelayedJoinSession = false;
 	bJoinSessionInProgress = false;
 #if !UE_SERVER
@@ -3198,7 +3201,10 @@ void UUTLocalPlayer::OnJoinSessionComplete(FName SessionName, EOnJoinSessionComp
 				PendingInstanceID.Empty();
 			}
 
-			FWorldContext &Context = GEngine->GetWorldContextFromWorldChecked(GetWorld());
+			UUTGameViewportClient* UTGameViewport = Cast<UUTGameViewportClient>(ViewportClient);
+			UWorld* World = UTGameViewport ? UTGameViewport->GetWorldNoActiveWorldOverride() : GetWorld();
+			
+			FWorldContext &Context = GEngine->GetWorldContextFromWorldChecked(World);
 			Context.LastURL.RemoveOption(TEXT("QuickMatch"));
 			Context.LastURL.RemoveOption(TEXT("Friend"));
 			Context.LastURL.RemoveOption(TEXT("Session"));
