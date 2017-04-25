@@ -120,6 +120,12 @@ class UNREALTOURNAMENT_API AUTLobbyGameState : public AUTGameState
 	void GameInstance_PlayerUpdate(uint32 GameInstanceID, const FRemotePlayerInfo& PlayerInfo, bool bLastUpdate);
 
 	/**
+	 *	Called when an instance's game is started.  
+	 **/
+	void GameInstance_StartGame(uint32 GameInstanceID, const FMatchUpdate& MatchUpdate);
+
+
+	/**
 	 *	Called when an instance's game is over.  It this called via GameEnded and doesn't mean any of the
 	 *  players have started to transition back.  But the Panel should no longer allow spectators to join
 	 **/

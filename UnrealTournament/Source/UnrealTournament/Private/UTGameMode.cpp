@@ -2056,6 +2056,21 @@ void AUTGameMode::HandleMatchHasStarted()
 	{
 		UTGameState->LineUpHelper->CleanUp();
 	}
+
+	if (IsGameInstanceServer() && LobbyBeacon)
+	{
+		FString MatchStats = FString::Printf(TEXT("%i"), UTGameState->ElapsedTime);
+
+		FMatchUpdate MatchUpdate;
+		MatchUpdate.GameTime = UTGameState->ElapsedTime;
+		MatchUpdate.NumPlayers = NumPlayers;
+		MatchUpdate.NumSpectators = NumSpectators;
+		MatchUpdate.MatchState = MatchState;
+		MatchUpdate.bMatchHasBegun = HasMatchStarted();
+		MatchUpdate.bMatchHasEnded = HasMatchEnded();
+		LobbyBeacon->StartGame(MatchUpdate);
+	}
+
 }
 
 void AUTGameMode::AnnounceMatchStart()

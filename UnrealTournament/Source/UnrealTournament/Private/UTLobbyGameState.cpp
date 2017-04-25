@@ -666,6 +666,22 @@ void AUTLobbyGameState::GameInstance_PlayerUpdate(uint32 InGameInstanceID, const
 	}
 }
 
+void AUTLobbyGameState::GameInstance_StartGame(uint32 InGameInstanceID, const FMatchUpdate& MatchUpdate)
+{
+	AUTLobbyGameMode* GM = GetWorld()->GetAuthGameMode<AUTLobbyGameMode>();
+	if (GM)
+	{
+		for (int32 i = 0; i < GameInstances.Num(); i++)
+		{
+			if (GameInstances[i].MatchInfo->GameInstanceID == InGameInstanceID)
+			{
+				GameInstances[i].MatchInfo->ProcessStartMatch(MatchUpdate);
+				break;
+			}
+		}
+	}
+}
+
 
 void AUTLobbyGameState::GameInstance_EndGame(uint32 InGameInstanceID, const FMatchUpdate& FinalMatchUpdate)
 {
