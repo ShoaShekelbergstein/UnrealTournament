@@ -906,6 +906,11 @@ void UUTFlagRunScoreboard::DrawStatsLeft(float DeltaTime, float& YPos, float XOf
 {
 }
 
+FText UUTFlagRunScoreboard::GetScoringSummaryTitle(bool bIsOnDefense) const
+{
+	return bIsOnDefense ? DefendTitle : AttackTitle;
+}
+
 void UUTFlagRunScoreboard::DrawScoringSummary(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float MaxHeight)
 {
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
@@ -924,7 +929,7 @@ void UUTFlagRunScoreboard::DrawScoringSummary(float DeltaTime, float& YPos, floa
 	TextRenderInfo.bClipText = true;
 	AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTPlayerOwner->PlayerState);
 
-	FText Title = GS->IsTeamOnDefenseNextRound(UTPS->Team->TeamIndex) ? DefendTitle : AttackTitle;
+	FText Title = GetScoringSummaryTitle(GS->IsTeamOnDefenseNextRound(UTPS->Team->TeamIndex));
 	FFormatNamedArguments Args;
 	Args.Add("RoundNum", FText::AsNumber(IsBeforeFirstRound() ? 1 : GS->CTFRound + 1));
 	Args.Add("NumRounds", FText::AsNumber(GS->NumRounds));

@@ -137,6 +137,7 @@ protected:
 	virtual void DrawTeamPanel(float RenderDelta, float& YOffset) override;
 
 	virtual FText GetRoundTitle(bool bIsOnDefense) const;
+	virtual FText GetScoringSummaryTitle(bool bIsOnDefense) const;
 
 	virtual bool ShouldShowPowerupForPlayer(AUTPlayerState* PlayerState);
 
