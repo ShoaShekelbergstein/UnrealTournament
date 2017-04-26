@@ -6,7 +6,7 @@
 #include "UTMcpUtils.h"
 #include "UTDMGameMode.h"
 #include "Misc/Base64.h"
-
+#include "UTVoiceChatTokenFeature.h"
 
 AUTDMGameMode::AUTDMGameMode(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -35,7 +35,13 @@ APlayerController* AUTDMGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRol
 		AUTPlayerController* UTPC = Cast<AUTPlayerController>(Result);
 		if (UTPC != NULL)
 		{
-			UTPC->VoiceChatChannel = DMVoiceChatChannel;
+			static const FName VoiceChatTokenFeatureName("VoiceChatToken");
+			if (UTPC->PlayerState && !UTPC->PlayerState->bOnlySpectator && IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
+			{
+				UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
+				UTPC->VoiceChatChannel = DMVoiceChatChannel;
+				VoiceChatToken->GenerateClientJoinToken(UTPC->VoiceChatPlayerName, UTPC->VoiceChatChannel, UTPC->VoiceChatJoinToken);
+			}
 		}
 	}
 
