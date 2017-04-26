@@ -5416,7 +5416,8 @@ void AUTPlayerController::OnRepVoiceChatJoinToken()
 {
 	static const FName VoiceChatFeatureName("VoiceChat");
 	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName) &&
-		!VoiceChatJoinToken.IsEmpty() && !VoiceChatChannel.IsEmpty())
+		!VoiceChatJoinToken.IsEmpty() && !VoiceChatChannel.IsEmpty() && 
+		VoiceChatJoinTokenCurrent != VoiceChatJoinToken && VoiceChatChannelCurrent != VoiceChatChannel)
 	{
 		if (!bVoiceChatSentLogin)
 		{
@@ -5425,14 +5426,16 @@ void AUTPlayerController::OnRepVoiceChatJoinToken()
 		}
 
 		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		/*
 		if (!VoiceChatChannelCurrent.IsEmpty())
 		{
 			VoiceChat->LeaveChannel(VoiceChatPlayerName, VoiceChatChannelCurrent);
 			VoiceChatChannelCurrent.Empty();
 		}
-		
+		*/
 		VoiceChat->JoinChannelUsingToken(VoiceChatPlayerName, VoiceChatChannel, VoiceChatJoinToken);
 		VoiceChatChannelCurrent = VoiceChatChannel;
+		VoiceChatJoinTokenCurrent = VoiceChatJoinToken;
 
 		// I believe we need to do this every channel join
 		UUTGameUserSettings* GS = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());

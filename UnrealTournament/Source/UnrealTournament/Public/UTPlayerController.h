@@ -827,6 +827,9 @@ public:
 	FString VoiceChatChannel;
 
 	UPROPERTY()
+	FString VoiceChatJoinTokenCurrent;
+
+	UPROPERTY()
 	FString VoiceChatChannelCurrent;
 
 protected:
