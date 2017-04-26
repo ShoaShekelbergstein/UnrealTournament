@@ -1105,12 +1105,13 @@ public:
 	void InvalidateLastSession();
 	void Reconnect(bool bAsSpectator);
 
-	void CachePassword(FString HostAddress, FString Password, bool bSpectator);		
-	FString RetrievePassword(FString HostAddress, bool bSpectator);
+	void CachePassword(FString ServerID, FString Password, bool bSpectator);		
+	FString RetrievePassword(FString ServerID, bool bSpectator);
+	void RemoveCachedPassword(const FString& ServerID, bool bSpectator = false);
 
 protected:
-	TMap<FString /*HostIP:Port*/, FString /*Password*/> CachedPasswords;
-	TMap<FString /*HostIP:Port*/, FString /*Password*/> CachedSpecPasswords;
+	TMap<FString /*ServerGUID*/, FString /*Password*/> CachedPasswords;
+	TMap<FString /*ServerGUID*/, FString /*Password*/> CachedSpecPasswords;
 
 protected:
 	UPROPERTY(Config)
@@ -1424,16 +1425,23 @@ public:
 	UFUNCTION()
 	void SetPartyType(EPartyType InPartyType, bool bLeaderFriendsOnly, bool bLeaderInvitesOnly);
 
-protected:
-	bool bLaunchTutorialOnLogin;
-
-	virtual void FinalizeLogin();
 	// If we are attempting to join a private server, this will hold the url option to add the password
 	FString PendingJoinSessionPassword;
 
 #if !UE_SERVER
+	TSharedPtr<SWidget> GetBestWidgetToFocus();
+#endif
+
+protected:
+	bool bLaunchTutorialOnLogin;
+
+	virtual void FinalizeLogin();
+
+#if !UE_SERVER
 	void ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID, bool bSpectatorPassword);
 #endif
+
+
 
 
 };

@@ -149,6 +149,9 @@ public:
 
 	int32 ZOrder;
 
+	virtual TSharedPtr<SWidget> GetBestWidgetToFocus();
+
+
 };
 
 

@@ -380,4 +380,9 @@ TSharedRef<class SWidget> SUTDialogBase::BuildTitleBar(FText InDialogTitle)
 		];
 }
 
+TSharedPtr<SWidget> SUTDialogBase::GetBestWidgetToFocus()
+{
+	return MakeShareable(this);
+}
+
 #endif

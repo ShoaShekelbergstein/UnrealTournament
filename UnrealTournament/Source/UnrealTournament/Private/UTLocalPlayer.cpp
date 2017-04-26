@@ -3013,17 +3013,29 @@ bool UUTLocalPlayer::JoinSession(const FOnlineSessionSearchResult& SearchResult,
 	FUniqueNetIdRepl UniqueId = OnlineIdentityInterface->GetUniquePlayerId(0);
 
 #if !UE_SERVER
-	if ( (ServerFlags & SERVERFLAG_RequiresPassword) == SERVERFLAG_RequiresPassword && PendingJoinSessionPassword.IsEmpty())
+
+	bool bServerRequiresPassword = bSpectate 
+			? (ServerFlags & SERVERFLAG_RequiresSpectatorPassword) == SERVERFLAG_RequiresSpectatorPassword  
+			: (ServerFlags & SERVERFLAG_RequiresPassword) == SERVERFLAG_RequiresPassword;
+
+	if ( bServerRequiresPassword && PendingJoinSessionPassword.IsEmpty())
 	{
-	
-		OpenDialog(SNew(SUTInputBoxDialog)
-			.OnDialogResult( FDialogResultDelegate::CreateUObject(this, &UUTLocalPlayer::ConnectPasswordResult, bSpectate))
-			.PlayerOwner(this)
-			.DialogTitle(NSLOCTEXT("UTGameViewportClient", "PasswordRequireTitle", "Password is Required"))
-			.MessageText(NSLOCTEXT("UTGameViewportClient", "PasswordRequiredText", "This server requires a password:"))
-			);
+		// Attempt to look up the password
+		FString ServerGUID;
+		SearchResult.Session.SessionSettings.Get(SETTING_SERVERINSTANCEGUID, ServerGUID);
+		PendingJoinSessionPassword = RetrievePassword(ServerGUID, bSpectate);	
+
+		if (PendingJoinSessionPassword.IsEmpty())
+		{
+			OpenDialog(SNew(SUTInputBoxDialog)
+				.OnDialogResult( FDialogResultDelegate::CreateUObject(this, &UUTLocalPlayer::ConnectPasswordResult, bSpectate))
+				.PlayerOwner(this)
+				.DialogTitle(NSLOCTEXT("UTGameViewportClient", "PasswordRequireTitle", "Password is Required"))
+				.MessageText(NSLOCTEXT("UTGameViewportClient", "PasswordRequiredText", "This server requires a password:"))
+				);
 		
-		return false;
+			return false;
+		}
 	}
 #endif
 
@@ -3148,19 +3160,14 @@ void UUTLocalPlayer::OnJoinSessionComplete(FName SessionName, EOnJoinSessionComp
 		FString ConnectionString;
 		if ( OnlineSessionInterface->GetResolvedConnectString(SessionName, ConnectionString) )
 		{
-			int32 Index = 0;
-			FString HostAddress = ConnectionString.FindChar(':',Index) ? ConnectionString.Left(Index) : ConnectionString;
-
 			FString Password = TEXT("");
-			if (PendingJoinSessionPassword.IsEmpty())
-			{
-				Password = bWantsToConnectAsSpectator ? TEXT("?specpassword=") : TEXT("?password=");
-				Password = Password + RetrievePassword(HostAddress, bWantsToConnectAsSpectator);
-			}
-			else
+			if (!PendingJoinSessionPassword.IsEmpty())
 			{
 				Password = (bWantsToConnectAsSpectator ? TEXT("?specpassword=") : TEXT("?password=")) + PendingJoinSessionPassword;
-				CachedPasswords.Add(HostAddress, PendingJoinSessionPassword);
+
+				FString ServerGUID;
+				PendingSession.Session.SessionSettings.Get(SETTING_SERVERINSTANCEGUID, ServerGUID);
+				CachedPasswords.Add(ServerGUID, PendingJoinSessionPassword);
 				PendingJoinSessionPassword = TEXT("");
 			}
 
@@ -5425,48 +5432,52 @@ void UUTLocalPlayer::HandleProfileNotification(const FOnlineNotification& Notifi
 	}
 }
 
-void UUTLocalPlayer::CachePassword(FString HostAddress, FString Password, bool bSpectator)
+void UUTLocalPlayer::CachePassword(FString ServerGUID, FString Password, bool bSpectator)
 {
 	if (bSpectator)
 	{
-		if (CachedSpecPasswords.Contains(HostAddress))
+		if (CachedSpecPasswords.Contains(ServerGUID))
 		{
-			CachedSpecPasswords[HostAddress] = Password;
+			CachedSpecPasswords[ServerGUID] = Password;
 		}
 		else
 		{
-			CachedSpecPasswords.Add(HostAddress, Password);
+			CachedSpecPasswords.Add(ServerGUID, Password);
 		}
 	}
 	else
 	{
-		if (CachedPasswords.Contains(HostAddress))
+		if (CachedPasswords.Contains(ServerGUID))
 		{
-			CachedPasswords[HostAddress] = Password;
+			CachedPasswords[ServerGUID] = Password;
 		}
 		else
 		{
-			CachedPasswords.Add(HostAddress, Password);
+			CachedPasswords.Add(ServerGUID, Password);
 		}
 	}
 }
 
-FString UUTLocalPlayer::RetrievePassword(FString HostAddress, bool bSpectator)
+FString UUTLocalPlayer::RetrievePassword(FString ServerGUID, bool bSpectator)
 {
-	FString StrippedHostAddress = StripOptionsFromAddress(HostAddress);
-
 	if (bSpectator)
 	{
-		if (CachedSpecPasswords.Contains(StrippedHostAddress))
+		if (CachedSpecPasswords.Contains(ServerGUID))
 		{
-			return FString::Printf(TEXT("%s"), *CachedSpecPasswords[StrippedHostAddress]);
+			return FString::Printf(TEXT("%s"), *CachedSpecPasswords[ServerGUID]);
 		}
 	}
-	else if (CachedPasswords.Contains(StrippedHostAddress))
+	else if (CachedPasswords.Contains(ServerGUID))
 	{
-		return FString::Printf(TEXT("%s"), *CachedPasswords[StrippedHostAddress]);
+		return FString::Printf(TEXT("%s"), *CachedPasswords[ServerGUID]);
 	}
 	return TEXT("");
+}
+
+void UUTLocalPlayer::RemoveCachedPassword(const FString& ServerID, bool bSpectator)
+{
+	if (!bSpectator && CachedPasswords.Contains(ServerID)) CachedPasswords.Remove(ServerID);
+	if (bSpectator && CachedSpecPasswords.Contains(ServerID)) CachedSpecPasswords.Remove(ServerID);
 }
 
 FString UUTLocalPlayer::StripOptionsFromAddress(FString HostAddress) const
@@ -5839,6 +5850,9 @@ TSharedPtr<SUTChatEditBox> UUTLocalPlayer::GetChatWidget()
 
 void UUTLocalPlayer::FocusWidget(TSharedPtr<SWidget> WidgetToFocus)
 {
+
+	UE_LOG(UT,Warning,TEXT("FocusWidget %s"), *WidgetToFocus->ToString())
+
 	FSlateApplication::Get().SetKeyboardFocus(WidgetToFocus, EKeyboardFocusCause::Keyboard);
 	GetSlateOperations() = FReply::Handled().ReleaseMouseCapture().SetUserFocus(WidgetToFocus.ToSharedRef(), EFocusCause::SetDirectly);
 }
@@ -7210,3 +7224,24 @@ void UUTLocalPlayer::SetPartyType(EPartyType InPartyType, bool bLeaderFriendsOnl
 		}
 	}
 }
+
+#if !UE_SERVER
+TSharedPtr<SWidget> UUTLocalPlayer::GetBestWidgetToFocus()
+{
+	if (OpenDialogs.Num() > 0)
+	{
+		TSharedPtr<SUTDialogBase> TopMost;
+		for (int32 i=0; i < OpenDialogs.Num(); i++)
+		{
+			if (OpenDialogs[i].IsValid() && (!TopMost.IsValid() || OpenDialogs[i]->ZOrder >= TopMost->ZOrder) )
+			{
+				TopMost = OpenDialogs[i];
+			}
+		}
+
+		if (TopMost.IsValid()) return TopMost->GetBestWidgetToFocus();
+	}
+
+	return ViewportClient->GetGameViewportWidget();
+}
+#endif

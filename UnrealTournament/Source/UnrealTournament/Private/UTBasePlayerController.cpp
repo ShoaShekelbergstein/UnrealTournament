@@ -996,7 +996,7 @@ void AUTBasePlayerController::UpdateInputMode()
 		}
 
 		bool bSetWidgetFocus = true;
-		TSharedPtr<SWidget> WidgetToFocus = LocalPlayer->ViewportClient->GetGameViewportWidget();
+		TSharedPtr<SWidget> WidgetToFocus = LocalPlayer->GetBestWidgetToFocus(); 
 
 		//Menus default to UI
 		if (LocalPlayer->AreMenusOpen())

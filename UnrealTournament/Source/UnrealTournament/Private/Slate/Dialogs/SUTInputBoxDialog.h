@@ -51,6 +51,7 @@ class UNREALTOURNAMENT_API SUTInputBoxDialog : public SUTDialogBase
 		return true;
 	}
 
+	virtual TSharedPtr<SWidget> GetBestWidgetToFocus() override;
 
 protected:
 	TSharedPtr<class SEditableTextBox> EditBox;
