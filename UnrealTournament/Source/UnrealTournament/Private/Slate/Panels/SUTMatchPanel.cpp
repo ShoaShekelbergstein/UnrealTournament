@@ -141,7 +141,7 @@ void SUTMatchPanel::Construct(const FArguments& InArgs)
 	.Padding(0,12,0,0)
 	[
 		SNew(SBox)												
-		.WidthOverride(954).HeightOverride(893)
+		.WidthOverride(954).HeightOverride(648)
 		[
 			SNew(SOverlay)
 			+SOverlay::Slot()
@@ -157,15 +157,24 @@ void SUTMatchPanel::Construct(const FArguments& InArgs)
 
 			+SOverlay::Slot()
 			[
-				SAssignNew( MatchList, SListView< TSharedPtr<FTrackedMatch> > )
-				// List view items are this tall
-				.ItemHeight(96)
-				// Tell the list view where to get its source data
-				.ListItemsSource( &TrackedMatches)
-				// When the list view needs to generate a widget for some data item, use this method
-				.OnGenerateRow( this, &SUTMatchPanel::OnGenerateWidgetForMatchList )
-				.SelectionMode(ESelectionMode::Single)
-				.OnMouseButtonDoubleClick(this, &SUTMatchPanel::OnListMouseButtonDoubleClick)
+				SNew(SVerticalBox)
+				+SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					SNew(SBox)												
+					.WidthOverride(954).HeightOverride(648)
+					[
+						SAssignNew( MatchList, SListView< TSharedPtr<FTrackedMatch> > )
+						// List view items are this tall
+						.ItemHeight(96)
+						// Tell the list view where to get its source data
+						.ListItemsSource( &TrackedMatches)
+						// When the list view needs to generate a widget for some data item, use this method
+						.OnGenerateRow( this, &SUTMatchPanel::OnGenerateWidgetForMatchList )
+						.SelectionMode(ESelectionMode::Single)
+						.OnMouseButtonDoubleClick(this, &SUTMatchPanel::OnListMouseButtonDoubleClick)
+					]
+				]
 			]
 			+SOverlay::Slot()
 			[
