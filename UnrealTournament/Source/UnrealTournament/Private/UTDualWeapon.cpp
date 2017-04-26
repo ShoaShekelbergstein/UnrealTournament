@@ -385,6 +385,8 @@ void AUTDualWeapon::PlayFiringEffects()
 		}
 		else
 		{
+			PlayFiringSound(CurrentFireMode);
+			
 			if (ShouldPlay1PVisuals())
 			{
 				UAnimInstance* HandAnimInstance = UTOwner->FirstPersonMesh ? UTOwner->FirstPersonMesh->GetAnimInstance() : nullptr;
