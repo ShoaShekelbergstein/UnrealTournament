@@ -132,6 +132,11 @@ void AUTPickupInventory::SetInventoryType(TSubclassOf<AUTInventory> NewType)
 		bDelayedSpawn = InventoryType.GetDefaultObject()->bDelayedSpawn;
 		BaseDesireability = InventoryType.GetDefaultObject()->BasePickupDesireability;
 		bFixedRespawnInterval = InventoryType.GetDefaultObject()->bFixedRespawnInterval;
+		if (InventoryType.GetDefaultObject()->PreSpawnEffect)
+		{
+			PreSpawnEffect = InventoryType.GetDefaultObject()->PreSpawnEffect;
+			PreSpawnTime = InventoryType.GetDefaultObject()->PreSpawnTime;
+		}
 	}
 	else
 	{

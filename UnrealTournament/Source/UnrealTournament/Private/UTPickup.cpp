@@ -49,6 +49,7 @@ AUTPickup::AUTPickup(const FObjectInitializer& ObjectInitializer)
 	bOverride_TeamSide = false;
 	IconColor = FLinearColor::White;
 	bSpawnOncePerRound = false;
+	PreSpawnTime = 3.f;
 }
 
 void AUTPickup::SetTacCom(bool bTacComEnabled)
@@ -120,7 +121,7 @@ FCanvasIcon AUTPickup::GetMinimapIcon() const
 void AUTPickup::Reset_Implementation()
 {
 	bHasSpawnedThisRound = false;
-	GetWorld()->GetTimerManager().ClearTimer(WakeUpTimerHandle);
+	GetWorldTimerManager().ClearTimer(WakeUpTimerHandle);
 	if (bDelayedSpawn)
 	{
 		State.bRepTakenEffects = false;
@@ -131,6 +132,14 @@ void AUTPickup::Reset_Implementation()
 		WakeUp();
 	}
 	bReplicateReset = !bReplicateReset;
+}
+
+void AUTPickup::PlayPreSpawnEffect()
+{
+	if (PreSpawnEffect && GetWorldTimerManager().IsTimerActive(WakeUpTimerHandle))
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), PreSpawnEffect, GetActorLocation(), GetActorRotation(), true);
+	}
 }
 
 void AUTPickup::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepHitResult)
@@ -257,6 +266,10 @@ void AUTPickup::StartSleeping_Implementation()
 			if (!bFixedRespawnInterval || !GetWorld()->GetTimerManager().IsTimerActive(WakeUpTimerHandle))
 			{
 				GetWorld()->GetTimerManager().SetTimer(WakeUpTimerHandle, this, &AUTPickup::WakeUpTimer, RespawnTime, false);
+				if ((PreSpawnTime > 0.f) && (PreSpawnTime < RespawnTime))
+				{
+					GetWorld()->GetTimerManager().SetTimer(PreSpawnTimerHandle, this, &AUTPickup::PlayPreSpawnEffect, RespawnTime - PreSpawnTime, false);
+				}
 			}
 			if (TimerEffect != NULL && TimerEffect->Template != NULL)
 			{
@@ -320,6 +333,10 @@ void AUTPickup::WakeUp_Implementation()
 	{
 		// start timer for next time
 		GetWorld()->GetTimerManager().SetTimer(WakeUpTimerHandle, this, &AUTPickup::WakeUpTimer, RespawnTime, false);
+		if ((PreSpawnTime > 0.f) && (PreSpawnTime < RespawnTime))
+		{
+			GetWorld()->GetTimerManager().SetTimer(PreSpawnTimerHandle, this, &AUTPickup::PlayPreSpawnEffect, RespawnTime - PreSpawnTime, false);
+		}
 		if (bFixedRespawnInterval && Role == ROLE_Authority)
 		{
 			bReplicateReset = !bReplicateReset;
@@ -471,6 +488,10 @@ void AUTPickup::OnRep_RespawnTimeRemaining()
 	if (!State.bActive && (RespawnTimeRemaining != GetWorld()->GetTimerManager().GetTimerRemaining(WakeUpTimerHandle)))
 	{
 		GetWorld()->GetTimerManager().SetTimer(WakeUpTimerHandle, this, &AUTPickup::WakeUpTimer, RespawnTimeRemaining, false);
+		if ((PreSpawnTime > 0.f) && (PreSpawnTime < RespawnTimeRemaining))
+		{
+			GetWorld()->GetTimerManager().SetTimer(PreSpawnTimerHandle, this, &AUTPickup::PlayPreSpawnEffect, RespawnTimeRemaining - PreSpawnTime, false);
+		}
 	}
 }
 
@@ -480,6 +501,10 @@ void AUTPickup::OnRep_Reset()
 	if (bFixedRespawnInterval && CreationTime < GetWorld()->TimeSeconds)
 	{
 		GetWorld()->GetTimerManager().SetTimer(WakeUpTimerHandle, this, &AUTPickup::WakeUpTimer, RespawnTime, false);
+		if ((PreSpawnTime > 0.f) && (PreSpawnTime < RespawnTime))
+		{
+			GetWorld()->GetTimerManager().SetTimer(PreSpawnTimerHandle, this, &AUTPickup::PlayPreSpawnEffect, RespawnTime - PreSpawnTime, false);
+		}
 	}
 }
 

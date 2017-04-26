@@ -105,6 +105,16 @@ public:
 	/** if set, pickup respawns every RespawnTime seconds regardless of when it was picked up last */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Pickup)
 	bool bFixedRespawnInterval;
+
+
+	/** if set, play this effect PreSpawnTime seconds before pickup spawns */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pickup)
+		UParticleSystem* PreSpawnEffect;
+
+	/** How long before spawn to play PreSpawnEffect */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pickup)
+		float PreSpawnTime;
+
 	/** if set, item is always dropped when its holder dies if uses/charges/etc remain */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Inventory)
 	bool bAlwaysDropOnDeath;

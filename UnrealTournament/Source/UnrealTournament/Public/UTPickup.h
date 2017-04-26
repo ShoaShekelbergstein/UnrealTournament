@@ -49,6 +49,18 @@ class UNREALTOURNAMENT_API AUTPickup : public AActor, public IUTResetInterface, 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
 	UParticleSystem* BaseTemplateTaken;
 
+	/** if set, play this effect PreSpawnTime seconds before pickup spawns */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+		UParticleSystem* PreSpawnEffect;
+
+	/** How long before spawn to play PreSpawnEffect */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+		float PreSpawnTime;
+
+	FTimerHandle PreSpawnTimerHandle;
+
+	virtual void PlayPreSpawnEffect();
+
 	/** respawn time for the pickup; if it's <= 0 then the pickup doesn't respawn until the round resets */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = Pickup)
 	float RespawnTime;
