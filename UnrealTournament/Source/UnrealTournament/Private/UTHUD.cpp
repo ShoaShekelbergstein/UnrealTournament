@@ -2057,6 +2057,16 @@ bool AUTHUD::ProcessInputKey(FKey Key, EInputEvent EventType)
 
 void AUTHUD::ToggleComsMenu(bool bShow)
 {
+	// No comms menu when game isn't active
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (GS)
+	{
+		if (!GS->IsMatchInProgress() || GS->IsMatchIntermission())
+		{
+			bShow = false;
+		}
+	}
+
 	bShowComsMenu = bShow;
 
 	if (bShow)
