@@ -996,7 +996,6 @@ void AUTBasePlayerController::UpdateInputMode()
 		}
 
 		bool bSetWidgetFocus = true;
-		TSharedPtr<SWidget> WidgetToFocus = LocalPlayer->GetBestWidgetToFocus(); 
 
 		//Menus default to UI
 		if (LocalPlayer->AreMenusOpen())
@@ -1028,6 +1027,9 @@ void AUTBasePlayerController::UpdateInputMode()
 		//Apply the new input if it needs to be changed
 		if (NewInputMode != InputMode && NewInputMode != EInputMode::EIM_None)
 		{
+			TSharedPtr<SWidget> WidgetToFocus = LocalPlayer->GetBestWidgetToFocus(); 
+
+
 			UE_LOG(UT, Warning, TEXT("Input Mode Changing!"));
 			InputMode = NewInputMode;
 			switch (NewInputMode)

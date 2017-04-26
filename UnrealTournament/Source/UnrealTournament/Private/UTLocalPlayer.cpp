@@ -7228,6 +7228,7 @@ void UUTLocalPlayer::SetPartyType(EPartyType InPartyType, bool bLeaderFriendsOnl
 #if !UE_SERVER
 TSharedPtr<SWidget> UUTLocalPlayer::GetBestWidgetToFocus()
 {
+	TSharedPtr<SWidget> Result;
 	if (OpenDialogs.Num() > 0)
 	{
 		TSharedPtr<SUTDialogBase> TopMost;
@@ -7239,9 +7240,12 @@ TSharedPtr<SWidget> UUTLocalPlayer::GetBestWidgetToFocus()
 			}
 		}
 
-		if (TopMost.IsValid()) return TopMost->GetBestWidgetToFocus();
+		if (TopMost.IsValid())
+		{
+			Result = TopMost->GetBestWidgetToFocus();
+		}
 	}
 
-	return ViewportClient->GetGameViewportWidget();
+	return Result.IsValid() ? Result : ViewportClient->GetGameViewportWidget();
 }
 #endif

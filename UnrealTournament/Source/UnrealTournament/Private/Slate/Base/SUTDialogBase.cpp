@@ -382,7 +382,7 @@ TSharedRef<class SWidget> SUTDialogBase::BuildTitleBar(FText InDialogTitle)
 
 TSharedPtr<SWidget> SUTDialogBase::GetBestWidgetToFocus()
 {
-	return MakeShareable(this);
+	return PlayerOwner->ViewportClient->GetGameViewportWidget();
 }
 
 #endif
