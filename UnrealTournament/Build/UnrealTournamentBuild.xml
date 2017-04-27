@@ -280,8 +280,8 @@
 			<Sign Files="#TargetsToSign_Trimmed" If="$(IsBuildMachine)"/>
 		</Node>
 		<Node Name="EditorDDC Win64" Requires="Copy Editor Win64" NotifyOnWarnings="false">
-			<Copy Files="UE4Editor-DDCUtils.dll" From="$(RootDir)/Engine/Binaries/Win64/NotForLicensees" To="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64/NotForLicensees" Tag="#ToSign"/>
-			<Copy Files="EpicInternal.txt" From="$(RootDir)/Engine/Build/NotForLicensees" To="$(LocalStagingDir)/UT-Build/Win64/Engine/Build/NotForLicensees" Tag="#ToSign"/>
+			<Copy Files="UE4Editor-DDCUtils.dll" From="$(RootDir)/Engine/Binaries/Win64/NotForLicensees" To="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64/NotForLicensees"/>
+			<Copy Files="EpicInternal.txt" From="$(RootDir)/Engine/Build/NotForLicensees" To="$(LocalStagingDir)/UT-Build/Win64/Engine/Build/NotForLicensees"/>
 			<Commandlet Name="DerivedDataCache" Project="$(LocalStagingDir)/UT-Build/Win64/UnrealTournament/UnrealTournament.uproject" EditorExe="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64/UE4Editor.exe" Arguments="-TargetPlatform=Windows -fill -DDC=CreateInstalledEnginePak -Map=Example_Map"/>
 		</Node>
 		<Node Name="Chunk Editor Win64" Requires="EditorDDC Win64" Token="$(BuildDir)/WindowsEditor/WindowsEditor.token">
