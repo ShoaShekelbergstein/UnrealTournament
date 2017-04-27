@@ -5850,9 +5850,6 @@ TSharedPtr<SUTChatEditBox> UUTLocalPlayer::GetChatWidget()
 
 void UUTLocalPlayer::FocusWidget(TSharedPtr<SWidget> WidgetToFocus)
 {
-
-	UE_LOG(UT,Warning,TEXT("FocusWidget %s"), *WidgetToFocus->ToString())
-
 	FSlateApplication::Get().SetKeyboardFocus(WidgetToFocus, EKeyboardFocusCause::Keyboard);
 	GetSlateOperations() = FReply::Handled().ReleaseMouseCapture().SetUserFocus(WidgetToFocus.ToSharedRef(), EFocusCause::SetDirectly);
 }
