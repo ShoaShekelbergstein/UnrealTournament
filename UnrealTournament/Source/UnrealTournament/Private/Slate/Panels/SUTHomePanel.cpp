@@ -775,11 +775,7 @@ FReply SUTHomePanel::QuickPlayClick(FName QuickMatchType)
 	TSharedPtr<SUTMainMenu> MainMenu = StaticCastSharedPtr<SUTMainMenu>(GetParentWindow());
 	if (MainMenu.IsValid())
 	{
-		if (QuickMatchType == EMenuCommand::MC_QuickPlayDM) 
-		{
-			PlayerOwner->PlayerController->SetPause(!PlayerOwner->PlayerController->IsPaused());
-		}			
-		//	MainMenu->QuickPlay(EEpicDefaultRuleTags::Deathmatch);
+		if (QuickMatchType == EMenuCommand::MC_QuickPlayDM) MainMenu->QuickPlay(EEpicDefaultRuleTags::Deathmatch);
 		else if (QuickMatchType == EMenuCommand::MC_QuickPlayFlagrun) MainMenu->QuickPlay(EEpicDefaultRuleTags::FlagRun);
 		else if (QuickMatchType == EMenuCommand::MC_QuickPlayShowdown) MainMenu->QuickPlay(EEpicDefaultRuleTags::FlagRunVSAI);
 	}

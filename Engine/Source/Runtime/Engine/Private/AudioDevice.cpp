@@ -2612,7 +2612,6 @@ void FAudioDevice::HandlePause(bool bGameTicking, bool bGlobalPause)
 			FSoundSource* Source = Sources[ i ];
 			if (!Source->IsPausedByGame() ) 
 			{
-				UE_LOG(LogAudio, Warning, TEXT("Pausing Source %i"),i);
 				Source->SetPauseByGame(true);
 			}
 		}
@@ -2625,7 +2624,6 @@ void FAudioDevice::HandlePause(bool bGameTicking, bool bGlobalPause)
 			FSoundSource* Source = Sources[ i ];
 			if ( Source->IsPausedByGame() )
 			{
-				UE_LOG(LogAudio, Warning, TEXT("UnPausing Source %i"),i);
 				Source->SetPauseByGame(false);
 			}
 		}
