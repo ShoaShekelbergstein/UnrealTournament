@@ -5,6 +5,7 @@
 #include "UTServerBeaconLobbyClient.h"
 #include "UTAntiCheatModularFeature.h"
 #include "UTBotPlayer.h"
+#include "UTPlayerStart.h"
 
 #include "UTGameMode.generated.h"
 
@@ -102,6 +103,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	bool bHasRespawnChoices;
+
+	UPROPERTY()
+		TArray<AUTPlayerStart*> PlayerStarts;
 
 	/** If true, when rating player starts also rate against potential starts (if bHasRespawnChoices is true).  Used before match to keep player start choices apart. */
 	UPROPERTY(BlueprintReadWrite, Category = Game)

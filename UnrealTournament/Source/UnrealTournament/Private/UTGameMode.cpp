@@ -3144,10 +3144,12 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 		}
 	}
 
-	TArray<APlayerStart*> PlayerStarts;
-	for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+	if (PlayerStarts.Num() == 0)
 	{
-		PlayerStarts.Add(*It);
+		for (TActorIterator<AUTPlayerStart> It(GetWorld()); It; ++It)
+		{
+			PlayerStarts.Add(*It);
+		}
 	}
 
 	if (PlayerStarts.Num() == 0)
@@ -3156,36 +3158,23 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 	}
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
-		for (int32 i = 0; i < PlayerStarts.Num(); i++)
+		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
 		{
-			APlayerStart* P = PlayerStarts[i];
-
-			if (P->IsA(APlayerStartPIE::StaticClass()))
+			// Always prefer the first "Play from Here" PlayerStart, if we find one while in PIE mode
+			if (Cast<APlayerStartPIE>(*It))
 			{
-				// Always prefer the first "Play from Here" PlayerStart, if we find one while in PIE mode
-				return P;
+				return *It;
 			}
 		}
 	}
-	
-	// Always randomize the list order a bit to prevent groups of bad starts from permanently making the next decent start overused
-	for (int32 i = 0; i < 2; i++)
-	{
-		int32 RandIndexOne = FMath::RandHelper(PlayerStarts.Num());
-		int32 RandIndexTwo = FMath::RandHelper(PlayerStarts.Num());
-		APlayerStart* SavedStart = PlayerStarts[RandIndexOne]; 
-		PlayerStarts[RandIndexOne] = PlayerStarts[RandIndexTwo];
-		PlayerStarts[RandIndexTwo] = SavedStart;
-	}
-
-	// Start by choosing a random start
-	int32 RandStart = FMath::RandHelper(PlayerStarts.Num());
 
 	float BestRating = -20.f;
-	APlayerStart* BestStart = NULL;
-	for ( int32 i=RandStart; i<PlayerStarts.Num(); i++ )
+	AUTPlayerStart* BestStart = NULL;
+	int32 BestStartIndex = 0;
+	int32 AvoidedStarts = (PlayerStarts.Num() > 7) ? 3 : 0;
+	for ( int32 i=0; i<PlayerStarts.Num()-AvoidedStarts; i++ )
 	{
-		APlayerStart* P = PlayerStarts[i];
+		AUTPlayerStart* P = PlayerStarts[i];
 
 		float NewRating = RatePlayerStart(P,Player);
 
@@ -3198,38 +3187,45 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 		{
 			BestRating = NewRating;
 			BestStart = P;
+			BestStartIndex = i;
 		}
 	}
-	for ( int32 i=0; i<RandStart; i++ )
+	if ((AvoidedStarts > 0) && (BestRating < 0.f))
 	{
-		APlayerStart* P = PlayerStarts[i];
-
-		float NewRating = RatePlayerStart(P,Player);
-
-		if (NewRating >= 30.0f)
+		for (int32 i = PlayerStarts.Num() - AvoidedStarts; i<PlayerStarts.Num(); i++)
 		{
-			// this PlayerStart is good enough
-			return P;
+			AUTPlayerStart* P = PlayerStarts[i];
+
+			float NewRating = RatePlayerStart(P, Player);
+
+			if (NewRating > BestRating)
+			{
+				BestRating = NewRating;
+				BestStart = P;
+				BestStartIndex = i;
+			}
 		}
-		if ( NewRating > BestRating )
-		{
-			BestRating = NewRating;
-			BestStart = P;
-		}
+	}
+	if (BestStart)
+	{
+		// move to back to avoid picking again
+		check(BestStart == PlayerStarts[BestStartIndex]);
+		PlayerStarts.RemoveAt(BestStartIndex);
+		PlayerStarts.Add(BestStart);
 	}
 	return (BestStart != NULL) ? BestStart : Super::ChoosePlayerStart_Implementation(Player);
 }
 
 float AUTGameMode::RatePlayerStart(APlayerStart* P, AController* Player)
 {
-	float Score = 29.0f + FMath::FRand();
+	float Score = 29.0f + 1.2f*FMath::FRand();
 
 	AActor* LastSpot = (Player != NULL && Player->StartSpot.IsValid()) ? Player->StartSpot.Get() : NULL;
 	AUTPlayerState *UTPS = Player ? Cast<AUTPlayerState>(Player->PlayerState) : NULL;
 	if (P == LastStartSpot || (LastSpot != NULL && P == LastSpot) || AvoidPlayerStart(Cast<AUTPlayerStart>(P)))
 	{
 		// avoid re-using starts
-		Score -= 15.0f;
+		return -8.0f;
 	}
 	FVector StartLoc = P->GetActorLocation() + AUTCharacter::StaticClass()->GetDefaultObject<AUTCharacter>()->BaseEyeHeight;
 	if (UTPS && UTPS->RespawnChoiceA)
@@ -3303,7 +3299,7 @@ float AUTGameMode::AdjustNearbyPlayerStartScore(const AController* Player, const
 	float NextDist = (OtherCharacter->GetActorLocation() - StartLoc).Size();
 	bool bTwoPlayerGame = (NumPlayers + NumBots == 2);
 
-	if (((NextDist < 8000.0f) || bTwoPlayerGame) && !UTGameState->OnSameTeam(Player, OtherController))
+	if (((NextDist < 5000.0f) || bTwoPlayerGame) && !UTGameState->OnSameTeam(Player, OtherController))
 	{
 		static FName NAME_RatePlayerStart = FName(TEXT("RatePlayerStart"));
 		bool bIsLastKiller = (OtherCharacter->PlayerState == Cast<AUTPlayerState>(Player->PlayerState)->LastKillerPlayerState);
@@ -3321,7 +3317,7 @@ float AUTGameMode::AdjustNearbyPlayerStartScore(const AController* Player, const
 
 			ScoreAdjust -= (5.f - 0.0003f * NextDist);
 		}
-		else if (NextDist < 4000.0f)
+		else if (NextDist < 3000.0f)
 		{
 			// Avoid the last person that killed me
 			ScoreAdjust -= bIsLastKiller ? 5.f : 0.0005f * (5000.f - NextDist);

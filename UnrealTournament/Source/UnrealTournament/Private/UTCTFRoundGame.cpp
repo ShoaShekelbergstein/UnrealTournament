@@ -261,42 +261,7 @@ void AUTCTFRoundGame::HandleMatchIntermission()
 
 float AUTCTFRoundGame::AdjustNearbyPlayerStartScore(const AController* Player, const AController* OtherController, const ACharacter* OtherCharacter, const FVector& StartLoc, const APlayerStart* P)
 {
-	float ScoreAdjust = 0.f;
-	float NextDist = (OtherCharacter->GetActorLocation() - StartLoc).Size();
-
-	if ((NextDist < 8000.0f) && Player && Cast<AUTPlayerState>(Player->PlayerState))
-	{
-		if (!UTGameState->OnSameTeam(Player, OtherController))
-		{
-			static FName NAME_RatePlayerStart = FName(TEXT("RatePlayerStart"));
-			bool bIsLastKiller = (OtherCharacter->PlayerState == Cast<AUTPlayerState>(Player->PlayerState)->LastKillerPlayerState);
-			if (!GetWorld()->LineTraceTestByChannel(StartLoc, OtherCharacter->GetActorLocation() + FVector(0.f, 0.f, OtherCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()), ECC_Visibility, FCollisionQueryParams(NAME_RatePlayerStart, false)))
-			{
-				// Avoid the last person that killed me
-				if (bIsLastKiller)
-				{
-					ScoreAdjust -= 7.f;
-				}
-
-				ScoreAdjust -= (5.f - 0.0003f * NextDist);
-			}
-			else if (NextDist < 4000.0f)
-			{
-				// Avoid the last person that killed me
-				ScoreAdjust -= bIsLastKiller ? 5.f : 0.0005f * (5000.f - NextDist);
-
-				if (!GetWorld()->LineTraceTestByChannel(StartLoc, OtherCharacter->GetActorLocation(), ECC_Visibility, FCollisionQueryParams(NAME_RatePlayerStart, false, this)))
-				{
-					ScoreAdjust -= 2.f;
-				}
-			}
-		}
-		else if ((NextDist < 3000.f) && IsPlayerOnLifeLimitedTeam(Cast<AUTPlayerState>(Player->PlayerState)))
-		{
-			ScoreAdjust += (3000.f - NextDist) / 1000.f;
-		}
-	}
-	return ScoreAdjust;
+	return 0.f;
 }
 
 bool AUTCTFRoundGame::CheckScore_Implementation(AUTPlayerState* Scorer)
