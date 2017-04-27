@@ -139,7 +139,7 @@
 	<Agent Name="Monolithics Mac" Type="CompileMac">
 		<Node Name="Compile UT Mac" Requires="Compile Tools Mac">
 			<Compile Target="UnrealTournament" Platform="Mac" Configuration="Shipping" Tag="#ToSign"/>
-			<Tag Files="#ToSign" Filter="*.app;*.dylib" With="#ToSign_Trimmed"/>
+			<Tag Files="#ToSign" Filter="*.app;*.dylib;UE4-Mac-Shipping" With="#ToSign_Trimmed"/>
 			<Sign Files="#ToSign_Trimmed" If="$(IsBuildMachine)"/>
 		</Node>
 	</Agent>
