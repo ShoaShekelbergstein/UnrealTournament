@@ -2022,6 +2022,12 @@ void AUTCharacter::PlayDying()
 		}
 		else
 		{
+			if (bInRagdollRecovery)
+			{
+				GetMesh()->GetAnimInstance()->Montage_Stop(0.1f, RagdollRecoveryMontage);
+				bFeigningDeath = false;
+			}
+			
 			if (!bFeigningDeath)
 			{
 				bool bPlayedDeathAnim = false;
