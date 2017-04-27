@@ -62,10 +62,10 @@ float AUTProj_ShockBall::TakeDamage(float Damage, const FDamageEvent& DamageEven
 			if (UTPC)
 			{
 				// verify that the beam that hit this was real
+				AUTWeapon* FiringWeapon = Cast <AUTWeapon>(DamageCauser);
 				if ((EventInstigator == InstigatorController) && UTPC->PlayerState)
 				{
 					float ImpliedSpawnTime = CreationTime - 0.001f * (UTPC->PlayerState->ExactPing + UTPC->PredictionFudgeFactor);
-					AUTWeapon* FiringWeapon = Cast <AUTWeapon>(DamageCauser);
 					float FireInterval = FiringWeapon ? FiringWeapon->GetRefireTime(1) : 0.6f;
 					if (GetWorld()->GetTimeSeconds() - ImpliedSpawnTime < FireInterval - 0.1f)
 					{
@@ -82,6 +82,11 @@ float AUTProj_ShockBall::TakeDamage(float Damage, const FDamageEvent& DamageEven
 					}
 				}
 				UTPC->ServerNotifyProjectileHit(this, GetActorLocation(), DamageCauser, GetWorld()->GetTimeSeconds());
+				if (FiringWeapon != nullptr)
+				{
+					FiringWeapon->AddAmmo(-ComboAmmoCost);
+					FiringWeapon->SwitchToBestWeaponIfNoAmmo();
+				}
 			}
 		}
 		else if (GetNetMode() == NM_Standalone)
@@ -157,6 +162,7 @@ void AUTProj_ShockBall::PerformCombo(class AController* InstigatedBy, class AAct
 		if (Weapon && (!GameMode || GameMode->bAmmoIsLimited || (Weapon->Ammo > 9)))
 		{
 			Weapon->AddAmmo(-ComboAmmoCost);
+			Weapon->SwitchToBestWeaponIfNoAmmo();
 		}
 
 		//This gets called before server startfire(). bPlayComboEffects = true will send the FireExtra when fired
