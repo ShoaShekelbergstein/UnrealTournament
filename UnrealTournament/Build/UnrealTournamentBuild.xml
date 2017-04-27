@@ -295,9 +295,8 @@
 			<LabelBuild AppName="$(EditorAppName)" BuildVersion="$(BuildVersion)" Platform="Windows" Label="$(LabelName)" McpConfig="$(McpConfig)"/>
 		</Node>
 		<Node Name="Publish Editor Win64" Requires="EditorDDC Win64">
-			<Delete Files="$(LocalStagingDir)/UT-Build/Win64/Engine/Binaries/Win64/NotForLicensees/UE4Editor-DDCUtils.dll" DeleteEmptyDirectories="true"/>
-			<Delete Files="$(LocalStagingDir)/UT-Build/Win64/Engine/Build/NotForLicensees/EpicInternal.txt" DeleteEmptyDirectories="true"/>
-			<Copy Files="..." From="$(LocalStagingDir)/UT-Build/Win64" To="$(BuildDir)/WindowsEditor"/>
+			<Tag Files="$(LocalStagingDir)/UT-Build/Win64/..." Except="UE4Editor-DDCUtils.dll;EpicInternal.txt" With="#FilesToCopy"/>
+			<Copy Files="#FilesToCopy" From="$(LocalStagingDir)/UT-Build/Win64" To="$(BuildDir)/WindowsEditor"/>
 		</Node>
 	</Agent>
 
