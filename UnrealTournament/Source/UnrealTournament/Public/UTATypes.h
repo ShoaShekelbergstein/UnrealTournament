@@ -1643,6 +1643,9 @@ struct FRconPlayerData
 	UPROPERTY()
 	FString InstanceGuid;
 
+	UPROPERTY()
+	bool bSpectator;
+
 	bool bPendingDelete;
 
 	FRconPlayerData()
@@ -1655,22 +1658,24 @@ struct FRconPlayerData
 		bPendingDelete = false;
 	}
 
-	FRconPlayerData(FString inPlayerName, FString inPlayerID, FString inPlayerIP, int32 inRank)
+	FRconPlayerData(FString inPlayerName, FString inPlayerID, FString inPlayerIP, int32 inRank, bool inbSpectator)
 		: PlayerName(inPlayerName)
 		, PlayerID(inPlayerID)
 		, PlayerIP(inPlayerIP)
 		, ReportedRank(inRank)
 		, bInInstance(false)
+		, bSpectator(inbSpectator)
 	{
 		bPendingDelete = false;
 	}
 
-	FRconPlayerData(FString inPlayerName, FString inPlayerID, FString inPlayerIP, int32 inRank, FString inInstanceGuid)
+	FRconPlayerData(FString inPlayerName, FString inPlayerID, FString inPlayerIP, int32 inRank, FString inInstanceGuid, bool inbSpectator)
 		: PlayerName(inPlayerName)
 		, PlayerID(inPlayerID)
 		, PlayerIP(inPlayerIP)
 		, ReportedRank(inRank)
 		, InstanceGuid(inInstanceGuid)
+		, bSpectator(inbSpectator)
 	{
 		bInInstance = InstanceGuid != TEXT("");
 		bPendingDelete = false;
@@ -1678,7 +1683,7 @@ struct FRconPlayerData
 
 	static TSharedRef<FRconPlayerData> Make(const FRconPlayerData& Original)
 	{
-		return MakeShareable( new FRconPlayerData(Original.PlayerName, Original.PlayerID, Original.PlayerIP, Original.ReportedRank, Original.InstanceGuid));
+		return MakeShareable( new FRconPlayerData(Original.PlayerName, Original.PlayerID, Original.PlayerIP, Original.ReportedRank, Original.InstanceGuid, Original.bSpectator));
 	}
 
 };

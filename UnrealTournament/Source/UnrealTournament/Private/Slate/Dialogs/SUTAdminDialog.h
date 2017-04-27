@@ -59,6 +59,10 @@ public:
 			{
 				ColumnText = FText::AsNumber(PlayerData->ReportedRank);
 			}
+			else if (ColumnName == FName(TEXT("Spectator"))) 
+			{
+				ColumnText = PlayerData->bSpectator ? NSLOCTEXT("Common","True","True") : NSLOCTEXT("Common","False","False");
+			}
 			else if (ColumnName == FName(TEXT("InMatch"))) 
 			{
 				ColumnText = PlayerData->bInInstance ? NSLOCTEXT("Common","True","True") : NSLOCTEXT("Common","False","False");
@@ -396,6 +400,7 @@ protected:
 
 	FReply RemoveBanClicked();
 
+	EVisibility GetSelfVis() const;
 };
 
 #endif

@@ -30,6 +30,7 @@
 #include "UTIntermissionBeginInterface.h"
 #include "UTPlayerStart.h"
 #include "UTTeamPlayerStart.h"
+#include "UTDemoRecSpectator.h"
 
 AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -2257,7 +2258,7 @@ void AUTGameState::FillOutRconPlayerList(TArray<FRconPlayerData>& PlayerList)
 		if (PlayerArray[i] && !PlayerArray[i]->IsPendingKillPending())
 		{
 			APlayerController* PlayerController = Cast<APlayerController>( PlayerArray[i]->GetOwner() );
-			if (PlayerController)
+			if (PlayerController && Cast<AUTDemoRecSpectator>(PlayerController) == nullptr)
 			{
 				FString PlayerID = PlayerArray[i]->UniqueId.ToString();
 
@@ -2278,7 +2279,7 @@ void AUTGameState::FillOutRconPlayerList(TArray<FRconPlayerData>& PlayerList)
 					AUTBaseGameMode* DefaultGame = GameModeClass ? GameModeClass->GetDefaultObject<AUTBaseGameMode>() : NULL;
 					int32 Rank = UTPlayerState && DefaultGame ? DefaultGame->GetEloFor(UTPlayerState, bRankedSession) : 0;
 					FString PlayerIP = PlayerController->GetPlayerNetworkAddress();
-					FRconPlayerData PlayerInfo(PlayerArray[i]->PlayerName, PlayerID, PlayerIP, Rank);
+					FRconPlayerData PlayerInfo(PlayerArray[i]->PlayerName, PlayerID, PlayerIP, Rank, UTPlayerState->bOnlySpectator);
 					PlayerList.Add( PlayerInfo );
 				}
 			}
