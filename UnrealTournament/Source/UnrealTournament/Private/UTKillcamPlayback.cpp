@@ -10,7 +10,6 @@
 #include "UTGameViewportClient.h"
 #include "UTDemoRecSpectator.h"
 #include "UTDemoNetDriver.h"
-#include "UTProj_Redeemer.h"
 #include "UTRemoteRedeemer.h"
 #include "UTCharacter.h"
 #include "UTRallyPoint.h"

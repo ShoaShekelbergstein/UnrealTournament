@@ -1,7 +1,6 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
 
-#include "UTProj_Redeemer.h"
 #include "Classes/Kismet/KismetMaterialLibrary.h"
 #include "UTRemoteRedeemer.generated.h"
 
@@ -22,9 +21,8 @@ class UNREALTOURNAMENT_API AUTRemoteRedeemer : public APawn, public IUTTeamInter
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Projectile)
 	UCapsuleComponent* CapsuleComp;
 
-	/** Used to get damage values */
-	UPROPERTY(EditDefaultsOnly, Category = Projectile)
-	TSubclassOf<class AUTProj_Redeemer> RedeemerProjectileClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Redeemer)
+		USoundBase* ShotDownAmbient;
 
 	/** Sound played when player targeting information first appears on HUD. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Lock)
@@ -33,6 +31,23 @@ class UNREALTOURNAMENT_API AUTRemoteRedeemer : public APawn, public IUTTeamInter
 	/** Sound played when redeemer receives damage. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Redeemer)
 		USoundBase* HitSound;
+
+	/** Sound played when redeemer receives damage. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Redeemer)
+		USoundBase* ExplosionSound; // FIXME from explosion effects
+
+	/** explosion effects blueprint, overrides the normal path; MUST DESTROY ITSELF */
+	UPROPERTY(EditDefaultsOnly, Category = Redeemer)
+		TSubclassOf<AActor> ExplosionBP;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage)
+		FRadialDamageParams DamageParams;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage)
+		TSubclassOf<UDamageType> MyDamageType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage)
+		float Momentum;
 
 	UPROPERTY()
 	int32 LockCount;
@@ -47,6 +62,10 @@ class UNREALTOURNAMENT_API AUTRemoteRedeemer : public APawn, public IUTTeamInter
 		float CurrentFuelTime;
 
 	uint8 CachedTeamNum;
+
+	float ExplosionTimings[5];
+	float ExplosionRadii[6];
+	float CollisionFreeRadius;
 
 protected:
 	/** for outline rendering */

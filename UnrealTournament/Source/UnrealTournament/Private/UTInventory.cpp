@@ -36,6 +36,7 @@ AUTInventory::AUTInventory(const FObjectInitializer& ObjectInitializer)
 	RemainingBoostsGivenOverride = 1;
 
 	HUDText = FText::GetEmpty();
+	PreSpawnTime = 3.f;
 }
 
 void AUTInventory::PostInitProperties()
