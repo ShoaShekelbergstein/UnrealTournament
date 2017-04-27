@@ -3178,16 +3178,16 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 
 		float NewRating = RatePlayerStart(P,Player);
 
-		if (NewRating >= 30.0f)
-		{
-			// this PlayerStart is good enough
-			return P;
-		}
 		if ( NewRating > BestRating )
 		{
 			BestRating = NewRating;
 			BestStart = P;
 			BestStartIndex = i;
+			if (NewRating >= 30.0f)
+			{
+				// this PlayerStart is good enough
+				break;
+			}
 		}
 	}
 	if ((AvoidedStarts > 0) && (BestRating < 0.f))
@@ -3307,7 +3307,7 @@ float AUTGameMode::AdjustNearbyPlayerStartScore(const AController* Player, const
 		{
 			return 0.f;
 		}
-		if (!GetWorld()->LineTraceTestByChannel(StartLoc, OtherCharacter->GetActorLocation() + FVector(0.f, 0.f, OtherCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()), ECC_Visibility, FCollisionQueryParams(NAME_RatePlayerStart, false)))
+		if (!GetWorld()->LineTraceTestByChannel(StartLoc, OtherCharacter->GetActorLocation() + FVector(0.f, 0.f, OtherCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()), COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionQueryParams(NAME_RatePlayerStart, false)))
 		{
 			// Avoid the last person that killed me
 			if (bIsLastKiller)
@@ -3322,7 +3322,7 @@ float AUTGameMode::AdjustNearbyPlayerStartScore(const AController* Player, const
 			// Avoid the last person that killed me
 			ScoreAdjust -= bIsLastKiller ? 5.f : 0.0005f * (5000.f - NextDist);
 
-			if (!GetWorld()->LineTraceTestByChannel(StartLoc, OtherCharacter->GetActorLocation(), ECC_Visibility, FCollisionQueryParams(NAME_RatePlayerStart, false, this)))
+			if (!GetWorld()->LineTraceTestByChannel(StartLoc, OtherCharacter->GetActorLocation(), COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionQueryParams(NAME_RatePlayerStart, false, this)))
 			{
 				ScoreAdjust -= 2.f;
 			}
