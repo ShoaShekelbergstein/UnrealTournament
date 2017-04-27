@@ -19,4 +19,8 @@ public:
 	virtual void SetRecordVolume(float InVolume) = 0;
 
 	virtual void SetAudioInputDeviceMuted(bool bIsMuted) = 0;
+
+	virtual void MutePlayer(const FString& PlayerName) = 0;
+	virtual void UnMutePlayer(const FString& PlayerName) = 0;
+	virtual bool IsPlayerMuted(const FString& PlayerName) = 0;
 };

@@ -1173,6 +1173,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Game")
 	bool bIsTalking;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Game")
+	bool bIsMuted;
 
 public:
 	/** Holds the last known location of the pawn associated with this pri */

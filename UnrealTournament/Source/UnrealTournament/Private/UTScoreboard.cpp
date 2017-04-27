@@ -788,9 +788,20 @@ void UUTScoreboard::DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float R
 		float StrikeWidth = FMath::Min(0.475f*ScaledCellWidth, XL);
 		DrawTexture(UTHUDOwner->HUDAtlas, XOffset + (ScaledCellWidth * ColumnHeaderPlayerX), YOffset + ColumnY, StrikeWidth, Height, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Red);
 	}
+	
+	// Draw the muted indicator
+	if (PlayerState->bIsMuted)
+	{
+		bool bLeft = (XOffset < Canvas->ClipX * 0.5f);
+		float TalkingXOffset = bLeft ? ScaledCellWidth + (10.0f *RenderScale) : (-36.0f * RenderScale);
+		FTextureUVs ChatIconUVs = bLeft ? FTextureUVs(497.0f, 965.0f, 35.0f, 31.0f) : FTextureUVs(532.0f, 965.0f, -35.0f, 31.0f);
+		DrawTexture(UTHUDOwner->HUDAtlas, XOffset + TalkingXOffset, YOffset + ((CellHeight * 0.5f - 24.0f) * RenderScale), (26 * RenderScale), (23 * RenderScale), ChatIconUVs.U, ChatIconUVs.V, ChatIconUVs.UL, ChatIconUVs.VL, 1.0f);
 
+		FTextureUVs MuteIconUVs = FTextureUVs(410.0f, 942.0f, 64.0f, 64.0f);
+		DrawTexture(UTHUDOwner->HUDAtlas, XOffset + TalkingXOffset - 3.f, YOffset + ((CellHeight * 0.5f - 30.0f) * RenderScale), (32 * RenderScale), (32 * RenderScale), MuteIconUVs.U, MuteIconUVs.V, MuteIconUVs.UL, MuteIconUVs.VL, 1.0f, FLinearColor::Red);
+	}
 	// Draw the talking indicator
-	if ( PlayerState->bIsTalking )
+	else if ( PlayerState->bIsTalking )
 	{
 		bool bLeft = (XOffset < Canvas->ClipX * 0.5f);
 		float TalkingXOffset = bLeft ? ScaledCellWidth + (10.0f *RenderScale) : (-36.0f * RenderScale);

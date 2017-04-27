@@ -13,6 +13,7 @@
 #include "../Widgets/SUTButton.h"
 #include "UTConsole.h"
 #include "SUTChatEditBox.h"
+#include "UTVoiceChatFeature.h"
 
 #if !UE_SERVER
 
@@ -505,6 +506,21 @@ FReply SUTInGameHomePanel::ContextCommand(int32 CommandId, TWeakObjectPtr<AUTPla
 							PC->ServerMutePlayer(TargetPlayerState->UniqueId);
 						}
 					}
+					
+					static const FName VoiceChatFeatureName("VoiceChat");
+					if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+					{
+						UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+						if (VoiceChat->IsPlayerMuted(TargetPlayerState->PlayerName))
+						{
+							VoiceChat->UnMutePlayer(TargetPlayerState->PlayerName);
+						}
+						else
+						{
+							VoiceChat->MutePlayer(TargetPlayerState->PlayerName);
+						}
+					}
+
 					HideContextMenu();
 					break;
 				}
@@ -663,6 +679,14 @@ FText SUTInGameHomePanel::GetMuteLabelText() const
 
 	TSharedPtr<const FUniqueNetId> Id = SelectedPlayer->UniqueId.GetUniqueNetId();
 	bool bIsMuted = Id.IsValid() && PlayerOwner->PlayerController->IsPlayerMuted(Id.ToSharedRef().Get());
+	
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+	{
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		bIsMuted = VoiceChat->IsPlayerMuted(SelectedPlayer->PlayerName);
+	}
+
 	return bIsMuted ? NSLOCTEXT("SUTInGameHomePanel","Unmute","Unmute Player") : NSLOCTEXT("SUTInGameHomePanel","Mute","Mute Player");
 }
 
