@@ -59,6 +59,12 @@ class UNREALTOURNAMENT_API AUTPickup : public AActor, public IUTResetInterface, 
 
 	FTimerHandle PreSpawnTimerHandle;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+		FTransform PreSpawnEffectTransform;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+		FVector PreSpawnColorVectorParam;
+
 	virtual void PlayPreSpawnEffect();
 
 	/** respawn time for the pickup; if it's <= 0 then the pickup doesn't respawn until the round resets */

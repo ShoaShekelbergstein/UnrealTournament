@@ -136,6 +136,8 @@ void AUTPickupInventory::SetInventoryType(TSubclassOf<AUTInventory> NewType)
 		{
 			PreSpawnEffect = InventoryType.GetDefaultObject()->PreSpawnEffect;
 			PreSpawnTime = InventoryType.GetDefaultObject()->PreSpawnTime;
+			PreSpawnEffectTransform = InventoryType.GetDefaultObject()->PreSpawnEffectTransform;
+			PreSpawnColorVectorParam = InventoryType.GetDefaultObject()->PreSpawnColorVectorParam;
 		}
 	}
 	else

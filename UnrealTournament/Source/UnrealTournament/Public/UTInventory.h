@@ -115,6 +115,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pickup)
 		float PreSpawnTime;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+		FTransform PreSpawnEffectTransform;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+		FVector PreSpawnColorVectorParam;
+
 	/** if set, item is always dropped when its holder dies if uses/charges/etc remain */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Inventory)
 	bool bAlwaysDropOnDeath;

@@ -138,7 +138,15 @@ void AUTPickup::PlayPreSpawnEffect()
 {
 	if (PreSpawnEffect && GetWorldTimerManager().IsTimerActive(WakeUpTimerHandle))
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), PreSpawnEffect, GetActorLocation(), GetActorRotation(), true);
+		FTransform EffectTransform = PreSpawnEffectTransform;
+		EffectTransform.SetTranslation(GetActorLocation() + PreSpawnEffectTransform.GetTranslation());
+		EffectTransform.SetRotation(GetActorRotation().Quaternion() + PreSpawnEffectTransform.GetRotation());
+		UParticleSystemComponent* PreSpawnPSC = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), PreSpawnEffect, EffectTransform, true);
+		if (PreSpawnPSC)
+		{
+			static FName NAME_SpawnColor(TEXT("SpawnColor"));
+			PreSpawnPSC->SetVectorParameter(NAME_SpawnColor, PreSpawnColorVectorParam);
+		}
 	}
 }
 
