@@ -1846,6 +1846,7 @@ void AUTCharacter::StartRagdoll()
 
 void AUTCharacter::StopRagdoll()
 {
+	UE_LOG(UT, Warning, TEXT("Stop ragdoll"));
 	// check for falling damage
 	if (!IsDead())
 	{
@@ -1937,10 +1938,13 @@ void AUTCharacter::StopRagdoll()
 
 	RagdollBlendOutTimeLeft = RagdollBlendOutTime;
 	bInRagdollRecovery = true;
+	UE_LOG(UT, Warning, TEXT("Ready to Update PhysicsVolume from %s"), *UTCharacterMovement->GetPhysicsVolume()->GetName());
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	if (UTCharacterMovement)
 	{
+		UE_LOG(UT, Warning, TEXT("Update PhysicsVolume from %s"), *UTCharacterMovement->GetPhysicsVolume()->GetName());
 		UTCharacterMovement->UpdatedComponent->UpdatePhysicsVolume(true);
+		UE_LOG(UT, Warning, TEXT("Update PhysicsVolume NOW %s"), *UTCharacterMovement->GetPhysicsVolume()->GetName());
 	}
 }
 
