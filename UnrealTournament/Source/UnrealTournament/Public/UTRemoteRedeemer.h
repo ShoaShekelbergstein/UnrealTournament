@@ -63,8 +63,8 @@ class UNREALTOURNAMENT_API AUTRemoteRedeemer : public APawn, public IUTTeamInter
 
 	uint8 CachedTeamNum;
 
-	float ExplosionTimings[5];
-	float ExplosionRadii[6];
+	float ExplosionTimings[2];
+	float ExplosionRadii[3];
 	float CollisionFreeRadius;
 
 protected:
@@ -230,12 +230,6 @@ public:
 	void ExplodeStage2();
 	UFUNCTION()
 	void ExplodeStage3();
-	UFUNCTION()
-	void ExplodeStage4();
-	UFUNCTION()
-	void ExplodeStage5();
-	UFUNCTION()
-	void ExplodeStage6();
 
 	UFUNCTION(reliable, client)
 	void ForceReplication();

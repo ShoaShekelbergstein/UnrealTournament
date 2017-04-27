@@ -70,15 +70,10 @@ AUTRemoteRedeemer::AUTRemoteRedeemer(const class FObjectInitializer& ObjectIniti
 	ExplosionTimings[0] = 0.18f;
 	ExplosionTimings[1] = 0.18f;
 	ExplosionTimings[2] = 0.18f;
-	ExplosionTimings[3] = 0.18f;
-	ExplosionTimings[4] = 0.18f;
 
 	ExplosionRadii[0] = 0.25f;
-	ExplosionRadii[1] = 0.4f;
-	ExplosionRadii[2] = 0.55f;
-	ExplosionRadii[3] = 0.7f;
-	ExplosionRadii[4] = 0.85f;
-	ExplosionRadii[5] = 1.0f;
+	ExplosionRadii[1] = 0.75f;
+	ExplosionRadii[2] = 1.f;
 
 	CollisionFreeRadius = 1200.f;
 }
@@ -609,38 +604,22 @@ void AUTRemoteRedeemer::ExplodeStage1()
 	FTimerHandle TempHandle;
 	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTRemoteRedeemer::ExplodeStage2, ExplosionTimings[0]);
 }
+
 void AUTRemoteRedeemer::ExplodeStage2()
 {
 	ExplodeStage(ExplosionRadii[1]);
 	FTimerHandle TempHandle;
 	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTRemoteRedeemer::ExplodeStage3, ExplosionTimings[1]);
 }
+
 void AUTRemoteRedeemer::ExplodeStage3()
-{
-	ExplodeStage(ExplosionRadii[2]);
-	FTimerHandle TempHandle;
-	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTRemoteRedeemer::ExplodeStage4, ExplosionTimings[2]);
-}
-void AUTRemoteRedeemer::ExplodeStage4()
-{
-	ExplodeStage(ExplosionRadii[3]);
-	FTimerHandle TempHandle;
-	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTRemoteRedeemer::ExplodeStage5, ExplosionTimings[3]);
-}
-void AUTRemoteRedeemer::ExplodeStage5()
-{
-	ExplodeStage(ExplosionRadii[4]);
-	FTimerHandle TempHandle;
-	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTRemoteRedeemer::ExplodeStage6, ExplosionTimings[4]);
-}
-void AUTRemoteRedeemer::ExplodeStage6()
 {
 	AUTPlayerState* StatusPS = ((Role == ROLE_Authority) && DamageInstigator) ? Cast<AUTPlayerState>(DamageInstigator->PlayerState) : nullptr;
 	if (Role == ROLE_Authority)
 	{
 		DriverLeave(true);
 	}
-	ExplodeStage(ExplosionRadii[5]);
+	ExplodeStage(ExplosionRadii[2]);
 
 	if (StatusPS && (KillCount > 0))
 	{
