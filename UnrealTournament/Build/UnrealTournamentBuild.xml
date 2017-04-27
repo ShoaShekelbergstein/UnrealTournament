@@ -52,7 +52,6 @@
 	
 	<Option Name="PromoteWindows" DefaultValue="false" Description="Whether or not to promote for Windows. Only true or false."/>
 	<Option Name="PromoteMac" DefaultValue="false" Description="Whether or not to promote for Mac. Only true or false."/>
-	<Option Name="PromoteWin32" DefaultValue="false" Description="Whether or not to promote for Win32. Only true or false."/>
 	<Property Name="Platforms" Value=""/>
 	<Property Name="Platforms" Value="Windows" If="'$(PromoteMac)' == false And '$(PromoteWindows)' == true"/>
 	<Property Name="Platforms" Value="Mac" If="'$(PromoteMac)' == true And '$(PromoteWindows)' == false"/>
