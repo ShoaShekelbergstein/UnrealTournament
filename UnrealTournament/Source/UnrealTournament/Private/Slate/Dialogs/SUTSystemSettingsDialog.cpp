@@ -680,7 +680,7 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildGeneralTab()
 			[
 				SNew(STextBlock)
 				.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
-				.Text(NSLOCTEXT("SUTSystemSettingsDialog", "Frame Rate Cap", "Frame Rate Cap"))
+				.Text(NSLOCTEXT("SUTSystemSettingsDialog", "Frame Rate Cap", "Frame Rate Cap (30-144)"))
 				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "FrameRateCap_Tooltip", "Limiting the max frame rate can improve the smoothness of mouse movement.")))
 			]
 		]
@@ -692,7 +692,7 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildGeneralTab()
 			.Style(SUWindowsStyle::Get(),"UT.Common.Editbox.White")
 			.ForegroundColor(FLinearColor::Black)
 			.MinDesiredWidth(100.0f)
-			.Text(FText::AsNumber(UTEngine->FrameRateCap))
+			.Text(FText::AsNumber(FMath::Clamp(UTEngine->FrameRateCap, 30.f, 144.f)))
 		]
 	]
 	+ SVerticalBox::Slot()
@@ -1345,7 +1345,7 @@ FReply SUTSystemSettingsDialog::OKClick()
 	}
 	if (FrameRateCap->GetText().ToString().IsNumeric())
 	{
-		UTEngine->FrameRateCap = FCString::Atoi(*FrameRateCap->GetText().ToString());
+		UTEngine->FrameRateCap = FMath::Clamp(FCString::Atof(*FrameRateCap->GetText().ToString()), 30.f, 144.f);
 	}
 	GEngine->bSmoothFrameRate = SmoothFrameRate->IsChecked();
 	GEngine->SaveConfig();
