@@ -1215,8 +1215,8 @@ void AUTHUD::DrawDamageNumbers()
 
 	for (int32 i = 0; i < DamageNumbers.Num(); i++)
 	{
-		DamageNumbers[i].Scale = DamageNumbers[i].Scale + 1.6f * GetWorld()->DeltaTimeSeconds;
-		float MaxScale = FMath::Clamp(0.055f * float(DamageNumbers[i].DamageAmount), 1.7f, 2.4f);
+		DamageNumbers[i].Scale = DamageNumbers[i].Scale + 1.7f * GetWorld()->DeltaTimeSeconds;
+		float MaxScale = FMath::Clamp(0.06f * float(DamageNumbers[i].DamageAmount), 1.8f, 2.4f);
 		if (DamageNumbers[i].Scale > MaxScale)
 		{
 			DamageNumbers.RemoveAt(i, 1);
@@ -1224,7 +1224,7 @@ void AUTHUD::DrawDamageNumbers()
 		}
 		else
 		{
-			float Alpha = 1.f - FMath::Clamp((DamageNumbers[i].Scale-1.f)/(MaxScale - 1.f), 0.f, 1.f);
+			float Alpha = 1.f - FMath::Square(FMath::Clamp((DamageNumbers[i].Scale-1.f)/(MaxScale - 1.f), 0.f, 1.f));
 			FVector ScreenPosition = Canvas->Project(DamageNumbers[i].WorldPosition);
 			float XL, YL;
 			FString DamageString = FString::Printf(TEXT("%d"), DamageNumbers[i].DamageAmount);
