@@ -280,7 +280,7 @@ TSharedRef<ITableRow> SUTMatchPanel::OnGenerateWidgetForMatchList( TSharedPtr<FT
 					.VAlign(VAlign_Center)
 					.AutoWidth()
 					[
-						SNew(SBox).HeightOverride(86).WidthOverride(563).Padding(FMargin(5.0f, 0.0f, 5.0f, 0.0f))
+						SNew(SBox).HeightOverride(86).WidthOverride(548).Padding(FMargin(5.0f, 0.0f, 5.0f, 0.0f))
 						[
 							SNew(SVerticalBox)
 							+SVerticalBox::Slot()
@@ -409,7 +409,7 @@ TSharedRef<ITableRow> SUTMatchPanel::OnGenerateWidgetForMatchList( TSharedPtr<FT
 					+SHorizontalBox::Slot()
 					.VAlign(VAlign_Center)
 					.AutoWidth()
-					.Padding(0.0,0.0,5.0,0.0)
+					.Padding(0.0,0.0,20.0,0.0)
 					[
 						SNew(SBox).WidthOverride(115).HeightOverride(86)
 						[
