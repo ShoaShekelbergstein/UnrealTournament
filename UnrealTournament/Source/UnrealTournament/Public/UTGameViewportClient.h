@@ -166,5 +166,8 @@ public:
 	// When the player is kicked, the reason will be placed here before they are disconnected. 
 	FText KickReason;
 
+	virtual void ReceivedFocus(FViewport* InViewport) override;
+
+
 };
 

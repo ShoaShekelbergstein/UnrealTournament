@@ -272,7 +272,7 @@ public:
 
 #if !UE_SERVER
 	virtual void Tick(float DeltaTime) override;
-	virtual void UpdateInputMode();
+	virtual void UpdateInputMode(bool bForce = false);
 
 #endif
 

@@ -982,7 +982,7 @@ void AUTBasePlayerController::Tick(float DeltaTime)
 	}
 }
 
-void AUTBasePlayerController::UpdateInputMode()
+void AUTBasePlayerController::UpdateInputMode(bool bForce)
 {
 
 	EInputMode::Type NewInputMode = EInputMode::EIM_None;
@@ -1025,7 +1025,7 @@ void AUTBasePlayerController::UpdateInputMode()
 
 
 		//Apply the new input if it needs to be changed
-		if (NewInputMode != InputMode && NewInputMode != EInputMode::EIM_None)
+		if (bForce || (NewInputMode != InputMode && NewInputMode != EInputMode::EIM_None) )
 		{
 			TSharedPtr<SWidget> WidgetToFocus = LocalPlayer->GetBestWidgetToFocus(); 
 

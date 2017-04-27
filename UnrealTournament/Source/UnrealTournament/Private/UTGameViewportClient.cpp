@@ -1199,3 +1199,20 @@ UWorld* UUTGameViewportClient::GetWorld() const
 
 	return Super::GetWorld();
 }
+
+void UUTGameViewportClient::ReceivedFocus(FViewport* InViewport)
+{
+	Super::ReceivedFocus(InViewport);
+	UUTLocalPlayer* FirstPlayer = Cast<UUTLocalPlayer>(GEngine->GetLocalPlayerFromControllerId(this, 0));	// Grab the first local player.
+	if (FirstPlayer && FirstPlayer->PlayerController)
+	{
+#if !UE_SERVER
+		AUTBasePlayerController* UTBasePlayerController = Cast<AUTBasePlayerController>(FirstPlayer->PlayerController);
+		if (UTBasePlayerController)
+		{
+			UTBasePlayerController->UpdateInputMode(true);
+		}
+#endif
+
+	}
+}
