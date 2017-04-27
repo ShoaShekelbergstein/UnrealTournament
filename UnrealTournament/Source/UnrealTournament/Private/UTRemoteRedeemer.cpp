@@ -69,7 +69,6 @@ AUTRemoteRedeemer::AUTRemoteRedeemer(const class FObjectInitializer& ObjectIniti
 
 	ExplosionTimings[0] = 0.18f;
 	ExplosionTimings[1] = 0.18f;
-	ExplosionTimings[2] = 0.18f;
 
 	ExplosionRadii[0] = 0.25f;
 	ExplosionRadii[1] = 0.75f;
