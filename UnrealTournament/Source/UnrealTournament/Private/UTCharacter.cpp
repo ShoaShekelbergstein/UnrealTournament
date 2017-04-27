@@ -1938,11 +1938,11 @@ void AUTCharacter::StopRagdoll()
 
 	RagdollBlendOutTimeLeft = RagdollBlendOutTime;
 	bInRagdollRecovery = true;
-	UE_LOG(UT, Warning, TEXT("Ready to Update PhysicsVolume from %s"), *UTCharacterMovement->GetPhysicsVolume()->GetName());
+	UE_LOG(UT, Warning, TEXT("Ready to Update PhysicsVolume from %s capsule %s updated component %s"), *UTCharacterMovement->GetPhysicsVolume()->GetName(), *GetCapsuleComponent()->GetName(), *UTCharacterMovement->UpdatedComponent->GetName());
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	if (UTCharacterMovement)
 	{
-		UE_LOG(UT, Warning, TEXT("Update PhysicsVolume from %s"), *UTCharacterMovement->GetPhysicsVolume()->GetName());
+		UE_LOG(UT, Warning, TEXT("Update PhysicsVolume from %s should update %d overlap %d collisionEnabled %d"), *UTCharacterMovement->GetPhysicsVolume()->GetName(), GetCapsuleComponent()->bShouldUpdatePhysicsVolume, GetCapsuleComponent()->bGenerateOverlapEvents, GetCapsuleComponent()->IsQueryCollisionEnabled());
 		UTCharacterMovement->UpdatedComponent->UpdatePhysicsVolume(true);
 		UE_LOG(UT, Warning, TEXT("Update PhysicsVolume NOW %s"), *UTCharacterMovement->GetPhysicsVolume()->GetName());
 	}

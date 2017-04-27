@@ -101,7 +101,6 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 	AUTCharacter* P = Cast<AUTCharacter>(Other);
 	if ((Role == ROLE_Authority) && P)
 	{
-		UE_LOG(UT, Warning, TEXT("%s entered %s"), *P->GetName(), *GetName());
 		P->LastGameVolume = this;
 		AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 		if (GS != nullptr && P->PlayerState != nullptr && !GS->IsMatchIntermission() && (GS->IsMatchInProgress() || (Cast<AUTPlayerState>(P->PlayerState) && ((AUTPlayerState*)(P->PlayerState))->bIsWarmingUp)))
@@ -319,7 +318,6 @@ void AUTGameVolume::ActorLeavingVolume(class AActor* Other)
 	AUTCharacter* UTCharacter = Cast<AUTCharacter>(Other);
 	if (UTCharacter)
 	{
-		UE_LOG(UT, Warning, TEXT("%s left %s"), *UTCharacter->GetName(), *GetName());
 		if (bIsTeamSafeVolume)
 		{
 			UTCharacter->bDamageHurtsHealth = true;
