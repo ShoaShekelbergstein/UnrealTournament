@@ -12,9 +12,9 @@ UUTShowdownRewardMessage::UUTShowdownRewardMessage(const class FObjectInitialize
 	MessageSlot = FName(TEXT("MajorRewardMessage"));
 
 	FinishItMsg = NSLOCTEXT("ShowdownRewardMessage", "FinishItMsg", "FINISH IT!");
-	LastManMsg = NSLOCTEXT("ShowdownRewardMessage", "LastManMsg", "Last Man Standing");
+	LastManMsg = NSLOCTEXT("ShowdownRewardMessage", "LastManMsg", " is Last Man Standing");
 	OverChargeMsg = NSLOCTEXT("ShowdownRewardMessage", "OverChargeMsg", "OVERCHARGE AVAILABLE!");
-	TerminationMsg = NSLOCTEXT("ShowdownRewardMessage", "TerminationMsg", "{Player1Name} TERMINATED!");
+	TerminationMsg = NSLOCTEXT("ShowdownRewardMessage", "TerminationMsg", " TERMINATED!");
 	AnnihilationMsg = NSLOCTEXT("ShowdownRewardMessage", "AnnihilationMsg", "ANNIHILATION!");
 	FinishIt = FName(TEXT("RW_FinishIt"));
 	LastMan = FName(TEXT("RW_LMS"));
@@ -53,6 +53,21 @@ float UUTShowdownRewardMessage::GetAnnouncementDelay(int32 Switch)
 	return (Switch == 3) ? 0.5f : 0.f;
 }
 
+void UUTShowdownRewardMessage::GetEmphasisText(FText& PrefixText, FText& EmphasisText, FText& PostfixText, FLinearColor& EmphasisColor, int32 Switch, class APlayerState* RelatedPlayerState_1, class APlayerState* RelatedPlayerState_2, class UObject* OptionalObject) const
+{
+	if ((Switch == 1) || (Switch == 3))
+	{
+		PrefixText = FText::GetEmpty();
+		PostfixText = (Switch == 1) ? LastManMsg : TerminationMsg;
+		EmphasisText = RelatedPlayerState_1 ? FText::FromString(RelatedPlayerState_1->PlayerName) : FText::GetEmpty();
+		AUTPlayerState* PS = Cast<AUTPlayerState>(RelatedPlayerState_1);
+		EmphasisColor = (PS && PS->Team) ? PS->Team->TeamColor : REDHUDCOLOR;
+		return;
+	}
+
+	Super::GetEmphasisText(PrefixText, EmphasisText, PostfixText, EmphasisColor, Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject);
+}
+
 FText UUTShowdownRewardMessage::GetText(int32 Switch, bool bTargetsPlayerState1, class APlayerState* RelatedPlayerState_1, class APlayerState* RelatedPlayerState_2, class UObject* OptionalObject) const 
 {
 	switch (Switch)
@@ -60,11 +75,11 @@ FText UUTShowdownRewardMessage::GetText(int32 Switch, bool bTargetsPlayerState1,
 	case 0:
 		return FinishItMsg;
 	case 1:
-		return LastManMsg;
+		return BuildEmphasisText(Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject); break;  //LastManMsg;
 	case 2:
 		return OverChargeMsg;
 	case 3:
-		return TerminationMsg;
+		return BuildEmphasisText(Switch, RelatedPlayerState_1, RelatedPlayerState_2, OptionalObject); break; // TerminationMsg;
 	case 4:
 		return AnnihilationMsg;
 	default:
