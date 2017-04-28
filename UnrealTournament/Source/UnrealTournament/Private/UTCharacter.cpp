@@ -892,7 +892,17 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 			{
 				TrueController = DrivenVehicle->GetController();
 			}
+
 			bool bApplyDamageToCharacter = ((Game && Game->bDamageHurtsHealth && bDamageHurtsHealth) || (Cast<APlayerController>(TrueController) == nullptr && Cast<AUTBot>(TrueController) == nullptr));
+			AUTGameVolume* GV = UTCharacterMovement ? Cast<AUTGameVolume>(UTCharacterMovement->GetPhysicsVolume()) : nullptr;
+			if (bApplyDamageToCharacter && GV && GV->bIsTeamSafeVolume)
+			{
+				AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+				if (GS && GS->OnSameTeam(this, GV))
+				{
+					bApplyDamageToCharacter = false;
+				}
+			}
 			if (bApplyDamageToCharacter)
 			{
 				// check for caused modifiers on instigator
@@ -5124,15 +5134,6 @@ void AUTCharacter::PossessedBy(AController* NewController)
 	if (Role == ROLE_Authority)
 	{
 		SetCosmeticsFromPlayerState();
-		AUTGameVolume* GV = UTCharacterMovement ? Cast<AUTGameVolume>(UTCharacterMovement->GetPhysicsVolume()) : nullptr;
-		if (GV && GV->bIsTeamSafeVolume)
-		{
-			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-			if (GS && GS->OnSameTeam(this, GV))
-			{
-				bDamageHurtsHealth = false;
-			}
-		}
 	}
 	OldPlayerState = Cast<AUTPlayerState>(PlayerState);
 }

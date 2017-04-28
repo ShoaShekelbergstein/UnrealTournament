@@ -114,7 +114,6 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 				}
 				else
 				{
-					P->bDamageHurtsHealth = false;
 					P->EnteredSafeVolumeTime = GetWorld()->GetTimeSeconds();
 					if ((P->Health < 80) && Cast<AUTPlayerState>(P->PlayerState) && (GetWorld()->GetTimeSeconds() - ((AUTPlayerState*)(P->PlayerState))->LastNeedHealthTime > 20.f))
 					{
@@ -122,6 +121,11 @@ void AUTGameVolume::ActorEnteredVolume(class AActor* Other)
 						((AUTPlayerState*)(P->PlayerState))->AnnounceStatus(StatusMessage::NeedHealth, 0, true);
 					}
 				}
+			}
+			else
+			{
+				// failsafe
+				P->bHasLeftSafeVolume = true;
 			}
 			if (bIsTeleportZone)
 			{
@@ -320,7 +324,6 @@ void AUTGameVolume::ActorLeavingVolume(class AActor* Other)
 	{
 		if (bIsTeamSafeVolume)
 		{
-			UTCharacter->bDamageHurtsHealth = true;
 			UTCharacter->bHasLeftSafeVolume = true;
 			AUTPlayerController* PC = Cast<AUTPlayerController>(UTCharacter->GetController());
 			if (PC)
