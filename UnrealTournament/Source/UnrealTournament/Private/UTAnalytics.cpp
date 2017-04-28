@@ -1696,6 +1696,11 @@ void FUTAnalytics::FireEvent_UTStartMatch(AUTGameMode* UTGM)
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsRanked), static_cast<bool>(UTGM->UTGameState->bRankedSession)));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsQuickMatch), static_cast<bool>(UTGM->UTGameState->bIsQuickMatch)));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsOnline), bIsOnlineGame));
+			
+			if (UTGM->UTGameState->bRankedSession || UTGM->UTGameState->bIsQuickMatch)
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlaylistId), UTGM->CurrentPlaylistId));
+			}
 		}
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTStartMatch), ParamArray);
@@ -1730,6 +1735,11 @@ void FUTAnalytics::FireEvent_UTEndMatch(AUTGameMode* UTGM)
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsRanked), static_cast<bool>(UTGM->UTGameState->bRankedSession)));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsQuickMatch), static_cast<bool>(UTGM->UTGameState->bIsQuickMatch)));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsOnline), bIsOnlineGame));
+
+			if (UTGM->UTGameState->bRankedSession || UTGM->UTGameState->bIsQuickMatch)
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlaylistId), UTGM->CurrentPlaylistId));
+			}
 		}
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTEndMatch), ParamArray);
