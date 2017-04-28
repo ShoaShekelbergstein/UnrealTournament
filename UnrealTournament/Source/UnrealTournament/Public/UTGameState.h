@@ -78,7 +78,7 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = GameState)
 	uint32 bStopGameClock : 1;
 
-	/** True if TeamDamagePct>0p, so projectiles impact teammates. */
+	/** True if TeamDamagePct>0p, so projectiles and hitscan impact teammates. */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
 		uint32 bTeamProjHits : 1;
 

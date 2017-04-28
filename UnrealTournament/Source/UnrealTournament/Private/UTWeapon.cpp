@@ -1716,7 +1716,7 @@ bool AUTWeapon::ShouldTraceIgnore(AActor* TestActor)
 	}
 	else if (UTOwner != nullptr && (Cast<AUTProj_WeaponScreen>(TestActor) != nullptr || (Cast<AUTTeamDeco>(TestActor) != nullptr && !((AUTTeamDeco*)(TestActor))->bBlockTeamProjectiles)))
 	{
-		return (GS != nullptr && GS->OnSameTeam(UTOwner, TestActor));
+		return (GS != nullptr && !GS->bTeamProjHits && GS->OnSameTeam(UTOwner, TestActor));
 	}
 	else
 	{
@@ -1795,7 +1795,7 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 		for (FConstPawnIterator Iterator = GetWorld()->GetPawnIterator(); Iterator; ++Iterator)
 		{
 			AUTCharacter* Target = Cast<AUTCharacter>(*Iterator);
-			if (Target && (Target != UTOwner) && (bTeammatesBlockHitscan || !GS || !GS->OnSameTeam(UTOwner, Target)))
+			if (Target && (Target != UTOwner) && (bTeammatesBlockHitscan || !GS || GS->bTeamProjHits || !GS->OnSameTeam(UTOwner, Target)))
 			{
 				float ExtraHitPadding = (Target == ClientSideHitActor) ? 40.f : 0.f;
 				// find appropriate rewind position, and test against trace from StartLocation to Hit.Location
