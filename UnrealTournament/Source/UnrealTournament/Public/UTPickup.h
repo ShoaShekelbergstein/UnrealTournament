@@ -50,19 +50,19 @@ class UNREALTOURNAMENT_API AUTPickup : public AActor, public IUTResetInterface, 
 	UParticleSystem* BaseTemplateTaken;
 
 	/** if set, play this effect PreSpawnTime seconds before pickup spawns */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = SpawnEffects)
 		UParticleSystem* PreSpawnEffect;
 
 	/** How long before spawn to play PreSpawnEffect */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = SpawnEffects)
 		float PreSpawnTime;
 
 	FTimerHandle PreSpawnTimerHandle;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = SpawnEffects)
 		FTransform PreSpawnEffectTransform;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = SpawnEffects)
 		FVector PreSpawnColorVectorParam;
 
 	virtual void PlayPreSpawnEffect();
