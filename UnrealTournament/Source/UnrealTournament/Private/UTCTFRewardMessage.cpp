@@ -97,6 +97,7 @@ FName UUTCTFRewardMessage::GetAnnouncementName_Implementation(int32 Switch, cons
 	case 8: return TEXT("RZE_Ace"); break;
 	case 9: return TEXT("RZE_DefenceHolds"); break;
 	case 10: return TEXT("RZE_YouShallNotPass"); break;
+	case 11: return TEXT("RZE_InstantReplay02"); break;
 	}
 	return NAME_None;
 }
