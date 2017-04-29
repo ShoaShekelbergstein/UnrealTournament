@@ -984,7 +984,6 @@ void AUTBasePlayerController::Tick(float DeltaTime)
 
 void AUTBasePlayerController::UpdateInputMode(bool bForce)
 {
-
 	EInputMode::Type NewInputMode = EInputMode::EIM_None;
 	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
 	if (LocalPlayer)
@@ -1023,14 +1022,10 @@ void AUTBasePlayerController::UpdateInputMode(bool bForce)
 			}
 		}
 
-
 		//Apply the new input if it needs to be changed
 		if (bForce || (NewInputMode != InputMode && NewInputMode != EInputMode::EIM_None) )
 		{
 			TSharedPtr<SWidget> WidgetToFocus = LocalPlayer->GetBestWidgetToFocus(); 
-
-
-			UE_LOG(UT, Warning, TEXT("Input Mode Changing!"));
 			InputMode = NewInputMode;
 			switch (NewInputMode)
 			{
@@ -1059,6 +1054,7 @@ void AUTBasePlayerController::UpdateInputMode(bool bForce)
 #endif
 
 bool AUTBasePlayerController::ServerSetAvatar_Validate(FName NewAvatar) { return true; }
+
 void AUTBasePlayerController::ServerSetAvatar_Implementation(FName NewAvatar)
 {
 	if (UTPlayerState)
@@ -1103,6 +1099,7 @@ void AUTBasePlayerController::SendStatsIDToServer()
 		}
 	}
 }
+
 void AUTBasePlayerController::ReceivedPlayer()
 {
 	Super::ReceivedPlayer();
@@ -1199,6 +1196,7 @@ bool AUTBasePlayerController::ServerReceiveStatsID_Validate(const FString& NewSt
 {
 	return true;
 }
+
 /** Store an id for stats tracking.  Right now we are using the machine ID for this PC until we have have a proper ID available.  */
 void AUTBasePlayerController::ServerReceiveStatsID_Implementation(const FString& NewStatsID)
 {

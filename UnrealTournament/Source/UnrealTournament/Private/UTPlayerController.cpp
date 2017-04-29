@@ -819,16 +819,19 @@ bool AUTPlayerController::InputKey(FKey Key, EInputEvent EventType, float Amount
 	if (Key.GetFName() == NAME_Enter && (EventType == IE_Pressed) && UTPlayerState != nullptr)
 	{
 		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-		if (UTPlayerState->bCaster || UTPlayerState->bIsMatchHost)
+		if (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart))
 		{
-			ServerCasterReady();
-			return true;
-		}
-		else if (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && !UTPlayerState->bOnlySpectator)
-		{
-			ServerToggleWarmup();
-			bPlayerIsWaiting = true;
-			return true;
+			if (UTPlayerState->bCaster || UTPlayerState->bIsMatchHost)
+			{
+				ServerCasterReady();
+				return true;
+			}
+			else if (!UTPlayerState->bOnlySpectator)
+			{
+				ServerToggleWarmup();
+				bPlayerIsWaiting = true;
+				return true;
+			}
 		}
 	}
 
