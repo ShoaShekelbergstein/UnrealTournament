@@ -201,7 +201,7 @@ void AUTBasePlayerController::TeamTalk()
 
 bool AUTBasePlayerController::AllowTextMessage(FString& Msg, bool bIsTeamMessage)
 {
-	const float TIME_PER_MSG = 2.0f;
+	const float TIME_PER_MSG = 1.0f;
 	const float MAX_OVERFLOW = 4.0f;
 
 	if (GetNetMode() == NM_Standalone || (GetNetMode() == NM_ListenServer && Role == ROLE_Authority))
@@ -251,11 +251,6 @@ void AUTBasePlayerController::Say(FString Message)
 	{
 		ServerSay(Message, false);
 	}
-	else
-	{
-		//Display spam message to the player
-		ClientSay_Implementation(nullptr, SpamText.ToString(), ChatDestinations::System);
-	}
 }
 
 void AUTBasePlayerController::TeamSay(FString Message)
@@ -265,11 +260,6 @@ void AUTBasePlayerController::TeamSay(FString Message)
 	if (AllowTextMessage(Message, true))
 	{
 		ServerSay(Message, true);
-	}
-	else
-	{
-		//Display spam message to the player
-		ClientSay_Implementation(nullptr, SpamText.ToString(), ChatDestinations::System);
 	}
 }
 
@@ -1306,11 +1296,6 @@ void AUTBasePlayerController::LobbySay(FString Message)
 	if (AllowTextMessage(Message, false))
 	{
 		ServerLobbySay(Message);
-	}
-	else
-	{
-		//Display spam message to the player
-		ClientSay_Implementation(nullptr, SpamText.ToString(), ChatDestinations::System);
 	}
 }
 
