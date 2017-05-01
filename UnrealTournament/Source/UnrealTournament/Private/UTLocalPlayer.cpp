@@ -2937,6 +2937,12 @@ void UUTLocalPlayer::ReturnToMainMenu()
 		CloseReplayWindow();
 	}
 #endif
+	
+	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PlayerController);
+	if (UTPC)
+	{
+		UTPC->LeaveVoiceChat();
+	}
 
 	if ( GetWorld() != nullptr )
 	{

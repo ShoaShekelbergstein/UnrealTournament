@@ -1313,6 +1313,8 @@ public:
 	// Will return true if this player can perform a rally
 	bool CanPerformRally() const;
 
+	virtual void LeaveVoiceChat();
+
 	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
 
 	UFUNCTION(Client, Unreliable)

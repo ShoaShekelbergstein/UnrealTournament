@@ -176,6 +176,8 @@ void AUTPlayerController::Destroyed()
 {
 	Super::Destroyed();
 
+	LeaveVoiceChat();
+
 	// if this is the master for the casting guide, destroy the extra viewports now
 	if (bCastingGuide)
 	{
@@ -5306,6 +5308,20 @@ void AUTPlayerController::ClientAnnounceRoundScore_Implementation(AUTTeamInfo* W
 	}
 }
 
+void AUTPlayerController::LeaveVoiceChat()
+{
+	if (bVoiceChatSentLogin)
+	{
+		static const FName VoiceChatFeatureName("VoiceChat");
+		if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+		{
+			UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+			VoiceChat->Logout(VoiceChatPlayerName);
+		}
+
+		bVoiceChatSentLogin = false;
+	}
+}
 
 void AUTPlayerController::PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
 {
@@ -5316,15 +5332,7 @@ void AUTPlayerController::PreClientTravel(const FString& PendingURL, ETravelType
 		GameState->SetMatchState(MatchState::WaitingTravel);
 	}
 
-	if (bVoiceChatSentLogin)
-	{
-		static const FName VoiceChatFeatureName("VoiceChat");
-		if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
-		{
-			UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
-			VoiceChat->Logout(VoiceChatPlayerName);
-		}
-	}
+	LeaveVoiceChat();
 	
 	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
 }
