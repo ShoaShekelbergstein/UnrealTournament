@@ -64,6 +64,7 @@ FReply SUTWebMessage::OnButtonClick(uint16 ButtonID)
 	UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
 	UserSettings->SetSoundClassVolume(EUTSoundClass::Music, UserSettings->GetSoundClassVolume(EUTSoundClass::Music));
 
+	WebBrowser->Browse(TEXT("http:127.0.0.1"));
 	PlayerOwner->CloseWebMessage();
 	return FReply::Handled();
 }
