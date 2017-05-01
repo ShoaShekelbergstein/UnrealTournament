@@ -554,15 +554,15 @@ float UUTGameEngine::GetMaxTickRate(float DeltaTime, bool bAllowFrameRateSmoothi
 	}
 
 	// Hard cap at frame rate cap
-	if (FrameRateCap > 30)
+	if (FrameRateCap > 0)
 	{
 		if (MaxTickRate > 0)
 		{
-			MaxTickRate = FMath::Min(FrameRateCap, MaxTickRate);
+			MaxTickRate = FMath::Min(FMath::Max(30.f, FrameRateCap), MaxTickRate);
 		}
 		else
 		{
-			MaxTickRate = FrameRateCap;
+			MaxTickRate = FMath::Max(30.f, FrameRateCap);
 		}
 	}
 	
