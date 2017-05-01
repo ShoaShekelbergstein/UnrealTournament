@@ -2940,20 +2940,32 @@ void UUTLocalPlayer::ReturnToMainMenu()
 
 	if ( GetWorld() != nullptr )
 	{
-		FString URL = TEXT("ut-entry?closed");
-
-		if (GetWorld()->GetGameState<AUTLobbyGameState>() != nullptr)
+		if ( IsMenuGame() )
 		{
-			URL += TEXT("?returnfromhub");
-		}
+			ShowMenu(TEXT(""));
+			if (DesktopSlateWidget.IsValid())
+			{
+				DesktopSlateWidget->ShowHomePanel();
+				ServerBrowserWidget.Reset();
 
-		if ( GetWorld()->URL.HasOption(TEXT("tutorialmask")))
+			}
+		}
+		else
 		{
-			URL += TEXT("?tutorialmenu");
-		}
+			FString URL = TEXT("ut-entry?closed");
 
-		GetWorld()->ServerTravel(URL,true, true);
-		//Exec( GetWorld(), TEXT( "disconnect" ), *GLog );
+			if (GetWorld()->GetGameState<AUTLobbyGameState>() != nullptr)
+			{
+				URL += TEXT("?returnfromhub");
+			}
+
+			if ( GetWorld()->URL.HasOption(TEXT("tutorialmask")))
+			{
+				URL += TEXT("?tutorialmenu");
+			}
+
+			GetWorld()->ServerTravel(URL,true, true);
+		}
 	}
 	else
 	{

@@ -275,7 +275,7 @@ void SUTLoginDialog::Construct(const FArguments& InArgs)
 							SNew(SButton)
 							.ButtonStyle(SUTStyle::Get(), "UT.Login.EmptyButton")
 							.OnClicked(this, &SUTLoginDialog::OnForgotPasswordClick)
-							.ContentPadding(FMargin(0.0f, 0.0f, 0.0f, 0.0f))
+							.ContentPadding(FMargin(0.0f, 10.0f, 0.0f, 0.0f))
 							[
 								SNew(STextBlock)
 								.Text(NSLOCTEXT("Login", "PasswordRecovery", "Forgot Your Password?"))
@@ -359,7 +359,7 @@ void SUTLoginDialog::Construct(const FArguments& InArgs)
 				]
 
 				// Click Here
-
+/*
 				+SVerticalBox::Slot()
 				.AutoHeight()
 				.HAlign(HAlign_Center)
@@ -379,6 +379,7 @@ void SUTLoginDialog::Construct(const FArguments& InArgs)
 						]
 					]
 				]
+*/
 			]
 			+SOverlay::Slot()
 			.VAlign(VAlign_Fill)
