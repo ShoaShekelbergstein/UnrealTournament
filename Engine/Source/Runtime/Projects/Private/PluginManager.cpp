@@ -260,7 +260,7 @@ void FPluginManager::ReadPluginsInDirectory(const FString& PluginsDirectory, con
 					Plugins[Plugin->GetName()] = Plugin;
 					UE_LOG(LogPluginManager, Verbose, TEXT("Replacing engine version of '%s' plugin with game version"), *Plugin->GetName());
 				}
-				else if( (*ExistingPlugin)->LoadedFrom != EPluginLoadedFrom::GameProject || LoadedFrom != EPluginLoadedFrom::Engine)
+				else if( (*ExistingPlugin)->LoadedFrom != EPluginLoadedFrom::GameProject || LoadedFrom != EPluginLoadedFrom::Engine && (*ExistingPlugin)->FileName != Plugin->FileName)
 				{
 					UE_LOG(LogPluginManager, Warning, TEXT("Plugin '%s' exists at '%s' and '%s' - second location will be ignored"), *Plugin->GetName(), *(*ExistingPlugin)->FileName, *Plugin->FileName);
 				}
