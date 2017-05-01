@@ -63,6 +63,7 @@ protected:
 
 	// Holds a list of all of the weapon data...
 	TArray<TSharedPtr<FWeaponListEntry>> WeaponList;
+	TArray<FName> WeaponCustomizationTags;
 
 
 	TSharedPtr< SListView<TSharedPtr<FWeaponListEntry>>> WeaponListView;
