@@ -697,6 +697,7 @@ void UActorComponent::OnRegister()
 void UActorComponent::OnUnregister()
 {
 	check(bRegistered);
+	check(!bPhysicsStateCreated);
 	bRegistered = false;
 }
 
