@@ -578,7 +578,6 @@ public:
 	int32 MapVoteListCount;
 
 	virtual void CreateMapVoteInfo(const FString& MapPackage,const FString& MapTitle, const FString& MapScreenshotReference);
-	void SortVotes();
 
 	// The # of seconds left for voting for a map.
 	UPROPERTY(Replicated)

@@ -185,7 +185,6 @@ void SUTMapVoteDialog::BuildMapList()
 	{
 		if (GameState->IsMapVoteListReplicationCompleted())
 		{
-			GameState->SortVotes();
 			// Store the current # of votes so we can check later to see if additional maps have been replicated or removed.
 			NumMapInfos = GameState->MapVoteList.Num();
 			MapBox->ClearChildren();

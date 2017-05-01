@@ -1754,49 +1754,6 @@ void AUTGameState::CreateMapVoteInfo(const FString& MapPackage,const FString& Ma
 	}
 }
 
-void AUTGameState::SortVotes()
-{
-
-	MapVoteList.Sort([&](AUTReplicatedMapInfo &A, const AUTReplicatedMapInfo &B)
-			{
-				bool bHasTitleA = !A.Title.IsEmpty();
-				bool bHasTitleB = !B.Title.IsEmpty();
-
-				if (bHasTitleA && !bHasTitleB)
-				{
-					return true;
-				}
-
-				if (A.bIsMeshedMap)
-				{
-					if (!B.bIsMeshedMap)
-					{
-						return true;
-					}
-					else if (A.bIsEpicMap && !B.bIsEpicMap)
-					{
-						return true;
-					}
-					else if (!A.bIsEpicMap && B.bIsEpicMap)
-					{
-						return false;
-					}
-				}
-				else if (B.bIsMeshedMap)
-				{
-					return false;
-				}
-				else if (A.bIsEpicMap && !B.bIsEpicMap)
-				{
-					return true;
-				}
-
-				return A.Title < B.Title;
-
-			}
-	);
-}
-
 bool AUTGameState::GetImportantPickups_Implementation(TArray<AUTPickup*>& PickupList)
 {
 	for (FActorIterator It(GetWorld()); It; ++It)
