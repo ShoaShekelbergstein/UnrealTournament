@@ -175,6 +175,16 @@ protected:
 
 	TWeakPtr<SWindow> SlateParentWindowPtr;
 	FDelegateHandle OnActivateHandle;
+
+	float XPDelay;
+	float XP;
+	int32 XPLevel;
+	float XPLevelPercent;
+
+	FText GetXPText() const;
+	FText GetXPLevelText() const;
+	TOptional<float> GetXPLevelPercent() const;
+
 public:
 	void HandleWindowActivated();
 	virtual bool SkipWorldRender();

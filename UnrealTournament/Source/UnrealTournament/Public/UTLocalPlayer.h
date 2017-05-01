@@ -1441,8 +1441,5 @@ protected:
 	void ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID, bool bSpectatorPassword);
 #endif
 
-
-
-
 };
 

@@ -5396,10 +5396,22 @@ void UUTLocalPlayer::HandleProfileNotification(const FOnlineNotification& Notifi
 		FXPProgressNotifyPayload Payload;
 		Notification.ParsePayload(Payload, Notification.TypeStr);
 		AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerController);
-		if (PC != NULL)
+		if (PC != nullptr)
 		{
 			PC->XPBreakdown = FNewScoreXP(float(Payload.XP - Payload.PrevXP));
+			int64 ProfileXP = 0.0f;
+#if WITH_PROFILE
+			UUtMcpProfile* McpProfile = GetMcpProfileManager()->GetMcpProfileAs<UUtMcpProfile>(EUtMcpProfile::Profile);
+			if (McpProfile)
+			{
+				ProfileXP = McpProfile->GetXP();
+			}
+#endif
+		
+			UE_LOG(UT,Warning,TEXT("XP Notification : Payload XP = %i   vs   ProfileXP = %i"), Payload.XP, ProfileXP);
 		}
+
+		
 
 		if (FUTAnalytics::IsAvailable())
 		{

@@ -200,7 +200,9 @@ FReply SUTMenuBase::OnMenuConsoleCommand(FString Command)
 void SUTMenuBase::ActivatePanel(TSharedPtr<class SUTPanelBase> PanelToActivate)
 {
 	if ( !Desktop.IsValid() ) return;		// Quick out if no place to put it
-	
+
+
+
 	// Don't reactivate the current panel
 	if (ActivePanel != PanelToActivate)
 	{
@@ -908,6 +910,31 @@ void SUTMenuBase::Tick( const FGeometry& AllottedGeometry, const double InCurren
 			OpenDelayedMenu();
 		}
 	}
+
+	// Every 10 seconds, pull the player's XP
+
+	if (XPDelay <= 0)
+	{
+		XPDelay = 10.0f;
+
+		XP = 0.0f;
+
+	#if WITH_PROFILE
+		// use profile if available, in case new data was received from MCP since the server set the replicated value
+		UUtMcpProfile* Profile = PlayerOwner->GetMcpProfileManager()->GetMcpProfileAs<UUtMcpProfile>(EUtMcpProfile::Profile);
+		if (Profile != NULL)
+		{
+			XP = Profile->GetXP();
+		}
+	#endif
+
+		XPLevel = GetLevelForXP(XP);
+		int32 XPLevelStart = GetXPForLevel(XPLevel);
+		int32 XPLevelEnd = GetXPForLevel(XPLevel + 1);
+		int32 XPLevelRange = XPLevelEnd - XPLevelStart;
+
+		XPLevelPercent = (XPLevelRange > 0) ? (float)(XP - XPLevelStart) / (float)XPLevelRange : 0.0f;
+	}
 }
 
 void SUTMenuBase::OpenDelayedMenu()
@@ -1075,22 +1102,6 @@ bool SUTMenuBase::SkipWorldRender()
 
 TSharedRef<SWidget> SUTMenuBase::BuildPlayerInfo()
 {
-	float PlayerXP = 0.0f;
-
-#if WITH_PROFILE
-	// use profile if available, in case new data was received from MCP since the server set the replicated value
-	UUtMcpProfile* Profile = PlayerOwner->GetMcpProfileManager()->GetMcpProfileAs<UUtMcpProfile>(EUtMcpProfile::Profile);
-	if (Profile != NULL)
-	{
-		PlayerXP = Profile->GetXP();
-	}
-#endif
-	int32 Level = GetLevelForXP(PlayerXP);
-	int32 LevelXPStart = GetXPForLevel(Level);
-	int32 LevelXPEnd = GetXPForLevel(Level + 1);
-	int32 LevelXPRange = LevelXPEnd - LevelXPStart;
-
-	float LevelAlpha = (LevelXPRange > 0) ? (float)(PlayerXP - LevelXPStart) / (float)LevelXPRange : 0.0f;
 	TSharedPtr<SVerticalBox> Container;
 	SAssignNew(Container, SVerticalBox)
 	+SVerticalBox::Slot().FillHeight(1.0).Padding(0.0f,0.0f,0.0f,0.0f)
@@ -1115,7 +1126,7 @@ TSharedRef<SWidget> SUTMenuBase::BuildPlayerInfo()
 					+SHorizontalBox::Slot().AutoWidth().Padding(5.0f,0.0f,5.0f,0.0f)
 					[
 						SNew(STextBlock)
-						.Text(FText::Format(NSLOCTEXT("SUTMenuBase","LevelFormat","lvl.{0}"),FText::AsNumber(Level)))
+						.Text(this, &SUTMenuBase::GetXPLevelText) 
 						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tiny.Bold")
 						.ColorAndOpacity(this, &SUTMenuBase::GetLabelColor)
 					]
@@ -1128,14 +1139,14 @@ TSharedRef<SWidget> SUTMenuBase::BuildPlayerInfo()
 							[
 								SNew(SProgressBar)
 								.Style(SUTStyle::Get(),"UT.ProgressBar.XP")
-								.Percent(LevelAlpha)
+								.Percent(this, &SUTMenuBase::GetXPLevelPercent)
 							]
 						]
 					]
 					+SHorizontalBox::Slot().AutoWidth().Padding(5.0f,3.0f,5.0f,0.0f)
 					[
 						SNew(STextBlock)
-						.Text(FText::Format(NSLOCTEXT("SUTMenuBase","LevelFormatB","({0}xp)"),FText::AsNumber(PlayerXP)))
+						.Text(this, &SUTMenuBase::GetXPText) 
 						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Teenie")
 						.ColorAndOpacity(this, &SUTMenuBase::GetLabelColor)
 					]
@@ -1179,6 +1190,21 @@ FSlateColor SUTMenuBase::GetLabelColor() const
 void SUTMenuBase::HandleWindowActivated()
 {
 	FSlateApplication::Get().SetAllUserFocus(SharedThis(this), EFocusCause::WindowActivate);
+}
+
+FText SUTMenuBase::GetXPText() const
+{
+	return FText::Format(NSLOCTEXT("SUTMenuBase","LevelFormatB","({0}xp)"),FText::AsNumber(XP));
+}
+
+FText SUTMenuBase::GetXPLevelText() const
+{
+	return FText::Format(NSLOCTEXT("SUTMenuBase","LevelFormat","lvl.{0}"),FText::AsNumber(XPLevel));
+}
+
+TOptional<float> SUTMenuBase::GetXPLevelPercent() const
+{
+	return XPLevelPercent;
 }
 
 
