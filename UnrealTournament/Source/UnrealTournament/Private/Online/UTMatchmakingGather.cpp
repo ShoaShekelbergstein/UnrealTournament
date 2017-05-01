@@ -31,7 +31,11 @@ void UUTMatchmakingGather::StartMatchmaking()
 
 void UUTMatchmakingGather::RestartMatchmaking()
 {
-	check(!GetWorldTimerManager().IsTimerActive(FindGatherTimerHandle));
+	// We're already ready to matchmake
+	if (GetWorldTimerManager().IsTimerActive(FindGatherTimerHandle))
+	{
+		return;
+	}
 
 	FTimerDelegate TimerDelegate;
 	if ((CurrentParams.Flags & EMatchmakingFlags::CreateNewOnly) == EMatchmakingFlags::CreateNewOnly)
