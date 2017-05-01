@@ -2948,6 +2948,7 @@ void UUTLocalPlayer::ReturnToMainMenu()
 	{
 		if ( IsMenuGame() )
 		{
+#if !UE_SERVER
 			ShowMenu(TEXT(""));
 			if (DesktopSlateWidget.IsValid())
 			{
@@ -2955,6 +2956,7 @@ void UUTLocalPlayer::ReturnToMainMenu()
 				ServerBrowserWidget.Reset();
 
 			}
+#endif
 		}
 		else
 		{
