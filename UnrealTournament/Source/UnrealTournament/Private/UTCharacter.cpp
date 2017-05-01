@@ -6313,7 +6313,7 @@ void AUTCharacter::PlayTauntByClass(TSubclassOf<AUTTaunt> TauntToPlay, float Emo
 					// This flag is set for 3rd person taunts
 					UTCharacterMovement->bIsTaunting = true;
 					// force standing
-					UTCharacterMovement->UnCrouch(true);
+					UnCrouch(false);
 				}
 				else if (IsLocallyControlled() && FirstPersonMesh)
 				{
