@@ -2034,8 +2034,12 @@ void AUTCharacter::PlayDying()
 		{
 			if (bInRagdollRecovery)
 			{
-				GetMesh()->GetAnimInstance()->Montage_Stop(0.1f, RagdollRecoveryMontage);
+				if (RagdollRecoveryMontage)
+				{
+					GetMesh()->GetAnimInstance()->Montage_Stop(0.1f, RagdollRecoveryMontage);
+				}
 				bFeigningDeath = false;
+				bInRagdollRecovery = false;
 			}
 			
 			if (!bFeigningDeath)
