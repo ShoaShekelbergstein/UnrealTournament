@@ -1507,7 +1507,7 @@ void AUTWeapon::ConsumeAmmo(uint8 FireModeNum)
 
 bool AUTWeapon::HasAmmo(uint8 FireModeNum)
 {
-	return (AmmoCost.IsValidIndex(FireModeNum) && Ammo >= AmmoCost[FireModeNum]);
+	return (AmmoCost.IsValidIndex(FireModeNum) && Ammo >= FMath::Min(1,AmmoCost[FireModeNum]));
 }
 
 bool AUTWeapon::NeedsAmmoDisplay_Implementation() const
