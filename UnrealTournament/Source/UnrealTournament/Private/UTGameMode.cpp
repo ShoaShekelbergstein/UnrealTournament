@@ -3166,6 +3166,25 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 				return *It;
 			}
 		}
+
+		// Pre-randomize
+		for (int32 i = 0; i < PlayerStarts.Num()/2; i++)
+		{
+			AUTPlayerStart* Swap = PlayerStarts[i];
+			int32 RandIndex = FMath::Min(PlayerStarts.Num() - 1, PlayerStarts.Num() / 2 + FMath::RandHelper(PlayerStarts.Num() / 2 - 1));
+			PlayerStarts[i] = PlayerStarts[RandIndex];
+			PlayerStarts[RandIndex] = Swap;
+		}
+	}
+
+	// Randomize each time
+	int32 NumToRandomize = FMath::Clamp(PlayerStarts.Num() - 8, 0, 4);
+	for (int32 i = 0; i < NumToRandomize; i++)
+	{
+		AUTPlayerStart* Swap = PlayerStarts[i];
+		int32 RandIndex = FMath::RandHelper(PlayerStarts.Num() - 5);
+		PlayerStarts[i] = PlayerStarts[RandIndex];
+		PlayerStarts[RandIndex] = Swap;
 	}
 
 	float BestRating = -20.f;
