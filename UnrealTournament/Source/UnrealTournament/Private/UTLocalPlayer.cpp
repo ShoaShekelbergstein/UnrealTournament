@@ -7287,9 +7287,12 @@ void UUTLocalPlayer::CenterMouseCursor()
 	if (UTViewportClient)
 	{
 		FViewport* Viewport = UTViewportClient->Viewport;
-		FVector2D ViewportSize;
-		UTViewportClient->GetViewportSize(ViewportSize);
-		ViewportSize *= 0.5f;
-		Viewport->SetMouse(ViewportSize.X, ViewportSize.Y);
+		if (Viewport)
+		{
+			FVector2D ViewportSize;
+			UTViewportClient->GetViewportSize(ViewportSize);
+			ViewportSize *= 0.5f;
+			Viewport->SetMouse(ViewportSize.X, ViewportSize.Y);
+		}
 	}
 }
