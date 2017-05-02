@@ -605,7 +605,18 @@ void UUTHUDWidget_SpectatorSlideOut::DrawPlayer(int32 Index, AUTPlayerState* Pla
 		bIsSelectedPlayer = true;
 	}
 
-	FText PlayerName = FText::FromString(GetClampedName(PlayerState, SlideOutFont, 1.f, 0.475f*Width));
+	FString DisplayName = PlayerState->PlayerName;
+	FString ClanName = PlayerState->ClanName;
+	if (!PlayerState->ClanName.IsEmpty())
+	{
+		ClanName = "[" + ClanName + "]";
+	}
+
+	float NameXL, NameYL;
+	float MaxNameWidth = 0.475f*Width;
+	Canvas->TextSize(SlideOutFont, ClanName + DisplayName, NameXL, NameYL, 1.f, 1.f);
+	float NameScaling = FMath::Min(1.f, MaxNameWidth / FMath::Max(NameXL, 1.f));
+	FText PlayerName = FText::FromString(ClanName + DisplayName);
 	FText PlayerScore = FText::AsNumber(int32(PlayerState->Score));
 
 	// Draw the background border.
@@ -625,7 +636,7 @@ void UUTHUDWidget_SpectatorSlideOut::DrawPlayer(int32 Index, AUTPlayerState* Pla
 	UTexture2D* NewFlagAtlas = UTHUDOwner->ResolveFlag(PlayerState, FlagUV);
 	DrawTexture(NewFlagAtlas, XOffset + (Width * FlagX), YOffset + 18, FlagUV.UL, FlagUV.VL, FlagUV.U, FlagUV.V, 36, 26, 1.0, FLinearColor::White, FVector2D(0.0f, 0.5f));
 
-	FVector2D NameSize = DrawText(PlayerName, XOffset + (Width * ColumnHeaderPlayerX), YOffset + ColumnY, SlideOutFont, 1.f, 1.f, DrawColor, ETextHorzPos::Left, ETextVertPos::Center);
+	FVector2D NameSize = DrawText(PlayerName, XOffset + (Width * ColumnHeaderPlayerX), YOffset + ColumnY, SlideOutFont, NameScaling, 1.f, DrawColor, ETextHorzPos::Left, ETextVertPos::Center);
 
 	if (bShowingStats && bIsSelectedPlayer)
 	{
