@@ -804,6 +804,7 @@ FReply SUTCreateGamePanel::ConfigureMutator()
 void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, FString& GameModeName, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32& bTeamGame)
 {
 	StartingMap = MapList->GetSelectedItem().IsValid() ? MapList->GetSelectedItem().Get()->MapPackageName : TEXT("");
+
 	AUTGameMode* DefaultGameMode = SelectedGameClass->GetDefaultObject<AUTGameMode>();
 	if (DefaultGameMode)
 	{
@@ -812,7 +813,9 @@ void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& Start
 
 		DefaultGameMode->UILastStartingMap = StartingMap;
 
+
 		GameMode = SelectedGameClass->GetPathName();
+		GConfig->SetString(TEXT("CreateGameDialog"), TEXT("LastGametypePath"), *GameMode, GGameIni);
 
 		GameModeName = DefaultGameMode->DisplayName.ToString();
 
