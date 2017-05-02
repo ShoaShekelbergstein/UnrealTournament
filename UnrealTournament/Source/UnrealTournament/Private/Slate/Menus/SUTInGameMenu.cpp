@@ -398,7 +398,7 @@ void SUTInGameMenu::ShowHomePanel()
 		{
 			if (PlayerOwner->GetWorld()->GetGameState<AUTLobbyGameState>())
 			{
-				Msg = NSLOCTEXT("SUTInGameMenu", "SUTInGameMenuBack", "Are you sure you want to leave the hub and return to the main menu?");
+				Msg = NSLOCTEXT("SUTInGameMenu", "SUTInGameMenuBack", "Are you sure you want to leave the hub and return to the hub browser?");
 			}
 			else
 			{
