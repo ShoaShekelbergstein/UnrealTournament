@@ -66,6 +66,8 @@ public:
 	virtual float GetVoiceChatRecordVolume();
 	virtual void SetVoiceChatPlaybackVolume(float InVolume);
 	virtual void SetVoiceChatRecordVolume(float InVolume);
+	virtual FString GetVoiceChatInputDevice();
+	virtual void SetVoiceChatInputDevice(const FString& CustomInputDevice);
 
 	virtual bool IsKeyboardLightingEnabled();
 	virtual void SetKeyboardLightingEnabled(bool NewKeyboardLightingEnabled);
@@ -132,6 +134,9 @@ protected:
 
 	UPROPERTY(config)
 	float VoiceChatRecordVolume;
+
+	UPROPERTY(config)
+	FString VoiceChatInputDevice;
 
 	UPROPERTY(config)
 	bool bDisableKeyboardLighting;

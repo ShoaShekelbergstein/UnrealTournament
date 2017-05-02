@@ -328,6 +328,25 @@ void SUTSystemSettingsDialog::Construct(const FArguments& InArgs)
 							.OnDialogResult(InArgs._OnDialogResult)
 						);
 
+	VOIPInputOptionsInitialSelection = 0;
+	VOIPInputOptions.Add(MakeShareable(new FString(TEXT("Use Default Input Device"))));
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+	{
+		UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		TArray<FString> CustomInputDevices;
+		VoiceChat->GetAvailableCustomInputDevices(CustomInputDevices);
+		for (int i = 0; i < CustomInputDevices.Num(); i++)
+		{
+			VOIPInputOptions.Add(MakeShareable(new FString(CustomInputDevices[i])));
+			if (UserSettings && UserSettings->GetVoiceChatInputDevice() == CustomInputDevices[i])
+			{
+				VOIPInputOptionsInitialSelection = i + 1;
+			}
+		}
+	}
+
 	VOIPOptions.Add(MakeShareable(new FString(NSLOCTEXT("SUTSystemSettingsDialog", "VOIPA", "Open Mic - You always send voice chat to other players").ToString())));
 	VOIPOptions.Add(MakeShareable(new FString(NSLOCTEXT("SUTSystemSettingsDialog", "VOIPB", "Push to Talk - You need to use your Push to Talk key to send voice chat").ToString())));
 
@@ -1086,6 +1105,32 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildAudioTab()
 		.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
 		.Text(NSLOCTEXT("SUTSystemSettingsDialog", "VOIPTitle", "Voice over IP Settings"))
 	]
+	
+	+ SVerticalBox::Slot()
+	.AutoHeight()
+	.Padding(FMargin(10.0f, 5.0f, 10.0f, 5.0f))
+	[
+
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.FillWidth(1.0f)
+		.VAlign(VAlign_Center)
+		[
+			SAssignNew(PushToTalkCombo, SComboBox< TSharedPtr<FString> >)
+			.InitiallySelectedItem(VOIPInputOptions[VOIPInputOptionsInitialSelection])
+			.ComboBoxStyle(SUWindowsStyle::Get(), "UT.ComboBox")
+			.ButtonStyle(SUWindowsStyle::Get(), "UT.Button.White")
+			.OptionsSource(&VOIPInputOptions)
+			.OnGenerateWidget(this, &SUTDialogBase::GenerateStringListWidget)
+			.OnSelectionChanged(this, &SUTSystemSettingsDialog::OnVOIPInputChanged)
+			.Content()
+			[
+				SAssignNew(VOIPInputOptionsText, STextBlock)
+				.Text(FText::FromString(*VOIPInputOptions[VOIPInputOptionsInitialSelection].Get()))
+				.TextStyle(SUWindowsStyle::Get(),"UT.Common.ButtonText.Black")
+			]
+		]
+	]
 
 	+ SVerticalBox::Slot()
 	.AutoHeight()
@@ -1301,6 +1346,7 @@ FReply SUTSystemSettingsDialog::OKClick()
 	UserSettings->SetVoiceChatEnabled(VoiceChatCheckBox->IsChecked());
 	UserSettings->SetVoiceChatPlaybackVolume(VoiceChatPlaybackVolume->GetValue());
 	UserSettings->SetVoiceChatRecordVolume(VoiceChatRecordVolume->GetValue());
+	UserSettings->SetVoiceChatInputDevice(VOIPInputOptionsText->GetText().ToString());
 
 	//UserSettings->SetSoundClassVolume(EUTSoundClass::VOIP, SoundVolumes[EUTSoundClass::VOIP]->GetValue() * 2.0f);
 
@@ -1561,6 +1607,14 @@ void SUTSystemSettingsDialog::OnVOIPChanged(TSharedPtr<FString> NewSelection, ES
 	if (NewSelection.IsValid())
 	{
 		VOIPOptionsText->SetText(*NewSelection.Get());
+	}
+}
+
+void SUTSystemSettingsDialog::OnVOIPInputChanged(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
+{
+	if (NewSelection.IsValid())
+	{
+		VOIPInputOptionsText->SetText(*NewSelection.Get());
 	}
 }
 

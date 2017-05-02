@@ -154,6 +154,10 @@ protected:
 
 	virtual TSharedRef<class SWidget> BuildCustomButtonBar() override;
 
+	TArray< TSharedPtr<FString> > VOIPInputOptions;
+	TSharedPtr<STextBlock> VOIPInputOptionsText;
+	int32 VOIPInputOptionsInitialSelection;
+
 	TArray< TSharedPtr<FString> > VOIPOptions;
 	TSharedPtr<STextBlock> VOIPOptionsText;
 
@@ -258,6 +262,7 @@ protected:
 	void OnEffectQualitySelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo);
 	void OnMatchmakingRegionSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo);
 	void OnVOIPChanged(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo);
+	void OnVOIPInputChanged(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo);
 	void OnAdvancedCheckChanged(ECheckBoxState NewState);
 	void UpdateAdvancedWidgets();
 

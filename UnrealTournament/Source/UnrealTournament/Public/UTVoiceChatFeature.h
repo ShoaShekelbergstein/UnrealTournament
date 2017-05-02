@@ -23,4 +23,13 @@ public:
 	virtual void MutePlayer(const FString& PlayerName) = 0;
 	virtual void UnMutePlayer(const FString& PlayerName) = 0;
 	virtual bool IsPlayerMuted(const FString& PlayerName) = 0;
+
+	virtual bool IsUsingCustomInputDevice() = 0;
+	virtual bool IsUsingCustomOutputDevice() = 0;
+
+	virtual void GetAvailableCustomInputDevices(TArray<FString>& CustomInputDevices) = 0;
+	virtual void GetAvailableCustomOutputDevices(TArray<FString>& CustomOutputDevices) = 0;
+
+	virtual void SetCustomInputDevice(const FString& CustomInputDevice) = 0;
+	virtual void SetCustomOutputDevice(const FString& CustomOutputDevice) = 0;
 };

@@ -297,6 +297,23 @@ void UUTGameUserSettings::SetVoiceChatRecordVolume(float InVolume)
 	}
 }
 
+FString UUTGameUserSettings::GetVoiceChatInputDevice()
+{
+	return VoiceChatInputDevice;
+}
+
+void UUTGameUserSettings::SetVoiceChatInputDevice(const FString& CustomInputDevice)
+{
+	VoiceChatInputDevice = CustomInputDevice;
+
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+	{
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		VoiceChat->SetCustomInputDevice(CustomInputDevice);
+	}
+}
+
 bool UUTGameUserSettings::IsKeyboardLightingEnabled()
 {
 	return !bDisableKeyboardLighting;
