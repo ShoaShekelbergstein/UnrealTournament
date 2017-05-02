@@ -467,7 +467,7 @@
 	</Agent>
 
 
-	<Agent Name="Promotion Agent Group" Type="Win64">
+	<Agent Name="Promotion Agent Group" Type="CompileWin64;Win64">
 		<Node Name="Promote Build">
 			<Error Message="Missing property 'ToAppName'" If="'$(ToAppName)' == ''"/>
 			<Error Message="No platforms configured to promote - Pick Windows, Mac, or Both" If="'$(PromoteMac)' == false And '$(PromoteWindows)' == false"/>
