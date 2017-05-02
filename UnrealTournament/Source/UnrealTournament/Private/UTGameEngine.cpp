@@ -699,7 +699,12 @@ void UUTGameEngine::IndexExpansionContent()
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
 		FoundPaks.Empty();
-		PlatformFile.IterateDirectoryRecursively(*FPaths::Combine(*FPaths::GameSavedDir(), TEXT("Paks"), TEXT("DownloadedPaks")), PakVisitor);
+
+		FString PakFolder = ( FParse::Param(FCommandLine::Get(), TEXT("altpaks")))  
+			? FPaths::Combine(FPlatformProcess::UserDir(), FApp::GetGameName(), TEXT("Saved"), TEXT("Paks"), TEXT("DownloadedPaks"))
+			: FPaths::Combine(*FPaths::GameSavedDir(), TEXT("Paks"), TEXT("DownloadedPaks"));
+
+		PlatformFile.IterateDirectoryRecursively(*PakFolder, PakVisitor);
 		for (const auto& PakPath : FoundPaks)
 		{
 			FString PakFilename = FPaths::GetBaseFilename(PakPath);

@@ -7087,7 +7087,7 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 		ExecPath = FPaths::EngineDir() + TEXT("\\Binaries\\Win64\\UE4Editor.exe");
 #endif
 
-		FString Options = FString::Printf(TEXT("unrealtournament %s -log -server -LAN -AUTH_PASSWORD="), *URL);
+		FString Options = FString::Printf(TEXT("unrealtournament %s -log -server -LAN -altpaks -AUTH_PASSWORD="), *URL);
 
 		if (OnlineIdentityInterface.IsValid())
 		{
