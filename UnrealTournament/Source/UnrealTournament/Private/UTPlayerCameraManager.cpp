@@ -237,7 +237,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 
 		ApplyCameraModifiers(DeltaTime, OutVT.POV);
 
-		if (OutVT.POV.Location.IsZero())
+		if (OutVT.POV.Location.IsZero() || IsValidCamLocation(PCOwner->GetFocalLocation()))
 		{
 			OutVT.POV.Location = PCOwner->GetFocalLocation();
 		}

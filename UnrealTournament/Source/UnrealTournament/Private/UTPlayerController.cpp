@@ -5225,6 +5225,30 @@ void AUTPlayerController::ClientSetActiveLineUp_Implementation()
 			else
 			{
 				AUTLineUpHelper::CleanUpPlayerAfterLineUp(this);
+				AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
+				if (WS)
+				{
+					SpawnLocation = WS->LoadingCameraLocation;
+					SetControlRotation(WS->LoadingCameraRotation);
+				}
+				AUTSpectatorCamera* BestCamera = nullptr;
+				for (TActorIterator<AUTSpectatorCamera> It(GetWorld()); It; ++It)
+				{
+					if (BestCamera == nullptr)
+					{
+						BestCamera = *It;
+					}
+					else if (It->bLoadingCamera)
+					{
+						BestCamera = *It;
+						break;
+					}
+				}
+				if (BestCamera)
+				{
+					SpawnLocation = BestCamera->GetActorLocation();
+					SetControlRotation(BestCamera->GetActorRotation());
+				}
 			}
 		}
 	}
