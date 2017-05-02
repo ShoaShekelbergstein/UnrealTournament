@@ -3146,16 +3146,25 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 
 	if (PlayerStarts.Num() == 0)
 	{
-		for (TActorIterator<AUTPlayerStart> It(GetWorld()); It; ++It)
+		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
 		{
 			PlayerStarts.Add(*It);
 		}
+		if (PlayerStarts.Num() == 0)
+		{
+			return Super::ChoosePlayerStart_Implementation(Player);
+		}
+
+		// Pre-randomize
+		for (int32 i = 0; i < PlayerStarts.Num() / 2; i++)
+		{
+			APlayerStart* Swap = PlayerStarts[i];
+			int32 RandIndex = FMath::Min(PlayerStarts.Num() - 1, PlayerStarts.Num() / 2 + FMath::RandHelper(PlayerStarts.Num() / 2 - 1));
+			PlayerStarts[i] = PlayerStarts[RandIndex];
+			PlayerStarts[RandIndex] = Swap;
+		}
 	}
 
-	if (PlayerStarts.Num() == 0)
-	{
-		return Super::ChoosePlayerStart_Implementation(Player);
-	}
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
 		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
@@ -3166,35 +3175,25 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 				return *It;
 			}
 		}
-
-		// Pre-randomize
-		for (int32 i = 0; i < PlayerStarts.Num()/2; i++)
-		{
-			AUTPlayerStart* Swap = PlayerStarts[i];
-			int32 RandIndex = FMath::Min(PlayerStarts.Num() - 1, PlayerStarts.Num() / 2 + FMath::RandHelper(PlayerStarts.Num() / 2 - 1));
-			PlayerStarts[i] = PlayerStarts[RandIndex];
-			PlayerStarts[RandIndex] = Swap;
-		}
 	}
 
 	// Randomize each time
-	int32 NumToRandomize = FMath::Clamp(PlayerStarts.Num() - 8, 0, 4);
+	int32 NumToRandomize = FMath::Clamp(PlayerStarts.Num()/4, 0, 4);
 	for (int32 i = 0; i < NumToRandomize; i++)
 	{
-		AUTPlayerStart* Swap = PlayerStarts[i];
-		int32 RandIndex = FMath::RandHelper(PlayerStarts.Num() - 5);
+		APlayerStart* Swap = PlayerStarts[i];
+		int32 RandIndex = FMath::RandHelper(PlayerStarts.Num()/2);
 		PlayerStarts[i] = PlayerStarts[RandIndex];
 		PlayerStarts[RandIndex] = Swap;
 	}
 
 	float BestRating = -20.f;
-	AUTPlayerStart* BestStart = NULL;
+	APlayerStart* BestStart = NULL;
 	int32 BestStartIndex = 0;
-	int32 AvoidedStarts = (PlayerStarts.Num() > 7) ? 3 : 0;
+	int32 AvoidedStarts = PlayerStarts.Num() / 2;
 	for ( int32 i=0; i<PlayerStarts.Num()-AvoidedStarts; i++ )
 	{
-		AUTPlayerStart* P = PlayerStarts[i];
-
+		APlayerStart* P = PlayerStarts[i];
 		float NewRating = RatePlayerStart(P,Player);
 
 		if ( NewRating > BestRating )
@@ -3213,7 +3212,7 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 	{
 		for (int32 i = PlayerStarts.Num() - AvoidedStarts; i<PlayerStarts.Num(); i++)
 		{
-			AUTPlayerStart* P = PlayerStarts[i];
+			APlayerStart* P = PlayerStarts[i];
 
 			float NewRating = RatePlayerStart(P, Player);
 
@@ -3237,7 +3236,7 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 
 float AUTGameMode::RatePlayerStart(APlayerStart* P, AController* Player)
 {
-	float Score = 29.0f + 1.2f*FMath::FRand();
+	float Score = 29.0f + 1.3f*FMath::FRand();
 
 	AActor* LastSpot = (Player != NULL && Player->StartSpot.IsValid()) ? Player->StartSpot.Get() : NULL;
 	AUTPlayerState *UTPS = Player ? Cast<AUTPlayerState>(Player->PlayerState) : NULL;
@@ -3317,7 +3316,6 @@ float AUTGameMode::AdjustNearbyPlayerStartScore(const AController* Player, const
 	float ScoreAdjust = 0.f;
 	float NextDist = (OtherCharacter->GetActorLocation() - StartLoc).Size();
 	bool bTwoPlayerGame = (NumPlayers + NumBots == 2);
-
 	if (((NextDist < 5000.0f) || bTwoPlayerGame) && !UTGameState->OnSameTeam(Player, OtherController))
 	{
 		static FName NAME_RatePlayerStart = FName(TEXT("RatePlayerStart"));
@@ -3335,16 +3333,6 @@ float AUTGameMode::AdjustNearbyPlayerStartScore(const AController* Player, const
 			}
 
 			ScoreAdjust -= (5.f - 0.0003f * NextDist);
-		}
-		else if (NextDist < 3000.0f)
-		{
-			// Avoid the last person that killed me
-			ScoreAdjust -= bIsLastKiller ? 5.f : 0.0005f * (5000.f - NextDist);
-
-			if (!GetWorld()->LineTraceTestByChannel(StartLoc, OtherCharacter->GetActorLocation(), COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionQueryParams(NAME_RatePlayerStart, false, this)))
-			{
-				ScoreAdjust -= 2.f;
-			}
 		}
 	}
 	return ScoreAdjust;
