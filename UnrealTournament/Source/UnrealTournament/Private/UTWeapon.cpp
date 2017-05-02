@@ -827,7 +827,8 @@ void AUTWeapon::BringUp(float OverflowTime)
 	AttachToOwner();
 	OnBringUp();
 	CurrentState->BringUp(OverflowTime);
-	if ((Ammo <= LowAmmoThreshold) && (Ammo > 0) && (LowAmmoSound != nullptr)) {
+	if ((Ammo <= LowAmmoThreshold) && (Ammo > 0) && (LowAmmoSound != nullptr)) 
+	{
 		PlayLowAmmoSound();
 	}
 
