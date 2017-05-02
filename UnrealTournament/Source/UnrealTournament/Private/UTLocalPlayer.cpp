@@ -572,6 +572,7 @@ void UUTLocalPlayer::ShowMenu(const FString& Parameters)
 				}
 			}
 			DesktopSlateWidget->OnMenuOpened(Parameters);
+			CenterMouseCursor();
 		}
 	}
 
@@ -7278,3 +7279,17 @@ TSharedPtr<SWidget> UUTLocalPlayer::GetBestWidgetToFocus()
 	return Result.IsValid() ? Result : ViewportClient->GetGameViewportWidget();
 }
 #endif
+
+
+void UUTLocalPlayer::CenterMouseCursor()
+{
+	UUTGameViewportClient* UTViewportClient = Cast<UUTGameViewportClient>(ViewportClient);
+	if (UTViewportClient)
+	{
+		FViewport* Viewport = UTViewportClient->Viewport;
+		FVector2D ViewportSize;
+		UTViewportClient->GetViewportSize(ViewportSize);
+		ViewportSize *= 0.5f;
+		Viewport->SetMouse(ViewportSize.X, ViewportSize.Y);
+	}
+}
