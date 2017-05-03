@@ -307,6 +307,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 
 	bRequireReady = (UGameplayStatics::GetIntOption(Options, TEXT("RequireReady"), bRequireReady) == 0) ? false : true;
 	bRequireFull = (UGameplayStatics::GetIntOption(Options, TEXT("RequireFull"), bRequireFull) == 0) ? false : true;
+	bForceWarmup = (UGameplayStatics::GetIntOption(Options, TEXT("ForceWarmup"), bForceWarmup) == 0) ? false : true;
 
 	bDebugHitScanReplication = UGameplayStatics::HasOption(Options, TEXT("HitScanDebug"));
 
@@ -3904,6 +3905,14 @@ void AUTGameMode::PostLogin( APlayerController* NewPlayer )
 	if (UTPC && FUTAnalytics::IsAvailable() && (GetNetMode() == NM_DedicatedServer))
 	{
 		FUTAnalytics::FireEvent_UTServerPlayerJoin(this, UTPC->UTPlayerState);
+	}
+
+	if (bForceWarmup && UTPC && PS && UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart))
+	{
+		PS->bIsWarmingUp = true;
+		PS->ForceNetUpdate();
+		UTPC->ClientUpdateWarmup(PS->bIsWarmingUp);
+		RestartPlayer(UTPC);
 	}
 }
 

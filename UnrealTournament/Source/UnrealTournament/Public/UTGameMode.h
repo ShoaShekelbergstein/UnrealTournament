@@ -193,6 +193,10 @@ public:
 	UPROPERTY()
 	uint32 bTeamGame:1;
 
+	/** Force warmup for players who enter before match has started. */
+	UPROPERTY()
+		uint32 bForceWarmup : 1;
+
 	UPROPERTY(BlueprintReadWrite, Category = "Game")
 	bool bFirstBloodOccurred;
 
