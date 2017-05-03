@@ -329,7 +329,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 
 		bool bViewingInstantReplay = UTDemoRecSpec ? UTDemoRecSpec->IsKillcamSpectator() : false;
 		bool bGameOver = (UTPC != nullptr && UTPC->GetStateName() == NAME_GameOver);
-		bUseDeathCam = !bViewingInstantReplay && !bGameOver && UTCharacter && (UTCharacter->IsDead() || UTCharacter->IsRagdoll()) && UTPC && (!UTPC->DeathCamFocus || (UTPC->DeathCamFocus != TargetActor));
+		bUseDeathCam = !bViewingInstantReplay && !bGameOver && UTCharacter && (UTCharacter->IsDead() || (UTCharacter->Health <= 0) || (UTCharacter->IsRagdoll() && UTPC->DeathCamFocus)) && UTPC && (!UTPC->DeathCamFocus || (UTPC->DeathCamFocus != TargetActor));
 
 		float CameraDistance = FreeCamDistance;
 		FVector CameraOffset = FreeCamOffset;
