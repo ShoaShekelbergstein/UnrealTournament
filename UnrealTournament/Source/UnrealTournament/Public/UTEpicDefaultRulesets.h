@@ -43,7 +43,7 @@ public:
 			NewRuleset->Title = TEXT("Deathmatch");
 			NewRuleset->Tooltip = TEXT("Standard free-for-all Deathmatch.");
 			NewRuleset->Description = TEXT("Standard free-for-all deathmatch.\n\n<UT.Hub.RulesText_Small>TimeLimit : %TimeLimit% minutes</>\n<UT.Hub.RulesText_Small>Maximum players : %MaxPlayers%</>");
-			NewRuleset->MaxPlayers = 8;
+			NewRuleset->MaxPlayers = 6;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_DM.GB_DM'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTDMGameMode");
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=10?GoalScore=0"));
