@@ -66,6 +66,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = UTUserWidgetBase)
 	const FText& GetBasicTooltipText() const { return UTTooltipText; }
 
+#if WITH_PROFILE
 	/** Gets the McpProfileAccount of the owning player */
 	template <typename ProfileAccountT = UUtMcpProfile, typename = typename TEnableIf<TIsDerivedFrom<ProfileAccountT, UUtMcpProfile>::IsDerived, ProfileAccountT>::Type>
 	ProfileAccountT* GetMcpProfileAccount(bool bChecked = false) const
@@ -73,6 +74,7 @@ protected:
 		UUtMcpProfile* Profile = GetUTLocalPlayer()->GetMcpProfileManager()->GetMcpProfileAs<UUtMcpProfile>(EUtMcpProfile::Profile);
 		return bChecked ? CastChecked<ProfileAccountT>(Profile, ECastCheckedType::NullAllowed) : Cast<ProfileAccountT>(Profile);
 	}
+#endif
 
 	UWidget* GetCurrentTooltip() const;
 	
