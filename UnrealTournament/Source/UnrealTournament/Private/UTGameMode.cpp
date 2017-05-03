@@ -597,7 +597,7 @@ void AUTGameMode::InitGameState()
 		UTGameState->bIsInstanceServer = IsGameInstanceServer();
 		UTGameState->bDebugHitScanReplication = bDebugHitScanReplication;
 		UTGameState->bRequireFull = bRequireFull;
-		if (bOfflineChallenge || bUseMatchmakingSession || bBasicTrainingGame || bIsVSAI)
+		if (bOfflineChallenge || bRankedSession || bBasicTrainingGame || bIsVSAI)
 		{
 			UTGameState->bAllowTeamSwitches = false;
 		}
@@ -3714,6 +3714,11 @@ void AUTGameMode::HandleCountdownToBegin()
 		FString MapName = GetOutermost()->GetName();
 		GetWorld()->Exec(GetWorld(), *FString::Printf(TEXT("Demorec %s"), *DemoFilename.Replace(TEXT("%m"), *MapName.RightChop(MapName.Find(TEXT("/"), ESearchCase::IgnoreCase, ESearchDir::FromEnd) + 1))));
 	}*/
+	if (bUseMatchmakingSession && UTGameState)
+	{
+		UTGameState->bAllowTeamSwitches = false;
+		UTGameState->ForceNetUpdate();
+	}
 	CountDown = 3;
 	FTimerHandle TempHandle;
 	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::CheckCountDown, 1.f*GetActorTimeDilation(), false);
