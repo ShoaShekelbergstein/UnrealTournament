@@ -335,6 +335,10 @@ public:
 
 	virtual FName GetTutorialAnnouncement(int32 Switch) const;
 
+	/** Set true if the TutorialAnnouncements have valid announcement sounds. */
+	UPROPERTY(EditAnyWhere, Category = "Tutorial")
+		bool bShouldPrecacheTutorialAnnouncements;
+
 	UPROPERTY(EditAnyWhere, Category = "Tutorial")
 		TArray<FName> TutorialAnnouncements;
 

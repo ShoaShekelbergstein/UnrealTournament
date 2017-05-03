@@ -37,6 +37,7 @@ AUTInventory::AUTInventory(const FObjectInitializer& ObjectInitializer)
 
 	HUDText = FText::GetEmpty();
 	PreSpawnTime = 3.f;
+	bShouldPrecacheTutorialAnnouncements = true;
 }
 
 void AUTInventory::PostInitProperties()
@@ -370,9 +371,12 @@ FText AUTInventory::GetHUDText() const
 
 void AUTInventory::PrecacheTutorialAnnouncements(UUTAnnouncer* Announcer) const
 {
-	for (int32 i = 0; i < TutorialAnnouncements.Num(); i++)
+	if (bShouldPrecacheTutorialAnnouncements)
 	{
-		Announcer->PrecacheAnnouncement(TutorialAnnouncements[i]);
+		for (int32 i = 0; i < TutorialAnnouncements.Num(); i++)
+		{
+			Announcer->PrecacheAnnouncement(TutorialAnnouncements[i]);
+		}
 	}
 }
 

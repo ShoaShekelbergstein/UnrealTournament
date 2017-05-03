@@ -36,6 +36,7 @@ AUTWeap_Minigun::AUTWeap_Minigun(const FObjectInitializer& ObjectInitializer)
 	HighlightText = NSLOCTEXT("Weapon", "StingerHighlightText", "Sting Like a Bee");
 	VeryLowMeshOffset = FVector(0.f, 0.f, -7.f);
 	HUDViewKickback = FVector2D(0.03f, 0.05f);
+	bShouldPrecacheTutorialAnnouncements = false;
 }
 
 void AUTWeap_Minigun::PlayFiringEffects()

@@ -53,6 +53,7 @@ AUTWeap_Enforcer::AUTWeap_Enforcer(const FObjectInitializer& ObjectInitializer)
 	LowMeshOffset = FVector(0.f, 0.f, -7.f);
 	VeryLowMeshOffset = FVector(0.f, 0.f, -15.f);
 	MaxVerticalSpread = 2.5f;
+	bShouldPrecacheTutorialAnnouncements = false;
 }
 
 float AUTWeap_Enforcer::GetImpartedMomentumMag(AActor* HitActor)
