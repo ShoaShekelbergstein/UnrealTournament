@@ -3715,7 +3715,7 @@ void AUTGameMode::HandleCountdownToBegin()
 		FString MapName = GetOutermost()->GetName();
 		GetWorld()->Exec(GetWorld(), *FString::Printf(TEXT("Demorec %s"), *DemoFilename.Replace(TEXT("%m"), *MapName.RightChop(MapName.Find(TEXT("/"), ESearchCase::IgnoreCase, ESearchDir::FromEnd) + 1))));
 	}*/
-	if (bUseMatchmakingSession && UTGameState)
+	if (bIsQuickMatch && UTGameState)
 	{
 		UTGameState->bAllowTeamSwitches = false;
 		UTGameState->ForceNetUpdate();
