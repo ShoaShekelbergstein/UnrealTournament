@@ -431,7 +431,7 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 	}
 
 	// if players from same party on a best team, move to it
-	if (PS->PartySize > 1)
+	if ((PS->PartySize > 1) && (!GameSession || (BestSize < GameSession->MaxPlayers/2)))
 	{
 		for (AUTTeamInfo* TestTeam : BestTeams)
 		{
