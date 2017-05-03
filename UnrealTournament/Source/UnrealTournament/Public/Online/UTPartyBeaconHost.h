@@ -26,6 +26,83 @@ DECLARE_DELEGATE_TwoParams(FOnServerConfigurationRequest, const FUniqueNetIdRepl
  */
 DECLARE_DELEGATE_TwoParams(FOnProcessReconnectForClient, AUTPartyBeaconClient*, EPartyReservationResult::Type);
 
+USTRUCT()
+struct FPlayerGameData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Transient)
+	FUniqueNetIdRepl UniqueId;
+
+	UPROPERTY(Transient)
+	int32 Skill;
+
+	FPlayerGameData()
+	{
+		Skill = 0;
+	}
+
+	FPlayerGameData(FUniqueNetIdRepl InUniqueId, int32 InSkill)
+	{
+		UniqueId = InUniqueId;
+		Skill = InSkill;
+	}
+};
+
+USTRUCT()
+struct FTeamBalanceInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	int32 TeamIndex;
+
+	UPROPERTY()
+	int32 TotalPlayers;
+
+	UPROPERTY()
+	int32 TotalSkill;
+
+	FTeamBalanceInfo(int32 InTeamIndex)
+	{
+		TeamIndex = InTeamIndex;
+	}
+
+	FTeamBalanceInfo()
+	{
+		TeamIndex = 0;
+		TotalPlayers = 0;
+		TotalSkill = 0;
+	}
+};
+
+USTRUCT()
+struct FPartyReservationTotalSize
+{
+	GENERATED_BODY()
+			
+	UPROPERTY()
+	int32 ReservationIndex;
+	UPROPERTY()
+	int32 PartySize;
+	UPROPERTY()
+	int32 Skill;
+
+	FPartyReservationTotalSize()
+	{
+		ReservationIndex = -1;
+		PartySize = -1;
+		Skill = 0;
+	}
+
+	FPartyReservationTotalSize(int32 InReservationIndex, int32 InPartySize, int32 InSkill)
+	{
+		ReservationIndex = InReservationIndex;
+		PartySize = InPartySize;
+		Skill = InSkill;
+	}
+};
+
 /**
  * A beacon host used for taking reservations for an existing game session
  */
@@ -40,6 +117,8 @@ class AUTPartyBeaconHost : public APartyBeaconHost
 	virtual void HandlePlayerLogout(const FUniqueNetIdRepl& PlayerId) override;
 	virtual void DumpReservations() const override;
 	
+	virtual void RedraftTeams(const TArray<FPlayerGameData>& PlayerData);
+
 	/**
 	 * Simple accessor for the delegate fired when a beacon client's reconnect request is processed
 	 */

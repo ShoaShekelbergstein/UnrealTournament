@@ -118,6 +118,7 @@ public:
 	//virtual void OnProcessReconnectForClient(AUTPartyBeaconClient* ReconnectClient, EPartyReservationResult::Type ReconnectResult);
 
 	virtual void RegisterServer() override;
+	virtual void UnRegisterServer(bool bShuttingDown) override;
 	virtual void CleanUpOnlineSubsystem() override;
 	virtual void StartServer() override;
 	virtual void UnregisterPlayer(FName InSessionName, const FUniqueNetIdRepl& UniqueId) override;
