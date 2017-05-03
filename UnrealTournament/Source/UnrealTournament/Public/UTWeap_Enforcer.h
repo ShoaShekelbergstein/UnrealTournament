@@ -63,6 +63,8 @@ class UNREALTOURNAMENT_API AUTWeap_Enforcer : public AUTDualWeapon
 
 	virtual void FiringInfoUpdated_Implementation(uint8 InFireMode, uint8 FlashCount, FVector InFlashLocation) override;
 
+	virtual void DualEquipFinished() override;
+
 	/** Call to modify our spread */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Weapon")
 	void ModifySpread();
