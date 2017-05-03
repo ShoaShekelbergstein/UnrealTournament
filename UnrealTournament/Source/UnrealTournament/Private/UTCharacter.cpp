@@ -1299,7 +1299,7 @@ void AUTCharacter::PlayTakeHitEffects_Implementation()
 			// TODO: gore setting check
 			if (bRecentlyRendered && BloodEffects.Num() > 0)
 			{
-				UParticleSystem* Blood = BloodEffects[FMath::RandHelper(BloodEffects.Num())];
+				UParticleSystem* Blood = BloodEffects[0];// FMath::RandHelper(BloodEffects.Num())];
 				if (Blood != NULL)
 				{
 					// we want the PSC 'attached' to ourselves for 1P/3P visibility yet using an absolute transform, so the GameplayStatics functions don't get the job done
@@ -5498,7 +5498,7 @@ void AUTCharacter::UpdateArmorOverlay()
 					static FName NAME_TeamColor(TEXT("TeamColor"));
 					MID->SetVectorParameterValue(NAME_TeamColor, PS->Team->TeamColor);
 				}
-				FLinearColor BaseColor = (PS->Team && (PS->Team->TeamIndex == 1)) ? FLinearColor(1.f, 1.f, 0.f, 1.f) : FLinearColor(0.5f, 0.5f, 0.1f, 1.f);
+				FLinearColor BaseColor = (PS->Team && (PS->Team->TeamIndex == 1)) ? FLinearColor(1.f, 1.f, 0.f, 1.f) : FLinearColor(0.75f, 0.75f, 0.1f, 1.f);
 				static FName NAME_Color(TEXT("Color"));
 				MID->SetVectorParameterValue(NAME_Color, BaseColor);
 			}
