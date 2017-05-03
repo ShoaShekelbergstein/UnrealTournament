@@ -132,6 +132,10 @@ bool AUTRemoteRedeemer::DriverEnter(APawn* NewDriver)
 			AUTCharacter *UTChar = Cast<AUTCharacter>(NewDriver);
 			if (UTChar)
 			{
+				if (UTChar->GetVelocity().IsNearlyZero() && UTChar->UTCharacterMovement)
+				{
+					UTChar->UTCharacterMovement->AddDampedImpulse(FVector(0.f, 0.f, 4000.f), false);
+				}
 				UTChar->StartDriving(this);
 				UTChar->PlayerState = PlayerState;
 			}
