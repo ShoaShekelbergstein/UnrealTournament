@@ -100,5 +100,7 @@ struct FRazerChroma : FTickableGameObject, IModuleInterface
 
 	void UpdateIdleColors(float DeltaTime);
 
+	void LoadChromaDLL();
+
 	int32 AtoZToRZKEY[26];
 };

@@ -91,6 +91,10 @@ IMPLEMENT_MODULE(FRazerChroma, RazerChroma)
 
 void FRazerChroma::StartupModule()
 {
+}
+
+void FRazerChroma::LoadChromaDLL()
+{
 	HMODULE ChromaSDKModule = nullptr;
 
 	ChromaSDKModule = LoadLibrary(CHROMASDKDLL);
@@ -453,6 +457,11 @@ void FRazerChroma::Tick(float DeltaTime)
 
 	if (!bChromaSDKEnabled)
 	{
+		if (!Init)
+		{
+			LoadChromaDLL();
+		}
+
 		if (Init && Init() == RZRESULT_SUCCESS)
 		{
 			bChromaSDKEnabled = true;
