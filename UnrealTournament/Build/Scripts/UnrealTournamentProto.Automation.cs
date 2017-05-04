@@ -1037,7 +1037,7 @@ namespace UnrealTournamentGame.Automation
 			// Set dedicated servers fleets live. 
 			if (bSetLiveServerBuild)
 			{
-				GameServerManager.DeployNewFleets(900);
+				GameServerManager.DeployNewFleets(1800);
 			}
 
 			// Apply game rollback label to preserve info about last Live build
@@ -1132,7 +1132,7 @@ namespace UnrealTournamentGame.Automation
 			// Set dedicated servers fleets live. 
 			if (bSetLiveServerBuild)
 			{
-				GameServerManager.DegradeOldFleets(900);
+				GameServerManager.DegradeOldFleets(1800);
 			}
 			Log("************************* Ocean_PromoteBuild completed");
 		}
