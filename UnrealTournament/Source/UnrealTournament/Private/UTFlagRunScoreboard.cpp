@@ -545,6 +545,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 			{
 				AUTCharacter* PawnToFocus = GS->ScoringPlayerState->GetUTCharacter();
 				FNetworkGUID FocusPawnGuid = PawnToFocus ? GetWorld()->DemoNetDriver->GetGUIDForActor(PawnToFocus) : GetWorld()->DemoNetDriver->GetGUIDForActor(GS->ScoringPlayerState);
+				UTPlayerOwner->ClientReceiveLocalizedMessage(UUTCTFRewardMessage::StaticClass(), 11, nullptr);
 				UTPlayerOwner->OnKillcamStart(FocusPawnGuid, 8.0f + ScoreInfoDuration);
 				GetWorld()->GetTimerManager().SetTimer(
 					UTPlayerOwner->KillcamStopHandle,
