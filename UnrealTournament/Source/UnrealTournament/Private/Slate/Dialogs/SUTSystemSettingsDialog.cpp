@@ -1116,7 +1116,7 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildAudioTab()
 		.FillWidth(1.0f)
 		.VAlign(VAlign_Center)
 		[
-			SAssignNew(PushToTalkCombo, SComboBox< TSharedPtr<FString> >)
+			SAssignNew(VoiceInputDeviceCombo, SComboBox< TSharedPtr<FString> >)
 			.InitiallySelectedItem(VOIPInputOptions[VOIPInputOptionsInitialSelection])
 			.ComboBoxStyle(SUWindowsStyle::Get(), "UT.ComboBox")
 			.ButtonStyle(SUWindowsStyle::Get(), "UT.Button.White")

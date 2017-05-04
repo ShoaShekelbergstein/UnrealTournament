@@ -193,6 +193,7 @@ protected:
 	TSharedPtr<STextBlock> SoundVolumesLabels[EUTSoundClass::MAX];
 
 	TSharedPtr<SComboBox< TSharedPtr<FString> > >PushToTalkCombo;
+	TSharedPtr<SComboBox< TSharedPtr<FString> > >VoiceInputDeviceCombo;
 
 	void OnSoundVolumeChangedMaster(float NewValue);
 	void OnSoundVolumeChangedMusic(float NewValue);
