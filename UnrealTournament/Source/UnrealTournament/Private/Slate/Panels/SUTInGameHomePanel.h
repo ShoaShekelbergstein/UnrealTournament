@@ -5,6 +5,7 @@
 #include "Slate/SlateGameResources.h"
 #include "../Base/SUTPanelBase.h"
 #include "../Widgets/SUTChatBar.h"
+#include "../Widgets/SUTImage.h"
 #include "../SUWindowsStyle.h"
 
 #if !UE_SERVER
@@ -71,6 +72,8 @@ protected:
 	virtual FReply OnSpectateClick();
 	
 	EVisibility GetMatchButtonVis() const;
+
+	virtual void Tick( const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime );
 
 };
 
