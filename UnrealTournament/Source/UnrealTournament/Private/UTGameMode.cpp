@@ -4037,7 +4037,8 @@ void AUTGameMode::Logout(AController* Exiting)
 	if (NumPlayers == 0 && bIsQuickMatch && bUseMatchmakingSession)
 	{
 		AUTGameSession* UTGameSession = Cast<AUTGameSession>(GameSession);
-		GetWorldTimerManager().SetTimer(ServerRestartTimerHandle, UTGameSession, &AUTGameSession::CheckForPossibleRestart, 60.0f, true);
+		GetWorldTimerManager().SetTimer(ServerRestartTimerHandle, UTGameSession, &AUTGameSession::CheckForPossibleRestart, 5.0f, true);
+		UTGameSession->CheckForPossibleRestart();
 	}
 
 	if (UTGameState && UTGameState->LineUpHelper)
