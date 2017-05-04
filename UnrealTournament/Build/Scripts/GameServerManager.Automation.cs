@@ -324,6 +324,7 @@ namespace UnrealTournamentGame.Automation
 				InstanceSize = InstanceSizeMin;
 			}
 
+			string AppEnvironment = AppName.ToString().Substring(GameName.Length);
 			string CredentialsFilePath = GetUtilitiesFilePath(AwsCredentialsFile);
 			string AwsCredentials = ReadFileContents(CredentialsFilePath);
 			string[] AwsCredentialsList = AwsCredentials.Split(':');
@@ -375,7 +376,7 @@ namespace UnrealTournamentGame.Automation
 				"epic_game_buildstr_base64=" + System.Convert.ToBase64String(BuildStringBytes) + "&" +
 				"epic_game_cpu_budget=" + LocalCpuBudget +"&" +
 				"epic_game_ram_budget=" + RamBudget + "&" +
-				"epic_game_environment=" + AppName.ToString() + "&" +
+				"epic_game_environment=" + AppEnvironment.ToString() + "&" +
 				"epic_rolling_update=" + UseRollingUpdates + "&" +
 				"epic_instance_size=" + InstanceSize.ToString() + "&" +
 				"epic_instance_min=" + InstanceSizeMin.ToString() + "&" +
@@ -416,6 +417,7 @@ namespace UnrealTournamentGame.Automation
 				CommandUtils.Log("Overriding AppName from {0} to {1}", AppName, LocalAppName);
 			}
 
+			string AppEnvironment = LocalAppName.ToString().Substring(GameName.Length);
 			string NetworkId = "default";
 			string CredentialsFile = "GceUtDevCredentials.txt";
 
@@ -485,7 +487,7 @@ namespace UnrealTournamentGame.Automation
 				"epic_game_cpu_budget=" + LocalCpuBudget +"&" +
 				"epic_game_ram_budget=" + RamBudget + "&" +
 				"epic_game_buildstr_base64=" + System.Convert.ToBase64String(BuildStringBytes) + "&" +
-				"epic_game_environment=" + LocalAppName.ToString() + "&" +
+				"epic_game_environment=" + AppEnvironment.ToString() + "&" +
 				"epic_rolling_update=" + UseRollingUpdates + "&" +
 				"epic_instance_size=" + InstanceSize.ToString() + "&" +
 				"epic_instance_min=" + InstanceSizeMin.ToString() + "&" +
