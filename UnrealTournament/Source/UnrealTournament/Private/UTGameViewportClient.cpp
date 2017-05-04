@@ -385,6 +385,7 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 		}
 	}
 
+	uint16 DialogButtons = UTDIALOG_BUTTON_OK | UTDIALOG_BUTTON_RECONNECT;
 	switch (FailureType)
 	{
 		case ENetworkFailure::FailureReceived:
@@ -392,6 +393,7 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 			if (!KickReason.IsEmpty())
 			{
 				NetworkErrorMessage = KickReason;
+				DialogButtons = UTDIALOG_BUTTON_OK;
 				KickReason = FText::GetEmpty();
 			}
 			else
@@ -419,7 +421,7 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 		{
 			FirstPlayer->HideMenu();
 		}
-		ReconnectDialog = FirstPlayer->ShowMessage(NSLOCTEXT("UTGameViewportClient","NetworkErrorDialogTitle","Network Error"), NetworkErrorMessage, UTDIALOG_BUTTON_OK | UTDIALOG_BUTTON_RECONNECT, FDialogResultDelegate::CreateUObject(this, &UUTGameViewportClient::NetworkFailureDialogResult));
+		ReconnectDialog = FirstPlayer->ShowMessage(NSLOCTEXT("UTGameViewportClient","NetworkErrorDialogTitle","Network Error"), NetworkErrorMessage, DialogButtons, FDialogResultDelegate::CreateUObject(this, &UUTGameViewportClient::NetworkFailureDialogResult));
 	}
 #endif
 }
