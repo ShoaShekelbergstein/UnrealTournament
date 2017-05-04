@@ -355,7 +355,7 @@ namespace UnrealTournamentGame.Automation
 				LocalCpuBudget=32000;
 				LocalMaxMatchLength = 0;
 				LocalTtlInterval = 0;
-				UseRollingUpdates = false;
+				UseRollingUpdates = "false";
 			}
 			else
 			{
@@ -468,7 +468,7 @@ namespace UnrealTournamentGame.Automation
 				LocalCpuBudget=32000;
 				LocalMaxMatchLength = 0;
 				LocalTtlInterval = 0;
-				UseRollingUpdates = false;
+				UseRollingUpdates = "false";
 			}
 			else
 			{
