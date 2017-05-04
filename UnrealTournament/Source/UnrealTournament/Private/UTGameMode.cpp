@@ -114,6 +114,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	MatchSummaryDelay = 9.f;
 	MatchSummaryTime = 20.f;
 	BotFillCount = 0;
+	WarmupFillCount = 0;
 	bWeaponStayActive = true;
 	VictoryMessageClass = UUTVictoryMessage::StaticClass();
 	DeathMessageClass = UUTDeathMessage::StaticClass();
@@ -464,6 +465,11 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	// Handle any associated ruleset
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("ART"));
 	if (!InOpt.IsEmpty()) ActiveRuleTag = InOpt;
+
+	if ((GetNetMode() != NM_Standalone) && !bRankedSession && !bForceNoBots && (GetWorld()->WorldType != EWorldType::PIE))
+	{
+		WarmupFillCount = FMath::Min(GameSession->MaxPlayers, bIsVSAI ? 3 : 6);
+	}
 }
 
 void AUTGameMode::AddMutator(const FString& MutatorPath)
@@ -1090,13 +1096,33 @@ bool AUTGameMode::AllowRemovingBot(AUTBotPlayer* B)
 
 		// remove as soon as dead or out of combat
 		// TODO: if this isn't getting them out fast enough we can restrict to only human players
-		return B->GetPawn() == NULL || B->GetEnemy() == NULL || B->LostContact(5.0f);
+		return B->GetPawn() == NULL || B->GetEnemy() == NULL || B->LostContact(5.0f) || !HasMatchStarted();
+	}
+}
+
+void AUTGameMode::RemoveExtraBots()
+{
+	int32 FailsafeCount = 0;
+	int32 BotsNeeded = (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && (GetNetMode() != NM_Standalone)) ? WarmupFillCount : BotFillCount;
+	while ((NumPlayers + NumBots > BotsNeeded) && (FailsafeCount < 10))
+	{
+		for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+		{
+			AUTBotPlayer* B = Cast<AUTBotPlayer>(It->Get());
+			if (B != NULL)
+			{
+				B->Destroy();
+				break;
+			}
+		}
+		FailsafeCount++;
 	}
 }
 
 void AUTGameMode::CheckBotCount()
 {
-	if (NumPlayers + NumBots > BotFillCount)
+	int32 BotsNeeded = (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && (GetNetMode() != NM_Standalone)) ? WarmupFillCount : BotFillCount;
+	if (NumPlayers + NumBots > BotsNeeded)
 	{
 		for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
 		{
@@ -1108,7 +1134,7 @@ void AUTGameMode::CheckBotCount()
 			}
 		}
 	}
-	else while (NumPlayers + NumBots < BotFillCount)
+	else while (NumPlayers + NumBots < BotsNeeded)
 	{
 		AddBot();
 	}
@@ -1983,10 +2009,9 @@ void AUTGameMode::RemoveAllPawns()
 	{
 		// Detach all controllers from their pawns
 		AController* Controller = Iterator->Get();
-		AUTPlayerController* PC = Cast<AUTPlayerController>(Controller);
-		if (PC && PC->UTPlayerState)
+		AUTPlayerState* NewPlayerState = Cast<AUTPlayerState>(Controller->PlayerState);
+		if (NewPlayerState)
 		{
-			AUTPlayerState* NewPlayerState = PC->UTPlayerState;
 			NewPlayerState->bIsWarmingUp = false;
 		}
 		if (Controller->GetPawn() != NULL)
@@ -2969,7 +2994,8 @@ void AUTGameMode::RestartPlayer(AController* aPlayer)
 		return;
 	}
 	AUTPlayerController* UTPC = Cast<AUTPlayerController>(aPlayer);
-	if (!IsMatchInProgress() && (!UTPC || !UTPC->UTPlayerState || !UTPC->UTPlayerState->bIsWarmingUp || (GetMatchState() != MatchState::WaitingToStart)) && (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsPlacingPlayers))
+	bool bWantsToWarmUp = UTPC ? UTPC->UTPlayerState  && UTPC->UTPlayerState->bIsWarmingUp : true;
+	if (!IsMatchInProgress() && ((GetMatchState() != MatchState::WaitingToStart) || !bWantsToWarmUp) && (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsPlacingPlayers))
 	{
 		return;
 	}
@@ -2989,6 +3015,14 @@ void AUTGameMode::RestartPlayer(AController* aPlayer)
 	AUTBot* Bot = Cast<AUTBot>(aPlayer);
 	if (Bot)
 	{
+		if (GetMatchState() == MatchState::WaitingToStart)
+		{
+			AUTPlayerState* PS = Cast<AUTPlayerState>(Bot->PlayerState);
+			if (PS)
+			{
+				PS->bIsWarmingUp = true;
+			}
+		}
 		Bot->LastRespawnTime = GetWorld()->TimeSeconds;
 		if (bAutoAdjustBotSkill)
 		{
@@ -3640,6 +3674,7 @@ void AUTGameMode::HandleMatchInOvertime()
 
 void AUTGameMode::HandlePlayerIntro()
 {
+	RemoveExtraBots();
 	if (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive)
 	{
 		RemoveAllPawns();
@@ -3654,7 +3689,6 @@ void AUTGameMode::HandlePlayerIntro()
 			PC->UTPlayerState->RespawnChoiceB = nullptr;
 		}
 	}
-
 
 	if (UTGameState && UTGameState->LineUpHelper)
 	{

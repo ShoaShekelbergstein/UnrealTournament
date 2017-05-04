@@ -573,6 +573,8 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 
 void AUTTeamGameMode::HandlePlayerIntro()
 {
+	RemoveExtraBots();
+
 	// we ignore balancing when applying players' URL specified value during prematch
 	// make sure we're balanced now before the game begins
 	if (bBalanceTeams)
@@ -701,9 +703,32 @@ bool AUTTeamGameMode::FoundBotToRemove(AUTTeamInfo* Team)
 	return bFound;
 }
 
+void AUTTeamGameMode::RemoveExtraBots()
+{
+	int32 FailsafeCount = 0;
+	int32 BotsNeeded = (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && (GetNetMode() != NM_Standalone)) ? WarmupFillCount : BotFillCount;
+	while ((NumPlayers + NumBots > BotsNeeded) && (FailsafeCount < 10))
+	{
+		TArray<AUTTeamInfo*> SortedTeams = UTGameState->Teams;
+		SortedTeams.Sort([](AUTTeamInfo& A, AUTTeamInfo& B) { return A.GetSize() > B.GetSize(); });
+
+		// try to remove bots from team with the most players
+		for (AUTTeamInfo* Team : SortedTeams)
+		{
+			bool bFound = FoundBotToRemove(Team);
+			if (bFound)
+			{
+				break;
+			}
+		}
+		FailsafeCount++;
+	}
+}
+
 void AUTTeamGameMode::CheckBotCount()
 {
-	if (NumPlayers + NumBots > BotFillCount)
+	int32 BotsNeeded = (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && (GetNetMode() != NM_Standalone)) ? WarmupFillCount : BotFillCount;
+	if (NumPlayers + NumBots > BotsNeeded)
 	{
 		if (bIsVSAI)
 		{
@@ -732,7 +757,7 @@ void AUTTeamGameMode::CheckBotCount()
 			}
 		}
 	}
-	else while (NumPlayers + NumBots < BotFillCount)
+	else while (NumPlayers + NumBots < BotsNeeded)
 	{
 		AddBot();
 	}

@@ -80,6 +80,7 @@ class UNREALTOURNAMENT_API AUTTeamGameMode : public AUTGameMode
 	virtual bool AvoidPlayerStart(class AUTPlayerStart* P) override;
 
 	virtual void CheckBotCount() override;
+	virtual void RemoveExtraBots() override;
 	virtual void DefaultTimer() override;
 	virtual int32 AdjustedBotFillCount() override;
 

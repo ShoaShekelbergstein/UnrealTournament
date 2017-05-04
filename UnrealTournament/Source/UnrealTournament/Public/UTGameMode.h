@@ -226,6 +226,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "MatchStart")
 	int32 BotFillCount;
 
+	/** for warm up, add bots until NumPlayers + NumBots is this number */
+	UPROPERTY(BlueprintReadWrite, Category = "MatchStart")
+		int32 WarmupFillCount;
+
 	// How long a player must wait before respawning.  Set to 0 for no delay.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Rules)
 	float RespawnWaitTime;
@@ -603,6 +607,10 @@ protected:
 	virtual class AUTBotPlayer* AddAssetBot(const FStringAssetReference& BotAssetPath, uint8 TeamNum = 255);
 	/** check for adding/removing bots to satisfy BotFillCount */
 	virtual void CheckBotCount();
+
+	/** Immediately remove all extra bots. */
+	virtual void RemoveExtraBots();
+
 	/** returns whether we should allow removing the given bot to satisfy the desired player/bot count settings
 	 * generally used to defer destruction of bots that currently are important to the current game state, like flag carriers
 	 */

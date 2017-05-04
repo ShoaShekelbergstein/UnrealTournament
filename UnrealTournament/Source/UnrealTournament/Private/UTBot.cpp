@@ -570,7 +570,7 @@ void AUTBot::Tick(float DeltaTime)
 		NavData = GetUTNavData(GetWorld());
 	}
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (!GS->IsMatchInProgress() || GS->IsMatchIntermission())
+	if (GS->IsMatchIntermission())
 	{
 		return;
 	}
