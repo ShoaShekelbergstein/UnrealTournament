@@ -759,7 +759,7 @@ void AUTGameState::DefaultTimer()
 			if (GetWorld()->GetNetMode() != NM_Client)
 			{
 				int32 RepTimeInterval = 10;
-				if (RemainingTime % RepTimeInterval == 0)
+				if (RemainingTime % RepTimeInterval == RepTimeInterval - 1)
 				{
 					ReplicatedRemainingTime = RemainingTime;
 					ForceNetUpdate();

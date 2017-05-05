@@ -3931,11 +3931,14 @@ void AUTGameMode::PostLogin( APlayerController* NewPlayer )
 		GetWorldTimerManager().ClearTimer(ServerRestartTimerHandle);
 	}
 
-	if (UTGameState && UTGameState->LineUpHelper)
+	if (UTGameState)
 	{
-		UTGameState->LineUpHelper->OnPlayerChange();
+		UTGameState->SetRemainingTime(UTGameState->GetRemainingTime());
+		if (UTGameState->LineUpHelper)
+		{
+			UTGameState->LineUpHelper->OnPlayerChange();
+		}
 	}
-
 	if (UTPC && FUTAnalytics::IsAvailable() && (GetNetMode() == NM_DedicatedServer))
 	{
 		FUTAnalytics::FireEvent_UTServerPlayerJoin(this, UTPC->UTPlayerState);
