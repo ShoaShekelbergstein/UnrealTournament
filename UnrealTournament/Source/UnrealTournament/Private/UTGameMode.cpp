@@ -3007,7 +3007,7 @@ void AUTGameMode::RestartPlayer(AController* aPlayer)
 	}
 	AUTPlayerController* UTPC = Cast<AUTPlayerController>(aPlayer);
 	bool bWantsToWarmUp = UTPC ? UTPC->UTPlayerState  && UTPC->UTPlayerState->bIsWarmingUp : true;
-	if (!IsMatchInProgress() && ((GetMatchState() != MatchState::WaitingToStart) || !bWantsToWarmUp) && (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsPlacingPlayers))
+	if (!IsMatchInProgress() && ((GetMatchState() != MatchState::WaitingToStart) || !bWantsToWarmUp || (GetNetMode() == NM_Standalone)) && (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsPlacingPlayers))
 	{
 		return;
 	}
