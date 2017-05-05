@@ -574,6 +574,7 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 void AUTTeamGameMode::HandlePlayerIntro()
 {
 	RemoveExtraBots();
+	CheckBotCount();
 
 	// we ignore balancing when applying players' URL specified value during prematch
 	// make sure we're balanced now before the game begins

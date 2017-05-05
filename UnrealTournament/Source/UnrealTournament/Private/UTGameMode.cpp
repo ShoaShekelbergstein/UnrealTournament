@@ -3687,6 +3687,7 @@ void AUTGameMode::HandleMatchInOvertime()
 void AUTGameMode::HandlePlayerIntro()
 {
 	RemoveExtraBots();
+	CheckBotCount();
 	if (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive)
 	{
 		RemoveAllPawns();
