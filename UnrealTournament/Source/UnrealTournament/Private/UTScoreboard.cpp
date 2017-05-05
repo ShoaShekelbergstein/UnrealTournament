@@ -452,7 +452,10 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 		Canvas->StrLen(UTHUDOwner->MediumFont, TEXT("TEST"), NameX, MessageY);
 	}
 
-	DrawText((UTHUDOwner->GetNetMode() == NM_Standalone) ? InteractiveStandaloneText : InteractiveText, 0.5f*Canvas->ClipX, YOffset - 24.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
+	if (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive || (UTGameState && UTGameState->HasMatchStarted()))
+	{
+		DrawText((UTHUDOwner->GetNetMode() == NM_Standalone) ? InteractiveStandaloneText : InteractiveText, 0.5f*Canvas->ClipX, YOffset - 24.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
+	}
 
 	// Draw the Background
 	float TimerX = DrawGameOptions(RenderDelta, YOffset, 0.f, true);
@@ -478,14 +481,18 @@ float UUTScoreboard::DrawGameOptions(float RenderDelta, float& YOffset, float Ri
 	float Length = 0.f;
 	if (UTGameState)
 	{
+		bool bShouldDrawTime = (!UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive || UTGameState->HasMatchStarted());
 		float DisplayedTime = UTGameState ? UTGameState->GetClockTime() : 0.f;
 		FText Timer = UTHUDOwner->ConvertTime(FText::GetEmpty(), FText::GetEmpty(), DisplayedTime, false, true, true);
 		FText StatusText = UTGameState->GetGameStatusText(true);
 		if (bGetLengthOnly)
 		{
 			float XL, YL;
-			Canvas->StrLen(UTHUDOwner->NumberFont, Timer.ToString(), XL, YL);
-			Length = XL;
+			if (bShouldDrawTime)
+			{
+				Canvas->StrLen(UTHUDOwner->NumberFont, Timer.ToString(), XL, YL);
+				Length = XL;
+			}
 			if (!StatusText.IsEmpty())
 			{
 				Canvas->StrLen(UTHUDOwner->SmallFont, StatusText.ToString(), XL, YL);
@@ -501,7 +508,7 @@ float UUTScoreboard::DrawGameOptions(float RenderDelta, float& YOffset, float Ri
 		}
 		else
 		{
-			FVector2D TimeSize = DrawText(Timer, RightEdge, YOffset + 21.f*RenderScale, UTHUDOwner->NumberFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Right, ETextVertPos::Center);
+			FVector2D TimeSize = bShouldDrawTime ? DrawText(Timer, RightEdge, YOffset + 21.f*RenderScale, UTHUDOwner->NumberFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Right, ETextVertPos::Center) : FVector2D(0.f, 0.f);
 			FVector2D StatusSize(0.f, 0.f);
 			RightEdge = RightEdge - (TimeSize.X + 8.f)*RenderScale;
 			if (!StatusText.IsEmpty())
