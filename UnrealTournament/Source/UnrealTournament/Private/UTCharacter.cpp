@@ -6800,9 +6800,9 @@ void AUTCharacter::TurnOff()
 {
 	DisallowWeaponFiring(true);
 
-	if (GetMesh() && (!IsLocallyControlled() || !Cast<APlayerController>(GetController())))
+	if (GetMesh())
 	{
-		GetMesh()->TickAnimation(1.0f, false);
+		GetMesh()->TickAnimation(0.16f, false);
 		GetMesh()->RefreshBoneTransforms();
 	}
 
@@ -7327,6 +7327,16 @@ void AUTCharacter::JumpVis()
 
 void AUTCharacter::PrepareForIntermission()
 {
+	//Our weapon attachment might be mismatched locally. Make sure it matches our equipped weapon
+	if (IsLocallyControlled())
+	{
+		if (Weapon && (Weapon->AttachmentType != WeaponAttachmentClass))
+		{
+			WeaponAttachmentClass = Weapon->AttachmentType;
+			UpdateWeaponAttachment();
+		}
+	}
+
 	SetAmbientSound(NULL);
 	SetLocalAmbientSound(NULL);
 	SetStatusAmbientSound(NULL);
