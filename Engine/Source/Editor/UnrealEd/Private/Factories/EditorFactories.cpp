@@ -3894,6 +3894,11 @@ bool UTextureExporterPCX::SupportsObject(UObject* Object) const
 
 		if (Texture)
 		{
+			if (Texture->bBlockExport)
+			{
+				return false;
+			}
+
 			bSupportsObject = Texture->Source.GetFormat() == TSF_BGRA8;
 		}
 	}
@@ -3905,6 +3910,11 @@ bool UTextureExporterPCX::ExportBinary( UObject* Object, const TCHAR* Type, FArc
 	UTexture2D* Texture = CastChecked<UTexture2D>( Object );
 
 	if( !Texture->Source.IsValid() || Texture->Source.GetFormat() != TSF_BGRA8 )
+	{
+		return false;
+	}
+
+	if (Texture->bBlockExport)
 	{
 		return false;
 	}
@@ -3977,6 +3987,11 @@ bool UTextureExporterBMP::SupportsObject(UObject* Object) const
 
 		if (Texture)
 		{
+			if (Texture->bBlockExport)
+			{
+				return false;
+			}
+
 			bSupportsObject = Texture->Source.GetFormat() == TSF_BGRA8 || Texture->Source.GetFormat() == TSF_RGBA16;
 		}
 	}
@@ -3986,6 +4001,11 @@ bool UTextureExporterBMP::SupportsObject(UObject* Object) const
 bool UTextureExporterBMP::ExportBinary( UObject* Object, const TCHAR* Type, FArchive& Ar, FFeedbackContext* Warn, int32 FileIndex, uint32 PortFlags )
 {
 	UTexture2D* Texture = CastChecked<UTexture2D>( Object );
+
+	if (Texture->bBlockExport)
+	{
+		return false;
+	}
 
 	if( !Texture->Source.IsValid() || ( Texture->Source.GetFormat() != TSF_BGRA8 && Texture->Source.GetFormat() != TSF_RGBA16 ) )
 	{
@@ -4104,11 +4124,25 @@ UTextureCubeExporterHDR::UTextureCubeExporterHDR(const FObjectInitializer& Objec
 	FormatDescription.Add(TEXT("HDR"));
 }
 
+bool UTextureCubeExporterHDR::SupportsObject(UObject* Object) const
+{
+	if (Super::SupportsObject(Object))
+	{
+		UTextureCube* Texture = Cast<UTextureCube>(Object);
+		if (Texture->bBlockExport)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 bool UTextureCubeExporterHDR::ExportBinary(UObject* Object, const TCHAR* Type, FArchive& Ar, FFeedbackContext* Warn, int32 FileIndex, uint32 PortFlags)
 {
 	UTextureCube* TexCube = Cast<UTextureCube>(Object);
 
-	if (TexCube != nullptr)
+	if (TexCube != nullptr && TexCube->bBlockExport)
 	{
 		return FImageUtils::ExportTextureCubeAsHDR(TexCube, Ar);
 	}
@@ -4137,6 +4171,11 @@ bool UTextureExporterHDR::SupportsObject(UObject* Object) const
 
 		if (Texture)
 		{
+			if (Texture->bBlockExport)
+			{
+				return false;
+			}
+
 			bSupportsObject = Texture->Source.GetFormat() == TSF_BGRA8 || Texture->Source.GetFormat() == TSF_RGBA16F;
 		}
 	}
@@ -4149,6 +4188,11 @@ bool UTextureExporterHDR::ExportBinary(UObject* Object, const TCHAR* Type, FArch
 
 	if (Texture != nullptr)
 	{
+		if (Texture->bBlockExport)
+		{
+			return false;
+		}
+
 		return FImageUtils::ExportTexture2DAsHDR(Texture, Ar);
 	}
 	return false;
@@ -4176,6 +4220,11 @@ bool UTextureExporterTGA::SupportsObject(UObject* Object) const
 
 		if (Texture)
 		{
+			if (Texture->bBlockExport)
+			{
+				return false;
+			}
+
 			bSupportsObject = Texture->Source.GetFormat() == TSF_BGRA8 || Texture->Source.GetFormat() == TSF_RGBA16;
 		}
 	}
@@ -4187,6 +4236,11 @@ bool UTextureExporterTGA::ExportBinary( UObject* Object, const TCHAR* Type, FArc
 	UTexture2D* Texture = CastChecked<UTexture2D>( Object );
 
 	if (!Texture->Source.IsValid() || (Texture->Source.GetFormat() != TSF_BGRA8 && Texture->Source.GetFormat() != TSF_RGBA16))
+	{
+		return false;
+	}
+
+	if (Texture->bBlockExport)
 	{
 		return false;
 	}

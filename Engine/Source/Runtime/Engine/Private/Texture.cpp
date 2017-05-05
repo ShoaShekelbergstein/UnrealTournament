@@ -28,6 +28,11 @@
 #endif
 #include "Engine/TextureCube.h"
 
+#if WITH_EDITOR
+#include "MessageDialog.h"
+#include "Misc/EngineBuildSettings.h"
+#endif
+
 DEFINE_LOG_CATEGORY(LogTexture);
 
 #if STATS
@@ -119,9 +124,44 @@ int32 UTexture::GetCachedLODBias() const
 }
 
 #if WITH_EDITOR
+
+static FName NAME_BlockExport("bBlockExport");
+
+bool UTexture::CanEditChange(const UProperty* InProperty) const
+{
+#if WITH_EDITORONLY_DATA
+	if (InProperty->GetFName() == NAME_BlockExport)
+	{
+		if (bBlockExport)
+		{
+			return false;
+		}
+	}
+#endif
+
+	return Super::CanEditChange(InProperty);
+}
+
 void UTexture::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+#if WITH_EDITORONLY_DATA
+	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == NAME_BlockExport)
+	{
+		if (FEngineBuildSettings::IsInternalBuild())
+		{
+			if (EAppReturnType::No == FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Removing the ability to export this asset is permanent. Are you sure you want to do this?"))))
+			{
+				bBlockExport = false;
+			}
+		}
+		else
+		{
+			bBlockExport = false;
+		}
+	}
+#endif
 
 	SetLightingGuid();
 

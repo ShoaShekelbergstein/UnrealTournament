@@ -527,6 +527,12 @@ public:
 	UPROPERTY(transient)
 	uint32 bUseCinematicMipLevels:1;
 
+#if WITH_EDITORONLY_DATA
+	/** If true, export of this asset is not allowed */
+	UPROPERTY(EditDefaultsOnly, Category=Texture)
+	bool bBlockExport;
+#endif
+
 protected:
 	/** Array of user data stored with the asset */
 	UPROPERTY(EditAnywhere, AdvancedDisplay, Instanced, Category = Texture)
@@ -717,6 +723,7 @@ public:
 
 	//~ Begin UObject Interface.
 #if WITH_EDITOR
+	ENGINE_API virtual bool CanEditChange(const UProperty* InProperty) const override;
 	ENGINE_API virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 	ENGINE_API virtual void Serialize(FArchive& Ar) override;
