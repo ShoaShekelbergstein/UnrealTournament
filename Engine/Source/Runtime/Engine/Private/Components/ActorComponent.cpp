@@ -697,7 +697,7 @@ void UActorComponent::OnRegister()
 void UActorComponent::OnUnregister()
 {
 	check(bRegistered);
-	check(!bPhysicsStateCreated);
+	ensureMsgf(!bPhysicsStateCreated, TEXT("Component has physics state while unregistering (%s)"), *GetFullName());
 	bRegistered = false;
 }
 
@@ -1159,7 +1159,7 @@ void UActorComponent::OnDestroyPhysicsState()
 void UActorComponent::CreatePhysicsState()
 {
 	SCOPE_CYCLE_COUNTER(STAT_ComponentCreatePhysicsState);
-
+	
 	if (!bPhysicsStateCreated && WorldPrivate->GetPhysicsScene() && ShouldCreatePhysicsState())
 	{
 		// Call virtual
