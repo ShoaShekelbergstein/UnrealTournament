@@ -191,6 +191,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		FText InteractiveText;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
+		FText InteractiveStandaloneText;
+
 	UPROPERTY(EditAnywhere, Category = "Scoreboard")
 		FText DifficultyText[3];
 
