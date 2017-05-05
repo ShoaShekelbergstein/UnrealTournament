@@ -21,7 +21,7 @@
 #include "UTFlagRunGame.h"
 #include "UTArmor.h"
 #include "UTGameState.h"
-#include "UTLineupHelper.h"
+#include "UTLineUpHelper.h"
 
 void FBotEnemyInfo::Update(EAIEnemyUpdateType UpdateType, const FVector& ViewerLoc)
 {
