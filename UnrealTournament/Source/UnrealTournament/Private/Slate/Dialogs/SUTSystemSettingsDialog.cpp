@@ -1056,7 +1056,7 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildAudioTab()
 			.IsChecked(UserSettings->IsHRTFEnabled() ? ESlateCheckBoxState::Checked : ESlateCheckBoxState::Unchecked)
 		]
 	]
-	
+#if 0
 	+ SVerticalBox::Slot()
 	.AutoHeight()
 	.Padding(FMargin(10.0f, 10.0f, 10.0f, 0.0f))
@@ -1156,7 +1156,9 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildAudioTab()
 				.TextStyle(SUWindowsStyle::Get(),"UT.Common.ButtonText.Black")
 			]
 		]
-	];
+	]
+#endif
+	;
 
 }
 
@@ -1343,10 +1345,12 @@ FReply SUTSystemSettingsDialog::OKClick()
 		}
 	}
 
+#if 0
 	UserSettings->SetVoiceChatEnabled(VoiceChatCheckBox->IsChecked());
 	UserSettings->SetVoiceChatPlaybackVolume(VoiceChatPlaybackVolume->GetValue());
 	UserSettings->SetVoiceChatRecordVolume(VoiceChatRecordVolume->GetValue());
 	UserSettings->SetVoiceChatInputDevice(VOIPInputOptionsText->GetText().ToString());
+#endif
 
 	//UserSettings->SetSoundClassVolume(EUTSoundClass::VOIP, SoundVolumes[EUTSoundClass::VOIP]->GetValue() * 2.0f);
 
@@ -1424,7 +1428,7 @@ FReply SUTSystemSettingsDialog::OKClick()
 			bProfileNeedsUpdate = true;
 		}
 
-
+#if 0
 		bool bWantsPushToTalk = PushToTalkCombo->GetSelectedItem()->Equals(*VOIPOptions[1].Get(),ESearchCase::IgnoreCase);
 		if (ProfileSettings->bPushToTalk != bWantsPushToTalk)
 		{
@@ -1440,8 +1444,7 @@ FReply SUTSystemSettingsDialog::OKClick()
 				VoiceChat->SetAudioInputDeviceMuted(ProfileSettings->bPushToTalk);
 			}
 		}
-
-
+#endif
 		if (bProfileNeedsUpdate) GetPlayerOwner()->SaveProfileSettings();
 	}
 
