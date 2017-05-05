@@ -285,6 +285,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	if (bBasicTrainingGame)
 	{
 		GoalScore = 0;
+		bNoTrainingMenu = (UGameplayStatics::GetIntOption(Options, TEXT("NoTutMenu"), bNoTrainingMenu) == 1) ? true : false;
 	}
 
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("RankCheck"));
@@ -1396,7 +1397,7 @@ void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, con
 				float Adjust = (BlueTeamDeaths > BlueTeamKills) ? 0.5f : 1.25f;
 				if (bBasicTrainingGame)
 				{
-					Adjust *= 1.2f;
+					Adjust *= 1.3f;
 				}
 				BlueTeamSkill = FMath::Max(MinSkill, BlueTeamSkill - Adjust / FMath::Min(5.f, 0.7f*float(BlueTeamKills + BlueTeamDeaths)));
 			}
@@ -1405,7 +1406,7 @@ void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, con
 				float Adjust = (RedTeamDeaths > RedTeamKills) ? 0.5f : 1.25f;
 				if (bBasicTrainingGame)
 				{
-					Adjust *= 1.2f;
+					Adjust *= 1.3f;
 				}
 				RedTeamSkill = FMath::Max(MinSkill, RedTeamSkill - Adjust / FMath::Min(4.f, 0.7f*float(RedTeamKills + RedTeamDeaths)));
 			}
@@ -2652,14 +2653,25 @@ void AUTGameMode::TravelToNextMap_Implementation()
 			// Otherwise, display the tutorial finished screen so that the user can determine his destination
 			else if (TutorialMask > 0)
 			{
-				UClass* UMGWidgetClass = LoadClass<UUserWidget>(NULL, TEXT("/Game/RestrictedAssets/Tutorials/Blueprints/TutFinishScreenWidget.TutFinishScreenWidget_C"), NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
-				if (UMGWidgetClass)
+				if (bNoTrainingMenu)
 				{
-					UUserWidget* UMGWidget = CreateWidget<UUserWidget>(GetWorld(), UMGWidgetClass);
-					if (UMGWidget)
+					TutorialMask = 0;
+					GetWorld()->URL.RemoveOption(TEXT("tutorialmask"));
+					GetWorld()->URL.RemoveOption(TEXT("tutorialmenu"));
+					LP->ReturnToMainMenu();
+					return;
+				}
+				else
+				{
+					UClass* UMGWidgetClass = LoadClass<UUserWidget>(NULL, TEXT("/Game/RestrictedAssets/Tutorials/Blueprints/TutFinishScreenWidget.TutFinishScreenWidget_C"), NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
+					if (UMGWidgetClass)
 					{
-						UMGWidget->AddToViewport(1000);
-						return;
+						UUserWidget* UMGWidget = CreateWidget<UUserWidget>(GetWorld(), UMGWidgetClass);
+						if (UMGWidget)
+						{
+							UMGWidget->AddToViewport(1000);
+							return;
+						}
 					}
 				}
 			}

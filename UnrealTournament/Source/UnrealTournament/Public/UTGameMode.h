@@ -290,6 +290,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
 	bool bBasicTrainingGame;
 
+	/** If true, don't go back to training menu at end of game. */
+	UPROPERTY(BlueprintReadWrite, Category = "Game")
+		bool bNoTrainingMenu;
+
 	/** To make it easier to customize for instagib.  FIXMESTEVE should eventually all be mutator driven so other mutators can take advantage too. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
 		bool bIsInstagib;

@@ -1370,7 +1370,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
 	void CloseSavingWidget();
 
-
 	// Looks for an update.  
 	UFUNCTION()
 	void CheckForNewUpdate();
@@ -1402,7 +1401,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Game)
 	bool IsKillcamReplayActive();
 
-
 	void RegainFocus();
 
 	/**
@@ -1432,8 +1430,9 @@ public:
 	TSharedPtr<SWidget> GetBestWidgetToFocus();
 #endif
 
-protected:
 	bool bLaunchTutorialOnLogin;
+
+protected:
 
 	virtual void FinalizeLogin();
 

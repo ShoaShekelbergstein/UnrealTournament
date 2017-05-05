@@ -2967,8 +2967,8 @@ void UUTLocalPlayer::ReturnToMainMenu()
 			{
 				URL += TEXT("?returnfromhub");
 			}
-
-			if ( GetWorld()->URL.HasOption(TEXT("tutorialmask")))
+			AUTGameMode* UTGame = GetWorld()->GetAuthGameMode<AUTGameMode>();
+			if ( GetWorld()->URL.HasOption(TEXT("tutorialmask")) && (!UTGame || !UTGame->bNoTrainingMenu))
 			{
 				URL += TEXT("?tutorialmenu");
 			}
@@ -6467,6 +6467,10 @@ void UUTLocalPlayer::LaunchTutorial(FName TutorialName, const FString& DesiredQu
 			}
 
 			FString URL = TutorialData[i].Map + TutorialData[i].LaunchArgs + FString::Printf(TEXT("?TutorialMask=%i"),TutorialData[i].Mask);
+			if (bLaunchTutorialOnLogin)
+			{
+				URL += "?NoTutMenu=1";
+			}
 			GetWorld()->ServerTravel(URL,true,false);
 			return;
 		}
