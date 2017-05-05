@@ -255,14 +255,4 @@ void AUTWeap_Enforcer::PlayImpactEffects_Implementation(const FVector& TargetLoc
 void AUTWeap_Enforcer::DualEquipFinished()
 {
 	Super::DualEquipFinished();
-
-	//We might have just fired a right burst, need to queue up off-hand burst now that we are dual immediately instead of waiting now that we have a 2nd gun.
-	UUTWeaponStateFiringBurstEnforcer* BurstFireMode = Cast<UUTWeaponStateFiringBurstEnforcer>(FiringState[GetCurrentFireMode()]);
-	if (BurstFireMode && UTOwner)
-	{
-		bFireLeftSide = true;
-		bFireLeftSideImpact = true;
-		GetWorldTimerManager().ClearTimer(BurstFireMode->RefireCheckHandle);
-		BurstFireMode->RefireCheckTimer();
-	}
 }
