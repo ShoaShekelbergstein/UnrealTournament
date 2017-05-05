@@ -71,6 +71,7 @@ UUTCharacterVoice::UUTCharacterVoice(const FObjectInitializer& ObjectInitializer
 	StatusOffsets.Add(GameVolumeSpeechType::GV_Waterfall, KEY_CALLOUTS + 3600);
 	StatusOffsets.Add(GameVolumeSpeechType::GV_Shrine, KEY_CALLOUTS + 3700);
 	StatusOffsets.Add(GameVolumeSpeechType::GV_Stinger, KEY_CALLOUTS + 3800);
+	StatusOffsets.Add(GameVolumeSpeechType::GV_Checkpoint, KEY_CALLOUTS + 3900);
 	// only game volume speech before LASTGAMEVOLUMESPEECH = KEY_CALLOUTS + 5000 
 
 	StatusOffsets.Add(StatusMessage::EnemyRally, KEY_CALLOUTS + 5000);
@@ -470,6 +471,10 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 			{
 				return GetGVLine(StingerLines, Switch - GetStatusIndex(GameVolumeSpeechType::GV_Stinger));
 			}
+			else if (Switch / 100 == GetStatusIndex(GameVolumeSpeechType::GV_Checkpoint) / 100)
+			{
+				return GetGVLine(CheckpointLines, Switch - GetStatusIndex(GameVolumeSpeechType::GV_Checkpoint));
+			}
 			else if (Switch / 100 == GetStatusIndex(GameVolumeSpeechType::GV_Flak) / 100)
 			{
 				return GetGVLine(FlakLines, Switch - GetStatusIndex(GameVolumeSpeechType::GV_Flak));
@@ -480,7 +485,13 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 			}
 			else if (Switch / 100 == GetStatusIndex(PickupSpeechType::UDamagePickup) / 100)
 			{
-				return (Switch - GetStatusIndex(PickupSpeechType::UDamagePickup) == 0) ? UDamageAvailableLine : UDamagePickupLine;
+				switch (Switch - GetStatusIndex(PickupSpeechType::UDamagePickup))
+				{
+				case 0: return UDamageAvailableLine;
+				case 1: return UDamagePickupLine;
+				case 2: return UDamageDroppedLine;
+				}
+				return EmptySpeech;
 			}
 			else if (Switch / 100 == GetStatusIndex(PickupSpeechType::ShieldbeltPickup) / 100)
 			{

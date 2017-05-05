@@ -453,7 +453,7 @@ void AUTPickupInventory::PlaySpawnVoiceLine()
 	}
 
 	AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (GM && GM->bAllowPickupAnnouncements)
+	if (GM && GM->bAllowPickupAnnouncements && (InventoryType.GetDefaultObject()->PickupAnnouncementName != NAME_None))
 	{
 		// find player to announce this pickup 
 		AUTPlayerState* Speaker = nullptr;
