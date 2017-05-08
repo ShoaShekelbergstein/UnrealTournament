@@ -414,7 +414,7 @@ void AUTBasePlayerController::ClientMatchmakingGameComplete_Implementation()
 	}
 }
 
-void AUTBasePlayerController::ClientReturnToLobby_Implementation()
+void AUTBasePlayerController::ClientReturnToLobby_Implementation(bool bKicked)
 {
 	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
 	if (LP)
@@ -423,6 +423,11 @@ void AUTBasePlayerController::ClientReturnToLobby_Implementation()
 		LP->LastRankedMatchPlayerId.Empty();
 		LP->LastRankedMatchTimeString.Empty();
 		LP->SaveConfig();
+	}
+
+	if (bKicked)
+	{
+		ClientWasKicked(NSLOCTEXT("General", "IdleKick", "You were kicked for being idle."));
 	}
 
 	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();

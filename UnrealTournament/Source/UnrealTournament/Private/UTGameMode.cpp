@@ -2799,7 +2799,7 @@ void AUTGameMode::KickIdlePlayers()
 			{
 				if ( IsGameInstanceServer() )
 				{
-					Controller->ClientReturnToLobby();
+					Controller->ClientReturnToLobby(true);
 				}
 				else if (GameSession != nullptr)
 				{

@@ -128,7 +128,7 @@ public:
 	virtual void ClientMatchmakingGameComplete();
 
 	UFUNCTION(Client, Reliable)
-	virtual void ClientReturnToLobby();
+	virtual void ClientReturnToLobby(bool bKicked=false);
 
 	UFUNCTION(Client, Reliable)
 	virtual void ClientRankedGameAbandoned();
