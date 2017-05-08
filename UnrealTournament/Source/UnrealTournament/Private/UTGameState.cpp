@@ -796,12 +796,17 @@ void AUTGameState::CheckTimerMessage()
 
 		if (TimerMessageIndex >= 0)
 		{
-			for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+			if ((GetWorld()->GetTimeSeconds() - LastTimerMessageTime > 1.5f) || (LastTimerMessageIndex != TimerMessageIndex))
 			{
-				AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
-				if (PC != NULL)
+				LastTimerMessageTime = GetWorld()->GetTimeSeconds();
+				LastTimerMessageIndex = TimerMessageIndex;
+				for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
 				{
-					PC->ClientReceiveLocalizedMessage(UUTTimerMessage::StaticClass(), TimerMessageIndex);
+					AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
+					if (PC != NULL)
+					{
+						PC->ClientReceiveLocalizedMessage(UUTTimerMessage::StaticClass(), TimerMessageIndex);
+					}
 				}
 			}
 		}

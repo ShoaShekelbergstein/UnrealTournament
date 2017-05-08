@@ -188,7 +188,6 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY()
 		float LastBlueSniperWarningTime;
 
-
 	UPROPERTY(replicatedusing = OnUpdateFriendlyLocation)
 		uint8 FCFriendlyLocCount;
 
@@ -221,6 +220,12 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	// Used to sync the time on clients to the server. Updated at a lower frequency to reduce bandwidth cost -- See DefaultTimer()
 	UPROPERTY(ReplicatedUsing=OnRepRemainingTime)
 		int32 ReplicatedRemainingTime;
+
+	UPROPERTY()
+		float LastTimerMessageTime;
+
+	UPROPERTY()
+		int32 LastTimerMessageIndex;
 
 	UFUNCTION()
 		virtual void OnRepRemainingTime();
