@@ -43,7 +43,7 @@ void AUTLobbyPC::OnRep_PlayerState()
 	{
 		UTLobbyPlayerState->Server_ReadyToBeginDataPush();
 		LP->UpdatePresence(TEXT("In Hub"), true, true, true, false);
-
+#if !UE_SERVER
 		if (LP && LP->ViewportClient)
 		{
 			UUTGameViewportClient* UTGameViewport = Cast<UUTGameViewportClient>(LP->ViewportClient);
@@ -52,6 +52,7 @@ void AUTLobbyPC::OnRep_PlayerState()
 				LP->ShowMessage(NSLOCTEXT("UTGameViewportClient","NetworkErrorDialogTitle","Network Error"), UTGameViewport->KickReason, UTDIALOG_BUTTON_OK);			
 			}
 		}
+#endif
 	}
 }
 
