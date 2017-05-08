@@ -53,6 +53,7 @@ void SUTInGameMenu::BuildLeftMenuBar()
 				SAssignNew(ChangeTeamButton, SUTButton)
 				.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
 				.OnClicked(this, &SUTInGameMenu::OnTeamChangeClick)
+				.Visibility(this, &SUTInGameMenu::GetChangeTeamVisibility)
 				.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
 				[
 					SNew(SHorizontalBox)
@@ -454,6 +455,19 @@ EVisibility SUTInGameMenu::GetMapVoteVisibility() const
 {
 	AUTGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
 	if (GameState && GameState->GetMatchState() == MatchState::MapVoteHappening)
+	{
+		return EVisibility::Visible;
+	}
+	else
+	{
+		return EVisibility::Collapsed;
+	}
+}
+
+EVisibility SUTInGameMenu::GetChangeTeamVisibility() const
+{
+	AUTGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
+	if (GameState && GameState->bAllowTeamSwitches)
 	{
 		return EVisibility::Visible;
 	}

@@ -91,6 +91,11 @@ void AUTShowdownGame::BeginPlay()
 
 void AUTShowdownGame::HandleCountdownToBegin()
 {
+	if (bIsQuickMatch && UTGameState)
+	{
+		UTGameState->bAllowTeamSwitches = false;
+		UTGameState->ForceNetUpdate();
+	}
 	BeginGame();
 }
 

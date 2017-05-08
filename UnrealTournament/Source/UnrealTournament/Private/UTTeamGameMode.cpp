@@ -231,7 +231,7 @@ bool AUTTeamGameMode::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroad
 		}
 		else
 		{
-			if ((bOfflineChallenge || bBasicTrainingGame) && PS->Team)
+			if ((bOfflineChallenge || bBasicTrainingGame || (bIsQuickMatch && (GetMatchState() != MatchState::WaitingToStart))) && PS->Team)
 			{
 				return false;
 			}

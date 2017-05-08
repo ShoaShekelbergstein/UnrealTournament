@@ -40,6 +40,7 @@ protected:
 	void BackResult(TSharedPtr<SCompoundWidget> Dialog, uint16 ButtonPressed);
 
 	EVisibility GetMapVoteVisibility() const;
+	EVisibility GetChangeTeamVisibility() const;
 
 	TSharedPtr<SUTMessageBoxDialog> MessageDialog;
 
