@@ -4126,23 +4126,20 @@ UTextureCubeExporterHDR::UTextureCubeExporterHDR(const FObjectInitializer& Objec
 
 bool UTextureCubeExporterHDR::SupportsObject(UObject* Object) const
 {
-	if (Super::SupportsObject(Object))
+	UTextureCube* Texture = Cast<UTextureCube>(Object);
+	if (Texture && Texture->bBlockExport)
 	{
-		UTextureCube* Texture = Cast<UTextureCube>(Object);
-		if (Texture->bBlockExport)
-		{
-			return false;
-		}
+		return false;
 	}
 
-	return true;
+	return Super::SupportsObject(Object);
 }
 
 bool UTextureCubeExporterHDR::ExportBinary(UObject* Object, const TCHAR* Type, FArchive& Ar, FFeedbackContext* Warn, int32 FileIndex, uint32 PortFlags)
 {
 	UTextureCube* TexCube = Cast<UTextureCube>(Object);
 
-	if (TexCube != nullptr && TexCube->bBlockExport)
+	if (TexCube != nullptr && !TexCube->bBlockExport)
 	{
 		return FImageUtils::ExportTextureCubeAsHDR(TexCube, Ar);
 	}
