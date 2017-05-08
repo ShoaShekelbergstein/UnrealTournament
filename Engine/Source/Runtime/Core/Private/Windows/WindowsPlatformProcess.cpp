@@ -343,6 +343,24 @@ FProcHandle FWindowsPlatformProcess::CreateProc( const TCHAR* URL, const TCHAR* 
 		dwFlags |= STARTF_USESTDHANDLES;
 	}
 
+	// Try using ShellExecute when launching LAN server from client to get the icon right
+#if !UE_EDITOR && !UE_SERVER
+	SHELLEXECUTEINFO ShellExecuteInfo;
+	ZeroMemory(&ShellExecuteInfo, sizeof(ShellExecuteInfo));
+	ShellExecuteInfo.cbSize = sizeof(ShellExecuteInfo);
+	ShellExecuteInfo.fMask = SEE_MASK_UNICODE | SEE_MASK_NOCLOSEPROCESS;
+	ShellExecuteInfo.lpFile = URL;
+	ShellExecuteInfo.lpVerb = TEXT("open");
+	ShellExecuteInfo.nShow = dwFlags;
+	ShellExecuteInfo.lpParameters = Parms;
+
+	bool bSuccess = false;
+	if (ShellExecuteEx(&ShellExecuteInfo))
+	{
+		return FProcHandle(ShellExecuteInfo.hProcess);
+	}
+#endif
+
 	// initialize startup info
 	STARTUPINFO StartupInfo = {
 		sizeof(STARTUPINFO),
