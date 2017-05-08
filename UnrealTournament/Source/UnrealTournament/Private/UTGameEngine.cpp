@@ -737,7 +737,10 @@ void UUTGameEngine::IndexExpansionContent()
 
 		// Only add MyContent pak files to LocalContentChecksums
 		FoundPaks.Empty();
-		PlatformFile.IterateDirectoryRecursively(*FPaths::Combine(*FPaths::GameSavedDir(), TEXT("Paks"), TEXT("MyContent")), PakVisitor);		
+		PakFolder = (FParse::Param(FCommandLine::Get(), TEXT("altpaks")))
+			? FPaths::Combine(FPlatformProcess::UserDir(), FApp::GetGameName(), TEXT("Saved"), TEXT("Paks"), TEXT("MyContent"))
+			: FPaths::Combine(*FPaths::GameSavedDir(), TEXT("Paks"), TEXT("MyContent"));
+		PlatformFile.IterateDirectoryRecursively(*PakFolder, PakVisitor);
 		for (const auto& PakPath : FoundPaks)
 		{
 			FString PakFilename = FPaths::GetBaseFilename(PakPath);
