@@ -89,6 +89,11 @@ bool UUTDemoNetDriver::ProcessGameSpecificDemoHeader(const TArray<FString>& Game
 		{
 			GI->SetLastTriedDemo(GetDemoURL());
 			Error = TEXT("Waiting for redirects to download files");
+
+			StopDemo();
+			GEngine->DestroyNamedNetDriver(GetWorld(), NetDriverName);
+			SetWorld(NULL);
+
 			return false;
 		}
 		else

@@ -244,15 +244,18 @@ bool UUTGameInstance::HandleOpenCommand(const TCHAR* Cmd, FOutputDevice& Ar, UWo
 
 void UUTGameInstance::HandleDemoPlaybackFailure( EDemoPlayFailure::Type FailureType, const FString& ErrorString )
 {
+	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetFirstGamePlayer());
+	if (LocalPlayer != nullptr)
+	{
+		LocalPlayer->ReturnToMainMenu();
+	}
+
 	// skip this if the "failure" is waiting for redirects
 	if (FailureType != EDemoPlayFailure::Generic || LastTriedDemo.IsEmpty() || bRetriedDemoAfterRedirects)
 	{
-		UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetFirstGamePlayer());
-
 		if (LocalPlayer != nullptr)
 		{
 #if !UE_SERVER
-			LocalPlayer->ReturnToMainMenu();
 			LocalPlayer->ShowMessage(
 				NSLOCTEXT("UUTGameInstance", "ReplayErrorTitle", "Replay Error"),
 				NSLOCTEXT("UUTGameInstance", "ReplayErrorMessage", "There was an error with the replay. Returning to the main menu."), UTDIALOG_BUTTON_OK, nullptr
