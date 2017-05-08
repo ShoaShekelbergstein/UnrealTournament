@@ -1603,7 +1603,9 @@ FVector AUTWeapon::GetFireStartLoc(uint8 FireMode)
 			{
 				Collider = FCollisionShape::MakeSphere(0.0f);
 			}
-			FCollisionQueryParams Params(FName(TEXT("WeaponStartLoc")), true, UTOwner);
+
+			static FName NAME_WeaponStartLoc(TEXT("WeaponStartLoc"));
+			FCollisionQueryParams Params(NAME_WeaponStartLoc, true, UTOwner);
 			FHitResult Hit;
 			if (GetWorld()->SweepSingleByChannel(Hit, BaseLoc, FinalLoc, FQuat::Identity, COLLISION_TRACE_WEAPON, Collider, Params))
 			{

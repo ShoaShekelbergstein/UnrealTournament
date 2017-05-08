@@ -74,7 +74,27 @@ FVector AUTWeap_FlakCannon::GetFireLocationForMultiShot_Implementation(int32 Mul
 	if (MultiShotIndex > 0 && MultiShotLocationSpread.IsValidIndex(CurrentFireMode))
 	{
 		// Randomize each projectile's spawn location if needed.
-		return FireLocation + FireRotation.RotateVector((FVector(0.25f, 0.25f, 0.25f) + 0.5f*FMath::VRand()) * MultiShotLocationSpread[CurrentFireMode]);
+		FVector NewFireLocation = FireLocation + FireRotation.RotateVector((FVector(0.25f, 0.25f, 0.25f) + 0.5f*FMath::VRand()) * MultiShotLocationSpread[CurrentFireMode]);
+
+		// trace from FireLocation to desired location, checking for intervening world geometry
+		FCollisionShape Collider;
+		if (ProjClass.IsValidIndex(CurrentFireMode) && ProjClass[CurrentFireMode] != NULL && ProjClass[CurrentFireMode].GetDefaultObject()->CollisionComp != NULL)
+		{
+			Collider = FCollisionShape::MakeSphere(ProjClass[CurrentFireMode].GetDefaultObject()->CollisionComp->GetUnscaledSphereRadius());
+		}
+		else
+		{
+			Collider = FCollisionShape::MakeSphere(0.0f);
+		}
+		static FName NAME_WeaponStartLoc(TEXT("WeaponStartLoc"));
+		FCollisionQueryParams Params(NAME_WeaponStartLoc, true, UTOwner);
+		FHitResult Hit;
+		if (GetWorld()->SweepSingleByChannel(Hit, FireLocation, NewFireLocation, FQuat::Identity, COLLISION_TRACE_WEAPON, Collider, Params))
+		{
+			NewFireLocation = Hit.Location - (NewFireLocation - FireLocation).GetSafeNormal();
+		}
+
+		return NewFireLocation;
 	}
 
 	// Main projectile fires straight from muzzle center
