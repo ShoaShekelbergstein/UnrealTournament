@@ -154,7 +154,7 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::Translocator, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::Translocator, 0, 1.0f, DefaultWeaponCrosshairs::Cross3, FLinearColor::White, 1.0f));
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::ImpactHammer, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::ImpactHammer, 1, 1.0f, DefaultWeaponCrosshairs::Bracket1, FLinearColor::White, 1.0f));
 		WeaponCustomizations.Add(EpicWeaponCustomizationTags::GrenadeLauncher, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::GrenadeLauncher, 3, 3.5f, DefaultWeaponCrosshairs::Bracket3, FLinearColor::White, 1.0f));
-		WeaponCustomizations.Add(EpicWeaponCustomizationTags::LightningRifle, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::LightningRifle, 9, 9.0f, DefaultWeaponCrosshairs::Sniper, FLinearColor::White, 1.0f));
+		WeaponCustomizations.Add(EpicWeaponCustomizationTags::LightningRifle, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::LightningRifle, 9, 9.5f, DefaultWeaponCrosshairs::Sniper, FLinearColor::White, 1.0f));
 
 		bAutoWeaponSwitch = true;
 		bCustomWeaponCrosshairs = false;
@@ -634,6 +634,14 @@ bool UUTProfileSettings::VersionFixup()
 	if (SettingsRevisionNum < ENABLE_DOUBLETAP_DODGE_FIXUP_VERSION)
 	{
 		bEnableDoubleTapDodge = true;
+	}
+
+	if (SettingsRevisionNum < LIGHTNING_RIFLE_FIXUP_VERSION)
+	{
+		if ( !WeaponCustomizations.Contains(EpicWeaponCustomizationTags::LightningRifle) )
+		{
+			WeaponCustomizations.Add(EpicWeaponCustomizationTags::LightningRifle, FWeaponCustomizationInfo(EpicWeaponCustomizationTags::LightningRifle, 9, 9.5f, DefaultWeaponCrosshairs::Sniper, FLinearColor::White, 1.0f));
+		}
 	}
 
 	return ValidateGameActions();
