@@ -125,6 +125,9 @@ class UNREALTOURNAMENT_API AUTServerBeaconClient : public AOnlineBeaconClient
 
 	void SetBeaconConnectionTimeout(float NewBeaconConnectionTimeout);
 
+	// If true, this will be a quick ping that doesn't request the server's info
+	bool bQuickPing;
+
 protected:
 	FServerBeaconInfo HostServerInfo;
 	

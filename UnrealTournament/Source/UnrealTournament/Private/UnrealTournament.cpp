@@ -35,7 +35,7 @@ DEFINE_LOG_CATEGORY(UTConnection);
 static uint32 UTGetNetworkVersion()
 {
 	uint32 Override;
-	if ( FParse::Value(FCommandLine::Get(), TEXT("buildidoverride="), Override) )
+	if ( FParse::Value(FCommandLine::Get(), TEXT("utversionoverride="), Override) )
 	{
 		return Override;
 	}
