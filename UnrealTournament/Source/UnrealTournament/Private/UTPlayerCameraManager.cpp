@@ -236,12 +236,21 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		OutVT.POV.PostProcessBlendWeight = 1.0f;
 
 		ApplyCameraModifiers(DeltaTime, OutVT.POV);
-
-		if (OutVT.POV.Location.IsZero() || IsValidCamLocation(PCOwner->GetFocalLocation()))
+		
+		// if not during active gameplay, use spawn location/rotation
+		AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(PCOwner);
+		if (UTPC && (!GameState || (GameState->GetMatchState() == MatchState::CountdownToBegin) || (GameState->GetMatchState() == MatchState::MatchIntermission)) && IsValidCamLocation(PCOwner->GetSpawnLocation()))
+		{
+			//FIXMESTEVE - set the bestcam location at start and always use here, not just in some situations
+			OutVT.POV.Location = PCOwner->GetSpawnLocation();
+			OutVT.POV.Rotation = UTPC->SpawnRotation;
+		}
+		else if (OutVT.POV.Location.IsZero() || IsValidCamLocation(PCOwner->GetFocalLocation()))
 		{
 			OutVT.POV.Location = PCOwner->GetFocalLocation();
+			OutVT.POV.Rotation = PCOwner->GetControlRotation();
 		}
-		OutVT.POV.Rotation = PCOwner->GetControlRotation();
 	}
 	else if (CameraStyle == NAME_RallyCam)
 	{

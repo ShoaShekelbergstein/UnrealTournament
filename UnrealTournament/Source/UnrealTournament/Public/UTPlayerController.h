@@ -299,7 +299,12 @@ public:
 	virtual void ClientPrepareForLineUp();
 
 	UFUNCTION(client, reliable)
-	virtual void ClientSetActiveLineUp();
+		virtual void ClientSetActiveLineUp();
+
+		virtual void SetCountdownCam();
+
+	UPROPERTY()
+		FRotator SpawnRotation;
 
 	UFUNCTION(client, reliable)
 	virtual void ClientToggleScoreboard(bool bShow);
