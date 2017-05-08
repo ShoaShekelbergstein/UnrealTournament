@@ -7087,7 +7087,16 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 			URL += FString::Printf(TEXT("?HostId=%s"), *PlayerState->UniqueId.ToString());
 		}
 
+#if UE_BUILD_SHIPPING
 		FString ExecPath = TEXT("..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Shipping.exe");
+#elif UE_BUILD_TEST
+		FString ExecPath = TEXT("..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Test.exe");
+#elif UE_BUILD_DEBUG
+		FString ExecPath = TEXT("..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server-Win64-Debug.exe");
+#else
+		FString ExecPath = TEXT("..\\..\\..\\WindowsServer\\Engine\\Binaries\\Win64\\UE4Server.exe");
+#endif
+
 #if WITH_EDITOR
 		ExecPath = FPaths::EngineDir() + TEXT("\\Binaries\\Win64\\UE4Editor.exe");
 #endif
