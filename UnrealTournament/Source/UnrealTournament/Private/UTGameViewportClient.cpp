@@ -862,6 +862,7 @@ void UUTGameViewportClient::UpdateRedirects(float DeltaTime)
 	else
 	{
 		FirstPlayer->HideRedirectDownload();
+		ContentDownloadComplete.Broadcast(this, ERedirectStatus::Completed, TEXT(""));
 	}
 }
 

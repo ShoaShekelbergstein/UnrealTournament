@@ -447,15 +447,6 @@ void AUTBasePlayerController::CancelConnectViaGUID()
 		GUIDJoin_CurrentGUID = TEXT("");
 		GUIDJoinAttemptCount = 0;
 		GUIDSessionSearchSettings.Reset();
-		
-		if (OnDownloadCompleteDelegateHandle.IsValid())
-		{
-			UUTGameViewportClient* ViewportClient = Cast<UUTGameViewportClient>(Cast<ULocalPlayer>(Player)->ViewportClient);
-			if (ViewportClient && ViewportClient->IsDownloadInProgress())
-			{
-				ViewportClient->RemoveContentDownloadCompleteDelegate(OnDownloadCompleteDelegateHandle);
-			}
-		}
 }
 
 void AUTBasePlayerController::ConnectToServerViaGUID(FString ServerGUID, int32 DesiredTeam, bool bSpectate, bool bVerifyServerFirst)
@@ -482,14 +473,6 @@ void AUTBasePlayerController::ConnectToServerViaGUID(FString ServerGUID, int32 D
 		{
 			StartGUIDJoin();
 		}
-	}
-}
-
-void AUTBasePlayerController::OnDownloadComplete(class UUTGameViewportClient* ViewportClient, ERedirectStatus::Type RedirectStatus, const FString& PackageName)
-{
-	if (ViewportClient && !ViewportClient->IsDownloadInProgress())
-	{
-		StartGUIDJoin();
 	}
 }
 

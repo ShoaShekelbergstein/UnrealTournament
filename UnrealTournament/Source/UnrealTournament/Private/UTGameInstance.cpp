@@ -282,11 +282,35 @@ bool UUTGameInstance::RedirectDownload(const FString& PakName, const FString& UR
 	UUTGameViewportClient* Viewport = Cast<UUTGameViewportClient>(GetGameViewportClient());
 	if (Viewport != NULL && !Viewport->CheckIfRedirectExists(FPackageRedirectReference(PakName, TEXT(""), TEXT(""), Checksum)))
 	{
+		if (OnDownloadCompleteDelegateHandle.IsValid())
+		{
+			Viewport->RemoveContentDownloadCompleteDelegate(OnDownloadCompleteDelegateHandle);
+		}
+
+		OnDownloadCompleteDelegateHandle = Viewport->RegisterContentDownloadCompleteDelegate(FContentDownloadComplete::FDelegate::CreateUObject(this, &ThisClass::OnDownloadComplete));
 		Viewport->DownloadRedirect(URL, PakName, Checksum);
 		return true;
 	}
 #endif
 	return false;
+}
+
+void UUTGameInstance::OnDownloadComplete(class UUTGameViewportClient* ViewportClient, ERedirectStatus::Type RedirectStatus, const FString& PackageName)
+{
+	if (OnDownloadCompleteDelegateHandle.IsValid())
+	{
+		ViewportClient->RemoveContentDownloadCompleteDelegate(OnDownloadCompleteDelegateHandle);
+	}
+
+	if (RedirectStatus == ERedirectStatus::Completed)
+	{
+		if (!LastTriedDemo.IsEmpty())
+		{
+			LastTriedDemo.RemoveFromEnd(TEXT("?Remote"));
+			GEngine->Exec(GetWorld(), *FString::Printf(TEXT("DEMOPLAY %s"), *LastTriedDemo));
+			LastTriedDemo.Empty();
+		}
+	}
 }
 
 void UUTGameInstance::HandleGameNetControlMessage(class UNetConnection* Connection, uint8 MessageByte, const FString& MessageStr)
