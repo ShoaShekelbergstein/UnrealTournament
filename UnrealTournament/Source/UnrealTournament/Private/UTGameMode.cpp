@@ -106,6 +106,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	StartDelay = 10.f;
 	LastMatchNotReady = 0.f;
 	DefaultMaxPlayers = 10;
+	bNoDefaultLeaderHat = true;
 
 	bHasRespawnChoices = false;
 	MaxWaitForPlayers = 180;
