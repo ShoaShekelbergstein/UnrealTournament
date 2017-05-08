@@ -203,38 +203,48 @@ void SUTGameSetupDialog::BuildRuleList(FName Category)
 
 	if (Category == FName(TEXT("Custom")))
 	{
-		CustomBox->AddSlot().AutoHeight()
-		[
-			SNew(SBox).HeightOverride(920)
-			[
-				SAssignNew(CustomPanel, SUTCreateGamePanel, GetPlayerOwner())
-			]
-		];
 
 		if (CustomPanel.IsValid())
 		{
-			bool LastRequireFull;
-			if ( GConfig->GetBool(TEXT("SUTGameSetupDialog"), TEXT("LastRequireFull"), LastRequireFull, GGameIni) )
-			{
-				cbRequireFull->SetIsChecked(LastRequireFull ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
-			}
+			CustomBox->AddSlot().AutoHeight()
+			[
+				SNew(SBox).HeightOverride(920)
+				[
+					CustomPanel.ToSharedRef()
+				]
+			];
+		}
+		else
+		{
+			CustomBox->AddSlot().AutoHeight()
+			[
+				SNew(SBox).HeightOverride(920)
+				[
+					SAssignNew(CustomPanel, SUTCreateGamePanel, GetPlayerOwner())
+				]
+			];
 
-			bool LastUseBots;
-			if ( GConfig->GetBool(TEXT("SUTGameSetupDialog"), TEXT("LastUseBots"), LastUseBots, GGameIni) )
+			if (CustomPanel.IsValid())
 			{
-				cbUseBots->SetIsChecked(LastUseBots ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
-			}
+				bool LastRequireFull;
+				if ( GConfig->GetBool(TEXT("SUTGameSetupDialog"), TEXT("LastRequireFull"), LastRequireFull, GGameIni) )
+				{
+					cbRequireFull->SetIsChecked(LastRequireFull ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
+				}
 
-			CustomPanel->SetBoxSkill(cbUseBots.ToSharedRef(), BotSkillLevelBox.ToSharedRef(), cbRequireFull.ToSharedRef());
+				bool LastUseBots;
+				if ( GConfig->GetBool(TEXT("SUTGameSetupDialog"), TEXT("LastUseBots"), LastUseBots, GGameIni) )
+				{
+					cbUseBots->SetIsChecked(LastUseBots ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
+				}
+
+				CustomPanel->SetBoxSkill(cbUseBots.ToSharedRef(), BotSkillLevelBox.ToSharedRef(), cbRequireFull.ToSharedRef());
+			}
 		}
 
 		BotSkillBox->SetVisibility(EVisibility::Collapsed);
 
 		return;	
-	}
-	else
-	{
-		CustomPanel.Reset();
 	}
 
 	BotSkillBox->SetVisibility(EVisibility::Visible);
