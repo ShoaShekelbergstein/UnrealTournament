@@ -19,7 +19,9 @@ AUTWeapAttachment_Enforcer::AUTWeapAttachment_Enforcer(const FObjectInitializer&
 
 	LeftAttachSocket = FName((TEXT("LeftWeaponPoint")));
 	BurstSize = 3;
+
 	AlternateCount = 0;
+	bFireLeftWeapon = false;
 }
 
 
@@ -90,7 +92,7 @@ void AUTWeapAttachment_Enforcer::PlayFiringEffects()
 			
 		//The only way in which the current weapon state is replicated is through the current firemode
 		//Assume that it's configured so that 1 == WeaponStateFiring_Enforcer and 2 == WeaponStateFiringBurst_Enforcer
-		if ((UTOwner->FireMode == 1 && AlternateCount / BurstSize > 0) || (UTOwner->FireMode == 0 && AlternateCount % 2 == 1))
+		if (bFireLeftWeapon)
 		{
 				CalculatedMuzzleFlashIndex += 2;
 		}
@@ -145,21 +147,12 @@ void AUTWeapAttachment_Enforcer::PlayFiringEffects()
 
 		PlayBulletWhip();
 
-		AlternateCount++;
+		++AlternateCount;
 
-		if (UTOwner->FireMode == 1 && AlternateCount == BurstSize * 2)
+		if ((UTOwner->FireMode == 0) || ((UTOwner->FireMode == 1) && ((AlternateCount / BurstSize) > 0)))
 		{
 			AlternateCount = 0;
+			bFireLeftWeapon = !bFireLeftWeapon;
 		}
 	}
 }
-
-void AUTWeapAttachment_Enforcer::StopFiringEffects_Implementation(bool bIgnoreCurrentMode)
-{
-	if (!bIgnoreCurrentMode)
-	{
-		AlternateCount = 0;
-	}
-	Super::StopFiringEffects_Implementation(bIgnoreCurrentMode);
-}
-
