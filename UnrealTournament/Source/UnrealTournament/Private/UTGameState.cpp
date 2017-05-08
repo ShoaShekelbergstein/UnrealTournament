@@ -275,7 +275,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	GameOverStatus = NSLOCTEXT("UTGameState", "PostGame", "Game Over");
 	MapVoteStatus = NSLOCTEXT("UTGameState", "Mapvote", "Map Vote");
 	PreGameStatus = NSLOCTEXT("UTGameState", "PreGame", "Pre-Game");
-	NeedPlayersStatus = NSLOCTEXT("UTGameState", "NeedPlayers", "Need {NumNeeded} More");
+	NeedPlayersStatus = NSLOCTEXT("UTGameState", "NeedPlayers", "Waiting for Players");
 	OvertimeStatus = NSLOCTEXT("UTCTFGameState", "Overtime", "Overtime");
 	HostStatus = NSLOCTEXT("UTCTFGameState", "HostStatus", "Waiting for Host");
 	BoostRechargeMaxCharges = 1;
@@ -1304,9 +1304,7 @@ FText AUTGameState::GetGameStatusText(bool bForScoreboard)
 		}
 		else if ((PlayersNeeded > 0) && (GetNetMode() != NM_Standalone))
 		{
-			FFormatNamedArguments Args;
-			Args.Add("NumNeeded", FText::AsNumber(PlayersNeeded));
-			return FText::Format(NeedPlayersStatus, Args);
+			return NeedPlayersStatus;
 		}
 		else
 		{
