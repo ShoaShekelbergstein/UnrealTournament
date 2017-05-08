@@ -75,6 +75,8 @@ UUTHUDWidget_SpectatorSlideOut::UUTHUDWidget_SpectatorSlideOut(const class FObje
 	DeathsColumn = 0.49f;
 	ShotsColumn = 0.66f;
 	AccuracyColumn = 0.83f;
+
+	TerminatedNotification = NSLOCTEXT("Scoreboard", "OutOfLives", "You are out of lives");
 }
 
 bool UUTHUDWidget_SpectatorSlideOut::ShouldDraw_Implementation(bool bShowScores)
@@ -135,6 +137,14 @@ void UUTHUDWidget_SpectatorSlideOut::Draw_Implementation(float DeltaTime)
 	if (bIsInteractive)
 	{
 		ClickElementStack.Empty();
+	}
+
+	if (UTHUDOwner->UTPlayerOwner && UTHUDOwner->UTPlayerOwner->UTPlayerState && !UTHUDOwner->UTPlayerOwner->UTPlayerState->bOnlySpectator && UTHUDOwner->UTPlayerOwner->UTPlayerState->bOutOfLives)
+	{
+		float XL, YL;
+		Canvas->SetDrawColor(FColor::White);
+		Canvas->TextSize(UTHUDOwner->MediumFont, TerminatedNotification.ToString(), XL, YL, 1.f, 1.f);
+		Canvas->DrawText(UTHUDOwner->MediumFont, TerminatedNotification, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, 0.80f*Canvas->ClipY, RenderScale, RenderScale);
 	}
 
 	// Hack to allow animations during pause

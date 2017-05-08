@@ -9,7 +9,7 @@ class UNREALTOURNAMENT_API AUTWeap_LightningRifle : public AUTWeap_Sniper
 {
 	GENERATED_UCLASS_BODY()
 
-		UPROPERTY(BlueprintReadWrite)
+		UPROPERTY(BlueprintReadWrite, Category = LightningRifle)
 		float ChargePct;
 
 	virtual void DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHudWidget, float RenderDelta) override;
