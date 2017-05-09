@@ -935,6 +935,10 @@ void SUTMenuBase::Tick( const FGeometry& AllottedGeometry, const double InCurren
 
 		XPLevelPercent = (XPLevelRange > 0) ? (float)(XP - XPLevelStart) / (float)XPLevelRange : 0.0f;
 	}
+	else
+	{
+		XPDelay -= InDeltaTime;
+	}
 }
 
 void SUTMenuBase::OpenDelayedMenu()
