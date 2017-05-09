@@ -198,20 +198,14 @@ void FSoundSource::Stop()
 
 void FSoundSource::SetPauseByGame(bool bInIsPauseByGame)
 {
-	if (bIsPausedByGame != bInIsPauseByGame)
-	{
-		bIsPausedByGame = bInIsPauseByGame;
-		UpdatePause();
-	}
+	bIsPausedByGame = bInIsPauseByGame;
+	UpdatePause();
 }
 
 void FSoundSource::SetPauseManually(bool bInIsPauseManually)
 {
-	if (bIsManuallyPaused != bInIsPauseManually)
-	{
-		bIsManuallyPaused = bInIsPauseManually;
-		UpdatePause();
-	}
+	bIsManuallyPaused = bInIsPauseManually;
+	UpdatePause();
 }
 
 void FSoundSource::UpdatePause()
