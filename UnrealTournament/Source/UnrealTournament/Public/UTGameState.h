@@ -86,10 +86,6 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = GameState)
 		uint32 bTeamCollision : 1;
 
-	/**If true, had to force balance teams. */
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
-	uint32 bForcedBalance : 1;
-
 	/** If true, teammates play status announcements */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
 		uint32 bPlayStatusAnnouncements : 1;

@@ -231,7 +231,7 @@ bool AUTTeamGameMode::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroad
 		}
 		else
 		{
-			if ((bOfflineChallenge || bBasicTrainingGame || (bIsQuickMatch && (GetMatchState() != MatchState::WaitingToStart))) && PS->Team)
+			if ((bOfflineChallenge || bBasicTrainingGame || (bIsQuickMatch && (GetMatchState() != MatchState::WaitingToStart) && !bForcedBalance)) && PS->Team)
 			{
 				return false;
 			}
@@ -582,6 +582,7 @@ void AUTTeamGameMode::HandlePlayerIntro()
 	{
 		TArray<AUTTeamInfo*> SortedTeams = UTGameState->Teams;
 		SortedTeams.Sort([](AUTTeamInfo& A, AUTTeamInfo& B) { return A.GetSize() > B.GetSize(); });
+		bForcedBalance = true;
 		for (int32 i = 0; i < SortedTeams.Num() - 1; i++)
 		{
 			if (SortedTeams[i]->GetSize() > 1)
@@ -592,7 +593,6 @@ void AUTTeamGameMode::HandlePlayerIntro()
 					while (SortedTeams[i]->GetSize() > SortedTeams[j]->GetSize() + 1)
 					{
 						// Calc team Elos, move player who will result in best team average Elo match.
-						UTGameState->bForcedBalance = true;
 						int32 SourceTeamElo = SortedTeams[i]->AverageEloFor(this);
 						int32 EloDiff = SourceTeamElo - SortedTeams[j]->AverageEloFor(this);
 						int32 SizeDiff = SortedTeams[i]->GetSize() - SortedTeams[j]->GetSize();
@@ -608,6 +608,7 @@ void AUTTeamGameMode::HandlePlayerIntro()
 				}
 			}
 		}
+		bForcedBalance = false;
 	}
 
 	Super::HandlePlayerIntro();

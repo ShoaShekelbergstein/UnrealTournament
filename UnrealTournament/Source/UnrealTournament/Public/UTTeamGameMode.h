@@ -46,6 +46,10 @@ class UNREALTOURNAMENT_API AUTTeamGameMode : public AUTGameMode
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = TeamGame)
 	bool bUseTeamStarts;
 
+	/**True while force balancing teams*/
+	UPROPERTY()
+	bool bForcedBalance;
+
 	/** percentage of damage applied for friendly fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = TeamGame)
 	float TeamDamagePct;

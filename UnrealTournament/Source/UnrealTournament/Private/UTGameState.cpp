@@ -41,7 +41,6 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	SpawnProtectionTime = 2.f;
 	bWeaponStay = true;
 	bAllowTeamSwitches = true;
-	bForcedBalance = false;
 	KickThreshold=51.0f;
 	TauntSelectionIndex = 0;
 	bPersistentKillIconMessages = false;
@@ -336,7 +335,6 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME(AUTGameState, MapVoteListCount);
 	DOREPLIFETIME(AUTGameState, VoteTimer);
 
-	DOREPLIFETIME(AUTGameState, bForcedBalance);
 	DOREPLIFETIME(AUTGameState, bHaveMatchHost);
 	DOREPLIFETIME(AUTGameState, bRequireFull);
 
@@ -2255,7 +2253,6 @@ void AUTGameState::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject)
 	JsonObject->SetBoolField(TEXT("bTeamGame"), bTeamGame);
 	JsonObject->SetBoolField(TEXT("bAllowTeamSwitches"), bAllowTeamSwitches);
 	JsonObject->SetBoolField(TEXT("bStopGameClock"), bStopGameClock);
-	JsonObject->SetBoolField(TEXT("bForcedBalance"), bForcedBalance);
 
 	JsonObject->SetNumberField(TEXT("GoalScore"), GoalScore);
 	JsonObject->SetNumberField(TEXT("TimeLimit"), TimeLimit);
