@@ -2577,3 +2577,30 @@ public:
 	{
 	}
 };
+
+USTRUCT()
+struct UNREALTOURNAMENT_API FUTGameModeCountStorage
+{
+	GENERATED_USTRUCT_BODY()
+public:
+	
+	UPROPERTY()
+	FString GameModeClass;
+
+	UPROPERTY()
+	int32 PlayCount;
+
+
+	FUTGameModeCountStorage()
+	{
+		GameModeClass = TEXT("");
+		PlayCount = 0;
+	}
+
+	FUTGameModeCountStorage(FString inGameModeClass)
+	{
+		GameModeClass = inGameModeClass;
+		PlayCount = 1;
+	}
+
+};

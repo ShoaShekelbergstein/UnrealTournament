@@ -1441,5 +1441,9 @@ protected:
 #endif
 
 	void CenterMouseCursor();
+
+	UPROPERTY(Config)
+	TArray<FUTGameModeCountStorage> GameModeCounts;
+
 };
 

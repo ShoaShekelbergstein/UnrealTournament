@@ -7155,6 +7155,30 @@ void UUTLocalPlayer::CheckLoadingMovie(const FString& GameMode)
 {
 	// Look to see if we have completed the tutorial for this 
 
+	int32 PlayCount = 0;
+
+	int32 FindIndex = INDEX_NONE;
+	for (int32 i=0; i < GameModeCounts.Num(); i++)
+	{
+		if (GameModeCounts[i].GameModeClass == GameMode)		
+		{
+			FindIndex = i;
+			break;
+		}
+	}
+
+	if (FindIndex != INDEX_NONE)
+	{
+		GameModeCounts[FindIndex].PlayCount++;
+		PlayCount = GameModeCounts[FindIndex].PlayCount;
+	}
+	else
+	{
+		GameModeCounts.Add(FUTGameModeCountStorage(GameMode));
+	}
+
+	SaveConfig();
+
 	FString TutorialMovie = TEXT("");
 	int32 DesiredTutorial = 0x00;
 	if (GameMode.Find(TEXT(".UTDMGameMode"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE || GameMode.Find(TEXT("=DM"), ESearchCase::IgnoreCase, ESearchDir::FromStart) != INDEX_NONE) 
@@ -7188,7 +7212,7 @@ void UUTLocalPlayer::CheckLoadingMovie(const FString& GameMode)
 		TutorialMovie = TEXT("TutorialMovies/flagrun-tutorial");
 	}
 			
-	if (DesiredTutorial != 0x00)
+	if (DesiredTutorial != 0x00 && PlayCount < 4)
 	{
 		if (CurrentProfileSettings && CurrentProfileSettings->TutorialVideoWatchCount.Contains(DesiredTutorial) )
 		{
@@ -7205,9 +7229,11 @@ void UUTLocalPlayer::CheckLoadingMovie(const FString& GameMode)
 			SaveProfileSettings();
 		}
 
+	
 		// Look to see if this tutorial has been completed
 		if ((GetProfileSettings()->TutorialMask & DesiredTutorial) != DesiredTutorial)
 		{
+
 			// Set the loading movie
 			UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
 			if (GI)
