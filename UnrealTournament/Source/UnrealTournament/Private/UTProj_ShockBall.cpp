@@ -84,8 +84,12 @@ float AUTProj_ShockBall::TakeDamage(float Damage, const FDamageEvent& DamageEven
 				UTPC->ServerNotifyProjectileHit(this, GetActorLocation(), DamageCauser, GetWorld()->GetTimeSeconds());
 				if (FiringWeapon != nullptr)
 				{
-					FiringWeapon->AddAmmo(-ComboAmmoCost);
-					FiringWeapon->SwitchToBestWeaponIfNoAmmo();
+					if (FiringWeapon->Ammo <= ComboAmmoCost)
+					{
+						FiringWeapon->Ammo = 0;
+						FiringWeapon->HandleContinuedFiring();
+						FiringWeapon->SwitchToBestWeaponIfNoAmmo();
+					}
 				}
 			}
 		}
@@ -162,7 +166,6 @@ void AUTProj_ShockBall::PerformCombo(class AController* InstigatedBy, class AAct
 		if (Weapon && (!GameMode || GameMode->bAmmoIsLimited || (Weapon->Ammo > 9)))
 		{
 			Weapon->AddAmmo(-ComboAmmoCost);
-			Weapon->SwitchToBestWeaponIfNoAmmo();
 		}
 
 		//This gets called before server startfire(). bPlayComboEffects = true will send the FireExtra when fired

@@ -1454,7 +1454,7 @@ void AUTWeapon::AddAmmo(int32 Amount)
 
 void AUTWeapon::SwitchToBestWeaponIfNoAmmo()
 {
-	if (UTOwner != NULL && UTOwner->GetPendingWeapon() == NULL && !HasAnyAmmo())
+	if (UTOwner && UTOwner->IsLocallyControlled() && UTOwner->GetPendingWeapon() == NULL && !HasAnyAmmo())
 	{
 		AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
 		if (PC != NULL)
