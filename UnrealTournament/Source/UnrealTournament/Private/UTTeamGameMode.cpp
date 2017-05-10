@@ -601,7 +601,7 @@ void AUTTeamGameMode::HandlePlayerIntro()
 						int32 SizeDiff = SortedTeams[i]->GetSize() - SortedTeams[j]->GetSize();
 						int32 DesiredElo = SourceTeamElo + EloDiff*SortedTeams[j]->GetSize() / 2 * SizeDiff;
 						AController* ToBeMoved = SortedTeams[i]->MemberClosestToElo(this, DesiredElo);
-						if (!ChangeTeam(ToBeMoved, j) || UTGameState->OnSameTeam(ToBeMoved, SortedTeams[i]))
+						if (!ChangeTeam(ToBeMoved, SortedTeams[j]->TeamIndex) || UTGameState->OnSameTeam(ToBeMoved, SortedTeams[i]))
 						{
 							// abort if failed to actually change team so we don't end up in recursion
 							break;
