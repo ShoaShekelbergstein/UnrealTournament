@@ -164,6 +164,8 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(bIsRanked);
 	AddGenericParamName(bIsQuickMatch);
 	
+	AddGenericParamName(Reason);
+
 	AddGenericParamName(UTMatchMakingStart);
 	AddGenericParamName(UTMatchMakingCancelled);
 	AddGenericParamName(UTMatchMakingJoinGame);
@@ -1719,7 +1721,7 @@ void FUTAnalytics::FireEvent_UTStartMatch(AUTGameMode* UTGM)
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_UTEndMatch(AUTGameMode* UTGM)
+void FUTAnalytics::FireEvent_UTEndMatch(AUTGameMode* UTGM, FName Reason)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
 	if (AnalyticsProvider.IsValid() && UTGM && UTGM->GetWorld())
@@ -1735,6 +1737,7 @@ void FUTAnalytics::FireEvent_UTEndMatch(AUTGameMode* UTGM)
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsRanked), static_cast<bool>(UTGM->UTGameState->bRankedSession)));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsQuickMatch), static_cast<bool>(UTGM->UTGameState->bIsQuickMatch)));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsOnline), bIsOnlineGame));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::Reason), Reason.ToString()));
 
 			if (UTGM->UTGameState->bRankedSession || UTGM->UTGameState->bIsQuickMatch)
 			{

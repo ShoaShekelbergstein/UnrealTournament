@@ -98,6 +98,8 @@ namespace EGenericAnalyticParam
 		bIsRanked,
 		bIsQuickMatch,
 
+		Reason,
+
 		UTTutorialPickupToken,
 		TokenID,
 		TokenDescription,

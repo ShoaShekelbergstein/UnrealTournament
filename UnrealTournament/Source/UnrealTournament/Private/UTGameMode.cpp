@@ -2143,8 +2143,6 @@ void AUTGameMode::EndMatch()
 
 	if (FUTAnalytics::IsAvailable())
 	{
-		FUTAnalytics::FireEvent_UTEndMatch(this);
-	
 		if (GetWorld() && (TutorialMask != 0))
 		{
 			FUTAnalytics::FireEvent_UTTutorialCompleted(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), GetWorld()->GetMapName());
@@ -2296,31 +2294,15 @@ void AUTGameMode::UpdateSkillRating()
 
 }
 
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName EndFFAMatch
-*
-* @Trigger Sent when a player logs out of a match
-*
-* @Type Sent by the Server
-*
-* @EventParam WinnerName Who won this match
-* @EventParam Reason Reason the player won
-*
-* @Comments
-*/
 void AUTGameMode::SendEndOfGameStats(FName Reason)
 {
 	if (FUTAnalytics::IsAvailable())
 	{
 		if (GetWorld()->GetNetMode() != NM_Standalone)
 		{
-			TArray<FAnalyticsEventAttribute> ParamArray;
-			ParamArray.Add(FAnalyticsEventAttribute(TEXT("WinnerName"), UTGameState->WinnerPlayerState ? UTGameState->WinnerPlayerState->PlayerName : TEXT("None")));
-			ParamArray.Add(FAnalyticsEventAttribute(TEXT("Reason"), *Reason.ToString()));
-			FUTAnalytics::SetMatchInitialParameters(this, ParamArray, false);
-			FUTAnalytics::GetProvider().RecordEvent(TEXT("EndFFAMatch"), ParamArray);
+			FUTAnalytics::FireEvent_UTEndMatch(this, Reason);
 		}
+
 		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 		{
 			SendLogoutAnalytics(Cast<AUTPlayerState>(UTGameState->PlayerArray[i]));

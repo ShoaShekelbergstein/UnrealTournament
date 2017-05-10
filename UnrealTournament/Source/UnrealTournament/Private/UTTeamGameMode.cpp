@@ -1061,37 +1061,13 @@ void AUTTeamGameMode::PlayEndOfMatchMessage()
 	}
 }
 
-//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
-/*
-* @EventName EndTeamMatch
-*
-* @Trigger Sent at the end of a game
-*
-* @Type Sent by the server
-*
-* @EventParam Reason string Reason the game ended
-* @EventParam TeamCount int32 number of teams in the game
-*
-* @Comments
-*/
 void AUTTeamGameMode::SendEndOfGameStats(FName Reason)
 {
 	if (FUTAnalytics::IsAvailable())
 	{
 		if (GetWorld()->GetNetMode() != NM_Standalone)
 		{
-			TArray<FAnalyticsEventAttribute> ParamArray;
-			ParamArray.Add(FAnalyticsEventAttribute(TEXT("Reason"), Reason.ToString()));
-			ParamArray.Add(FAnalyticsEventAttribute(TEXT("TeamCount"), UTGameState->Teams.Num()));
-			for (int32 i=0;i<UTGameState->Teams.Num();i++)
-			{
-				FString TeamName = FString::Printf(TEXT("TeamScore%i"), i);
-				ParamArray.Add(FAnalyticsEventAttribute(TeamName, UTGameState->Teams[i]->Score));
-			}
-
-			FUTAnalytics::SetMatchInitialParameters(this, ParamArray, true);
-
-			FUTAnalytics::GetProvider().RecordEvent(TEXT("EndTeamMatch"), ParamArray);
+			FUTAnalytics::FireEvent_UTEndMatch(this, Reason);
 		}
 	}
 	

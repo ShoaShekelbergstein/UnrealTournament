@@ -48,7 +48,7 @@ public:
 	static void FireEvent_UTInitContext(const AUTBaseGameMode* UTGM);
 	static void FireEvent_UTInitMatch(AUTGameMode* UTGM);
 	static void FireEvent_UTStartMatch(AUTGameMode* UTGM);
-	static void FireEvent_UTEndMatch(AUTGameMode* UTGM);
+	static void FireEvent_UTEndMatch(AUTGameMode* UTGM, FName Reason);
 	static void FireEvent_UTServerPlayerJoin(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	static void FireEvent_UTServerPlayerDisconnect(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	
