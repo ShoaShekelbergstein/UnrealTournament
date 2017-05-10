@@ -1106,6 +1106,7 @@ void AUTCTFRoundGame::ScoreKill_Implementation(AController* Killer, AController*
 
 		// check if just transitioned to last man
 		bool bWasAlreadyLastMan = bLastManOccurred;
+		AUTPlayerState* LastMan = nullptr;
 		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 		{
 			AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
@@ -1113,6 +1114,7 @@ void AUTCTFRoundGame::ScoreKill_Implementation(AController* Killer, AController*
 			{
 				RemainingDefenders++;
 				RemainingLives += PS->RemainingLives;
+				LastMan = PS;
 			}
 		}
 		bLastManOccurred = (RemainingDefenders == 1);
@@ -1125,7 +1127,7 @@ void AUTCTFRoundGame::ScoreKill_Implementation(AController* Killer, AController*
 				if (PC)
 				{
 					int32 MessageType = (OtherPS->Team == PS->Team) ? 1 : 0;
-					PC->ClientReceiveLocalizedMessage(UUTShowdownRewardMessage::StaticClass(), MessageType, PS, NULL, NULL);
+					PC->ClientReceiveLocalizedMessage(UUTShowdownRewardMessage::StaticClass(), MessageType, LastMan, NULL, NULL);
 				}
 			}
 		}
