@@ -694,13 +694,14 @@ void UUTGameEngine::IndexExpansionContent()
 		};
 		
 		// Search for pak files that were downloaded through redirects
+		const bool bAltPaks = FParse::Param(FCommandLine::Get(), TEXT("altpaks"));
 		TArray<FString>	FoundPaks;
 		FPakFileSearchVisitor PakVisitor(FoundPaks);
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
 		FoundPaks.Empty();
 
-		FString PakFolder = ( FParse::Param(FCommandLine::Get(), TEXT("altpaks")))  
+		FString PakFolder = bAltPaks
 			? FPaths::Combine(FPlatformProcess::UserDir(), FApp::GetGameName(), TEXT("Saved"), TEXT("Paks"), TEXT("DownloadedPaks"))
 			: FPaths::Combine(*FPaths::GameSavedDir(), TEXT("Paks"), TEXT("DownloadedPaks"));
 
@@ -708,6 +709,12 @@ void UUTGameEngine::IndexExpansionContent()
 		for (const auto& PakPath : FoundPaks)
 		{
 			FString PakFilename = FPaths::GetBaseFilename(PakPath);
+
+			// If dedicated server, mount the pak
+			if (bAltPaks && FCoreDelegates::OnMountPak.IsBound())
+			{
+				FCoreDelegates::OnMountPak.Execute(PakPath, 0, nullptr);
+			}
 
 			bool bValidPak = CheckVersionOfPakFile(PakFilename);
 
@@ -737,7 +744,7 @@ void UUTGameEngine::IndexExpansionContent()
 
 		// Only add MyContent pak files to LocalContentChecksums
 		FoundPaks.Empty();
-		PakFolder = (FParse::Param(FCommandLine::Get(), TEXT("altpaks")))
+		PakFolder = bAltPaks
 			? FPaths::Combine(FPlatformProcess::UserDir(), FApp::GetGameName(), TEXT("Saved"), TEXT("Paks"), TEXT("MyContent"))
 			: FPaths::Combine(*FPaths::GameSavedDir(), TEXT("Paks"), TEXT("MyContent"));
 		PlatformFile.IterateDirectoryRecursively(*PakFolder, PakVisitor);
@@ -745,6 +752,12 @@ void UUTGameEngine::IndexExpansionContent()
 		{
 			FString PakFilename = FPaths::GetBaseFilename(PakPath);
 
+			// If dedicated server, mount the pak
+			if (bAltPaks && FCoreDelegates::OnMountPak.IsBound())
+			{
+				FCoreDelegates::OnMountPak.Execute(PakPath, 0, nullptr);
+			}
+			
 			bool bValidPak = CheckVersionOfPakFile(PakFilename);
 
 			if (bValidPak)
