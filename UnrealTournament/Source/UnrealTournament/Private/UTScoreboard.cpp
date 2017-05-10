@@ -264,6 +264,11 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 			int32 CurrentXP = LP->GetOnlineXP();
 			FXPBreakdown XPBreakdown = UTHUDOwner->UTPlayerOwner->XPBreakdown;
 			int32 NewXP = XPBreakdown.Total();  //28 FIXMESTEVE
+			if (CurrentXP > UTPlayerOwner->UTPlayerState->GetPrevXP())
+			{
+				CurrentXP -= NewXP;
+			}
+		
 			int32 Level = GetLevelForXP(CurrentXP);
 			int32 LevelXPStart = GetXPForLevel(Level);
 			int32 LevelXPEnd = FMath::Max(GetXPForLevel(Level + 1), LevelXPStart+1);
