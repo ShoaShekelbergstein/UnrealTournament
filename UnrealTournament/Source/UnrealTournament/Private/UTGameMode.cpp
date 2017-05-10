@@ -3745,11 +3745,6 @@ void AUTGameMode::HandleCountdownToBegin()
 		FString MapName = GetOutermost()->GetName();
 		GetWorld()->Exec(GetWorld(), *FString::Printf(TEXT("Demorec %s"), *DemoFilename.Replace(TEXT("%m"), *MapName.RightChop(MapName.Find(TEXT("/"), ESearchCase::IgnoreCase, ESearchDir::FromEnd) + 1))));
 	}*/
-	if (bIsQuickMatch && UTGameState)
-	{
-		UTGameState->bAllowTeamSwitches = false;
-		UTGameState->ForceNetUpdate();
-	}
 	CountDown = 3;
 	FTimerHandle TempHandle;
 	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::CheckCountDown, 1.f*GetActorTimeDilation(), false);

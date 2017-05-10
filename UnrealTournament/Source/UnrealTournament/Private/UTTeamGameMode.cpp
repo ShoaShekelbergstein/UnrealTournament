@@ -613,6 +613,11 @@ void AUTTeamGameMode::HandlePlayerIntro()
 		}
 		bForcedBalance = false;
 	}
+	if (bIsQuickMatch && UTGameState)
+	{
+		UTGameState->bAllowTeamSwitches = false;
+		UTGameState->ForceNetUpdate();
+	}
 
 	Super::HandlePlayerIntro();
 }
