@@ -1507,6 +1507,17 @@ void FUTAnalytics::FireEvent_UTTutorialQuit(AUTPlayerController* UTPC, FString T
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TutorialMap), TutorialMap));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MatchTime), GetMatchTime(UTPC)));
 
+		//Add ELO and Stat information in the quit message
+		if (UTPC && UTPC->GetWorld())
+		{
+			AUTGameMode* GameMode = UTPC->GetWorld()->GetAuthGameMode<AUTGameMode>();
+			if (GameMode)
+			{
+				SetMatchInitialParameters(GameMode, ParamArray, true);
+				AddPlayerStatsToParameters(GameMode, ParamArray);
+			}
+		}
+		
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTTutorialQuit), ParamArray);
 	}
 }
