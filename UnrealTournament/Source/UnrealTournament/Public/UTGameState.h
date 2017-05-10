@@ -453,6 +453,7 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 		virtual bool IsSelectedBoostValid(AUTPlayerState* PlayerState) const;
 
 protected:
+	virtual void UpdateTimeMessage();
 
 	// How long must a player wait before respawning
 	UPROPERTY(Replicated, EditAnywhere, Category = GameState)

@@ -722,6 +722,10 @@ void AUTGameState::OnRepRemainingTime()
 
 void AUTGameState::DefaultTimer()
 {
+	if (GetWorld()->IsPaused())
+	{
+		return;
+	}
 	Super::DefaultTimer();
 	if (IsMatchIntermission())
 	{
@@ -771,6 +775,11 @@ void AUTGameState::DefaultTimer()
 		}
 		CheckTimerMessage();
 	}
+	UpdateTimeMessage();
+}
+
+void AUTGameState::UpdateTimeMessage()
+{
 }
 
 void AUTGameState::CheckTimerMessage()

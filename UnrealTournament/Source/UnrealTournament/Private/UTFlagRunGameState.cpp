@@ -166,28 +166,31 @@ void AUTFlagRunGameState::OnBonusLevelChanged()
 
 void AUTFlagRunGameState::UpdateTimeMessage()
 {
-	// bonus time countdowns
-	if (RemainingTime <= GoldBonusThreshold + 7)
+	if (!bIsAtIntermission && (GetNetMode() != NM_DedicatedServer) && IsMatchInProgress())
 	{
-		if (RemainingTime > GoldBonusThreshold)
+		// bonus time countdowns
+		if (RemainingTime <= GoldBonusThreshold + 7)
 		{
-			for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+			if (RemainingTime > GoldBonusThreshold)
 			{
-				AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
-				if (PC != NULL)
+				for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
 				{
-					PC->ClientReceiveLocalizedMessage(UUTCountDownMessage::StaticClass(), 4000 + RemainingTime - GoldBonusThreshold);
+					AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
+					if (PC != NULL)
+					{
+						PC->ClientReceiveLocalizedMessage(UUTCountDownMessage::StaticClass(), 4000 + RemainingTime - GoldBonusThreshold);
+					}
 				}
 			}
-		}
-		else if ((RemainingTime <= SilverBonusThreshold + 7) && (RemainingTime > SilverBonusThreshold))
-		{
-			for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+			else if ((RemainingTime <= SilverBonusThreshold + 7) && (RemainingTime > SilverBonusThreshold))
 			{
-				AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
-				if (PC != NULL)
+				for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
 				{
-					PC->ClientReceiveLocalizedMessage(UUTCountDownMessage::StaticClass(), 3000 + RemainingTime - SilverBonusThreshold);
+					AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
+					if (PC != NULL)
+					{
+						PC->ClientReceiveLocalizedMessage(UUTCountDownMessage::StaticClass(), 3000 + RemainingTime - SilverBonusThreshold);
+					}
 				}
 			}
 		}

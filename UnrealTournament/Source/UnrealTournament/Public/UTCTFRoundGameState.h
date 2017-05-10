@@ -42,11 +42,7 @@ class UNREALTOURNAMENT_API AUTCTFRoundGameState : public AUTCTFGameState
 
 	virtual FText GetGameStatusText(bool bForScoreboard) override;
 	virtual FText GetRoundStatusText(bool bForScoreboard);
-	virtual void DefaultTimer() override;
 
 	virtual bool InOrder(class AUTPlayerState* P1, class AUTPlayerState* P2) override;
-
-protected:
-	virtual void UpdateTimeMessage();
 
 };
