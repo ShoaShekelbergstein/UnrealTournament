@@ -135,17 +135,20 @@ APlayerController* AUTTeamGameMode::Login(class UPlayer* NewPlayer, ENetRole InR
 {
 	APlayerController* PC = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
 
+	UE_LOG(LogOnlineGame, Verbose, TEXT("AUTTeamGameMode::Login %s, Matchmaking: %d"), PC && PC->PlayerState ? *PC->PlayerState->PlayerName : TEXT("no player"), bUseMatchmakingSession ? 1 : 0);
+
 	if (PC && PC->PlayerState && !PC->PlayerState->bOnlySpectator)
 	{
 			// FIXMESTEVE Does team get overwritten in postlogin if inactive player?
 			uint8 DesiredTeam = 1;
 
-			if (bRankedSession)
+			if (bUseMatchmakingSession)
 			{
 				AUTGameSessionRanked* UTGameSession = Cast<AUTGameSessionRanked>(GameSession);
 				if (UTGameSession)
 				{
 					DesiredTeam = UTGameSession->GetTeamForPlayer(UniqueId);
+					UE_LOG(LogOnlineGame, Verbose, TEXT("AUTTeamGameMode::Login %s GetTeamForPlayer %d"), *PC->PlayerState->PlayerName, DesiredTeam);
 				}
 			}
 			else if (GetNetMode() != NM_Standalone)

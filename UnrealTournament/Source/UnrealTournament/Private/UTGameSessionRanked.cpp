@@ -969,6 +969,8 @@ void AUTGameSessionRanked::UnregisterPlayer(const APlayerController* ExitingPlay
 
 void AUTGameSessionRanked::UnRegisterServer(bool bShuttingDown)
 {
+	UE_LOG(LogOnlineGame, Verbose, TEXT("AUTGameSessionRanked::UnRegisterServer %d"), bShuttingDown ? 1 : 0);
+
 	// Redraft quick match teams
 	if (!bShuttingDown)
 	{
