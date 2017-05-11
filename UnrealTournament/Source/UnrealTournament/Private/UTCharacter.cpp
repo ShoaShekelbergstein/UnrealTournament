@@ -5246,7 +5246,51 @@ void AUTCharacter::ApplyCharacterData(TSubclassOf<AUTCharacterContent> CharType)
 	{
 		CharacterData = CharType;
 	}
+
 	const AUTCharacterContent* Data = CharacterData.GetDefaultObject();
+
+	if (Data->SkeletonMesh1p)
+	{
+		FComponentReregisterContext ReregisterContext(FirstPersonMesh);
+
+		// Animation is wiped out when context is reregistered
+		ResetTaunt();
+
+		FirstPersonMesh->OverrideMaterials = Data->OverideMaterials1p;
+		FFAColor = (Data->DMSkinType == EDMSkin_Base) ? 255 : 0;
+		if ((PS != NULL && PS->Team != NULL) || (FFAColor != 255))
+		{
+			FirstPersonMesh->OverrideMaterials.SetNumZeroed(FMath::Min<int32>(FirstPersonMesh->GetNumMaterials(), Data->TeamMaterials.Num()));
+			for (int32 i = FirstPersonMesh->OverrideMaterials.Num() - 1; i >= 0; i--)
+			{
+				if (Data->TeamMaterials[i] != NULL)
+				{
+					FirstPersonMesh->OverrideMaterials[i] = Data->TeamMaterials[i];
+				}
+			}
+		}
+		FirstPersonMesh->SkeletalMesh = Data->SkeletonMesh1p;
+		
+		FirstPersonMeshMIDs.Empty();
+		for (int32 i = 0; i < FirstPersonMesh->GetNumMaterials(); i++)
+		{
+			// FIXME: NULL check is hack for editor reimport bug breaking number of materials
+			if (FirstPersonMesh->GetMaterial(i) != NULL)
+			{
+				UMaterialInstanceDynamic* MI = FirstPersonMesh->CreateAndSetMaterialInstanceDynamic(i);
+				MI->SetScalarParameterValue(TEXT("TeamSelect"), FFAColor);
+				
+				FirstPersonMeshMIDs.Add(MI);
+			}
+		}
+		FirstPersonMesh->PhysicsAssetOverride = Data->PhysicsAssetOverride1p;
+		FirstPersonMesh->RelativeScale3D = GetClass()->GetDefaultObject<AUTCharacter>()->FirstPersonMesh->RelativeScale3D * Data->RelativeScale1p;
+		if (FirstPersonMesh != GetRootComponent())
+		{
+			FirstPersonMesh->RelativeRotation = Data->RelativeRotation1p;
+		}
+	}
+
 	if (Data->Mesh != NULL)
 	{
 		FComponentReregisterContext ReregisterContext(GetMesh());

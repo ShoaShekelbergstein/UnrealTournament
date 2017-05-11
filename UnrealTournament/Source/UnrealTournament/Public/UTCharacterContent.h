@@ -101,6 +101,26 @@ public:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 	USkeletalMesh* SkeletonMesh;
 
+	/** Mesh converted to SkeletonMeshComponent on UTChar to be used for 1p arms */
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "1P Skeleton Mesh")
+	USkeletalMesh* SkeletonMesh1p;
+
+	/** Scale to apply to SkeletonMesh1p when converted to SkeletonmeshComponent **/
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "1P Skeleton Mesh")
+	FVector RelativeScale1p;
+
+	/** Rotation to apply to SkeletonMesh1p when converted to SkeletonmeshComponent **/
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "1P Skeleton Mesh")
+	FRotator RelativeRotation1p;
+
+	/** Material Overrides to apply to SkeletonMesh1p when converted to SkeletonmeshComponent **/
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "1P Skeleton Mesh")
+	TArray<class UMaterialInterface*> OverideMaterials1p;
+
+	/** Phsyics Asset Override to apply to SkeletonMesh1p when converted to SkeletonmeshComponent **/
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "1P Skeleton Mesh")
+	class UPhysicsAsset* PhysicsAssetOverride1p;
+
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 	TArray<FGibSlotInfo> Gibs;
 
