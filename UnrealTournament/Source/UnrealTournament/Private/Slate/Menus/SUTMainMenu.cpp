@@ -127,7 +127,7 @@ FReply SUTMainMenu::OnShowHomePanel()
 			if (UTLocalPlayer)
 			{
 				int32 TutorialMask = UTLocalPlayer->GetTutorialMask();
-				if (TutorialMask == 0 || (TutorialMask & TUTORIAL_SkillMoves) != TUTORIAL_SkillMoves) 
+				if (TutorialMask == 0 || (TutorialMask & TUTORIAL_DM) != TUTORIAL_DM)
 				{
 					FUTAnalytics::FireEvent_UTCancelOnboarding(PC);
 				}
