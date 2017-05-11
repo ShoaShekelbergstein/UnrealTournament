@@ -125,11 +125,6 @@ void AUTCTFRoundGame::InitGame(const FString& MapName, const FString& Options, F
 	bSlowFlagCarrier = EvalBoolOptions(InOpt, bSlowFlagCarrier);
 }
 
-bool AUTCTFRoundGame::SkipPlacement(AUTCharacter* UTChar)
-{
-	return false; // (UTChar && FlagScorer && (UTChar->PlayerState == FlagScorer));
-}
-
 void AUTCTFRoundGame::BeginGame()
 {
 	UE_LOG(UT, Log, TEXT("BEGIN GAME GameType: %s"), *GetNameSafe(this));

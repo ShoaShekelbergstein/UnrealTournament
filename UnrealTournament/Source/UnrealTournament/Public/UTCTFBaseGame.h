@@ -62,6 +62,9 @@ class UNREALTOURNAMENT_API AUTCTFBaseGame : public AUTTeamGameMode
 	UFUNCTION(exec)
 		virtual void CheatScore();
 
+	/** Called when flag is picked up for the first time. */
+	virtual void NotifyFirstPickup(AUTCarriedObject* Flag) {};
+
 	virtual int32 PickCheatWinTeam();
 
 	/** Admin control for restarting competitive matches with appropriate status. */

@@ -509,7 +509,7 @@ void AUTFlagRunGame::DefaultTimer()
 
 	if (UTGameState && UTGameState->IsMatchInProgress() && !UTGameState->IsMatchIntermission())
 	{
-		AUTCTFRoundGameState* RCTFGameState = Cast<AUTCTFRoundGameState>(CTFGameState);
+		AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(CTFGameState);
 		if (RCTFGameState && (RCTFGameState->RemainingPickupDelay <= 0) && (GetWorld()->GetTimeSeconds() - LastEntryDefenseWarningTime > 12.f))
 		{
 			// check for uncovered routes - support up to 5 entries for now

@@ -11,9 +11,9 @@
 #include "UTFlagReturnTrail.h"
 #include "UTGhostFlag.h"
 #include "UTGameVolume.h"
-#include "UTCTFRoundGameState.h"
-#include "UTCTFRoundGame.h"
 #include "UTRallyPoint.h"
+#include "UTCTFBaseGame.h"
+#include "UTFlagRunGameState.h"
 
 AUTCarriedObject::AUTCarriedObject(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -455,10 +455,10 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 			if (bWaitingForFirstPickup)
 			{
 				bWaitingForFirstPickup = false;
-				AUTCTFRoundGame* RCTFGame = GetWorld()->GetAuthGameMode<AUTCTFRoundGame>();
-				if (RCTFGame)
+				AUTCTFBaseGame* CTFGame = GetWorld()->GetAuthGameMode<AUTCTFBaseGame>();
+				if (CTFGame)
 				{
-					RCTFGame->NotifyFirstPickup(this);
+					CTFGame->NotifyFirstPickup(this);
 				}
 			}
 		}
@@ -1132,7 +1132,7 @@ FText AUTCarriedObject::GetHUDStatusMessage(AUTHUD* HUD)
 
 float AUTCarriedObject::GetGhostFlagTimerTime(AUTGhostFlag* Ghost)
 {
-	AUTCTFRoundGameState* RCTFGameState = GetWorld()->GetGameState<AUTCTFRoundGameState>();
+	AUTFlagRunGameState* RCTFGameState = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	float ReturnTime = (RCTFGameState && (RCTFGameState->RemainingPickupDelay > 0.f)) ? RCTFGameState->RemainingPickupDelay : FlagReturnTime;
 	return AutoReturnTime > 0.f ? (1.0f - ReturnTime / 12.f) : 0.f;
 }
@@ -1143,7 +1143,7 @@ void AUTCarriedObject::PlayAlarm()
 	if (GV && GV->bIsDefenderBase && GV->AlarmSound && (!GetWorld()->GetTimerManager().IsTimerActive(AlarmHandle) || (GetWorld()->GetTimerManager().GetTimerRemaining(AlarmHandle) < 1.f)))
 	{
 		// play alarm
-		AUTCTFRoundGameState* RCTFGameState = GetWorld()->GetGameState<AUTCTFRoundGameState>();
+		AUTFlagRunGameState* RCTFGameState = GetWorld()->GetGameState<AUTFlagRunGameState>();
 		if (RCTFGameState && !RCTFGameState->IsMatchIntermission() && RCTFGameState->IsMatchInProgress())
 		{
 			UUTGameplayStatics::UTPlaySound(GetWorld(), GV->AlarmSound, HoldingPawn, SRT_All, false, FVector::ZeroVector, NULL, NULL, false);

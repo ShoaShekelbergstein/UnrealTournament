@@ -1,6 +1,6 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #include "UnrealTournament.h"
-#include "UTCTFRoundGameState.h"
+#include "UTFlagRunGameState.h"
 #include "UTHUDWidget_FlagRunStatus.h"
 #include "UTFlagRunGameState.h"
 
@@ -264,7 +264,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 			}
 			else if (Flag->ObjectState == CarriedObjectState::Home)
 			{
-				AUTCTFRoundGameState* RCTFGameState = Cast<AUTCTFRoundGameState>(GameState);
+				AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(GameState);
 				if (RCTFGameState && (RCTFGameState->RemainingPickupDelay > 0))
 				{
 					DrawText(FText::AsNumber(RCTFGameState->RemainingPickupDelay), DrawNumberPosition.X, DrawNumberPosition.Y, TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 1.5f*InWorldNumberScale, 0.5f + 0.5f*CurrentNumberAlpha, FLinearColor::White, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);

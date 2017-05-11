@@ -7,8 +7,6 @@
 #include "UTWeaponAttachment.h"
 #include "UTHUD.h"
 #include "UTCTFGameState.h"
-#include "UTCTFRoundGameState.h"
-#include "UTCTFRoundGame.h"
 #include "UTCTFGameMode.h"
 #include "UTFlagRunGameState.h"
 #include "UTPlayerState.h"
@@ -596,8 +594,6 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 	if (UTGS && UTGM)
 	{
 		AUTTeamGameMode* TeamGM = Cast<AUTTeamGameMode>(UTGM);
-		AUTCTFRoundGame* CTFGM = Cast<AUTCTFRoundGame>(UTGM);
-		AUTCTFGameState* CTFGS = Cast<AUTCTFGameState>(UTGS);
 
 		TArray<FTransform> RedOrWinnerSpawns;
 		TArray<FTransform> BlueOrLoserSpawns;

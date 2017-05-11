@@ -50,7 +50,6 @@
 #include "AnalyticsEventAttribute.h"
 #include "IAnalyticsProvider.h"
 #include "UTSupplyChest.h"
-#include "UTCTFRoundGameState.h"
 #include "UTGameVolume.h"
 #include "UTArmor.h"
 #include "UTLineUpZone.h"

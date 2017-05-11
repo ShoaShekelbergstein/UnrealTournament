@@ -31,7 +31,6 @@
 #include "UTFlagRunGame.h"
 #include "UTHUDWidget_NetInfo.h"
 #include "UTMcpUtils.h"
-#include "UTCTFRoundGame.h"
 #include "UTFlagRunGameState.h"
 #include "UTCTFMajorMessage.h"
 #include "Engine/DemoNetDriver.h"

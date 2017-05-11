@@ -3,7 +3,6 @@
 #include "UTGhostFlag.h"
 #include "Net/UnrealNetwork.h"
 #include "UTFlagReturnTrail.h"
-#include "UTCTFRoundGameState.h"
 
 static FName NAME_ColorParam = FName(TEXT("color"));
 
