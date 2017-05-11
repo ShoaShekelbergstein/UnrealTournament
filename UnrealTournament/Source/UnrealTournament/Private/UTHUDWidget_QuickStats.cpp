@@ -316,20 +316,6 @@ void UUTHUDWidget_QuickStats::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCa
 				else
 				{
 					BoostProvidedPowerupInfo.Value = 0.0f;
-/*
-					//Show countdown to power up
-					AUTFlagRunGameState* RoundGameState = GetWorld()->GetGameState<AUTFlagRunGameState>();
-					if (RoundGameState != NULL && RoundGameState->IsTeamAbleToEarnPowerup(UTPlayerState->GetTeamNum()))
-					{
-						BoostProvidedPowerupInfo.Label = FText::FromString(FString::Printf(TEXT("Kill: %i"), RoundGameState->GetKillsNeededForPowerup(UTPlayerState->GetTeamNum())));
-						BoostProvidedPowerupInfo.Value = RoundGameState->GetKillsNeededForPowerup(UTPlayerState->GetTeamNum());
-					}
-					else if (UTGameState != NULL && UTGameState->BoostRechargeMaxCharges > 0 && UTGameState->BoostRechargeTime > 0.0f)
-					{
-						BoostProvidedPowerupInfo.Label = FText::FromString(FString::Printf(TEXT("CD: %i"), FMath::CeilToInt(UTPlayerState->BoostRechargeTimeRemaining)));
-						BoostProvidedPowerupInfo.Value = FMath::CeilToInt(UTPlayerState->BoostRechargeTimeRemaining);
-					}
-*/
 				}
 			}
 		}

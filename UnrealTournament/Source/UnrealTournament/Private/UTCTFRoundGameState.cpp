@@ -21,8 +21,6 @@ void AUTCTFRoundGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty 
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AUTCTFRoundGameState, OffenseKills);
-	DOREPLIFETIME(AUTCTFRoundGameState, DefenseKills);
 	DOREPLIFETIME(AUTCTFRoundGameState, RemainingPickupDelay);
 	DOREPLIFETIME(AUTCTFRoundGameState, TiebreakValue);
 	DOREPLIFETIME(AUTCTFRoundGameState, RedLivesRemaining);

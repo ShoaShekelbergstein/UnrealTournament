@@ -44,12 +44,6 @@ public:
 		bool bAllowBoosts;
 
 	UPROPERTY(BlueprintReadOnly, Category = CTF)
-		int OffenseKillsNeededForPowerUp;
-
-	UPROPERTY(BlueprintReadOnly, Category = CTF)
-		int DefenseKillsNeededForPowerUp;
-
-	UPROPERTY(BlueprintReadOnly, Category = CTF)
 		class AUTCarriedObject* ActiveFlag;
 
 	TAssetSubclassOf<class AUTInventory> ActivatedPowerupPlaceholderObject;
@@ -91,7 +85,6 @@ public:
 	virtual int32 GetDefenseScore() override;
 	virtual void BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo* ScoringTeam, int32 OldScore = 0) override;
 	virtual void CheckRoundTimeVictory() override;
-	virtual void ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType) override;
 	virtual void HandleTeamChange(AUTPlayerState* PS, AUTTeamInfo* OldTeam) override;
 	virtual void InitGameStateForRound() override;
 	virtual bool IsTeamOnOffense(int32 TeamNumber) const override;
@@ -125,8 +118,6 @@ public:
 
 protected:
 
-	virtual void HandlePowerupUnlocks(APawn* Other, AController* Killer);
-	virtual void UpdatePowerupUnlockProgress(AUTPlayerState* VictimPS, AUTPlayerState* KillerPS);
 	virtual void GrantPowerupToTeam(int TeamIndex, AUTPlayerState* PlayerToHighlight);
 };
 

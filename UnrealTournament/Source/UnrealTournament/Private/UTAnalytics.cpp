@@ -1155,8 +1155,10 @@ void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDef
 				SetMatchInitialParameters(UTGame, ParamArray, true);
 				AddPlayerStatsToParameters(UTGame, ParamArray);
 
-				int LivesRemaining = 0;
-				int PlayersEliminated = 0;
+				int32 LivesRemaining = 0;
+				int32 PlayersEliminated = 0;
+				int32 OffenseKills = 0;
+				int32 DefenseKills = 0;
 				for (APlayerState* PS : UTGS->PlayerArray)
 				{
 					AUTPlayerState* UTPS = Cast<AUTPlayerState>(PS);
@@ -1167,6 +1169,11 @@ void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDef
 						{
 							++PlayersEliminated;
 						}
+						DefenseKills += UTPS->Kills;
+					}
+					else
+					{
+						OffenseKills += UTPS->Kills;
 					}
 				}
 				
@@ -1187,8 +1194,8 @@ void FUTAnalytics::FireEvent_FlagRunRoundEnd(AUTFlagRunGame* UTGame, bool bIsDef
 					BlueTeamBonusTime = UTGS->Teams[1]->RoundBonus;
 				}
 				
- 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::OffenseKills), UTGS->OffenseKills));
-				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::DefenseKills), UTGS->DefenseKills));
+ 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::OffenseKills), OffenseKills));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::DefenseKills), DefenseKills));
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::DefenseLivesRemaining), LivesRemaining));
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::DefensePlayersEliminated), PlayersEliminated));
 				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PointsScored), bIsDefenseRoundWin ? UTGame->GetDefenseScore() : UTGame->GetFlagCapScore()));

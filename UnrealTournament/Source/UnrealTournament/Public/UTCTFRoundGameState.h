@@ -11,12 +11,6 @@ class UNREALTOURNAMENT_API AUTCTFRoundGameState : public AUTCTFGameState
 	GENERATED_UCLASS_BODY()
 
 	UPROPERTY(Replicated)
-		int32 OffenseKills;
-
-	UPROPERTY(Replicated)
-		int32 DefenseKills;
-
-	UPROPERTY(Replicated)
 		int32 RemainingPickupDelay;
 
 	UPROPERTY(Replicated)

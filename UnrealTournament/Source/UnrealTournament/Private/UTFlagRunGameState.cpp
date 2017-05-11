@@ -137,8 +137,6 @@ void AUTFlagRunGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	DOREPLIFETIME(AUTFlagRunGameState, EarlyEndTime);
 	DOREPLIFETIME(AUTFlagRunGameState, bAllowBoosts);
 	DOREPLIFETIME(AUTFlagRunGameState, bUsePrototypePowerupSelect);
-	DOREPLIFETIME(AUTFlagRunGameState, OffenseKillsNeededForPowerup);
-	DOREPLIFETIME(AUTFlagRunGameState, DefenseKillsNeededForPowerup);
 	DOREPLIFETIME(AUTFlagRunGameState, bIsDefenseAbleToGainPowerup);
 	DOREPLIFETIME(AUTFlagRunGameState, bIsOffenseAbleToGainPowerup);
 	DOREPLIFETIME(AUTFlagRunGameState, OffenseSelectablePowerups);
@@ -411,11 +409,6 @@ AUTCTFFlag* AUTFlagRunGameState::GetOffenseFlag()
 {
 	int OffenseTeam = bRedToCap ? 0 : 1;
 	return ((FlagBases.Num() > OffenseTeam) && FlagBases[OffenseTeam]) ? FlagBases[OffenseTeam]->MyFlag : nullptr;
-}
-
-int AUTFlagRunGameState::GetKillsNeededForPowerup(int32 TeamNumber) const
-{
-	return IsTeamOnOffense(TeamNumber) ? (OffenseKillsNeededForPowerup - OffenseKills) : (DefenseKillsNeededForPowerup - DefenseKills);
 }
 
 void AUTFlagRunGameState::Tick(float DeltaTime)

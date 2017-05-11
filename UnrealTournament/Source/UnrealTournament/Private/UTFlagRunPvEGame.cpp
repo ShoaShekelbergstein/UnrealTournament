@@ -140,8 +140,6 @@ void AUTFlagRunPvEGame::InitGameState()
 		bAllowBoosts = true;
 		GS->bAllowBoosts = true;
 		GS->BoostRechargeTime = 180.0f;
-		GS->OffenseKillsNeededForPowerup = 1000000; // i.e. never
-		GS->DefenseKillsNeededForPowerup = 1000000;
 	}
 }
 
