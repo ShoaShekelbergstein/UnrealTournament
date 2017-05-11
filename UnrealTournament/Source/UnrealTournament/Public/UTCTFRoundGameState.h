@@ -22,12 +22,6 @@ class UNREALTOURNAMENT_API AUTCTFRoundGameState : public AUTCTFGameState
 	UPROPERTY()
 		bool bDefenderLivesLimited;
 
-	UPROPERTY(Replicated)
-		int32 RedLivesRemaining;
-
-	UPROPERTY(Replicated)
-		int32 BlueLivesRemaining;
-
 	UFUNCTION(BlueprintCallable, Category = Team)
 		virtual bool IsTeamOnOffense(int32 TeamNumber) const;
 

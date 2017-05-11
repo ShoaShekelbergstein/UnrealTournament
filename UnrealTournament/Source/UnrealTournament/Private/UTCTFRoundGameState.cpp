@@ -23,8 +23,6 @@ void AUTCTFRoundGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty 
 
 	DOREPLIFETIME(AUTCTFRoundGameState, RemainingPickupDelay);
 	DOREPLIFETIME(AUTCTFRoundGameState, TiebreakValue);
-	DOREPLIFETIME(AUTCTFRoundGameState, RedLivesRemaining);
-	DOREPLIFETIME(AUTCTFRoundGameState, BlueLivesRemaining);
 }
 
 FText AUTCTFRoundGameState::GetRoundStatusText(bool bForScoreboard)

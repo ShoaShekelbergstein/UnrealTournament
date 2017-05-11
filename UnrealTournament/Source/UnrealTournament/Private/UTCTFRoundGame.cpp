@@ -42,7 +42,6 @@ AUTCTFRoundGame::AUTCTFRoundGame(const FObjectInitializer& ObjectInitializer)
 	TimeLimit = 5;
 	IntermissionDuration = 28.f;
 	RoundLives = 5;
-	bPerPlayerLives = true;
 	bNeedFiveKillsMessage = true;
 	FlagCapScore = 1;
 	UnlimitedRespawnWaitTime = 2.f;
@@ -119,9 +118,6 @@ void AUTCTFRoundGame::InitGame(const FString& MapName, const FString& Options, F
 
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("FlagReturn"));
 	bNoFlagReturn = EvalBoolOptions(InOpt, bNoFlagReturn);
-
-	InOpt = UGameplayStatics::ParseOption(Options, TEXT("PerPlayerLives"));
-	bPerPlayerLives = EvalBoolOptions(InOpt, bPerPlayerLives);
 
 	FlagPickupDelay = FMath::Max(1, UGameplayStatics::GetIntOption(Options, TEXT("FlagDelay"), FlagPickupDelay));
 
@@ -664,17 +660,6 @@ void AUTCTFRoundGame::InitGameStateForRound()
 	if (RCTFGameState)
 	{
 		RCTFGameState->CTFRound++;
-		if (!bPerPlayerLives)
-		{
-			RCTFGameState->RedLivesRemaining = RoundLives;
-			RCTFGameState->BlueLivesRemaining = RoundLives;
-		}
-		if (CTFGameState->FlagBases.Num() > 1)
-		{
-			RCTFGameState->RedLivesRemaining += CTFGameState->FlagBases[0] ? CTFGameState->FlagBases[0]->RoundLivesAdjustment : 0;
-			RCTFGameState->BlueLivesRemaining += CTFGameState->FlagBases[1] ? CTFGameState->FlagBases[0]->RoundLivesAdjustment : 0;
-		}
-
 		RCTFGameState->RemainingPickupDelay = FlagPickupDelay;
 	}
 }
@@ -902,7 +887,7 @@ void AUTCTFRoundGame::RestartPlayer(AController* aPlayer)
 	}
 	AUTPlayerState* PS = Cast<AUTPlayerState>(aPlayer->PlayerState);
 	AUTPlayerController* PC = Cast<AUTPlayerController>(aPlayer);
-	if (bPerPlayerLives && PS && PS->Team && HasMatchStarted())
+	if (PS && PS->Team && HasMatchStarted())
 	{
 		if (IsPlayerOnLifeLimitedTeam(PS) && (PS->RemainingLives == 0) && (GetMatchState() == MatchState::InProgress))
 		{
@@ -957,39 +942,6 @@ void AUTCTFRoundGame::RestartPlayer(AController* aPlayer)
 	Super::RestartPlayer(aPlayer);
 
 	AUTCTFRoundGameState* RCTFGameState = Cast<AUTCTFRoundGameState>(CTFGameState);
-	if (aPlayer->GetPawn() && !bPerPlayerLives && (RoundLives > 0) && PS && PS->Team && RCTFGameState && RCTFGameState->IsMatchInProgress())
-	{
-		if ((PS->Team->TeamIndex == 0) && IsPlayerOnLifeLimitedTeam(PS))
-		{
-			RCTFGameState->RedLivesRemaining--;
-			if (RCTFGameState->RedLivesRemaining <= 0)
-			{
-				RCTFGameState->RedLivesRemaining = 0;
-				ScoreAlternateWin(1);
-				return;
-			}
-			else if (bNeedFiveKillsMessage && (RCTFGameState->RedLivesRemaining == 5))
-			{
-				bNeedFiveKillsMessage = false;
-				BroadcastLocalized(NULL, UUTShowdownGameMessage::StaticClass(), 7);
-			}
-		}
-		else if ((PS->Team->TeamIndex == 1) && IsPlayerOnLifeLimitedTeam(PS))
-		{
-			RCTFGameState->BlueLivesRemaining--;
-			if (RCTFGameState->BlueLivesRemaining <= 0)
-			{
-				RCTFGameState->BlueLivesRemaining = 0;
-				ScoreAlternateWin(0);
-				return;
-			}
-			else if (bNeedFiveKillsMessage && (RCTFGameState->BlueLivesRemaining == 5))
-			{
-				bNeedFiveKillsMessage = false;
-				BroadcastLocalized(NULL, UUTShowdownGameMessage::StaticClass(), 7);
-			}
-		}
-	}
 }
 
 void AUTCTFRoundGame::HandleRollingAttackerRespawn(AUTPlayerState* OtherPS)
