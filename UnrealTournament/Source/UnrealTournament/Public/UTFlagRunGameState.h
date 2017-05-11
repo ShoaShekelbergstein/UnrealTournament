@@ -149,4 +149,12 @@ protected:
 
 public:
 	virtual void SetSelectablePowerups(const TArray<TSubclassOf<AUTInventory>>& OffenseList, const TArray<TSubclassOf<AUTInventory>>& DefenseList);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RoleStrings")
+		FText AttackText;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RoleStrings")
+		FText DefendText;
+
+	virtual FText OverrideRoleText(AUTPlayerState* PS) override;
 };

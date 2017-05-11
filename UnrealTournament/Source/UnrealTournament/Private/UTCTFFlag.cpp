@@ -7,7 +7,6 @@
 #include "UTCTFGameMode.h"
 #include "UTCTFRewardMessage.h"
 #include "UnrealNetwork.h"
-#include "UTCTFRoundGame.h"
 
 static FName NAME_Wipe(TEXT("Wipe"));
 

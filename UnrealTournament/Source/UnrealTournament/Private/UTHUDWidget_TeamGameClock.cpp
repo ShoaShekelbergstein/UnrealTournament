@@ -11,8 +11,6 @@ UUTHUDWidget_TeamGameClock::UUTHUDWidget_TeamGameClock(const FObjectInitializer&
 	Size=FVector2D(430.0f,83.0f);
 	ScreenPosition=FVector2D(0.5f, 0.0f);
 	Origin=FVector2D(0.5f,0.0f);
-	AttackText = NSLOCTEXT("UUTHUDWidget_TeamGameClock", "AttackingRole", "Rd {RoundNum}: Attacking on");
-	DefendText = NSLOCTEXT("UUTHUDWidget_TeamGameClock", "DefendingRole", "Rd {RoundNum}: Defending on");
 }
 
 void UUTHUDWidget_TeamGameClock::InitializeWidget(AUTHUD* Hud)
@@ -49,15 +47,10 @@ void UUTHUDWidget_TeamGameClock::Draw_Implementation(float DeltaTime)
 	if (UTGameState && UTGameState->bTeamGame && PS && PS->Team && UTGameState->HasMatchStarted())
 	{
 		RoleText.bHidden = false;
-
-		AUTCTFRoundGameState* CTFGS = Cast<AUTCTFRoundGameState>(UTGameState);
-		if (CTFGS && (CTFGS->CTFRound > 0))
+		FText RoleTextOverride = UTGameState->OverrideRoleText(PS);
+		if (!RoleTextOverride.IsEmpty())
 		{
-			// Change role text to include round and role (attacking/defending)
-			FFormatNamedArguments Args;
-			Args.Add("RoundNum", FText::AsNumber(CTFGS->CTFRound));
-			RoleText.Text = CTFGS->IsTeamOnOffense(PS->Team->TeamIndex) ? AttackText : DefendText;
-			RoleText.Text = FText::Format(RoleText.Text, Args);
+			RoleText.Text = RoleTextOverride;
 			RoleText.Position.X = 130.f;
 			TeamNameText.Position.X = 285.f;
 		}

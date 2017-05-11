@@ -33,6 +33,8 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	bTeamGame = true;
 	GoldBonusThreshold = 120;
 	SilverBonusThreshold = 60;
+	AttackText = NSLOCTEXT("UUTHUDWidget_TeamGameClock", "AttackingRole", "Rd {RoundNum}: Attacking on");
+	DefendText = NSLOCTEXT("UUTHUDWidget_TeamGameClock", "DefendingRole", "Rd {RoundNum}: Defending on");
 
 	HighlightMap.Add(HighlightNames::MostKillsTeam, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
 	HighlightMap.Add(HighlightNames::BadMF, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
@@ -784,6 +786,20 @@ void AUTFlagRunGameState::AddMinorRoundHighlights(AUTPlayerState* PS)
 		PS->MatchHighlights[0] = HighlightNames::ParticipationAward;
 	}
 }
+
+FText AUTFlagRunGameState::OverrideRoleText(AUTPlayerState* PS)
+{
+	if (PS && (CTFRound > 0))
+	{
+		// Change role text to include round and role (attacking/defending)
+		FFormatNamedArguments Args;
+		Args.Add("RoundNum", FText::AsNumber(CTFRound));
+		FText RoleText = IsTeamOnOffense(PS->Team->TeamIndex) ? AttackText : DefendText;
+		return FText::Format(RoleText, Args);
+	}
+	return FText::GetEmpty();
+}
+
 
 
 

@@ -762,6 +762,8 @@ public:
 	UPROPERTY(Replicated)
 	FString HostIdString; 
 
+	virtual FText OverrideRoleText(AUTPlayerState* PS) { return FText::GetEmpty(); };
+
 protected:
 	virtual AUTLineUpZone* CreateLineUpAtPlayerStart(LineUpTypes LineUpType, class APlayerStart* PlayerSpawn);
 };
