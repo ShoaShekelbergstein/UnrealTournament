@@ -2600,7 +2600,7 @@ public:
 	FUTGameModeCountStorage(FString inGameModeClass)
 	{
 		GameModeClass = inGameModeClass;
-		PlayCount = 1;
+		PlayCount = 0;
 	}
 
 };
