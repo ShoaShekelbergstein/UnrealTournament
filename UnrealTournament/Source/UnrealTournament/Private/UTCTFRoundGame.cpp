@@ -110,7 +110,7 @@ void AUTCTFRoundGame::InitGame(const FString& MapName, const FString& Options, F
 		TimeLimit = WorldSettings ? WorldSettings->DefaultRoundLength : TimeLimit;
 	}
 
-	// key options are ?RoundLives=xx?Dash=xx?Asymm=xx?PerPlayerLives=xx?OffKillsForPowerup=xx?DefKillsForPowerup=xx?AllowPrototypePowerups=xx?DelayRally=xxx?Boost=xx
+	// key options are ?RoundLives=xx?Dash=xx?Asymm=xx?PerPlayerLives=xx?OffKillsForPowerup=xx?DefKillsForPowerup=xx?DelayRally=xxx?Boost=xx
 	RoundLives = FMath::Max(1, UGameplayStatics::GetIntOption(Options, TEXT("RoundLives"), RoundLives));
 
 	FString InOpt = UGameplayStatics::ParseOption(Options, TEXT("OwnFlag"));

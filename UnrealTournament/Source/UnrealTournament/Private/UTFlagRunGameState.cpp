@@ -23,7 +23,6 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	BronzeBonusTimedText = NSLOCTEXT("FlagRun", "BronzeBonusTimeText", "\u2605 {BonusTime}");
 	BronzeBonusText = NSLOCTEXT("FlagRun", "BronzeBonusText", "\u2605");
 	BonusLevel = 3;
-	bUsePrototypePowerupSelect = false;
 	bAttackerLivesLimited = false;
 	bDefenderLivesLimited = true;
 	FlagRunMessageSwitch = 0;
@@ -115,7 +114,6 @@ void AUTFlagRunGameState::BeginPlay()
 
 	if (GetWorld() && GetWorld()->GetAuthGameMode<AUTFlagRunGame>())
 	{
-		bUsePrototypePowerupSelect = GetWorld()->GetAuthGameMode<AUTFlagRunGame>()->bAllowPrototypePowerups;
 		bAllowBoosts = GetWorld()->GetAuthGameMode<AUTFlagRunGame>()->bAllowBoosts;
 	}
 
@@ -136,9 +134,6 @@ void AUTFlagRunGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	DOREPLIFETIME(AUTFlagRunGameState, bAttackersCanRally);
 	DOREPLIFETIME(AUTFlagRunGameState, EarlyEndTime);
 	DOREPLIFETIME(AUTFlagRunGameState, bAllowBoosts);
-	DOREPLIFETIME(AUTFlagRunGameState, bUsePrototypePowerupSelect);
-	DOREPLIFETIME(AUTFlagRunGameState, bIsDefenseAbleToGainPowerup);
-	DOREPLIFETIME(AUTFlagRunGameState, bIsOffenseAbleToGainPowerup);
 	DOREPLIFETIME(AUTFlagRunGameState, OffenseSelectablePowerups);
 	DOREPLIFETIME(AUTFlagRunGameState, DefenseSelectablePowerups);
 }
@@ -311,17 +306,6 @@ FString AUTFlagRunGameState::GetPowerupSelectWidgetPath(int32 TeamNumber)
 			return TEXT("/Game/RestrictedAssets/Blueprints/BP_PowerupSelector_EmptyOffense.BP_PowerupSelector_EmptyOffense_C");
 		}
 	}
-	else if (bUsePrototypePowerupSelect)
-	{
-		if (IsTeamOnDefenseNextRound(TeamNumber))
-		{
-			return TEXT("/Game/RestrictedAssets/Blueprints/BP_PowerupSelector_Defense_Prototype.BP_PowerupSelector_Defense_Prototype_C");
-		}
-		else
-		{
-			return TEXT("/Game/RestrictedAssets/Blueprints/BP_PowerupSelector_Offense_Prototype.BP_PowerupSelector_Offense_Prototype_C");
-		}
-	}
 	else
 	{
 		if (IsTeamOnDefenseNextRound(TeamNumber))
@@ -398,11 +382,6 @@ void AUTFlagRunGameState::CachePowerupAnnouncement(class UUTAnnouncer* Announcer
 	{
 		Announcer->PrecacheAnnouncement(Powerup->AnnouncementName);
 	}
-}
-
-bool AUTFlagRunGameState::IsTeamAbleToEarnPowerup(int32 TeamNumber) const
-{
-	return IsTeamOnOffense(TeamNumber) ? bIsOffenseAbleToGainPowerup : bIsDefenseAbleToGainPowerup;
 }
 
 AUTCTFFlag* AUTFlagRunGameState::GetOffenseFlag()

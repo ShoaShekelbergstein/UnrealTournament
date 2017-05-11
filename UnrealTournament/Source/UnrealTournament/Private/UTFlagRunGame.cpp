@@ -70,7 +70,6 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	bNoDefaultLeaderHat = true;
 
 	ActivatedPowerupPlaceholderObject = FStringAssetReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_ActivatedPowerup_UDamage.BP_ActivatedPowerup_UDamage_C"));
-	RepulsorObject = FStringAssetReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_Repulsor.BP_Repulsor_C"));
 
 	static ConstructorHelpers::FObjectFinder<UClass> AfterImageFinder(TEXT("Blueprint'/Game/RestrictedAssets/Weapons/Translocator/TransAfterImage.TransAfterImage_C'"));
 	AfterImageType = AfterImageFinder.Object;
@@ -87,15 +86,8 @@ void AUTFlagRunGame::InitGame(const FString& MapName, const FString& Options, FS
 	{
 		ActivatedPowerupPlaceholderClass = Cast<UClass>(StaticLoadObject(UClass::StaticClass(), NULL, *ActivatedPowerupPlaceholderObject.ToStringReference().ToString(), NULL, LOAD_NoWarn));
 	}
-	if (!RepulsorObject.IsNull())
-	{
-		RepulsorClass = Cast<UClass>(StaticLoadObject(UClass::StaticClass(), NULL, *RepulsorObject.ToStringReference().ToString(), NULL, LOAD_NoWarn));
-	}
 
-	FString InOpt = UGameplayStatics::ParseOption(Options, TEXT("AllowPrototypePowerups"));
-	bAllowPrototypePowerups = EvalBoolOptions(InOpt, bAllowPrototypePowerups);
-
-	InOpt = UGameplayStatics::ParseOption(Options, TEXT("Boost"));
+	FString InOpt = UGameplayStatics::ParseOption(Options, TEXT("Boost"));
 	bAllowBoosts = EvalBoolOptions(InOpt, bAllowBoosts);
 
 	if (bDevServer)
@@ -150,8 +142,6 @@ void AUTFlagRunGame::InitGameStateForRound()
 	AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(CTFGameState);
 	if (FRGS)
 	{
-		FRGS->bIsOffenseAbleToGainPowerup = true;
-		FRGS->bIsDefenseAbleToGainPowerup = true;
 		FRGS->bRedToCap = !FRGS->bRedToCap;
 		FRGS->CurrentRallyPoint = nullptr;
 		FRGS->PendingRallyPoint = nullptr;

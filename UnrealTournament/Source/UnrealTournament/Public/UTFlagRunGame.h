@@ -38,24 +38,17 @@ public:
 		int32 DefenseScore;
 
 	UPROPERTY()
-		bool bAllowPrototypePowerups;
-
-	UPROPERTY()
 		bool bAllowBoosts;
 
 	UPROPERTY(BlueprintReadOnly, Category = CTF)
 		class AUTCarriedObject* ActiveFlag;
 
 	TAssetSubclassOf<class AUTInventory> ActivatedPowerupPlaceholderObject;
-	TAssetSubclassOf<class AUTInventory> RepulsorObject;
 
 	UPROPERTY()
 		TSubclassOf<class AUTInventory> ActivatedPowerupPlaceholderClass;
 
 	virtual TSubclassOf<class AUTInventory> GetActivatedPowerupPlaceholderClass() { return ActivatedPowerupPlaceholderClass; };
-
-	UPROPERTY()
-		TSubclassOf<class AUTInventory> RepulsorClass;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
 		USoundBase* RallyFailedSound;

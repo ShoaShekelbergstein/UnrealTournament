@@ -51,15 +51,6 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 		uint8 BonusLevel;
 
 	UPROPERTY(Replicated)
-		bool bIsDefenseAbleToGainPowerup;
-
-	UPROPERTY(Replicated)
-		bool bIsOffenseAbleToGainPowerup;
-
-	UPROPERTY(Replicated)
-		bool bUsePrototypePowerupSelect;
-
-	UPROPERTY(Replicated)
 		bool bAllowBoosts;
 
 	UPROPERTY(Replicated)
@@ -126,9 +117,6 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 
 	UFUNCTION(BlueprintCallable, Category = GameState)
 		virtual bool IsSelectedBoostValid(AUTPlayerState* PlayerState) const override;
-
-	UFUNCTION(BlueprintCallable, Category = Team)
-		virtual bool IsTeamAbleToEarnPowerup(int32 TeamNumber) const;
 
 	UFUNCTION(BlueprintCallable, Category = Team)
 		virtual AUTCTFFlag* GetOffenseFlag();
