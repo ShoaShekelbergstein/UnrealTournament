@@ -608,6 +608,13 @@ namespace UnrealTournamentGame.Automation
 				throw new AutomationException("No Cloud arguments found for function {0}", D2Function);
 			}
 
+			// This loop is polling FleetManager every second to determine when a job has
+			// completed. The 'retries' represent how many times to poll FleetManager before
+			// giving up and marking the job as timed out. Because of this, retries essentially
+			// represents how many seconds to wait.
+			//
+			// There's room for improvement here. It would be best if we didn't poll FleetManager
+			// every second, but instead poll periodically every 30 seconds or so.
 			bool bSuccess = false;
 			int Retries = 0;
 			do
