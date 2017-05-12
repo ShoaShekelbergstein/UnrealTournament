@@ -59,8 +59,15 @@ public:
 	UPROPERTY()
 		FName LastDefenderSpawnGroup;
 
+	virtual void ScoreRedAlternateWin();
+	virtual void ScoreBlueAlternateWin();
+
+	virtual void HandleTeamChange(AUTPlayerState* PS, AUTTeamInfo* OldTeam);
+
+	virtual bool CheckForWinner(AUTTeamInfo* ScoringTeam);
+
 	virtual class AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = TEXT("")) override;
-	virtual void AnnounceWin(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 Reason) override;
+	virtual void AnnounceWin(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 Reason);
 	virtual void NotifyFirstPickup(AUTCarriedObject* Flag) override;
 	virtual float GetScoreForXP(class AUTPlayerState* PS) override;
 
@@ -68,7 +75,6 @@ public:
 	virtual float OverrideRespawnTime(AUTPickupInventory* Pickup, TSubclassOf<AUTInventory> InventoryType) override;
 	virtual bool HandleRallyRequest(AController* C) override;
 	virtual void CompleteRallyRequest(AController* C) override;
-	virtual bool CheckForWinner(AUTTeamInfo* ScoringTeam) override;
 	virtual int32 PickCheatWinTeam() override;
 	virtual bool AvoidPlayerStart(class AUTPlayerStart* P) override;
 	virtual void InitDelayedFlag(class AUTCarriedObject* Flag) override;
@@ -77,13 +83,20 @@ public:
 	virtual int32 GetFlagCapScore() override;
 	virtual int32 GetDefenseScore() override;
 	virtual void BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo* ScoringTeam, int32 OldScore = 0) override;
-	virtual void CheckRoundTimeVictory() override;
-	virtual void HandleTeamChange(AUTPlayerState* PS, AUTTeamInfo* OldTeam) override;
+	virtual void CheckRoundTimeVictory();
 	virtual void InitGameStateForRound() override;
 	virtual bool IsTeamOnOffense(int32 TeamNumber) const override;
 	virtual AActor* SetIntermissionCameras(uint32 TeamToWatch) override;
-	virtual void SendRestartNotifications(AUTPlayerState* PS, AUTPlayerController* PC) override;
+	virtual void SendRestartNotifications(AUTPlayerState* PS, AUTPlayerController* PC);
 	virtual bool PlayerWonChallenge() override;
+	virtual bool ChangeTeam(AController* Player, uint8 NewTeam, bool bBroadcast) override;
+	virtual bool CheckScore_Implementation(AUTPlayerState* Scorer);
+	virtual void CheckGameTime() override;
+	virtual void EndPlayerIntro() override;
+	virtual uint8 GetWinningTeamForLineUp() const override;
+	virtual void RestartPlayer(AController* aPlayer) override;
+	virtual void SetPlayerStateInactive(APlayerState* NewPlayerState) override;
+	virtual void BuildServerResponseRules(FString& OutRules) override;
 
 	virtual int32 GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPlayerController* Instigator, UWorld* World);
 	virtual void InitFlags() override;
@@ -108,6 +121,9 @@ public:
 	virtual bool SupportsInstantReplay() const override;
 	virtual void FindAndMarkHighScorer() override;
 	virtual void HandleRollingAttackerRespawn(AUTPlayerState* OtherPS) override;
+
+	/** Update tiebreaker value based on new round bonus. Tiebreaker is positive if Red is ahead, negative if blue is ahead. */
+	virtual void UpdateTiebreak(int32 Bonus, int32 TeamIndex);
 
 protected:
 

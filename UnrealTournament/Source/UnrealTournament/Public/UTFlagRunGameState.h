@@ -57,6 +57,9 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 		int32 FlagRunMessageSwitch;
 
 	UPROPERTY(Replicated)
+		int32 TiebreakValue;
+
+	UPROPERTY(Replicated)
 		class AUTTeamInfo* FlagRunMessageTeam;
 
 	UPROPERTY(BlueprintReadOnly, Replicated)
@@ -124,7 +127,9 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 	//Handles precaching all game announcement sounds for the local player
 	virtual void PrecacheAllPowerupAnnouncements(class UUTAnnouncer* Announcer) const;
 
-	virtual FText GetRoundStatusText(bool bForScoreboard) override;
+	virtual FText GetRoundStatusText(bool bForScoreboard);
+
+	virtual FText GetGameStatusText(bool bForScoreboard) override;
 
 	virtual FLinearColor GetGameStatusColor() override;
 
@@ -133,6 +138,8 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 	virtual void AddMinorRoundHighlights(AUTPlayerState* PS);
 
 	virtual int32 NumHighlightsNeeded() override;
+
+	virtual bool InOrder(class AUTPlayerState* P1, class AUTPlayerState* P2) override;
 
 protected:
 	virtual void UpdateTimeMessage() override;

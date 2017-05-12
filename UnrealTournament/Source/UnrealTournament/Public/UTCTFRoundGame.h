@@ -94,53 +94,29 @@ class UNREALTOURNAMENT_API AUTCTFRoundGame : public AUTCTFBaseGame
 	virtual void FlagsAreReady();
 	virtual void InitGameStateForRound();
 
-	/** Update tiebreaker value based on new round bonus. Tiebreaker is positive if Red is ahead, negative if blue is ahead. */
-	virtual void UpdateTiebreak(int32 Bonus, int32 TeamIndex);
-
-	virtual void AnnounceWin(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 Reason);
-
-	virtual void CheckRoundTimeVictory();
-
 	virtual int32 GetDefenseScore();
-
-	virtual void HandleTeamChange(AUTPlayerState* PS, AUTTeamInfo* OldTeam);
 
 	virtual AActor* SetIntermissionCameras(uint32 TeamToWatch);
 
-	virtual void SendRestartNotifications(AUTPlayerState* PS, AUTPlayerController* PC);
+	virtual void ScoreRedAlternateWin();
+	virtual void ScoreBlueAlternateWin();
 
 	virtual void BeginGame() override;
-	virtual void ScoreObject_Implementation(AUTCarriedObject* GameObject, AUTCharacter* HolderPawn, AUTPlayerState* Holder, FName Reason) override;
-	virtual void RestartPlayer(AController* aPlayer) override;
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
-	virtual bool CheckScore_Implementation(AUTPlayerState* Scorer);
-	virtual bool CheckForWinner(AUTTeamInfo* ScoringTeam);
-	void BuildServerResponseRules(FString& OutRules);
 	virtual void HandleFlagCapture(AUTCharacter* HolderPawn, AUTPlayerState* Holder) override;
 	virtual void HandleExitingIntermission() override;
 	virtual int32 IntermissionTeamToView(AUTPlayerController* PC) override;
 	virtual void CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps);
-	virtual bool ChangeTeam(AController* Player, uint8 NewTeam, bool bBroadcast) override;
-	virtual void CheckGameTime() override;
 	virtual void HandleMatchIntermission() override;
 	virtual void ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType) override;
 	virtual void HandleRollingAttackerRespawn(AUTPlayerState* OtherPS);
 	virtual float AdjustNearbyPlayerStartScore(const AController* Player, const AController* OtherController, const ACharacter* OtherCharacter, const FVector& StartLoc, const APlayerStart* P) override;
-	virtual void EndPlayerIntro() override;
 	virtual void InitGameState() override;
-	virtual void SetPlayerStateInactive(APlayerState* NewPlayerState) override;
-	virtual float GetScoreForXP(class AUTPlayerState* PS) override;
 
 	virtual void EndTeamGame(AUTTeamInfo* Winner, FName Reason);
 
 	virtual bool UTIsHandlingReplays() override { return false; }
 	virtual void StopRCTFReplayRecording();
-
-	virtual void ScoreRedAlternateWin();
-	virtual void ScoreBlueAlternateWin();
-
-	/** Score round ending due some other reason than capture. */
-	virtual void ScoreAlternateWin(int32 WinningTeamIndex, uint8 Reason = 0);
 
 	/** Initialize for new round. */
 	virtual void InitRound();
@@ -149,8 +125,6 @@ class UNREALTOURNAMENT_API AUTCTFRoundGame : public AUTCTFBaseGame
 	virtual void InitPlayerForRound(AUTPlayerState* PS);
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
-
-	virtual uint8 GetWinningTeamForLineUp() const override;
 
 protected:
 	virtual bool IsTeamOnOffense(int32 TeamNumber) const;

@@ -42,6 +42,8 @@
 #include "UTRallyPoint.h"
 #include "UTRemoteRedeemer.h"
 #include "UTFlagRunScoring.h"
+#include "UTLineUpHelper.h"
+#include "UTShowdownStatusMessage.h"
 
 AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -170,6 +172,18 @@ float AUTFlagRunGame::RatePlayerStart(APlayerStart* P, AController* Player)
 		}
 	}
 	return Result;
+}
+
+bool AUTFlagRunGame::ChangeTeam(AController* Player, uint8 NewTeamIndex, bool bBroadcast)
+{
+	AUTPlayerState* PS = Cast<AUTPlayerState>(Player->PlayerState);
+	AUTTeamInfo* OldTeam = PS->Team;
+	bool bResult = Super::ChangeTeam(Player, NewTeamIndex, bBroadcast);
+	if (bResult && (GetMatchState() == MatchState::InProgress))
+	{
+		HandleTeamChange(PS, OldTeam);
+	}
+	return bResult;
 }
 
 AActor* AUTFlagRunGame::FindPlayerStart_Implementation(AController* Player, const FString& IncomingName)
@@ -317,32 +331,66 @@ int32 AUTFlagRunGame::PickCheatWinTeam()
 	return (FRGS && FRGS->bRedToCap) ? 0 : 1;
 }
 
+bool AUTFlagRunGame::CheckScore_Implementation(AUTPlayerState* Scorer)
+{
+	CheckForWinner(Scorer->Team);
+	return true;
+}
+
 bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 {
-	if (Super::CheckForWinner(ScoringTeam))
+	if (ScoringTeam && CTFGameState && (CTFGameState->CTFRound >= NumRounds) && (CTFGameState->CTFRound % 2 == 0))
 	{
-		if (FUTAnalytics::IsAvailable())
+		AUTTeamInfo* BestTeam = ScoringTeam;
+		bool bHaveTie = false;
+
+		// Check if team with highest score has reached goal score
+		for (AUTTeamInfo* Team : Teams)
 		{
-			const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
-			int WinningTeamNum = 0;
-			if (ScoringTeam)
+			if (Team->Score > BestTeam->Score)
 			{
-				WinningTeamNum = ScoringTeam->GetTeamNum();
+				BestTeam = Team;
+				bHaveTie = false;
+				bSecondaryWin = false;
 			}
-			else
+			else if ((Team != BestTeam) && (Team->Score == BestTeam->Score))
 			{
-				for (int TeamNumIndex = 0; TeamNumIndex < Teams.Num(); ++TeamNumIndex)
+				bHaveTie = true;
+				AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(UTGameState);
+				if (GS && (GS->TiebreakValue != 0))
 				{
-					if (IsTeamOnDefense(Teams.Num()))
-					{
-						WinningTeamNum = Teams[TeamNumIndex]->GetTeamNum();
-					}
+					BestTeam = (GS->TiebreakValue > 0) ? Teams[0] : Teams[1];
+					bHaveTie = false;
+					bSecondaryWin = true;
 				}
 			}
-
-			FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true, WinningTeamNum);
 		}
-		return true;
+		if (!bHaveTie)
+		{
+			EndTeamGame(BestTeam, FName(TEXT("scorelimit")));
+			if (FUTAnalytics::IsAvailable())
+			{
+				const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
+				int WinningTeamNum = 0;
+				if (ScoringTeam)
+				{
+					WinningTeamNum = ScoringTeam->GetTeamNum();
+				}
+				else
+				{
+					for (int TeamNumIndex = 0; TeamNumIndex < Teams.Num(); ++TeamNumIndex)
+					{
+						if (IsTeamOnDefense(Teams.Num()))
+						{
+							WinningTeamNum = Teams[TeamNumIndex]->GetTeamNum();
+						}
+					}
+				}
+
+				FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true, WinningTeamNum);
+			}
+			return true;
+		}
 	}
 
 	// Check if a team has an insurmountable lead
@@ -1129,7 +1177,47 @@ void AUTFlagRunGame::HandleTeamChange(AUTPlayerState* PS, AUTTeamInfo* OldTeam)
 			PS->BoostClass = SelectedBoost;
 		}
 	}
-	Super::HandleTeamChange(PS, OldTeam);
+	if ((GetWorld()->WorldType == EWorldType::PIE) || bDevServer || !PS || !UTGameState || (UTGameState->GetMatchState() != MatchState::InProgress))
+	{
+		return;
+	}
+	if (bSitOutDuringRound)
+	{
+		PS->RemainingLives = 0;
+	}
+	if (PS->RemainingLives == 0 && IsPlayerOnLifeLimitedTeam(PS))
+	{
+		PS->SetOutOfLives(true);
+		PS->ForceRespawnTime = 1.f;
+	}
+
+	// verify that OldTeam and New team still have live players
+	AUTTeamInfo* NewTeam = PS->Team;
+	bool bOldTeamHasPlayers = false;
+	bool bNewTeamHasPlayers = false;
+	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+	{
+		AUTPlayerState* OtherPS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+		if (OtherPS && !OtherPS->bOutOfLives && !OtherPS->bIsInactive)
+		{
+			if (OldTeam && (OtherPS->Team == OldTeam))
+			{
+				bOldTeamHasPlayers = true;
+			}
+			if (NewTeam && (OtherPS->Team == NewTeam))
+			{
+				bNewTeamHasPlayers = true;
+			}
+		}
+	}
+	if (!bOldTeamHasPlayers && OldTeam)
+	{
+		ScoreAlternateWin((OldTeam->TeamIndex == 0) ? 1 : 0);
+	}
+	else if (!bNewTeamHasPlayers && NewTeam)
+	{
+		ScoreAlternateWin((NewTeam->TeamIndex == 0) ? 1 : 0);
+	}
 }
 
 AActor* AUTFlagRunGame::SetIntermissionCameras(uint32 TeamToWatch)
@@ -1182,11 +1270,49 @@ void AUTFlagRunGame::SendRestartNotifications(AUTPlayerState* PS, AUTPlayerContr
 
 void AUTFlagRunGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AUTCharacter* HolderPawn, AUTPlayerState* Holder, FName Reason)
 {
-	Super::ScoreObject_Implementation(GameObject,HolderPawn,Holder,Reason);
+	for (int32 i = 0; i < Teams.Num(); i++)
+	{
+		if (Teams[i])
+		{
+			Teams[i]->RoundBonus = 0;
+		}
+	}
+	if (Reason == FName("FlagCapture"))
+	{
+		if (UTGameState)
+		{
+			// force replication of server clock time
+			UTGameState->SetRemainingTime(UTGameState->GetRemainingTime());
+			if (Holder && Holder->Team)
+			{
+				Holder->Team->RoundBonus = FMath::Min(MaxTimeScoreBonus, UTGameState->GetRemainingTime());
+				UpdateTiebreak(Holder->Team->RoundBonus, Holder->Team->TeamIndex);
+			}
+		}
+	}
+
+	Super::ScoreObject_Implementation(GameObject, HolderPawn, Holder, Reason);
 
 	if (UTGameState)
 	{
 		UTGameState->ScoringPlayerState = Cast<AUTPlayerState>(HolderPawn->PlayerState);
+	}
+}
+
+
+void AUTFlagRunGame::ScoreRedAlternateWin()
+{
+	if (IsMatchInProgress() && (GetMatchState() != MatchState::MatchIntermission))
+	{
+		ScoreAlternateWin(0);
+	}
+}
+
+void AUTFlagRunGame::ScoreBlueAlternateWin()
+{
+	if (IsMatchInProgress() && (GetMatchState() != MatchState::MatchIntermission))
+	{
+		ScoreAlternateWin(1);
 	}
 }
 
@@ -1218,7 +1344,92 @@ void AUTFlagRunGame::ScoreAlternateWin(int32 WinningTeamIndex, uint8 Reason /* =
 		}
 	}
 
-	Super::ScoreAlternateWin(WinningTeamIndex, Reason);
+	FindAndMarkHighScorer();
+	AUTTeamInfo* WinningTeam = (Teams.Num() > WinningTeamIndex) ? Teams[WinningTeamIndex] : NULL;
+	if (WinningTeam)
+	{
+		if (Reason != 2)
+		{
+			WinningTeam->Score += IsTeamOnOffense(WinningTeamIndex) ? GetFlagCapScore() : GetDefenseScore();
+		}
+		if (CTFGameState)
+		{
+			for (int32 i = 0; i < Teams.Num(); i++)
+			{
+				if (Teams[i])
+				{
+					Teams[i]->RoundBonus = 0;
+				}
+			}
+			if (Reason != 2)
+			{
+				WinningTeam->RoundBonus = FMath::Min(MaxTimeScoreBonus, CTFGameState->GetRemainingTime());
+				UpdateTiebreak(WinningTeam->RoundBonus, WinningTeam->TeamIndex);
+			}
+
+			FCTFScoringPlay NewScoringPlay;
+			NewScoringPlay.Team = WinningTeam;
+			NewScoringPlay.bDefenseWon = !IsTeamOnOffense(WinningTeamIndex);
+			NewScoringPlay.Period = CTFGameState->CTFRound;
+			NewScoringPlay.bAnnihilation = (Reason == 0);
+			NewScoringPlay.TeamScores[0] = CTFGameState->Teams[0] ? CTFGameState->Teams[0]->Score : 0;
+			NewScoringPlay.TeamScores[1] = CTFGameState->Teams[1] ? CTFGameState->Teams[1]->Score : 0;
+			NewScoringPlay.RemainingTime = CTFGameState->GetRemainingTime();
+			NewScoringPlay.RedBonus = CTFGameState->Teams[0] ? CTFGameState->Teams[0]->RoundBonus : 0;
+			NewScoringPlay.BlueBonus = CTFGameState->Teams[1] ? CTFGameState->Teams[1]->RoundBonus : 0;
+			CTFGameState->AddScoringPlay(NewScoringPlay);
+
+			// force replication of server clock time
+			CTFGameState->SetRemainingTime(CTFGameState->GetRemainingTime());
+		}
+
+		WinningTeam->ForceNetUpdate();
+		LastTeamToScore = WinningTeam;
+		AnnounceWin(WinningTeam, nullptr, Reason);
+		CheckForWinner(LastTeamToScore);
+		if (UTGameState->IsMatchInProgress())
+		{
+			SetMatchState(MatchState::MatchIntermission);
+		}
+
+		if (FUTAnalytics::IsAvailable())
+		{
+			if (GetWorld()->GetNetMode() != NM_Standalone)
+			{
+				TArray<FAnalyticsEventAttribute> ParamArray;
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("FlagCapScore"), 0));
+				FUTAnalytics::SetMatchInitialParameters(this, ParamArray, true);
+				FUTAnalytics::GetProvider().RecordEvent(TEXT("RCTFRoundResult"), ParamArray);
+			}
+		}
+	}
+}
+
+void AUTFlagRunGame::UpdateTiebreak(int32 Bonus, int32 TeamIndex)
+{
+	AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(CTFGameState);
+	if (RCTFGameState)
+	{
+		if (Bonus == MaxTimeScoreBonus)
+		{
+			Bonus = 60;
+		}
+		else
+		{
+			while (Bonus > 59)
+			{
+				Bonus -= 60;
+			}
+		}
+		if (TeamIndex == 0)
+		{
+			RCTFGameState->TiebreakValue += Bonus;
+		}
+		else
+		{
+			RCTFGameState->TiebreakValue -= Bonus;
+		}
+	}
 }
 
 bool AUTFlagRunGame::SupportsInstantReplay() const
@@ -1293,4 +1504,148 @@ bool AUTFlagRunGame::PlayerWonChallenge()
 	APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
 	AUTPlayerState* PS = LocalPC ? Cast<AUTPlayerState>(LocalPC->PlayerState) : NULL;
 	return PS && PS->Team && (PS->Team == UTGameState->WinningTeam);
+}
+
+void AUTFlagRunGame::CheckGameTime()
+{
+	AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(CTFGameState);
+	if (RCTFGameState && RCTFGameState->IsMatchIntermission())
+	{
+		if (RCTFGameState->IntermissionTime <= 0)
+		{
+			SetMatchState(MatchState::MatchExitingIntermission);
+		}
+	}
+	else if ((GetMatchState() == MatchState::InProgress) && TimeLimit > 0)
+	{
+		CheckRoundTimeVictory();
+	}
+	else
+	{
+		Super::CheckGameTime();
+	}
+}
+
+void AUTFlagRunGame::EndPlayerIntro()
+{
+	BeginGame();
+}
+
+uint8 AUTFlagRunGame::GetWinningTeamForLineUp() const
+{
+	uint8 Result = Super::GetWinningTeamForLineUp();
+	if (Result == 255)
+	{
+		if (FlagScorer != nullptr)
+		{
+			Result = FlagScorer->GetTeamNum();
+		}
+		else if (CTFGameState != nullptr && CTFGameState->GetScoringPlays().Num() > 0)
+		{
+			const TArray<const FCTFScoringPlay>& ScoringPlays = CTFGameState->GetScoringPlays();
+			const FCTFScoringPlay& WinningPlay = ScoringPlays.Last();
+
+			if (WinningPlay.Team)
+			{
+				Result = WinningPlay.Team->GetTeamNum();
+			}
+		}
+	}
+	return Result;
+}
+
+void AUTFlagRunGame::RestartPlayer(AController* aPlayer)
+{
+	if ((!IsMatchInProgress() && bPlacingPlayersAtIntermission) || (GetMatchState() == MatchState::MatchIntermission) || (UTGameState && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive && UTGameState->LineUpHelper->bIsPlacingPlayers))
+	{
+		// placing players during intermission
+		if (bPlacingPlayersAtIntermission || (UTGameState && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive && UTGameState->LineUpHelper->bIsPlacingPlayers))
+		{
+			AGameMode::RestartPlayer(aPlayer);
+		}
+		return;
+	}
+	AUTPlayerState* PS = Cast<AUTPlayerState>(aPlayer->PlayerState);
+	AUTPlayerController* PC = Cast<AUTPlayerController>(aPlayer);
+	if (PS && PS->Team && HasMatchStarted())
+	{
+		if (IsPlayerOnLifeLimitedTeam(PS) && (PS->RemainingLives == 0) && (GetMatchState() == MatchState::InProgress))
+		{
+			// failsafe for player that leaves match before RemainingLives are set and then rejoins
+			PS->SetOutOfLives(true);
+		}
+		if (PS->bOutOfLives)
+		{
+			if (PC != NULL)
+			{
+				PC->ChangeState(NAME_Spectating);
+				PC->ClientGotoState(NAME_Spectating);
+
+				for (AController* Member : PS->Team->GetTeamMembers())
+				{
+					if (Member->GetPawn() != NULL)
+					{
+						PC->ServerViewPlayerState(Member->PlayerState);
+						break;
+					}
+				}
+			}
+			return;
+		}
+		if (IsPlayerOnLifeLimitedTeam(PS))
+		{
+			if ((PS->RemainingLives > 0) && IsMatchInProgress() && (GetMatchState() != MatchState::MatchIntermission))
+			{
+				if (PS->RemainingLives == 1)
+				{
+					if (PC)
+					{
+						PC->ClientReceiveLocalizedMessage(UUTShowdownStatusMessage::StaticClass(), 5, PS, NULL, NULL);
+					}
+					PS->AnnounceStatus(StatusMessage::LastLife, 0, true);
+					PS->RespawnWaitTime = 0.5f;
+					PS->ForceNetUpdate();
+					PS->OnRespawnWaitReceived();
+				}
+				else if (PC)
+				{
+					PC->ClientReceiveLocalizedMessage(UUTShowdownStatusMessage::StaticClass(), 30 + PS->RemainingLives, PS, NULL, NULL);
+				}
+			}
+			else
+			{
+				return;
+			}
+		}
+	}
+	SendRestartNotifications(PS, PC);
+	Super::RestartPlayer(aPlayer);
+
+	AUTCTFRoundGameState* RCTFGameState = Cast<AUTCTFRoundGameState>(CTFGameState);
+}
+
+void AUTFlagRunGame::SetPlayerStateInactive(APlayerState* NewPlayerState)
+{
+	Super::SetPlayerStateInactive(NewPlayerState);
+	AUTPlayerState* PS = Cast<AUTPlayerState>(NewPlayerState);
+	if (PS && !PS->bOnlySpectator && UTGameState && UTGameState->IsMatchIntermission())
+	{
+		PS->RemainingLives = RoundLives;
+	}
+	if (PS)
+	{
+		PS->ClearRoundStats();
+	}
+}
+
+void AUTFlagRunGame::BuildServerResponseRules(FString& OutRules)
+{
+	OutRules += FString::Printf(TEXT("Goal Score\t%i\t"), GoalScore);
+
+	AUTMutator* Mut = BaseMutator;
+	while (Mut)
+	{
+		OutRules += FString::Printf(TEXT("Mutator\t%s\t"), *Mut->DisplayName.ToString());
+		Mut = Mut->NextMutator;
+	}
 }

@@ -23,8 +23,6 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	BronzeBonusTimedText = NSLOCTEXT("FlagRun", "BronzeBonusTimeText", "\u2605 {BonusTime}");
 	BronzeBonusText = NSLOCTEXT("FlagRun", "BronzeBonusText", "\u2605");
 	BonusLevel = 3;
-	bAttackerLivesLimited = false;
-	bDefenderLivesLimited = true;
 	FlagRunMessageSwitch = 0;
 	FlagRunMessageTeam = nullptr;
 	bPlayStatusAnnouncements = true;
@@ -35,6 +33,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	SilverBonusThreshold = 60;
 	AttackText = NSLOCTEXT("UUTHUDWidget_TeamGameClock", "AttackingRole", "Rd {RoundNum}: Attacking on");
 	DefendText = NSLOCTEXT("UUTHUDWidget_TeamGameClock", "DefendingRole", "Rd {RoundNum}: Defending on");
+	TiebreakValue = 0;
 
 	HighlightMap.Add(HighlightNames::MostKillsTeam, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
 	HighlightMap.Add(HighlightNames::BadMF, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
@@ -135,6 +134,7 @@ void AUTFlagRunGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	DOREPLIFETIME(AUTFlagRunGameState, FlagRunMessageTeam);
 	DOREPLIFETIME(AUTFlagRunGameState, bAttackersCanRally);
 	DOREPLIFETIME(AUTFlagRunGameState, EarlyEndTime);
+	DOREPLIFETIME(AUTFlagRunGameState, TiebreakValue);
 	DOREPLIFETIME(AUTFlagRunGameState, bAllowBoosts);
 	DOREPLIFETIME(AUTFlagRunGameState, OffenseSelectablePowerups);
 	DOREPLIFETIME(AUTFlagRunGameState, DefenseSelectablePowerups);
@@ -798,6 +798,67 @@ FText AUTFlagRunGameState::OverrideRoleText(AUTPlayerState* PS)
 		return FText::Format(RoleText, Args);
 	}
 	return FText::GetEmpty();
+}
+
+/** Returns true if P1 should be sorted before P2.  */
+bool AUTFlagRunGameState::InOrder(AUTPlayerState* P1, AUTPlayerState* P2)
+{
+	// spectators are sorted last
+	if (P1->bOnlySpectator)
+	{
+		return P2->bOnlySpectator;
+	}
+	else if (P2->bOnlySpectator)
+	{
+		return true;
+	}
+
+	// sort by Score
+	if (P1->Score < P2->Score)
+	{
+		return false;
+	}
+	if (P1->Score == P2->Score)
+	{
+		// if score tied, use round kills to sort
+		if (P1->RoundKills > P2->RoundKills)
+			return false;
+
+		// keep local player highest on list
+		if ((P1->RoundKills == P2->RoundKills) && (Cast<APlayerController>(P2->GetOwner()) != NULL))
+		{
+			ULocalPlayer* LP2 = Cast<ULocalPlayer>(Cast<APlayerController>(P2->GetOwner())->Player);
+			if (LP2 != NULL)
+			{
+				// make sure ordering is consistent for splitscreen players
+				ULocalPlayer* LP1 = Cast<ULocalPlayer>(Cast<APlayerController>(P2->GetOwner())->Player);
+				return (LP1 != NULL);
+			}
+		}
+	}
+	return true;
+}
+
+FText AUTFlagRunGameState::GetGameStatusText(bool bForScoreboard)
+{
+	if (HasMatchEnded())
+	{
+		return GameOverStatus;
+	}
+	else if (GetMatchState() == MatchState::MapVoteHappening)
+	{
+		return MapVoteStatus;
+	}
+	else if ((CTFRound > 0) && IsMatchInProgress())
+	{
+		return GetRoundStatusText(bForScoreboard);
+	}
+	else if (IsMatchIntermission())
+	{
+		return IntermissionStatus;
+	}
+
+	return AUTGameState::GetGameStatusText(bForScoreboard);
 }
 
 
