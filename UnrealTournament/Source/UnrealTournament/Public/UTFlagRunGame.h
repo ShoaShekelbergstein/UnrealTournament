@@ -66,6 +66,9 @@ public:
 	virtual void ScoreRedAlternateWin();
 	virtual void ScoreBlueAlternateWin();
 
+	virtual void FlagCountDown();
+	virtual void FlagsAreReady();
+
 	virtual void HandleTeamChange(AUTPlayerState* PS, AUTTeamInfo* OldTeam);
 
 	virtual bool CheckForWinner(AUTTeamInfo* ScoringTeam);
@@ -78,27 +81,32 @@ public:
 
 	virtual void ResetFlags();
 
+	virtual void EndTeamGame(AUTTeamInfo* Winner, FName Reason);
+
+	virtual bool UTIsHandlingReplays() override { return false; }
+	virtual void StopRCTFReplayRecording();
+
 	virtual class AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = TEXT("")) override;
 	virtual void AnnounceWin(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 Reason);
 	virtual void NotifyFirstPickup(AUTCarriedObject* Flag) override;
 	virtual float GetScoreForXP(class AUTPlayerState* PS) override;
-
+	virtual void BeginGame() override;
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	virtual float OverrideRespawnTime(AUTPickupInventory* Pickup, TSubclassOf<AUTInventory> InventoryType) override;
 	virtual bool HandleRallyRequest(AController* C) override;
 	virtual void CompleteRallyRequest(AController* C) override;
 	virtual int32 PickCheatWinTeam() override;
 	virtual bool AvoidPlayerStart(class AUTPlayerStart* P) override;
-	virtual void InitDelayedFlag(class AUTCarriedObject* Flag) override;
-	virtual void InitFlagForRound(class AUTCarriedObject* Flag) override;
-	virtual void IntermissionSwapSides() override;
+	virtual void InitDelayedFlag(class AUTCarriedObject* Flag);
+	virtual void InitFlagForRound(class AUTCarriedObject* Flag);
+	virtual void IntermissionSwapSides();
 	virtual int32 GetFlagCapScore() override;
 	virtual int32 GetDefenseScore();
 	virtual void BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo* ScoringTeam, int32 OldScore = 0) override;
 	virtual void CheckRoundTimeVictory();
-	virtual void InitGameStateForRound() override;
+	virtual void InitGameStateForRound();
 	virtual bool IsTeamOnOffense(int32 TeamNumber) const;
-	virtual AActor* SetIntermissionCameras(uint32 TeamToWatch) override;
+	virtual AActor* SetIntermissionCameras(uint32 TeamToWatch);
 	virtual void SendRestartNotifications(AUTPlayerState* PS, AUTPlayerController* PC);
 	virtual bool PlayerWonChallenge() override;
 	virtual bool ChangeTeam(AController* Player, uint8 NewTeam, bool bBroadcast) override;
@@ -113,9 +121,10 @@ public:
 	virtual void PlayEndOfMatchMessage() override;
 	virtual void CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps);
 	virtual void ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType) override;
+	virtual void InitGameState() override;
 
 	virtual int32 GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPlayerController* Instigator, UWorld* World);
-	virtual void InitFlags() override;
+	virtual void InitFlags();
 	virtual void HandleMatchIntermission() override;
 	virtual void CheatScore() override;
 	virtual void DefaultTimer() override;

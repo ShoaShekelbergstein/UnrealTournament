@@ -70,26 +70,6 @@ class UNREALTOURNAMENT_API AUTCTFRoundGame : public AUTCTFBaseGame
 	UPROPERTY()
 		AUTPlayerState* FlagScorer;
 
-	virtual void InitFlags();
-	virtual void InitDelayedFlag(class AUTCarriedObject* Flag);
-	virtual void InitFlagForRound(class AUTCarriedObject* Flag);
-	virtual void IntermissionSwapSides();
-	virtual void FlagCountDown();
-	virtual void FlagsAreReady();
-	virtual void InitGameStateForRound();
-
-	virtual AActor* SetIntermissionCameras(uint32 TeamToWatch);
-
-	virtual void BeginGame() override;
-	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
-	virtual void HandleMatchIntermission() override;
-	virtual void InitGameState() override;
-
-	virtual void EndTeamGame(AUTTeamInfo* Winner, FName Reason);
-
-	virtual bool UTIsHandlingReplays() override { return false; }
-	virtual void StopRCTFReplayRecording();
-
 protected:
 
 	UPROPERTY()

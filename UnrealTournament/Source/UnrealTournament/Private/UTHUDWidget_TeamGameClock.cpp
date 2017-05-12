@@ -2,7 +2,6 @@
 #include "UnrealTournament.h"
 #include "UTHUDWidget_TeamGameClock.h"
 #include "UTCTFGameState.h"
-#include "UTCTFRoundGameState.h"
 
 UUTHUDWidget_TeamGameClock::UUTHUDWidget_TeamGameClock(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)

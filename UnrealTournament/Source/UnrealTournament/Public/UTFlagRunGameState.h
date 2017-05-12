@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "UTCTFRoundGameState.h"
+#include "UTCTFGameState.h"
 #include "UTFlagRunGameState.generated.h"
 
 UCLASS()
-class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
+class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFGameState
 {
 	GENERATED_UCLASS_BODY()
 
@@ -58,6 +58,9 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFRoundGameState
 
 	UPROPERTY(Replicated)
 		int32 TiebreakValue;
+
+	UPROPERTY(Replicated)
+		int32 RemainingPickupDelay;
 
 	UPROPERTY(Replicated)
 		class AUTTeamInfo* FlagRunMessageTeam;

@@ -34,6 +34,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	AttackText = NSLOCTEXT("UUTHUDWidget_TeamGameClock", "AttackingRole", "Rd {RoundNum}: Attacking on");
 	DefendText = NSLOCTEXT("UUTHUDWidget_TeamGameClock", "DefendingRole", "Rd {RoundNum}: Defending on");
 	TiebreakValue = 0;
+	RemainingPickupDelay = 0;
 
 	HighlightMap.Add(HighlightNames::MostKillsTeam, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
 	HighlightMap.Add(HighlightNames::BadMF, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
@@ -130,6 +131,7 @@ void AUTFlagRunGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	DOREPLIFETIME(AUTFlagRunGameState, BonusLevel);
 	DOREPLIFETIME(AUTFlagRunGameState, CurrentRallyPoint);
 	DOREPLIFETIME(AUTFlagRunGameState, bEnemyRallyPointIdentified);
+	DOREPLIFETIME(AUTFlagRunGameState, RemainingPickupDelay);
 	DOREPLIFETIME(AUTFlagRunGameState, FlagRunMessageSwitch);
 	DOREPLIFETIME(AUTFlagRunGameState, FlagRunMessageTeam);
 	DOREPLIFETIME(AUTFlagRunGameState, bAttackersCanRally);

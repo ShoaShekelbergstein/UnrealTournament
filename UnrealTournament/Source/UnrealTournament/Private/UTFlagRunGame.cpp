@@ -45,9 +45,46 @@
 #include "UTLineUpHelper.h"
 #include "UTShowdownStatusMessage.h"
 
+//Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
+/*
+* @EventName RCTFRoundResult
+* @Trigger Sent when a round ends in an RCTF game through Score Alternate Win
+* @Type Sent by the Server
+* @EventParam FlagCapScore int32 Always 0, just shows that someone caped flag
+* @Comments
+*/
+
 AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	TimeLimit = 5;
+	IntermissionDuration = 28.f;
+	RoundLives = 5;
+	bNeedFiveKillsMessage = true;
+	FlagCapScore = 1;
+	UnlimitedRespawnWaitTime = 2.f;
+	bForceRespawn = true;
+	bFirstRoundInitialized = false;
+	HUDClass = AUTFlagRunHUD::StaticClass();
+	SquadType = AUTAsymCTFSquadAI::StaticClass();
+	NumRounds = 6;
+	InitialBoostCount = 0;
+	MaxTimeScoreBonus = 180;
+	bGameHasTranslocator = false;
+
+	RollingAttackerRespawnDelay = 5.f;
+	LastAttackerSpawnTime = 0.f;
+	RollingSpawnStartTime = 0.f;
+	bRollingAttackerSpawns = true;
+	ForceRespawnTime = 0.1f;
+	LimitedRespawnWaitTime = 6.f;
+	MatchSummaryDelay = 20.f;
+
+	bSitOutDuringRound = false;
+	EndOfMatchMessageDelay = 2.5f;
+	bUseLevelTiming = true;
+
+
 	GoldScore = 3;
 	SilverScore = 2;
 	BronzeScore = 1;
@@ -94,6 +131,17 @@ void AUTFlagRunGame::InitGame(const FString& MapName, const FString& Options, FS
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
 
+	if (!UGameplayStatics::HasOption(Options, TEXT("TimeLimit")) || (TimeLimit <= 0))
+	{
+		AUTWorldSettings* WorldSettings = bUseLevelTiming ? Cast<AUTWorldSettings>(GetWorldSettings()) : nullptr;
+		TimeLimit = WorldSettings ? WorldSettings->DefaultRoundLength : TimeLimit;
+	}
+
+	// key options are ?RoundLives=xx?Dash=xx?Asymm=xx?PerPlayerLives=xx?OffKillsForPowerup=xx?DefKillsForPowerup=xx?DelayRally=xxx?Boost=xx
+	RoundLives = FMath::Max(1, UGameplayStatics::GetIntOption(Options, TEXT("RoundLives"), RoundLives));
+
+	FlagPickupDelay = FMath::Max(1, UGameplayStatics::GetIntOption(Options, TEXT("FlagDelay"), FlagPickupDelay));
+
 	if (!ActivatedPowerupPlaceholderObject.IsNull())
 	{
 		ActivatedPowerupPlaceholderClass = Cast<UClass>(StaticLoadObject(UClass::StaticClass(), NULL, *ActivatedPowerupPlaceholderObject.ToStringReference().ToString(), NULL, LOAD_NoWarn));
@@ -111,6 +159,14 @@ void AUTFlagRunGame::InitGame(const FString& MapName, const FString& Options, FS
 	bSlowFlagCarrier = EvalBoolOptions(InOpt, bSlowFlagCarrier);
 }
 
+void AUTFlagRunGame::InitGameState()
+{
+	Super::InitGameState();
+
+	CTFGameState->CTFRound = 1;
+	CTFGameState->NumRounds = NumRounds;
+}
+
 void AUTFlagRunGame::PostLogin(APlayerController* NewPlayer)
 {
 	if (NewPlayer)
@@ -124,6 +180,73 @@ void AUTFlagRunGame::PostLogin(APlayerController* NewPlayer)
 	}
 	Super::PostLogin(NewPlayer);
 }
+
+void AUTFlagRunGame::BeginGame()
+{
+	UE_LOG(UT, Log, TEXT("BEGIN GAME GameType: %s"), *GetNameSafe(this));
+	UE_LOG(UT, Log, TEXT("Difficulty: %f GoalScore: %i TimeLimit (sec): %i"), GameDifficulty, GoalScore, TimeLimit);
+
+	for (FActorIterator It(GetWorld()); It; ++It)
+	{
+		AActor* TestActor = *It;
+		if (TestActor && !TestActor->IsPendingKill() && TestActor->IsA<AUTPlayerState>())
+		{
+			Cast<AUTPlayerState>(TestActor)->StartTime = 0;
+			Cast<AUTPlayerState>(TestActor)->bSentLogoutAnalytics = false;
+		}
+		else if (TestActor && !TestActor->IsPendingKill() && TestActor->IsA<AUTProjectile>())
+		{
+			TestActor->Destroy();
+		}
+	}
+	if (CTFGameState)
+	{
+		CTFGameState->ElapsedTime = 0;
+	}
+
+	//Let the game session override the StartMatch function, in case it wants to wait for arbitration
+	if (GameSession->HandleStartMatchRequest())
+	{
+		return;
+	}
+	if (CTFGameState)
+	{
+		CTFGameState->CTFRound = 1;
+		CTFGameState->NumRounds = NumRounds;
+		CTFGameState->HalftimeScoreDelay = 0.5f;
+	}
+	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+	{
+		AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+		if (UTPlayerState)
+		{
+			UTPlayerState->NotIdle();
+		}
+	}
+
+	if (GetNetMode() == NM_Standalone)
+	{
+		IntermissionDuration = 15.f;
+	}
+
+	float RealIntermissionDuration = IntermissionDuration;
+	IntermissionDuration = bBasicTrainingGame ? 12.f : 6.f;
+	SetMatchState(MatchState::MatchIntermission);
+	IntermissionDuration = RealIntermissionDuration;
+
+	if ((!GetWorld() || !GetWorld()->GetGameState<AUTGameState>() || !GetWorld()->GetGameState<AUTGameState>()->LineUpHelper || !GetWorld()->GetGameState<AUTGameState>()->LineUpHelper->bIsActive))
+	{
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			AUTPlayerController* PC = Cast<AUTPlayerController>(It->Get());
+			if (PC)
+			{
+				PC->ViewStartSpot();
+			}
+		}
+	}
+}
+
 
 float AUTFlagRunGame::GetScoreForXP(AUTPlayerState* PS)
 {
@@ -172,10 +295,11 @@ void AUTFlagRunGame::BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo*
 
 void AUTFlagRunGame::InitGameStateForRound()
 {
-	Super::InitGameStateForRound();
 	AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(CTFGameState);
 	if (FRGS)
 	{
+		FRGS->CTFRound++;
+		FRGS->RemainingPickupDelay = FlagPickupDelay;
 		FRGS->bRedToCap = !FRGS->bRedToCap;
 		FRGS->CurrentRallyPoint = nullptr;
 		FRGS->PendingRallyPoint = nullptr;
@@ -287,14 +411,20 @@ void AUTFlagRunGame::CheckRoundTimeVictory()
 
 void AUTFlagRunGame::InitDelayedFlag(AUTCarriedObject* Flag)
 {
-	Super::InitDelayedFlag(Flag);
-	if (Flag && IsTeamOnOffense(Flag->GetTeamNum()))
+	if (Flag != nullptr)
 	{
-		Flag->SetActorHiddenInGame(true);
-		FFlagTrailPos NewPosition;
-		NewPosition.Location = Flag->GetHomeLocation();
-		NewPosition.MidPoints[0] = FVector(0.f);
-		Flag->PutGhostFlagAt(NewPosition);
+		Flag->bEnemyCanPickup = false;
+		Flag->bFriendlyCanPickup = false;
+		Flag->bTeamPickupSendsHome = false;
+		Flag->bEnemyPickupSendsHome = false;
+		if (IsTeamOnOffense(Flag->GetTeamNum()))
+		{
+			Flag->SetActorHiddenInGame(true);
+			FFlagTrailPos NewPosition;
+			NewPosition.Location = Flag->GetHomeLocation();
+			NewPosition.MidPoints[0] = FVector(0.f);
+			Flag->PutGhostFlagAt(NewPosition);
+		}
 	}
 }
 
@@ -347,7 +477,48 @@ void AUTFlagRunGame::IntermissionSwapSides()
 
 void AUTFlagRunGame::InitFlags()
 {
-	Super::InitFlags();
+	for (AUTCTFFlagBase* Base : CTFGameState->FlagBases)
+	{
+		if (Base != NULL && Base->MyFlag)
+		{
+			InitFlagForRound(Base->MyFlag);
+
+			// check for flag carrier already here waiting
+			TArray<AActor*> Overlapping;
+			Base->MyFlag->GetOverlappingActors(Overlapping, AUTCharacter::StaticClass());
+			// try humans first, then bots
+			for (AActor* A : Overlapping)
+			{
+				AUTCharacter* Character = Cast<AUTCharacter>(A);
+				if (Character != nullptr && Cast<APlayerController>(Character->Controller) != nullptr)
+				{
+					if (!GetWorld()->LineTraceTestByChannel(Character->GetActorLocation(), Base->MyFlag->GetActorLocation(), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams))
+					{
+						Base->MyFlag->TryPickup(Character);
+						if (Base->MyFlag->ObjectState == CarriedObjectState::Held)
+						{
+							return;
+						}
+					}
+				}
+			}
+			for (AActor* A : Overlapping)
+			{
+				AUTCharacter* Character = Cast<AUTCharacter>(A);
+				if (Character != nullptr && Cast<APlayerController>(Character->Controller) == nullptr)
+				{
+					if (!GetWorld()->LineTraceTestByChannel(Character->GetActorLocation(), Base->MyFlag->GetActorLocation(), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams))
+					{
+						Base->MyFlag->TryPickup(Character);
+						if (Base->MyFlag->ObjectState == CarriedObjectState::Held)
+						{
+							return;
+						}
+					}
+				}
+			}
+		}
+	}
 	for (AUTCTFFlagBase* Base : CTFGameState->FlagBases)
 	{
 		if (Base)
@@ -1017,7 +1188,57 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 
 void AUTFlagRunGame::HandleMatchIntermission()
 {
-	Super::HandleMatchIntermission();
+	if (bFirstRoundInitialized)
+	{
+		// kick idlers
+		if (UTGameState && GameSession && !bIgnoreIdlePlayers && !bIsLANGame)
+		{
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				if (UTPlayerState && IsPlayerIdle(UTPlayerState) && Cast<APlayerController>(UTPlayerState->GetOwner()))
+				{
+					Cast<APlayerController>(UTPlayerState->GetOwner())->ClientWasKicked(NSLOCTEXT("General", "IdleKick", "You were kicked for being idle."));
+					UTPlayerState->GetOwner()->Destroy();
+				}
+			}
+		}
+
+		// view defender base, with last team to score around it
+		int32 TeamToWatch = IntermissionTeamToView(nullptr);
+
+		if ((CTFGameState == NULL) || (TeamToWatch >= CTFGameState->FlagBases.Num()) || (CTFGameState->FlagBases[TeamToWatch] == NULL))
+		{
+			return;
+		}
+
+		UTGameState->PrepareForIntermission();
+
+		AActor* IntermissionFocus = SetIntermissionCameras(TeamToWatch);
+		// Tell the controllers to look at defender base
+		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+		{
+			AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+			if (PC != NULL)
+			{
+				PC->ClientPrepareForIntermission();
+				PC->SetViewTarget(IntermissionFocus);
+			}
+		}
+
+		if (UTGameState->LineUpHelper)
+		{
+			UTGameState->LineUpHelper->HandleLineUp(LineUpTypes::Intermission);
+		}
+	}
+
+	if (CTFGameState)
+	{
+		CTFGameState->bIsAtIntermission = true;
+		CTFGameState->bStopGameClock = true;
+		CTFGameState->IntermissionTime = IntermissionDuration;
+	}
+
 	AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(UTGameState);
 	if (GS && GS->GetScoringPlays().Num() > 0)
 	{
@@ -1662,8 +1883,6 @@ void AUTFlagRunGame::RestartPlayer(AController* aPlayer)
 	}
 	SendRestartNotifications(PS, PC);
 	Super::RestartPlayer(aPlayer);
-
-	AUTCTFRoundGameState* RCTFGameState = Cast<AUTCTFRoundGameState>(CTFGameState);
 }
 
 void AUTFlagRunGame::SetPlayerStateInactive(APlayerState* NewPlayerState)
@@ -1934,7 +2153,7 @@ void AUTFlagRunGame::InitRound()
 			}
 		}
 		FTimerHandle TempHandle;
-		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTCTFRoundGame::FlagCountDown, 1.f*GetActorTimeDilation(), false);
+		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTFlagRunGame::FlagCountDown, 1.f*GetActorTimeDilation(), false);
 	}
 	else
 	{
@@ -2011,4 +2230,125 @@ bool AUTFlagRunGame::IsTeamOnDefense(int32 TeamNumber) const
 bool AUTFlagRunGame::IsPlayerOnLifeLimitedTeam(AUTPlayerState* PlayerState) const
 {
 	return PlayerState && PlayerState->Team && IsTeamOnDefense(PlayerState->Team->TeamIndex);
+}
+
+void AUTFlagRunGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
+{
+	// Dont ever end the game in PIE
+	if (GetWorld()->WorldType == EWorldType::PIE) return;
+
+	UTGameState->WinningTeam = Winner;
+	EndTime = GetWorld()->TimeSeconds;
+
+	APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
+	UUTLocalPlayer* LP = LocalPC ? Cast<UUTLocalPlayer>(LocalPC->Player) : NULL;
+	if (LP)
+	{
+		LP->EarnedStars = 0;
+		LP->RosterUpgradeText = FText::GetEmpty();
+		if (bOfflineChallenge && PlayerWonChallenge())
+		{
+			LP->ChallengeCompleted(ChallengeTag, ChallengeDifficulty + 1);
+		}
+	}
+
+	if (IsGameInstanceServer() && LobbyBeacon)
+	{
+		FString MatchStats = FString::Printf(TEXT("%i"), CTFGameState->ElapsedTime);
+
+		FMatchUpdate MatchUpdate;
+		MatchUpdate.GameTime = UTGameState->ElapsedTime;
+		MatchUpdate.NumPlayers = NumPlayers;
+		MatchUpdate.NumSpectators = NumSpectators;
+		MatchUpdate.MatchState = MatchState;
+		MatchUpdate.bMatchHasBegun = HasMatchStarted();
+		MatchUpdate.bMatchHasEnded = HasMatchEnded();
+
+		UpdateLobbyScore(MatchUpdate);
+		LobbyBeacon->EndGame(MatchUpdate);
+	}
+
+	// SETENDGAMEFOCUS
+	EndMatch();
+	AActor* EndMatchFocus = SetIntermissionCameras(Winner->TeamIndex);
+
+	AUTCTFFlagBase* WinningBase = Cast<AUTCTFFlagBase>(EndMatchFocus);
+	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+	{
+		AUTPlayerController* Controller = Cast<AUTPlayerController>(*Iterator);
+		if (Controller && Controller->UTPlayerState)
+		{
+			AUTCTFFlagBase* BaseToView = WinningBase;
+			// If we don't have a winner, view my base
+			if (BaseToView == NULL)
+			{
+				AUTTeamInfo* MyTeam = Controller->UTPlayerState->Team;
+				if (MyTeam)
+				{
+					BaseToView = CTFGameState->FlagBases[MyTeam->GetTeamNum()];
+				}
+			}
+
+			if (BaseToView)
+			{
+				if (UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive)
+				{
+					Controller->GameHasEnded(Controller->GetPawn(), (Controller->UTPlayerState->Team && (Controller->UTPlayerState->Team->TeamIndex == Winner->TeamIndex)));
+				}
+				else
+				{
+					Controller->GameHasEnded(BaseToView, (Controller->UTPlayerState->Team && (Controller->UTPlayerState->Team->TeamIndex == Winner->TeamIndex)));
+				}
+			}
+		}
+	}
+
+	// Allow replication to happen before reporting scores, stats, etc.
+	FTimerHandle TempHandle;
+	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::HandleMatchHasEnded, 1.5f);
+	bGameEnded = true;
+
+	// Setup a timer to continue to the next map.  Need enough time for match summaries
+	EndTime = GetWorld()->TimeSeconds;
+	float TravelDelay = GetTravelDelay();
+	FTimerHandle TempHandle3;
+	GetWorldTimerManager().SetTimer(TempHandle3, this, &AUTGameMode::TravelToNextMap, TravelDelay*GetActorTimeDilation());
+
+	FTimerHandle TempHandle4;
+	float EndReplayDelay = TravelDelay - 10.f;
+	GetWorldTimerManager().SetTimer(TempHandle4, this, &AUTFlagRunGame::StopRCTFReplayRecording, EndReplayDelay);
+
+	SendEndOfGameStats(Reason);
+}
+
+void AUTFlagRunGame::StopRCTFReplayRecording()
+{
+	if (Super::UTIsHandlingReplays() && GetGameInstance() != nullptr)
+	{
+		GetGameInstance()->StopRecordingReplay();
+	}
+}
+
+void AUTFlagRunGame::FlagCountDown()
+{
+	AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(CTFGameState);
+	if (RCTFGameState && IsMatchInProgress() && (MatchState != MatchState::MatchIntermission))
+	{
+		RCTFGameState->RemainingPickupDelay--;
+		if (RCTFGameState->RemainingPickupDelay > 0)
+		{
+			FTimerHandle TempHandle;
+			GetWorldTimerManager().SetTimer(TempHandle, this, &AUTFlagRunGame::FlagCountDown, 1.f*GetActorTimeDilation(), false);
+		}
+		else
+		{
+			FlagsAreReady();
+		}
+	}
+}
+
+void AUTFlagRunGame::FlagsAreReady()
+{
+	BroadcastLocalized(this, UUTCTFMajorMessage::StaticClass(), 21, NULL, NULL, NULL);
+	InitFlags();
 }
