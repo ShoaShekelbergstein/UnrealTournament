@@ -60,8 +60,6 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	MapPrefix = TEXT("FR");
 	GameStateClass = AUTFlagRunGameState::StaticClass();
 	bAllowBoosts = false;
-	bCarryOwnFlag = true;
-	bNoFlagReturn = true;
 	bGameHasImpactHammer = false;
 	FlagPickupDelay = 15;
 	bTrackKillAssists = true;
@@ -70,6 +68,7 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	XPMultiplier = 3.5f;
 	MatchIntroTime = 2.f;
 	bNoDefaultLeaderHat = true;
+	bSlowFlagCarrier = false;
 
 	ActivatedPowerupPlaceholderObject = FStringAssetReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_ActivatedPowerup_UDamage.BP_ActivatedPowerup_UDamage_C"));
 
@@ -78,6 +77,17 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 
 	static ConstructorHelpers::FObjectFinder<USoundBase> RallyFinalSoundFinder(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RallyFailed.RallyFailed'"));
 	RallyFailedSound = RallyFinalSoundFinder.Object;
+}
+
+void AUTFlagRunGame::CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps)
+{
+	MenuProps.Empty();
+	if (BotFillCount == 0)
+	{
+		BotFillCount = DefaultMaxPlayers;
+	}
+	MenuProps.Add(MakeShareable(new TAttributeProperty<int32>(this, &BotFillCount, TEXT("BotFill"))));
+	MenuProps.Add(MakeShareable(new TAttributePropertyBool(this, &bBalanceTeams, TEXT("BalanceTeams"))));
 }
 
 void AUTFlagRunGame::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -96,11 +106,33 @@ void AUTFlagRunGame::InitGame(const FString& MapName, const FString& Options, FS
 	{
 		FlagPickupDelay = 3.f;
 	}
+
+	InOpt = UGameplayStatics::ParseOption(Options, TEXT("SlowFC"));
+	bSlowFlagCarrier = EvalBoolOptions(InOpt, bSlowFlagCarrier);
+}
+
+void AUTFlagRunGame::PostLogin(APlayerController* NewPlayer)
+{
+	if (NewPlayer)
+	{
+		InitPlayerForRound(Cast<AUTPlayerState>(NewPlayer->PlayerState));
+		AUTPlayerState* UTPS = Cast<AUTPlayerController>(NewPlayer) ? Cast<AUTPlayerController>(NewPlayer)->UTPlayerState : nullptr;
+		if (UTPS && UTPS->Team && IsMatchInProgress() && UTGameState && !UTGameState->IsMatchIntermission())
+		{
+			NewPlayer->ClientReceiveLocalizedMessage(UUTCTFRoleMessage::StaticClass(), IsTeamOnDefense(UTPS->Team->TeamIndex) ? 2 : 1);
+		}
+	}
+	Super::PostLogin(NewPlayer);
 }
 
 float AUTFlagRunGame::GetScoreForXP(AUTPlayerState* PS)
 {
 	return PS->Kills + PS->KillAssists + 5.f*PS->FlagCaptures;
+}
+
+float AUTFlagRunGame::AdjustNearbyPlayerStartScore(const AController* Player, const AController* OtherController, const ACharacter* OtherCharacter, const FVector& StartLoc, const APlayerStart* P)
+{
+	return 0.f;
 }
 
 int32 AUTFlagRunGame::GetFlagCapScore()
@@ -554,6 +586,17 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 void AUTFlagRunGame::DefaultTimer()
 {
 	Super::DefaultTimer();
+
+	//Super::DefaultTimer will never set the ReplayID because of our override of IsUTHandingReplays, 
+	//check Super::IsUTHandlingReplays instead to see if we should set ReplayID.
+	if (Super::UTIsHandlingReplays())
+	{
+		UDemoNetDriver* DemoNetDriver = GetWorld()->DemoNetDriver;
+		if (DemoNetDriver != nullptr && DemoNetDriver->ReplayStreamer.IsValid())
+		{
+			UTGameState->ReplayID = DemoNetDriver->ReplayStreamer->GetReplayID();
+		}
+	}
 
 	if (UTGameState && UTGameState->IsMatchInProgress() && !UTGameState->IsMatchIntermission())
 	{
@@ -1495,7 +1538,6 @@ void AUTFlagRunGame::HandleRollingAttackerRespawn(AUTPlayerState* OtherPS)
 
 void AUTFlagRunGame::PlayEndOfMatchMessage()
 {
-	// stub to not break the build
 }
 
 bool AUTFlagRunGame::PlayerWonChallenge()
@@ -1648,4 +1690,325 @@ void AUTFlagRunGame::BuildServerResponseRules(FString& OutRules)
 		OutRules += FString::Printf(TEXT("Mutator\t%s\t"), *Mut->DisplayName.ToString());
 		Mut = Mut->NextMutator;
 	}
+}
+
+void AUTFlagRunGame::HandleFlagCapture(AUTCharacter* HolderPawn, AUTPlayerState* Holder)
+{
+	FlagScorer = Holder;
+	CheckScore(Holder);
+	if (UTGameState && UTGameState->IsMatchInProgress())
+	{
+		Holder->AddCoolFactorEvent(400.0f);
+
+		SetMatchState(MatchState::MatchIntermission);
+	}
+}
+
+int32 AUTFlagRunGame::IntermissionTeamToView(AUTPlayerController* PC)
+{
+	if (LastTeamToScore)
+	{
+		return LastTeamToScore->TeamIndex;
+	}
+	return Super::IntermissionTeamToView(PC);
+}
+
+void AUTFlagRunGame::HandleExitingIntermission()
+{
+	CTFGameState->bStopGameClock = false;
+	CTFGameState->HalftimeScoreDelay = 3.f;
+	RemoveAllPawns();
+
+	if (bFirstRoundInitialized)
+	{
+		IntermissionSwapSides();
+	}
+	else
+	{
+		CTFGameState->CTFRound = 0;
+	}
+
+	InitRound();
+	if (!bFirstRoundInitialized)
+	{
+		bFirstRoundInitialized = true;
+		if (Super::UTIsHandlingReplays() && GetGameInstance() != nullptr)
+		{
+			GetGameInstance()->StartRecordingReplay(TEXT(""), GetWorld()->GetMapName());
+		}
+	}
+
+	//now respawn all the players
+	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+	{
+		AController* Controller = Iterator->Get();
+		if (Controller->PlayerState != NULL && !Controller->PlayerState->bOnlySpectator)
+		{
+			RestartPlayer(Controller);
+
+			// Reset group taunt
+			AUTPlayerState* PS = Cast<AUTPlayerState>(Controller->PlayerState);
+			if (PS)
+			{
+				PS->ActiveGroupTaunt = nullptr;
+				PS->ClearRoundStats();
+			}
+		}
+	}
+
+	// Send all flags home..
+	CTFGameState->ResetFlags();
+	CTFGameState->bIsAtIntermission = false;
+	CTFGameState->SetTimeLimit(TimeLimit);		// Reset the GameClock for the second time.
+	SetMatchState(MatchState::InProgress);
+
+	if (UTGameState->LineUpHelper)
+	{
+		UTGameState->LineUpHelper->CleanUp();
+	}
+}
+
+void AUTFlagRunGame::ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType)
+{
+	Super::ScoreKill_Implementation(Killer, Other, KilledPawn, DamageType);
+
+	AUTPlayerState* OtherPS = Other ? Cast<AUTPlayerState>(Other->PlayerState) : nullptr;
+	if (OtherPS && OtherPS->Team && IsTeamOnOffense(OtherPS->Team->TeamIndex) && bRollingAttackerSpawns)
+	{
+		HandleRollingAttackerRespawn(OtherPS);
+		OtherPS->RespawnWaitTime += 0.01f * FMath::FRand();
+		OtherPS->ForceNetUpdate();
+		OtherPS->OnRespawnWaitReceived();
+	}
+	if (OtherPS && IsPlayerOnLifeLimitedTeam(OtherPS) && (OtherPS->RemainingLives > 0))
+	{
+		OtherPS->RemainingLives--;
+		bool bEliminated = false;
+		if (OtherPS->RemainingLives == 0)
+		{
+			// this player is out of lives
+			OtherPS->SetOutOfLives(true);
+			bEliminated = true;
+			bool bFoundTeammate = false;
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				AUTPlayerState* TeamPS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				if (TeamPS && (OtherPS->Team == TeamPS->Team) && !TeamPS->bOutOfLives && !TeamPS->bIsInactive)
+				{
+					// found a live teammate, so round isn't over - notify about termination though
+					if (IsMatchInProgress() && (GetMatchState() != MatchState::MatchIntermission))
+					{
+						BroadcastLocalized(NULL, UUTShowdownRewardMessage::StaticClass(), 3, OtherPS);
+					}
+					bFoundTeammate = true;
+					break;
+				}
+			}
+			if (!bFoundTeammate)
+			{
+				BroadcastLocalized(NULL, UUTShowdownRewardMessage::StaticClass(), 4);
+				CTFGameState->bStopGameClock = true;
+
+				if (OtherPS->Team->TeamIndex == 0)
+				{
+					FTimerHandle TempHandle;
+					GetWorldTimerManager().SetTimer(TempHandle, this, &AUTFlagRunGame::ScoreBlueAlternateWin, 1.f);
+				}
+				else
+				{
+					FTimerHandle TempHandle;
+					GetWorldTimerManager().SetTimer(TempHandle, this, &AUTFlagRunGame::ScoreRedAlternateWin, 1.f);
+
+				}
+			}
+		}
+		else if (UTGameState && IsMatchInProgress() && (GetMatchState() != MatchState::MatchIntermission))
+		{
+			bool bFoundLiveTeammate = false;
+			int32 TeamCount = 0;
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				AUTPlayerState* TeamPS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				if (TeamPS && (OtherPS->Team == TeamPS->Team) && !TeamPS->bOutOfLives && !TeamPS->bIsInactive)
+				{
+					TeamCount++;
+					if (TeamPS->GetUTCharacter() && !TeamPS->GetUTCharacter()->IsDead())
+					{
+						bFoundLiveTeammate = true;
+						break;
+					}
+				}
+			}
+			if (!bFoundLiveTeammate && (TeamCount == 5) && (GetWorld()->GetTimeSeconds() - LastAceTime > 20.f))
+			{
+				LastAceTime = GetWorld()->GetTimeSeconds();
+				BroadcastLocalized(NULL, UUTCTFRewardMessage::StaticClass(), 8);
+			}
+		}
+
+		int32 RemainingDefenders = 0;
+		int32 RemainingLives = 0;
+
+		// check if just transitioned to last man
+		bool bWasAlreadyLastMan = bLastManOccurred;
+		AUTPlayerState* LastMan = nullptr;
+		for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+		{
+			AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+			if (PS && (OtherPS->Team == PS->Team) && !PS->bOutOfLives && !PS->bIsInactive)
+			{
+				RemainingDefenders++;
+				RemainingLives += PS->RemainingLives;
+				LastMan = PS;
+			}
+		}
+		bLastManOccurred = (RemainingDefenders == 1);
+		if (bLastManOccurred && !bWasAlreadyLastMan)
+		{
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				AUTPlayerController* PC = PS ? Cast<AUTPlayerController>(PS->GetOwner()) : nullptr;
+				if (PC)
+				{
+					int32 MessageType = (OtherPS->Team == PS->Team) ? 1 : 0;
+					PC->ClientReceiveLocalizedMessage(UUTShowdownRewardMessage::StaticClass(), MessageType, LastMan, NULL, NULL);
+				}
+			}
+		}
+		else if (((RemainingDefenders == 3) && bEliminated) || (RemainingLives < 10))
+		{
+			// find player on other team to speak message
+			AUTPlayerState* Speaker = nullptr;
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				AUTPlayerState* TeamPS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+				if (TeamPS && TeamPS->Team && (OtherPS->Team != TeamPS->Team) && !TeamPS->bOutOfLives && !TeamPS->bIsInactive)
+				{
+					Speaker = TeamPS;
+					break;
+				}
+			}
+			if (Speaker != nullptr)
+			{
+				if ((RemainingDefenders == 3) && bEliminated)
+				{
+					Speaker->AnnounceStatus(StatusMessage::EnemyThreePlayers);
+				}
+				else if (RemainingLives == 9)
+				{
+					Speaker->AnnounceStatus(StatusMessage::EnemyLowLives);
+				}
+			}
+		}
+
+		if (OtherPS->RemainingLives > 0)
+		{
+			OtherPS->RespawnWaitTime = FMath::Max(1.f, float(RemainingDefenders));
+			if (UTGameState && UTGameState->GetRemainingTime() > 150)
+			{
+				OtherPS->RespawnWaitTime = FMath::Min(OtherPS->RespawnWaitTime, 2.f);
+			}
+			OtherPS->RespawnWaitTime += 0.01f * FMath::FRand();
+			OtherPS->ForceNetUpdate();
+			OtherPS->OnRespawnWaitReceived();
+		}
+	}
+}
+
+void AUTFlagRunGame::InitRound()
+{
+	FlagScorer = nullptr;
+	bFirstBloodOccurred = false;
+	bLastManOccurred = false;
+	bNeedFiveKillsMessage = true;
+	InitGameStateForRound();
+	ResetFlags();
+	if (FlagPickupDelay > 0)
+	{
+		for (AUTCTFFlagBase* Base : CTFGameState->FlagBases)
+		{
+			if (Base != NULL && Base->MyFlag)
+			{
+				InitDelayedFlag(Base->MyFlag);
+			}
+		}
+		FTimerHandle TempHandle;
+		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTCTFRoundGame::FlagCountDown, 1.f*GetActorTimeDilation(), false);
+	}
+	else
+	{
+		InitFlags();
+	}
+
+	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+	{
+		AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+		InitPlayerForRound(PS);
+
+	}
+	CTFGameState->SetTimeLimit(TimeLimit);
+
+	// re-initialize all AI squads, in case objectives have changed sides
+	for (AUTTeamInfo* Team : Teams)
+	{
+		Team->ReinitSquads();
+	}
+}
+
+void AUTFlagRunGame::ResetFlags()
+{
+	for (AUTCTFFlagBase* Base : CTFGameState->FlagBases)
+	{
+		if (Base != NULL && Base->MyFlag)
+		{
+			Base->MyFlag->SetActorHiddenInGame(true);
+			Base->ClearDefenseEffect();
+			if (IsTeamOnDefense(Base->MyFlag->GetTeamNum()))
+			{
+				Base->SpawnDefenseEffect();
+			}
+		}
+	}
+}
+
+void AUTFlagRunGame::InitPlayerForRound(AUTPlayerState* PS)
+{
+	if (PS)
+	{
+		PS->RoundKills = 0;
+		PS->RoundDeaths = 0;
+		PS->RoundKillAssists = 0;
+		PS->bRallyActivated = false;
+		PS->RespawnWaitTime = IsPlayerOnLifeLimitedTeam(PS) ? LimitedRespawnWaitTime : UnlimitedRespawnWaitTime;
+		PS->SetRemainingBoosts(InitialBoostCount);
+		PS->bSpecialTeamPlayer = false;
+		PS->bSpecialPlayer = false;
+		if (GetNetMode() != NM_DedicatedServer)
+		{
+			PS->OnRepSpecialPlayer();
+			PS->OnRepSpecialTeamPlayer();
+		}
+		if (PS && (!PS->Team || PS->bOnlySpectator))
+		{
+			PS->RemainingLives = 0;
+			PS->SetOutOfLives(true);
+		}
+		else if (PS)
+		{
+			PS->RemainingLives = RoundLives;
+			PS->SetOutOfLives(false);
+		}
+		PS->ForceNetUpdate();
+	}
+}
+
+bool AUTFlagRunGame::IsTeamOnDefense(int32 TeamNumber) const
+{
+	return !IsTeamOnOffense(TeamNumber);
+}
+
+bool AUTFlagRunGame::IsPlayerOnLifeLimitedTeam(AUTPlayerState* PlayerState) const
+{
+	return PlayerState && PlayerState->Team && IsTeamOnDefense(PlayerState->Team->TeamIndex);
 }

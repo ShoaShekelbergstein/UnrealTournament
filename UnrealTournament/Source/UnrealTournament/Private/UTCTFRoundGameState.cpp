@@ -23,15 +23,4 @@ void AUTCTFRoundGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty 
 	DOREPLIFETIME(AUTCTFRoundGameState, RemainingPickupDelay);
 }
 
-
-bool AUTCTFRoundGameState::IsTeamOnOffense(int32 TeamNumber) const
-{
-	return false;
-}
-
-bool AUTCTFRoundGameState::IsTeamOnDefense(int32 TeamNumber) const
-{
-	return false;
-}
-
  

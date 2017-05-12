@@ -40,6 +40,10 @@ public:
 	UPROPERTY()
 		bool bAllowBoosts;
 
+	/*  If true, slow flag carrier */
+	UPROPERTY(BlueprintReadOnly, Category = CTF)
+		bool bSlowFlagCarrier;
+
 	UPROPERTY(BlueprintReadOnly, Category = CTF)
 		class AUTCarriedObject* ActiveFlag;
 
@@ -66,6 +70,14 @@ public:
 
 	virtual bool CheckForWinner(AUTTeamInfo* ScoringTeam);
 
+	/** Initialize for new round. */
+	virtual void InitRound();
+
+	/** Initialize a player for the new round. */
+	virtual void InitPlayerForRound(AUTPlayerState* PS);
+
+	virtual void ResetFlags();
+
 	virtual class AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = TEXT("")) override;
 	virtual void AnnounceWin(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 Reason);
 	virtual void NotifyFirstPickup(AUTCarriedObject* Flag) override;
@@ -81,11 +93,11 @@ public:
 	virtual void InitFlagForRound(class AUTCarriedObject* Flag) override;
 	virtual void IntermissionSwapSides() override;
 	virtual int32 GetFlagCapScore() override;
-	virtual int32 GetDefenseScore() override;
+	virtual int32 GetDefenseScore();
 	virtual void BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo* ScoringTeam, int32 OldScore = 0) override;
 	virtual void CheckRoundTimeVictory();
 	virtual void InitGameStateForRound() override;
-	virtual bool IsTeamOnOffense(int32 TeamNumber) const override;
+	virtual bool IsTeamOnOffense(int32 TeamNumber) const;
 	virtual AActor* SetIntermissionCameras(uint32 TeamToWatch) override;
 	virtual void SendRestartNotifications(AUTPlayerState* PS, AUTPlayerController* PC);
 	virtual bool PlayerWonChallenge() override;
@@ -97,13 +109,20 @@ public:
 	virtual void RestartPlayer(AController* aPlayer) override;
 	virtual void SetPlayerStateInactive(APlayerState* NewPlayerState) override;
 	virtual void BuildServerResponseRules(FString& OutRules) override;
+	virtual float AdjustNearbyPlayerStartScore(const AController* Player, const AController* OtherController, const ACharacter* OtherCharacter, const FVector& StartLoc, const APlayerStart* P) override;
+	virtual void PlayEndOfMatchMessage() override;
+	virtual void CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps);
+	virtual void ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType) override;
 
 	virtual int32 GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPlayerController* Instigator, UWorld* World);
 	virtual void InitFlags() override;
 	virtual void HandleMatchIntermission() override;
 	virtual void CheatScore() override;
 	virtual void DefaultTimer() override;
-	virtual void PlayEndOfMatchMessage() override;
+	virtual void HandleFlagCapture(AUTCharacter* HolderPawn, AUTPlayerState* Holder) override;
+	virtual int32 IntermissionTeamToView(AUTPlayerController* PC) override;
+	virtual void HandleExitingIntermission() override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
 
 	virtual void UpdateSkillRating() override;
 
@@ -120,13 +139,14 @@ public:
 
 	virtual bool SupportsInstantReplay() const override;
 	virtual void FindAndMarkHighScorer() override;
-	virtual void HandleRollingAttackerRespawn(AUTPlayerState* OtherPS) override;
+	virtual void HandleRollingAttackerRespawn(AUTPlayerState* OtherPS);
 
 	/** Update tiebreaker value based on new round bonus. Tiebreaker is positive if Red is ahead, negative if blue is ahead. */
 	virtual void UpdateTiebreak(int32 Bonus, int32 TeamIndex);
 
 protected:
-
 	virtual void GrantPowerupToTeam(int TeamIndex, AUTPlayerState* PlayerToHighlight);
+	virtual bool IsTeamOnDefense(int32 TeamNumber) const;
+	virtual bool IsPlayerOnLifeLimitedTeam(AUTPlayerState* PlayerState) const;
 };
 

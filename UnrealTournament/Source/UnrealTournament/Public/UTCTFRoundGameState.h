@@ -12,11 +12,4 @@ class UNREALTOURNAMENT_API AUTCTFRoundGameState : public AUTCTFGameState
 
 	UPROPERTY(Replicated)
 		int32 RemainingPickupDelay;
-
-	UFUNCTION(BlueprintCallable, Category = Team)
-		virtual bool IsTeamOnOffense(int32 TeamNumber) const;
-
-	UFUNCTION(BlueprintCallable, Category = Team)
-		virtual bool IsTeamOnDefense(int32 TeamNumber) const;
-
 };
