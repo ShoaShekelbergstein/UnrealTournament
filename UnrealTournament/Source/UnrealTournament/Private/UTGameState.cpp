@@ -240,7 +240,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	ShortHighlightMap.Add(NAME_SpreeKillLevel3, NSLOCTEXT("AUTGameMode", "ShortSpreeKillLevel3", "Unstoppable"));
 	ShortHighlightMap.Add(NAME_SpreeKillLevel4, NSLOCTEXT("AUTGameMode", "ShortSpreeKillLevel4", "Godlike"));
 	ShortHighlightMap.Add(HighlightNames::KillsAward, NSLOCTEXT("AUTGameMode", "ShortKillsAward", "Kills"));
-	ShortHighlightMap.Add(HighlightNames::DamageAward, NSLOCTEXT("AUTGameMode", "ShortDamageAward", "Damage Done"));
+	ShortHighlightMap.Add(HighlightNames::DamageAward, NSLOCTEXT("AUTGameMode", "ShortDamageAward", "I'd hit that"));
 
 	HighlightPriority.Add(HighlightNames::TopScorer, 10.f);
 	HighlightPriority.Add(HighlightNames::TopScorerRed, 5.f);
