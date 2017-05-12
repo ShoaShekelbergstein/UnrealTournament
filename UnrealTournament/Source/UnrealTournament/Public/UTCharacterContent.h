@@ -53,6 +53,9 @@ public:
 		Mesh->bReceivesDecals = false;
 		DMSkinType = EDMSkin_Red;
 
+		RelativeScale1p = FVector(1.0f, 1.0f, 1.0f);
+		RelativeRotation1p = FRotator(0.0f, -90.0f, 0.0f);
+
 		DisplayName = NSLOCTEXT("UT", "UntitledCharacter", "Untitled Character");
 
 		static ConstructorHelpers::FObjectFinder<UClass> GibRef[] = { TEXT("/Game/RestrictedAssets/Blueprints/GibHumanHead.GibHumanHead_C"), 
@@ -173,6 +176,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 	TArray<UMaterialInterface*> TeamMaterials;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	TArray<UMaterialInterface*> TeamMaterials1p;
 
 public:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
