@@ -319,7 +319,7 @@ void AUTWeap_LightningRifle::FireShot()
 				FHitResult OutHit;
 				FireInstantHit(true, &OutHit);
 
-				if (bFullPowerShot && Cast<AUTCharacter>(OutHit.Actor.Get()))
+				if (bFullPowerShot && Cast<AUTCharacter>(OutHit.Actor.Get()) && !OutHit.Actor->bTearOff)
 				{
 					ChainLightning(OutHit);
 				}
