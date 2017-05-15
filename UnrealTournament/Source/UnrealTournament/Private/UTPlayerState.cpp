@@ -2287,7 +2287,7 @@ TSharedRef<SWidget> AUTPlayerState::BuildLeagueInfo()
 	VBox->AddSlot()
 	.AutoHeight()
 	[
-		BuildLeagueInfoPane(NAME_RankedFlagRunSkillRating.ToString(), NSLOCTEXT("Generic", "FlagrunLeagueHeader", "5v5 Flag Run League"))
+		BuildLeagueInfoPane(NAME_RankedFlagRunSkillRating.ToString(), NSLOCTEXT("Generic", "FlagrunLeagueHeader", "5v5 Blitz League"))
 	];
 
 	VBox->AddSlot()
@@ -2301,8 +2301,6 @@ TSharedRef<SWidget> AUTPlayerState::BuildLeagueInfo()
 			.Image(SUTStyle::Get().GetBrush("UT.Divider.Black"))
 		]
 	];
-	
-
 
 	VBox->AddSlot()
 	.AutoHeight()
