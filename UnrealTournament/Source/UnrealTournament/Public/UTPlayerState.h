@@ -228,6 +228,8 @@ public:
 
 	virtual void AnnounceStatus(FName NewStatus, int32 Switch=0, bool bSkipSelf=false);
 
+	virtual void AnnounceLocation(class AUTGameVolume* LocationVolume, int32 Switch = 0, bool bSkipSelf = false);
+
 	virtual bool IsOwnedByReplayController() const;
 
 	/** Used for tracking multikills - not always correct as it is reset when player dies. */

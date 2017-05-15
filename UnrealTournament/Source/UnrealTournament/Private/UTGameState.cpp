@@ -31,6 +31,7 @@
 #include "UTPlayerStart.h"
 #include "UTTeamPlayerStart.h"
 #include "UTDemoRecSpectator.h"
+#include "UTGameVolume.h"
 
 AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -364,25 +365,25 @@ void AUTGameState::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTra
 	Super::PreReplication(ChangedPropertyTracker);
 }
 
-void AUTGameState::UpdateFCFriendlyLocation(AUTPlayerState* AnnouncingPlayer, FName VoiceLinesSet)
+void AUTGameState::UpdateFCFriendlyLocation(AUTPlayerState* AnnouncingPlayer, AUTGameVolume* LocationVolume)
 {
-	if (AnnouncingPlayer)
+	if (AnnouncingPlayer && LocationVolume)
 	{
-		AnnouncingPlayer->AnnounceStatus(VoiceLinesSet, 1);
+		AnnouncingPlayer->AnnounceLocation(LocationVolume, 1);
 		LastFriendlyLocationReportTime = GetWorld()->GetTimeSeconds();
-		LastFriendlyLocationName = VoiceLinesSet;
+		LastFriendlyLocationName = LocationVolume->VoiceLinesSet;
 		FCFriendlyLocCount++;
 		ForceNetUpdate();
 	}
 }
 
-void AUTGameState::UpdateFCEnemyLocation(AUTPlayerState* AnnouncingPlayer, FName VoiceLinesSet)
+void AUTGameState::UpdateFCEnemyLocation(AUTPlayerState* AnnouncingPlayer, AUTGameVolume* LocationVolume)
 {
-	if (AnnouncingPlayer)
+	if (AnnouncingPlayer && LocationVolume)
 	{
-		AnnouncingPlayer->AnnounceStatus(VoiceLinesSet, 0);
+		AnnouncingPlayer->AnnounceLocation(LocationVolume, 0);
 		LastEnemyLocationReportTime = GetWorld()->GetTimeSeconds();
-		LastEnemyLocationName = VoiceLinesSet;
+		LastEnemyLocationName = LocationVolume->VoiceLinesSet;
 		FCEnemyLocCount++;
 		ForceNetUpdate();
 	}

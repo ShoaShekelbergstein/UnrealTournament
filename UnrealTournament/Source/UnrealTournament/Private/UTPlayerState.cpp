@@ -392,6 +392,28 @@ void AUTPlayerState::AnnounceStatus(FName NewStatus, int32 SwitchOffset, bool bS
 	}
 }
 
+void AUTPlayerState::AnnounceLocation(AUTGameVolume* LocationVolume, int32 SwitchOffset, bool bSkipSelf)
+{
+	GetCharacterVoiceClass();
+	if (CharacterVoice != NULL)
+	{
+		// send to same team only
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+		if (!GS)
+		{
+			return;
+		}
+		for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+		{
+			AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+			if (PC && GS->OnSameTeam(this, PC) && (!bSkipSelf || (PC->PlayerState != this)))
+			{
+				PC->ClientReceiveLocalizedMessage(CharacterVoice, SwitchOffset, this, PC->PlayerState, LocationVolume);
+			}
+		}
+	}
+}
+
 bool AUTPlayerState::ShouldBroadCastWelcomeMessage(bool bExiting)
 {
 	return !bIsInactive && ((GetNetMode() == NM_Standalone) || (GetNetMode() == NM_Client));

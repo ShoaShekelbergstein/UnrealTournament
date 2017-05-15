@@ -53,8 +53,6 @@ const int32 SPREAD_OUT_SWITCH_INDEX = 11000;
 const int32 BASE_UNDER_ATTACK_SWITCH_INDEX = 11100;
 const int32 DROP_FLAG_SWITCH_INDEX = 11200;
 const int32 KEY_CALLOUTS = 100000;
-const int32 FIRSTGAMEVOLUMESPEECH = KEY_CALLOUTS + 299;
-const int32 LASTGAMEVOLUMESPEECH = KEY_CALLOUTS + 4999;
 const int32 FIRSTPICKUPSPEECH = KEY_CALLOUTS + 5099;
 const int32 LASTPICKUPSPEECH = KEY_CALLOUTS + 9999;
 
@@ -348,6 +346,6 @@ class UNREALTOURNAMENT_API UUTCharacterVoice : public UUTLocalMessage
 	virtual bool IsOptionalSpoken(int32 MessageIndex) const override;
 	virtual int32 GetDestinationIndex(int32 MessageIndex) const override;
 
-	virtual bool IsFlagLocationUpdate(int32 Switch) const;
+	virtual bool IsFlagLocationUpdate(int32 Switch, const class UObject* OptionalObject) const;
 	virtual bool IsPickupUpdate(int32 Switch) const;
 };

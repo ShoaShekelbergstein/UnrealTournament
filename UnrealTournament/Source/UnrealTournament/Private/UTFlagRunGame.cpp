@@ -835,7 +835,7 @@ void AUTFlagRunGame::DefaultTimer()
 							Cast<AUTBot>(Speaker->GetOwner())->Say(Why, true);
 						}
 						*/
-						Speaker->AnnounceStatus(EntryRoutes[i]->VoiceLinesSet, 3);
+						Speaker->AnnounceLocation(EntryRoutes[i], 3);
 					}
 				}
 			}

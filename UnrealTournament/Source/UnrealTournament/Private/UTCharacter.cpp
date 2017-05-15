@@ -1394,7 +1394,7 @@ void AUTCharacter::FlagPingedBy(AUTPlayerState* PS)
 		}
 		if (GV && (GV->VoiceLinesSet != NAME_None))
 		{
-			PS->AnnounceStatus(GV->VoiceLinesSet, 0);
+			PS->AnnounceLocation(GV, 0);
 			GS->LastEnemyLocationName = GV->VoiceLinesSet;
 			if (GS && GS->CurrentRallyPoint)
 			{
