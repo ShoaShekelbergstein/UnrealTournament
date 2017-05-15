@@ -80,12 +80,12 @@ struct FJsonExporter : public TSharedFromThis<FJsonExporter>
 				}
 			}
 
-			//bSuccess = WriteCatalogJson() && bSuccess;
 			bSuccess = ExportProfileItems() && bSuccess;
 			bSuccess = ExportXPTable() && bSuccess;
 			bSuccess = WriteSimpleItemAssetJson(EUtItemType::CardPack, TEXT("ItemTemplates/CardPack.json")) && bSuccess;
 			bSuccess = WriteSimpleItemAssetJson(EUtItemType::Token, TEXT("ItemTemplates/Token.json")) && bSuccess;
 			bSuccess = WriteSimpleItemAssetJson(EUtItemType::Boost, TEXT("ItemTemplates/Boost.json")) && bSuccess;
+			bSuccess = WriteCatalogJson() && bSuccess;
 
 			bSuccess = ExportLootTables() && bSuccess;
 			bSuccess = ExportLoginRewards() && bSuccess;
@@ -195,7 +195,7 @@ protected:
 	bool WriteCatalogJson()
 	{
 		// load the store catalog asset
-		static const TCHAR* CATALOG_PATH = TEXT("/Game/Backend/StoreCatalog.StoreCatalog");
+		static const TCHAR* CATALOG_PATH = TEXT("/Game/EpicInternal/DataTables/StoreCatalog.StoreCatalog");
 		UCatalogDefinition* StoreCatalog = LoadObject<UCatalogDefinition>(nullptr, CATALOG_PATH);
 		if (StoreCatalog == nullptr)
 		{
@@ -203,9 +203,11 @@ protected:
 			return false;
 		}
 
+		CatalogExporter.OnIsValidTemplateId.BindSP(AsShared(), &FJsonExporter::IsValidTemplateIdOrPath);
+
 		// load the fulfillments directory
 		UObjectLibrary* FulfillmentsLib = UObjectLibrary::CreateLibrary(UCatalogFulfillment::StaticClass(), false, false);
-		static const TCHAR* FULFILLMENTS_PATH = TEXT("/Game/GameObjects/GameData");
+		static const TCHAR* FULFILLMENTS_PATH = TEXT("/Game/EpicInternal/Loot");
 		TArray<FString> Paths;
 		Paths.Add(FULFILLMENTS_PATH);
 		FulfillmentsLib->LoadAssetsFromPaths(Paths);
