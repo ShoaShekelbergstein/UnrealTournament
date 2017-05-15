@@ -857,6 +857,7 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildGraphicsTab()
 			+ AddConsoleVarSliderWidget(MakeShareable(new SSlateConsoleVarDelegate(TEXT("r.Shadow.MaxResolution"), FVector2D(512.0f, 1024.0f))), NSLOCTEXT("SUTSystemSettingsDialog", "ShadowRes", "Shadow Texture Resolution"))
 			+ AddConsoleVarCheckboxWidget(MakeShareable(new SSlateConsoleVarDelegate(TEXT("r.DistanceFieldShadowing"))), NSLOCTEXT("SUTSystemSettingsDialog", "DistanceFieldShadow", "Distance Field Shadows"))
 			+ AddConsoleVarCheckboxWidget(MakeShareable(new SSlateConsoleVarDelegate(TEXT("r.DistanceFieldAO"))), NSLOCTEXT("SUTSystemSettingsDialog", "DistanceFieldAO", "Distance Field Ambient Occlusion"))
+			+ AddConsoleVarCheckboxWidget(MakeShareable(new SSlateConsoleVarDelegate(TEXT("r.SimpleForwardShading"))), NSLOCTEXT("SUTSystemSettingsDialog", "SimpleShading", "Simple Forward Shading"))
 		];
 	TSharedRef<SBox> EffectsAdvanced = SNew(SBox)
 		[
