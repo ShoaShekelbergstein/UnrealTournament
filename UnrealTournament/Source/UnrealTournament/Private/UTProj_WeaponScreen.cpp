@@ -81,7 +81,7 @@ void AUTProj_WeaponScreen::ProcessHit_Implementation(AActor* OtherActor, UPrimit
 			}
 		}
 	}
-	else if (bCauseMomentumToPawns && Cast<APawn>(OtherActor) != NULL && OtherActor != Instigator && !HitPawns.Contains((APawn*)OtherActor) && (!bOnlyAffectEnemies || GS == nullptr || !GS->OnSameTeam(OtherActor, this)))
+	else if (bCauseMomentumToPawns && Cast<AUTCharacter>(OtherActor) != NULL && OtherActor != Instigator && !HitPawns.Contains((APawn*)OtherActor) && (!bOnlyAffectEnemies || GS == nullptr || !GS->OnSameTeam(OtherActor, this)))
 	{
 		FCollisionQueryParams Params(FName(TEXT("WeaponScreenOverlap")), false, this);
 		Params.AddIgnoredActor(OtherActor);
