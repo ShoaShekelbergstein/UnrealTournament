@@ -115,29 +115,6 @@ void SUTMainMenu::SetInitialPanel()
 	}
 }
 
-FReply SUTMainMenu::OnShowHomePanel()
-{
-	//if we are leaving the tutorial panel, we may have canceled on boarding
-	if (FUTAnalytics::IsAvailable() && ActivePanel == TutorialPanel)
-	{
-		AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
-		if (PC && !PC->SkipTutorialCheck())
-		{
-			UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(PC->Player);
-			if (UTLocalPlayer)
-			{
-				int32 TutorialMask = UTLocalPlayer->GetTutorialMask();
-				if (TutorialMask == 0 || (TutorialMask & TUTORIAL_DM) != TUTORIAL_DM)
-				{
-					FUTAnalytics::FireEvent_UTCancelOnboarding(PC);
-				}
-			}
-		}
-	}
-
-	return SUTMenuBase::OnShowHomePanel();
-}
-
 /****************************** [ Build Sub Menus ] *****************************************/
 
 void SUTMainMenu::BuildLeftMenuBar()

@@ -58,8 +58,6 @@ protected:
 	TArray<AUTReplicatedGameRuleset*> AvailableGameRulesets;
 	TSharedPtr<SUTGameSetupDialog> CreateGameDialog;
 
-	virtual FReply OnShowHomePanel() override;
-
 	virtual FReply OnFragCenterClick();
 
 	TSharedPtr<SUTFragCenterPanel> FragCenterPanel;

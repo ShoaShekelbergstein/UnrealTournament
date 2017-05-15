@@ -2223,6 +2223,9 @@ namespace ETutorialTags
 	// This tag is used to force the game to play the next tutorial in the progression based on what the
 	// player has already played.  See UUTLocalPlayer::LaunchTutorial
 	const FName TUTTAG_Progress = FName(TEXT("NextTutorialProgression"));
+
+	// Used to set what tutorial should be auto-launched during new player onboarding.
+	const FName TUTTAG_NewPlayerLaunchTutorial = TUTTAG_DM;
 }
 
 UENUM()

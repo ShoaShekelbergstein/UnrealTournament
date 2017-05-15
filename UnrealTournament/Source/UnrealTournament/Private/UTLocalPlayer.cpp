@@ -2943,6 +2943,17 @@ void UUTLocalPlayer::ReturnToMainMenu()
 	if (UTPC)
 	{
 		UTPC->LeaveVoiceChat();
+
+		AUTGameMode* UTGM = GetWorld()->GetAuthGameMode<AUTGameMode>();
+		//Check if we were a new playing in the tutorial. If so fire correct analytic.
+		if (FUTAnalytics::IsAvailable() &&
+			bLaunchTutorialOnLogin &&
+			!UTPC->SkipTutorialCheck() &&
+			!IsTutorialCompleted(ETutorialTags::TUTTAG_NewPlayerLaunchTutorial) &&
+			(UTGM->bBasicTrainingGame))
+		{
+			FUTAnalytics::FireEvent_UTCancelOnboarding(UTPC);
+		}
 	}
 
 	if ( GetWorld() != nullptr )
@@ -6142,7 +6153,7 @@ void UUTLocalPlayer::LoginProcessComplete()
 void UUTLocalPlayer::FinalizeLogin()
 {
 	LoginPhase = ELoginPhase::LoggedIn;
-	if (bLaunchTutorialOnLogin) LaunchTutorial(ETutorialTags::TUTTAG_DM, TEXT(""));
+	if (bLaunchTutorialOnLogin) LaunchTutorial(ETutorialTags::TUTTAG_NewPlayerLaunchTutorial, TEXT(""));
 }
 
 void UUTLocalPlayer::QoSComplete()
