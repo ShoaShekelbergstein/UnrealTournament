@@ -196,11 +196,6 @@ public:
 	
 	}
 
-private:
-	FGuid UniqueAnalyticSessionGuid;
-
-
-
 public:
 
 	UPROPERTY()

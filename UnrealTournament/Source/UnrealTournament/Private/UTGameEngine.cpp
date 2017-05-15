@@ -137,19 +137,13 @@ void UUTGameEngine::Init(IEngineLoop* InEngineLoop)
 
 	IndexExpansionContent();
 
-	UniqueAnalyticSessionGuid = FGuid::NewGuid();
 	FUTAnalytics::Initialize();
-
-	Super::Init(InEngineLoop);
-
-
-
 	if (FUTAnalytics::IsAvailable())
 	{
-		TArray<FAnalyticsEventAttribute> ParamArray;
-		ParamArray.Add(FAnalyticsEventAttribute(TEXT("AnalyticSessionGuid"), UniqueAnalyticSessionGuid.ToString()));
-		FUTAnalytics::GetProvider().RecordEvent( TEXT("ApplicationStart"), ParamArray );
+		FUTAnalytics::FireEvent_ApplicationStart();
 	}
+
+	Super::Init(InEngineLoop);
 
 
 	// HACK: UGameUserSettings::ApplyNonResolutionSettings() isn't virtual so we need to force our settings to be applied...
@@ -191,13 +185,9 @@ void UUTGameEngine::PreExit()
 {
 
 	if (FUTAnalytics::IsAvailable())
-	{
-		TArray<FAnalyticsEventAttribute> ParamArray;
-		ParamArray.Add(FAnalyticsEventAttribute(TEXT("AnalyticSessionGuid"), UniqueAnalyticSessionGuid.ToString()));
-		FUTAnalytics::GetProvider().RecordEvent( TEXT("ApplicationStop"), ParamArray );
+	{	
+		FUTAnalytics::FireEvent_ApplicationStop();
 	}
-
-
 
 	Super::PreExit();
 	FUTAnalytics::Shutdown();

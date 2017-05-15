@@ -2,6 +2,8 @@ namespace EGenericAnalyticParam
 {
 	enum Type
 	{
+		UniqueAnalyticSessionGuid,
+
 		PlayerGUID,
 		PlayerList,
 		PlayerKills,
@@ -60,6 +62,9 @@ namespace EGenericAnalyticParam
 		NumDeaths,
 		NumAssists,
 		
+		ApplicationStart,
+		ApplicationStop,
+
 		UTFPSCharts,
 		UTServerFPSCharts,
 

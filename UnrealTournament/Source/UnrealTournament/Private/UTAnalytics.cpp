@@ -47,6 +47,8 @@ TSharedPtr<IAnalyticsProviderET> FUTAnalytics::Analytics = NULL;
 FString FUTAnalytics::CurrentAccountID(TEXT("__UNINITIALIZED__"));
 FUTAnalytics::EAccountSource FUTAnalytics::CurrentAccountSource = FUTAnalytics::EAccountSource::EFromRegistry;
 
+FGuid FUTAnalytics::UniqueAnalyticSessionGuid;
+
 /**
  * On-demand construction of the singleton. 
  */
@@ -65,6 +67,8 @@ static const FString SecureAnalyticsEndpoint = TEXT("https://datarouter.ol.epicg
 
 void FUTAnalytics::Initialize()
 {
+	UniqueAnalyticSessionGuid = FGuid::NewGuid();
+
 	if (IsRunningCommandlet() || GIsEditor || GIsPlayInEditorWorld)
 	{
 		return;
@@ -120,6 +124,8 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	// server stats
 #define AddGenericParamName(ParamName) \
 	GenericParamNames[EGenericAnalyticParam::ParamName] = TEXT(#ParamName)
+
+	AddGenericParamName(UniqueAnalyticSessionGuid);
 
 	AddGenericParamName(PlayerGUID);
 	AddGenericParamName(PlayerList);
@@ -184,6 +190,9 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 
 	AddGenericParamName(NumDeaths);
 	AddGenericParamName(NumAssists);
+
+	AddGenericParamName(ApplicationStart);
+	AddGenericParamName(ApplicationStop);
 
 	AddGenericParamName(UTFPSCharts);
 	AddGenericParamName(UTServerFPSCharts);
@@ -342,8 +351,15 @@ FString FUTAnalytics::GetGenericParamName(EGenericAnalyticParam::Type InGenericP
 	}
 }
 
+void FUTAnalytics::SetGlobalInitialParameters(TArray<FAnalyticsEventAttribute>& ParamArray)
+{
+	ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::UniqueAnalyticSessionGuid), UniqueAnalyticSessionGuid));
+}
+
 void FUTAnalytics::SetClientInitialParameters(AUTBasePlayerController* UTPC, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime)
 {
+	SetGlobalInitialParameters(ParamArray);
+
 	if (UTPC)
 	{
 		if (UTPC->GetWorld())
@@ -433,6 +449,8 @@ void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalytic
 
 void FUTAnalytics::SetServerInitialParameters(TArray<FAnalyticsEventAttribute>& ParamArray)
 {
+	SetGlobalInitialParameters(ParamArray);
+
 	ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::Hostname), FPlatformProcess::ComputerName()));
 	ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::SystemId), FPlatformMisc::GetOperatingSystemId()));
 #if WITH_QOSREPORTER
@@ -669,6 +687,53 @@ FString FUTAnalytics::GetEpicAccountName(AUTPlayerState* UTPS)
 	}
 
 	return FString();
+}
+
+/*
+* @EventName ApplicationStart
+*
+* @Trigger Fires during engine intialization during application start.
+*
+* @Type Sent by client and  server
+*
+* @EventParam UniqueAnalyticSessionGuid GUID that tracks the current session's GUID for the analytics system to track.
+*
+*/
+void FUTAnalytics::FireEvent_ApplicationStart()
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetGlobalInitialParameters(ParamArray);
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::ApplicationStart), ParamArray);
+	}
+}
+
+/*
+* @EventName ApplicationStop
+*
+* @Trigger Fires before engine shuts down during application shutdown
+*
+* @Type Sent by client and  server
+*
+* @EventParam UniqueAnalyticSessionGuid GUID that tracks the current session's GUID for the analytics system to track.
+*
+*/
+
+void FUTAnalytics::FireEvent_ApplicationStop()
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		SetGlobalInitialParameters(ParamArray);
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::ApplicationStop), ParamArray);
+	}
 }
 
 /*

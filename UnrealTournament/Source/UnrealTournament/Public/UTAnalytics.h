@@ -40,6 +40,10 @@ public:
 
 /** Analytics events*/
 public:
+	/* Global Metrics */
+	static void FireEvent_ApplicationStart();
+	static void FireEvent_ApplicationStop();
+
 	/* Server metrics */
 	static void FireEvent_ServerUnplayableCondition(AUTGameMode* UTGM, double HitchThresholdInMs, int32 NumHitchesAboveThreshold, double TotalUnplayableTimeInMs);
 	static void FireEvent_PlayerContextLocationPerMinute(AUTBasePlayerController* UTPC, FString& PlayerContextLocation, const int32 NumSocialPartyMembers, int32 PlaylistID);
@@ -84,6 +88,7 @@ public:
 	static FString GetGenericParamName(EGenericAnalyticParam::Type InGenericParam);
 
 	/*Parameter Array Helpers*/
+	static void SetGlobalInitialParameters(TArray<FAnalyticsEventAttribute>& ParamArray);
 	static void SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime, bool bIsRankedMatch = false);
 	static void SetServerInitialParameters(TArray<FAnalyticsEventAttribute>& ParamArray);
 	static void SetClientInitialParameters(AUTBasePlayerController* UTPC, TArray<FAnalyticsEventAttribute>& ParamArray, bool bNeedMatchTime);
@@ -121,4 +126,6 @@ private:
 	static EAccountSource CurrentAccountSource;
 
 	static TArray<FString> GenericParamNames;
+	
+	static FGuid UniqueAnalyticSessionGuid;
 };
