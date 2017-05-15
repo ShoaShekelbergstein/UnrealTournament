@@ -46,7 +46,7 @@ public:
 			NewRuleset->MaxPlayers = 6;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_DM.GB_DM'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTDMGameMode");
-			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=3?GoalScore=0"));
+			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=10?GoalScore=0"));
 			NewRuleset->bTeamGame = false;
 						
 			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
