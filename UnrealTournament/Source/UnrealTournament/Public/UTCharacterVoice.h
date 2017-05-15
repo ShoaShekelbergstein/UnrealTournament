@@ -17,15 +17,18 @@ struct FCharacterSpeech
 };
 
 USTRUCT()
-struct FGameVolumeSpeech
+struct FGameVolumeLines
 {
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		TArray<FCharacterSpeech> EnemyFCSpeech;
+		FName VoiceLinesSet;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		TArray<FCharacterSpeech> FriendlyFCSpeech;
+		TArray<FCharacterSpeech> FlagHereNormal;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
+		TArray<FCharacterSpeech> FlagHereUrgent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
 		TArray<FCharacterSpeech> SecureSpeech;
@@ -176,109 +179,7 @@ class UNREALTOURNAMENT_API UUTCharacterVoice : public UUTLocalMessage
 		TArray<FCharacterSpeech> RallyHotMessages;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech BridgeLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech RiverLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech AntechamberLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech ThroneRoomLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech CourtyardLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech StablesLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech AntechamberHighLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech TowerLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech CreekLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech TempleLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech CaveLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech BaseCampLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech SniperLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech ArenaLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech BonsaiiLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech CliffsLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech CoreLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech CrossroadsLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech VentsLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech PipesLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech RampLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech HingeLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech TreeLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech TunnelLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech WaterfallLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech FortLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech FountainLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech GateHouseLines;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech OverlookLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech RuinsLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech SniperTowerLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech ShrineLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech StingerLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech CheckpointLines;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
-		FGameVolumeSpeech FlakLines;
+		TArray<FGameVolumeLines> LocationLines;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
 		FCharacterSpeech RedeemerPickupLine;
@@ -320,17 +221,12 @@ class UNREALTOURNAMENT_API UUTCharacterVoice : public UUTLocalMessage
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Voice)
 		FText StatusTextFormat;
 
-	UPROPERTY()
-		TMap<FName, FName> FallbackLines;
-
 	virtual FName GetFallbackLines(FName InName) const;
 
 	/** map of status index offsets. */
 	TMap< FName, int32 > StatusOffsets;
 
 	virtual int32 GetStatusIndex(FName NewStatus) const;
-
-	virtual FCharacterSpeech GetGVLine(const FGameVolumeSpeech& GVLines, int32 Switch) const;
 
 	virtual FText GetText(int32 Switch, bool bTargetsPlayerState1, class APlayerState* RelatedPlayerState_1, class APlayerState* RelatedPlayerState_2, class UObject* OptionalObject) const override;
 

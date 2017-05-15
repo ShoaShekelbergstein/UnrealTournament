@@ -57,26 +57,25 @@ UUTCharacterVoice::UUTCharacterVoice(const FObjectInitializer& ObjectInitializer
 	StatusOffsets.Add(PickupSpeechType::ShieldbeltPickup, KEY_CALLOUTS + 5300);
 	// LASTPICKUPSPEECH = KEY_CALLOUTS + 9999;
 
-
 	StatusOffsets.Add(StatusMessage::RedeemerKills, KEY_CALLOUTS + 10000);	
 
 	TauntText = NSLOCTEXT("UTCharacterVoice", "Taunt", ": {TauntMessage}");
 	StatusTextFormat = NSLOCTEXT("UTCharacterVoice", "StatusFormat", " at {LastKnownLocation}: {TauntMessage}");
-
-	FallbackLines.Add(FName(TEXT("Bridge")), GameVolumeSpeechType::GV_Bridge);
-	FallbackLines.Add(FName(TEXT("River")), GameVolumeSpeechType::GV_River);
-	FallbackLines.Add(FName(TEXT("Tower")), GameVolumeSpeechType::GV_Tower);
-	FallbackLines.Add(FName(TEXT("Creek")), GameVolumeSpeechType::GV_Creek);
-	FallbackLines.Add(FName(TEXT("Temple")), GameVolumeSpeechType::GV_Temple);
-	FallbackLines.Add(FName(TEXT("Cave")), GameVolumeSpeechType::GV_Cave);
-	FallbackLines.Add(FName(TEXT("Antechamber")), GameVolumeSpeechType::GV_Antechamber);
-	FallbackLines.Add(FName(TEXT("Courtyard")), GameVolumeSpeechType::GV_Courtyard);
-	FallbackLines.Add(FName(TEXT("Stables")), GameVolumeSpeechType::GV_Stables);
 }
 
 FName UUTCharacterVoice::GetFallbackLines(FName InName) const
 {
-	return FallbackLines.FindRef(InName);
+	// try to construct lines
+	FString LocationString = TEXT("GV_") + InName.ToString();
+	FName FallbackLines = FName(*LocationString);
+	for (int32 i = 0; i < LocationLines.Num(); i++)
+	{
+		if (FallbackLines == LocationLines[i].VoiceLinesSet)
+		{
+			return FallbackLines;
+		}
+	}
+	return NAME_None;
 }
 
 bool UUTCharacterVoice::IsOptionalSpoken(int32 MessageIndex) const
@@ -141,150 +140,30 @@ USoundBase* UUTCharacterVoice::GetAnnouncementSound_Implementation(int32 Switch,
 	const AUTGameVolume* LocationVolume = Cast<AUTGameVolume>(OptionalObject);
 	if (LocationVolume != nullptr)
 	{
-		if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Bridge)
+		for (int32 i = 0; i < LocationLines.Num(); i++)
 		{
-			return GetGVLine(BridgeLines, Switch).SpeechSound;
+			if (LocationVolume->VoiceLinesSet == LocationLines[i].VoiceLinesSet)
+			{
+				// @TODO FIXMESTEVE optimized sorted array somewhere, or keep map of indices
+				if (Switch < 2)
+				{
+					// @TODO FIXMESTEVE
+					Switch = (LocationVolume->bIsDefenderBase || LocationVolume->bIsWarningZone || LocationVolume->bPlayIncomingWarning) ? 1 : 0;
+					if ((Switch == 1) && (LocationLines[0].FlagHereUrgent.Num() == 0))
+					{
+						Switch = 0;
+					}
+				}
+				switch (Switch)
+				{
+				case 0: return (LocationLines[i].FlagHereNormal.Num() > 0) ? LocationLines[i].FlagHereNormal[FMath::RandRange(0, LocationLines[i].FlagHereNormal.Num() - 1)].SpeechSound : nullptr;
+				case 1: return (LocationLines[i].FlagHereUrgent.Num() > 0) ? LocationLines[i].FlagHereUrgent[FMath::RandRange(0, LocationLines[i].FlagHereUrgent.Num() - 1)].SpeechSound : nullptr;
+				case 2: return (LocationLines[i].SecureSpeech.Num() > 0) ? LocationLines[i].SecureSpeech[FMath::RandRange(0, LocationLines[i].SecureSpeech.Num() - 1)].SpeechSound : nullptr;
+				case 3: return (LocationLines[i].UndefendedSpeech.Num() > 0) ? LocationLines[i].UndefendedSpeech[FMath::RandRange(0, LocationLines[i].UndefendedSpeech.Num() - 1)].SpeechSound : nullptr;
+				}
+			}
 		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_River)
-		{
-			return GetGVLine(RiverLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Antechamber)
-		{
-			return GetGVLine(AntechamberLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_ThroneRoom)
-		{
-			return GetGVLine(ThroneRoomLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Courtyard)
-		{
-			return GetGVLine(CourtyardLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Stables)
-		{
-			return GetGVLine(StablesLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_AntechamberHigh)
-		{
-			return GetGVLine(AntechamberHighLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Tower)
-		{
-			return GetGVLine(TowerLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Creek)
-		{
-			return GetGVLine(CreekLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Temple)
-		{
-			return GetGVLine(TempleLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Cave)
-		{
-			return GetGVLine(CaveLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_BaseCamp)
-		{
-			return GetGVLine(BaseCampLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Sniper)
-		{
-			return GetGVLine(SniperLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Arena)
-		{
-			return GetGVLine(ArenaLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Bonsaii)
-		{
-			return GetGVLine(BonsaiiLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Cliffs)
-		{
-			return GetGVLine(CliffsLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Core)
-		{
-			return GetGVLine(CoreLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Crossroads)
-		{
-			return GetGVLine(CrossroadsLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Vents)
-		{
-			return GetGVLine(VentsLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Pipes)
-		{
-			return GetGVLine(PipesLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Ramp)
-		{
-			return GetGVLine(RampLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Hinge)
-		{
-			return GetGVLine(HingeLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Tree)
-		{
-			return GetGVLine(TreeLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Tunnel)
-		{
-			return GetGVLine(TunnelLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Falls)
-		{
-			return GetGVLine(WaterfallLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Fort)
-		{
-			return GetGVLine(FortLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Fountain)
-		{
-			return GetGVLine(FountainLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_GateHouse)
-		{
-			return GetGVLine(GateHouseLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Overlook)
-		{
-			return GetGVLine(OverlookLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Ruins)
-		{
-			return GetGVLine(RuinsLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_SniperTower)
-		{
-			return GetGVLine(SniperTowerLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Shrine)
-		{
-			return GetGVLine(ShrineLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Stinger)
-		{
-			return GetGVLine(StingerLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Checkpoint)
-		{
-			return GetGVLine(CheckpointLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Flak)
-		{
-			return GetGVLine(FlakLines, Switch).SpeechSound;
-		}
-		else if (LocationVolume->VoiceLinesSet == GameVolumeSpeechType::GV_Waterfall)
-		{
-			return GetGVLine(WaterfallLines, Switch).SpeechSound;
-		}
+		UE_LOG(UT, Warning, TEXT("Lines not found for %s"), *LocationVolume->VoiceLinesSet.ToString());
 		return nullptr;
 	}
 	FCharacterSpeech PickedSpeech = GetCharacterSpeech(Switch);
@@ -539,21 +418,6 @@ FCharacterSpeech UUTCharacterVoice::GetCharacterSpeech(int32 Switch) const
 				return (RedeemerSpottedMessages.Num() == 0) ? EmptySpeech : RedeemerSpottedMessages[FMath::RandRange(0, RedeemerSpottedMessages.Num() - 1)];
 			}
 		}
-	}
-	return EmptySpeech;
-}
-
-FCharacterSpeech UUTCharacterVoice::GetGVLine(const FGameVolumeSpeech& GVLines, int32 SwitchIndex) const
-{
-	FCharacterSpeech EmptySpeech;
-	EmptySpeech.SpeechSound = nullptr;
-	EmptySpeech.SpeechText = FText::GetEmpty();
-	switch(SwitchIndex)
-	{
-	case 0: return (GVLines.EnemyFCSpeech.Num() > 0) ? GVLines.EnemyFCSpeech[FMath::RandRange(0, GVLines.EnemyFCSpeech.Num() - 1)] : EmptySpeech;
-	case 1: return (GVLines.FriendlyFCSpeech.Num() > 0) ? GVLines.FriendlyFCSpeech[FMath::RandRange(0, GVLines.FriendlyFCSpeech.Num() - 1)] : EmptySpeech;
-	case 2: return (GVLines.SecureSpeech.Num() > 0) ? GVLines.SecureSpeech[FMath::RandRange(0, GVLines.SecureSpeech.Num() - 1)] : EmptySpeech;
-	case 3: return (GVLines.UndefendedSpeech.Num() > 0) ? GVLines.UndefendedSpeech[FMath::RandRange(0, GVLines.UndefendedSpeech.Num() - 1)] : EmptySpeech;
 	}
 	return EmptySpeech;
 }
