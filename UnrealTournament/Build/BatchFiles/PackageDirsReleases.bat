@@ -13,15 +13,11 @@ GOTO ZIPUP
 :ZIPUP
 
 xcopy RunUT-Shipping.bat \\isi-02.epicgames.net\Builds_UnrealTournament\++UT+Release-Next-CL-%BUILDCL%\WindowsNoEditor
-xcopy RunUT-Shipping32.bat \\isi-02.epicgames.net\Builds_UnrealTournament\++UT+Release-Next-CL-%BUILDCL%\WindowsNoEditor
 xcopy RunUT-Test.bat \\isi-02.epicgames.net\Builds_UnrealTournament\++UT+Release-Next-CL-%BUILDCL%\WindowsNoEditor
-xcopy RunUT-Test32.bat \\isi-02.epicgames.net\Builds_UnrealTournament\++UT+Release-Next-CL-%BUILDCL%\WindowsNoEditor
 
 pushd \\isi-02.epicgames.net\Builds_UnrealTournament\++UT+Release-Next-CL-%BUILDCL%
 
 "C:\Program Files (x86)\wxChecksums\wxcksums" --create=LinuxServer\%BUILDCL%.sfv LinuxServer\
-
-"C:\Program Files\7-Zip\7z" a UnrealTournament-Client-XAN-%BUILDCL%-Win.zip WindowsNoEditor
 
 "C:\Program Files\7-Zip\7z" a UnrealTournament-Server-XAN-%BUILDCL%-Linux.zip LinuxServer
 "C:\Program Files\7-Zip\7z" a UnrealTournament-Server-XAN-%BUILDCL%-Win64.zip WindowsServer
