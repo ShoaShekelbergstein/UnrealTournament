@@ -4535,16 +4535,11 @@ void AUTCharacter::UpdateSkin()
 		{
 			GetMesh()->SetMaterial(i, BodyMIs.IsValidIndex(i) ? BodyMIs[i] : GetClass()->GetDefaultObject<AUTCharacter>()->GetMesh()->GetMaterial(i));
 		}
+
 		for (int32 i = 0; i < FirstPersonMesh->GetNumMaterials(); i++)
 		{
-			FirstPersonMesh->SetMaterial(i, GetClass()->GetDefaultObject<AUTCharacter>()->FirstPersonMesh->GetMaterial(i));
+			FirstPersonMesh->SetMaterial(i, FirstPersonMeshMIDs.IsValidIndex(i) ? FirstPersonMeshMIDs[i] : GetClass()->GetDefaultObject<AUTCharacter>()->FirstPersonMesh->GetMaterial(i));
 		}
-	}
-
-	FirstPersonMeshMIDs.Empty();
-	for (int32 i = 0; i < FirstPersonMesh->GetNumMaterials(); i++)
-	{
-		FirstPersonMeshMIDs.Add(FirstPersonMesh->CreateAndSetMaterialInstanceDynamic(i));
 	}
 
 	if (Weapon != NULL)
