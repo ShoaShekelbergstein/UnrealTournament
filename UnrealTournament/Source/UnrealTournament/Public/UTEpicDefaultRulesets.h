@@ -475,25 +475,6 @@ public:
 			NewRuleset->bHideFromUI = true;
 		}
 
-		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::FlagRunVSAI, ESearchCase::IgnoreCase))
-		{
-			NewRuleset->Title = TEXT("Blitz vs Bots");
-			NewRuleset->Categories.Empty();
-			NewRuleset->Categories.Add(TEXT("QuickPlay"));
-			NewRuleset->MaxPlayers = 5;
-			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
-			NewRuleset->bTeamGame = true;
-			NewRuleset->MaxTeamCount = 1;
-			NewRuleset->MaxTeamSize = 5;
-			NewRuleset->MaxPartySize = 5;
-
-			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/WIP/FR-Fort";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-MeltDown";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-Loh";
-
-			NewRuleset->DefaultMap = "/Game/RestrictedAssets/Maps/WIP/FR-Fort";
-			NewRuleset->bHideFromUI = true;
-		}
 		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::QuickPlay_FlagRunVSAINormal, ESearchCase::IgnoreCase))
 		{
 			NewRuleset->Title = TEXT("Blitz vs Bots");
@@ -648,6 +629,73 @@ public:
 			NewRuleset->bHideFromUI = true;
 		}
 	
+
+		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::FlagRun, ESearchCase::IgnoreCase))
+		{
+			NewRuleset->Categories.Empty();
+			NewRuleset->Categories.Add(TEXT("Featured"));
+
+			NewRuleset->Title = TEXT("Blitz");
+			NewRuleset->Tooltip = TEXT("Attackers must deliver their flag to the enemy base.");
+			NewRuleset->Description = TEXT("Blitz.\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
+			NewRuleset->MaxPlayers = 10;
+			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
+			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTFlagRunGame");
+			NewRuleset->GameOptions = FString(TEXT(""));
+			NewRuleset->bTeamGame = true;
+			NewRuleset->MaxMapsInList = 16;
+
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
+
+			NewRuleset->EpicMaps ="/Game/RestrictedAssets/Maps/WIP/FR-Fort";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-MeltDown";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-Loh";
+		}
+		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::FlagRunVSAI, ESearchCase::IgnoreCase))
+		{
+			NewRuleset->Categories.Empty();
+			NewRuleset->Categories.Add(TEXT("Featured"));
+
+			NewRuleset->Title = TEXT("Blitz vs AI");
+			NewRuleset->Tooltip = TEXT("Co-op vs AI.  Attackers must deliver their flag to the enemy base.");
+			NewRuleset->Description = TEXT("Blitz Coop vs AI.\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
+			NewRuleset->MaxPlayers = 5;
+			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
+			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTFlagRunGame");
+			NewRuleset->GameOptions = FString(TEXT("?VSAI=1"));
+			NewRuleset->bTeamGame = true;
+			NewRuleset->MaxMapsInList = 16;
+
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_BotSkill;
+
+			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/WIP/FR-Fort";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-MeltDown";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-Loh";
+		}
+
+		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::Siege, ESearchCase::IgnoreCase))
+		{
+			NewRuleset->Categories.Empty();
+			NewRuleset->Categories.Add(TEXT("Featured"));
+
+			NewRuleset->Title = TEXT("Siege");
+			NewRuleset->Tooltip = TEXT("Prototype PVE mode.  Defend your base against hordes of incoming enemies trying to deliver their flag.");
+			NewRuleset->Description = TEXT("PROTOTYPE PVE mode.  Defend your base against hordes of incoming enemies trying to deliver their flag..\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
+			NewRuleset->MaxPlayers = 5;
+			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
+			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTFlagRunPvEGame");
+			NewRuleset->GameOptions = FString(TEXT(""));
+			NewRuleset->bTeamGame = true;
+			NewRuleset->MaxMapsInList = 16;
+
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_BotSkill + GAME_OPTION_FLAGS_RequireFull;
+
+			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/WIP/FR-Fort";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-MeltDown";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/FR-Loh";
+		}
+
+
 	}
 };
 
