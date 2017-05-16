@@ -322,6 +322,7 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 			LevelUpRewards[50] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/NecrisMale04.NecrisMale04"));
 
 			int32 OldLevel = Level;
+			int32 NewLevel = GetLevelForXP(LP->GetOnlineXP());
 			if (SummaryTime > XPUpdateStart)
 			{
 				if (SummaryTime - RenderDelta <= XPUpdateStart)
@@ -344,8 +345,8 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 				float GlowScale = (GlowTime < 0.1f) ? (1.f + 30.f*GlowTime) : FMath::Max(1.f, 4.f - 5.f*(GlowTime - 0.1f));
 				DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth - 0.5f * XPSize * (GlowScale - 1.f), XPBarY + 2.f*RenderScale - 0.5f * XPBarHeight * (GlowScale - 1.f), XPSize * GlowScale, (XPBarHeight*GlowScale) - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 0.2f, XPGlow);
 
-				OldLevel = GetLevelForXP(CurrentXP - NewXP);
-				if (bGiveReward && (Level != OldLevel))
+				OldLevel = GetLevelForXP(CurrentXP);
+				if (bGiveReward && (OldLevel != NewLevel))
 				{
 					if (SummaryTime - RenderDelta <= LevelUpdateStart)
 					{
@@ -393,7 +394,7 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 					Args.Add("RewardLevelNum", FText::AsNumber(RewardLevelNum));
 					Args.Add("NextReward", RewardText);
 					FText RewardLevelText = FText::Format(NSLOCTEXT("UTScoreboard", "RewardLevel", "Unlock '{NextReward}' when you reach Level {RewardLevelNum}"), Args);
-					if (bGiveReward && (RewardLevelNum <= Level))
+					if (bGiveReward && (RewardLevelNum <= NewLevel))
 					{
 						RewardLevelText = FText::Format(NSLOCTEXT("UTScoreboard", "RewardAchieved", "You unlocked '{NextReward}'!"), Args);
 					}
