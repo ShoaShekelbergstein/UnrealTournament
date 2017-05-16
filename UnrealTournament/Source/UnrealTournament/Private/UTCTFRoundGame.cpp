@@ -6,6 +6,7 @@
 AUTCTFRoundGame::AUTCTFRoundGame(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
+	bHideInUI = true;
 }
 
 
