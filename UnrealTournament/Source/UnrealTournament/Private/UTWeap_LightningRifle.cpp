@@ -301,7 +301,6 @@ void AUTWeap_LightningRifle::FireShot()
 
 	AmmoCost[0] = bIsFullyPowered ? 2 : 1;
 	bool bFullPowerShot = bIsFullyPowered;
-	ConsumeAmmo(0);
 	if (!FireShotOverride() && GetUTOwner() != NULL) // script event may kill user
 	{
 		if ((ZoomState == EZoomState::EZS_NotZoomed) && ProjClass.IsValidIndex(CurrentFireMode) && ProjClass[CurrentFireMode] != NULL)
@@ -329,6 +328,8 @@ void AUTWeap_LightningRifle::FireShot()
 		//UE_LOG(UT, Warning, TEXT("FireShot"));
 		PlayFiringEffects();
 	}
+	ConsumeAmmo(0);
+
 	if (GetUTOwner() != NULL)
 	{
 		GetUTOwner()->InventoryEvent(InventoryEventName::FiredWeapon);
