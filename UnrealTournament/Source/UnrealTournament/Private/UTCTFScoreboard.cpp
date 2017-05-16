@@ -206,12 +206,7 @@ void UUTCTFScoreboard::DrawScoringPlayInfo(const FCTFScoringPlay& Play, float Cu
 	float IconHeight = 0.9f*CurrentScoreHeight;
 	float IconOffset = 0.13f*ScoreWidth;
 	DrawTexture(UTHUDOwner->HUDAtlas, XOffset + IconOffset, YPos + 0.1f*CurrentScoreHeight, IconHeight, IconHeight, UTHUDOwner->TeamIconUV[IconIndex].X, UTHUDOwner->TeamIconUV[IconIndex].Y, 72, 72, 1.f, Play.Team->TeamColor);
-
 	FString ScoredByLine = Play.ScoredBy.GetPlayerName();
-	if (Play.ScoredByCaps > 1)
-	{
-		ScoredByLine += FString::Printf(TEXT(" (%i)"), Play.ScoredByCaps);
-	}
 
 	// time of game
 	FString TimeStampLine = UTHUDOwner->ConvertTime(FText::GetEmpty(), FText::GetEmpty(), Play.RemainingTime, false, true, false).ToString();
