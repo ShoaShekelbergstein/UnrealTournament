@@ -2540,6 +2540,9 @@ public:
 		, EpicMaps(TEXT(""))
 		, DefaultMap(TEXT(""))
 		, MaxPlayers(0)
+		, MaxTeamCount(0)
+		, MaxPartySize(0)
+		, MaxTeamSize(0)
 		, DisplayTexture(TEXT(""))
 		, GameMode(TEXT(""))
 		, GameOptions(TEXT(""))
@@ -2548,9 +2551,6 @@ public:
 		, OptionFlags(GAME_OPTION_FLAGS_All)
 		, bHideFromUI(false)
 		, EpicForceUIVisibility(0)
-		, MaxTeamCount(0)
-		, MaxPartySize(0)
-		, MaxTeamSize(0)
 	{
 		Categories.Empty();
 		MapPrefixes.Empty();
