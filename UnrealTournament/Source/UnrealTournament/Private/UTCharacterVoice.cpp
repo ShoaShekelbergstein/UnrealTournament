@@ -457,29 +457,29 @@ bool UUTCharacterVoice::IsPickupUpdate(int32 Switch) const
 	return (Switch > StatusBaseIndex + FIRSTPICKUPSPEECH) && (Switch < StatusBaseIndex + LASTPICKUPSPEECH);
 }
 
-bool UUTCharacterVoice::InterruptAnnouncement(const FAnnouncementInfo AnnouncementInfo, const FAnnouncementInfo OtherAnnouncementInfo) const
+bool UUTCharacterVoice::InterruptAnnouncement(const FAnnouncementInfo NewAnnouncementInfo, const FAnnouncementInfo OtherAnnouncementInfo) const
 {
-	if (AnnouncementInfo.Switch == GetStatusIndex(StatusMessage::Incoming))
+	if (NewAnnouncementInfo.Switch == GetStatusIndex(StatusMessage::Incoming))
 	{
-		return (AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass)
+		return (NewAnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass)
 			|| OtherAnnouncementInfo.MessageClass->GetDefaultObject<UUTLocalMessage>()->IsOptionalSpoken(OtherAnnouncementInfo.Switch)
 			|| (OtherAnnouncementInfo.MessageClass->GetDefaultObject<UUTLocalMessage>()->GetAnnouncementPriority(OtherAnnouncementInfo) < 1.f);
 	}
-	if (AnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass)
+	if (NewAnnouncementInfo.MessageClass == OtherAnnouncementInfo.MessageClass)
 	{
-		bool bNewIsFlagLocUpdate = IsFlagLocationUpdate(AnnouncementInfo.Switch, AnnouncementInfo.OptionalObject);
+		bool bNewIsFlagLocUpdate = IsFlagLocationUpdate(NewAnnouncementInfo.Switch, NewAnnouncementInfo.OptionalObject);
 		bool bOldIsFlagLocUpdate = IsFlagLocationUpdate(OtherAnnouncementInfo.Switch, OtherAnnouncementInfo.OptionalObject);
 		if (bNewIsFlagLocUpdate)
 		{
 			return bOldIsFlagLocUpdate || IsPickupUpdate(OtherAnnouncementInfo.Switch) || (OtherAnnouncementInfo.Switch < StatusBaseIndex + KEY_CALLOUTS);
 		}
-		if (AnnouncementInfo.Switch >= StatusBaseIndex + KEY_CALLOUTS)
+		if (NewAnnouncementInfo.Switch >= StatusBaseIndex + KEY_CALLOUTS)
 		{
-			if (OtherAnnouncementInfo.Switch < StatusBaseIndex + KEY_CALLOUTS)
+			if ((OtherAnnouncementInfo.Switch < StatusBaseIndex + KEY_CALLOUTS) && !bOldIsFlagLocUpdate)
 			{
 				return true;
 			}
-			if ((AnnouncementInfo.Switch == GetStatusIndex(StatusMessage::RallyNow)) && (OtherAnnouncementInfo.Switch == GetStatusIndex(StatusMessage::NeedRally)))
+			if ((NewAnnouncementInfo.Switch == GetStatusIndex(StatusMessage::RallyNow)) && (OtherAnnouncementInfo.Switch == GetStatusIndex(StatusMessage::NeedRally)))
 			{
 				return true;
 			}
@@ -488,6 +488,7 @@ bool UUTCharacterVoice::InterruptAnnouncement(const FAnnouncementInfo Announceme
 	return false;
 }
 
+// check using right names
 bool UUTCharacterVoice::CancelByAnnouncement_Implementation(int32 Switch, const UObject* OptionalObject, TSubclassOf<UUTLocalMessage> OtherMessageClass, int32 OtherSwitch, const UObject* OtherOptionalObject) const
 {
 	if (GetClass() == OtherMessageClass)
@@ -496,15 +497,11 @@ bool UUTCharacterVoice::CancelByAnnouncement_Implementation(int32 Switch, const 
 		{
 			return (OtherSwitch >= StatusBaseIndex + KEY_CALLOUTS) || IsFlagLocationUpdate(OtherSwitch, OtherOptionalObject);
 		}
-		if ( !Cast<AUTGameVolume>(OtherOptionalObject) || !Cast<AUTGameVolume>(OptionalObject) )
-		{
-			return false;
-		}
-		if ( IsFlagLocationUpdate(OtherSwitch, OtherOptionalObject) && IsFlagLocationUpdate(Switch, OptionalObject) )
+		if ((OtherSwitch == GetStatusIndex(StatusMessage::RallyNow)) && (Switch == GetStatusIndex(StatusMessage::NeedRally)))
 		{
 			return true;
 		}
-		if ((OtherSwitch == GetStatusIndex(StatusMessage::RallyNow)) && (Switch == GetStatusIndex(StatusMessage::NeedRally)))
+		if ( IsFlagLocationUpdate(OtherSwitch, OtherOptionalObject) && IsFlagLocationUpdate(Switch, OptionalObject) )
 		{
 			return true;
 		}

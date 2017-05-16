@@ -110,10 +110,6 @@ bool UUTTutorialAnnouncement::InterruptAnnouncement(const FAnnouncementInfo Anno
 
 bool UUTTutorialAnnouncement::CancelByAnnouncement_Implementation(int32 Switch, const UObject* OptionalObject, TSubclassOf<UUTLocalMessage> OtherMessageClass, int32 OtherSwitch, const UObject* OtherOptionalObject) const
 {
-	if ((OtherMessageClass == GetClass()) && (Switch == OtherSwitch) && (OptionalObject == OtherOptionalObject))
-	{
-		//UE_LOG(UT, Warning, TEXT("Cancel %s %d because of %s %d"), *OptionalObject->GetName(), Switch, *OtherOptionalObject->GetName(), OtherSwitch);
-	}
 	return (OtherMessageClass == GetClass()) && (Switch == OtherSwitch) && (OptionalObject == OtherOptionalObject);
 }
 

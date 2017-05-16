@@ -75,7 +75,7 @@ void UUTAnnouncer::PlayAnnouncement(TSubclassOf<UUTLocalMessage> MessageClass, i
 				bool bCancelThisAnnouncement = false;
 				int32 InsertIndex = -1;
 				float AnnouncementPriority = MessageClass.GetDefaultObject()->GetAnnouncementPriority(NewAnnouncement);
-				// see if we should cancel any existing announcements
+				// see if we should cancel this new announcement because of currently playing announcement
 				if ((CurrentAnnouncement.MessageClass != NULL) && MessageClass.GetDefaultObject()->CancelByAnnouncement(Switch, OptionalObject, CurrentAnnouncement.MessageClass, CurrentAnnouncement.Switch, CurrentAnnouncement.OptionalObject))
 				{
 					if (MessageClass.GetDefaultObject()->EnableAnnouncerLogging())

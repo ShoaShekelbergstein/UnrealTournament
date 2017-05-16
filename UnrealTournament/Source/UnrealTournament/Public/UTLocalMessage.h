@@ -170,13 +170,13 @@ class UNREALTOURNAMENT_API UUTLocalMessage : public ULocalMessage
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, BlueprintPure, Category = Message)
 	bool ShouldCountInstances(int32 MessageIndex, UObject* OptionalObject) const;
 
-	/** return whether this announcement should interrupt/cancel the passed in announcement */
+	/** return whether this announcement should interrupt/cancel the passed in other announcement */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, BlueprintPure, Category = Message)
 	bool InterruptAnnouncement(int32 Switch, const UObject* OptionalObject, TSubclassOf<UUTLocalMessage> OtherMessageClass, int32 OtherSwitch, const UObject* OtherOptionalObject) const;
 
 	virtual bool InterruptAnnouncement(const FAnnouncementInfo AnnouncementInfo, const FAnnouncementInfo OtherAnnouncementInfo) const;
 
-	/** return whether this announcement should be cancelled by the passed in announcement */
+	/** return whether this announcement should be cancelled by the passed in other announcement */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, BlueprintPure, Category = Message)
 	bool CancelByAnnouncement(int32 Switch, const UObject* OptionalObject, TSubclassOf<UUTLocalMessage> OtherMessageClass, int32 OtherSwitch, const UObject* OtherOptionalObject) const;
 
