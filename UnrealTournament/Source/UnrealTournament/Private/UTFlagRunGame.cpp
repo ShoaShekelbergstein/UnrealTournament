@@ -21,21 +21,18 @@
 #include "UTShowdownGameMessage.h"
 #include "UTShowdownRewardMessage.h"
 #include "UTPlayerStart.h"
-#include "UTArmor.h"
-#include "UTTimedPowerup.h"
 #include "UTPlayerState.h"
 #include "UTFlagRunHUD.h"
+#include "UTArmor.h"
 #include "UTGhostFlag.h"
 #include "UTFlagRunGameState.h"
 #include "UTAsymCTFSquadAI.h"
 #include "UTWeaponRedirector.h"
-#include "UTWeaponLocker.h"
 #include "UTFlagRunMessage.h"
 #include "UTWeap_Translocator.h"
 #include "UTReplicatedEmitter.h"
 #include "UTATypes.h"
 #include "UTGameVolume.h"
-#include "UTTaunt.h"
 #include "Animation/AnimInstance.h"
 #include "UTFlagRunGameMessage.h"
 #include "UTAnalytics.h"
@@ -81,7 +78,6 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	bSitOutDuringRound = false;
 	EndOfMatchMessageDelay = 2.5f;
 	bUseLevelTiming = true;
-
 
 	GoldScore = 3;
 	SilverScore = 2;
@@ -388,21 +384,18 @@ void AUTFlagRunGame::CheckRoundTimeVictory()
 		// Round is over, defense wins.
 		ScoreAlternateWin((FRGS && FRGS->bRedToCap) ? 1 : 0, 2);
 	}
-	else
+	else if (FRGS)
 	{
-		if (FRGS)
+		uint8 OldBonusLevel = FRGS->BonusLevel;
+		FRGS->BonusLevel = (RemainingTime >= FRGS->GoldBonusThreshold) ? 3 : 2;
+		if (RemainingTime < FRGS->SilverBonusThreshold)
 		{
-			uint8 OldBonusLevel = FRGS->BonusLevel;
-			FRGS->BonusLevel = (RemainingTime >= FRGS->GoldBonusThreshold) ? 3 : 2;
-			if (RemainingTime < FRGS->SilverBonusThreshold)
-			{
-				FRGS->BonusLevel = 1;
-			}
-			if (OldBonusLevel != FRGS->BonusLevel)
-			{
-				FRGS->OnBonusLevelChanged();
-				FRGS->ForceNetUpdate();
-			}
+			FRGS->BonusLevel = 1;
+		}
+		if (OldBonusLevel != FRGS->BonusLevel)
+		{
+			FRGS->OnBonusLevelChanged();
+			FRGS->ForceNetUpdate();
 		}
 	}
 }
@@ -891,12 +884,10 @@ int32 AUTFlagRunGame::GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPl
 				{
 					return GOT_YOUR_BACK_SWITCH_INDEX;
 				}
-
 				else if (CommandTag == CommandTags::Attack)
 				{
 					return GOING_IN_SWITCH_INDEX;
 				}
-
 				else if (CommandTag == CommandTags::Defend)
 				{
 					return ATTACK_THEIR_BASE_SWITCH_INDEX;
@@ -1373,7 +1364,6 @@ void AUTFlagRunGame::SetEloFor(AUTPlayerState* PS, bool bInRankedSession, int32 
 			{
 				PS->RankedFlagRunMatchesPlayed++;
 			}
-
 		}
 		else
 		{
@@ -1381,44 +1371,6 @@ void AUTFlagRunGame::SetEloFor(AUTPlayerState* PS, bool bInRankedSession, int32 
 			if (bIncrementMatchCount && (PS->FlagRunMatchesPlayed < 255))
 			{
 				PS->FlagRunMatchesPlayed++;
-			}
-		}
-	}
-}
-
-void AUTFlagRunGame::GrantPowerupToTeam(int TeamIndex, AUTPlayerState* PlayerToHighlight)
-{
-	if (!bAllowBoosts)
-	{
-		return;
-	}
-	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
-	{
-		AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-		if (PS && PS->Team)
-		{
-			if (PS->Team->TeamIndex == TeamIndex)
-			{
-				if (PS->BoostClass && PS->BoostClass.GetDefaultObject() && PS->BoostClass.GetDefaultObject()->RemainingBoostsGivenOverride > 0)
-				{
-					PS->SetRemainingBoosts(PS->BoostClass.GetDefaultObject()->RemainingBoostsGivenOverride);
-				}
-				else
-				{
-					PS->SetRemainingBoosts(1);
-				}
-			}
-			AUTPlayerController* PC = Cast<AUTPlayerController>(PS->GetOwner());
-			if (PC)
-			{
-				if (PS->Team->TeamIndex == TeamIndex)
-				{
-					PC->ClientReceiveLocalizedMessage(UUTCTFRewardMessage::StaticClass(), 7, PlayerToHighlight);
-				}
-				else
-				{
-					PC->ClientReceiveLocalizedMessage(UUTCTFRoleMessage::StaticClass(), 7, PlayerToHighlight);
-				}
 			}
 		}
 	}
@@ -2157,7 +2109,6 @@ void AUTFlagRunGame::InitRound()
 	{
 		AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
 		InitPlayerForRound(PS);
-
 	}
 	CTFGameState->SetTimeLimit(TimeLimit);
 
@@ -2227,7 +2178,7 @@ bool AUTFlagRunGame::IsPlayerOnLifeLimitedTeam(AUTPlayerState* PlayerState) cons
 
 void AUTFlagRunGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 {
-	// Dont ever end the game in PIE
+	// Don't ever end the game in PIE
 	if (GetWorld()->WorldType == EWorldType::PIE) return;
 
 	UTGameState->WinningTeam = Winner;

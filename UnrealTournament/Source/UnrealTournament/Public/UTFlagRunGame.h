@@ -223,7 +223,6 @@ public:
 	virtual void UpdateTiebreak(int32 Bonus, int32 TeamIndex);
 
 protected:
-	virtual void GrantPowerupToTeam(int TeamIndex, AUTPlayerState* PlayerToHighlight);
 	virtual bool IsTeamOnDefense(int32 TeamNumber) const;
 	virtual bool IsPlayerOnLifeLimitedTeam(AUTPlayerState* PlayerState) const;
 };
