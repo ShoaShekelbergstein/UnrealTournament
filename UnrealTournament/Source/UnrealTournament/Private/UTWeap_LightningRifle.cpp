@@ -319,7 +319,8 @@ void AUTWeap_LightningRifle::FireShot()
 				FHitResult OutHit;
 				FireInstantHit(true, &OutHit);
 
-				if (bFullPowerShot && Cast<AUTCharacter>(OutHit.Actor.Get()) && !OutHit.Actor->bTearOff)
+				AUTCharacter* PoweredHitCharacter = bFullPowerShot ? Cast<AUTCharacter>(OutHit.Actor.Get()) : nullptr;
+				if (PoweredHitCharacter && (!PoweredHitCharacter->bTearOff || (PoweredHitCharacter->TimeOfDeath == GetWorld()->GetTimeSeconds())))
 				{
 					ChainLightning(OutHit);
 				}
