@@ -169,6 +169,12 @@ void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 				{
 					PlayerConxtextLocation.Append(TEXT("_CustomContent"));
 				}
+
+				if (PlayerConxtextLocation.Contains(TEXT("Match")))
+				{
+					PlayerConxtextLocation.Append(FString::Printf(TEXT("_%s"), *UTPC->GetWorld()->GetMapName()));
+				}
+
 				FUserActivityTracking::SetActivity(FUserActivity(PlayerConxtextLocation));
 			}
 		}
