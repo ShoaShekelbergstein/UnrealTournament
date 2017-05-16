@@ -18,18 +18,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TSubclassOf<class AUTWeaponRedirector> AfterImageType;
 
-	UPROPERTY()
-		float RallyRequestTime;
-
+	/** Used for periodic defense warnings about unguarded routes. */
 	UPROPERTY()
 		float LastEntryDefenseWarningTime;
 
+	/** Amount of score earned for 3 star cap. */
 	UPROPERTY()
 		int32 GoldScore;
 
+	/** Amount of score earned for 2 star cap. */
 	UPROPERTY()
 		int32 SilverScore;
 
+	/** Amount of score earned for 1 star cap. */
 	UPROPERTY()
 		int32 BronzeScore;
 
@@ -44,6 +45,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = CTF)
 		bool bSlowFlagCarrier;
 
+	/** Active carried object for this round. */
 	UPROPERTY(BlueprintReadOnly, Category = CTF)
 		class AUTCarriedObject* ActiveFlag;
 
@@ -54,15 +56,82 @@ public:
 
 	virtual TSubclassOf<class AUTInventory> GetActivatedPowerupPlaceholderClass() { return ActivatedPowerupPlaceholderClass; };
 
+	/** Sound to play when a rally attempt fails. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
 		USoundBase* RallyFailedSound;
 
+	/** Last spawn group used by attackers (used to spread out spawns). */
 	UPROPERTY()
 		FName LastAttackerSpawnGroup;
 
+	/** Last spawn group used by defenders (used to spread out spawns). */
 	UPROPERTY()
 		FName LastDefenderSpawnGroup;
 
+	/** Alternate round victory condition - get this many kills. */
+	UPROPERTY(BlueprintReadWrite, Category = CTF)
+		int32 RoundLives;
+
+	/* If true, use world settings round times */
+	UPROPERTY(BlueprintReadOnly, Category = CTF)
+		bool bUseLevelTiming;
+
+	/** Respawn wait time for team with no life limit. */
+	UPROPERTY(BlueprintReadOnly, Category = CTF)
+		float UnlimitedRespawnWaitTime;
+
+	/** Limited Respawn wait time. */
+	UPROPERTY(BlueprintReadOnly, Category = CTF)
+		float LimitedRespawnWaitTime;
+
+	UPROPERTY(BlueprintReadOnly, Category = CTF)
+		int32 NumRounds;
+
+	/** Last time Ace reward was announced (kill results in all five member of enemy team dead simultaneously). */
+	UPROPERTY(BlueprintReadWrite, Category = CTF)
+		float LastAceTime;
+
+	/** Set once first round has been initialized. */
+	UPROPERTY()
+		bool bFirstRoundInitialized;
+
+	/*  Victory due to secondary score (best total capture time) */
+	UPROPERTY(BlueprintReadOnly, Category = CTF)
+		bool bSecondaryWin;
+
+	/** Delay at start of round before attackers can pick up flag. */
+	UPROPERTY(BlueprintReadOnly)
+		int32 FlagPickupDelay;
+
+	/** Maximum time remaining considered for tiebreak bonus. */
+	UPROPERTY()
+		int32 MaxTimeScoreBonus;
+
+	UPROPERTY()
+		bool bRollingAttackerSpawns;
+
+	UPROPERTY()
+		float RollingAttackerRespawnDelay;
+
+	UPROPERTY()
+		float LastAttackerSpawnTime;
+
+	UPROPERTY()
+		float RollingSpawnStartTime;
+
+	UPROPERTY()
+		bool bLastManOccurred;
+
+	UPROPERTY()
+		AUTPlayerState* FlagScorer;
+
+protected:
+	// If true, players who join during the round, or switch teams during the round will be forced to
+	// sit out and wait for the next round/
+	UPROPERTY()
+		bool bSitOutDuringRound;
+
+public:
 	virtual void ScoreRedAlternateWin();
 	virtual void ScoreBlueAlternateWin();
 

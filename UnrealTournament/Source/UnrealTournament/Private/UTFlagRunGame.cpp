@@ -60,7 +60,6 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	TimeLimit = 5;
 	IntermissionDuration = 28.f;
 	RoundLives = 5;
-	bNeedFiveKillsMessage = true;
 	FlagCapScore = 1;
 	UnlimitedRespawnWaitTime = 2.f;
 	bForceRespawn = true;
@@ -68,7 +67,6 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	HUDClass = AUTFlagRunHUD::StaticClass();
 	SquadType = AUTAsymCTFSquadAI::StaticClass();
 	NumRounds = 6;
-	InitialBoostCount = 0;
 	MaxTimeScoreBonus = 180;
 	bGameHasTranslocator = false;
 
@@ -1166,10 +1164,6 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 					if (GS->OnSameTeam(UTPlayerState, PC))
 					{
 						PC->ClientReceiveLocalizedMessage(UUTCTFMajorMessage::StaticClass(), 27, UTPlayerState);
-						if (GetWorld()->GetTimeSeconds() - RallyRequestTime < 6.f)
-						{
-							PC->ClientReceiveLocalizedMessage(UTPlayerState->GetCharacterVoiceClass(), ACKNOWLEDGE_SWITCH_INDEX, UTPlayerState, PC->PlayerState, NULL);
-						}
 					}
 					else
 					{
@@ -2140,7 +2134,6 @@ void AUTFlagRunGame::InitRound()
 	FlagScorer = nullptr;
 	bFirstBloodOccurred = false;
 	bLastManOccurred = false;
-	bNeedFiveKillsMessage = true;
 	InitGameStateForRound();
 	ResetFlags();
 	if (FlagPickupDelay > 0)
@@ -2200,7 +2193,7 @@ void AUTFlagRunGame::InitPlayerForRound(AUTPlayerState* PS)
 		PS->RoundKillAssists = 0;
 		PS->bRallyActivated = false;
 		PS->RespawnWaitTime = IsPlayerOnLifeLimitedTeam(PS) ? LimitedRespawnWaitTime : UnlimitedRespawnWaitTime;
-		PS->SetRemainingBoosts(InitialBoostCount);
+		PS->SetRemainingBoosts(0);
 		PS->bSpecialTeamPlayer = false;
 		PS->bSpecialPlayer = false;
 		if (GetNetMode() != NM_DedicatedServer)
