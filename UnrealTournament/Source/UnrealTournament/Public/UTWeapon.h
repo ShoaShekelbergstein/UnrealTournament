@@ -1137,6 +1137,10 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UAnimSequence* dodgeLeft;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
 	UAnimSequence* dodgeRight;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* dodgeForward_right;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* dodgeForward_left;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
 	UAnimSequence* wallRun_L_into;
@@ -1150,6 +1154,10 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UAnimSequence* wallRun_R;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
 	UAnimSequence* wallRun_R_out;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_L_dodge;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
+	UAnimSequence* wallRun_R_dodge;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Animation")
 	class UAimOffsetBlendSpace* lagAO;

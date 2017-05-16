@@ -128,7 +128,7 @@ public:
 	virtual void ClientMatchmakingGameComplete();
 
 	UFUNCTION(Client, Reliable)
-	virtual void ClientReturnToLobby();
+	virtual void ClientReturnToLobby(bool bKicked=false);
 
 	UFUNCTION(Client, Reliable)
 	virtual void ClientRankedGameAbandoned();
@@ -198,12 +198,7 @@ protected:
 	void AttemptGUIDJoin();
 	void OnFindSessionsComplete(bool bWasSuccessful);
 	void OnCancelGUIDFindSessionComplete(bool bWasSuccessful);
-
-	//FIXME JOE - I think we can remove this but I have to search to make sure noone else is using it
-	FContentDownloadComplete OnDownloadComleteDelgate;
-	FDelegateHandle OnDownloadCompleteDelegateHandle;
-	virtual void OnDownloadComplete(class UUTGameViewportClient* ViewportClient, ERedirectStatus::Type RedirectStatus, const FString& PackageName);
-
+	
 public:
 	UFUNCTION(Exec)
 	virtual void UTLogOut();
@@ -254,7 +249,7 @@ public:
 	virtual void HandleNetworkFailureMessage(enum ENetworkFailure::Type FailureType, const FString& ErrorString);
 
 	/**Check to see if this PC can chat. Called on Client and server independantly*/
-	bool AllowTextMessage(const FString& Msg);
+	bool AllowTextMessage(FString& Msg, bool bIsTeamMessage);
 
 	/**The accumulation of time added per message. Once overflowed the player must wait for this to return to 0*/
 	float ChatOverflowTime;
@@ -272,7 +267,7 @@ public:
 
 #if !UE_SERVER
 	virtual void Tick(float DeltaTime) override;
-	virtual void UpdateInputMode();
+	virtual void UpdateInputMode(bool bForce = false);
 
 #endif
 

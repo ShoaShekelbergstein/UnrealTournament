@@ -66,6 +66,15 @@ AUTRemoteRedeemer::AUTRemoteRedeemer(const class FObjectInitializer& ObjectIniti
 	LockCount = 0;
 	CachedTeamNum = 255;
 	MaxFuelTime = 20.f;
+
+	ExplosionTimings[0] = 0.18f;
+	ExplosionTimings[1] = 0.18f;
+
+	ExplosionRadii[0] = 0.25f;
+	ExplosionRadii[1] = 0.75f;
+	ExplosionRadii[2] = 1.f;
+
+	CollisionFreeRadius = 1200.f;
 }
 
 FVector AUTRemoteRedeemer::GetVelocity() const
@@ -123,6 +132,10 @@ bool AUTRemoteRedeemer::DriverEnter(APawn* NewDriver)
 			AUTCharacter *UTChar = Cast<AUTCharacter>(NewDriver);
 			if (UTChar)
 			{
+				if (UTChar->GetVelocity().IsNearlyZero() && UTChar->UTCharacterMovement)
+				{
+					UTChar->UTCharacterMovement->AddDampedImpulse(FVector(0.f, 0.f, 4000.f), false);
+				}
 				UTChar->StartDriving(this);
 				UTChar->PlayerState = PlayerState;
 			}
@@ -135,11 +148,6 @@ bool AUTRemoteRedeemer::DriverEnter(APawn* NewDriver)
 
 bool AUTRemoteRedeemer::DriverLeave(bool bForceLeave)
 {
-	if (!bShotDown)
-	{
-		BlowUp();
-	}
-
 	AController* C = Controller;
 	if (Driver && C)
 	{
@@ -362,9 +370,9 @@ void AUTRemoteRedeemer::PlayShotDownEffects()
 	// stop any looping audio and particles
 	TArray<USceneComponent*> Components;
 	GetComponents<USceneComponent>(Components);
-	if (RedeemerProjectileClass && RedeemerProjectileClass->GetDefaultObject<AUTProj_Redeemer>()->ShotDownAmbient)
+	if (ShotDownAmbient)
 	{
-		UUTGameplayStatics::UTPlaySound(GetWorld(), RedeemerProjectileClass->GetDefaultObject<AUTProj_Redeemer>()->ShotDownAmbient, this, SRT_IfSourceNotReplicated, false, GetActorLocation(), NULL, NULL, false, SAT_None);
+		UUTGameplayStatics::UTPlaySound(GetWorld(), ShotDownAmbient, this, SRT_IfSourceNotReplicated, false, GetActorLocation(), NULL, NULL, false, SAT_None);
 	}
 	for (int32 i = 0; i < Components.Num(); i++)
 	{
@@ -406,20 +414,12 @@ void AUTRemoteRedeemer::PlayExplosionEffects()
 		}
 	}
 
-	AUTProj_Redeemer* DefaultRedeemer = (RedeemerProjectileClass != NULL) ? RedeemerProjectileClass->GetDefaultObject<AUTProj_Redeemer>() : NULL;
-	if (DefaultRedeemer != NULL)
+	if (ExplosionBP != NULL)
 	{
-		if (DefaultRedeemer->ExplosionBP != NULL)
+		GetWorld()->SpawnActor<AActor>(ExplosionBP, FTransform(GetActorRotation(), GetActorLocation()));
+		if (ExplosionSound != nullptr)
 		{
-			GetWorld()->SpawnActor<AActor>(DefaultRedeemer->ExplosionBP, FTransform(GetActorRotation(), GetActorLocation()));
-			if (DefaultRedeemer->ExplosionEffects && DefaultRedeemer->ExplosionEffects.GetDefaultObject()->Audio)
-			{
-				UUTGameplayStatics::UTPlaySound(GetWorld(), DefaultRedeemer->ExplosionEffects.GetDefaultObject()->Audio, this, SRT_IfSourceNotReplicated, false, GetActorLocation(), NULL, NULL, false, SAT_None);
-			}
-		}
-		else if (DefaultRedeemer->ExplosionEffects != NULL)
-		{
-			DefaultRedeemer->ExplosionEffects.GetDefaultObject()->SpawnEffect(GetWorld(), FTransform(GetActorRotation(), GetActorLocation()), nullptr, this, DamageInstigator);
+			UUTGameplayStatics::UTPlaySound(GetWorld(), ExplosionSound, this, SRT_IfSourceNotReplicated, false, GetActorLocation(), NULL, NULL, false, SAT_None);
 		}
 	}
 }
@@ -489,10 +489,17 @@ void AUTRemoteRedeemer::GetActorEyesViewPoint(FVector& out_Location, FRotator& o
 
 void AUTRemoteRedeemer::PawnStartFire(uint8 FireModeNum)
 {
-	if (FireModeNum == 0)
+	if (GetWorld()->GetTimeSeconds() - CreationTime > 0.5f)
 	{
-		ServerBlowUp();
-		ProjectileMovement->SetActive(false);
+		if (FireModeNum == 0)
+		{
+			ServerBlowUp();
+			ProjectileMovement->SetActive(false);
+		}
+		else
+		{
+			ServerDriverLeave();
+		}
 	}
 }
 
@@ -508,6 +515,16 @@ void AUTRemoteRedeemer::ServerBlowUp_Implementation()
 	{
 		BlowUp();
 	}
+}
+
+bool AUTRemoteRedeemer::ServerDriverLeave_Validate()
+{
+	return true;
+}
+
+void AUTRemoteRedeemer::ServerDriverLeave_Implementation()
+{
+	DriverLeave(true);
 }
 
 void AUTRemoteRedeemer::OnRep_PlayerState()
@@ -533,127 +550,79 @@ void AUTRemoteRedeemer::OnRep_PlayerState()
 
 void AUTRemoteRedeemer::ExplodeStage(float RangeMultiplier)
 {
-	AUTProj_Redeemer* DefaultRedeemer = (RedeemerProjectileClass != NULL) ? RedeemerProjectileClass->GetDefaultObject<AUTProj_Redeemer>() : NULL;
-	if (DefaultRedeemer != NULL)
+	FRadialDamageParams AdjustedDamageParams = DamageParams;
+	if (AdjustedDamageParams.OuterRadius > 0.0f)
 	{
-		FRadialDamageParams AdjustedDamageParams = DefaultRedeemer->DamageParams;
-		if (AdjustedDamageParams.OuterRadius > 0.0f)
+		TArray<AActor*> IgnoreActors;
+		StatsHitCredit = 0.f;
+		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+		AUTPlayerState* StatusPS = ((Role == ROLE_Authority) && DamageInstigator && GS && GS->bPlayStatusAnnouncements) ? Cast<AUTPlayerState>(DamageInstigator->PlayerState) : nullptr;
+		if (StatusPS)
 		{
-			TArray<AActor*> IgnoreActors;
-			StatsHitCredit = 0.f;
-			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-			AUTPlayerState* StatusPS = ((Role == ROLE_Authority) && GetController() && GS && GS->bPlayStatusAnnouncements) ? Cast<AUTPlayerState>(GetController()->PlayerState) : nullptr;
-			if (StatusPS)
+			int32 LiveEnemyCount = 0;
+			for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 			{
-				int32 LiveEnemyCount = 0;
-				for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+				AController* C = Iterator->Get();
+				AUTPlayerState* TeamPS = C ? Cast<AUTPlayerState>(C->PlayerState) : nullptr;
+				if (TeamPS && C->GetPawn() && !GS->OnSameTeam(DamageInstigator, C))
 				{
-					AController* C = Iterator->Get();
-					AUTPlayerState* TeamPS = C ? Cast<AUTPlayerState>(C->PlayerState) : nullptr;
-					if (TeamPS && C->GetPawn() && !GS->OnSameTeam(GetController(), C))
-					{
-						LiveEnemyCount++;
-					}
+					LiveEnemyCount++;
 				}
-				KillCount += LiveEnemyCount;
 			}
+			KillCount += LiveEnemyCount;
+		}
 
-			//DrawDebugSphere(GetWorld(), ExplosionCenter, RangeMultiplier*AdjustedDamageParams.OuterRadius, 12, FColor::Green, true, -1.f);
-			float MinDamage = (RangeMultiplier * AdjustedDamageParams.OuterRadius < DefaultRedeemer->CollisionFreeRadius) ? 200.f : AdjustedDamageParams.MinimumDamage;
-			UUTGameplayStatics::UTHurtRadius(this, AdjustedDamageParams.BaseDamage, MinDamage, DefaultRedeemer->Momentum, ExplosionCenter, RangeMultiplier * AdjustedDamageParams.InnerRadius, RangeMultiplier * AdjustedDamageParams.OuterRadius, AdjustedDamageParams.DamageFalloff,
-				DefaultRedeemer->MyDamageType, IgnoreActors, this, DamageInstigator, nullptr, nullptr, DefaultRedeemer->CollisionFreeRadius);
-			if (StatusPS)
+		//DrawDebugSphere(GetWorld(), ExplosionCenter, RangeMultiplier*AdjustedDamageParams.OuterRadius, 12, FColor::Green, true, -1.f);
+		float MinDamage = (RangeMultiplier * AdjustedDamageParams.OuterRadius < CollisionFreeRadius) ? 200.f : AdjustedDamageParams.MinimumDamage;
+		UUTGameplayStatics::UTHurtRadius(this, AdjustedDamageParams.BaseDamage, MinDamage, Momentum, ExplosionCenter, RangeMultiplier * AdjustedDamageParams.InnerRadius, RangeMultiplier * AdjustedDamageParams.OuterRadius, AdjustedDamageParams.DamageFalloff,
+			MyDamageType, IgnoreActors, this, DamageInstigator, nullptr, nullptr, CollisionFreeRadius);
+		if (StatusPS)
+		{
+			int32 LiveEnemyCount = 0;
+			for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 			{
-				int32 LiveEnemyCount = 0;
-				for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+				AController* C = Iterator->Get();
+				AUTPlayerState* TeamPS = C ? Cast<AUTPlayerState>(C->PlayerState) : nullptr;
+				if (TeamPS && C->GetPawn() && !GS->OnSameTeam(DamageInstigator, C))
 				{
-					AController* C = Iterator->Get();
-					AUTPlayerState* TeamPS = C ? Cast<AUTPlayerState>(C->PlayerState) : nullptr;
-					if (TeamPS && C->GetPawn() && !GS->OnSameTeam(GetController(), C))
-					{
-						LiveEnemyCount++;
-					}
+					LiveEnemyCount++;
 				}
-				KillCount -= LiveEnemyCount;
 			}
-			if ((Role == ROLE_Authority) && (HitsStatsName != NAME_None))
+			KillCount -= LiveEnemyCount;
+		}
+		if ((Role == ROLE_Authority) && (HitsStatsName != NAME_None))
+		{
+			AUTPlayerState* PS = DamageInstigator ? Cast<AUTPlayerState>(DamageInstigator->PlayerState) : NULL;
+			if (PS)
 			{
-				AUTPlayerState* PS = DamageInstigator ? Cast<AUTPlayerState>(DamageInstigator->PlayerState) : NULL;
-				if (PS)
-				{
-					PS->ModifyStatsValue(HitsStatsName, StatsHitCredit / AdjustedDamageParams.BaseDamage);
-				}
+				PS->ModifyStatsValue(HitsStatsName, StatsHitCredit / AdjustedDamageParams.BaseDamage);
 			}
 		}
-	}
-	else
-	{
-		UE_LOG(UT, Warning, TEXT("UTRemoteRedeemer does not have a proper reference to UTProj_Redeemer"));
 	}
 }
 
 void AUTRemoteRedeemer::ExplodeStage1()
 {
-	AUTProj_Redeemer* DefaultRedeemer = (RedeemerProjectileClass != NULL) ? RedeemerProjectileClass->GetDefaultObject<AUTProj_Redeemer>() : NULL;
-	if (DefaultRedeemer != nullptr)
-	{
-		ExplodeStage(DefaultRedeemer->ExplosionRadii[0]);
-		FTimerHandle TempHandle;
-		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTRemoteRedeemer::ExplodeStage2, DefaultRedeemer->ExplosionTimings[0]);
-	}
+	ExplodeStage(ExplosionRadii[0]);
+	FTimerHandle TempHandle;
+	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTRemoteRedeemer::ExplodeStage2, ExplosionTimings[0]);
 }
+
 void AUTRemoteRedeemer::ExplodeStage2()
 {
-	AUTProj_Redeemer* DefaultRedeemer = (RedeemerProjectileClass != NULL) ? RedeemerProjectileClass->GetDefaultObject<AUTProj_Redeemer>() : NULL;
-	if (DefaultRedeemer != nullptr)
-	{
-		ExplodeStage(DefaultRedeemer->ExplosionRadii[1]);
-		FTimerHandle TempHandle;
-		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTRemoteRedeemer::ExplodeStage3, DefaultRedeemer->ExplosionTimings[1]);
-	}
+	ExplodeStage(ExplosionRadii[1]);
+	FTimerHandle TempHandle;
+	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTRemoteRedeemer::ExplodeStage3, ExplosionTimings[1]);
 }
+
 void AUTRemoteRedeemer::ExplodeStage3()
 {
-	AUTProj_Redeemer* DefaultRedeemer = (RedeemerProjectileClass != NULL) ? RedeemerProjectileClass->GetDefaultObject<AUTProj_Redeemer>() : NULL;
-	if (DefaultRedeemer != nullptr)
-	{
-		ExplodeStage(DefaultRedeemer->ExplosionRadii[2]);
-		FTimerHandle TempHandle;
-		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTRemoteRedeemer::ExplodeStage4, DefaultRedeemer->ExplosionTimings[2]);
-	}
-}
-void AUTRemoteRedeemer::ExplodeStage4()
-{
-	AUTProj_Redeemer* DefaultRedeemer = (RedeemerProjectileClass != NULL) ? RedeemerProjectileClass->GetDefaultObject<AUTProj_Redeemer>() : NULL;
-	if (DefaultRedeemer != nullptr)
-	{
-		ExplodeStage(DefaultRedeemer->ExplosionRadii[3]);
-		FTimerHandle TempHandle;
-		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTRemoteRedeemer::ExplodeStage5, DefaultRedeemer->ExplosionTimings[3]);
-	}
-}
-void AUTRemoteRedeemer::ExplodeStage5()
-{
-	AUTProj_Redeemer* DefaultRedeemer = (RedeemerProjectileClass != NULL) ? RedeemerProjectileClass->GetDefaultObject<AUTProj_Redeemer>() : NULL;
-	if (DefaultRedeemer != nullptr)
-	{
-		ExplodeStage(DefaultRedeemer->ExplosionRadii[4]);
-		FTimerHandle TempHandle;
-		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTRemoteRedeemer::ExplodeStage6, DefaultRedeemer->ExplosionTimings[4]);
-	}
-}
-void AUTRemoteRedeemer::ExplodeStage6()
-{
-	AUTPlayerState* StatusPS = ((Role == ROLE_Authority) && GetController()) ? Cast<AUTPlayerState>(GetController()->PlayerState) : nullptr;
+	AUTPlayerState* StatusPS = ((Role == ROLE_Authority) && DamageInstigator) ? Cast<AUTPlayerState>(DamageInstigator->PlayerState) : nullptr;
 	if (Role == ROLE_Authority)
 	{
 		DriverLeave(true);
 	}
-	AUTProj_Redeemer* DefaultRedeemer = (RedeemerProjectileClass != NULL) ? RedeemerProjectileClass->GetDefaultObject<AUTProj_Redeemer>() : NULL;
-	if (DefaultRedeemer != nullptr)
-	{
-		ExplodeStage(DefaultRedeemer->ExplosionRadii[5]);
-	}
+	ExplodeStage(ExplosionRadii[2]);
 
 	if (StatusPS && (KillCount > 0))
 	{
@@ -729,7 +698,7 @@ void AUTRemoteRedeemer::Tick(float DeltaSeconds)
 			ProjectileMovement->Acceleration = FVector::ZeroVector;
 			ProjectileMovement->Velocity = FVector::ZeroVector;
 		}
-		else
+		else if (GetController())
 		{
 			FRotator Rotation = GetActorRotation();
 			FVector X, Y, Z;
@@ -750,6 +719,10 @@ void AUTRemoteRedeemer::Tick(float DeltaSeconds)
 			float SmoothRoll = FMath::Min(1.0f, RollSmoothingMultiplier * DeltaSeconds);
 			RolledRotation.Roll = RolledRotation.Roll * SmoothRoll + Rotation.Roll * (1.0f - SmoothRoll);
 			SetActorRotation(RolledRotation);
+		}
+		else if (!ProjectileMovement->Velocity.IsZero())
+		{
+			SetActorRotation(ProjectileMovement->Velocity.ToOrientationRotator());
 		}
 	}
 
@@ -807,7 +780,7 @@ void AUTRemoteRedeemer::RedeemerDenied(AController* InstigatedBy)
 	AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
 	if (GM)
 	{
-		APlayerState* InstigatorPS = GetController() ? GetController()->PlayerState : NULL;;
+		APlayerState* InstigatorPS = DamageInstigator ? DamageInstigator->PlayerState : NULL;;
 		AUTPlayerState* InstigatedbyPS = InstigatedBy ? Cast<AUTPlayerState>(InstigatedBy->PlayerState) : NULL;
 		if (InstigatedbyPS)
 		{
@@ -979,6 +952,15 @@ void AUTRemoteRedeemer::PostRender(AUTHUD* HUD, UCanvas* C)
 		C->DrawText(HUD->TinyFont, FuelWarning, XPos - 0.5f*XL, YPos - 0.5f*YL, 1.f, 1.f, TextRenderInfo);
 	}
 	DrawTexture(C, HUD->HUDAtlas, XPos - 0.5f*WidthScale*Width, YPos, WidthScale*Width, HeightScale*Height, 127, 612, Width, Height, 1.f, FLinearColor::White, FVector2D(0.f, 0.5f));
+
+	if (GetWorld()->GetTimeSeconds() - CreationTime > 0.5f)
+	{
+		FText PrimaryText = NSLOCTEXT("Redeemer", "Primary", "Press [FIRE] to detonate the missile");
+		FText SecondaryText = NSLOCTEXT("Redeemer", "Secondary", "Press [ALTFIRE] to release missile guidance");
+		C->SetDrawColor(FLinearColor::White.ToFColor(false));
+		C->DrawText(HUD->TinyFont, PrimaryText, XPos + WidthScale*Width, YPos - YL, 1.f, 1.f, TextRenderInfo);
+		C->DrawText(HUD->TinyFont, SecondaryText, XPos + WidthScale*Width, YPos, 1.f, 1.f, TextRenderInfo);
+	}
 }
 
 void AUTRemoteRedeemer::PawnClientRestart()

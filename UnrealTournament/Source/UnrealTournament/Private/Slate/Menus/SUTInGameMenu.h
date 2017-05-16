@@ -40,10 +40,13 @@ protected:
 	void BackResult(TSharedPtr<SCompoundWidget> Dialog, uint16 ButtonPressed);
 
 	EVisibility GetMapVoteVisibility() const;
+	EVisibility GetChangeTeamVisibility() const;
 
 	TSharedPtr<SUTMessageBoxDialog> MessageDialog;
 
-
+	virtual FReply OnTeamChangeClick();
+	FSlateColor GetChangeTeamLabelColor() const;
+	TSharedPtr<SUTButton> ChangeTeamButton;
 public:
 	virtual bool SkipWorldRender();
 

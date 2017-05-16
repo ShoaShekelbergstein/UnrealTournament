@@ -5,6 +5,8 @@
 #include "UTServerBeaconLobbyClient.h"
 #include "UTAntiCheatModularFeature.h"
 #include "UTBotPlayer.h"
+#include "UTPlayerStart.h"
+
 #include "UTGameMode.generated.h"
 
 UNREALTOURNAMENT_API DECLARE_LOG_CATEGORY_EXTERN(LogUTGame, Log, All);
@@ -102,6 +104,9 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	bool bHasRespawnChoices;
 
+	UPROPERTY()
+		TArray<APlayerStart*> PlayerStarts;
+
 	/** If true, when rating player starts also rate against potential starts (if bHasRespawnChoices is true).  Used before match to keep player start choices apart. */
 	UPROPERTY(BlueprintReadWrite, Category = Game)
 		bool bCheckAgainstPotentialStarts;
@@ -188,6 +193,10 @@ public:
 	UPROPERTY()
 	uint32 bTeamGame:1;
 
+	/** Force warmup for players who enter before match has started. */
+	UPROPERTY()
+		uint32 bForceWarmup : 1;
+
 	UPROPERTY(BlueprintReadWrite, Category = "Game")
 	bool bFirstBloodOccurred;
 
@@ -210,9 +219,16 @@ public:
 	UPROPERTY()
 	float StartPlayTime;
 
+	UPROPERTY()
+		float MatchIntroTime;
+
 	/** add bots until NumPlayers + NumBots is this number */
 	UPROPERTY(BlueprintReadWrite, Category = "MatchStart")
 	int32 BotFillCount;
+
+	/** for warm up, add bots until NumPlayers + NumBots is this number */
+	UPROPERTY(BlueprintReadWrite, Category = "MatchStart")
+		int32 WarmupFillCount;
 
 	// How long a player must wait before respawning.  Set to 0 for no delay.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Rules)
@@ -273,6 +289,10 @@ public:
 	/** If true, is a training mode with no cheats allowed. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
 	bool bBasicTrainingGame;
+
+	/** If true, don't go back to training menu at end of game. */
+	UPROPERTY(BlueprintReadWrite, Category = "Game")
+		bool bNoTrainingMenu;
 
 	/** To make it easier to customize for instagib.  FIXMESTEVE should eventually all be mutator driven so other mutators can take advantage too. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
@@ -591,6 +611,10 @@ protected:
 	virtual class AUTBotPlayer* AddAssetBot(const FStringAssetReference& BotAssetPath, uint8 TeamNum = 255);
 	/** check for adding/removing bots to satisfy BotFillCount */
 	virtual void CheckBotCount();
+
+	/** Immediately remove all extra bots. */
+	virtual void RemoveExtraBots();
+
 	/** returns whether we should allow removing the given bot to satisfy the desired player/bot count settings
 	 * generally used to defer destruction of bots that currently are important to the current game state, like flag carriers
 	 */
@@ -985,10 +1009,15 @@ public:
 	virtual void ShutdownGameInstance();
 
 	virtual void ForceEndServer();
+	
+	virtual void SendVoiceChatLoginToken(AUTPlayerController* PC);
 
 public:
 	// If this is a single player game, or an instance server, this will hold the unique tag of the ruleset being used if relevant
 	UPROPERTY(BlueprintReadOnly,Category = Game)
 	FString ActiveRuleTag;
+
+	virtual bool AllowTextMessage_Implementation(FString& Msg, bool bIsTeamMessage, AUTBasePlayerController* Sender);
+
 };
 

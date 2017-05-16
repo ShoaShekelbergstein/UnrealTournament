@@ -86,7 +86,9 @@ protected:
 	void OnFindLANSessionsComplete(bool bWasSuccessful);
 
 	TArray<TSharedPtr<SUTWebBrowserPanel>> AnnouncementBrowserList;
-
+	TSharedPtr<SHorizontalBox> RankedBox;
+	EVisibility RankedBoxVisibile() const;
+	EVisibility RankedButtonVis(int32 PlaylistId) const;
 };
 
 #endif

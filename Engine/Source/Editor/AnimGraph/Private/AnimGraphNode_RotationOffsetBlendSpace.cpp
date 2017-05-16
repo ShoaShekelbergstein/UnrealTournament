@@ -1,4 +1,4 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+// Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
 
 #include "AnimGraphNode_RotationOffsetBlendSpace.h"
 #include "UObject/UObjectHash.h"
@@ -30,7 +30,35 @@ FText UAnimGraphNode_RotationOffsetBlendSpace::GetTooltipText() const
 
 FText UAnimGraphNode_RotationOffsetBlendSpace::GetNodeTitle(ENodeTitleType::Type TitleType) const
 {
-	if (Node.BlendSpace == nullptr)
+	UBlendSpaceBase* BlendSpaceToCheck = Node.BlendSpace;
+	UEdGraphPin* BlendSpacePin = FindPin(GET_MEMBER_NAME_STRING_CHECKED(FAnimNode_RotationOffsetBlendSpace, BlendSpace));
+	FText BlendSpaceConnectedPinOverrideName = FText::GetEmpty();
+	if (BlendSpacePin != nullptr && BlendSpaceToCheck == nullptr)
+	{
+		BlendSpaceToCheck = Cast<UBlendSpaceBase>(BlendSpacePin->DefaultObject);
+	
+		//Need to check for connected pins
+		if (BlendSpacePin)
+		{
+			for (UEdGraphPin* LinkPin : BlendSpacePin->LinkedTo)
+			{
+				//Try and get at default object for connecting pins
+				if (LinkPin->PinType.PinSubCategoryObject.IsValid())
+				{
+					UClass* PinClass = Cast<UClass>(LinkPin->PinType.PinSubCategoryObject.Get());
+					BlendSpaceToCheck = Cast<UBlendSpaceBase>(PinClass->GetDefaultObject());
+
+					if (BlendSpaceToCheck != NULL)
+					{
+						BlendSpaceConnectedPinOverrideName = FText::FromString(LinkPin->PinName);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	if ((BlendSpaceToCheck == nullptr) && (BlendSpaceConnectedPinOverrideName.IsEmpty()))
 	{
 		if (TitleType == ENodeTitleType::ListView || TitleType == ENodeTitleType::MenuTitle)
 		{
@@ -45,7 +73,7 @@ FText UAnimGraphNode_RotationOffsetBlendSpace::GetNodeTitle(ENodeTitleType::Type
 	//        choose to mark this dirty when that happens for this to properly work
 	else //if (!CachedNodeTitles.IsTitleCached(TitleType, this))
 	{
-		const FText BlendSpaceName = FText::FromString(Node.BlendSpace->GetName());
+		const FText BlendSpaceName = BlendSpaceConnectedPinOverrideName.IsEmpty() ? FText::FromString(BlendSpaceToCheck->GetName()) : BlendSpaceConnectedPinOverrideName;
 
 		FFormatNamedArguments Args;
 		Args.Add(TEXT("BlendSpaceName"), BlendSpaceName);
@@ -134,18 +162,44 @@ void UAnimGraphNode_RotationOffsetBlendSpace::SetAnimationAsset(UAnimationAsset*
 
 void UAnimGraphNode_RotationOffsetBlendSpace::ValidateAnimNodeDuringCompilation(class USkeleton* ForSkeleton, class FCompilerResultsLog& MessageLog)
 {
-	if (Node.BlendSpace == NULL)
+	UBlendSpaceBase* BlendSpaceToCheck = Node.BlendSpace;
+	UEdGraphPin* BlendSpacePin = FindPin(GET_MEMBER_NAME_STRING_CHECKED(FAnimNode_RotationOffsetBlendSpace, BlendSpace));
+	if (BlendSpacePin != nullptr && BlendSpaceToCheck == nullptr)
+	{
+		BlendSpaceToCheck = Cast<UBlendSpaceBase>(BlendSpacePin->DefaultObject);
+		
+		//Need to check for connected pins
+		if (BlendSpaceToCheck == NULL)
+		{
+			for (UEdGraphPin* LinkPin : BlendSpacePin->LinkedTo)
+			{
+				//Try and get at default object for connecting pins
+				if (LinkPin->PinType.PinSubCategoryObject.IsValid())
+				{
+					UClass* PinClass = Cast<UClass>(LinkPin->PinType.PinSubCategoryObject.Get());
+					BlendSpaceToCheck = Cast<UBlendSpaceBase>(PinClass->GetDefaultObject());
+						
+					if (BlendSpaceToCheck != NULL)
+					{
+						break;
+					}	
+				}
+			}
+		}
+	}
+
+	if (BlendSpaceToCheck == NULL)
 	{
 		MessageLog.Error(TEXT("@@ references an unknown blend space"), this);
 	}
-	else if (Cast<UAimOffsetBlendSpace>(Node.BlendSpace) == NULL &&
-			 Cast<UAimOffsetBlendSpace1D>(Node.BlendSpace) == NULL)
+	else if (Cast<UAimOffsetBlendSpace>(BlendSpaceToCheck) == NULL &&
+		Cast<UAimOffsetBlendSpace1D>(BlendSpaceToCheck) == NULL)
 	{
 		MessageLog.Error(TEXT("@@ references an invalid blend space (one that is not an aim offset)"), this);
 	}
 	else
 	{
-		USkeleton* BlendSpaceSkeleton = Node.BlendSpace->GetSkeleton();
+		USkeleton* BlendSpaceSkeleton = BlendSpaceToCheck->GetSkeleton();
 		if (BlendSpaceSkeleton && // if blend space doesn't have skeleton, it might be due to blend space not loaded yet, @todo: wait with anim blueprint compilation until all assets are loaded?
 			!BlendSpaceSkeleton->IsCompatible(ForSkeleton))
 		{

@@ -57,6 +57,7 @@
 #include "UTFlagRunPvEHUD.h"
 #include "BlueprintContextLibrary.h"
 #include "PartyContext.h"
+#include "UTVoiceChatFeature.h"
 
 static TAutoConsoleVariable<float> CVarUTKillcamStartDelay(
 	TEXT("UT.KillcamStartDelay"),
@@ -175,6 +176,8 @@ void AUTPlayerController::Destroyed()
 {
 	Super::Destroyed();
 
+	LeaveVoiceChat();
+
 	// if this is the master for the casting guide, destroy the extra viewports now
 	if (bCastingGuide)
 	{
@@ -203,6 +206,11 @@ void AUTPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 	DOREPLIFETIME_CONDITION(AUTPlayerController, bCastingGuide, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerController, CastingGuideViewIndex, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerController, HUDClass, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AUTPlayerController, VoiceChatPlayerName, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AUTPlayerController, VoiceChatLoginToken, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AUTPlayerController, VoiceChatJoinToken, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AUTPlayerController, VoiceChatChannel, COND_OwnerOnly);
+
 }
 void AUTPlayerController::ClientSetSpectatorLocation_Implementation(FVector NewLocation, FRotator NewRotation)
 {
@@ -813,16 +821,19 @@ bool AUTPlayerController::InputKey(FKey Key, EInputEvent EventType, float Amount
 	if (Key.GetFName() == NAME_Enter && (EventType == IE_Pressed) && UTPlayerState != nullptr)
 	{
 		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-		if (UTPlayerState->bCaster || UTPlayerState->bIsMatchHost)
+		if (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart))
 		{
-			ServerCasterReady();
-			return true;
-		}
-		else if (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && !UTPlayerState->bOnlySpectator)
-		{
-			ServerToggleWarmup();
-			bPlayerIsWaiting = true;
-			return true;
+			if (UTPlayerState->bCaster || UTPlayerState->bIsMatchHost)
+			{
+				ServerCasterReady();
+				return true;
+			}
+			else if (!UTPlayerState->bOnlySpectator)
+			{
+				ServerToggleWarmup();
+				bPlayerIsWaiting = true;
+				return true;
+			}
 		}
 	}
 
@@ -971,7 +982,7 @@ void AUTPlayerController::ServerThrowWeapon_Implementation()
 	if (UTCharacter != nullptr && !UTCharacter->IsFiringDisabled())
 	{
 		AUTGameMode* UTGM = GetWorld()->GetAuthGameMode<AUTGameMode>();
-		if (UTGM && !UTGM->bBasicTrainingGame && UTCharacter->GetWeapon() != nullptr && UTCharacter->GetWeapon()->DroppedPickupClass != nullptr && UTCharacter->GetWeapon()->bCanThrowWeapon && !UTCharacter->GetWeapon()->IsFiring() && UTCharacter->GetWeapon()->HasAnyAmmo())
+		if (UTGM && (!UTGM->bBasicTrainingGame || UTGM->bDamageHurtsHealth) && UTCharacter->GetWeapon() != nullptr && UTCharacter->GetWeapon()->DroppedPickupClass != nullptr && UTCharacter->GetWeapon()->bCanThrowWeapon && !UTCharacter->GetWeapon()->IsFiring() && UTCharacter->GetWeapon()->HasAnyAmmo())
 		{
 			UTCharacter->TossInventory(UTCharacter->GetWeapon(), FVector(400.0f, 0, 200.f));
 		}
@@ -2543,7 +2554,7 @@ bool AUTPlayerController::ServerCasterReady_Validate()
 void AUTPlayerController::ServerCasterReady_Implementation()
 {
 	AUTGameMode* UTGM = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (UTGM)
+	if (UTGM && UTGM->UTGameState && (!UTGM->bRequireReady || (UTGM->UTGameState->PlayersNeeded == 0)))
 	{
 		UTGM->bCasterReady = true;
 	}
@@ -4391,7 +4402,21 @@ void AUTPlayerController::ServerRegisterBanVote_Implementation(AUTPlayerState* B
 	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
 	if (GameState && UTPlayerState && BadGuy && !UTPlayerState->bOnlySpectator)
 	{
-		GameState->VoteForTempBan(BadGuy, UTPlayerState);
+		if ( GameState->VoteForTempBan(BadGuy, UTPlayerState) )
+		{
+			if (FUTAnalytics::IsAvailable())
+			{
+				TArray<FAnalyticsEventAttribute> ParamArray;
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("TrollName"), BadGuy->PlayerName));
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("TrollID"), BadGuy->UniqueId.ToString()));
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("ReportName"), UTPlayerState->PlayerName));
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("ReportID"), UTPlayerState->UniqueId.ToString()));
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("DemoIKD"), GameState->ReplayID));
+				ParamArray.Add(FAnalyticsEventAttribute(TEXT("Abuse"), TEXT("KickVote")));
+				FUTAnalytics::SetClientInitialParameters(this, ParamArray, false);
+				FUTAnalytics::GetProvider().RecordEvent( TEXT("AbuseReport"), ParamArray );
+			}
+		}
 	}
 }
 
@@ -5200,8 +5225,37 @@ void AUTPlayerController::ClientSetActiveLineUp_Implementation()
 			else
 			{
 				AUTLineUpHelper::CleanUpPlayerAfterLineUp(this);
+				SetCountdownCam();
 			}
 		}
+	}
+}
+
+void AUTPlayerController::SetCountdownCam()
+{
+	AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
+	if (WS)
+	{
+		SpawnLocation = WS->LoadingCameraLocation;
+		SpawnRotation = WS->LoadingCameraRotation;
+	}
+	AUTSpectatorCamera* BestCamera = nullptr;
+	for (TActorIterator<AUTSpectatorCamera> It(GetWorld()); It; ++It)
+	{
+		if (BestCamera == nullptr)
+		{
+			BestCamera = *It;
+		}
+		else if (It->bLoadingCamera)
+		{
+			BestCamera = *It;
+			break;
+		}
+	}
+	if (BestCamera)
+	{
+		SpawnLocation = BestCamera->GetActorLocation();
+		SpawnRotation = BestCamera->GetActorRotation();
 	}
 }
 
@@ -5283,6 +5337,20 @@ void AUTPlayerController::ClientAnnounceRoundScore_Implementation(AUTTeamInfo* W
 	}
 }
 
+void AUTPlayerController::LeaveVoiceChat()
+{
+	if (bVoiceChatSentLogin)
+	{
+		static const FName VoiceChatFeatureName("VoiceChat");
+		if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+		{
+			UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+			VoiceChat->Logout(VoiceChatPlayerName);
+		}
+
+		bVoiceChatSentLogin = false;
+	}
+}
 
 void AUTPlayerController::PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
 {
@@ -5292,6 +5360,8 @@ void AUTPlayerController::PreClientTravel(const FString& PendingURL, ETravelType
 		GameState->VoteTimer = 0;
 		GameState->SetMatchState(MatchState::WaitingTravel);
 	}
+
+	LeaveVoiceChat();
 	
 	Super::PreClientTravel(PendingURL, TravelType, bIsSeamlessTravel);
 }
@@ -5353,5 +5423,72 @@ void AUTPlayerController::SetMouseAccelOffset(float NewAccelOffset)
 	if (Input)
 	{
 		Input->AccelerationOffset = NewAccelOffset;
+	}
+}
+
+void AUTPlayerController::OnRepVoiceChatLoginToken()
+{
+	UUTGameUserSettings* GS = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
+	if (GS)
+	{
+		if (!GS->IsVoiceChatEnabled())
+		{
+			return;
+		}
+	}
+
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName) && 
+		!VoiceChatPlayerName.IsEmpty() && !VoiceChatLoginToken.IsEmpty())
+	{
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		VoiceChat->LoginUsingToken(VoiceChatPlayerName, VoiceChatLoginToken);
+		bVoiceChatSentLogin = true;
+
+		if (!VoiceChatJoinToken.IsEmpty() && !VoiceChatChannel.IsEmpty())
+		{
+			OnRepVoiceChatJoinToken();
+		}
+	}
+}
+
+void AUTPlayerController::OnRepVoiceChatJoinToken()
+{
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName) &&
+		!VoiceChatJoinToken.IsEmpty() && !VoiceChatChannel.IsEmpty() && 
+		VoiceChatJoinTokenCurrent != VoiceChatJoinToken && VoiceChatChannelCurrent != VoiceChatChannel)
+	{
+		if (!bVoiceChatSentLogin)
+		{
+			// retry in a bit
+			return;
+		}
+
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		/*
+		if (!VoiceChatChannelCurrent.IsEmpty())
+		{
+			VoiceChat->LeaveChannel(VoiceChatPlayerName, VoiceChatChannelCurrent);
+			VoiceChatChannelCurrent.Empty();
+		}
+		*/
+		VoiceChat->JoinChannelUsingToken(VoiceChatPlayerName, VoiceChatChannel, VoiceChatJoinToken);
+		VoiceChatChannelCurrent = VoiceChatChannel;
+		VoiceChatJoinTokenCurrent = VoiceChatJoinToken;
+
+		// I believe we need to do this every channel join
+		UUTGameUserSettings* GS = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
+		if (GS)
+		{
+			GS->SetVoiceChatPlaybackVolume(GS->GetVoiceChatPlaybackVolume());
+			GS->SetVoiceChatRecordVolume(GS->GetVoiceChatRecordVolume());
+		}
+		UUTProfileSettings* ProfileSettings = GetProfileSettings();
+		if (ProfileSettings)
+		{
+			// If we're PushToTalk, mute the mic. If we're not, unmute to be sure.
+			VoiceChat->SetAudioInputDeviceMuted(ProfileSettings->bPushToTalk);
+		}
 	}
 }

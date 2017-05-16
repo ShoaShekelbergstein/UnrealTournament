@@ -908,5 +908,11 @@ void AUTLobbyMatchInfo::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject)
 	JsonObject->SetArrayField(TEXT("InstancePlayers"),  IPArray);
 
 }
-
+void AUTLobbyMatchInfo::ProcessStartMatch(const FMatchUpdate& NewMatchUpdate)
+{
+	if (CurrentRuleset.IsValid() && CurrentRuleset->bCompetitiveMatch)
+	{
+		bPrivateMatch = true;		
+	}
+}
 

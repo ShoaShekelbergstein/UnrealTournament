@@ -116,6 +116,7 @@ void UUTGameEngine::Init(IEngineLoop* InEngineLoop)
 	// workaround for engine bugs when loading classes that reference UMG on a dedicated server (i.e. mutators)
 	FModuleManager::Get().LoadModule("Foliage");
 	FModuleManager::Get().LoadModule("BlueprintContext");
+	FModuleManager::Get().LoadModule("CinematicCamera");
 
 	if (bFirstRun)
 	{
@@ -558,11 +559,11 @@ float UUTGameEngine::GetMaxTickRate(float DeltaTime, bool bAllowFrameRateSmoothi
 	{
 		if (MaxTickRate > 0)
 		{
-			MaxTickRate = FMath::Min(FrameRateCap, MaxTickRate);
+			MaxTickRate = FMath::Min(FMath::Max(30.f, FrameRateCap), MaxTickRate);
 		}
 		else
 		{
-			MaxTickRate = FrameRateCap;
+			MaxTickRate = FMath::Max(30.f, FrameRateCap);
 		}
 	}
 	
@@ -693,15 +694,27 @@ void UUTGameEngine::IndexExpansionContent()
 		};
 		
 		// Search for pak files that were downloaded through redirects
+		const bool bAltPaks = FParse::Param(FCommandLine::Get(), TEXT("altpaks"));
 		TArray<FString>	FoundPaks;
 		FPakFileSearchVisitor PakVisitor(FoundPaks);
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
 		FoundPaks.Empty();
-		PlatformFile.IterateDirectoryRecursively(*FPaths::Combine(*FPaths::GameSavedDir(), TEXT("Paks"), TEXT("DownloadedPaks")), PakVisitor);
+
+		FString PakFolder = bAltPaks
+			? FPaths::Combine(FPlatformProcess::UserDir(), FApp::GetGameName(), TEXT("Saved"), TEXT("Paks"), TEXT("DownloadedPaks"))
+			: FPaths::Combine(*FPaths::GameSavedDir(), TEXT("Paks"), TEXT("DownloadedPaks"));
+
+		PlatformFile.IterateDirectoryRecursively(*PakFolder, PakVisitor);
 		for (const auto& PakPath : FoundPaks)
 		{
 			FString PakFilename = FPaths::GetBaseFilename(PakPath);
+
+			// If dedicated server, mount the pak
+			if (bAltPaks && FCoreDelegates::OnMountPak.IsBound())
+			{
+				FCoreDelegates::OnMountPak.Execute(PakPath, 0, nullptr);
+			}
 
 			bool bValidPak = CheckVersionOfPakFile(PakFilename);
 
@@ -731,11 +744,20 @@ void UUTGameEngine::IndexExpansionContent()
 
 		// Only add MyContent pak files to LocalContentChecksums
 		FoundPaks.Empty();
-		PlatformFile.IterateDirectoryRecursively(*FPaths::Combine(*FPaths::GameSavedDir(), TEXT("Paks"), TEXT("MyContent")), PakVisitor);		
+		PakFolder = bAltPaks
+			? FPaths::Combine(FPlatformProcess::UserDir(), FApp::GetGameName(), TEXT("Saved"), TEXT("Paks"), TEXT("MyContent"))
+			: FPaths::Combine(*FPaths::GameSavedDir(), TEXT("Paks"), TEXT("MyContent"));
+		PlatformFile.IterateDirectoryRecursively(*PakFolder, PakVisitor);
 		for (const auto& PakPath : FoundPaks)
 		{
 			FString PakFilename = FPaths::GetBaseFilename(PakPath);
 
+			// If dedicated server, mount the pak
+			if (bAltPaks && FCoreDelegates::OnMountPak.IsBound())
+			{
+				FCoreDelegates::OnMountPak.Execute(PakPath, 0, nullptr);
+			}
+			
 			bool bValidPak = CheckVersionOfPakFile(PakFilename);
 
 			if (bValidPak)

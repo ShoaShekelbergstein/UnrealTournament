@@ -162,3 +162,9 @@ void AUTMutator::AddDefaultInventory(TSubclassOf<AUTInventory> InventoryClass)
 void AUTMutator::GetGameURLOptions_Implementation(TArray<FString>& OptionsList) const
 {
 }
+
+bool AUTMutator::AllowTextMessage_Implementation(FString& Msg, bool bIsTeamMessage, AUTBasePlayerController* Sender)
+{
+	if (NextMutator) return NextMutator->AllowTextMessage(Msg, bIsTeamMessage, Sender);
+	return true;
+}

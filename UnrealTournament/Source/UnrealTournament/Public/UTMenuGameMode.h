@@ -25,9 +25,13 @@ public:
 	UPROPERTY(config)
 	FString MenuMusicAssetName;
 
-protected:
 	UPROPERTY()
 	USoundBase* MenuMusic;
+
+	UPROPERTY()
+	UAudioComponent* MenuMusicAC;
+
+protected:
 
 	/** default music options for cooking */
 	UPROPERTY()

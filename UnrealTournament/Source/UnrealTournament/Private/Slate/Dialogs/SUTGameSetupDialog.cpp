@@ -203,27 +203,48 @@ void SUTGameSetupDialog::BuildRuleList(FName Category)
 
 	if (Category == FName(TEXT("Custom")))
 	{
-		CustomBox->AddSlot().AutoHeight()
-		[
-			SNew(SBox).HeightOverride(920)
-			[
-				SAssignNew(CustomPanel, SUTCreateGamePanel, GetPlayerOwner())
-			]
-		];
 
 		if (CustomPanel.IsValid())
 		{
-			CustomPanel->SetBoxSkill(cbUseBots.ToSharedRef(), BotSkillLevelBox.ToSharedRef(), cbRequireFull.ToSharedRef());
+			CustomBox->AddSlot().AutoHeight()
+			[
+				SNew(SBox).HeightOverride(920)
+				[
+					CustomPanel.ToSharedRef()
+				]
+			];
 		}
+		else
+		{
+			CustomBox->AddSlot().AutoHeight()
+			[
+				SNew(SBox).HeightOverride(920)
+				[
+					SAssignNew(CustomPanel, SUTCreateGamePanel, GetPlayerOwner())
+				]
+			];
 
+			if (CustomPanel.IsValid())
+			{
+				bool LastRequireFull;
+				if ( GConfig->GetBool(TEXT("SUTGameSetupDialog"), TEXT("LastRequireFull"), LastRequireFull, GGameIni) )
+				{
+					cbRequireFull->SetIsChecked(LastRequireFull ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
+				}
+
+				bool LastUseBots;
+				if ( GConfig->GetBool(TEXT("SUTGameSetupDialog"), TEXT("LastUseBots"), LastUseBots, GGameIni) )
+				{
+					cbUseBots->SetIsChecked(LastUseBots ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
+				}
+
+				CustomPanel->SetBoxSkill(cbUseBots.ToSharedRef(), BotSkillLevelBox.ToSharedRef(), cbRequireFull.ToSharedRef());
+			}
+		}
 
 		BotSkillBox->SetVisibility(EVisibility::Collapsed);
 
 		return;	
-	}
-	else
-	{
-		CustomPanel.Reset();
 	}
 
 	BotSkillBox->SetVisibility(EVisibility::Visible);
@@ -652,7 +673,7 @@ FReply SUTGameSetupDialog::OnMapClick(int32 MapIndex)
 
 		PlayerOwner->ShowMessage(
 			NSLOCTEXT("SUTGameSetupDialog", "RightsTitle", "Epic Store"), 
-			NSLOCTEXT("SUTGameSetupDialog", "RightText", "The map you have selected is available in the Epic Store.  Do you wish to load the store to accquire the map?"), 
+			NSLOCTEXT("SUTGameSetupDialog", "RightText", "The map you have selected is available in the Epic Store.  Do you wish to load the store to acquire the map?"), 
 			UTDIALOG_BUTTON_YES + UTDIALOG_BUTTON_NO, 
 			FDialogResultDelegate::CreateRaw(this, &SUTGameSetupDialog::OnStoreDialogResult));								
 	}
@@ -762,13 +783,6 @@ FReply SUTGameSetupDialog::OnButtonClick(uint16 ButtonID)
 {
 	if (ButtonID != UTDIALOG_BUTTON_CANCEL ) 
 	{
-		// Save the selected bot skill out to the profile
-		if (PlayerOwner->GetProfileSettings())
-		{
-			PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel = sBotSkill->GetSnapValue();
-			PlayerOwner->SaveProfileSettings();
-		}
-
 		if (bHubMenu)
 		{
 			ConfigureMatch(ECreateInstanceTypes::Lobby);
@@ -831,8 +845,11 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildSessionName()
 
 TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 {
-	int32 DefaultBotSkillLevel = PlayerOwner->GetProfileSettings() ? PlayerOwner->GetProfileSettings()->DefaultBotSkillLevel : 3;
-	DefaultBotSkillLevel = FMath::Clamp<int32>(DefaultBotSkillLevel,0,8);
+	int32 DefaultBotSkillLevel;
+	if ( !GConfig->GetInt(TEXT("SUTGameSetupDialog"), TEXT("LastBotSkillLevel"), DefaultBotSkillLevel, GGameIni) )
+	{
+		DefaultBotSkillLevel = 3;
+	}
 
 	TSharedPtr<SVerticalBox> Final;
 	SAssignNew(Final, SVerticalBox)
@@ -901,7 +918,6 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 				]
 			]
 		];
-
 
 	return Final.ToSharedRef();
 }
@@ -979,7 +995,7 @@ void SUTGameSetupDialog::AddButtonsToLeftOfButtonBar(uint32& ButtonCount)
 		SAssignNew(cbPrivateMatch, SCheckBox)
 		.IsChecked(ECheckBoxState::Unchecked)
 		.Style(SUTStyle::Get(), "UT.CheckBox")
-		.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","PrivateTT","If checked only friends that you personally invite in to this match will be able to join it.")))
+		.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTGameSetupDialog","PrivateTT","If checked, only friends that you personally invite in to this match will be able to join it.")))
 		.Content()
 		[
 			SNew(STextBlock)
@@ -1008,6 +1024,8 @@ void SUTGameSetupDialog::ConfigureMatch(ECreateInstanceTypes::Type InstanceType)
 	int32 DesiredPlayerCount = 0;
 	int32 bTeamGame = 0;
 
+	GConfig->SetInt(TEXT("SUTGameSetupDialog"), TEXT("LastBotSkillLevel"), BotDifficulty, GGameIni);
+
 	bool bIsInParty = false;
 	UPartyContext* PartyContext = Cast<UPartyContext>(UBlueprintContextLibrary::GetContext(PlayerOwner->GetWorld(), UPartyContext::StaticClass()));
 	if (PartyContext)
@@ -1018,6 +1036,8 @@ void SUTGameSetupDialog::ConfigureMatch(ECreateInstanceTypes::Type InstanceType)
 	if ( IsCustomSettings() )
 	{
 		GetCustomGameSettings(GameMode, StartingMap, Description, GameModeName, GameOptions, DesiredPlayerCount, bTeamGame);
+		GConfig->SetInt(TEXT("SUTGameSetupDialog"), TEXT("LastRequireFull"), bRequireFilled, GGameIni);
+		GConfig->SetInt(TEXT("SUTGameSetupDialog"), TEXT("LastUseBots"), bUseBots, GGameIni);
 	}
 
 	if (InstanceType == ECreateInstanceTypes::Lobby)

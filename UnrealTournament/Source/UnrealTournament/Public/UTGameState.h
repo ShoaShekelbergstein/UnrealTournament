@@ -78,17 +78,13 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = GameState)
 	uint32 bStopGameClock : 1;
 
-	/** True if TeamDamagePct>0p, so projectiles impact teammates. */
+	/** True if TeamDamagePct>0p, so projectiles and hitscan impact teammates. */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
 		uint32 bTeamProjHits : 1;
 
 	/** If true, teammates block each others movement. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = GameState)
 		uint32 bTeamCollision : 1;
-
-	/**If true, had to force balance teams. */
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
-	uint32 bForcedBalance : 1;
 
 	/** If true, teammates play status announcements */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
@@ -101,6 +97,14 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	/** If true, hitscan replication debugging is enabled. */
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = GameState)
 		uint32 bDebugHitScanReplication : 1;
+
+	/** If true, have match host controlling match start. */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
+		uint32 bHaveMatchHost : 1;
+
+	/** If true, match must be full to start. */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
+		uint32 bRequireFull : 1;
 
 	/** Replicated only for vs AI matches, 0 means not vs AI. */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = GameState)
@@ -145,6 +149,9 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
 		FText OvertimeStatus;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
+		FText HostStatus;
+
 	/** amount of time between kills to qualify as a multikill */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
 	float MultiKillDelay;
@@ -176,7 +183,6 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 
 	UPROPERTY()
 		float LastBlueSniperWarningTime;
-
 
 	UPROPERTY(replicatedusing = OnUpdateFriendlyLocation)
 		uint8 FCFriendlyLocCount;
@@ -210,6 +216,12 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	// Used to sync the time on clients to the server. Updated at a lower frequency to reduce bandwidth cost -- See DefaultTimer()
 	UPROPERTY(ReplicatedUsing=OnRepRemainingTime)
 		int32 ReplicatedRemainingTime;
+
+	UPROPERTY()
+		float LastTimerMessageTime;
+
+	UPROPERTY()
+		int32 LastTimerMessageIndex;
 
 	UFUNCTION()
 		virtual void OnRepRemainingTime();
@@ -441,6 +453,7 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 		virtual bool IsSelectedBoostValid(AUTPlayerState* PlayerState) const;
 
 protected:
+	virtual void UpdateTimeMessage();
 
 	// How long must a player wait before respawning
 	UPROPERTY(Replicated, EditAnywhere, Category = GameState)
@@ -484,7 +497,7 @@ public:
 	bool IsTempBanned(const FUniqueNetIdRepl& UniqueId);
 
 	// Registers a vote for temp banning a player.  If the player goes above the threashhold, they will be banned for the remainder of the match
-	void VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter);
+	bool VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter);
 
 	UPROPERTY(Config)
 	float KickThreshold;
@@ -567,7 +580,6 @@ public:
 	int32 MapVoteListCount;
 
 	virtual void CreateMapVoteInfo(const FString& MapPackage,const FString& MapTitle, const FString& MapScreenshotReference);
-	void SortVotes();
 
 	// The # of seconds left for voting for a map.
 	UPROPERTY(Replicated)

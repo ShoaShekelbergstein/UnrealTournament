@@ -23,6 +23,7 @@ class UNREALTOURNAMENT_API AUTServerBeaconLobbyClient : public AOnlineBeaconClie
 	
 	virtual void UpdateMatch(const FMatchUpdate& MatchUpdate);
 	virtual void UpdatePlayer(AUTBaseGameMode* GameMode, AUTPlayerState* PlayerState, bool bLastUpdate);
+	virtual void StartGame(const FMatchUpdate& MatchUpdate);
 	virtual void EndGame(const FMatchUpdate& FinalMatchUpdate);
 	virtual void Empty();
 
@@ -43,6 +44,12 @@ class UNREALTOURNAMENT_API AUTServerBeaconLobbyClient : public AOnlineBeaconClie
 	 **/
 	UFUNCTION(server, reliable, WithValidation)
 	virtual void Lobby_UpdatePlayer(uint32 InstanceID, FRemotePlayerInfo PlayerInfo, bool bLastUpdate);
+
+	/**
+	 *	Tells the Lobby that this instance has started (not in warmup or prematch)
+	 **/
+	UFUNCTION(server, reliable, WithValidation)
+	virtual void Lobby_StartGame(uint32 InstanceID, const FMatchUpdate& MatchUpdate);
 
 	/**
 	 *	Tells the Lobby that this instance is at Game Over

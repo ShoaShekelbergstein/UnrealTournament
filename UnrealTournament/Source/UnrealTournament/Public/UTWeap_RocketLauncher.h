@@ -62,10 +62,6 @@ class UNREALTOURNAMENT_API AUTWeap_RocketLauncher : public AUTWeapon
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
 		TArray<UAnimMontage*> EmptyLoadingAnimationHands;
 
-	/**The sounds to play when loading each rocket*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
-	TArray<USoundBase*> LoadingSounds;
-
 	/**The sound that indicates a rocket was loaded*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = RocketLauncher)
 	USoundBase* RocketLoadedSound;

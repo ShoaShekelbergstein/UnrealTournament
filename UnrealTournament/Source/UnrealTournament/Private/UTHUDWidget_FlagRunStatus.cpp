@@ -11,6 +11,7 @@ UUTHUDWidget_FlagRunStatus::UUTHUDWidget_FlagRunStatus(const FObjectInitializer&
 	LineGlow = 0.4f;
 	PulseLength = 0.7f;
 	bAlwaysDrawFlagHolderName = false;
+	DeliveryPointText = NSLOCTEXT("FlagRunStatus", "DeliveryPoint", "Delivery Point");
 }
 
 bool UUTHUDWidget_FlagRunStatus::ShouldDraw_Implementation(bool bShowScores)
@@ -107,6 +108,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, F
 			BlueTeamIconTemplate.RenderOpacity = CurrentWorldAlpha;
 			RenderObj_TextureAt(BlueTeamIconTemplate, DrawScreenPosition.X, DrawScreenPosition.Y, BlueTeamIconTemplate.GetWidth()* WorldRenderScale, BlueTeamIconTemplate.GetHeight()* WorldRenderScale);
 		}
+		DrawText(DeliveryPointText, DrawScreenPosition.X, DrawScreenPosition.Y - ((BlueTeamIconTemplate.GetHeight() + 8.f) * WorldRenderScale), AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 1.5f*WorldRenderScale, 0.5f + 0.5f*CurrentWorldAlpha, FLinearColor::White, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);
 
 		if (bDrawEdgeArrow)
 		{

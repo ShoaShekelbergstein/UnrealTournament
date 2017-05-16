@@ -299,7 +299,12 @@ public:
 	virtual void ClientPrepareForLineUp();
 
 	UFUNCTION(client, reliable)
-	virtual void ClientSetActiveLineUp();
+		virtual void ClientSetActiveLineUp();
+
+		virtual void SetCountdownCam();
+
+	UPROPERTY()
+		FRotator SpawnRotation;
 
 	UFUNCTION(client, reliable)
 	virtual void ClientToggleScoreboard(bool bShow);
@@ -804,6 +809,34 @@ public:
 	virtual void UTBugIt(const FString& ScreenShotDescription);
 	virtual void UTBugItStringCreator(FVector ViewLocation, FRotator ViewRotation, FString& GoString, FString& LocString);
 	virtual void UTLogOutBugItGoToLogFile(const FString& InScreenShotDesc, const FString& InGoString, const FString& InLocString);
+		
+	UPROPERTY()
+	bool bVoiceChatSentLogin;
+
+	UFUNCTION()
+	void OnRepVoiceChatLoginToken();
+
+	UFUNCTION()
+	void OnRepVoiceChatJoinToken();
+
+	UPROPERTY(replicatedUsing = OnRepVoiceChatLoginToken)
+	FString VoiceChatPlayerName;
+
+	UPROPERTY(replicatedUsing = OnRepVoiceChatLoginToken)
+	FString VoiceChatLoginToken;
+
+	UPROPERTY(replicatedUsing = OnRepVoiceChatJoinToken)
+	FString VoiceChatJoinToken;
+
+	UPROPERTY(replicatedUsing = OnRepVoiceChatJoinToken)
+	FString VoiceChatChannel;
+
+	UPROPERTY()
+	FString VoiceChatJoinTokenCurrent;
+
+	UPROPERTY()
+	FString VoiceChatChannelCurrent;
+
 protected:
 
 	// If set, this will be the final viewtarget this pawn can see.
@@ -1284,6 +1317,8 @@ protected:
 public:
 	// Will return true if this player can perform a rally
 	bool CanPerformRally() const;
+
+	virtual void LeaveVoiceChat();
 
 	virtual void PreClientTravel(const FString& PendingURL, ETravelType TravelType, bool bIsSeamlessTravel) override;
 

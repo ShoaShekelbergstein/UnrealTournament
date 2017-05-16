@@ -43,6 +43,16 @@ void AUTProj_Rocket::Tick(float DeltaTime)
 		}
 		else
 		{
+			if (ProjectileMovement->Velocity.IsZero())
+			{
+				// check if should stop because of intermission
+				AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+				if (GS && GS->bNeedToClearIntermission)
+				{
+					return;
+				}
+				
+			}
 			if (bLeadTarget && (Dist < MaxLeadDistance))
 			{
 				WantedDir += TargetActor->GetVelocity() * Dist / ProjectileMovement->MaxSpeed;

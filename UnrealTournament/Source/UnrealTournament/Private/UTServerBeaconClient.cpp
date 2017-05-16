@@ -12,6 +12,7 @@ Super(ObjectInitializer)
 {
 	PingStartTime = -1;
 	bRelevantForNetworkReplays = false;
+	bQuickPing = false;
 }
 
 void AUTServerBeaconClient::OnConnected()
@@ -53,8 +54,17 @@ void AUTServerBeaconClient::ClientPong_Implementation(int32 inServerTickRate)
 
 	UE_LOG(LogBeacon, Verbose, TEXT("---> Requesting Info %f [%i]"), Ping, ServerTickRate);
 
-	// Ask for additional server info
-	ServerRequestInfo();
+	if (bQuickPing)
+	{
+		UE_LOG(LogBeacon, Verbose, TEXT("---> Quick Ping Received Info DONE!!!!"));
+		OnServerRequestResults.ExecuteIfBound(this, FServerBeaconInfo());
+	}
+	else
+	{
+		// Ask for additional server info
+		ServerRequestInfo();
+	}
+	
 }
 
 bool AUTServerBeaconClient::ServerRequestInfo_Validate() { return true; }

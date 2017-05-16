@@ -222,6 +222,9 @@ public:
 	// Processing an update to the match coming from an instance
 	virtual void ProcessMatchUpdate(const FMatchUpdate& NewMatchUpdate);
 
+	// Processing an update to the match coming from an instance
+	virtual void ProcessStartMatch(const FMatchUpdate& NewMatchUpdate);
+
 	bool IsBanned(FUniqueNetIdRepl Who);
 	void GetMapInformation();
 

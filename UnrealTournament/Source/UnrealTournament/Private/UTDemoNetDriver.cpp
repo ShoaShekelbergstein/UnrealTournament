@@ -38,10 +38,16 @@ bool UUTDemoNetDriver::ShouldSaveCheckpoint()
 			return Super::ShouldSaveCheckpoint();
 		}
 
-		// If playercontroller has no pawn, probably dead and ok to checkpoint
 		APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 		if (PC)
 		{
+			// Spectator should just save checkpoints
+			if (PC->PlayerState && PC->PlayerState->bOnlySpectator)
+			{
+				return true;
+			}
+
+			// If playercontroller has no pawn, probably dead and ok to checkpoint
 			AUTCharacter* Char = Cast<AUTCharacter>(PC->GetPawn());
 			if ((Char == nullptr && !PC->GetPawn()) || 
 				(Char != nullptr && Char->IsDead()))
@@ -83,6 +89,11 @@ bool UUTDemoNetDriver::ProcessGameSpecificDemoHeader(const TArray<FString>& Game
 		{
 			GI->SetLastTriedDemo(GetDemoURL());
 			Error = TEXT("Waiting for redirects to download files");
+
+			StopDemo();
+			GEngine->DestroyNamedNetDriver(GetWorld(), NetDriverName);
+			SetWorld(NULL);
+
 			return false;
 		}
 		else

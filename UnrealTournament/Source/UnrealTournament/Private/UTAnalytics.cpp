@@ -1505,6 +1505,17 @@ void FUTAnalytics::FireEvent_UTTutorialQuit(AUTPlayerController* UTPC, FString T
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TutorialMap), TutorialMap));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MatchTime), GetMatchTime(UTPC)));
 
+		//Add ELO and Stat information in the quit message
+		if (UTPC && UTPC->GetWorld())
+		{
+			AUTGameMode* GameMode = UTPC->GetWorld()->GetAuthGameMode<AUTGameMode>();
+			if (GameMode)
+			{
+				SetMatchInitialParameters(GameMode, ParamArray, true);
+				AddPlayerStatsToParameters(GameMode, ParamArray);
+			}
+		}
+		
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTTutorialQuit), ParamArray);
 	}
 }
@@ -1696,6 +1707,11 @@ void FUTAnalytics::FireEvent_UTStartMatch(AUTGameMode* UTGM)
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsRanked), static_cast<bool>(UTGM->UTGameState->bRankedSession)));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsQuickMatch), static_cast<bool>(UTGM->UTGameState->bIsQuickMatch)));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsOnline), bIsOnlineGame));
+			
+			if (UTGM->UTGameState->bRankedSession || UTGM->UTGameState->bIsQuickMatch)
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlaylistId), UTGM->CurrentPlaylistId));
+			}
 		}
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTStartMatch), ParamArray);
@@ -1730,6 +1746,11 @@ void FUTAnalytics::FireEvent_UTEndMatch(AUTGameMode* UTGM)
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsRanked), static_cast<bool>(UTGM->UTGameState->bRankedSession)));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsQuickMatch), static_cast<bool>(UTGM->UTGameState->bIsQuickMatch)));
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::bIsOnline), bIsOnlineGame));
+
+			if (UTGM->UTGameState->bRankedSession || UTGM->UTGameState->bIsQuickMatch)
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlaylistId), UTGM->CurrentPlaylistId));
+			}
 		}
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTEndMatch), ParamArray);

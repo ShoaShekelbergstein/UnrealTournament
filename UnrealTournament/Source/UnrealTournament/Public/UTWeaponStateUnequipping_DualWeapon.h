@@ -4,15 +4,15 @@
 
 #include "UTWeapon.h"
 #include "UTWeaponStateUnequipping.h"
-#include "UTWeaponStateUnequipping_Enforcer.generated.h"
+#include "UTWeaponStateUnequipping_DualWeapon.generated.h"
 
 /** base class of states that fire the weapon and live in the weapon's FiringState array */
 UCLASS(CustomConstructor)
-class UNREALTOURNAMENT_API UUTWeaponStateUnequipping_Enforcer : public UUTWeaponStateUnequipping
+class UNREALTOURNAMENT_API UUTWeaponStateUnequipping_DualWeapon : public UUTWeaponStateUnequipping
 {
 	GENERATED_UCLASS_BODY()
 
-	UUTWeaponStateUnequipping_Enforcer(const FObjectInitializer& OI)
+	UUTWeaponStateUnequipping_DualWeapon(const FObjectInitializer& OI)
 	: Super(OI)
 	{}
 

@@ -244,15 +244,18 @@ bool UUTGameInstance::HandleOpenCommand(const TCHAR* Cmd, FOutputDevice& Ar, UWo
 
 void UUTGameInstance::HandleDemoPlaybackFailure( EDemoPlayFailure::Type FailureType, const FString& ErrorString )
 {
+	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetFirstGamePlayer());
+	if (LocalPlayer != nullptr)
+	{
+		LocalPlayer->ReturnToMainMenu();
+	}
+
 	// skip this if the "failure" is waiting for redirects
 	if (FailureType != EDemoPlayFailure::Generic || LastTriedDemo.IsEmpty() || bRetriedDemoAfterRedirects)
 	{
-		UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetFirstGamePlayer());
-
 		if (LocalPlayer != nullptr)
 		{
 #if !UE_SERVER
-			LocalPlayer->ReturnToMainMenu();
 			LocalPlayer->ShowMessage(
 				NSLOCTEXT("UUTGameInstance", "ReplayErrorTitle", "Replay Error"),
 				NSLOCTEXT("UUTGameInstance", "ReplayErrorMessage", "There was an error with the replay. Returning to the main menu."), UTDIALOG_BUTTON_OK, nullptr
@@ -279,11 +282,35 @@ bool UUTGameInstance::RedirectDownload(const FString& PakName, const FString& UR
 	UUTGameViewportClient* Viewport = Cast<UUTGameViewportClient>(GetGameViewportClient());
 	if (Viewport != NULL && !Viewport->CheckIfRedirectExists(FPackageRedirectReference(PakName, TEXT(""), TEXT(""), Checksum)))
 	{
+		if (OnDownloadCompleteDelegateHandle.IsValid())
+		{
+			Viewport->RemoveContentDownloadCompleteDelegate(OnDownloadCompleteDelegateHandle);
+		}
+
+		OnDownloadCompleteDelegateHandle = Viewport->RegisterContentDownloadCompleteDelegate(FContentDownloadComplete::FDelegate::CreateUObject(this, &ThisClass::OnDownloadComplete));
 		Viewport->DownloadRedirect(URL, PakName, Checksum);
 		return true;
 	}
 #endif
 	return false;
+}
+
+void UUTGameInstance::OnDownloadComplete(class UUTGameViewportClient* ViewportClient, ERedirectStatus::Type RedirectStatus, const FString& PackageName)
+{
+	if (OnDownloadCompleteDelegateHandle.IsValid())
+	{
+		ViewportClient->RemoveContentDownloadCompleteDelegate(OnDownloadCompleteDelegateHandle);
+	}
+
+	if (RedirectStatus == ERedirectStatus::Completed)
+	{
+		if (!LastTriedDemo.IsEmpty())
+		{
+			LastTriedDemo.RemoveFromEnd(TEXT("?Remote"));
+			GEngine->Exec(GetWorld(), *FString::Printf(TEXT("DEMOPLAY %s"), *LastTriedDemo));
+			LastTriedDemo.Empty();
+		}
+	}
 }
 
 void UUTGameInstance::HandleGameNetControlMessage(class UNetConnection* Connection, uint8 MessageByte, const FString& MessageStr)
@@ -942,7 +969,7 @@ EVisibility UUTGameInstance::GetLevelLoadThrobberVisibility() const
 
 EVisibility UUTGameInstance::GetLevelLoadTextVisibility() const
 {
-	return EVisibility::Visible;
+	return (bLevelIsLoading && bSuppressLoadingText) ? EVisibility::Collapsed : EVisibility::Visible;
 }
 
 EVisibility UUTGameInstance::GetEpicLogoVisibility() const

@@ -27,6 +27,7 @@ namespace UnrealTournamentGame.Automation
 		private int MaxMatchLength { get; set; }
 		private int TtlInterval { get; set; }
 		private string InstallSumo { get; set; }
+		private bool RollingUpdates { get; set; }
 
 		public bool Debug { get; private set; }
 		public string GameName { get; private set; }
@@ -55,6 +56,7 @@ namespace UnrealTournamentGame.Automation
 			this.GameBinary = "UE4Server-Linux-Shipping";
 			this.CpuBudget = 33;
 			this.RamBudget = 55;
+			this.RollingUpdates = false;
 
 			FEngineVersionSupport ParsedVersion = FEngineVersionSupport.FromString(InBuildString, bAllowNoVersion: true);
 			this.Changelist = ParsedVersion.Changelist;
@@ -79,6 +81,7 @@ namespace UnrealTournamentGame.Automation
 				case UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDev:
 				case UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentPublicTest:
 					this.GameBinary = "UE4Server-Linux-Shipping";
+					this.RollingUpdates = true;
 					break;
 				case UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDevPlaytest:
 					this.GameBinary = "UE4Server-Linux-Test";
@@ -321,6 +324,7 @@ namespace UnrealTournamentGame.Automation
 				InstanceSize = InstanceSizeMin;
 			}
 
+			string AppEnvironment = AppName.ToString().Substring(GameName.Length);
 			string CredentialsFilePath = GetUtilitiesFilePath(AwsCredentialsFile);
 			string AwsCredentials = ReadFileContents(CredentialsFilePath);
 			string[] AwsCredentialsList = AwsCredentials.Split(':');
@@ -329,6 +333,16 @@ namespace UnrealTournamentGame.Automation
 			{
 				throw new AutomationException("Unable to parse credentials from file {0} {1}",
 					AwsCredentialsFile, AwsCredentials);
+			}
+
+			string UseRollingUpdates;
+			if (RollingUpdates)
+			{
+				UseRollingUpdates = "true";
+			}
+			else
+			{
+				UseRollingUpdates = "false";
 			}
 
 			string AwsAccessKey = AwsCredentialsList[0];
@@ -341,6 +355,7 @@ namespace UnrealTournamentGame.Automation
 				LocalCpuBudget=32000;
 				LocalMaxMatchLength = 0;
 				LocalTtlInterval = 0;
+				UseRollingUpdates = "false";
 			}
 			else
 			{
@@ -362,7 +377,8 @@ namespace UnrealTournamentGame.Automation
 				"epic_game_buildstr_base64=" + System.Convert.ToBase64String(BuildStringBytes) + "&" +
 				"epic_game_cpu_budget=" + LocalCpuBudget +"&" +
 				"epic_game_ram_budget=" + RamBudget + "&" +
-				"epic_game_environment=" + AppName.ToString() + "&" +
+				"epic_game_environment=" + AppEnvironment.ToString() + "&" +
+				"epic_rolling_update=" + UseRollingUpdates + "&" +
 				"epic_instance_size=" + InstanceSize.ToString() + "&" +
 				"epic_instance_min=" + InstanceSizeMin.ToString() + "&" +
 				"epic_instance_max=" + InstanceSizeMax.ToString() + "&" +
@@ -402,6 +418,7 @@ namespace UnrealTournamentGame.Automation
 				CommandUtils.Log("Overriding AppName from {0} to {1}", AppName, LocalAppName);
 			}
 
+			string AppEnvironment = LocalAppName.ToString().Substring(GameName.Length);
 			string NetworkId = "default";
 			string CredentialsFile = "GceUtDevCredentials.txt";
 
@@ -420,6 +437,16 @@ namespace UnrealTournamentGame.Automation
 			else if (InstanceSizeMin > InstanceSize)
 			{
 				InstanceSize = InstanceSizeMin;
+			}
+
+			string UseRollingUpdates;
+			if (RollingUpdates)
+			{
+				UseRollingUpdates = "true";
+			}
+			else
+			{
+				UseRollingUpdates = "false";
 			}
 
 			string CredentialsFilePath = GetUtilitiesFilePath(CredentialsFile);
@@ -441,6 +468,7 @@ namespace UnrealTournamentGame.Automation
 				LocalCpuBudget=32000;
 				LocalMaxMatchLength = 0;
 				LocalTtlInterval = 0;
+				UseRollingUpdates = "false";
 			}
 			else
 			{
@@ -461,7 +489,8 @@ namespace UnrealTournamentGame.Automation
 				"epic_game_cpu_budget=" + LocalCpuBudget +"&" +
 				"epic_game_ram_budget=" + RamBudget + "&" +
 				"epic_game_buildstr_base64=" + System.Convert.ToBase64String(BuildStringBytes) + "&" +
-				"epic_game_environment=" + LocalAppName.ToString() + "&" +
+				"epic_game_environment=" + AppEnvironment.ToString() + "&" +
+				"epic_rolling_update=" + UseRollingUpdates + "&" +
 				"epic_instance_size=" + InstanceSize.ToString() + "&" +
 				"epic_instance_min=" + InstanceSizeMin.ToString() + "&" +
 				"epic_instance_max=" + InstanceSizeMax.ToString() + "&" +

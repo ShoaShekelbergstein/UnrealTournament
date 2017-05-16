@@ -32,6 +32,8 @@
 
 // Requires a password to join
 #define SERVERFLAG_RequiresPassword 0x00000001
+#define SERVERFLAG_RequiresSpectatorPassword 0x00000004
+
 
 // This server is restricted for some reason.  
 #define SERVERFLAG_Restricted 0x00000002

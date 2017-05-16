@@ -826,7 +826,7 @@ void AUTPlayerState::Tick(float DeltaTime)
 						{
 							MyPC->ClientReceiveLocalizedMessage(Speaker->CharacterVoice, Switch, Speaker, this, NULL);
 						}
-						if (GS && GS->CurrentRallyPoint && (GS->CurrentRallyPoint->LastRallyHot - GetWorld()->GetTimeSeconds() < 2.f))
+						if (GS && GS->CurrentRallyPoint && (GetWorld()->GetTimeSeconds() - GS->CurrentRallyPoint->LastRallyHot < 2.f))
 						{
 							int32 RallyHotSwitch = Speaker->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyHot);
 							if (RallyHotSwitch >= 0)
@@ -3371,12 +3371,12 @@ void AUTPlayerState::OnRepOverrideHat()
 	}
 }
 
-void AUTPlayerState::LogBanRequest(AUTPlayerState* Voter)
+bool AUTPlayerState::LogBanRequest(AUTPlayerState* Voter)
 {
 	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
 	if (UTGameState->bDisableVoteKick || (UTGameState->bOnlyTeamCanVoteKick && GetTeamNum() != Voter->GetTeamNum())) 
 	{
-		return;
+		return false;
 	}
 
 	float CurrentTime = GetWorld()->GetRealTimeSeconds();
@@ -3389,11 +3389,12 @@ void AUTPlayerState::LogBanRequest(AUTPlayerState* Voter)
 				// Update the ban
 				BanVotes[i].BanTime = CurrentTime;
 			}
-			return;
+			return false;
 		}
 	}
 
 	BanVotes.Add(FTempBanInfo(Voter->UniqueId.GetUniqueNetId(), CurrentTime));
+	return true;
 }
 
 int32 AUTPlayerState::CountBanVotes()
@@ -4060,4 +4061,3 @@ void AUTPlayerState::NotIdle()
 {
 	LastActiveTime = GetWorld()->GetTimeSeconds();
 }
-

@@ -72,7 +72,8 @@ UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) 
 	ReadyText = NSLOCTEXT("UTScoreboard", "READY", "READY");
 	NotReadyText = NSLOCTEXT("UTScoreboard", "NOTREADY", "");
 	WarmupText = NSLOCTEXT("UTScoreboard", "WARMUP", "WARMUP");
-	InteractiveText = NSLOCTEXT("UTScoreboard", "InteractiveText", "Press [ESC] to switch to interactive scoreboard.");
+	InteractiveText = NSLOCTEXT("UTScoreboard", "InteractiveText", "Press [ESC] to toggle interactive scoreboard.");
+	InteractiveStandaloneText = NSLOCTEXT("UTScoreboard", "InteractiveStandaloneText", "Press [ESC] to toggle interactive scoreboard and pause.");
 	DifficultyText[0] = NSLOCTEXT("UTScoreboard", "Normal", " vs. Normal AI");
 	DifficultyText[1] = NSLOCTEXT("UTScoreboard", "Hard", " vs. Hard AI");
 	DifficultyText[2] = NSLOCTEXT("UTScoreboard", "Inhuman", " vs. Inhuman AI");
@@ -263,10 +264,11 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 			int32 CurrentXP = LP->GetOnlineXP();
 			FXPBreakdown XPBreakdown = UTHUDOwner->UTPlayerOwner->XPBreakdown;
 			int32 NewXP = XPBreakdown.Total();  //28 FIXMESTEVE
-			if (bGiveReward)
+			if (CurrentXP > UTPlayerOwner->UTPlayerState->GetPrevXP())
 			{
-				CurrentXP += NewXP;
+				CurrentXP -= NewXP;
 			}
+		
 			int32 Level = GetLevelForXP(CurrentXP);
 			int32 LevelXPStart = GetXPForLevel(Level);
 			int32 LevelXPEnd = FMath::Max(GetXPForLevel(Level + 1), LevelXPStart+1);
@@ -330,20 +332,17 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 				Args.Add("XPGained", FText::AsNumber(NewXP));
 				XPValueItem.Text = FText::Format(NSLOCTEXT("UTScoreboard", "XPGained", "+{XPGained}"), Args);
 				XPValueItem.SetColor(FLinearColor::Yellow);
-				XPValueItem.Position.X = XPBarX + CurrentXPWidth;
+				XPValueItem.Position.X = XPBarX + FMath::Max(CurrentXPWidth, 0.1f*XPBarWidth);
 				Canvas->DrawItem(XPValueItem);
 
-				if (!bGiveReward)
-				{
-					float GlowTime = SummaryTime - XPUpdateStart;
-					float XPSize = XPBarWidth* float(NewXP) / float(LevelXP);
-					DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth, XPBarY + 2.f*RenderScale, FMath::Min(XPSize, XPBarWidth - CurrentXPWidth - 4.f*RenderScale), XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Yellow);
+				float GlowTime = SummaryTime - XPUpdateStart;
+				float XPSize = XPBarWidth* float(NewXP) / float(LevelXP);
+				DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth, XPBarY + 2.f*RenderScale, FMath::Min(XPSize, XPBarWidth - CurrentXPWidth - 4.f*RenderScale), XPBarHeight - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Yellow);
 
-					FLinearColor XPGlow = FLinearColor::Yellow;
-					XPGlow.A = 0.3f;
-					float GlowScale = (GlowTime < 0.1f) ? (1.f + 30.f*GlowTime) : FMath::Max(1.f, 4.f - 5.f*(GlowTime - 0.1f));
-					DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth - 0.5f * XPSize * (GlowScale - 1.f), XPBarY + 2.f*RenderScale - 0.5f * XPBarHeight * (GlowScale - 1.f), XPSize * GlowScale, (XPBarHeight*GlowScale) - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 0.2f, XPGlow);
-				}
+				FLinearColor XPGlow = FLinearColor::Yellow;
+				XPGlow.A = 0.3f;
+				float GlowScale = (GlowTime < 0.1f) ? (1.f + 30.f*GlowTime) : FMath::Max(1.f, 4.f - 5.f*(GlowTime - 0.1f));
+				DrawTexture(UTHUDOwner->HUDAtlas, XPBarX + 2.f*RenderScale + CurrentXPWidth - 0.5f * XPSize * (GlowScale - 1.f), XPBarY + 2.f*RenderScale - 0.5f * XPBarHeight * (GlowScale - 1.f), XPSize * GlowScale, (XPBarHeight*GlowScale) - 4.f*RenderScale, 185.f, 400.f, 4.f, 4.f, 0.2f, XPGlow);
 
 				OldLevel = GetLevelForXP(CurrentXP - NewXP);
 				if (bGiveReward && (Level != OldLevel))
@@ -458,7 +457,10 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 		Canvas->StrLen(UTHUDOwner->MediumFont, TEXT("TEST"), NameX, MessageY);
 	}
 
-	DrawText(InteractiveText, 0.5f*Canvas->ClipX, YOffset - 24.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
+	if (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive || (UTGameState && UTGameState->HasMatchStarted()))
+	{
+		DrawText((UTHUDOwner->GetNetMode() == NM_Standalone) ? InteractiveStandaloneText : InteractiveText, 0.5f*Canvas->ClipX, YOffset - 24.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
+	}
 
 	// Draw the Background
 	float TimerX = DrawGameOptions(RenderDelta, YOffset, 0.f, true);
@@ -484,14 +486,18 @@ float UUTScoreboard::DrawGameOptions(float RenderDelta, float& YOffset, float Ri
 	float Length = 0.f;
 	if (UTGameState)
 	{
+		bool bShouldDrawTime = (!UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive || UTGameState->HasMatchStarted());
 		float DisplayedTime = UTGameState ? UTGameState->GetClockTime() : 0.f;
 		FText Timer = UTHUDOwner->ConvertTime(FText::GetEmpty(), FText::GetEmpty(), DisplayedTime, false, true, true);
 		FText StatusText = UTGameState->GetGameStatusText(true);
 		if (bGetLengthOnly)
 		{
 			float XL, YL;
-			Canvas->StrLen(UTHUDOwner->NumberFont, Timer.ToString(), XL, YL);
-			Length = XL;
+			if (bShouldDrawTime)
+			{
+				Canvas->StrLen(UTHUDOwner->NumberFont, Timer.ToString(), XL, YL);
+				Length = XL;
+			}
 			if (!StatusText.IsEmpty())
 			{
 				Canvas->StrLen(UTHUDOwner->SmallFont, StatusText.ToString(), XL, YL);
@@ -507,7 +513,7 @@ float UUTScoreboard::DrawGameOptions(float RenderDelta, float& YOffset, float Ri
 		}
 		else
 		{
-			FVector2D TimeSize = DrawText(Timer, RightEdge, YOffset + 21.f*RenderScale, UTHUDOwner->NumberFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Right, ETextVertPos::Center);
+			FVector2D TimeSize = bShouldDrawTime ? DrawText(Timer, RightEdge, YOffset + 21.f*RenderScale, UTHUDOwner->NumberFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Right, ETextVertPos::Center) : FVector2D(0.f, 0.f);
 			FVector2D StatusSize(0.f, 0.f);
 			RightEdge = RightEdge - (TimeSize.X + 8.f)*RenderScale;
 			if (!StatusText.IsEmpty())
@@ -795,9 +801,20 @@ void UUTScoreboard::DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float R
 		float StrikeWidth = FMath::Min(0.475f*ScaledCellWidth, XL);
 		DrawTexture(UTHUDOwner->HUDAtlas, XOffset + (ScaledCellWidth * ColumnHeaderPlayerX), YOffset + ColumnY, StrikeWidth, Height, 185.f, 400.f, 4.f, 4.f, 1.0f, FLinearColor::Red);
 	}
+	
+	// Draw the muted indicator
+	if (PlayerState->bIsMuted)
+	{
+		bool bLeft = (XOffset < Canvas->ClipX * 0.5f);
+		float TalkingXOffset = bLeft ? ScaledCellWidth + (10.0f *RenderScale) : (-36.0f * RenderScale);
+		FTextureUVs ChatIconUVs = bLeft ? FTextureUVs(497.0f, 965.0f, 35.0f, 31.0f) : FTextureUVs(532.0f, 965.0f, -35.0f, 31.0f);
+		DrawTexture(UTHUDOwner->HUDAtlas, XOffset + TalkingXOffset, YOffset + ((CellHeight * 0.5f - 24.0f) * RenderScale), (26 * RenderScale), (23 * RenderScale), ChatIconUVs.U, ChatIconUVs.V, ChatIconUVs.UL, ChatIconUVs.VL, 1.0f);
 
+		FTextureUVs MuteIconUVs = FTextureUVs(410.0f, 942.0f, 64.0f, 64.0f);
+		DrawTexture(UTHUDOwner->HUDAtlas, XOffset + TalkingXOffset - 3.f, YOffset + ((CellHeight * 0.5f - 30.0f) * RenderScale), (32 * RenderScale), (32 * RenderScale), MuteIconUVs.U, MuteIconUVs.V, MuteIconUVs.UL, MuteIconUVs.VL, 1.0f, FLinearColor::Red);
+	}
 	// Draw the talking indicator
-	if ( PlayerState->bIsTalking )
+	else if ( PlayerState->bIsTalking )
 	{
 		bool bLeft = (XOffset < Canvas->ClipX * 0.5f);
 		float TalkingXOffset = bLeft ? ScaledCellWidth + (10.0f *RenderScale) : (-36.0f * RenderScale);

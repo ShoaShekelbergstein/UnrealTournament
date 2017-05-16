@@ -113,6 +113,14 @@
 		{
 			"Name": "Substance",
 			"Enabled": false
+		},
+		{
+			"Name": "Vivox",
+			"Enabled": false
+		},
+		{
+			"Name": "VivoxToken",
+			"Enabled": false
 		}
 	]
 }

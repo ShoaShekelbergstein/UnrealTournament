@@ -59,56 +59,43 @@ AUTProjectile* AUTWeap_Redeemer::FireProjectile()
 		UTOwner->bCanRally = true;
 		AUTPlayerState* PS = UTOwner->Controller ? Cast<AUTPlayerState>(UTOwner->Controller->PlayerState) : NULL;
 		LaunchTeam = PS && PS->Team ? PS->Team->TeamIndex : 255;
-		if (CurrentFireMode == 0)
+		const FVector SpawnLocation = GetFireStartLoc();
+		const FRotator SpawnRotation = GetAdjustedAim(SpawnLocation);
+		UTOwner->IncrementFlashCount(CurrentFireMode);
+		if (PS && (ShotsStatsName != NAME_None))
 		{
-			LaunchedMissile = Super::FireProjectile();
+			PS->ModifyStatsValue(ShotsStatsName, 1);
+		}
+
+		// spawn the projectile at the muzzle
+		FActorSpawnParameters Params;
+		Params.Instigator = UTOwner;
+		RemoteRedeemer = GetWorld()->SpawnActor<AUTRemoteRedeemer>(RemoteRedeemerClass, SpawnLocation, SpawnRotation, Params);
+		if (!RemoteRedeemer)
+		{
+			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			RemoteRedeemer = GetWorld()->SpawnActor<AUTRemoteRedeemer>(RemoteRedeemerClass, UTOwner->GetActorLocation(), SpawnRotation, Params);
+		}
+		if (RemoteRedeemer)
+		{
+			if (UTOwner && UTOwner->Controller)
+			{
+				RemoteRedeemer->SetOwner(UTOwner->Controller);
+				RemoteRedeemer->ForceReplication();
+				RemoteRedeemer->TryToDrive(UTOwner);
+			}
+
+			RemoteRedeemer->CollisionComp->bGenerateOverlapEvents = true;
+			LaunchedMissile = RemoteRedeemer;
 			if (LaunchedMissile != nullptr)
 			{
 				FTimerHandle TempHandle;
-				GetWorldTimerManager().SetTimer(TempHandle, this, &AUTWeap_Redeemer::AnnounceLaunch, 0.1f, false);
+				GetWorldTimerManager().SetTimer(TempHandle, this, &AUTWeap_Redeemer::AnnounceLaunch, 0.5f, false);
 			}
-			return Cast<AUTProjectile>(LaunchedMissile);
 		}
 		else
 		{
-			const FVector SpawnLocation = GetFireStartLoc();
-			const FRotator SpawnRotation = GetAdjustedAim(SpawnLocation);
-			UTOwner->IncrementFlashCount(CurrentFireMode);
-			if (PS && (ShotsStatsName != NAME_None))
-			{
-				PS->ModifyStatsValue(ShotsStatsName, 1);
-			}
-
-			// spawn the projectile at the muzzle
-			FActorSpawnParameters Params;
-			Params.Instigator = UTOwner;
-			RemoteRedeemer = GetWorld()->SpawnActor<AUTRemoteRedeemer>(RemoteRedeemerClass, SpawnLocation, SpawnRotation, Params);
-			if (!RemoteRedeemer)
-			{
-				Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-				RemoteRedeemer = GetWorld()->SpawnActor<AUTRemoteRedeemer>(RemoteRedeemerClass, UTOwner->GetActorLocation(), SpawnRotation, Params);
-			}
-			if (RemoteRedeemer)
-			{
-				if (UTOwner && UTOwner->Controller)
-				{
-					RemoteRedeemer->SetOwner(UTOwner->Controller);
-					RemoteRedeemer->ForceReplication();
-					RemoteRedeemer->TryToDrive(UTOwner);
-				}
-
-				RemoteRedeemer->CollisionComp->bGenerateOverlapEvents = true;
-				LaunchedMissile = RemoteRedeemer;
-				if (LaunchedMissile != nullptr)
-				{
-					FTimerHandle TempHandle;
-					GetWorldTimerManager().SetTimer(TempHandle, this, &AUTWeap_Redeemer::AnnounceLaunch, 0.5f, false);
-				}
-			}
-			else
-			{
-				UE_LOG(UT, Warning, TEXT("Could not spawn remote redeemer"));
-			}
+			UE_LOG(UT, Warning, TEXT("Could not spawn remote redeemer"));
 		}
 	}
 	return NULL;
@@ -168,6 +155,7 @@ float AUTWeap_Redeemer::SuggestDefenseStyle_Implementation()
 
 void AUTWeap_Redeemer::BringUp(float OverflowTime)
 {
+	EquipStartTime = GetWorld()->GetTimeSeconds();
 	Super::BringUp(OverflowTime);
 	UUTGameplayStatics::UTPlaySound(GetWorld(), GlobalBringupSound, UTOwner, SRT_AllButOwner);
 }
@@ -276,4 +264,53 @@ bool AUTWeap_Redeemer::CanAttack_Implementation(AActor* Target, const FVector& T
 	BestFireMode = 0;
 	return bResult;
 }
+
+void AUTWeap_Redeemer::DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHudWidget, float RenderDelta)
+{
+	FText RedeemerText = NSLOCTEXT("Redeemer", "Redeemer", "Redeemer(TM) Missile Launch System");
+	FText InitializingText = NSLOCTEXT("Redeemer", "Initializing", "Initializing...");
+	FText OnlineText = NSLOCTEXT("Redeemer", "Online", "ON-LINE");
+	FText GuidanceText = NSLOCTEXT("Redeemer", "Guidance", "Guidance Systems");
+	FText FireText = NSLOCTEXT("Redeemer", "PressFire", "Press [FIRE] to launch guided missile.");
+	FText DotText = NSLOCTEXT("Redeemer", "Dot", "*");
+
+	float RenderScale = WeaponHudWidget->GetRenderScale();
+	float PosX = 50.f * RenderScale;
+	float PosY = 0.f;
+	float TimeShown = GetWorld()->GetTimeSeconds() - EquipStartTime;
+	float FrameHeight = FMath::Clamp(1024.f*TimeShown - 256.f, 16.f, 112.f) * RenderScale;
+	float BackAlpha = 0.3f;
+	WeaponHudWidget->DrawTexture(WeaponHudWidget->UTHUDOwner->ScoreboardAtlas, PosX, PosY, 320.f*RenderScale, FrameHeight, 149, 138, 32, 32, BackAlpha, FLinearColor::Black);
+
+	if (TimeShown > 0.5f)
+	{
+		FVector2D TextSize = WeaponHudWidget->DrawText(RedeemerText, PosX, PosY, WeaponHudWidget->UTHUDOwner->TinyFont, FLinearColor::Black, RenderScale, 1.0f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Top);
+		PosY += TextSize.Y*RenderScale;
+		FVector2D GuidanceSize = WeaponHudWidget->DrawText(GuidanceText, PosX, PosY, WeaponHudWidget->UTHUDOwner->TinyFont, FLinearColor::Black, RenderScale, 1.0f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Top);
+		float StatusOffset = GuidanceSize.X*RenderScale + 16.f*RenderScale;
+		if (CurrentState == ActiveState)
+		{
+			WeaponHudWidget->DrawText(OnlineText, PosX + StatusOffset, PosY, WeaponHudWidget->UTHUDOwner->TinyFont, FLinearColor::Black, RenderScale, 1.0f, FLinearColor::Yellow, ETextHorzPos::Left, ETextVertPos::Top);
+			WeaponHudWidget->DrawText(FireText, PosX, PosY + GuidanceSize.Y*RenderScale, WeaponHudWidget->UTHUDOwner->TinyFont, FLinearColor::Black, RenderScale, 1.0f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Top);
+		}
+		else if (CurrentState == EquippingState)
+		{
+			float Opacity = FMath::Max(0.f, FMath::Sin(8.f*GetWorld()->GetTimeSeconds()));
+			WeaponHudWidget->DrawText(InitializingText, PosX + StatusOffset, PosY, WeaponHudWidget->UTHUDOwner->TinyFont, FLinearColor::Black, RenderScale, Opacity, FLinearColor::Yellow, ETextHorzPos::Left, ETextVertPos::Top);
+		}
+	}
+	else
+	{
+		int32 NumDots = 30 * TimeShown;
+		for (int32 i = 0; i < NumDots; i++)
+		{
+			WeaponHudWidget->DrawText(DotText, PosX, PosY - 8.f*RenderScale, WeaponHudWidget->UTHUDOwner->TinyFont, FLinearColor::Black, RenderScale, 1.f, FLinearColor::Yellow, ETextHorzPos::Left, ETextVertPos::Top);
+			PosX += 8.f;
+		}
+	}
+
+	//Draw the crosshair
+	Super::DrawWeaponCrosshair_Implementation(WeaponHudWidget, RenderDelta);
+}
+
 

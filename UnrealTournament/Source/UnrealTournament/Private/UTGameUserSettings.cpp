@@ -3,6 +3,7 @@
 #include "UnrealTournament.h"
 #include "UTGameEngine.h"
 #include "UTGameUserSettings.h"
+#include "UTVoiceChatFeature.h"
 
 namespace EUTGameUserSettingsVersion
 {
@@ -23,6 +24,9 @@ UUTGameUserSettings::UUTGameUserSettings(const class FObjectInitializer& ObjectI
 	SoundClassVolumes[EUTSoundClass::VOIP] = 1.0f;
 	SoundClassVolumes[EUTSoundClass::Music_Stingers] = 1.0f;
 	SoundClassVolumes[EUTSoundClass::GameMusic] = 0.f;
+	VoiceChatPlaybackVolume = 0.5f;
+	VoiceChatRecordVolume = 0.5f;
+	bVoiceChatEnabled = true;
 	InitialBenchmarkState = -1;
 	bBenchmarkInProgress=false;
 	BotSpeech = BSO_All;
@@ -51,6 +55,9 @@ void UUTGameUserSettings::SetToDefaults()
 	SoundClassVolumes[EUTSoundClass::Music_Stingers] = 1.0f;
 	SoundClassVolumes[EUTSoundClass::GameMusic] = 0.f;
 	FullscreenMode = EWindowMode::Fullscreen;
+	VoiceChatPlaybackVolume = 0.5f;
+	VoiceChatRecordVolume = 0.5f;
+	bVoiceChatEnabled = true;
 	ScreenPercentage = 100;
 	InitialBenchmarkState = -1;
 }
@@ -67,6 +74,9 @@ void UUTGameUserSettings::ApplySettings(bool bCheckForCommandLineOverrides)
 	SetAAMode(AAMode);
 	SetScreenPercentage(ScreenPercentage);
 	SetHRTFEnabled(bHRTFEnabled);
+	SetVoiceChatEnabled(bVoiceChatEnabled);
+	SetVoiceChatPlaybackVolume(VoiceChatPlaybackVolume);
+	SetVoiceChatRecordVolume(VoiceChatRecordVolume);
 	SetBotSpeech(BotSpeech);
 }
 
@@ -225,6 +235,83 @@ void UUTGameUserSettings::SetHRTFEnabled(bool NewHRTFEnabled)
 		AudioDevice->SetHRTFEnabledForAll(bHRTFEnabled);
 	}
 #endif
+}
+
+bool UUTGameUserSettings::IsVoiceChatEnabled()
+{
+	return bVoiceChatEnabled;
+}
+
+void UUTGameUserSettings::SetVoiceChatEnabled(bool NewVoiceChatEnabled)
+{
+	bVoiceChatEnabled = NewVoiceChatEnabled;
+
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+	{
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		if (!bVoiceChatEnabled)
+		{
+			// If we're already connected, we should disconnect now
+			VoiceChat->Disconnect();
+		}
+		else
+		{
+			// If we're not connected, we should connect now
+			VoiceChat->Connect();
+		}
+	}
+}
+
+float UUTGameUserSettings::GetVoiceChatPlaybackVolume()
+{
+	return VoiceChatPlaybackVolume;
+}
+
+float UUTGameUserSettings::GetVoiceChatRecordVolume()
+{
+	return VoiceChatRecordVolume;
+}
+
+void UUTGameUserSettings::SetVoiceChatPlaybackVolume(float InVolume)
+{
+	VoiceChatPlaybackVolume = InVolume;
+
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+	{
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		VoiceChat->SetPlaybackVolume(VoiceChatPlaybackVolume);
+	}
+}
+
+void UUTGameUserSettings::SetVoiceChatRecordVolume(float InVolume)
+{
+	VoiceChatRecordVolume = InVolume;
+
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+	{
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		VoiceChat->SetRecordVolume(VoiceChatRecordVolume);
+	}
+}
+
+FString UUTGameUserSettings::GetVoiceChatInputDevice()
+{
+	return VoiceChatInputDevice;
+}
+
+void UUTGameUserSettings::SetVoiceChatInputDevice(const FString& CustomInputDevice)
+{
+	VoiceChatInputDevice = CustomInputDevice;
+
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+	{
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		VoiceChat->SetCustomInputDevice(CustomInputDevice);
+	}
 }
 
 bool UUTGameUserSettings::IsKeyboardLightingEnabled()

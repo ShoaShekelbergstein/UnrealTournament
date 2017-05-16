@@ -185,7 +185,7 @@ FText UUTCTFMajorMessage::GetText(int32 Switch, bool bTargetsPlayerState1, APlay
 
 float UUTCTFMajorMessage::GetAnnouncementPriority(const FAnnouncementInfo AnnouncementInfo) const
 {
-	return ((AnnouncementInfo.Switch <13) || (AnnouncementInfo.Switch == 30)) ? 1.f : 0.f;
+	return ((AnnouncementInfo.Switch <13) || (AnnouncementInfo.Switch == 30)) ? 1.f : 0.5f;
 }
 
 bool UUTCTFMajorMessage::InterruptAnnouncement(const FAnnouncementInfo AnnouncementInfo, const FAnnouncementInfo OtherAnnouncementInfo) const

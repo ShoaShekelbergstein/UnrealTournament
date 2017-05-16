@@ -827,6 +827,10 @@ void AUTWeapon::BringUp(float OverflowTime)
 	AttachToOwner();
 	OnBringUp();
 	CurrentState->BringUp(OverflowTime);
+	if ((Ammo <= LowAmmoThreshold) && (Ammo > 0) && (LowAmmoSound != nullptr)) 
+	{
+		PlayLowAmmoSound();
+	}
 
 	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
 	AUTPlayerController* TutPlayer = (GameMode && GameMode->bBasicTrainingGame && !GameMode->bDamageHurtsHealth && UTOwner && (GetNetMode() == NM_Standalone)) ? Cast<AUTPlayerController>(UTOwner->GetController()) : nullptr;
@@ -1404,7 +1408,6 @@ bool AUTWeapon::ServerHitScanHit_Validate(AUTCharacter* HitScanChar, uint8 HitSc
 
 void AUTWeapon::ServerHitScanHit_Implementation(AUTCharacter* HitScanChar, uint8 HitScanEventIndex)
 {
-	UE_LOG(UT, Warning, TEXT("Received ServerHitScanHit %d"), HitScanEventIndex);
 	ReceivedHitScanHitChar = HitScanChar;
 	ReceivedHitScanIndex = HitScanEventIndex;
 }
@@ -1451,7 +1454,7 @@ void AUTWeapon::AddAmmo(int32 Amount)
 
 void AUTWeapon::SwitchToBestWeaponIfNoAmmo()
 {
-	if (UTOwner != NULL && UTOwner->GetPendingWeapon() == NULL && !HasAnyAmmo())
+	if (UTOwner && UTOwner->IsLocallyControlled() && UTOwner->GetPendingWeapon() == NULL && !HasAnyAmmo())
 	{
 		AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
 		if (PC != NULL)
@@ -1508,7 +1511,7 @@ void AUTWeapon::ConsumeAmmo(uint8 FireModeNum)
 
 bool AUTWeapon::HasAmmo(uint8 FireModeNum)
 {
-	return (AmmoCost.IsValidIndex(FireModeNum) && Ammo >= AmmoCost[FireModeNum]);
+	return (AmmoCost.IsValidIndex(FireModeNum) && Ammo >= FMath::Min(1,AmmoCost[FireModeNum]));
 }
 
 bool AUTWeapon::NeedsAmmoDisplay_Implementation() const
@@ -1600,7 +1603,9 @@ FVector AUTWeapon::GetFireStartLoc(uint8 FireMode)
 			{
 				Collider = FCollisionShape::MakeSphere(0.0f);
 			}
-			FCollisionQueryParams Params(FName(TEXT("WeaponStartLoc")), true, UTOwner);
+
+			static FName NAME_WeaponStartLoc(TEXT("WeaponStartLoc"));
+			FCollisionQueryParams Params(NAME_WeaponStartLoc, true, UTOwner);
 			FHitResult Hit;
 			if (GetWorld()->SweepSingleByChannel(Hit, BaseLoc, FinalLoc, FQuat::Identity, COLLISION_TRACE_WEAPON, Collider, Params))
 			{
@@ -1717,7 +1722,7 @@ bool AUTWeapon::ShouldTraceIgnore(AActor* TestActor)
 	}
 	else if (UTOwner != nullptr && (Cast<AUTProj_WeaponScreen>(TestActor) != nullptr || (Cast<AUTTeamDeco>(TestActor) != nullptr && !((AUTTeamDeco*)(TestActor))->bBlockTeamProjectiles)))
 	{
-		return (GS != nullptr && GS->OnSameTeam(UTOwner, TestActor));
+		return (GS != nullptr && !GS->bTeamProjHits && GS->OnSameTeam(UTOwner, TestActor));
 	}
 	else
 	{
@@ -1796,7 +1801,7 @@ void AUTWeapon::HitScanTrace(const FVector& StartLocation, const FVector& EndTra
 		for (FConstPawnIterator Iterator = GetWorld()->GetPawnIterator(); Iterator; ++Iterator)
 		{
 			AUTCharacter* Target = Cast<AUTCharacter>(*Iterator);
-			if (Target && (Target != UTOwner) && (bTeammatesBlockHitscan || !GS || !GS->OnSameTeam(UTOwner, Target)))
+			if (Target && (Target != UTOwner) && (bTeammatesBlockHitscan || !GS || GS->bTeamProjHits || !GS->OnSameTeam(UTOwner, Target)))
 			{
 				float ExtraHitPadding = (Target == ClientSideHitActor) ? 40.f : 0.f;
 				// find appropriate rewind position, and test against trace from StartLocation to Hit.Location
@@ -2999,7 +3004,10 @@ void AUTWeapon::SetSkin(UMaterialInterface* NewSkin)
 		MeshMIDs.Empty();
 		for (int i = 0; i < GetMesh()->GetNumMaterials(); i++)
 		{
-			MeshMIDs.Add(GetMesh()->CreateAndSetMaterialInstanceDynamic(i));
+			if (GetMesh()->GetMaterial(i))
+			{
+				MeshMIDs.Add(GetMesh()->CreateAndSetMaterialInstanceDynamic(i));
+			}
 		}
 	}
 }

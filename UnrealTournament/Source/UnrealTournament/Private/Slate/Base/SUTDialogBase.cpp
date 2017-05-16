@@ -328,7 +328,7 @@ TSharedRef<SWidget> SUTDialogBase::GenerateStringListWidget(TSharedPtr<FString> 
 
 FReply SUTDialogBase::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
 {
-	if (InKeyEvent.GetKey() == EKeys::Tab)
+	if ((InKeyEvent.GetKey() == EKeys::Tab) && (TabTable.Num() > 0))
 	{
 		int32 NewStop = (InKeyEvent.IsLeftShiftDown() || InKeyEvent.IsRightShiftDown()) ? -1 : 1;
 		if (TabStop + NewStop < 0)
@@ -378,6 +378,11 @@ TSharedRef<class SWidget> SUTDialogBase::BuildTitleBar(FText InDialogTitle)
 			.Text(InDialogTitle)
 			.TextStyle(SUWindowsStyle::Get(), "UT.Dialog.TitleTextStyle")
 		];
+}
+
+TSharedPtr<SWidget> SUTDialogBase::GetBestWidgetToFocus()
+{
+	return PlayerOwner->ViewportClient->GetGameViewportWidget();
 }
 
 #endif

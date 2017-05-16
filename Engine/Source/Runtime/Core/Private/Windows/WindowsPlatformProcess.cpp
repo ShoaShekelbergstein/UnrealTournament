@@ -342,7 +342,7 @@ FProcHandle FWindowsPlatformProcess::CreateProc( const TCHAR* URL, const TCHAR* 
 	{
 		dwFlags |= STARTF_USESTDHANDLES;
 	}
-
+	
 	// initialize startup info
 	STARTUPINFO StartupInfo = {
 		sizeof(STARTUPINFO),

@@ -275,7 +275,7 @@ void SUTLoginDialog::Construct(const FArguments& InArgs)
 							SNew(SButton)
 							.ButtonStyle(SUTStyle::Get(), "UT.Login.EmptyButton")
 							.OnClicked(this, &SUTLoginDialog::OnForgotPasswordClick)
-							.ContentPadding(FMargin(0.0f, 0.0f, 0.0f, 0.0f))
+							.ContentPadding(FMargin(0.0f, 10.0f, 0.0f, 0.0f))
 							[
 								SNew(STextBlock)
 								.Text(NSLOCTEXT("Login", "PasswordRecovery", "Forgot Your Password?"))
@@ -337,45 +337,6 @@ void SUTLoginDialog::Construct(const FArguments& InArgs)
 							SNew(STextBlock)
 							.Text(NSLOCTEXT("Login", "PlayOffline", "Play Offline"))
 							.TextStyle(SUTStyle::Get(), "UT.Login.Offline.TextStyle")
-						]
-					]
-				]
-
-				// New Account
-
-				+SVerticalBox::Slot()
-				.Padding(10.0f, 66.0f, 10.0f, 0.0f)
-				.AutoHeight()
-				.HAlign(HAlign_Center)
-				[
-					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-					.AutoWidth()
-					[
-						SNew(STextBlock)
-						.Text(NSLOCTEXT("Login", "NoAccountMsg", "Need an Epic Games Account?"))
-						.TextStyle(SUTStyle::Get(), "UT.Login.TextStyle")
-					]
-				]
-
-				// Click Here
-
-				+SVerticalBox::Slot()
-				.AutoHeight()
-				.HAlign(HAlign_Center)
-				[
-					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-					.AutoWidth()
-					[
-						SNew(SButton)
-						.ButtonStyle(SUTStyle::Get(), "UT.Login.EmptyButton")
-						.OnClicked(this, &SUTLoginDialog::OnNewAccountClick)
-						.ContentPadding(FMargin(0.0f, 0.0f, 0.0f, 0.0f))
-						[
-							SNew(STextBlock)
-							.Text(NSLOCTEXT("Login", "SignUp", "Sign Up!"))
-							.TextStyle(SUTStyle::Get(), "UT.Login.EmptyButton.TextStyle")
 						]
 					]
 				]

@@ -106,12 +106,13 @@ void UUTFlagRunScoreboard::DrawTeamPanel(float RenderDelta, float& YOffset)
 	{
 		return;
 	}
-	if (IsBeforeFirstRound() && (EndIntermissionTime > GetWorld()->GetTimeSeconds()) && UTHUDOwner && UTHUDOwner->UTPlayerOwner)
+	if (IsBeforeFirstRound() && bHasAnnouncedNextRound)
 	{
-	//	float Width = 0.35f * Canvas->ClipX;
-	//	DrawFramedBackground(0.5f * (Canvas->ClipX - Width), LeftCorner.Y, Width, Height);
-	//	Super::DrawTeamPanel(RenderDelta, YOffset);
-		return;
+		AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
+		if (GM && GM->bBasicTrainingGame)
+		{
+			return;
+		}
 	}
 
 	// allow pending score to count up
@@ -139,9 +140,7 @@ void UUTFlagRunScoreboard::DrawTeamPanel(float RenderDelta, float& YOffset)
 		FLinearColor TiebreakColor = (CurrentTiebreakValue > 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
 		float ChargeOffset = (ChargePct < 0.f) ? 0.f : ChargePct;
 		DrawTexture(UTHUDOwner->HUDAtlas, 0.5f*Canvas->ClipX - ChargeOffset, BackgroundY, FMath::Abs(ChargePct), Height, 127.f, 641, 150.f, 21.f, 1.f, TiebreakColor, FVector2D(0.f, 0.5f));
-
 		DrawTexture(UTHUDOwner->HUDAtlas, 0.5f*Canvas->ClipX, BackgroundY, Width, Height, 127, 612, 150, 21.f, 1.f, FLinearColor::White, FVector2D(0.5f, 0.5f));
-
 		DrawText(NSLOCTEXT("FlagRun", "Tiebreak", "TIEBREAKER"), 0.5f*Canvas->ClipX, BackgroundY + Height, UTHUDOwner->TinyFont, FVector2D(1.f,1.f), FLinearColor::Black, FLinearColor::Black, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
 
 		if (CurrentTiebreakValue != 0)
@@ -196,6 +195,10 @@ void UUTFlagRunScoreboard::AnnounceRoundScore(AUTTeamInfo* InScoringTeam, APlaye
 		else if (RoundBonus > 0)
 		{
 			PendingTiebreak = FMath::Min(int32(RoundBonus), 59);
+		}
+		else if (Reason == 2)
+		{
+			PendingScore = 0;
 		}
 		if (ScoringTeam->TeamIndex == 1)
 		{
@@ -298,6 +301,10 @@ void UUTFlagRunScoreboard::GetScoringStars(int32& NumStars, FLinearColor& StarCo
 				NumStars = 2;
 				StarColor = SILVERCOLOR;
 			}
+		}
+		else if (Reason == 2)
+		{
+			NumStars = 0;
 		}
 	}
 }
@@ -538,6 +545,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 			{
 				AUTCharacter* PawnToFocus = GS->ScoringPlayerState->GetUTCharacter();
 				FNetworkGUID FocusPawnGuid = PawnToFocus ? GetWorld()->DemoNetDriver->GetGUIDForActor(PawnToFocus) : GetWorld()->DemoNetDriver->GetGUIDForActor(GS->ScoringPlayerState);
+				UTPlayerOwner->ClientReceiveLocalizedMessage(UUTCTFRewardMessage::StaticClass(), 11, nullptr);
 				UTPlayerOwner->OnKillcamStart(FocusPawnGuid, 8.0f + ScoreInfoDuration);
 				GetWorld()->GetTimerManager().SetTimer(
 					UTPlayerOwner->KillcamStopHandle,
@@ -551,11 +559,12 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 		const float MapSize = FMath::Min(Canvas->ClipX - 2.f*ScaledEdgeSize - 2.f*ScaledCellWidth, 0.9f*Canvas->ClipY - 120.f * RenderScale);
 		float MapYPos = (LastScorePanelYOffset > 0.f) ? LastScorePanelYOffset - 2.f : 0.25f*Canvas->ClipY;
 		FVector2D LeftCorner = FVector2D(MinimapCenter.X*Canvas->ClipX - 0.5f*MapSize, MapYPos);
-		if ((EndIntermissionTime < GetWorld()->GetTimeSeconds()) && (GS->IntermissionTime < 8.f) && (GS->IntermissionTime > 0.f) && !bHasAnnouncedWin)
+		if (!bHasAnnouncedNextRound && (GS->IntermissionTime < 8.f) && (GS->IntermissionTime > 0.f) && !bHasAnnouncedWin)
 		{
-			EndIntermissionTime = GetWorld()->GetTimeSeconds() + (GS->HasMatchEnded() ? 11.2f : 8.3f);
+			EndIntermissionTime = GetWorld()->GetTimeSeconds();
 			OldDisplayedParagraphs = 0;
 			bFullListPlayed = false;
+			bHasAnnouncedNextRound = true;
 			bool bIsOnDefense = UTPS && UTPS->Team && GS->IsTeamOnDefenseNextRound(UTPS->Team->TeamIndex);
 			int32 MessageIndex = IsBeforeFirstRound() ? 2001 : GS->CTFRound + 2001;
 			UTPlayerOwner->ClientReceiveLocalizedMessage(UUTCountDownMessage::StaticClass(), MessageIndex);
@@ -565,9 +574,10 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 				UTPlayerOwner->ClientReceiveLocalizedMessage(UUTFlagRunMessage::StaticClass(), GS->FlagRunMessageSwitch, nullptr, nullptr, GS->FlagRunMessageTeam);
 			}
 		}
-		if (UTPS && UTPS->Team && (EndIntermissionTime > GetWorld()->GetTimeSeconds()) && UTHUDOwner && UTHUDOwner->UTPlayerOwner)
+		if (UTPS && UTPS->Team && bHasAnnouncedNextRound && UTHUDOwner && UTHUDOwner->UTPlayerOwner)
 		{
-			if (IsBeforeFirstRound())
+			AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
+			if (IsBeforeFirstRound() && GM && GM->bBasicTrainingGame )
 			{
 				// draw round information
 				LeftCorner.Y = 10.f*RenderScale;
@@ -588,7 +598,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 				float TextXPos = 0.5f*Canvas->ClipX - 0.47f*Width;
 				TextYPos += 44.f*RenderScale;
 
-				int32 DisplayedParagraphs = 8 - int32(EndIntermissionTime - GetWorld()->GetTimeSeconds());
+				int32 DisplayedParagraphs = int32(GetWorld()->GetTimeSeconds() - EndIntermissionTime);
 				int32 CountedParagraphs = 0;
 				int32 LastParStart = 0;
 				bool bFullList = true;
@@ -621,7 +631,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 					TextYPos += NextLine.IsEmpty() ? 12.f*RenderScale : 32.f*RenderScale;
 				}
 			}
-			else if (DefaultGame && (GS->GetScoringPlays().Num() > 0))
+			else if (DefaultGame)
 			{
 				float Height = 0.5f*Canvas->ClipY;
 				float ScoreWidth = 0.8f*MapSize;
@@ -631,7 +641,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 				LeftCorner.Y += 0.15f*Canvas->ClipY;
 			}
 		}
-		else if (GS->GetScoringPlays().Num() > 0)
+		else if ((GS->GetScoringPlays().Num() > 0) && !bHasAnnouncedNextRound)
 		{
 			// draw scoring plays
 			float ScoreWidth = 0.5f*MapSize;
@@ -653,6 +663,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 	}
 	else
 	{
+		bHasAnnouncedNextRound = false;
 		Super::DrawMinimap(RenderDelta);
 	}
 }
@@ -896,6 +907,11 @@ void UUTFlagRunScoreboard::DrawStatsLeft(float DeltaTime, float& YPos, float XOf
 {
 }
 
+FText UUTFlagRunScoreboard::GetScoringSummaryTitle(bool bIsOnDefense) const
+{
+	return bIsOnDefense ? DefendTitle : AttackTitle;
+}
+
 void UUTFlagRunScoreboard::DrawScoringSummary(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float MaxHeight)
 {
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
@@ -914,7 +930,7 @@ void UUTFlagRunScoreboard::DrawScoringSummary(float DeltaTime, float& YPos, floa
 	TextRenderInfo.bClipText = true;
 	AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTPlayerOwner->PlayerState);
 
-	FText Title = GS->IsTeamOnDefenseNextRound(UTPS->Team->TeamIndex) ? DefendTitle : AttackTitle;
+	FText Title = GetScoringSummaryTitle(GS->IsTeamOnDefenseNextRound(UTPS->Team->TeamIndex));
 	FFormatNamedArguments Args;
 	Args.Add("RoundNum", FText::AsNumber(IsBeforeFirstRound() ? 1 : GS->CTFRound + 1));
 	Args.Add("NumRounds", FText::AsNumber(GS->NumRounds));

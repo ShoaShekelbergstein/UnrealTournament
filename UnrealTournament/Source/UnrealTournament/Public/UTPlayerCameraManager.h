@@ -43,12 +43,20 @@ class UNREALTOURNAMENT_API AUTPlayerCameraManager : public APlayerCameraManager
 	UPROPERTY()
 	float EndGameFreeCamDistance;
 
-	UPROPERTY()
-		FVector DeathCamOffset;
-
 	/** Offset to Z death camera position */
 	UPROPERTY()
 		float DeathCamDistance;
+
+	/** Death camera position */
+	UPROPERTY()
+		FVector DeathCamPosition;
+
+	/** What Deathcam is looking at */
+	UPROPERTY()
+		FVector DeathCamFocalPoint;
+
+	UPROPERTY()
+		float DeathCamFOV;
 
 	/** Spectator cam auto prioritization. */
 	/** Bonus for currently viewed camera. */

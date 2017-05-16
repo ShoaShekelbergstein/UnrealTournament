@@ -132,6 +132,13 @@ void AUTPickupInventory::SetInventoryType(TSubclassOf<AUTInventory> NewType)
 		bDelayedSpawn = InventoryType.GetDefaultObject()->bDelayedSpawn;
 		BaseDesireability = InventoryType.GetDefaultObject()->BasePickupDesireability;
 		bFixedRespawnInterval = InventoryType.GetDefaultObject()->bFixedRespawnInterval;
+		if (InventoryType.GetDefaultObject()->PreSpawnEffect)
+		{
+			PreSpawnEffect = InventoryType.GetDefaultObject()->PreSpawnEffect;
+			PreSpawnTime = InventoryType.GetDefaultObject()->PreSpawnTime;
+			PreSpawnEffectTransform = InventoryType.GetDefaultObject()->PreSpawnEffectTransform;
+			PreSpawnColorVectorParam = InventoryType.GetDefaultObject()->PreSpawnColorVectorParam;
+		}
 	}
 	else
 	{
@@ -446,7 +453,7 @@ void AUTPickupInventory::PlaySpawnVoiceLine()
 	}
 
 	AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (GM && GM->bAllowPickupAnnouncements)
+	if (GM && GM->bAllowPickupAnnouncements && (InventoryType.GetDefaultObject()->PickupAnnouncementName != NAME_None))
 	{
 		// find player to announce this pickup 
 		AUTPlayerState* Speaker = nullptr;
@@ -650,7 +657,7 @@ void AUTPickupInventory::AnnouncePickup(AUTCharacter* P)
 void AUTPickupInventory::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME_CONDITION(AUTPickupInventory, InventoryType, COND_None);
+	DOREPLIFETIME(AUTPickupInventory, InventoryType);
 }
 
 void AUTPickupInventory::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)

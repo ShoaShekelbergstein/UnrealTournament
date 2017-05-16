@@ -354,7 +354,15 @@ void UPartyContext::HandleJoinPartyFailure(EJoinPartyCompletionResult Result, in
 	UUTLocalPlayer* LocalPlayer = GetOwningPlayer<UUTLocalPlayer>();
 	if (LocalPlayer)
 	{
-		LocalPlayer->ShowToast(NSLOCTEXT("UPartyContext", "FailPartyJoin", "Failed to join party"));
+		FText Reason;
+		if ( EJoinPartyDenialReason(DeniedResultCode) == EJoinPartyDenialReason::Busy ) Reason = NSLOCTEXT("UPartyContext","DeniedCode_Busy","Leader is busy.");
+		else if ( EJoinPartyDenialReason(DeniedResultCode) == EJoinPartyDenialReason::GameFull ) Reason = NSLOCTEXT("UPartyContext","DeniedCode_Busy","Game is full!");
+		else if ( EJoinPartyDenialReason(DeniedResultCode) == EJoinPartyDenialReason::NotPartyLeader) Reason = NSLOCTEXT("UPartyContext","DeniedCode_Busy","Not the party leader!");
+		else if ( EJoinPartyDenialReason(DeniedResultCode) == EJoinPartyDenialReason::PartyFull) Reason = NSLOCTEXT("UPartyContext","DeniedCode_Busy","Party is full.");
+		else if ( EJoinPartyDenialReason(DeniedResultCode) == EJoinPartyDenialReason::PartyPrivate) Reason = NSLOCTEXT("UPartyContext","DeniedCode_Busy","Party is private.");
+		else Reason = NSLOCTEXT("UPartyContext","DeniedCode_Busy","Unknown reason.");
+		
+		LocalPlayer->ShowToast(FText::Format(NSLOCTEXT("UPartyContext", "FailPartyJoin", "Failed to join party: {0}"), Reason));
 	}
 }
 

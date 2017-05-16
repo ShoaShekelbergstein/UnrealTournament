@@ -240,7 +240,7 @@ public:
 #if !UE_SERVER
 
 	TArray<TSharedPtr<SUTWindowBase>> WindowStack;
-	virtual void OpenWindow(TSharedPtr<SUTWindowBase> WindowToOpen);
+	virtual void OpenWindow(TSharedPtr<SUTWindowBase> WindowToOpen, int32 ZOrder = 1);
 	virtual bool CloseWindow(TSharedPtr<SUTWindowBase> WindowToClose);
 	virtual void WindowClosed(TSharedPtr<SUTWindowBase> WindowThatWasClosed);
 
@@ -1105,12 +1105,13 @@ public:
 	void InvalidateLastSession();
 	void Reconnect(bool bAsSpectator);
 
-	void CachePassword(FString HostAddress, FString Password, bool bSpectator);		
-	FString RetrievePassword(FString HostAddress, bool bSpectator);
+	void CachePassword(FString ServerID, FString Password, bool bSpectator);		
+	FString RetrievePassword(FString ServerID, bool bSpectator);
+	void RemoveCachedPassword(const FString& ServerID, bool bSpectator = false);
 
 protected:
-	TMap<FString /*HostIP:Port*/, FString /*Password*/> CachedPasswords;
-	TMap<FString /*HostIP:Port*/, FString /*Password*/> CachedSpecPasswords;
+	TMap<FString /*ServerGUID*/, FString /*Password*/> CachedPasswords;
+	TMap<FString /*ServerGUID*/, FString /*Password*/> CachedSpecPasswords;
 
 protected:
 	UPROPERTY(Config)
@@ -1369,7 +1370,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category=UMG)
 	void CloseSavingWidget();
 
-
 	// Looks for an update.  
 	UFUNCTION()
 	void CheckForNewUpdate();
@@ -1401,7 +1401,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Game)
 	bool IsKillcamReplayActive();
 
-
 	void RegainFocus();
 
 	/**
@@ -1417,10 +1416,34 @@ public:
 	FText PlayListIDToText(int32 PlayListId);
 	void CancelQuickmatch();
 
-protected:
+	void StopKillCam();
+
+	FString GetBuildNotesURL();
+
+	UFUNCTION()
+	void SetPartyType(EPartyType InPartyType, bool bLeaderFriendsOnly, bool bLeaderInvitesOnly);
+
+	// If we are attempting to join a private server, this will hold the url option to add the password
+	FString PendingJoinSessionPassword;
+
+#if !UE_SERVER
+	TSharedPtr<SWidget> GetBestWidgetToFocus();
+#endif
+
 	bool bLaunchTutorialOnLogin;
 
+protected:
+
 	virtual void FinalizeLogin();
+
+#if !UE_SERVER
+	void ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID, bool bSpectatorPassword);
+#endif
+
+	void CenterMouseCursor();
+
+	UPROPERTY(Config)
+	TArray<FUTGameModeCountStorage> GameModeCounts;
 
 };
 

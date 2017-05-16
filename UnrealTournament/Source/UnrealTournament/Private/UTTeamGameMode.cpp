@@ -19,6 +19,8 @@
 #include "AnalyticsEventAttribute.h"
 #include "IAnalyticsProvider.h"
 #include "UTATypes.h"
+#include "Misc/Base64.h"
+#include "UTVoiceChatTokenFeature.h"
 
 UUTTeamInterface::UUTTeamInterface(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -83,6 +85,8 @@ void AUTTeamGameMode::InitGame(const FString& MapName, const FString& Options, F
 
 		Teams.Add(NewTeam);
 		checkSlow(Teams[i] == NewTeam);
+
+		NewTeam->VoiceChatChannel = FBase64::Encode(FGuid::NewGuid().ToString());
 	}
 
 	MercyScore = FMath::Max(0, UGameplayStatics::GetIntOption(Options, TEXT("MercyScore"), MercyScore));
@@ -131,17 +135,20 @@ APlayerController* AUTTeamGameMode::Login(class UPlayer* NewPlayer, ENetRole InR
 {
 	APlayerController* PC = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
 
+	UE_LOG(LogOnlineGame, Verbose, TEXT("AUTTeamGameMode::Login %s, Matchmaking: %d"), PC && PC->PlayerState ? *PC->PlayerState->PlayerName : TEXT("no player"), bUseMatchmakingSession ? 1 : 0);
+
 	if (PC && PC->PlayerState && !PC->PlayerState->bOnlySpectator)
 	{
 			// FIXMESTEVE Does team get overwritten in postlogin if inactive player?
 			uint8 DesiredTeam = 1;
 
-			if (bRankedSession)
+			if (bUseMatchmakingSession)
 			{
 				AUTGameSessionRanked* UTGameSession = Cast<AUTGameSessionRanked>(GameSession);
 				if (UTGameSession)
 				{
 					DesiredTeam = UTGameSession->GetTeamForPlayer(UniqueId);
+					UE_LOG(LogOnlineGame, Verbose, TEXT("AUTTeamGameMode::Login %s GetTeamForPlayer %d"), *PC->PlayerState->PlayerName, DesiredTeam);
 				}
 			}
 			else if (GetNetMode() != NM_Standalone)
@@ -227,7 +234,7 @@ bool AUTTeamGameMode::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroad
 		}
 		else
 		{
-			if ((bOfflineChallenge || bBasicTrainingGame) && PS->Team)
+			if ((bOfflineChallenge || bBasicTrainingGame || (bIsQuickMatch && (GetMatchState() != MatchState::WaitingToStart) && !bForcedBalance)) && PS->Team)
 			{
 				return false;
 			}
@@ -327,6 +334,16 @@ bool AUTTeamGameMode::MovePlayerToTeam(AController* Player, AUTPlayerState* PS, 
 		}
 		Teams[NewTeam]->AddToTeam(Player);
 		PS->bPendingTeamSwitch = false;
+
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(Player);
+		static const FName VoiceChatTokenFeatureName("VoiceChatToken");
+		if (UTPC && PS && PS->Team && !PS->bOnlySpectator && IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
+		{
+			UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
+			UTPC->VoiceChatChannel = PS->Team->VoiceChatChannel;
+			VoiceChatToken->GenerateClientJoinToken(UTPC->VoiceChatPlayerName, UTPC->VoiceChatChannel, UTPC->VoiceChatJoinToken);
+		}
+
 		PS->ForceNetUpdate();
 
 		// Clear the player's gameplay mute list.
@@ -417,7 +434,7 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 	}
 
 	// if players from same party on a best team, move to it
-	if (PS->PartySize > 1)
+	if ((PS->PartySize > 1) && (!GameSession || (BestSize < GameSession->MaxPlayers/2)))
 	{
 		for (AUTTeamInfo* TestTeam : BestTeams)
 		{
@@ -559,12 +576,16 @@ uint8 AUTTeamGameMode::PickBalancedTeam(AUTPlayerState* PS, uint8 RequestedTeam)
 
 void AUTTeamGameMode::HandlePlayerIntro()
 {
+	RemoveExtraBots();
+	CheckBotCount();
+
 	// we ignore balancing when applying players' URL specified value during prematch
 	// make sure we're balanced now before the game begins
 	if (bBalanceTeams)
 	{
 		TArray<AUTTeamInfo*> SortedTeams = UTGameState->Teams;
 		SortedTeams.Sort([](AUTTeamInfo& A, AUTTeamInfo& B) { return A.GetSize() > B.GetSize(); });
+		bForcedBalance = true;
 		for (int32 i = 0; i < SortedTeams.Num() - 1; i++)
 		{
 			if (SortedTeams[i]->GetSize() > 1)
@@ -575,13 +596,12 @@ void AUTTeamGameMode::HandlePlayerIntro()
 					while (SortedTeams[i]->GetSize() > SortedTeams[j]->GetSize() + 1)
 					{
 						// Calc team Elos, move player who will result in best team average Elo match.
-						UTGameState->bForcedBalance = true;
 						int32 SourceTeamElo = SortedTeams[i]->AverageEloFor(this);
 						int32 EloDiff = SourceTeamElo - SortedTeams[j]->AverageEloFor(this);
 						int32 SizeDiff = SortedTeams[i]->GetSize() - SortedTeams[j]->GetSize();
 						int32 DesiredElo = SourceTeamElo + EloDiff*SortedTeams[j]->GetSize() / 2 * SizeDiff;
 						AController* ToBeMoved = SortedTeams[i]->MemberClosestToElo(this, DesiredElo);
-						if (!ChangeTeam(ToBeMoved, j) || UTGameState->OnSameTeam(ToBeMoved, SortedTeams[i]))
+						if (!ChangeTeam(ToBeMoved, SortedTeams[j]->TeamIndex) || UTGameState->OnSameTeam(ToBeMoved, SortedTeams[i]))
 						{
 							// abort if failed to actually change team so we don't end up in recursion
 							break;
@@ -591,6 +611,12 @@ void AUTTeamGameMode::HandlePlayerIntro()
 				}
 			}
 		}
+		bForcedBalance = false;
+	}
+	if (bIsQuickMatch && UTGameState)
+	{
+		UTGameState->bAllowTeamSwitches = false;
+		UTGameState->ForceNetUpdate();
 	}
 
 	Super::HandlePlayerIntro();
@@ -687,9 +713,32 @@ bool AUTTeamGameMode::FoundBotToRemove(AUTTeamInfo* Team)
 	return bFound;
 }
 
+void AUTTeamGameMode::RemoveExtraBots()
+{
+	int32 FailsafeCount = 0;
+	int32 BotsNeeded = (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && (GetNetMode() != NM_Standalone)) ? WarmupFillCount : BotFillCount;
+	while ((NumPlayers + NumBots > BotsNeeded) && (FailsafeCount < 10))
+	{
+		TArray<AUTTeamInfo*> SortedTeams = UTGameState->Teams;
+		SortedTeams.Sort([](AUTTeamInfo& A, AUTTeamInfo& B) { return A.GetSize() > B.GetSize(); });
+
+		// try to remove bots from team with the most players
+		for (AUTTeamInfo* Team : SortedTeams)
+		{
+			bool bFound = FoundBotToRemove(Team);
+			if (bFound)
+			{
+				break;
+			}
+		}
+		FailsafeCount++;
+	}
+}
+
 void AUTTeamGameMode::CheckBotCount()
 {
-	if (NumPlayers + NumBots > BotFillCount)
+	int32 BotsNeeded = (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && (GetNetMode() != NM_Standalone)) ? WarmupFillCount : BotFillCount;
+	if (NumPlayers + NumBots > BotsNeeded)
 	{
 		if (bIsVSAI)
 		{
@@ -718,7 +767,7 @@ void AUTTeamGameMode::CheckBotCount()
 			}
 		}
 	}
-	else while (NumPlayers + NumBots < BotFillCount)
+	else while (NumPlayers + NumBots < BotsNeeded)
 	{
 		AddBot();
 	}
@@ -852,7 +901,7 @@ bool AUTTeamGameMode::CheckScore_Implementation(AUTPlayerState* Scorer)
 
 	if (MercyScore > 0)
 	{
-		int32 Spread = Scorer->Team->Score;
+		int32 Spread = MercyScore;
 		for (AUTTeamInfo* OtherTeam : Teams)
 		{
 			if (OtherTeam != Scorer->Team)

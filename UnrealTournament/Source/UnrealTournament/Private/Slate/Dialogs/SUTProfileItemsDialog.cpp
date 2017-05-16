@@ -10,7 +10,7 @@ void SUTProfileItemsDialog::Construct(const FArguments& InArgs)
 {
 	SUTDialogBase::Construct(SUTDialogBase::FArguments()
 		.PlayerOwner(InArgs._PlayerOwner)
-		.DialogTitle(NSLOCTEXT("SUTMenuBase", "CollectableItems", "Collectable Items"))
+		.DialogTitle(NSLOCTEXT("SUTMenuBase", "CollectibleItems", "Collectible Items"))
 		.DialogSize(InArgs._DialogSize)
 		.bDialogSizeIsRelative(InArgs._bDialogSizeIsRelative)
 		.DialogPosition(InArgs._DialogPosition)

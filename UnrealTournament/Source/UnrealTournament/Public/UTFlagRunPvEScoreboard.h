@@ -49,6 +49,11 @@ public:
 		return FText::Format(DefendTitle, Args);
 	}
 
+	virtual FText GetScoringSummaryTitle(bool bIsOnDefense) const override
+	{
+		return GetRoundTitle(bIsOnDefense);
+	}
+
 	virtual void GetTitleMessageArgs(FFormatNamedArguments& Args) const override
 	{
 		Super::GetTitleMessageArgs(Args);

@@ -511,7 +511,7 @@ void SUTCreateGamePanel::OnMapSelected(TWeakObjectPtr<AUTReplicatedMapInfo> NewS
 		{
 			PlayerOwner->ShowMessage(
 				NSLOCTEXT("SUTGameSetupDialog", "RightsTitle", "Epic Store"), 
-				NSLOCTEXT("SUTGameSetupDialog", "RightText", "The map you have selected is available in the Epic Store.  Do you wish to load the store to accquire the map?"), 
+				NSLOCTEXT("SUTGameSetupDialog", "RightText", "The map you have selected is available in the Epic Store.  Do you wish to load the store to acquire the map?"), 
 				UTDIALOG_BUTTON_YES + UTDIALOG_BUTTON_NO, 
 				FDialogResultDelegate::CreateRaw(this, &SUTCreateGamePanel::OnStoreDialogResult));								
 		}
@@ -804,6 +804,7 @@ FReply SUTCreateGamePanel::ConfigureMutator()
 void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& StartingMap, FString& Description, FString& GameModeName, TArray<FString>&GameOptions, int32& DesiredPlayerCount, int32& bTeamGame)
 {
 	StartingMap = MapList->GetSelectedItem().IsValid() ? MapList->GetSelectedItem().Get()->MapPackageName : TEXT("");
+
 	AUTGameMode* DefaultGameMode = SelectedGameClass->GetDefaultObject<AUTGameMode>();
 	if (DefaultGameMode)
 	{
@@ -812,7 +813,9 @@ void SUTCreateGamePanel::GetCustomGameSettings(FString& GameMode, FString& Start
 
 		DefaultGameMode->UILastStartingMap = StartingMap;
 
+
 		GameMode = SelectedGameClass->GetPathName();
+		GConfig->SetString(TEXT("CreateGameDialog"), TEXT("LastGametypePath"), *GameMode, GGameIni);
 
 		GameModeName = DefaultGameMode->DisplayName.ToString();
 

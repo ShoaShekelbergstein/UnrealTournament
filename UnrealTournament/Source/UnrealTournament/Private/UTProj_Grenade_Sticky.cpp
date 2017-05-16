@@ -35,6 +35,21 @@ void AUTProj_Grenade_Sticky::BeginPlay()
 		GetWorldTimerManager().SetTimer(FLifeTimeHandle, this, &ThisClass::ExplodeDueToTimeout, LifeTime, false);
 		GetWorldTimerManager().SetTimer(FArmedHandle, this, &ThisClass::ArmGrenade, MinimumLifeTime, false);
 	}
+
+	TArray<UPointLightComponent*> LightComponents;
+	GetComponents<UPointLightComponent>(LightComponents);
+	BlinkingLight = (LightComponents.Num() > 0) ? LightComponents[0] : nullptr;
+}
+
+void AUTProj_Grenade_Sticky::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// blink point light
+	if (BlinkingLight)
+	{
+		BlinkingLight->SetIntensity(2000.f*FMath::Abs(FMath::Sin(13.f*DeltaTime)));
+	}
 }
 
 void AUTProj_Grenade_Sticky::ArmGrenade()

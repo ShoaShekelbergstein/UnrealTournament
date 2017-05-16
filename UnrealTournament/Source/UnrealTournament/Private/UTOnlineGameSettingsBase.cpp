@@ -1,3 +1,5 @@
+#define SERVERFLAG_RequiresPassword 0x00000001
+
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #include "UnrealTournament.h"
 #include "OnlineSessionSettings.h"

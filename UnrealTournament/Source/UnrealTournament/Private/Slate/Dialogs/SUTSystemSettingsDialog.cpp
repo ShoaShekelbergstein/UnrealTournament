@@ -9,6 +9,7 @@
 #include "Scalability.h"
 #include "UTWorldSettings.h"
 #include "UTGameEngine.h"
+#include "UTVoiceChatFeature.h"
 
 #if !UE_SERVER
 
@@ -326,6 +327,25 @@ void SUTSystemSettingsDialog::Construct(const FArguments& InArgs)
 							.ButtonMask(InArgs._ButtonMask)
 							.OnDialogResult(InArgs._OnDialogResult)
 						);
+
+	VOIPInputOptionsInitialSelection = 0;
+	VOIPInputOptions.Add(MakeShareable(new FString(TEXT("Use Default Input Device"))));
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+	{
+		UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		TArray<FString> CustomInputDevices;
+		VoiceChat->GetAvailableCustomInputDevices(CustomInputDevices);
+		for (int i = 0; i < CustomInputDevices.Num(); i++)
+		{
+			VOIPInputOptions.Add(MakeShareable(new FString(CustomInputDevices[i])));
+			if (UserSettings && UserSettings->GetVoiceChatInputDevice() == CustomInputDevices[i])
+			{
+				VOIPInputOptionsInitialSelection = i + 1;
+			}
+		}
+	}
 
 	VOIPOptions.Add(MakeShareable(new FString(NSLOCTEXT("SUTSystemSettingsDialog", "VOIPA", "Open Mic - You always send voice chat to other players").ToString())));
 	VOIPOptions.Add(MakeShareable(new FString(NSLOCTEXT("SUTSystemSettingsDialog", "VOIPB", "Push to Talk - You need to use your Push to Talk key to send voice chat").ToString())));
@@ -680,7 +700,7 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildGeneralTab()
 				SNew(STextBlock)
 				.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
 				.Text(NSLOCTEXT("SUTSystemSettingsDialog", "Frame Rate Cap", "Frame Rate Cap"))
-				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "FrameRateCap_Tooltip", "Limiting the max frame rate can improve the smoothness of mouse movement.")))
+				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "FrameRateCap_Tooltip", "Limiting the max frame rate can improve the smoothness of mouse movement.  A cap of 0 means uncapped.  Other values below 30 will be treated as 30.")))
 			]
 		]
 		+ SHorizontalBox::Slot()
@@ -1035,8 +1055,48 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildAudioTab()
 			.Style(SUWindowsStyle::Get(), "UT.Common.CheckBox")
 			.IsChecked(UserSettings->IsHRTFEnabled() ? ESlateCheckBoxState::Checked : ESlateCheckBoxState::Unchecked)
 		]
-	];
-/*
+	]
+#if 0
+	+ SVerticalBox::Slot()
+	.AutoHeight()
+	.Padding(FMargin(10.0f, 10.0f, 10.0f, 0.0f))
+	[
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		[
+			SNew(SBox)
+			.WidthOverride(650)
+			[
+				SNew(STextBlock)
+				.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+				.Text(NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatText", "Voice Chat"))
+				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChat_Tooltip", "Enable Voice Chat")))
+			]
+		]
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		[
+			SAssignNew(VoiceChatCheckBox, SCheckBox)
+			.Style(SUWindowsStyle::Get(), "UT.Common.CheckBox")
+			.IsChecked(UserSettings->IsVoiceChatEnabled() ? ESlateCheckBoxState::Checked : ESlateCheckBoxState::Unchecked)
+		]
+	]
+
+	+AddGeneralSliderWithLabelWidget(VoiceChatPlaybackVolume, 
+		VoiceChatPlaybackVolumeLabel, 
+		&SUTSystemSettingsDialog::OnVoiceChatPlaybackVolumeChanged, 
+		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatPlaybackVolume", "Voice Chat Playback Volume").ToString(), 
+		UserSettings->GetVoiceChatPlaybackVolume(),
+		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatPlaybackVolume_Tooltip", "Controls the voice chat playback volume."))
+		
+	+AddGeneralSliderWithLabelWidget(VoiceChatRecordVolume, 
+		VoiceChatRecordVolumeLabel, 
+		&SUTSystemSettingsDialog::OnVoiceChatRecordVolumeChanged, 
+		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume", "Voice Chat Record Volume").ToString(), 
+		UserSettings->GetVoiceChatRecordVolume(),
+		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume_Tooltip", "Controls the voice chat record volume."))
+
 	+ SVerticalBox::Slot()
 	.AutoHeight()
 	.Padding(FMargin(10.0f, 50.0f, 10.0f, 5.0f))
@@ -1044,6 +1104,32 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildAudioTab()
 		SNew(STextBlock)
 		.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
 		.Text(NSLOCTEXT("SUTSystemSettingsDialog", "VOIPTitle", "Voice over IP Settings"))
+	]
+	
+	+ SVerticalBox::Slot()
+	.AutoHeight()
+	.Padding(FMargin(10.0f, 5.0f, 10.0f, 5.0f))
+	[
+
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.FillWidth(1.0f)
+		.VAlign(VAlign_Center)
+		[
+			SAssignNew(VoiceInputDeviceCombo, SComboBox< TSharedPtr<FString> >)
+			.InitiallySelectedItem(VOIPInputOptions[VOIPInputOptionsInitialSelection])
+			.ComboBoxStyle(SUWindowsStyle::Get(), "UT.ComboBox")
+			.ButtonStyle(SUWindowsStyle::Get(), "UT.Button.White")
+			.OptionsSource(&VOIPInputOptions)
+			.OnGenerateWidget(this, &SUTDialogBase::GenerateStringListWidget)
+			.OnSelectionChanged(this, &SUTSystemSettingsDialog::OnVOIPInputChanged)
+			.Content()
+			[
+				SAssignNew(VOIPInputOptionsText, STextBlock)
+				.Text(FText::FromString(*VOIPInputOptions[VOIPInputOptionsInitialSelection].Get()))
+				.TextStyle(SUWindowsStyle::Get(),"UT.Common.ButtonText.Black")
+			]
+		]
 	]
 
 	+ SVerticalBox::Slot()
@@ -1070,8 +1156,10 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildAudioTab()
 				.TextStyle(SUWindowsStyle::Get(),"UT.Common.ButtonText.Black")
 			]
 		]
-	];
-*/
+	]
+#endif
+	;
+
 }
 
 void SUTSystemSettingsDialog::OnBotSpeechSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
@@ -1257,6 +1345,13 @@ FReply SUTSystemSettingsDialog::OKClick()
 		}
 	}
 
+#if 0
+	UserSettings->SetVoiceChatEnabled(VoiceChatCheckBox->IsChecked());
+	UserSettings->SetVoiceChatPlaybackVolume(VoiceChatPlaybackVolume->GetValue());
+	UserSettings->SetVoiceChatRecordVolume(VoiceChatRecordVolume->GetValue());
+	UserSettings->SetVoiceChatInputDevice(VOIPInputOptionsText->GetText().ToString());
+#endif
+
 	//UserSettings->SetSoundClassVolume(EUTSoundClass::VOIP, SoundVolumes[EUTSoundClass::VOIP]->GetValue() * 2.0f);
 
 	// engine scalability
@@ -1333,16 +1428,23 @@ FReply SUTSystemSettingsDialog::OKClick()
 			bProfileNeedsUpdate = true;
 		}
 
-/*
+#if 0
 		bool bWantsPushToTalk = PushToTalkCombo->GetSelectedItem()->Equals(*VOIPOptions[1].Get(),ESearchCase::IgnoreCase);
 		if (ProfileSettings->bPushToTalk != bWantsPushToTalk)
 		{
 			ProfileSettings->bPushToTalk = bWantsPushToTalk;
 			GetPlayerOwner()->PlayerController->ToggleSpeaking(!ProfileSettings->bPushToTalk);
 			bProfileNeedsUpdate = true;
-		}
-*/
 
+			// If we're push to talk now, mute the mic. If we are clearing it, unmute the mic.
+			static const FName VoiceChatFeatureName("VoiceChat");
+			if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+			{
+				UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+				VoiceChat->SetAudioInputDeviceMuted(ProfileSettings->bPushToTalk);
+			}
+		}
+#endif
 		if (bProfileNeedsUpdate) GetPlayerOwner()->SaveProfileSettings();
 	}
 
@@ -1511,5 +1613,22 @@ void SUTSystemSettingsDialog::OnVOIPChanged(TSharedPtr<FString> NewSelection, ES
 	}
 }
 
+void SUTSystemSettingsDialog::OnVOIPInputChanged(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
+{
+	if (NewSelection.IsValid())
+	{
+		VOIPInputOptionsText->SetText(*NewSelection.Get());
+	}
+}
+
+void SUTSystemSettingsDialog::OnVoiceChatRecordVolumeChanged(float NewValue)
+{
+
+}
+
+void SUTSystemSettingsDialog::OnVoiceChatPlaybackVolumeChanged(float NewValue)
+{
+
+}
 
 #endif

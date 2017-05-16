@@ -29,10 +29,12 @@ public:
 	UPROPERTY()
 	uint32 AlternateCount;
 
+	UPROPERTY()
+	bool bFireLeftWeapon;
+
 	virtual void BeginPlay() override;
 	virtual void AttachToOwnerNative() override;
 	virtual void PlayFiringEffects() override;
-	virtual void StopFiringEffects_Implementation(bool bIgnoreCurrentMode) override;
 	virtual void UpdateOverlays() override;
 	virtual void SetSkin(UMaterialInterface* NewSkin) override;
 };

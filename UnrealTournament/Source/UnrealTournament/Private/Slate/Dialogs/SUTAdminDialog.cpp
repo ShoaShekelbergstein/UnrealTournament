@@ -192,6 +192,20 @@ void SUTAdminDialog::AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 							]
 						]
 
+					+ SHeaderRow::Column("Spectator")
+						.HAlignCell(HAlign_Left)
+						//.OnSort(this, &SUTServerBrowserPanel::OnSort)
+						.FillWidth(0.1f)
+						.HeaderContent()
+						[
+							SNew(SHorizontalBox)+SHorizontalBox::Slot().VAlign(VAlign_Center)
+							[
+								SNew(STextBlock)
+								.Text(NSLOCTEXT("SUTAdminDialog", "Spectator", "Spectator"))
+								.TextStyle(SUTStyle::Get(), "UT.Font.ServerBrowser.List.Header")
+							]
+						]
+
 					+ SHeaderRow::Column("InMatch")
 						.HAlignCell(HAlign_Left)
 						//.OnSort(this, &SUTServerBrowserPanel::OnSort)
@@ -201,7 +215,7 @@ void SUTAdminDialog::AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 							SNew(SHorizontalBox)+SHorizontalBox::Slot().VAlign(VAlign_Center)
 							[
 								SNew(STextBlock)
-								.Text(bInLobby ? NSLOCTEXT("SUTAdminDialog", "InMatch", "In Match") : NSLOCTEXT("SUTAdminDialog", "Spectator", "Spectator"))
+								.Text(NSLOCTEXT("SUTAdminDialog", "InMatch", "In Instance"))
 								.TextStyle(SUTStyle::Get(), "UT.Font.ServerBrowser.List.Header")
 							]
 						]
@@ -227,6 +241,7 @@ void SUTAdminDialog::AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 							.Text( NSLOCTEXT("SUTAdminDialog", "Kick","KICK USER"))
 							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
 							.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton")
+							.Visibility(this, &SUTAdminDialog::GetSelfVis)
 						]
 						+SHorizontalBox::Slot()
 						.Padding(FMargin(10.0, 0.0))
@@ -237,6 +252,7 @@ void SUTAdminDialog::AddPlayerPanel(TSharedPtr<SHorizontalBox> ButtonBox)
 							.Text( NSLOCTEXT("SUTAdminDialog", "Ban","BAN USER"))
 							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
 							.ButtonStyle(SUTStyle::Get(), "UT.SimpleButton")
+							.Visibility(this, &SUTAdminDialog::GetSelfVis)
 						]
 						+SHorizontalBox::Slot()
 						.Padding(FMargin(10.0,0.0))
@@ -1125,6 +1141,22 @@ FReply SUTAdminDialog::RemoveBanClicked()
 
 
 	return FReply::Handled();
+}
+
+EVisibility SUTAdminDialog::GetSelfVis() const
+{
+	AUTPlayerState* UTPlayerState = PlayerOwner.IsValid() && PlayerOwner->PlayerController ? Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState) : nullptr;
+	TArray<TSharedPtr<FRconPlayerData>> Selected = PlayerList->GetSelectedItems();
+	if (UTPlayerState && Selected.Num() > 0) 
+	{
+		if (Selected[0]->PlayerID == UTPlayerState->UniqueId.ToString())
+		{
+			return EVisibility::Collapsed;
+		}
+	}
+
+	return EVisibility::Visible;
+
 }
 
 #endif

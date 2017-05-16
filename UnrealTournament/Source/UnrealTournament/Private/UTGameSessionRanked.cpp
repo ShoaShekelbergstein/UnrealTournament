@@ -87,7 +87,8 @@ void AUTGameSessionRanked::OnReadTitleFileComplete(bool bWasSuccessful, const FS
 						{
 							UTGameInstance->GetPlaylistManager()->UpdatePlaylistFromMCP(DownloadedPlaylists.PlaylistOverrides[i].Id,
 								DownloadedPlaylists.PlaylistOverrides[i].ExtraCommandline,
-								DownloadedPlaylists.PlaylistOverrides[i].MapNames);
+								DownloadedPlaylists.PlaylistOverrides[i].MapNames,
+								DownloadedPlaylists.PlaylistOverrides[i].bSkipEloChecks);
 
 						}
 					}
@@ -964,4 +965,45 @@ void AUTGameSessionRanked::UnregisterPlayer(const APlayerController* ExitingPlay
 	{
 		Super::UnregisterPlayer(ExitingPlayer);
 	}
+}
+
+void AUTGameSessionRanked::UnRegisterServer(bool bShuttingDown)
+{
+	UE_LOG(LogOnlineGame, Verbose, TEXT("AUTGameSessionRanked::UnRegisterServer %d"), bShuttingDown ? 1 : 0);
+
+	// Redraft quick match teams
+	if (!bShuttingDown)
+	{
+		if (ReservationBeaconHost)
+		{
+			UWorld* const World = GetWorld();
+			if (World)
+			{
+				AUTGameState* GS = World->GetGameState<AUTGameState>();
+				if (GS && GS->bIsQuickMatch)
+				{					
+					TArray<FPlayerGameData> PlayerData;
+					for (int i = 0; i < GS->PlayerArray.Num(); i++)
+					{
+						AUTPlayerState* PS = Cast<AUTPlayerState>(GS->PlayerArray[i]);
+						if (PS && !PS->bIsABot && !PS->StatsID.IsEmpty())
+						{
+							FPlayerGameData Player(PS->UniqueId, PS->Score);
+							PlayerData.Add(Player);
+						}
+					}
+#if !UE_BUILD_SHIPPING
+					ReservationBeaconHost->DumpReservations();
+#endif
+					ReservationBeaconHost->RedraftTeams(PlayerData);
+#if !UE_BUILD_SHIPPING
+					ReservationBeaconHost->DumpReservations();
+#endif
+					UpdatePlayerNeedsStatus();
+				}
+			}
+		}
+	}
+
+	Super::UnRegisterServer(bShuttingDown);
 }

@@ -105,6 +105,22 @@ public:
 	/** if set, pickup respawns every RespawnTime seconds regardless of when it was picked up last */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Pickup)
 	bool bFixedRespawnInterval;
+
+
+	/** if set, play this effect PreSpawnTime seconds before pickup spawns */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = SpawnEffects)
+		UParticleSystem* PreSpawnEffect;
+
+	/** How long before spawn to play PreSpawnEffect */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = SpawnEffects)
+		float PreSpawnTime;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = SpawnEffects)
+		FTransform PreSpawnEffectTransform;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = SpawnEffects)
+		FVector PreSpawnColorVectorParam;
+
 	/** if set, item is always dropped when its holder dies if uses/charges/etc remain */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Inventory)
 	bool bAlwaysDropOnDeath;
@@ -318,6 +334,10 @@ public:
 	virtual void PrecacheTutorialAnnouncements(class UUTAnnouncer* Announcer) const;
 
 	virtual FName GetTutorialAnnouncement(int32 Switch) const;
+
+	/** Set true if the TutorialAnnouncements have valid announcement sounds. */
+	UPROPERTY(EditAnyWhere, Category = "Tutorial")
+		bool bShouldPrecacheTutorialAnnouncements;
 
 	UPROPERTY(EditAnyWhere, Category = "Tutorial")
 		TArray<FName> TutorialAnnouncements;

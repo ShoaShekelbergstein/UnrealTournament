@@ -22,7 +22,7 @@ public:
 		Rules.Add(EEpicDefaultRuleTags::TDM);
 		Rules.Add(EEpicDefaultRuleTags::BIGCTF);
 		Rules.Add(EEpicDefaultRuleTags::COMPCTF);
-		Rules.Add(EEpicDefaultRuleTags::SHOWDOWN);
+//		Rules.Add(EEpicDefaultRuleTags::SHOWDOWN);
 		Rules.Add(EEpicDefaultRuleTags::TEAMSHOWDOWN);
 		Rules.Add(EEpicDefaultRuleTags::DUEL);
 		Rules.Add(EEpicDefaultRuleTags::iDM);
@@ -43,10 +43,10 @@ public:
 			NewRuleset->Title = TEXT("Deathmatch");
 			NewRuleset->Tooltip = TEXT("Standard free-for-all Deathmatch.");
 			NewRuleset->Description = TEXT("Standard free-for-all deathmatch.\n\n<UT.Hub.RulesText_Small>TimeLimit : %TimeLimit% minutes</>\n<UT.Hub.RulesText_Small>Maximum players : %MaxPlayers%</>");
-			NewRuleset->MaxPlayers = 8;
+			NewRuleset->MaxPlayers = 6;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_DM.GB_DM'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTDMGameMode");
-			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=10?GoalScore=0"));
+			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=3?GoalScore=0"));
 			NewRuleset->bTeamGame = false;
 						
 			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
@@ -193,7 +193,7 @@ public:
 			NewRuleset->MaxPlayers = 2;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_Duel.GB_Duel'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTShowdownGame");
-			NewRuleset->GameOptions = FString(TEXT("?Timelimit=2?GoalScore=5?RequireFull=1"));
+			NewRuleset->GameOptions = FString(TEXT("?Timelimit=2?GoalScore=5"));
 			NewRuleset->bTeamGame = true;
 
 			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
@@ -279,7 +279,7 @@ public:
 			NewRuleset->MaxPlayers = 10;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
-			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?RequireReady=1?MercyScore=0"));
+			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?MercyScore=0"));
 			NewRuleset->bCompetitiveMatch = true;
 			NewRuleset->bTeamGame = true;
 			NewRuleset->MaxMapsInList = 16;

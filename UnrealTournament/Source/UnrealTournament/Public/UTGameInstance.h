@@ -57,6 +57,9 @@ class UNREALTOURNAMENT_API UUTGameInstance : public UGameInstance
 	// If true, we will ingore the level load and not display anything.  This is to keep the loading screen from appearing with the killcam.
 	bool bIgnoreLevelLoad;
 
+	FDelegateHandle OnDownloadCompleteDelegateHandle;
+	virtual void OnDownloadComplete(class UUTGameViewportClient* ViewportClient, ERedirectStatus::Type RedirectStatus, const FString& PackageName);
+
 	virtual bool DelayPendingNetGameTravel() override
 	{
 		return IsAutoDownloadingContent();

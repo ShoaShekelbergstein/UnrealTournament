@@ -29,20 +29,6 @@ void AUTCTFRoundGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty 
 	DOREPLIFETIME(AUTCTFRoundGameState, BlueLivesRemaining);
 }
 
-void AUTCTFRoundGameState::DefaultTimer()
-{
-	Super::DefaultTimer();
-	if (!bIsAtIntermission && (GetNetMode() != NM_DedicatedServer) && IsMatchInProgress())
-	{
-		UpdateTimeMessage();
-	}
-}
-
-void AUTCTFRoundGameState::UpdateTimeMessage()
-{
-}
-
-
 FText AUTCTFRoundGameState::GetRoundStatusText(bool bForScoreboard)
 {
 	FFormatNamedArguments Args;

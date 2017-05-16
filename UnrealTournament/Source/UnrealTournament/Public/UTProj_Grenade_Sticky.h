@@ -30,6 +30,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category=Projectile)
 	bool bArmed;
 
+	UPROPERTY()
+		ULightComponent* BlinkingLight;
+
 	FTimerHandle FLifeTimeHandle;
 	FTimerHandle FArmedHandle;
 
@@ -51,10 +54,9 @@ public:
 	void PlayIdleEffects();
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-	
 	virtual void OnStop(const FHitResult& Hit) override;
-
 	virtual void ProcessHit_Implementation(AActor* OtherActor, UPrimitiveComponent* OtherComp, const FVector& HitLocation, const FVector& HitNormal) override;
+	virtual void Tick(float DeltaSeconds) override;
 
 protected:
 

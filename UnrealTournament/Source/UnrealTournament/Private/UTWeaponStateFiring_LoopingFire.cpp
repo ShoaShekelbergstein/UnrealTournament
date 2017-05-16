@@ -18,9 +18,7 @@ void UUTWeaponStateFiring_LoopingFire::BeginState(const UUTWeaponState* PrevStat
 
 	CurrentShot = 0;
 
-	bIsInCooldown = false;
-
-	if (BeginFireAnim_Weapon || BeginFireAnim_Hands)
+	if (!bIsInCooldown && (BeginFireAnim_Weapon || BeginFireAnim_Hands))
 	{
 		const float BeginFireTimerTime = BeginFireAnim_Weapon ? BeginFireAnim_Weapon->GetPlayLength() : BeginFireAnim_Hands->GetPlayLength();
 	

@@ -36,6 +36,8 @@ AUTInventory::AUTInventory(const FObjectInitializer& ObjectInitializer)
 	RemainingBoostsGivenOverride = 1;
 
 	HUDText = FText::GetEmpty();
+	PreSpawnTime = 3.f;
+	bShouldPrecacheTutorialAnnouncements = true;
 }
 
 void AUTInventory::PostInitProperties()
@@ -232,7 +234,7 @@ void AUTInventory::DropFrom(const FVector& StartLocation, const FVector& TossVel
 {
 	if (Role == ROLE_Authority)
 	{
-		APawn* FormerInstigator = Instigator;
+		AUTCharacter* FormerInstigator = Cast<AUTCharacter>(Instigator);
 
 		if (UTOwner != NULL)
 		{
@@ -263,6 +265,11 @@ void AUTInventory::DropFrom(const FVector& StartLocation, const FVector& TossVel
 			{
 				Pickup->Movement->Velocity = TossVelocity;
 				InitializeDroppedPickup(Pickup);
+				AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
+				if (FormerInstigator && FormerInstigator->OldPlayerState && GM && GM->bAllowPickupAnnouncements && (PickupAnnouncementName != NAME_None))
+				{
+					FormerInstigator->OldPlayerState->AnnounceStatus(PickupAnnouncementName, 2, false);
+				}
 			}
 			else
 			{
@@ -369,9 +376,12 @@ FText AUTInventory::GetHUDText() const
 
 void AUTInventory::PrecacheTutorialAnnouncements(UUTAnnouncer* Announcer) const
 {
-	for (int32 i = 0; i < TutorialAnnouncements.Num(); i++)
+	if (bShouldPrecacheTutorialAnnouncements)
 	{
-		Announcer->PrecacheAnnouncement(TutorialAnnouncements[i]);
+		for (int32 i = 0; i < TutorialAnnouncements.Num(); i++)
+		{
+			Announcer->PrecacheAnnouncement(TutorialAnnouncements[i]);
+		}
 	}
 }
 

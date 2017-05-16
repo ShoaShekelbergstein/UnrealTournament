@@ -290,7 +290,7 @@ void AUTLobbyGameState::JoinMatch(AUTLobbyMatchInfo* MatchInfo, AUTLobbyPlayerSt
 		{
 			// Look to see if this player has the key to the match
 	
-			if (MatchInfo->AllowedPlayerList.Find(NewPlayer->UniqueId.ToString()) == INDEX_NONE)
+			if (!NewPlayer->PartyLeader.Equals(MatchInfo->OwnerId.ToString(),ESearchCase::IgnoreCase) && MatchInfo->AllowedPlayerList.Find(NewPlayer->UniqueId.ToString()) == INDEX_NONE)
 			{
 				NewPlayer->ClientMatchError(NSLOCTEXT("LobbyMessage","Private","Sorry, but the match you are trying to join is private."));
 				return;
@@ -661,6 +661,22 @@ void AUTLobbyGameState::GameInstance_PlayerUpdate(uint32 InGameInstanceID, const
 					AUTGameSession* UTGameSession = Cast<AUTGameSession>(LobbyGameMode->GameSession);
 					if (UTGameSession) UTGameSession->UpdateGameState();
 				}
+			}
+		}
+	}
+}
+
+void AUTLobbyGameState::GameInstance_StartGame(uint32 InGameInstanceID, const FMatchUpdate& MatchUpdate)
+{
+	AUTLobbyGameMode* GM = GetWorld()->GetAuthGameMode<AUTLobbyGameMode>();
+	if (GM)
+	{
+		for (int32 i = 0; i < GameInstances.Num(); i++)
+		{
+			if (GameInstances[i].MatchInfo->GameInstanceID == InGameInstanceID)
+			{
+				GameInstances[i].MatchInfo->ProcessStartMatch(MatchUpdate);
+				break;
 			}
 		}
 	}
@@ -1085,7 +1101,7 @@ void AUTLobbyGameState::FillOutRconPlayerList(TArray<FRconPlayerData>& PlayerLis
 					int32 Rank = Match->PlayersInMatchInstance[i].RankCheck;
 					FString PlayerIP = TEXT("N/A")
 					;
-					PlayerList.Add( FRconPlayerData(Match->PlayersInMatchInstance[i].PlayerName, PlayerID, PlayerIP, Rank, Match->GameInstanceGUID) );
+					PlayerList.Add( FRconPlayerData(Match->PlayersInMatchInstance[i].PlayerName, PlayerID, PlayerIP, Rank, Match->GameInstanceGUID, true) );
 				}
 
 			}

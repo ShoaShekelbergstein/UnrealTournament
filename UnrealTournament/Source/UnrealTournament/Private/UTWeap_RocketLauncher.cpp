@@ -111,14 +111,6 @@ void AUTWeap_RocketLauncher::BeginLoadRocket()
 			GetUTOwner()->FirstPersonMesh->GetAnimInstance()->Montage_Play(PickedHandHanim, PickedHandHanim->SequenceLength / GetLoadTime(NumLoadedBarrels));
 		}
 	}
-
-	//Replicate the loading sound to other players 
-	//Local players will use the sounds synced to the animation
-	AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
-	if (PC != NULL && !PC->IsLocalPlayerController() && (NumLoadedRockets == NumLoadedBarrels) && LoadingSounds.IsValidIndex(NumLoadedRockets))
-	{
-		UUTGameplayStatics::UTPlaySound(GetWorld(), LoadingSounds[NumLoadedRockets], UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, NULL, NULL, true, SAT_WeaponFoley);
-	}
 }
 
 void AUTWeap_RocketLauncher::EndLoadRocket()
@@ -144,7 +136,13 @@ void AUTWeap_RocketLauncher::EndLoadRocket()
 	}
 	LastLoadTime = GetWorld()->TimeSeconds;
 
-	UUTGameplayStatics::UTPlaySound(GetWorld(), RocketLoadedSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, NULL, NULL, true, SAT_WeaponFoley);
+	//Replicate the loading sound to other players 
+	//Local players will use the sounds synced to the animation
+	AUTPlayerController* PC = Cast<AUTPlayerController>(UTOwner->Controller);
+	if ((PC == nullptr) || !PC->IsLocalPlayerController())
+	{
+		UUTGameplayStatics::UTPlaySound(GetWorld(), RocketLoadedSound, UTOwner, SRT_AllButOwner, false, FVector::ZeroVector, NULL, NULL, true, SAT_WeaponFire);
+	}
 
 	// bot maybe shoots rockets from here
 	AUTBot* B = Cast<AUTBot>(UTOwner->Controller);
@@ -807,6 +805,7 @@ void AUTWeap_RocketLauncher::DrawWeaponCrosshair_Implementation(UUTHUDWidget* We
 	//Draw the locked on crosshair
 	if (LockCrosshairTexture)
 	{
+		float ResScaling = WeaponHudWidget->GetCanvas() ? WeaponHudWidget->GetCanvas()->ClipX / 1920.f : 1.f;
 		float W = LockCrosshairTexture->GetSurfaceWidth();
 		float H = LockCrosshairTexture->GetSurfaceHeight();
 		float CrosshairRot = GetWorld()->TimeSeconds * 90.0f;
@@ -816,7 +815,7 @@ void AUTWeap_RocketLauncher::DrawWeaponCrosshair_Implementation(UUTHUDWidget* We
 			FVector ScreenTarget = WeaponHudWidget->GetCanvas()->Project(LockedTarget->GetActorLocation());
 			ScreenTarget.X -= WeaponHudWidget->GetCanvas()->SizeX*0.5f;
 			ScreenTarget.Y -= WeaponHudWidget->GetCanvas()->SizeY*0.5f;
-			WeaponHudWidget->DrawTexture(LockCrosshairTexture, ScreenTarget.X, ScreenTarget.Y, W, H, 0.f, 0.f, W, H, 1.f, FLinearColor::Red, FVector2D(0.5f, 0.5f), CrosshairRot);
+			WeaponHudWidget->DrawTexture(LockCrosshairTexture, ScreenTarget.X, ScreenTarget.Y, W*ResScaling, H*ResScaling, 0.f, 0.f, W, H, 1.f, FLinearColor::Red, FVector2D(0.5f, 0.5f), CrosshairRot);
 		}
 		else if (PendingLockedTarget && (GetWorld()->GetTimeSeconds() - PendingLockedTargetTime > LockAcquireTime- AcquireDisplayTime))
 		{
@@ -825,7 +824,7 @@ void AUTWeap_RocketLauncher::DrawWeaponCrosshair_Implementation(UUTHUDWidget* We
 			ScreenTarget.Y -= WeaponHudWidget->GetCanvas()->SizeY*0.5f;
 			float Opacity = (GetWorld()->GetTimeSeconds() - PendingLockedTargetTime - LockAcquireTime + AcquireDisplayTime) / AcquireDisplayTime;
 			float PendingScale = 1.f + 5.f * (1.f - Opacity);
-			WeaponHudWidget->DrawTexture(LockCrosshairTexture, ScreenTarget.X, ScreenTarget.Y, W * PendingScale, H * PendingScale, 0.f, 0.f, W, H, 0.2f + 0.5f*Opacity, FLinearColor::White, FVector2D(0.5f, 0.5f), 2.5f*CrosshairRot);
+			WeaponHudWidget->DrawTexture(LockCrosshairTexture, ScreenTarget.X, ScreenTarget.Y, W * PendingScale*ResScaling, H * PendingScale*ResScaling, 0.f, 0.f, W, H, 0.2f + 0.5f*Opacity, FLinearColor::White, FVector2D(0.5f, 0.5f), 2.5f*CrosshairRot);
 		}
 
 		for (int32 i = 0; i < TrackingRockets.Num(); i++)
@@ -844,7 +843,7 @@ void AUTWeap_RocketLauncher::DrawWeaponCrosshair_Implementation(UUTHUDWidget* We
 				FVector ScreenTarget = WeaponHudWidget->GetCanvas()->Project(TrackingRockets[i]->TargetActor->GetActorLocation());
 				ScreenTarget.X -= WeaponHudWidget->GetCanvas()->SizeX*0.5f;
 				ScreenTarget.Y -= WeaponHudWidget->GetCanvas()->SizeY*0.5f;
-				WeaponHudWidget->DrawTexture(LockCrosshairTexture, ScreenTarget.X, ScreenTarget.Y, 2.f * W * Scale, 2.f * H * Scale, 0.f, 0.f, W, H, 1.f, FLinearColor::Red, FVector2D(0.5f, 0.5f), CrosshairRot);
+				WeaponHudWidget->DrawTexture(LockCrosshairTexture, ScreenTarget.X, ScreenTarget.Y, 2.f * W * ResScaling, 2.f * H * ResScaling, 0.f, 0.f, W, H, 1.f, FLinearColor::Red, FVector2D(0.5f, 0.5f), CrosshairRot);
 			}
 		}
 	}

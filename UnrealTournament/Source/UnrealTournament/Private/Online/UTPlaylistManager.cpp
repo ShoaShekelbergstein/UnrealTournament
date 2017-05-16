@@ -128,7 +128,7 @@ bool UUTPlaylistManager::GetURLForPlaylist(int32 PlaylistId, FString& URL)
 	return false;
 }
 
-void UUTPlaylistManager::UpdatePlaylistFromMCP(int32 PlaylistId, FString InExtraCommandline, TArray<FString>& InMapNames)
+void UUTPlaylistManager::UpdatePlaylistFromMCP(int32 PlaylistId, FString InExtraCommandline, TArray<FString>& InMapNames, bool bSkipEloChecks)
 {
 	for (FPlaylistItem& PlaylistEntry : Playlist)
 	{
@@ -136,6 +136,7 @@ void UUTPlaylistManager::UpdatePlaylistFromMCP(int32 PlaylistId, FString InExtra
 		{
 			PlaylistEntry.ExtraCommandline = InExtraCommandline;
 			PlaylistEntry.MapNames = InMapNames;
+			PlaylistEntry.bSkipEloChecks = bSkipEloChecks;
 		}
 	}
 }

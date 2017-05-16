@@ -30,6 +30,9 @@ class UNREALTOURNAMENT_API AUTWeap_Redeemer : public AUTWeapon
 	UPROPERTY()
 		uint8 LaunchTeam;
 
+	UPROPERTY()
+		float EquipStartTime;
+
 	virtual AUTProjectile* FireProjectile() override;
 
 	virtual void BringUp(float OverflowTime) override;
@@ -37,6 +40,7 @@ class UNREALTOURNAMENT_API AUTWeap_Redeemer : public AUTWeapon
 	virtual void AddAmmo(int32 Amount) override;
 	virtual void GivenTo(AUTCharacter* NewOwner, bool bAutoActivate) override;
 	virtual void DropFrom(const FVector& StartLocation, const FVector& TossVelocity) override;
+	virtual void DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHudWidget, float RenderDelta) override;
 
 	virtual float SuggestAttackStyle_Implementation() override;
 	virtual float SuggestDefenseStyle_Implementation() override;

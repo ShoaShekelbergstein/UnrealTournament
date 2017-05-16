@@ -33,9 +33,17 @@ void AUTDemoRecSpectator::PlayerTick(float DeltaTime)
 		ViewQueuedNetId();
 	}
 
-	if (IsKillcamSpectator() && !Cast<APawn>(GetViewTarget()))
+	if (IsKillcamSpectator())
 	{
-		Super::ChooseBestCamera();
+		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
+		if (!GetWorld()->IsPaused() && LP && !LP->IsKillcamReplayActive() && GetWorld()->GetWorldSettings())
+		{
+			GetWorld()->GetWorldSettings()->Pauser = PlayerState;
+		}
+		else if (!Cast<APawn>(GetViewTarget()))
+		{
+			Super::ChooseBestCamera();
+		}
 	}
 }
 

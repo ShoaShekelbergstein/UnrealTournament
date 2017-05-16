@@ -74,6 +74,11 @@ void AUTServerBeaconLobbyClient::UpdatePlayer(AUTBaseGameMode* GameMode, AUTPlay
 	Lobby_UpdatePlayer(GameInstanceID, PlayerInfo, bLastUpdate);
 }
 
+void AUTServerBeaconLobbyClient::StartGame(const FMatchUpdate& MatchUpdate)
+{
+	Lobby_StartGame(GameInstanceID, MatchUpdate);
+}
+
 void AUTServerBeaconLobbyClient::EndGame(const FMatchUpdate& FinalMatchUpdate)
 {
 	Lobby_EndGame(GameInstanceID, FinalMatchUpdate);
@@ -124,6 +129,17 @@ void AUTServerBeaconLobbyClient::Lobby_UpdatePlayer_Implementation(uint32 Instan
 	if (LobbyGameState)
 	{
 		LobbyGameState->GameInstance_PlayerUpdate(InstanceID, PlayerInfo, bLastUpdate);
+	}
+}
+
+bool AUTServerBeaconLobbyClient::Lobby_StartGame_Validate(uint32 InstanceID, const FMatchUpdate& MatchUpdate) { return true; }
+void AUTServerBeaconLobbyClient::Lobby_StartGame_Implementation(uint32 InstanceID, const FMatchUpdate& MatchUpdate)
+{
+	UE_LOG(UT,Verbose,TEXT("[Hub] StartGame: Instance %i"), InstanceID);
+	AUTLobbyGameState* LobbyGameState = GetWorld()->GetGameState<AUTLobbyGameState>();
+	if (LobbyGameState)
+	{
+		LobbyGameState->GameInstance_StartGame(InstanceID,MatchUpdate);
 	}
 }
 

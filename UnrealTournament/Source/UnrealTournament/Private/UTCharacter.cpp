@@ -892,7 +892,17 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 			{
 				TrueController = DrivenVehicle->GetController();
 			}
+
 			bool bApplyDamageToCharacter = ((Game && Game->bDamageHurtsHealth && bDamageHurtsHealth) || (Cast<APlayerController>(TrueController) == nullptr && Cast<AUTBot>(TrueController) == nullptr));
+			AUTGameVolume* GV = UTCharacterMovement ? Cast<AUTGameVolume>(UTCharacterMovement->GetPhysicsVolume()) : nullptr;
+			if (bApplyDamageToCharacter && GV && GV->bIsTeamSafeVolume)
+			{
+				AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+				if (GS && GS->OnSameTeam(this, GV))
+				{
+					bApplyDamageToCharacter = false;
+				}
+			}
 			if (bApplyDamageToCharacter)
 			{
 				// check for caused modifiers on instigator
@@ -1289,7 +1299,7 @@ void AUTCharacter::PlayTakeHitEffects_Implementation()
 			// TODO: gore setting check
 			if (bRecentlyRendered && BloodEffects.Num() > 0)
 			{
-				UParticleSystem* Blood = BloodEffects[FMath::RandHelper(BloodEffects.Num())];
+				UParticleSystem* Blood = BloodEffects[0];// FMath::RandHelper(BloodEffects.Num())];
 				if (Blood != NULL)
 				{
 					// we want the PSC 'attached' to ourselves for 1P/3P visibility yet using an absolute transform, so the GameplayStatics functions don't get the job done
@@ -1752,7 +1762,7 @@ void AUTCharacter::AnnounceShred(AUTPlayerController *KillerPC)
 
 void AUTCharacter::StartRagdoll()
 {
-	if (IsActorBeingDestroyed() || !GetMesh()->IsRegistered())
+	if (IsActorBeingDestroyed() || !GetMesh()->IsRegistered() || bInRagdollRecovery)
 	{
 		return;
 	}
@@ -1882,6 +1892,7 @@ void AUTCharacter::StopRagdoll()
 	FVector AdjustedLoc = GetActorLocation() + FVector(0.0f, 0.0f, GetCharacterMovement()->CrouchedHalfHeight);
 	GetWorld()->FindTeleportSpot(this, AdjustedLoc, GetActorRotation());
 	GetCapsuleComponent()->SetWorldLocation(AdjustedLoc);
+
 	if (UTCharacterMovement)
 	{
 		UTCharacterMovement->NeedsClientAdjustment();
@@ -1937,6 +1948,10 @@ void AUTCharacter::StopRagdoll()
 	RagdollBlendOutTimeLeft = RagdollBlendOutTime;
 	bInRagdollRecovery = true;
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	if (UTCharacterMovement)
+	{
+		UTCharacterMovement->UpdatedComponent->UpdatePhysicsVolume(true);
+	}
 }
 
 void AUTCharacter::SetRagdollGravityScale(float NewScale)
@@ -2013,6 +2028,16 @@ void AUTCharacter::PlayDying()
 		}
 		else
 		{
+			if (bInRagdollRecovery)
+			{
+				if (RagdollRecoveryMontage)
+				{
+					GetMesh()->GetAnimInstance()->Montage_Stop(0.1f, RagdollRecoveryMontage);
+				}
+				bFeigningDeath = false;
+				bInRagdollRecovery = false;
+			}
+			
 			if (!bFeigningDeath)
 			{
 				bool bPlayedDeathAnim = false;
@@ -2234,6 +2259,11 @@ bool AUTCharacter::ServerFeignDeath_Validate()
 }
 void AUTCharacter::ServerFeignDeath_Implementation()
 {
+	if (bInRagdollRecovery)
+	{
+		return;
+	}
+
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
 	if (Role == ROLE_Authority && 
@@ -5104,15 +5134,6 @@ void AUTCharacter::PossessedBy(AController* NewController)
 	if (Role == ROLE_Authority)
 	{
 		SetCosmeticsFromPlayerState();
-		AUTGameVolume* GV = UTCharacterMovement ? Cast<AUTGameVolume>(UTCharacterMovement->GetPhysicsVolume()) : nullptr;
-		if (GV && GV->bIsTeamSafeVolume)
-		{
-			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-			if (GS && GS->OnSameTeam(this, GV))
-			{
-				bDamageHurtsHealth = false;
-			}
-		}
 	}
 	OldPlayerState = Cast<AUTPlayerState>(PlayerState);
 }
@@ -5473,7 +5494,7 @@ void AUTCharacter::UpdateArmorOverlay()
 					static FName NAME_TeamColor(TEXT("TeamColor"));
 					MID->SetVectorParameterValue(NAME_TeamColor, PS->Team->TeamColor);
 				}
-				FLinearColor BaseColor = (PS->Team && (PS->Team->TeamIndex == 1)) ? FLinearColor(1.f, 1.f, 0.f, 1.f) : FLinearColor(0.5f, 0.5f, 0.1f, 1.f);
+				FLinearColor BaseColor = (PS->Team && (PS->Team->TeamIndex == 1)) ? FLinearColor(1.f, 1.f, 0.f, 1.f) : FLinearColor(0.75f, 0.75f, 0.1f, 1.f);
 				static FName NAME_Color(TEXT("Color"));
 				MID->SetVectorParameterValue(NAME_Color, BaseColor);
 			}
@@ -6287,6 +6308,8 @@ void AUTCharacter::PlayTauntByClass(TSubclassOf<AUTTaunt> TauntToPlay, float Emo
 				{
 					// This flag is set for 3rd person taunts
 					UTCharacterMovement->bIsTaunting = true;
+					// force standing
+					UnCrouch(false);
 				}
 				else if (IsLocallyControlled() && FirstPersonMesh)
 				{
@@ -6773,9 +6796,9 @@ void AUTCharacter::TurnOff()
 {
 	DisallowWeaponFiring(true);
 
-	if (GetMesh() && (!IsLocallyControlled() || !Cast<APlayerController>(GetController())))
+	if (GetMesh())
 	{
-		GetMesh()->TickAnimation(1.0f, false);
+		GetMesh()->TickAnimation(0.16f, false);
 		GetMesh()->RefreshBoneTransforms();
 	}
 
@@ -7300,6 +7323,16 @@ void AUTCharacter::JumpVis()
 
 void AUTCharacter::PrepareForIntermission()
 {
+	//Our weapon attachment might be mismatched locally. Make sure it matches our equipped weapon
+	if (IsLocallyControlled())
+	{
+		if (Weapon && (Weapon->AttachmentType != WeaponAttachmentClass))
+		{
+			WeaponAttachmentClass = Weapon->AttachmentType;
+			UpdateWeaponAttachment();
+		}
+	}
+
 	SetAmbientSound(NULL);
 	SetLocalAmbientSound(NULL);
 	SetStatusAmbientSound(NULL);

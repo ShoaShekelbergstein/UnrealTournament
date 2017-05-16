@@ -17,8 +17,7 @@ AUTPlayerCameraManager::AUTPlayerCameraManager(const class FObjectInitializer& O
 	EndGameFreeCamOffset = FVector(-256.f, 0.f, 45.f);
 	EndGameFreeCamDistance = 55.0f;
 
-	DeathCamDistance = 55.f;
-	DeathCamOffset = FVector(-128.f, 0.f, 30.f);
+	DeathCamDistance = 200.f;
 	FlagBaseFreeCamOffset = FVector(0, 0, 90);
 	bUseClientSideCameraUpdates = false;
 	
@@ -64,6 +63,7 @@ AUTPlayerCameraManager::AUTPlayerCameraManager(const class FObjectInitializer& O
 	ThirdPersonCameraSmoothingSpeed = 6.0f;
 	CurrentCameraRoll = 0.f;
 	WallSlideCameraRoll = 12.5f;
+	DeathCamFOV = 100.f;
 }
 
 // @TODO FIXMESTEVE SPLIT OUT true spectator controls
@@ -194,7 +194,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 
 	FName SavedCameraStyle = CameraStyle;
 	CameraStyle = GetCameraStyleWithOverrides();
-
+	bool bUseDeathCam = false;
 	//if we have a line up active, change our ViewTarget to be the line-up target and setup camera settings
 	if (CameraStyle == NAME_LineUpCam)
 	{
@@ -236,12 +236,21 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		OutVT.POV.PostProcessBlendWeight = 1.0f;
 
 		ApplyCameraModifiers(DeltaTime, OutVT.POV);
-
-		if (OutVT.POV.Location.IsZero())
+		
+		// if not during active gameplay, use spawn location/rotation
+		AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(PCOwner);
+		if (UTPC && (!GameState || (GameState->GetMatchState() == MatchState::CountdownToBegin) || (GameState->GetMatchState() == MatchState::MatchIntermission)) && IsValidCamLocation(PCOwner->GetSpawnLocation()))
+		{
+			//FIXMESTEVE - set the bestcam location at start and always use here, not just in some situations
+			OutVT.POV.Location = PCOwner->GetSpawnLocation();
+			OutVT.POV.Rotation = UTPC->SpawnRotation;
+		}
+		else if (OutVT.POV.Location.IsZero() || IsValidCamLocation(PCOwner->GetFocalLocation()))
 		{
 			OutVT.POV.Location = PCOwner->GetFocalLocation();
+			OutVT.POV.Rotation = PCOwner->GetControlRotation();
 		}
-		OutVT.POV.Rotation = PCOwner->GetControlRotation();
 	}
 	else if (CameraStyle == NAME_RallyCam)
 	{
@@ -327,17 +336,12 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		AUTPlayerController* UTPC = Cast<AUTPlayerController>(PCOwner);
 		AUTDemoRecSpectator* UTDemoRecSpec = Cast<AUTDemoRecSpectator>(PCOwner);
 
-		bool bViewingInstantReplay = false;
-		if (UTDemoRecSpec)
-		{
-			bViewingInstantReplay = UTDemoRecSpec->IsKillcamSpectator();
-		}
-
+		bool bViewingInstantReplay = UTDemoRecSpec ? UTDemoRecSpec->IsKillcamSpectator() : false;
 		bool bGameOver = (UTPC != nullptr && UTPC->GetStateName() == NAME_GameOver);
-		bool bUseDeathCam = !bViewingInstantReplay && !bGameOver && UTCharacter && (UTCharacter->IsDead() || UTCharacter->IsRagdoll()) && UTPC && UTPC->DeathCamFocus && !UTPC->DeathCamFocus->IsPendingKillPending() && (UTPC->DeathCamFocus != TargetActor);
+		bUseDeathCam = !bViewingInstantReplay && !bGameOver && UTCharacter && (UTCharacter->IsDead() || (UTCharacter->Health <= 0) || (UTCharacter->IsRagdoll() && UTPC->DeathCamFocus)) && UTPC && (!UTPC->DeathCamFocus || (UTPC->DeathCamFocus != TargetActor));
 
-		float CameraDistance = bUseDeathCam ? DeathCamDistance : FreeCamDistance;
-		FVector CameraOffset = bUseDeathCam ? DeathCamOffset : FreeCamOffset;
+		float CameraDistance = FreeCamDistance;
+		FVector CameraOffset = FreeCamOffset;
 		if (bGameOver)
 		{
 			CameraDistance = EndGameFreeCamDistance;
@@ -346,23 +350,26 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		FRotator Rotator = (!UTPC || UTPC->bSpectatorMouseChangesView) ? PCOwner->GetControlRotation() : UTPC->GetSpectatingRotation(Loc, DeltaTime);
 		if (bUseDeathCam)
 		{
+			if (UTPC->DeathCamFocus && !UTPC->DeathCamFocus->IsPendingKillPending() && (GetWorld()->GetTimeSeconds() - UTPC->DeathCamTime < 2.f))
+			{
+				DeathCamFocalPoint = UTPC->DeathCamFocus->GetActorLocation();
+			}
 			float ZoomFactor = FMath::Clamp(1.5f*UTPC->GetFrozenTime() - 0.8f, 0.f, 1.f);
 			float DistanceScaling = 1.f - ZoomFactor;
-			CameraOffset.Z = DeathCamOffset.Z * (1.f - ZoomFactor) + 90.f*ZoomFactor;
-			FVector Pos = Loc + FRotationMatrix(Rotator).TransformVector(CameraOffset) - Rotator.Vector() * CameraDistance * DistanceScaling;
+			FVector Pos = DeathCamPosition - Rotator.Vector() * DeathCamDistance;
 			FHitResult Result;
-			CheckCameraSweep(Result, TargetActor, Loc, Pos);
+			CheckCameraSweep(Result, TargetActor, DeathCamPosition, Pos);
 			OutVT.POV.Location = !Result.bBlockingHit ? Pos : Result.Location;
-			bool bZoomIn = (UTPC->GetFrozenTime() > 0.5f);
+ 			bool bZoomIn = (UTPC->GetFrozenTime() > 0.5f) && UTPC->DeathCamFocus;
 			if (bZoomIn)
 			{
 				// zoom in
-				float ViewDist = (UTPC->DeathCamFocus->GetActorLocation() - OutVT.POV.Location).SizeSquared();
-				float ZoomedFOV = DefaultFOV * FMath::Clamp(360000.f / FMath::Max(1.f, ViewDist), 0.3f, 1.f);
-				OutVT.POV.FOV = DefaultFOV * (1.f - ZoomFactor) + ZoomedFOV*ZoomFactor;
+				float ViewDist = (DeathCamFocalPoint - OutVT.POV.Location).SizeSquared();
+				float ZoomedFOV = DefaultFOV * FMath::Clamp(360000.f / FMath::Max(1.f, ViewDist), 0.5f, 1.f);
+				DeathCamFOV = DefaultFOV * (1.f - ZoomFactor) + ZoomedFOV*ZoomFactor;
 			}
-			if (UTPC->IsInState(NAME_Inactive)
-				&& (!UTPC->IsFrozen() || (UTPC->GetFrozenTime() > 0.25f)) && (GetWorld()->GetTimeSeconds() - UTPC->DeathCamTime < 3.f))
+			OutVT.POV.FOV = DeathCamFOV;
+			if (UTPC->IsInState(NAME_Inactive) && !DeathCamFocalPoint.IsZero()	&& (!UTPC->IsFrozen() || (UTPC->GetFrozenTime() > 0.25f)))
 			{
 				// custom camera control for dead players
 				// still for a short while, then look at killer
@@ -370,7 +377,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 				ViewRotation.Yaw = FMath::UnwindDegrees(ViewRotation.Yaw);
 				ViewRotation.Pitch = FMath::UnwindDegrees(ViewRotation.Pitch);
 				ViewRotation.Roll = 0.f;
-				FRotator DesiredViewRotation = (UTPC->DeathCamFocus->GetActorLocation() + FVector(0.f, 0.f, 83.f) - OutVT.POV.Location).Rotation();
+				FRotator DesiredViewRotation = (DeathCamFocalPoint - OutVT.POV.Location).Rotation();
 				DesiredViewRotation.Yaw = FMath::UnwindDegrees(DesiredViewRotation.Yaw);
 				DesiredViewRotation.Pitch = bZoomIn ? FMath::UnwindDegrees(DesiredViewRotation.Pitch) : FMath::Clamp(FMath::UnwindDegrees(DesiredViewRotation.Pitch), -8.f, -5.f);
 				float DeltaYaw = FMath::RadiansToDegrees(FMath::FindDeltaAngleRadians(FMath::DegreesToRadians(ViewRotation.Yaw), FMath::DegreesToRadians(DesiredViewRotation.Yaw)));
@@ -380,7 +387,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 				UTPC->SetControlRotation(ViewRotation);
 				Rotator = ViewRotation;
 
-				if ((GetWorld()->GetTimeSeconds() - UTPC->DeathCamFocus->GetLastRenderTime() > 0.2f) && !UTPC->LineOfSightTo(UTPC->DeathCamFocus))
+				if (UTPC->DeathCamFocus && (GetWorld()->GetTimeSeconds() - UTPC->DeathCamFocus->GetLastRenderTime() > 0.2f) && !UTPC->LineOfSightTo(UTPC->DeathCamFocus))
 				{
 					UTPC->DeathCamFocus = nullptr;
 				}
@@ -391,17 +398,21 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 				Rotator.Pitch = FMath::Clamp(Rotator.Pitch, -85.f, -5.f);
 			}
 		}
-		if (Cast<AUTProjectile>(TargetActor) && !TargetActor->IsPendingKillPending())
+		else
 		{
-			Rotator = TargetActor->GetVelocity().Rotation();
-			CameraDistance = 60.f;
-			Loc = DesiredLoc;
-		}
+			DeathCamFocalPoint = FVector::ZeroVector;
+			if (Cast<AUTProjectile>(TargetActor) && !TargetActor->IsPendingKillPending())
+			{
+				Rotator = TargetActor->GetVelocity().Rotation();
+				CameraDistance = 60.f;
+				Loc = DesiredLoc;
+			}
 
-		FVector Pos = Loc + FRotationMatrix(Rotator).TransformVector(CameraOffset) - Rotator.Vector() * CameraDistance;
-		FHitResult Result;
-		CheckCameraSweep(Result, TargetActor, Loc, Pos);
-		OutVT.POV.Location = !Result.bBlockingHit ? Pos : Result.Location;
+			FVector Pos = Loc + FRotationMatrix(Rotator).TransformVector(CameraOffset) - Rotator.Vector() * CameraDistance;
+			FHitResult Result;
+			CheckCameraSweep(Result, TargetActor, Loc, Pos);
+			OutVT.POV.Location = !Result.bBlockingHit ? Pos : Result.Location;
+		}
 		OutVT.POV.Rotation = Rotator;
 		ApplyCameraModifiers(DeltaTime, OutVT.POV);
 
@@ -446,6 +457,11 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		bIsForcingGoodCamLoc = true;
 	}
 	LastGoodCamLocation = OutVT.POV.Location;
+	if (!bUseDeathCam)
+	{
+		DeathCamPosition = LastGoodCamLocation;
+		DeathCamFOV = DefaultFOV;
+	}
 	CameraStyle = SavedCameraStyle;
 }
 

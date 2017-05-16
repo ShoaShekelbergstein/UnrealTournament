@@ -39,6 +39,37 @@ void SUTInGameMenu::BuildLeftMenuBar()
 {
 	if (LeftMenuBar.IsValid())
 	{
+		AUTGameState* GS = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
+		AUTPlayerState* PS = PlayerOwner->PlayerController ? Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState) : NULL;
+		bool bIsSpectator = PS && PS->bOnlySpectator;
+
+		if (GS && GS->GetMatchState() != MatchState::WaitingToStart && GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches)
+		{
+		
+			LeftMenuBar->AddSlot()
+			.Padding(5.0f,0.0f,0.0f,0.0f)
+			.AutoWidth()
+			[
+				SAssignNew(ChangeTeamButton, SUTButton)
+				.ButtonStyle(SUTStyle::Get(), "UT.Button.MenuBar")
+				.OnClicked(this, &SUTInGameMenu::OnTeamChangeClick)
+				.Visibility(this, &SUTInGameMenu::GetChangeTeamVisibility)
+				.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
+				[
+					SNew(SHorizontalBox)
+					+SHorizontalBox::Slot().AutoWidth()
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text(NSLOCTEXT("SUTMenuBase","MenuBar_ChangeTeam","CHANGE TEAM"))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+						.ColorAndOpacity(this, &SUTInGameMenu::GetChangeTeamLabelColor)
+					]
+				]
+			];
+		}
+
+
 		LeftMenuBar->AddSlot()
 		.Padding(5.0f,0.0f,0.0f,0.0f)
 		.AutoWidth()
@@ -337,6 +368,11 @@ void SUTInGameMenu::QuitConfirmation()
 
 void SUTInGameMenu::OnDestinationResult(int32 PickedIndex)
 {
+	if (PlayerOwner.IsValid())
+	{
+		PlayerOwner->StopKillCam();
+	}
+
 	switch(PickedIndex)
 	{
 		case 0: OnReturnToMainMenu(); break;
@@ -363,7 +399,7 @@ void SUTInGameMenu::ShowHomePanel()
 		{
 			if (PlayerOwner->GetWorld()->GetGameState<AUTLobbyGameState>())
 			{
-				Msg = NSLOCTEXT("SUTInGameMenu", "SUTInGameMenuBack", "Are you sure you want to leave the hub and return to the main menu?");
+				Msg = NSLOCTEXT("SUTInGameMenu", "SUTInGameMenuBack", "Are you sure you want to leave the hub and return to the hub browser?");
 			}
 			else
 			{
@@ -428,6 +464,19 @@ EVisibility SUTInGameMenu::GetMapVoteVisibility() const
 	}
 }
 
+EVisibility SUTInGameMenu::GetChangeTeamVisibility() const
+{
+	AUTGameState* GameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
+	if (GameState && GameState->bAllowTeamSwitches)
+	{
+		return EVisibility::Visible;
+	}
+	else
+	{
+		return EVisibility::Collapsed;
+	}
+}
+
 void SUTInGameMenu::OnMenuOpened(const FString& Parameters)
 {
 	SUTMenuBase::OnMenuOpened(Parameters);
@@ -461,5 +510,21 @@ void SUTInGameMenu::OnMenuClosed()
 
 	SUTMenuBase::OnMenuClosed();
 }
+
+FReply SUTInGameMenu::OnTeamChangeClick()
+{
+	AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+	if (PC)
+	{
+		PC->ServerSwitchTeam();
+	}
+	return FReply::Handled();
+}
+
+FSlateColor SUTInGameMenu::GetChangeTeamLabelColor() const
+{
+	return ChangeTeamButton.IsValid() ? ChangeTeamButton->GetLabelColor() : FSlateColor(FLinearColor::White);
+}
+
 
 #endif

@@ -18,6 +18,7 @@ AUTWeap_LightningRifle::AUTWeap_LightningRifle(const FObjectInitializer& ObjectI
 	LowMeshOffset = FVector(0.f, 0.f, -3.f);
 	VeryLowMeshOffset = FVector(0.f, 0.f, -12.f);
 	ExtraFullPowerFireDelay = 0.3f;
+	bShouldPrecacheTutorialAnnouncements = false;
 }
 
 void AUTWeap_LightningRifle::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

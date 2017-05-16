@@ -83,6 +83,12 @@ void UUTWeaponStateFiringLinkBeam::EndState()
 {
 	bPendingStartFire = false;
 	bPendingEndFire = false;
+
+	AUTWeap_LinkGun* LinkGun = Cast<AUTWeap_LinkGun>(GetOuterAUTWeapon());
+	if (LinkGun)
+	{
+		LinkGun->bReadyToPull = false;
+	}
     Super::EndState();
 }
 

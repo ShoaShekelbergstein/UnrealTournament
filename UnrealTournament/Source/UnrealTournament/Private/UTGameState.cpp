@@ -30,6 +30,7 @@
 #include "UTIntermissionBeginInterface.h"
 #include "UTPlayerStart.h"
 #include "UTTeamPlayerStart.h"
+#include "UTDemoRecSpectator.h"
 
 AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -40,7 +41,6 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	SpawnProtectionTime = 2.f;
 	bWeaponStay = true;
 	bAllowTeamSwitches = true;
-	bForcedBalance = false;
 	KickThreshold=51.0f;
 	TauntSelectionIndex = 0;
 	bPersistentKillIconMessages = false;
@@ -274,9 +274,9 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	GameOverStatus = NSLOCTEXT("UTGameState", "PostGame", "Game Over");
 	MapVoteStatus = NSLOCTEXT("UTGameState", "Mapvote", "Map Vote");
 	PreGameStatus = NSLOCTEXT("UTGameState", "PreGame", "Pre-Game");
-	NeedPlayersStatus = NSLOCTEXT("UTGameState", "NeedPlayers", "Need {NumNeeded} More");
+	NeedPlayersStatus = NSLOCTEXT("UTGameState", "NeedPlayers", "Waiting for Players");
 	OvertimeStatus = NSLOCTEXT("UTCTFGameState", "Overtime", "Overtime");
-
+	HostStatus = NSLOCTEXT("UTCTFGameState", "HostStatus", "Waiting for Host");
 	BoostRechargeMaxCharges = 1;
 	BoostRechargeTime = 0.0f; // off by default
 	MusicVolume = 1.f;
@@ -317,7 +317,6 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME(AUTGameState, PlayersNeeded);
 	DOREPLIFETIME(AUTGameState, HubGuid);
 
-	DOREPLIFETIME_CONDITION(AUTGameState, bAllowTeamSwitches, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, bWeaponStay, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, GoalScore, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, OverlayEffects, COND_InitialOnly);
@@ -328,6 +327,7 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME_CONDITION(AUTGameState, ServerName, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, ServerDescription, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, ServerMOTD, COND_InitialOnly);
+	DOREPLIFETIME(AUTGameState, bAllowTeamSwitches);
 
 	DOREPLIFETIME(AUTGameState, ServerSessionId);
 
@@ -335,7 +335,8 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME(AUTGameState, MapVoteListCount);
 	DOREPLIFETIME(AUTGameState, VoteTimer);
 
-	DOREPLIFETIME(AUTGameState, bForcedBalance);
+	DOREPLIFETIME(AUTGameState, bHaveMatchHost);
+	DOREPLIFETIME(AUTGameState, bRequireFull);
 
 	DOREPLIFETIME_CONDITION(AUTGameState, BoostRechargeTime, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AUTGameState, BoostRechargeMaxCharges, COND_InitialOnly);
@@ -721,6 +722,10 @@ void AUTGameState::OnRepRemainingTime()
 
 void AUTGameState::DefaultTimer()
 {
+	if (GetWorld()->IsPaused())
+	{
+		return;
+	}
 	Super::DefaultTimer();
 	if (IsMatchIntermission())
 	{
@@ -756,7 +761,7 @@ void AUTGameState::DefaultTimer()
 			if (GetWorld()->GetNetMode() != NM_Client)
 			{
 				int32 RepTimeInterval = 10;
-				if (RemainingTime % RepTimeInterval == 0)
+				if (RemainingTime % RepTimeInterval == RepTimeInterval - 1)
 				{
 					ReplicatedRemainingTime = RemainingTime;
 					ForceNetUpdate();
@@ -770,6 +775,11 @@ void AUTGameState::DefaultTimer()
 		}
 		CheckTimerMessage();
 	}
+	UpdateTimeMessage();
+}
+
+void AUTGameState::UpdateTimeMessage()
+{
 }
 
 void AUTGameState::CheckTimerMessage()
@@ -793,12 +803,17 @@ void AUTGameState::CheckTimerMessage()
 
 		if (TimerMessageIndex >= 0)
 		{
-			for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+			if ((GetWorld()->GetTimeSeconds() - LastTimerMessageTime > 1.5f) || (LastTimerMessageIndex != TimerMessageIndex))
 			{
-				AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
-				if (PC != NULL)
+				LastTimerMessageTime = GetWorld()->GetTimeSeconds();
+				LastTimerMessageIndex = TimerMessageIndex;
+				for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
 				{
-					PC->ClientReceiveLocalizedMessage(UUTTimerMessage::StaticClass(), TimerMessageIndex);
+					AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
+					if (PC != NULL)
+					{
+						PC->ClientReceiveLocalizedMessage(UUTTimerMessage::StaticClass(), TimerMessageIndex);
+					}
 				}
 			}
 		}
@@ -1295,11 +1310,13 @@ FText AUTGameState::GetGameStatusText(bool bForScoreboard)
 		{
 			return NSLOCTEXT("UTGameState","WaitingTravel","Waiting For Server"); 
 		}
+		else if ((GetNetMode() != NM_Standalone) && bHaveMatchHost)
+		{
+			return HostStatus;
+		}
 		else if ((PlayersNeeded > 0) && (GetNetMode() != NM_Standalone))
 		{
-			FFormatNamedArguments Args;
-			Args.Add("NumNeeded", FText::AsNumber(PlayersNeeded));
-			return FText::Format(NeedPlayersStatus, Args);
+			return NeedPlayersStatus;
 		}
 		else
 		{
@@ -1514,8 +1531,9 @@ bool AUTGameState::IsTempBanned(const FUniqueNetIdRepl& UniqueId)
 	return false;
 }
 
-void AUTGameState::VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter)
+bool AUTGameState::VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter)
 {
+	bool bResult = false;
 	AUTGameMode* Game = GetWorld()->GetAuthGameMode<AUTGameMode>();
 
 	if (Game && Game->NumPlayers > 0)
@@ -1523,10 +1541,10 @@ void AUTGameState::VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter)
 		// Quick out.
 		if (bDisableVoteKick || (bOnlyTeamCanVoteKick && !OnSameTeam(BadGuy, Voter)))
 		{
-			return;
+			return false;
 		}
 		
-		BadGuy->LogBanRequest(Voter);
+		bResult = BadGuy->LogBanRequest(Voter);
 		Game->BroadcastLocalized(Voter, UUTGameMessage::StaticClass(), 13, Voter, BadGuy);
 
 		int32 NumPlayers = 0;
@@ -1559,6 +1577,8 @@ void AUTGameState::VoteForTempBan(AUTPlayerState* BadGuy, AUTPlayerState* Voter)
 			}
 		}
 	}
+
+	return bResult;
 }
 
 void AUTGameState::GetAvailableGameData(TArray<UClass*>& GameModes, TArray<UClass*>& MutatorList)
@@ -1742,49 +1762,6 @@ void AUTGameState::CreateMapVoteInfo(const FString& MapPackage,const FString& Ma
 
 		MapVoteList.Add(MapVoteInfo);
 	}
-}
-
-void AUTGameState::SortVotes()
-{
-
-	MapVoteList.Sort([&](AUTReplicatedMapInfo &A, const AUTReplicatedMapInfo &B)
-			{
-				bool bHasTitleA = !A.Title.IsEmpty();
-				bool bHasTitleB = !B.Title.IsEmpty();
-
-				if (bHasTitleA && !bHasTitleB)
-				{
-					return true;
-				}
-
-				if (A.bIsMeshedMap)
-				{
-					if (!B.bIsMeshedMap)
-					{
-						return true;
-					}
-					else if (A.bIsEpicMap && !B.bIsEpicMap)
-					{
-						return true;
-					}
-					else if (!A.bIsEpicMap && B.bIsEpicMap)
-					{
-						return false;
-					}
-				}
-				else if (B.bIsMeshedMap)
-				{
-					return false;
-				}
-				else if (A.bIsEpicMap && !B.bIsEpicMap)
-				{
-					return true;
-				}
-
-				return A.Title < B.Title;
-
-			}
-	);
 }
 
 bool AUTGameState::GetImportantPickups_Implementation(TArray<AUTPickup*>& PickupList)
@@ -2248,7 +2225,7 @@ void AUTGameState::FillOutRconPlayerList(TArray<FRconPlayerData>& PlayerList)
 		if (PlayerArray[i] && !PlayerArray[i]->IsPendingKillPending())
 		{
 			APlayerController* PlayerController = Cast<APlayerController>( PlayerArray[i]->GetOwner() );
-			if (PlayerController)
+			if (PlayerController && Cast<AUTDemoRecSpectator>(PlayerController) == nullptr)
 			{
 				FString PlayerID = PlayerArray[i]->UniqueId.ToString();
 
@@ -2269,7 +2246,7 @@ void AUTGameState::FillOutRconPlayerList(TArray<FRconPlayerData>& PlayerList)
 					AUTBaseGameMode* DefaultGame = GameModeClass ? GameModeClass->GetDefaultObject<AUTBaseGameMode>() : NULL;
 					int32 Rank = UTPlayerState && DefaultGame ? DefaultGame->GetEloFor(UTPlayerState, bRankedSession) : 0;
 					FString PlayerIP = PlayerController->GetPlayerNetworkAddress();
-					FRconPlayerData PlayerInfo(PlayerArray[i]->PlayerName, PlayerID, PlayerIP, Rank);
+					FRconPlayerData PlayerInfo(PlayerArray[i]->PlayerName, PlayerID, PlayerIP, Rank, UTPlayerState->bOnlySpectator);
 					PlayerList.Add( PlayerInfo );
 				}
 			}
@@ -2285,7 +2262,6 @@ void AUTGameState::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject)
 	JsonObject->SetBoolField(TEXT("bTeamGame"), bTeamGame);
 	JsonObject->SetBoolField(TEXT("bAllowTeamSwitches"), bAllowTeamSwitches);
 	JsonObject->SetBoolField(TEXT("bStopGameClock"), bStopGameClock);
-	JsonObject->SetBoolField(TEXT("bForcedBalance"), bForcedBalance);
 
 	JsonObject->SetNumberField(TEXT("GoalScore"), GoalScore);
 	JsonObject->SetNumberField(TEXT("TimeLimit"), TimeLimit);

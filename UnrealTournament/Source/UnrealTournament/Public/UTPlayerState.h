@@ -1099,7 +1099,7 @@ protected:
 	TArray<FTempBanInfo> BanVotes;
 
 public:
-	void LogBanRequest(AUTPlayerState* Voter);
+	bool LogBanRequest(AUTPlayerState* Voter);
 	int32 CountBanVotes();
 
 	UPROPERTY(Replicated)
@@ -1173,6 +1173,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Game")
 	bool bIsTalking;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Game")
+	bool bIsMuted;
 
 public:
 	/** Holds the last known location of the pawn associated with this pri */
@@ -1221,8 +1224,8 @@ public:
 
 	// The time at which the player that owns this PlayerState was active in real time seconds.  This should be set by calling NotActive()
 	UPROPERTY(BlueprintReadWrite)
-		float LastActiveTime;
-
+	float LastActiveTime;
+	
 protected:
 
 

@@ -282,8 +282,22 @@ void SUTPlayerSettingsDialog::Construct(const FArguments& InArgs)
 	
 	float FOVSliderSetting = ((ProfileSettings ? ProfileSettings->PlayerFOV : 100)- FOV_CONFIG_MIN) / (FOV_CONFIG_MAX - FOV_CONFIG_MIN);
 
+	if (GetPlayerOwner().IsValid() && UTEngine)
+	{
+		SelectedFlag = UTEngine->GetFlag(GetPlayerOwner()->GetCountryFlag());
+	}
+
+	if (SelectedFlag == nullptr && CountryFlags.Num() > 0)
+	{
+		SelectedFlag = CountryFlags[0].Get();
+	}
+
 	if (DialogContent.IsValid())
 	{
+
+
+
+
 		const float MessageTextPaddingX = 10.0f;
 		TSharedPtr<STextBlock> MessageTextBlock;
 		DialogContent->AddSlot()
@@ -375,7 +389,7 @@ void SUTPlayerSettingsDialog::Construct(const FArguments& InArgs)
 								.OnSelectionChanged(this, &SUTPlayerSettingsDialog::OnFlagSelected)
 								.Content()
 								[
-									SAssignNew(SelectedFlagWidget, SOverlay)
+									SAssignNew(SelectedFlagWidget, SOverlay).Visibility(EVisibility::HitTestInvisible)
 								]
 							]
 						]
@@ -937,9 +951,8 @@ void SUTPlayerSettingsDialog::Construct(const FArguments& InArgs)
 			CharacterComboBox->SetSelectedItem(CharacterList[0]);
 		}
 
-		if (GetPlayerOwner().IsValid() && UTEngine)
+		if (SelectedFlag != nullptr)
 		{
-			SelectedFlag = UTEngine->GetFlag(GetPlayerOwner()->GetCountryFlag());
 			OnFlagSelected(SelectedFlag, ESelectInfo::Direct);
 		}
 	}
@@ -1686,6 +1699,7 @@ TSharedRef<SWidget> SUTPlayerSettingsDialog::GenerateFlagListWidget(TWeakObjectP
 				[
 					SNew(SImage)
 					.Image(SUWindowsStyle::Get().GetBrush(InItem->GetSlatePropertyName()))
+					.Visibility(EVisibility::HitTestInvisible)
 				]
 			]
 			+ SHorizontalBox::Slot()
@@ -1697,6 +1711,7 @@ TSharedRef<SWidget> SUTPlayerSettingsDialog::GenerateFlagListWidget(TWeakObjectP
 				SNew(STextBlock)
 				.Text(FText::FromString(InItem->GetFriendlyName()))
 				.TextStyle(SUTStyle::Get(), "UT.Font.ContextMenuItem")
+				.Visibility(EVisibility::HitTestInvisible)
 			];
 }
 
@@ -1716,6 +1731,8 @@ TSharedRef<SWidget> SUTPlayerSettingsDialog::GenerateSelectedFlagWidget()
 				[
 					SNew(SImage)
 					.Image(SUWindowsStyle::Get().GetBrush(SelectedFlag->GetSlatePropertyName()))
+					.Visibility(EVisibility::HitTestInvisible)
+
 				]
 			]
 			+ SHorizontalBox::Slot()
@@ -1727,6 +1744,8 @@ TSharedRef<SWidget> SUTPlayerSettingsDialog::GenerateSelectedFlagWidget()
 				SNew(STextBlock)
 				.Text(FText::FromString(SelectedFlag->GetFriendlyName()))
 				.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.Black")
+				.Visibility(EVisibility::HitTestInvisible)
+
 			];
 }
 

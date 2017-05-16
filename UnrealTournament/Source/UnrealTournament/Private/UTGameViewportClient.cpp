@@ -12,6 +12,7 @@
 #include "UTLocalPlayer.h"
 #include "PartyContext.h"
 #include "BlueprintContextLibrary.h"
+#include "UTOnlineGameSettingsBase.h"
 
 UUTGameViewportClient::UUTGameViewportClient(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -298,26 +299,27 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 		{
 			if (ErrorString == TEXT("NEEDPASS") || ErrorString == TEXT("NEEDSPECPASS"))
 			{
+				// If we have gotten here, then any password used is invalid.. So remove it.
 				bool bNeedSpectator = ErrorString == TEXT("NEEDSPECPASS");
 				if (NetDriver != NULL && NetDriver->ServerConnection != NULL)
 				{
-					LastAttemptedURL = NetDriver->ServerConnection->URL;
-
-					FString StoredPassword = FirstPlayer->RetrievePassword(LastAttemptedURL.Host, bNeedSpectator);
-					if (!StoredPassword.IsEmpty())
+					// If we are in a session, we we have already attempted to use a cached password and it would have failed.  So just popup the dialog
+					IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+					if (OnlineSub)
 					{
-						// We have a cached password and we didn't try it already, just reconnect.  We have to do this here for Hub instances that
-						// have the same password.
-						FString LastPass = LastAttemptedURL.GetOption(bNeedSpectator ? TEXT("specpassword=") : TEXT("password="), TEXT(""));
-						if ( LastPass.IsEmpty() || LastPass != StoredPassword )
+						IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
+						FOnlineSessionSettings* Settings = SessionInterface->GetSessionSettings(TEXT("Game"));
+						
+						if (Settings != nullptr)
 						{
-							bReconnectAtNextTick = true;
-							bReconnectAtNextTickNeedSpectator = bNeedSpectator;
-
-							return;
+							FString ServerGUID;
+							Settings->Get(SETTING_SERVERINSTANCEGUID, ServerGUID);
+							if (ServerGUID.IsEmpty())
+							{
+								FirstPlayer->RemoveCachedPassword(ServerGUID);
+							}						
 						}
 					}
-
 
 					FirstPlayer->OpenDialog(SNew(SUTInputBoxDialog)
 						.OnDialogResult( FDialogResultDelegate::CreateUObject(this, &UUTGameViewportClient::ConnectPasswordResult, ErrorString == TEXT("NEEDSPECPASS")))
@@ -383,6 +385,7 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 		}
 	}
 
+	uint16 DialogButtons = UTDIALOG_BUTTON_OK | UTDIALOG_BUTTON_RECONNECT;
 	switch (FailureType)
 	{
 		case ENetworkFailure::FailureReceived:
@@ -390,6 +393,7 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 			if (!KickReason.IsEmpty())
 			{
 				NetworkErrorMessage = KickReason;
+				DialogButtons = UTDIALOG_BUTTON_OK;
 				KickReason = FText::GetEmpty();
 			}
 			else
@@ -417,7 +421,7 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 		{
 			FirstPlayer->HideMenu();
 		}
-		ReconnectDialog = FirstPlayer->ShowMessage(NSLOCTEXT("UTGameViewportClient","NetworkErrorDialogTitle","Network Error"), NetworkErrorMessage, UTDIALOG_BUTTON_OK | UTDIALOG_BUTTON_RECONNECT, FDialogResultDelegate::CreateUObject(this, &UUTGameViewportClient::NetworkFailureDialogResult));
+		ReconnectDialog = FirstPlayer->ShowMessage(NSLOCTEXT("UTGameViewportClient","NetworkErrorDialogTitle","Network Error"), NetworkErrorMessage, DialogButtons, FDialogResultDelegate::CreateUObject(this, &UUTGameViewportClient::NetworkFailureDialogResult));
 	}
 #endif
 }
@@ -673,7 +677,17 @@ void UUTGameViewportClient::ConnectPasswordResult(TSharedPtr<SCompoundWidget> Wi
 			UUTLocalPlayer* FirstPlayer = Cast<UUTLocalPlayer>(GEngine->GetLocalPlayerFromControllerId(this, 0));	// Grab the first local player.
 			if (!InputText.IsEmpty() && FirstPlayer != NULL)
 			{
-				FirstPlayer->CachePassword(LastAttemptedURL.Host, InputText, bSpectatorPassword);
+				if (FirstPlayer->LastSession.IsValid())
+				{
+					FString ServerGUID;
+					FirstPlayer->LastSession.Session.SessionSettings.Get(SETTING_SERVERINSTANCEGUID, ServerGUID);
+					FirstPlayer->CachePassword(ServerGUID, InputText, bSpectatorPassword);
+				}						
+				else
+				{
+					FirstPlayer->CachePassword(FirstPlayer->LastConnectToIP, InputText, bSpectatorPassword);
+				}
+
 				FirstPlayer->Reconnect(bSpectatorPassword);
 			}
 		}
@@ -848,6 +862,7 @@ void UUTGameViewportClient::UpdateRedirects(float DeltaTime)
 	else
 	{
 		FirstPlayer->HideRedirectDownload();
+		ContentDownloadComplete.Broadcast(this, ERedirectStatus::Completed, TEXT(""));
 	}
 }
 
@@ -1186,4 +1201,21 @@ UWorld* UUTGameViewportClient::GetWorld() const
 	}
 
 	return Super::GetWorld();
+}
+
+void UUTGameViewportClient::ReceivedFocus(FViewport* InViewport)
+{
+	Super::ReceivedFocus(InViewport);
+	UUTLocalPlayer* FirstPlayer = Cast<UUTLocalPlayer>(GEngine->GetLocalPlayerFromControllerId(this, 0));	// Grab the first local player.
+	if (FirstPlayer && FirstPlayer->PlayerController)
+	{
+#if !UE_SERVER
+		AUTBasePlayerController* UTBasePlayerController = Cast<AUTBasePlayerController>(FirstPlayer->PlayerController);
+		if (UTBasePlayerController)
+		{
+			UTBasePlayerController->UpdateInputMode(true);
+		}
+#endif
+
+	}
 }

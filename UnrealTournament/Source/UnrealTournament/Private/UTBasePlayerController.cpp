@@ -19,6 +19,7 @@
 #include "BlueprintContextLibrary.h"
 #include "PartyContext.h"
 #include "SUTQuickChatWindow.h"
+#include "UTVoiceChatFeature.h"
 
 AUTBasePlayerController::AUTBasePlayerController(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -198,14 +199,26 @@ void AUTBasePlayerController::TeamTalk()
 	}
 }
 
-bool AUTBasePlayerController::AllowTextMessage(const FString& Msg)
+bool AUTBasePlayerController::AllowTextMessage(FString& Msg, bool bIsTeamMessage)
 {
-	const float TIME_PER_MSG = 2.0f;
+	const float TIME_PER_MSG = 1.0f;
 	const float MAX_OVERFLOW = 4.0f;
 
 	if (GetNetMode() == NM_Standalone || (GetNetMode() == NM_ListenServer && Role == ROLE_Authority))
 	{
 		return true;
+	}
+
+	if (Role == ROLE_Authority)
+	{
+		// Give the game mode a chance to adjust/deny the message.
+
+		AUTBaseGameMode* BaseGameMode = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
+		if ( BaseGameMode && !BaseGameMode->AllowTextMessage(Msg, bIsTeamMessage, this) )
+		{
+			return false;
+		}
+	
 	}
 
 	ChatOverflowTime = FMath::Max(ChatOverflowTime, GetWorld()->RealTimeSeconds);
@@ -234,14 +247,9 @@ void AUTBasePlayerController::Say(FString Message)
 {
 	// clamp message length; aside from troll prevention this is needed for networking reasons
 	Message = Message.Left(MAX_CHAT_TEXT_SIZE);
-	if (AllowTextMessage(Message))
+	if (AllowTextMessage(Message, false))
 	{
 		ServerSay(Message, false);
-	}
-	else
-	{
-		//Display spam message to the player
-		ClientSay_Implementation(nullptr, SpamText.ToString(), ChatDestinations::System);
 	}
 }
 
@@ -249,22 +257,18 @@ void AUTBasePlayerController::TeamSay(FString Message)
 {
 	// clamp message length; aside from troll prevention this is needed for networking reasons
 	Message = Message.Left(MAX_CHAT_TEXT_SIZE);
-	if (AllowTextMessage(Message))
+	if (AllowTextMessage(Message, true))
 	{
 		ServerSay(Message, true);
-	}
-	else
-	{
-		//Display spam message to the player
-		ClientSay_Implementation(nullptr, SpamText.ToString(), ChatDestinations::System);
 	}
 }
 
 bool AUTBasePlayerController::ServerSay_Validate(const FString& Message, bool bTeamMessage) { return true; }
 
-void AUTBasePlayerController::ServerSay_Implementation(const FString& Message, bool bTeamMessage)
+void AUTBasePlayerController::ServerSay_Implementation(const FString& inMessage, bool bTeamMessage)
 {
-	if (AllowTextMessage(Message) && PlayerState != nullptr)
+	FString Message = inMessage;
+	if (AllowTextMessage(Message, bTeamMessage) && PlayerState != nullptr)
 	{
 		// Look to see if this message is a direct message to a given player.
 
@@ -410,7 +414,7 @@ void AUTBasePlayerController::ClientMatchmakingGameComplete_Implementation()
 	}
 }
 
-void AUTBasePlayerController::ClientReturnToLobby_Implementation()
+void AUTBasePlayerController::ClientReturnToLobby_Implementation(bool bKicked)
 {
 	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
 	if (LP)
@@ -419,6 +423,11 @@ void AUTBasePlayerController::ClientReturnToLobby_Implementation()
 		LP->LastRankedMatchPlayerId.Empty();
 		LP->LastRankedMatchTimeString.Empty();
 		LP->SaveConfig();
+	}
+
+	if (bKicked)
+	{
+		ClientWasKicked(NSLOCTEXT("General", "IdleKick", "You were kicked for being idle."));
 	}
 
 	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
@@ -438,15 +447,6 @@ void AUTBasePlayerController::CancelConnectViaGUID()
 		GUIDJoin_CurrentGUID = TEXT("");
 		GUIDJoinAttemptCount = 0;
 		GUIDSessionSearchSettings.Reset();
-		
-		if (OnDownloadCompleteDelegateHandle.IsValid())
-		{
-			UUTGameViewportClient* ViewportClient = Cast<UUTGameViewportClient>(Cast<ULocalPlayer>(Player)->ViewportClient);
-			if (ViewportClient && ViewportClient->IsDownloadInProgress())
-			{
-				ViewportClient->RemoveContentDownloadCompleteDelegate(OnDownloadCompleteDelegateHandle);
-			}
-		}
 }
 
 void AUTBasePlayerController::ConnectToServerViaGUID(FString ServerGUID, int32 DesiredTeam, bool bSpectate, bool bVerifyServerFirst)
@@ -473,14 +473,6 @@ void AUTBasePlayerController::ConnectToServerViaGUID(FString ServerGUID, int32 D
 		{
 			StartGUIDJoin();
 		}
-	}
-}
-
-void AUTBasePlayerController::OnDownloadComplete(class UUTGameViewportClient* ViewportClient, ERedirectStatus::Type RedirectStatus, const FString& PackageName)
-{
-	if (ViewportClient && !ViewportClient->IsDownloadInProgress())
-	{
-		StartGUIDJoin();
 	}
 }
 
@@ -596,6 +588,7 @@ void AUTBasePlayerController::OnFindSessionsComplete(bool bWasSuccessful)
 						{
 							PingBeacon->OnServerRequestResults = FServerRequestResultsDelegate::CreateUObject(this, &AUTBasePlayerController::OnPingBeaconResult);
 							PingBeacon->OnServerRequestFailure = FServerRequestFailureDelegate::CreateUObject(this, &AUTBasePlayerController::OnPingBeaconFailure);
+							PingBeacon->bQuickPing = true;
 						
 							IOnlineSessionPtr OnlineSessionInterface;
 							if (OnlineSubsystem) OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
@@ -968,9 +961,8 @@ void AUTBasePlayerController::Tick(float DeltaTime)
 	}
 }
 
-void AUTBasePlayerController::UpdateInputMode()
+void AUTBasePlayerController::UpdateInputMode(bool bForce)
 {
-
 	EInputMode::Type NewInputMode = EInputMode::EIM_None;
 	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(Player);
 	if (LocalPlayer)
@@ -982,7 +974,6 @@ void AUTBasePlayerController::UpdateInputMode()
 		}
 
 		bool bSetWidgetFocus = true;
-		TSharedPtr<SWidget> WidgetToFocus = LocalPlayer->ViewportClient->GetGameViewportWidget();
 
 		//Menus default to UI
 		if (LocalPlayer->AreMenusOpen())
@@ -1010,11 +1001,10 @@ void AUTBasePlayerController::UpdateInputMode()
 			}
 		}
 
-
 		//Apply the new input if it needs to be changed
-		if (NewInputMode != InputMode && NewInputMode != EInputMode::EIM_None)
+		if (bForce || (NewInputMode != InputMode && NewInputMode != EInputMode::EIM_None) )
 		{
-			UE_LOG(UT, Warning, TEXT("Input Mode Changing!"));
+			TSharedPtr<SWidget> WidgetToFocus = LocalPlayer->GetBestWidgetToFocus(); 
 			InputMode = NewInputMode;
 			switch (NewInputMode)
 			{
@@ -1043,6 +1033,7 @@ void AUTBasePlayerController::UpdateInputMode()
 #endif
 
 bool AUTBasePlayerController::ServerSetAvatar_Validate(FName NewAvatar) { return true; }
+
 void AUTBasePlayerController::ServerSetAvatar_Implementation(FName NewAvatar)
 {
 	if (UTPlayerState)
@@ -1087,6 +1078,7 @@ void AUTBasePlayerController::SendStatsIDToServer()
 		}
 	}
 }
+
 void AUTBasePlayerController::ReceivedPlayer()
 {
 	Super::ReceivedPlayer();
@@ -1183,6 +1175,7 @@ bool AUTBasePlayerController::ServerReceiveStatsID_Validate(const FString& NewSt
 {
 	return true;
 }
+
 /** Store an id for stats tracking.  Right now we are using the machine ID for this PC until we have have a proper ID available.  */
 void AUTBasePlayerController::ServerReceiveStatsID_Implementation(const FString& NewStatsID)
 {
@@ -1289,22 +1282,18 @@ void AUTBasePlayerController::LobbySay(FString Message)
 {
 	// clamp message length; aside from troll prevention this is needed for networking reasons
 	Message = Message.Left(MAX_CHAT_TEXT_SIZE);
-	if (AllowTextMessage(Message))
+	if (AllowTextMessage(Message, false))
 	{
 		ServerLobbySay(Message);
-	}
-	else
-	{
-		//Display spam message to the player
-		ClientSay_Implementation(nullptr, SpamText.ToString(), ChatDestinations::System);
 	}
 }
 
 bool AUTBasePlayerController::ServerLobbySay_Validate(const FString& Message) { return true; }
-void AUTBasePlayerController::ServerLobbySay_Implementation(const FString& Message)
+void AUTBasePlayerController::ServerLobbySay_Implementation(const FString& inMessage)
 {
 	AUTGameMode * GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	if (GameMode && GameMode->IsGameInstanceServer()  && AllowTextMessage(Message) && PlayerState != nullptr)
+	FString Message = inMessage;
+	if (GameMode && GameMode->IsGameInstanceServer()  && AllowTextMessage(Message, false) && PlayerState != nullptr)
 	{
 		GameMode->SendLobbyMessage(Message, Cast<AUTPlayerState>(PlayerState));
 	}
@@ -1351,6 +1340,13 @@ void AUTBasePlayerController::StartVOIPTalking()
 	if (ProfileSettings && ProfileSettings->bPushToTalk)
 	{
 		ToggleSpeaking(true);
+		
+		static const FName VoiceChatFeatureName("VoiceChat");
+		if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+		{
+			UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+			VoiceChat->SetAudioInputDeviceMuted(false);
+		}
 	}
 }
 
@@ -1360,6 +1356,13 @@ void AUTBasePlayerController::StopVOIPTalking()
 	if (ProfileSettings && ProfileSettings->bPushToTalk)
 	{
 		ToggleSpeaking(false);
+
+		static const FName VoiceChatFeatureName("VoiceChat");
+		if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+		{
+			UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+			VoiceChat->SetAudioInputDeviceMuted(true);
+		}
 	}
 }
 

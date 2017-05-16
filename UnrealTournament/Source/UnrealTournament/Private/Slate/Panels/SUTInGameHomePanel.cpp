@@ -13,6 +13,8 @@
 #include "../Widgets/SUTButton.h"
 #include "UTConsole.h"
 #include "SUTChatEditBox.h"
+#include "UTVoiceChatFeature.h"
+
 
 #if !UE_SERVER
 
@@ -45,6 +47,25 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 	[
 		SNew(SOverlay)
 		+SOverlay::Slot()
+		.VAlign(VAlign_Bottom)
+		.HAlign(HAlign_Fill)
+		[
+			SAssignNew(MatchBox, SVerticalBox)
+			+SVerticalBox::Slot().AutoHeight().Padding(0.0f,0.0f,0.0f,0.0f)
+			[
+				SNew(SBox).HeightOverride(68.0f)
+				[
+					SNew(SUTBorder)
+					.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Dark"))
+					.HAlign(HAlign_Center).VAlign(VAlign_Center)
+					[
+						SAssignNew(MatchButtonBox, SHorizontalBox)
+						.Visibility(this, &SUTInGameHomePanel::GetMatchButtonVis)
+					]
+				]
+			]
+		]
+		+SOverlay::Slot()
 		.VAlign(VAlign_Fill)
 		.HAlign(HAlign_Fill)
 		[
@@ -69,20 +90,7 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 				] 
 			]
 		]
-		+SOverlay::Slot()
-		.VAlign(VAlign_Bottom)
-		.HAlign(HAlign_Center)
-		[
-			SAssignNew(MatchBox, SVerticalBox)
-			+SVerticalBox::Slot().AutoHeight().Padding(0.0f,0.0f,0.0f,16.0f)
 
-			[
-				SNew(SBox).HeightOverride(52.0f)
-				[
-					SAssignNew(MatchButtonBox, SHorizontalBox)
-				]
-			]
-		]
 	];
 
 	if (SubMenuOverlay.IsValid())
@@ -94,48 +102,29 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 		];
 	}
 
-	if (GS && GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches)
-	{
-		MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
-		[
-			SAssignNew(ChangeTeamButton, SUTButton)
-			.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft")
-			.OnClicked(this, &SUTInGameHomePanel::OnTeamChangeClick)
-			.Visibility(this, &SUTInGameHomePanel::GetChangeTeamVisibility)
-			.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
-			[
-				SNew(SHorizontalBox)
-				+SHorizontalBox::Slot().AutoWidth()
-				.VAlign(VAlign_Center)
-				[
-					SNew(STextBlock)
-					.Text(NSLOCTEXT("SUTMenuBase","MenuBar_ChangeTeam","CHANGE TEAM"))
-					.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-					.ColorAndOpacity(this, &SUTInGameHomePanel::GetChangeTeamLabelColor)
-				]
-			]
-		];
-	}			
-
 	if (GS && (GS->GetMatchState() == MatchState::WaitingToStart))
 	{
 		if (GS->GetNetMode() == NM_Standalone)
 		{
 			MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
 			[
-				SAssignNew(MatchButton, SUTButton)
-				.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
-				.OnClicked(this, &SUTInGameHomePanel::OnReadyChangeClick)
-				.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
+				SNew(SOverlay)
+				+SOverlay::Slot()
 				[
-					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot().AutoWidth()
-					.VAlign(VAlign_Center)
+					SAssignNew(MatchButton, SUTButton)
+					.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
+					.OnClicked(this, &SUTInGameHomePanel::OnReadyChangeClick)
+					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
 					[
-						SNew(STextBlock)
-						.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_StartMatch", "START MATCH"))
-						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-						.ColorAndOpacity(this, &SUTInGameHomePanel::GetMatchLabelColor)
+						SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot().AutoWidth()
+						.VAlign(VAlign_Center)
+						[
+							SNew(STextBlock)
+							.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_StartMatch", "START MATCH"))
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+							.ColorAndOpacity(this, &SUTInGameHomePanel::GetMatchLabelColor)
+						]
 					]
 				]
 			];
@@ -165,23 +154,52 @@ void SUTInGameHomePanel::ConstructPanel(FVector2D CurrentViewportSize)
 		{
 			MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
 			[
-				SAssignNew(MatchButton, SUTButton)
-				.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
-				.OnClicked(this, &SUTInGameHomePanel::OnReadyChangeClick)
-				.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
+				SNew(SOverlay)
+				+SOverlay::Slot()
 				[
-					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot().AutoWidth()
-					.VAlign(VAlign_Center)
+					SAssignNew(MatchButton, SUTButton)
+					.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft.Gold")
+					.OnClicked(this, &SUTInGameHomePanel::OnReadyChangeClick)
+					.ContentPadding(FMargin(25.0, 0.0, 25.0, 5.0))
 					[
-						SNew(STextBlock)
-						.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "JOIN WARM UP"))
-						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
-						.ColorAndOpacity(this, &SUTInGameHomePanel::GetMatchLabelColor)
+						SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot().AutoWidth()
+						.VAlign(VAlign_Center)
+						[
+							SNew(STextBlock)
+							.Text(NSLOCTEXT("SUTMenuBase", "MenuBar_ChangeReady", "JOIN WARM UP"))
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+							.ColorAndOpacity(this, &SUTInGameHomePanel::GetMatchLabelColor)
+						]
 					]
 				]
 			];
 		}
+
+		if (GS->bTeamGame && !bIsSpectator && GS->bAllowTeamSwitches)
+		{
+			MatchButtonBox->AddSlot().AutoWidth().Padding(5.0f,0.0f,0.0f,0.0f)
+			[
+				SAssignNew(ChangeTeamButton, SUTButton)
+				.ButtonStyle(SUTStyle::Get(), "UT.Button.Soft")
+				.OnClicked(this, &SUTInGameHomePanel::OnTeamChangeClick)
+				.Visibility(this, &SUTInGameHomePanel::GetChangeTeamVisibility)
+				.ContentPadding(FMargin(25.0,0.0,25.0,5.0))
+				[
+					SNew(SHorizontalBox)
+					+SHorizontalBox::Slot().AutoWidth()
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text(NSLOCTEXT("SUTMenuBase","MenuBar_ChangeTeam","CHANGE TEAM"))
+						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Large.Bold")
+						.ColorAndOpacity(this, &SUTInGameHomePanel::GetChangeTeamLabelColor)
+					]
+				]
+			];
+		}			
+
+
 	}
 }
 
@@ -504,6 +522,21 @@ FReply SUTInGameHomePanel::ContextCommand(int32 CommandId, TWeakObjectPtr<AUTPla
 							PC->ServerMutePlayer(TargetPlayerState->UniqueId);
 						}
 					}
+					
+					static const FName VoiceChatFeatureName("VoiceChat");
+					if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+					{
+						UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+						if (VoiceChat->IsPlayerMuted(TargetPlayerState->PlayerName))
+						{
+							VoiceChat->UnMutePlayer(TargetPlayerState->PlayerName);
+						}
+						else
+						{
+							VoiceChat->MutePlayer(TargetPlayerState->PlayerName);
+						}
+					}
+
 					HideContextMenu();
 					break;
 				}
@@ -662,6 +695,14 @@ FText SUTInGameHomePanel::GetMuteLabelText() const
 
 	TSharedPtr<const FUniqueNetId> Id = SelectedPlayer->UniqueId.GetUniqueNetId();
 	bool bIsMuted = Id.IsValid() && PlayerOwner->PlayerController->IsPlayerMuted(Id.ToSharedRef().Get());
+	
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+	{
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		bIsMuted = VoiceChat->IsPlayerMuted(SelectedPlayer->PlayerName);
+	}
+
 	return bIsMuted ? NSLOCTEXT("SUTInGameHomePanel","Unmute","Unmute Player") : NSLOCTEXT("SUTInGameHomePanel","Mute","Mute Player");
 }
 
@@ -718,5 +759,27 @@ FSlateColor SUTInGameHomePanel::GetMatchLabelColor() const
 	return FSlateColor(FLinearColor::Yellow);
 }
 		
+EVisibility SUTInGameHomePanel::GetMatchButtonVis() const
+{
+	AUTPlayerState* PS = PlayerOwner->PlayerController ? Cast<AUTPlayerState>(PlayerOwner->PlayerController->PlayerState) : NULL;
+	bool bIsSpectator = PS && PS->bOnlySpectator;
+	if (PS && !PS->bOnlySpectator)
+	{
+		return EVisibility::Visible;
+	}
+
+	return EVisibility::Collapsed;
+}
+
+void SUTInGameHomePanel::Tick( const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime )
+{
+	if (MatchButton.IsValid())
+	{
+		float Scale = 1.0f + (0.05 * FMath::Sin(PlayerOwner->GetWorld()->GetRealTimeSeconds() * 6.0f));
+		MatchButton->SetRenderTransform(FSlateRenderTransform(Scale));
+	}
+
+}
+
 
 #endif

@@ -14,6 +14,7 @@
 #include "UTOnlineGameSearchBase.h"
 #include "OnlineSubsystemTypes.h"
 #include "Dialogs/SUTDownloadAllDialog.h"
+#include "UTGameViewportClient.h"
 
 AUTLobbyPC::AUTLobbyPC(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -42,6 +43,16 @@ void AUTLobbyPC::OnRep_PlayerState()
 	{
 		UTLobbyPlayerState->Server_ReadyToBeginDataPush();
 		LP->UpdatePresence(TEXT("In Hub"), true, true, true, false);
+#if !UE_SERVER
+		if (LP && LP->ViewportClient)
+		{
+			UUTGameViewportClient* UTGameViewport = Cast<UUTGameViewportClient>(LP->ViewportClient);
+			if (UTGameViewport && !UTGameViewport->KickReason.IsEmpty())
+			{
+				LP->ShowMessage(NSLOCTEXT("UTGameViewportClient","NetworkErrorDialogTitle","Network Error"), UTGameViewport->KickReason, UTDIALOG_BUTTON_OK);			
+			}
+		}
+#endif
 	}
 }
 

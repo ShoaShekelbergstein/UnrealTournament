@@ -72,7 +72,7 @@ void SUTInputBoxDialog::OnDialogOpened()
 {
 	SUTDialogBase::OnDialogOpened();
 	// start with the editbox focused
-	FSlateApplication::Get().SetKeyboardFocus(EditBox, EKeyboardFocusCause::SetDirectly);
+	PlayerOwner->FocusWidget(EditBox.ToSharedRef());
 }
 
 
@@ -115,5 +115,12 @@ FString SUTInputBoxDialog::GetInputText()
 	}
 	return TEXT("");
 }
+
+TSharedPtr<SWidget> SUTInputBoxDialog::GetBestWidgetToFocus()
+{
+	return EditBox;
+}
+
+
 
 #endif

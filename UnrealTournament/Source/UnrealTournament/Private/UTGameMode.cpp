@@ -1,6 +1,7 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #include "UnrealTournament.h"
+
 #include "GameFramework/GameMode.h"
 #include "UTDeathMessage.h"
 #include "UTGameMessage.h"
@@ -55,6 +56,7 @@
 #include "UTLineUpZone.h"
 #include "UTLineUpHelper.h"
 #include "UTRewardMessage.h"
+#include "UTVoiceChatTokenFeature.h"
 
 DEFINE_LOG_CATEGORY(LogUTGame);
 
@@ -97,12 +99,14 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	TimeLimit = 15;
 	bUseSeamlessTravel = false;
 	CountDown = 3;
+	MatchIntroTime = 7.f;
 	bPauseable = false;
 	RespawnWaitTime = 2.f;
 	ForceRespawnTime = 5.f;
 	StartDelay = 10.f;
 	LastMatchNotReady = 0.f;
 	DefaultMaxPlayers = 10;
+	bNoDefaultLeaderHat = true;
 
 	bHasRespawnChoices = false;
 	MaxWaitForPlayers = 180;
@@ -111,6 +115,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	MatchSummaryDelay = 9.f;
 	MatchSummaryTime = 20.f;
 	BotFillCount = 0;
+	WarmupFillCount = 0;
 	bWeaponStayActive = true;
 	VictoryMessageClass = UUTVictoryMessage::StaticClass();
 	DeathMessageClass = UUTDeathMessage::StaticClass();
@@ -281,6 +286,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 	if (bBasicTrainingGame)
 	{
 		GoalScore = 0;
+		bNoTrainingMenu = (UGameplayStatics::GetIntOption(Options, TEXT("NoTutMenu"), bNoTrainingMenu) == 1) ? true : false;
 	}
 
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("RankCheck"));
@@ -304,6 +310,7 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 
 	bRequireReady = (UGameplayStatics::GetIntOption(Options, TEXT("RequireReady"), bRequireReady) == 0) ? false : true;
 	bRequireFull = (UGameplayStatics::GetIntOption(Options, TEXT("RequireFull"), bRequireFull) == 0) ? false : true;
+	bForceWarmup = (UGameplayStatics::GetIntOption(Options, TEXT("ForceWarmup"), bForceWarmup) == 0) ? false : true;
 
 	bDebugHitScanReplication = UGameplayStatics::HasOption(Options, TEXT("HitScanDebug"));
 
@@ -451,15 +458,20 @@ void AUTGameMode::InitGame( const FString& MapName, const FString& Options, FStr
 		FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController()), FString::Printf(TEXT("Console - %s"), *DisplayName.ToString()));
 	}
 
-	if ((GetNetMode() == NM_Standalone) && (BotFillCount == 0) && !bRankedSession && !bOfflineChallenge && !bForceNoBots && !bDevServer && (GetWorld()->WorldType != EWorldType::PIE))
+	if (((GetNetMode() == NM_Standalone) || bIsLANGame) && (BotFillCount == 0) && !bRankedSession && !bOfflineChallenge && !bForceNoBots && !bDevServer && (GetWorld()->WorldType != EWorldType::PIE))
 	{
-		// if not competitive match, fill standalone match with bots
+		// if not competitive match, fill standalone/LAN match with bots
 		BotFillCount = FMath::Max(BotFillCount, AdjustedBotFillCount());
 	}
 
 	// Handle any associated ruleset
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("ART"));
 	if (!InOpt.IsEmpty()) ActiveRuleTag = InOpt;
+
+	if ((GetNetMode() != NM_Standalone) && !bRankedSession && !bForceNoBots && (GetWorld()->WorldType != EWorldType::PIE))
+	{
+		WarmupFillCount = FMath::Min(GameSession->MaxPlayers, bIsVSAI ? 3 : 6);
+	}
 }
 
 void AUTGameMode::AddMutator(const FString& MutatorPath)
@@ -593,7 +605,8 @@ void AUTGameMode::InitGameState()
 		UTGameState->bWeaponStay = bWeaponStayActive;
 		UTGameState->bIsInstanceServer = IsGameInstanceServer();
 		UTGameState->bDebugHitScanReplication = bDebugHitScanReplication;
-		if (bOfflineChallenge || bUseMatchmakingSession || bBasicTrainingGame || bIsVSAI)
+		UTGameState->bRequireFull = bRequireFull;
+		if (bOfflineChallenge || bRankedSession || bBasicTrainingGame || bIsVSAI)
 		{
 			UTGameState->bAllowTeamSwitches = false;
 		}
@@ -752,6 +765,8 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 				UChildConnection* ChildConn = Cast<UChildConnection>(NewPlayer);
 				UTPC->CastingGuideViewIndex = (ChildConn != NULL) ? (ChildConn->Parent->Children.Find(ChildConn) + 1) : 0;
 			}
+
+			SendVoiceChatLoginToken(UTPC);
 		}
 		AUTPlayerState* PS = Cast<AUTPlayerState>(Result->PlayerState);
 		if (PS != NULL)
@@ -803,8 +818,25 @@ APlayerController* AUTGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole,
 	{
 		AntiCheatEngine->OnPlayerLogin(Result, Options, UniqueId.GetUniqueNetId());
 	}
-
+	
 	return Result;
+}
+
+void AUTGameMode::SendVoiceChatLoginToken(AUTPlayerController* PC)
+{
+	static const FName VoiceChatTokenFeatureName("VoiceChatToken");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
+	{
+		UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
+
+		AUTPlayerState* PS = Cast<AUTPlayerState>(PC->PlayerState);
+		if (PS)
+		{
+			PC->VoiceChatPlayerName = FString::Printf(TEXT(".%s."), *PS->PlayerName);
+
+			VoiceChatToken->GenerateClientLoginToken(PC->VoiceChatPlayerName, PC->VoiceChatLoginToken);
+		}
+	}
 }
 
 void AUTGameMode::EntitlementQueryComplete(bool bWasSuccessful, const FUniqueNetId& UniqueId, const FString& Namespace, const FString& ErrorMessage)
@@ -1066,13 +1098,33 @@ bool AUTGameMode::AllowRemovingBot(AUTBotPlayer* B)
 
 		// remove as soon as dead or out of combat
 		// TODO: if this isn't getting them out fast enough we can restrict to only human players
-		return B->GetPawn() == NULL || B->GetEnemy() == NULL || B->LostContact(5.0f);
+		return B->GetPawn() == NULL || B->GetEnemy() == NULL || B->LostContact(5.0f) || !HasMatchStarted();
+	}
+}
+
+void AUTGameMode::RemoveExtraBots()
+{
+	int32 FailsafeCount = 0;
+	int32 BotsNeeded = (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && (GetNetMode() != NM_Standalone)) ? WarmupFillCount : BotFillCount;
+	while ((NumPlayers + NumBots > BotsNeeded) && (FailsafeCount < 10))
+	{
+		for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+		{
+			AUTBotPlayer* B = Cast<AUTBotPlayer>(It->Get());
+			if (B != NULL)
+			{
+				B->Destroy();
+				break;
+			}
+		}
+		FailsafeCount++;
 	}
 }
 
 void AUTGameMode::CheckBotCount()
 {
-	if (NumPlayers + NumBots > BotFillCount)
+	int32 BotsNeeded = (UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart) && (GetNetMode() != NM_Standalone)) ? WarmupFillCount : BotFillCount;
+	if (NumPlayers + NumBots > BotsNeeded)
 	{
 		for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
 		{
@@ -1084,7 +1136,7 @@ void AUTGameMode::CheckBotCount()
 			}
 		}
 	}
-	else while (NumPlayers + NumBots < BotFillCount)
+	else while (NumPlayers + NumBots < BotsNeeded)
 	{
 		AddBot();
 	}
@@ -1343,7 +1395,7 @@ void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, con
 			if (bKillerOnBlue)
 			{
 				// if more deaths still, less reduction
-				float Adjust = (BlueTeamDeaths > BlueTeamKills) ? 0.5f : 1.f;
+				float Adjust = (BlueTeamDeaths > BlueTeamKills) ? 0.5f : 1.25f;
 				if (bBasicTrainingGame)
 				{
 					Adjust *= 1.3f;
@@ -1352,7 +1404,7 @@ void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, con
 			}
 			else
 			{
-				float Adjust = (RedTeamDeaths > RedTeamKills) ? 0.5f : 1.f;
+				float Adjust = (RedTeamDeaths > RedTeamKills) ? 0.5f : 1.25f;
 				if (bBasicTrainingGame)
 				{
 					Adjust *= 1.3f;
@@ -1368,7 +1420,7 @@ void AUTGameMode::UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, con
 		else
 		{
 			// increase skill level for bot team capped
-			float MaxSkill = bBasicTrainingGame ? 4.f : 6.f;
+			float MaxSkill = bBasicTrainingGame ? GameDifficulty : 5.f;
 			if (bKillerOnBlue || !bTeamGame)
 			{
 				float Adjust = (RedTeamKills > RedTeamDeaths) ? 0.5f : 1.f;
@@ -1959,10 +2011,9 @@ void AUTGameMode::RemoveAllPawns()
 	{
 		// Detach all controllers from their pawns
 		AController* Controller = Iterator->Get();
-		AUTPlayerController* PC = Cast<AUTPlayerController>(Controller);
-		if (PC && PC->UTPlayerState)
+		AUTPlayerState* NewPlayerState = Cast<AUTPlayerState>(Controller->PlayerState);
+		if (NewPlayerState)
 		{
-			AUTPlayerState* NewPlayerState = PC->UTPlayerState;
 			NewPlayerState->bIsWarmingUp = false;
 		}
 		if (Controller->GetPawn() != NULL)
@@ -2040,6 +2091,21 @@ void AUTGameMode::HandleMatchHasStarted()
 	{
 		UTGameState->LineUpHelper->CleanUp();
 	}
+
+	if (IsGameInstanceServer() && LobbyBeacon)
+	{
+		FString MatchStats = FString::Printf(TEXT("%i"), UTGameState->ElapsedTime);
+
+		FMatchUpdate MatchUpdate;
+		MatchUpdate.GameTime = UTGameState->ElapsedTime;
+		MatchUpdate.NumPlayers = NumPlayers;
+		MatchUpdate.NumSpectators = NumSpectators;
+		MatchUpdate.MatchState = MatchState;
+		MatchUpdate.bMatchHasBegun = HasMatchStarted();
+		MatchUpdate.bMatchHasEnded = HasMatchEnded();
+		LobbyBeacon->StartGame(MatchUpdate);
+	}
+
 }
 
 void AUTGameMode::AnnounceMatchStart()
@@ -2588,14 +2654,25 @@ void AUTGameMode::TravelToNextMap_Implementation()
 			// Otherwise, display the tutorial finished screen so that the user can determine his destination
 			else if (TutorialMask > 0)
 			{
-				UClass* UMGWidgetClass = LoadClass<UUserWidget>(NULL, TEXT("/Game/RestrictedAssets/Tutorials/Blueprints/TutFinishScreenWidget.TutFinishScreenWidget_C"), NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
-				if (UMGWidgetClass)
+				if (bNoTrainingMenu)
 				{
-					UUserWidget* UMGWidget = CreateWidget<UUserWidget>(GetWorld(), UMGWidgetClass);
-					if (UMGWidget)
+					TutorialMask = 0;
+					GetWorld()->URL.RemoveOption(TEXT("tutorialmask"));
+					GetWorld()->URL.RemoveOption(TEXT("tutorialmenu"));
+					LP->ReturnToMainMenu();
+					return;
+				}
+				else
+				{
+					UClass* UMGWidgetClass = LoadClass<UUserWidget>(NULL, TEXT("/Game/RestrictedAssets/Tutorials/Blueprints/TutFinishScreenWidget.TutFinishScreenWidget_C"), NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
+					if (UMGWidgetClass)
 					{
-						UMGWidget->AddToViewport(1000);
-						return;
+						UUserWidget* UMGWidget = CreateWidget<UUserWidget>(GetWorld(), UMGWidgetClass);
+						if (UMGWidget)
+						{
+							UMGWidget->AddToViewport(1000);
+							return;
+						}
 					}
 				}
 			}
@@ -2722,7 +2799,7 @@ void AUTGameMode::KickIdlePlayers()
 			{
 				if ( IsGameInstanceServer() )
 				{
-					Controller->ClientReturnToLobby();
+					Controller->ClientReturnToLobby(true);
 				}
 				else if (GameSession != nullptr)
 				{
@@ -2930,7 +3007,8 @@ void AUTGameMode::RestartPlayer(AController* aPlayer)
 		return;
 	}
 	AUTPlayerController* UTPC = Cast<AUTPlayerController>(aPlayer);
-	if (!IsMatchInProgress() && (!UTPC || !UTPC->UTPlayerState || !UTPC->UTPlayerState->bIsWarmingUp || (GetMatchState() != MatchState::WaitingToStart)) && (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsPlacingPlayers))
+	bool bWantsToWarmUp = UTPC ? UTPC->UTPlayerState  && UTPC->UTPlayerState->bIsWarmingUp : true;
+	if (!IsMatchInProgress() && ((GetMatchState() != MatchState::WaitingToStart) || !bWantsToWarmUp || (GetNetMode() == NM_Standalone)) && (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsPlacingPlayers))
 	{
 		return;
 	}
@@ -2950,6 +3028,14 @@ void AUTGameMode::RestartPlayer(AController* aPlayer)
 	AUTBot* Bot = Cast<AUTBot>(aPlayer);
 	if (Bot)
 	{
+		if (GetMatchState() == MatchState::WaitingToStart)
+		{
+			AUTPlayerState* PS = Cast<AUTPlayerState>(Bot->PlayerState);
+			if (PS)
+			{
+				PS->bIsWarmingUp = true;
+			}
+		}
 		Bot->LastRespawnTime = GetWorld()->TimeSeconds;
 		if (bAutoAdjustBotSkill)
 		{
@@ -3106,92 +3192,106 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 		}
 	}
 
-	TArray<APlayerStart*> PlayerStarts;
-	for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
-	{
-		PlayerStarts.Add(*It);
-	}
-
 	if (PlayerStarts.Num() == 0)
 	{
-		return Super::ChoosePlayerStart_Implementation(Player);
+		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		{
+			PlayerStarts.Add(*It);
+		}
+		if (PlayerStarts.Num() == 0)
+		{
+			return Super::ChoosePlayerStart_Implementation(Player);
+		}
+
+		// Pre-randomize
+		for (int32 i = 0; i < PlayerStarts.Num() / 2; i++)
+		{
+			APlayerStart* Swap = PlayerStarts[i];
+			int32 RandIndex = FMath::Min(PlayerStarts.Num() - 1, PlayerStarts.Num() / 2 + FMath::RandHelper(PlayerStarts.Num() / 2 - 1));
+			PlayerStarts[i] = PlayerStarts[RandIndex];
+			PlayerStarts[RandIndex] = Swap;
+		}
 	}
+
 	if (GetWorld()->WorldType == EWorldType::PIE)
 	{
-		for (int32 i = 0; i < PlayerStarts.Num(); i++)
+		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
 		{
-			APlayerStart* P = PlayerStarts[i];
-
-			if (P->IsA(APlayerStartPIE::StaticClass()))
+			// Always prefer the first "Play from Here" PlayerStart, if we find one while in PIE mode
+			if (Cast<APlayerStartPIE>(*It))
 			{
-				// Always prefer the first "Play from Here" PlayerStart, if we find one while in PIE mode
-				return P;
+				return *It;
 			}
 		}
 	}
-	
-	// Always randomize the list order a bit to prevent groups of bad starts from permanently making the next decent start overused
-	for (int32 i = 0; i < 2; i++)
-	{
-		int32 RandIndexOne = FMath::RandHelper(PlayerStarts.Num());
-		int32 RandIndexTwo = FMath::RandHelper(PlayerStarts.Num());
-		APlayerStart* SavedStart = PlayerStarts[RandIndexOne]; 
-		PlayerStarts[RandIndexOne] = PlayerStarts[RandIndexTwo];
-		PlayerStarts[RandIndexTwo] = SavedStart;
-	}
 
-	// Start by choosing a random start
-	int32 RandStart = FMath::RandHelper(PlayerStarts.Num());
+	// Randomize each time
+	int32 NumToRandomize = FMath::Clamp(PlayerStarts.Num()/4, 0, 4);
+	for (int32 i = 0; i < NumToRandomize; i++)
+	{
+		APlayerStart* Swap = PlayerStarts[i];
+		int32 RandIndex = FMath::RandHelper(PlayerStarts.Num()/2);
+		PlayerStarts[i] = PlayerStarts[RandIndex];
+		PlayerStarts[RandIndex] = Swap;
+	}
 
 	float BestRating = -20.f;
 	APlayerStart* BestStart = NULL;
-	for ( int32 i=RandStart; i<PlayerStarts.Num(); i++ )
+	int32 BestStartIndex = 0;
+	int32 AvoidedStarts = PlayerStarts.Num() / 2;
+	for ( int32 i=0; i<PlayerStarts.Num()-AvoidedStarts; i++ )
 	{
 		APlayerStart* P = PlayerStarts[i];
-
 		float NewRating = RatePlayerStart(P,Player);
 
-		if (NewRating >= 30.0f)
-		{
-			// this PlayerStart is good enough
-			return P;
-		}
 		if ( NewRating > BestRating )
 		{
 			BestRating = NewRating;
 			BestStart = P;
+			BestStartIndex = i;
+			if (NewRating >= 30.0f)
+			{
+				// this PlayerStart is good enough
+				break;
+			}
 		}
 	}
-	for ( int32 i=0; i<RandStart; i++ )
+	if ((AvoidedStarts > 0) && (BestRating < 0.f))
 	{
-		APlayerStart* P = PlayerStarts[i];
-
-		float NewRating = RatePlayerStart(P,Player);
-
-		if (NewRating >= 30.0f)
+		for (int32 i = PlayerStarts.Num() - AvoidedStarts; i<PlayerStarts.Num(); i++)
 		{
-			// this PlayerStart is good enough
-			return P;
+			APlayerStart* P = PlayerStarts[i];
+
+			float NewRating = RatePlayerStart(P, Player);
+
+			if (NewRating > BestRating)
+			{
+				BestRating = NewRating;
+				BestStart = P;
+				BestStartIndex = i;
+			}
 		}
-		if ( NewRating > BestRating )
-		{
-			BestRating = NewRating;
-			BestStart = P;
-		}
+	}
+	if (BestStart)
+	{
+		// move to back to avoid picking again
+		check(BestStart == PlayerStarts[BestStartIndex]);
+		PlayerStarts.RemoveAt(BestStartIndex);
+		PlayerStarts.Add(BestStart);
 	}
 	return (BestStart != NULL) ? BestStart : Super::ChoosePlayerStart_Implementation(Player);
 }
 
 float AUTGameMode::RatePlayerStart(APlayerStart* P, AController* Player)
 {
-	float Score = 29.0f + FMath::FRand();
+	float Score = 29.0f + 1.3f*FMath::FRand();
 
 	AActor* LastSpot = (Player != NULL && Player->StartSpot.IsValid()) ? Player->StartSpot.Get() : NULL;
 	AUTPlayerState *UTPS = Player ? Cast<AUTPlayerState>(Player->PlayerState) : NULL;
 	if (P == LastStartSpot || (LastSpot != NULL && P == LastSpot) || AvoidPlayerStart(Cast<AUTPlayerStart>(P)))
 	{
 		// avoid re-using starts
-		Score -= 15.0f;
+		return -8.0f;
 	}
 	FVector StartLoc = P->GetActorLocation() + AUTCharacter::StaticClass()->GetDefaultObject<AUTCharacter>()->BaseEyeHeight;
 	if (UTPS && UTPS->RespawnChoiceA)
@@ -3227,7 +3327,7 @@ float AUTGameMode::RatePlayerStart(APlayerStart* P, AController* Player)
 				}
 				Score += AdjustNearbyPlayerStartScore(Player, OtherController, OtherCharacter, StartLoc, P);
 			}
-			if (bHasRespawnChoices && bCheckAgainstPotentialStarts && OtherController->PlayerState && !OtherController->PlayerState->bOnlySpectator)
+			if (bHasRespawnChoices && (bCheckAgainstPotentialStarts || !OtherCharacter) && OtherController->PlayerState && !OtherController->PlayerState->bOnlySpectator)
 			{
 				// make sure no one else has this start as a pending choice
 				AUTPlayerState* OtherUTPS = Cast<AUTPlayerState>(OtherController->PlayerState);
@@ -3264,8 +3364,7 @@ float AUTGameMode::AdjustNearbyPlayerStartScore(const AController* Player, const
 	float ScoreAdjust = 0.f;
 	float NextDist = (OtherCharacter->GetActorLocation() - StartLoc).Size();
 	bool bTwoPlayerGame = (NumPlayers + NumBots == 2);
-
-	if (((NextDist < 8000.0f) || bTwoPlayerGame) && !UTGameState->OnSameTeam(Player, OtherController))
+	if (((NextDist < 5000.0f) || bTwoPlayerGame) && !UTGameState->OnSameTeam(Player, OtherController))
 	{
 		static FName NAME_RatePlayerStart = FName(TEXT("RatePlayerStart"));
 		bool bIsLastKiller = (OtherCharacter->PlayerState == Cast<AUTPlayerState>(Player->PlayerState)->LastKillerPlayerState);
@@ -3273,7 +3372,7 @@ float AUTGameMode::AdjustNearbyPlayerStartScore(const AController* Player, const
 		{
 			return 0.f;
 		}
-		if (!GetWorld()->LineTraceTestByChannel(StartLoc, OtherCharacter->GetActorLocation() + FVector(0.f, 0.f, OtherCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()), ECC_Visibility, FCollisionQueryParams(NAME_RatePlayerStart, false)))
+		if (!GetWorld()->LineTraceTestByChannel(StartLoc, OtherCharacter->GetActorLocation() + FVector(0.f, 0.f, OtherCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()), COLLISION_TRACE_WEAPONNOCHARACTER, FCollisionQueryParams(NAME_RatePlayerStart, false)))
 		{
 			// Avoid the last person that killed me
 			if (bIsLastKiller)
@@ -3282,16 +3381,6 @@ float AUTGameMode::AdjustNearbyPlayerStartScore(const AController* Player, const
 			}
 
 			ScoreAdjust -= (5.f - 0.0003f * NextDist);
-		}
-		else if (NextDist < 4000.0f)
-		{
-			// Avoid the last person that killed me
-			ScoreAdjust -= bIsLastKiller ? 5.f : 0.0005f * (5000.f - NextDist);
-
-			if (!GetWorld()->LineTraceTestByChannel(StartLoc, OtherCharacter->GetActorLocation(), ECC_Visibility, FCollisionQueryParams(NAME_RatePlayerStart, false, this)))
-			{
-				ScoreAdjust -= 2.f;
-			}
 		}
 	}
 	return ScoreAdjust;
@@ -3379,7 +3468,9 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 			}
 		}
 
-		bool bHaveHost = false;
+		int32 NeededPlayers = GameSession ? GameSession->MaxPlayers : DefaultMaxPlayers;
+		UTGameState->PlayersNeeded = FMath::Max(0, NeededPlayers - NumPlayers);
+		UTGameState->bHaveMatchHost = false;
 		bool bHostIsReady = false;
 		if (!HostIdString.IsEmpty())
 		{
@@ -3388,8 +3479,8 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 				AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
 				if (PS != NULL && !PS->bIsInactive && HostIdString.Equals(PS->UniqueId.ToString(), ESearchCase::IgnoreCase))
 				{
-					bHaveHost = true;
-					bHostIsReady = bCasterReady;
+					UTGameState->bHaveMatchHost = true;
+					bHostIsReady = bCasterReady && (!bRequireFull || (UTGameState->PlayersNeeded == 0));
 					PS->bIsMatchHost = true;
 				}
 				else if (PS)
@@ -3401,8 +3492,6 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 		StartPlayTime = (NumPlayers > 0) ? FMath::Min(StartPlayTime, GetWorld()->GetTimeSeconds()) : 10000000.f;
 		float ElapsedWaitTime = FMath::Max(0.f, GetWorld()->GetTimeSeconds() - StartPlayTime);
 
-		int32 NeededPlayers = GameSession ? GameSession->MaxPlayers : DefaultMaxPlayers;
-		UTGameState->PlayersNeeded = FMath::Max(0, NeededPlayers - NumPlayers);
 		if (!bRequireReady && !bRequireFull && !bRankedSession && (GetWorld()->GetTimeSeconds() - StartPlayTime > MaxWaitForPlayers))
 		{
 			int32 MinPlayersToStart = 1;
@@ -3411,7 +3500,7 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 		if (((GetNetMode() == NM_Standalone) || bDevServer || bHostIsReady || (UTGameState->PlayersNeeded == 0)) && (NumPlayers + NumSpectators > 0))
 		{
 			bool bReadyFulfilled = true;
-			if (bHaveHost)
+			if (UTGameState->bHaveMatchHost)
 			{
 				bReadyFulfilled = bHostIsReady;
 			}
@@ -3437,7 +3526,7 @@ bool AUTGameMode::ReadyToStartMatch_Implementation()
 			float RemainingStartDelay = StartDelay;
 			if (bReadyFulfilled)
 			{
-				RemainingStartDelay = bHaveHost ? 0 : StartDelay - (GetWorld()->GetTimeSeconds() - LastMatchNotReady);
+				RemainingStartDelay = UTGameState->bHaveMatchHost ? 0 : StartDelay - (GetWorld()->GetTimeSeconds() - LastMatchNotReady);
 				if (GetNetMode() == NM_Standalone)
 				{
 					RemainingStartDelay = 0.f;
@@ -3598,6 +3687,8 @@ void AUTGameMode::HandleMatchInOvertime()
 
 void AUTGameMode::HandlePlayerIntro()
 {
+	RemoveExtraBots();
+	CheckBotCount();
 	if (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive)
 	{
 		RemoveAllPawns();
@@ -3613,14 +3704,13 @@ void AUTGameMode::HandlePlayerIntro()
 		}
 	}
 
-
 	if (UTGameState && UTGameState->LineUpHelper)
 	{
 		UTGameState->LineUpHelper->HandleLineUp(LineUpTypes::Intro);
 	}
 
 	FTimerHandle TempHandle;
-	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::EndPlayerIntro, 7.5f*GetActorTimeDilation(), false);
+	GetWorldTimerManager().SetTimer(TempHandle, this, &AUTGameMode::EndPlayerIntro, MatchIntroTime*GetActorTimeDilation(), false);
 }
 
 void AUTGameMode::EndPlayerIntro()
@@ -3850,14 +3940,25 @@ void AUTGameMode::PostLogin( APlayerController* NewPlayer )
 		GetWorldTimerManager().ClearTimer(ServerRestartTimerHandle);
 	}
 
-	if (UTGameState && UTGameState->LineUpHelper)
+	if (UTGameState)
 	{
-		UTGameState->LineUpHelper->OnPlayerChange();
+		UTGameState->SetRemainingTime(UTGameState->GetRemainingTime());
+		if (UTGameState->LineUpHelper)
+		{
+			UTGameState->LineUpHelper->OnPlayerChange();
+		}
 	}
-
 	if (UTPC && FUTAnalytics::IsAvailable() && (GetNetMode() == NM_DedicatedServer))
 	{
 		FUTAnalytics::FireEvent_UTServerPlayerJoin(this, UTPC->UTPlayerState);
+	}
+
+	if (bForceWarmup && UTPC && PS && UTGameState && (UTGameState->GetMatchState() == MatchState::WaitingToStart))
+	{
+		PS->bIsWarmingUp = true;
+		PS->ForceNetUpdate();
+		UTPC->ClientUpdateWarmup(PS->bIsWarmingUp);
+		RestartPlayer(UTPC);
 	}
 }
 
@@ -3982,19 +4083,14 @@ void AUTGameMode::Logout(AController* Exiting)
 	if (NumPlayers == 0 && bIsQuickMatch && bUseMatchmakingSession)
 	{
 		AUTGameSession* UTGameSession = Cast<AUTGameSession>(GameSession);
-		GetWorldTimerManager().SetTimer(ServerRestartTimerHandle, UTGameSession, &AUTGameSession::CheckForPossibleRestart, 60.0f, true);
+		GetWorldTimerManager().SetTimer(ServerRestartTimerHandle, UTGameSession, &AUTGameSession::CheckForPossibleRestart, 5.0f, true);
+		UTGameSession->CheckForPossibleRestart();
 	}
 
 	if (UTGameState && UTGameState->LineUpHelper)
 	{
 		UTGameState->LineUpHelper->OnPlayerChange();
 	}
-
-	if (GetWorldSettings()->Pauser == Exiting->PlayerState)
-	{
-		ClearPause();
-	}
-
 }
 
 void AUTGameMode::ForceEndServer()
@@ -4137,7 +4233,7 @@ void AUTGameMode::GetGameURLOptions(const TArray<TSharedPtr<TAttributePropertyBa
 
 int32 AUTGameMode::AdjustedBotFillCount()
 {
-	if (GameSession && (GetNetMode() == NM_Standalone))
+	if (GameSession && ((GetNetMode() == NM_Standalone) || bIsLANGame))
 	{
 		return GameSession->MaxPlayers;
 	}
@@ -5069,12 +5165,12 @@ void AUTGameMode::CullMapVotes()
 			{
 				if ( Sorted.Num() > 0 )
 				{
-					int32 RandIdx = FMath::RandRange(0, Sorted.Num()-1);
-					UTGameState->MapVoteList.Add(Sorted[RandIdx]);
-				}
-				else
-				{
-					break;
+					int32 RandIdx = FMath::RandRange(i, Sorted.Num()-1);
+					if (Sorted.IsValidIndex(RandIdx) && UTGameState->MapVoteList.Find(Sorted[RandIdx]) == INDEX_NONE)
+					{
+						UTGameState->MapVoteList.Add(Sorted[RandIdx]);
+						Sorted.RemoveAt(RandIdx);
+					}
 				}
 			}
 		}
@@ -5082,24 +5178,20 @@ void AUTGameMode::CullMapVotes()
 		{
 			for (int32 i=0; i < 3; i++)
 			{
-				if (Sorted.IsValidIndex(i))
+				if (Sorted.Num() > 0)
 				{
-					if (Sorted[i]->VoteCount > 0)
+					if (Sorted[0]->VoteCount > 0)
 					{
-						UTGameState->MapVoteList.Add(Sorted[i]);
+						UTGameState->MapVoteList.Add(Sorted[0]);
+						Sorted.RemoveAt(0);
 					}
 					else
 					{
-						// Just randomly pick one, but cap it at 10 attempts
-
-						for (int32 j=0; j < 10; j++)
+						int32 RandIdx = FMath::RandRange(i, Sorted.Num()-1);
+						if (Sorted.IsValidIndex(RandIdx) && UTGameState->MapVoteList.Find(Sorted[RandIdx]) == INDEX_NONE)
 						{
-							int32 RandIdx = FMath::RandRange(i, Sorted.Num()-1);
-							if (Sorted.IsValidIndex(RandIdx) && UTGameState->MapVoteList.Find(Sorted[RandIdx]) == INDEX_NONE)
-							{
-								UTGameState->MapVoteList.Add(Sorted[RandIdx]);
-								break;
-							}
+							UTGameState->MapVoteList.Add(Sorted[RandIdx]);
+							Sorted.RemoveAt(RandIdx);
 						}
 
 					}
@@ -5650,5 +5742,15 @@ void AUTGameMode::HandleDefaultLineupSpawns(LineUpTypes LineUpType, TArray<AUTCh
 	{
 	
 	}
+}
+
+bool AUTGameMode::AllowTextMessage_Implementation(FString& Msg, bool bIsTeamMessage, AUTBasePlayerController* Sender)
+{
+	if (BaseMutator && !BaseMutator->AllowTextMessage(Msg, bIsTeamMessage, Sender))
+	{
+		return false;
+	}
+
+	return Super::AllowTextMessage_Implementation(Msg, bIsTeamMessage, Sender);
 }
 

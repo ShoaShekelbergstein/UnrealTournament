@@ -19,9 +19,14 @@ public:
 	/** effect attached to projectile when fuse is lit */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UParticleSystem* FuseEffect;
+
 	/** sound played periodically while fuse is lit */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	USoundBase* FuseBeepSound;
+
+	/** In flight audio (need property so can turn off. */
+	UPROPERTY()
+		UAudioComponent* FlightAudioComponent;
 
 	/** maximum amount of time before starting explosion sequence (may start earlier if it gets close to a target or runs out of bounces) */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
@@ -32,6 +37,8 @@ public:
 	/** delay on spawn before we consider nearby targets for early fuse start */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float ProximityDelay;
+
+	FTimerHandle FuseTimerHandle;
 
 	UFUNCTION(BlueprintCallable, Category = BioGrenade)
 	virtual void StartFuse();
@@ -45,6 +52,7 @@ public:
 	virtual void OnRep_Instigator() override;
 	virtual void BeginPlay() override;
 	virtual void OnStop(const FHitResult& Hit) override;
+	virtual void Tick(float DeltaSeconds) override;
 
 	UFUNCTION()
 	virtual void ProximityOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

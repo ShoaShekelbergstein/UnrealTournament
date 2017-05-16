@@ -363,7 +363,11 @@ USoundBase* UUTAnnouncer::LoadAudio(FString NewAudioPath, FString NewAudioNamePr
 	}
 	// manually check that the file exists to avoid spurious log warnings (the loading code seems to be ignoring LOAD_NoWarn | LOAD_Quiet)
 	FString PackageName = NewAudioPath + NewAudioNamePrefix + SoundName.ToString();
-	if (FPackageName::DoesPackageExist(PackageName))
+	if (GIsSavingPackage || (IsInGameThread() && IsGarbageCollecting()))
+	{
+		UE_LOG(UT, Warning, TEXT("Can't load audio %s during GC"), *PackageName);
+	}
+	else if (FPackageName::DoesPackageExist(PackageName))
 	{
 		return LoadObject<USoundBase>(NULL, *(PackageName + TEXT(".") + NewAudioNamePrefix + SoundName.ToString()), NULL, LOAD_NoWarn | LOAD_Quiet);
 	}

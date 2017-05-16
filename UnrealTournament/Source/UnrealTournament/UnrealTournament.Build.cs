@@ -31,6 +31,8 @@ public class UnrealTournament : ModuleRules
         {
             PublicLibraryPaths.Add("UnrealTournament/ThirdParty/sqlite/Windows");
             PublicAdditionalLibraries.Add("sqlite3.lib");
+
+            PublicAdditionalLibraries.Add("bcrypt.lib");
         }
 
         DynamicallyLoadedModuleNames.AddRange(

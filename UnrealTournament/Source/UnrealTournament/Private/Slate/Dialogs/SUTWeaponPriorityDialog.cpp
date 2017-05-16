@@ -79,15 +79,25 @@ void SUTWeaponPriorityDialog::InitializeList(TArray<FWeaponInfo>& AllWeapons)
 			UE_LOG(UT,Log,TEXT("IL: %s %f"),*GetNameSafe(AllWeapons[i].WeaponClass), AllWeapons[i].WeaponCustomizationInfo->WeaponAutoSwitchPriority)
 			if (WeaponList.Num() > 0)
 			{
-				// Insert Sort to find it's place.
-				for (int32 j = 0; j < WeaponList.Num(); j++)
+
+				if (WeaponCustomizationTags.Num() == 0 || WeaponCustomizationTags.Find(WeaponInfoPtr->WeaponCustomizationInfo->WeaponCustomizationTag) == INDEX_NONE)
 				{
-					if (WeaponList[j]->WeaponInfoPtr->WeaponCustomizationInfo->WeaponAutoSwitchPriority < AllWeapons[i].WeaponCustomizationInfo->WeaponAutoSwitchPriority)
+					// Found a new one.. find it's place.
+					// Insert Sort to find it's place.
+					for (int32 j = 0; j < WeaponList.Num(); j++)
 					{
-						WeaponList.Insert(FWeaponListEntry::Make(AllWeapons[i].WeaponDefaultObject, WeaponInfoPtr), j);
-						bAdd = false;
-						break;
+						if (WeaponList[j]->WeaponInfoPtr->WeaponCustomizationInfo->WeaponAutoSwitchPriority < AllWeapons[i].WeaponCustomizationInfo->WeaponAutoSwitchPriority)
+						{
+							WeaponList.Insert(FWeaponListEntry::Make(AllWeapons[i].WeaponDefaultObject, WeaponInfoPtr), j);
+							bAdd = false;
+							break;
+						}
 					}
+					WeaponCustomizationTags.Add(WeaponInfoPtr->WeaponCustomizationInfo->WeaponCustomizationTag);
+				}
+				else
+				{
+					bAdd = false;
 				}
 			}
 
@@ -258,9 +268,11 @@ void SUTWeaponPriorityDialog::OnWeaponListSelectionChanged(TSharedPtr<FWeaponLis
 
 float SUTWeaponPriorityDialog::GetPriorityFor(TWeakObjectPtr<AUTWeapon> Weapon)
 {
+
 	for (int32 i = 0; i < WeaponList.Num(); i++)
 	{
-		if (WeaponList[i]->Weapon.Get() == Weapon.Get())
+
+		if (WeaponList[i]->WeaponInfoPtr->WeaponCustomizationInfo->WeaponCustomizationTag == Weapon->WeaponCustomizationTag)
 		{
 			return 1000.0f - (1000.0f * (float(i) / float(WeaponList.Num())));
 		}

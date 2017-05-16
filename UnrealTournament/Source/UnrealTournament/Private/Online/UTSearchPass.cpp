@@ -177,10 +177,12 @@ void UUTSearchPass::RequestReservation()
 
 			if ((CurrentSearchParams.Flags & EMatchmakingFlags::NoReservation) == EMatchmakingFlags::NoReservation)
 			{
+				UE_LOG(LogOnlineGame, Verbose, TEXT("UUTSearchPass::RequestReservation() skipping reservation"));
 				SessionHelper->SkipReservation(PartyLeaderId, CurrentSearchParams.SessionName, SearchResult, CompletionDelegate);
 			}
 			else
 			{
+				UE_LOG(LogOnlineGame, Verbose, TEXT("UUTSearchPass::RequestReservation() sending reservation"));
 				SessionHelper->ReserveSession(PartyLeaderId, CurrentSearchParams.SessionName, SearchResult, CompletionDelegate);
 			}
 		}

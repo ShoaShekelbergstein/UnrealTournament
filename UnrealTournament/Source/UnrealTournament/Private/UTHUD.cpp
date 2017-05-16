@@ -121,9 +121,11 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 	SuffixNth = NSLOCTEXT("UTHUD", "NthPlaceSuffix", "th");
 
 	CachedProfileSettings = nullptr;
-	BuildText = NSLOCTEXT("UTHUD", "info", "PRE-ALPHA Build 0.1.10");
+	BuildText = NSLOCTEXT("UTHUD", "info", "PRE-ALPHA Build 0.1.11");
 	WarmupText = NSLOCTEXT("UTHUD", "warmup", "You are in WARM UP");
-	MatchHostText = NSLOCTEXT("UTHUD", "hostwarmup", "You are in WARM UP.  Press [ENTER] to start match.");
+	MatchHostText = NSLOCTEXT("UTHUD", "hostwarmup", "Press [ENTER] to start match.");
+	NeedFullText = NSLOCTEXT("UTHUD", "NeedFullText", "Waiting for match to fill.");
+	HaveHostText = NSLOCTEXT("UTHUD", "havehost", "Waiting for Host to start match.");
 	bShowVoiceDebug = false;
 	bDrawDamageNumbers = true;
 
@@ -749,7 +751,8 @@ void AUTHUD::ShowHUD()
 bool AUTHUD::ScoreboardIsUp()
 {
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	bool bPreMatchScoreBoard = (GS && !GS->HasMatchStarted() && !GS->IsMatchInCountdown()) && (!UTPlayerOwner || !UTPlayerOwner->UTPlayerState || !UTPlayerOwner->UTPlayerState->bIsWarmingUp);
+	AUTPlayerState* PS = UTPlayerOwner ? UTPlayerOwner->UTPlayerState : nullptr;
+	bool bPreMatchScoreBoard = (GS && !GS->HasMatchStarted() && !GS->IsMatchInCountdown()) && PS && !PS->bIsWarmingUp && (!PS->bOnlySpectator || !Cast<AUTCharacter>(UTPlayerOwner->GetViewTarget()));
 	bShowScoresWhileDead = bShowScoresWhileDead && GS && GS->IsMatchInProgress() && !GS->IsMatchIntermission() && UTPlayerOwner && !UTPlayerOwner->GetPawn() && !UTPlayerOwner->IsInState(NAME_Spectating);
 	return bShowScores || bPreMatchScoreBoard || bForceScores || bShowScoresWhileDead || bDisplayMatchSummary;
 }
@@ -958,10 +961,25 @@ void AUTHUD::DrawHUD()
 			if (GS && GS->GetMatchState() == MatchState::WaitingToStart)
 			{
 				float RenderScale = Canvas->ClipX / 1920.0f;
-				float XL, YL;
 				Canvas->DrawColor = FColor(255, 255, 255, 255);
-				Canvas->TextSize(LargeFont, WarmupText.ToString(), XL, YL, 1.f, 1.f);
-				Canvas->DrawText(LargeFont, ViewedPS->bIsMatchHost ? MatchHostText : WarmupText, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
+
+				float BackgroundWidth = 512.f * RenderScale;
+				float BackgroundHeight = GS->bHaveMatchHost ? 0.095f*Canvas->ClipY : 0.05f*Canvas->ClipY;
+				Canvas->DrawTile(ScoreboardAtlas, 0.5f*Canvas->ClipX - 0.5f*BackgroundWidth, (0.82f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, BackgroundWidth, BackgroundHeight, 4.0f, 2.0f, 124.0f, 128.0f);
+
+				float XL, YL;
+				Canvas->TextSize(MediumFont, WarmupText.ToString(), XL, YL, 1.f, 1.f);
+				Canvas->DrawText(MediumFont, WarmupText, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.82f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
+				if (GS->bHaveMatchHost)
+				{
+					FText WarmupMessage = UTPlayerOwner && UTPlayerOwner->UTPlayerState && UTPlayerOwner->UTPlayerState->bIsMatchHost ? MatchHostText : HaveHostText;
+					if (GS->bRequireFull && (GS->PlayersNeeded > 0))
+					{
+						WarmupMessage = NeedFullText;
+					}
+					Canvas->TextSize(MediumFont, WarmupMessage.ToString(), XL, YL, 1.f, 1.f);
+					Canvas->DrawText(MediumFont, WarmupMessage, 0.5f*Canvas->ClipX - 0.5f*XL*RenderScale, (0.86f - 0.08f*GetHUDWidgetScaleOverride())*Canvas->ClipY, RenderScale, RenderScale);
+				}
 			}
 		}
 		CachedProfileSettings = nullptr;
@@ -1197,8 +1215,8 @@ void AUTHUD::DrawDamageNumbers()
 
 	for (int32 i = 0; i < DamageNumbers.Num(); i++)
 	{
-		DamageNumbers[i].Scale = DamageNumbers[i].Scale + 1.6f * GetWorld()->DeltaTimeSeconds;
-		float MaxScale = FMath::Clamp(0.055f * float(DamageNumbers[i].DamageAmount), 1.7f, 2.4f);
+		DamageNumbers[i].Scale = DamageNumbers[i].Scale + 1.7f * GetWorld()->DeltaTimeSeconds;
+		float MaxScale = FMath::Clamp(0.06f * float(DamageNumbers[i].DamageAmount), 1.8f, 2.4f);
 		if (DamageNumbers[i].Scale > MaxScale)
 		{
 			DamageNumbers.RemoveAt(i, 1);
@@ -1206,7 +1224,7 @@ void AUTHUD::DrawDamageNumbers()
 		}
 		else
 		{
-			float Alpha = 1.f - FMath::Clamp((DamageNumbers[i].Scale-1.f)/(MaxScale - 1.f), 0.f, 1.f);
+			float Alpha = 1.f - FMath::Square(FMath::Clamp((DamageNumbers[i].Scale-1.f)/(MaxScale - 1.f), 0.f, 1.f));
 			FVector ScreenPosition = Canvas->Project(DamageNumbers[i].WorldPosition);
 			float XL, YL;
 			FString DamageString = FString::Printf(TEXT("%d"), DamageNumbers[i].DamageAmount);
@@ -2039,6 +2057,16 @@ bool AUTHUD::ProcessInputKey(FKey Key, EInputEvent EventType)
 
 void AUTHUD::ToggleComsMenu(bool bShow)
 {
+	// No comms menu when game isn't active
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (GS)
+	{
+		if (!GS->IsMatchInProgress() || GS->IsMatchIntermission())
+		{
+			bShow = false;
+		}
+	}
+
 	bShowComsMenu = bShow;
 
 	if (bShow)

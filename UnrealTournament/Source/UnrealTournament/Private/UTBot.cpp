@@ -20,6 +20,8 @@
 #include "UTLift.h"
 #include "UTFlagRunGame.h"
 #include "UTArmor.h"
+#include "UTGameState.h"
+#include "UTLineUpHelper.h"
 
 void FBotEnemyInfo::Update(EAIEnemyUpdateType UpdateType, const FVector& ViewerLoc)
 {
@@ -570,7 +572,7 @@ void AUTBot::Tick(float DeltaTime)
 		NavData = GetUTNavData(GetWorld());
 	}
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (!GS->IsMatchInProgress() || GS->IsMatchIntermission())
+	if (GS->IsMatchIntermission() || (GS->LineUpHelper && GS->LineUpHelper->bIsActive))
 	{
 		return;
 	}

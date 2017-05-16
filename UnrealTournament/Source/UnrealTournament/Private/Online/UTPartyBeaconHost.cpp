@@ -76,6 +76,83 @@ void AUTPartyBeaconHost::DumpReservations() const
 	APartyBeaconHost::DumpReservations();
 }
 
+void AUTPartyBeaconHost::RedraftTeams(const TArray<FPlayerGameData>& PlayerData)
+{
+	if (UTState)
+	{
+		const int32 NumTeams = GetNumTeams();
+		if (NumTeams > 1)
+		{
+			const int32 MaxTeamSize = GetMaxPlayersPerTeam();
+
+			// Create a list of all parties with highest player count, highest skill count first
+			TArray<FPartyReservationTotalSize> Parties;
+
+			for (int32 PartyIndex = 0; PartyIndex < UTState->Reservations.Num(); PartyIndex++)
+			{
+				int32 TotalSkill = 0;
+				for (int32 i = 0; i < UTState->Reservations[PartyIndex].PartyMembers.Num(); i++)
+				{
+					for (int PlayerIdx = 0; PlayerIdx < PlayerData.Num(); PlayerIdx++)
+					{
+						if (PlayerData[PlayerIdx].UniqueId == UTState->Reservations[PartyIndex].PartyMembers[i].UniqueId)
+						{
+							TotalSkill += PlayerData[PlayerIdx].Skill;
+						}
+					}
+				}
+
+				FPartyReservationTotalSize PartyRes(PartyIndex, UTState->Reservations[PartyIndex].PartyMembers.Num(), TotalSkill);
+				Parties.Add(PartyRes);
+			}
+			Parties.Sort([](const FPartyReservationTotalSize& A, const FPartyReservationTotalSize& B)
+			{
+				if (A.PartySize == B.PartySize)
+				{
+					return A.Skill > B.Skill;
+				}
+
+				return A.PartySize > B.PartySize;
+			});
+
+			// Create a list of teams
+			TArray<FTeamBalanceInfo> TeamsCandidates;
+			for (int32 i = 0; i < NumTeams; i++)
+			{
+				TeamsCandidates.Add(FTeamBalanceInfo(i));
+			}
+
+			for (int32 PartyIndex = 0; PartyIndex < Parties.Num(); PartyIndex++)
+			{
+				for (int32 TeamIndex = 0; TeamIndex < TeamsCandidates.Num(); TeamIndex++)
+				{
+					if (TeamsCandidates[TeamIndex].TotalPlayers + Parties[PartyIndex].PartySize <= MaxTeamSize)
+					{
+						// Update reservation with new team
+						UTState->Reservations[Parties[PartyIndex].ReservationIndex].TeamNum = TeamsCandidates[TeamIndex].TeamIndex;
+
+						// Update team info
+						TeamsCandidates[TeamIndex].TotalPlayers += Parties[PartyIndex].PartySize;
+						TeamsCandidates[TeamIndex].TotalSkill += Parties[PartyIndex].Skill;
+
+						break;
+					}
+				}
+
+				// Sort the team list again so most open slots, lowest skill first
+				TeamsCandidates.Sort([](const FTeamBalanceInfo& A, const FTeamBalanceInfo& B)
+				{
+					if (A.TotalPlayers == B.TotalPlayers)
+					{
+						return A.TotalSkill < B.TotalSkill;
+					}
+
+					return A.TotalPlayers < B.TotalPlayers;
+				});
+			}
+		}
+	}
+}
 
 EPartyReservationResult::Type AUTPartyBeaconHost::AddEmptyServerReservationRequest(const FEmptyServerReservation& ReservationData, const FPartyReservation& ReservationRequest)
 {

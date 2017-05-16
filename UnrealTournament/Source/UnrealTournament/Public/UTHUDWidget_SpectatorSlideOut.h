@@ -95,6 +95,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		float ActionHighlightTime;
 
+	/** How long after last action to highlight active players. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
+		FText TerminatedNotification;
+
+
 	UPROPERTY(EditDefaultsOnly, Category = "RenderObject")
 		FCanvasIcon UDamageHUDIcon;
 

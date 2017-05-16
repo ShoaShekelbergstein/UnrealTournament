@@ -5,7 +5,8 @@
 #include "StatNames.h"
 #include "UTMcpUtils.h"
 #include "UTDMGameMode.h"
-
+#include "Misc/Base64.h"
+#include "UTVoiceChatTokenFeature.h"
 
 AUTDMGameMode::AUTDMGameMode(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -15,10 +16,37 @@ AUTDMGameMode::AUTDMGameMode(const class FObjectInitializer& ObjectInitializer)
 	XPMultiplier = 3.0f;
 	bGameHasImpactHammer = false;
 	bPlayersStartWithArmor = false;
-	DefaultMaxPlayers = 8;
+	DefaultMaxPlayers = 6;
 	bTrackKillAssists = false;
 }
 
+void AUTDMGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+	Super::InitGame(MapName, Options, ErrorMessage);
+
+	DMVoiceChatChannel = FBase64::Encode(FGuid::NewGuid().ToString());
+}
+
+APlayerController* AUTDMGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+	APlayerController* Result = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
+	if (Result != NULL)
+	{
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(Result);
+		if (UTPC != NULL)
+		{
+			static const FName VoiceChatTokenFeatureName("VoiceChatToken");
+			if (UTPC->PlayerState && !UTPC->PlayerState->bOnlySpectator && IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
+			{
+				UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
+				UTPC->VoiceChatChannel = DMVoiceChatChannel;
+				VoiceChatToken->GenerateClientJoinToken(UTPC->VoiceChatPlayerName, UTPC->VoiceChatChannel, UTPC->VoiceChatJoinToken);
+			}
+		}
+	}
+
+	return Result;
+}
 
 void AUTDMGameMode::UpdateSkillRating()
 {

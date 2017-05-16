@@ -10,7 +10,7 @@ AUTTimedPowerup::AUTTimedPowerup(const FObjectInitializer& ObjectInitializer)
 {
 	TimeRemaining = 30.0f;
 	TriggeredTime = 15.f;
-	DroppedTickRate = 0.4f;
+	DroppedTickRate = 1.f;
 	RespawnTime = 90.0f;
 	bAlwaysDropOnDeath = true;
 	BasePickupDesireability = 2.0f;
@@ -26,6 +26,7 @@ void AUTTimedPowerup::GivenTo(AUTCharacter* NewOwner, bool bAutoActivate)
 {
 	Super::GivenTo(NewOwner, bAutoActivate);
 
+	TimeRemaining = FMath::Max(3.f, TimeRemaining);
 	ClientSetTimeRemaining(TimeRemaining);
 	NewOwner->SetWeaponOverlayEffect(OverlayEffect.IsValid() ? OverlayEffect : FOverlayEffect(OverlayMaterial), true);
 	GetWorld()->GetTimerManager().SetTimer(PlayFadingSoundHandle, this, &AUTTimedPowerup::PlayFadingSound, FMath::Max<float>(0.1f, TimeRemaining - 3.0f), false);
@@ -106,7 +107,7 @@ void AUTTimedPowerup::Destroyed()
 void AUTTimedPowerup::InitializeDroppedPickup(AUTDroppedPickup* Pickup)
 {
 	Super::InitializeDroppedPickup(Pickup);
-	Pickup->SetLifeSpan(5.f + TimeRemaining/FMath::Max(DroppedTickRate, 0.001f));
+	Pickup->SetLifeSpan(1.f + TimeRemaining/FMath::Max(DroppedTickRate, 0.001f));
 	MyPickup = Pickup;
 }
 

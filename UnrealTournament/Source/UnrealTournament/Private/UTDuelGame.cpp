@@ -18,7 +18,6 @@ AUTDuelGame::AUTDuelGame(const class FObjectInitializer& ObjectInitializer)
 {
 	HUDClass = AUTHUD_Duel::StaticClass();
 	DisplayName = NSLOCTEXT("UTGameMode", "Duel", "Duel");
-	PowerupDuration = 10.f;
 	GoalScore = 0;
 	TimeLimit = 10;
 	bForceRespawn = true;
@@ -83,11 +82,6 @@ bool AUTDuelGame::CheckRelevance_Implementation(AActor* Other)
 		}
 	}
 
-	AUTTimedPowerup* Powerup = Cast<AUTTimedPowerup>(Other);
-	if (Powerup)
-	{
-		Powerup->TimeRemaining = PowerupDuration;
-	}
 	return Super::CheckRelevance_Implementation(Other);
 }
 

@@ -18,6 +18,7 @@ AUTWeap_GrenadeLauncher::AUTWeap_GrenadeLauncher()
 	HighlightText = NSLOCTEXT("Weapon", "GrenadeHighlightText", "Hot Potato");
 	LowMeshOffset = FVector(0.f, 0.f, -3.f);
 	VeryLowMeshOffset = FVector(0.f, 0.f, -7.f);
+	bShouldPrecacheTutorialAnnouncements = false;
 }
 
 bool AUTWeap_GrenadeLauncher::BeginFiringSequence(uint8 FireModeNum, bool bClientFired)
