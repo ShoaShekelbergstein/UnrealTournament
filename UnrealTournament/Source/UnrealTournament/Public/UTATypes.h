@@ -2541,8 +2541,8 @@ public:
 		, DefaultMap(TEXT(""))
 		, MaxPlayers(0)
 		, MaxTeamCount(0)
-		, MaxPartySize(0)
 		, MaxTeamSize(0)
+		, MaxPartySize(0)
 		, DisplayTexture(TEXT(""))
 		, GameMode(TEXT(""))
 		, GameOptions(TEXT(""))
@@ -2635,7 +2635,7 @@ public:
 	FUTGameModeCountStorage(FString inGameModeClass)
 	{
 		GameModeClass = inGameModeClass;
-		PlayCount = 0;
+		PlayCount = 1;
 	}
 
 };

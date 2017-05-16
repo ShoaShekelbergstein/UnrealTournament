@@ -1433,6 +1433,9 @@ public:
 
 	virtual void FinalizeLogin();
 
+	// Used for locally tracking what type of game is played.  This is used to skip tutorial movies playing
+	void TrackGamePlayed(const FString& GameMode);
+
 protected:
 
 

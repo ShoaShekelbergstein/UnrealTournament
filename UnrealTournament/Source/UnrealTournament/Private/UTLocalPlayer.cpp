@@ -6882,10 +6882,39 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 	}
 }
 
+void UUTLocalPlayer::TrackGamePlayed(const FString& GameMode)
+{
+	// Attempt to build a full class name if needed
+	FString GameModeClassName = UGameplayStatics::ParseOption(GameMode, TEXT("Game"));
+	if ( GameModeClassName.IsEmpty() )
+	{
+		// It wasn't a full url so assume it's just a class name
+		GameModeClassName = GameMode;
+	}
+	else
+	{
+		// Resolve aliases
+		GameModeClassName = UGameMapsSettings::GetGameModeForName(GameModeClassName);
+	}
+
+	int32 FindIndex = INDEX_NONE;
+	for (int32 i=0; i < GameModeCounts.Num(); i++)
+	{
+		if (GameModeCounts[i].GameModeClass.Equals(GameModeClassName, ESearchCase::IgnoreCase))		
+		{
+			GameModeCounts[FindIndex].PlayCount++;
+			return;
+		}
+	}
+
+	// Not found, so add one.  NOTE: The constructor for FUTGameModeCountStorage will set the play count to 1 by default this way
+	GameModeCounts.Add(FUTGameModeCountStorage(GameModeClassName));
+	SaveConfig();
+}
+
+// Look to see if we have completed the tutorial for this 
 void UUTLocalPlayer::CheckLoadingMovie(const FString& GameMode)
 {
-	// Look to see if we have completed the tutorial for this 
-
 	FString GameModeClassName = UGameplayStatics::ParseOption(GameMode, TEXT("Game"));
 	if ( GameModeClassName.IsEmpty() )
 	{
@@ -6899,7 +6928,6 @@ void UUTLocalPlayer::CheckLoadingMovie(const FString& GameMode)
 	}
 
 	int32 PlayCount = 0;
-
 	int32 FindIndex = INDEX_NONE;
 	for (int32 i=0; i < GameModeCounts.Num(); i++)
 	{
@@ -6910,14 +6938,7 @@ void UUTLocalPlayer::CheckLoadingMovie(const FString& GameMode)
 		}
 	}
 
-	if (FindIndex == INDEX_NONE)
-	{
-		FindIndex = GameModeCounts.Add(FUTGameModeCountStorage(GameModeClassName));
-	}
-
-	GameModeCounts[FindIndex].PlayCount++;
-	PlayCount = GameModeCounts[FindIndex].PlayCount;
-	SaveConfig();
+	PlayCount = FindIndex != INDEX_NONE ? GameModeCounts[FindIndex].PlayCount : 0;
 
 	FString TutorialMovie = TEXT("");
 	int32 DesiredTutorial = 0x00;

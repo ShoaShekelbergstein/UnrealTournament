@@ -1229,6 +1229,27 @@ FText AUTGameState::ServerRules()
 	}
 }
 
+void AUTGameState::TrackGame()
+{
+	if (GameModeClass != nullptr)
+	{
+		const AUTGameMode* DefaultGame = Cast<AUTGameMode>(GameModeClass.GetDefaultObject());
+		if (DefaultGame != nullptr)
+		{
+			for (auto It = GetGameInstance()->GetLocalPlayerIterator(); It; ++It)
+			{
+				UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(*It);
+				if (UTLocalPlayer)
+				{
+					UTLocalPlayer->TrackGamePlayed(DefaultGame->GetClass()->GetPathName());
+					break;
+				}
+			}
+		}
+	}
+}
+
+
 void AUTGameState::ReceivedGameModeClass()
 {
 	Super::ReceivedGameModeClass();
@@ -1245,6 +1266,11 @@ void AUTGameState::ReceivedGameModeClass()
 				UTGameClass.GetDefaultObject()->PrecacheAnnouncements(UTPC->Announcer);
 			}
 		}
+	}
+
+	if (GetWorld()->GetNetMode() != NM_DedicatedServer)
+	{
+		TrackGame();	
 	}
 
 	FTimerHandle TempHandle;

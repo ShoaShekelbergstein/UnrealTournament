@@ -766,4 +766,5 @@ public:
 
 protected:
 	virtual AUTLineUpZone* CreateLineUpAtPlayerStart(LineUpTypes LineUpType, class APlayerStart* PlayerSpawn);
+	void TrackGame();
 };
