@@ -249,5 +249,38 @@ public:
 
 	/** If true, the loading movie will suppress the loading text.  Thnis is used for tutorial movies */
 	bool bSuppressLoadingText;
+
+	/**
+	 *	Call this function to acquire any title files from the MCP.
+	 **/
+	void AcquireTitleFilesFromMCP();
+
+	// Takes a given ruleset, and make sure it conforms to Epic's default rules if it's using one of the Epic rule tags.  NOTE this will
+	// utilize the DefaultEpicRuleDataJson that is pushed from the MCP if it's available, otherwise it will use the UTEpicDefaultRuleset object.
+	void InsureEpicDefaults(FUTGameRuleset* NewRuleset);
+
+	FUTGameRuleset* GetRuleset(const FString& RulesetTag);
+
+	void ProcessMCPRulesetUpdate(FString MCPRulesetJson);
+
+	/**
+	 *	Holds a list of rulesets that are available.  The list is initially seeded during initialization via the UTGameRules.json file
+	 *	and it's then updated when an MCP connection is made.
+	 **/
+	UPROPERTY(BlueprintReadOnly, category = Ruleset)
+	TArray<FUTGameRuleset> GameRulesets;
+
+	bool bReceivedTitleFiles;
+
+protected:
+
+	// Holds a list of title files that have been requested from the MCP.  If this list isn't empty then we are waiting on files
+	TArray<FString> RequestedTitleFiles;
+
+	FDelegateHandle OnReadTitleFileCompleteDelegate;
+	FDelegateHandle OnEnumerateTitleFilesCompleteDelegate;
+
+	virtual void OnReadTitleFileComplete(bool bWasSuccessful, const FString& Filename);
+	virtual void OnEnumerateTitleFilesComplete(bool bWasSuccessful);
 };
 

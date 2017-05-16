@@ -193,12 +193,6 @@ void UUTLocalPlayer::InitializeOnlineSubsystem()
 		OnFindFriendSessionCompleteDelegate = OnlineSessionInterface->AddOnFindFriendSessionCompleteDelegate_Handle(0, FOnFindFriendSessionCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnFindFriendSessionComplete));
 	}
 
-	if (OnlineTitleFileInterface.IsValid())
-	{
-		OnReadTitleFileCompleteDelegate = OnlineTitleFileInterface->AddOnReadFileCompleteDelegate_Handle(FOnReadFileCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnReadTitleFileComplete));
-		OnEnumerateTitleFilesCompleteDelegate = OnlineTitleFileInterface->AddOnEnumerateFilesCompleteDelegate_Handle(FOnEnumerateFilesCompleteDelegate::CreateUObject(this, &UUTLocalPlayer::OnEnumerateTitleFilesComplete));
-	}
-
 	IOnlineVoicePtr VoiceInt = OnlineSubsystem->GetVoiceInterface();
 	if (VoiceInt.IsValid())
 	{
@@ -228,11 +222,6 @@ void UUTLocalPlayer::CleanUpOnlineSubSystyem()
 			OnlineSessionInterface->ClearOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
 			OnlineSessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
 			OnlineSessionInterface->ClearOnFindFriendSessionCompleteDelegate_Handle(0, OnFindFriendSessionCompleteDelegate);
-		}
-		if (OnlineTitleFileInterface.IsValid())
-		{
-			OnlineTitleFileInterface->ClearOnEnumerateFilesCompleteDelegate_Handle(OnEnumerateTitleFilesCompleteDelegate);
-			OnlineTitleFileInterface->ClearOnReadFileCompleteDelegate_Handle(OnReadTitleFileCompleteDelegate);
 		}
 
 		IOnlineVoicePtr VoiceInt = OnlineSubsystem->GetVoiceInterface();
@@ -2917,7 +2906,7 @@ void UUTLocalPlayer::SetShowingFriendsPopup(bool bShowing)
 
 void UUTLocalPlayer::CancelQuickmatch()
 {
-	PendingQuickmatchType = TEXT("");
+	PendingQuickmatchType = -1;
 	bQuickmatchOnLevelChange = false;
 
 	InvalidateLastSession();
@@ -3542,127 +3531,44 @@ void UUTLocalPlayer::SetCountryFlagAndAvatar(FName NewFlag, FName NewAvatar)
 }
 
 #if !UE_SERVER
-void UUTLocalPlayer::StartQuickMatch(FString QuickMatchType)
+void UUTLocalPlayer::StartQuickMatch(int32 PlaylistId)
 {
 	bQuickmatchOnLevelChange = false;
-	PendingQuickmatchType = TEXT("");
+	PendingQuickmatchType = -1;
 
-	if (IsLoggedIn() && OnlineSessionInterface.IsValid())
+	UUTPlaylistManager* UTPlaylistManager = Cast<UUTGameInstance>(GetGameInstance())->GetPlaylistManager();
+
+	if (PlaylistId >= 0 && IsLoggedIn() && OnlineSessionInterface.IsValid() && UTPlaylistManager != nullptr)
 	{
-		// Look to see if the player has played this tutorial before.
-/*
-		FName DesiredTutorial = NAME_None;
-		if (QuickMatchType == EEpicDefaultRuleTags::Deathmatch) DesiredTutorial = ETutorialTags::TUTTAG_DM;
-		if (QuickMatchType == EEpicDefaultRuleTags::TDM) DesiredTutorial = ETutorialTags::TUTTAG_TDM;
-		if (QuickMatchType == EEpicDefaultRuleTags::FlagRun ||
-			QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAI) DesiredTutorial = ETutorialTags::TUTTAG_Flagrun;
-		if (QuickMatchType == EEpicDefaultRuleTags::CTF) DesiredTutorial = ETutorialTags::TUTTAG_CTF;
-		if (QuickMatchType == EEpicDefaultRuleTags::TEAMSHOWDOWN) DesiredTutorial = ETutorialTags::TUTTAG_Showdown;
-		if (QuickMatchType == EEpicDefaultRuleTags::DUEL) DesiredTutorial = ETutorialTags::TUTTAG_Duel;
-
-		// If there is a required Tutorial, look to see if we should play it first
-		if (DesiredTutorial != NAME_None)
+		// If this is the vs. Flag run, then popup a dialog and ask for a difficulty	
+		FUTGameRuleset* Ruleset = UTPlaylistManager->GetRuleset(PlaylistId);
+		if (Ruleset)
 		{
-			int32 DesiredTutorialMask = 0;
-			// Create a quick lookup table.
-			for (int32 i=0; i < TutorialData.Num(); i++)
+			if (Ruleset->UniqueTag == EEpicDefaultRuleTags::FlagRunVSAI)	
 			{
-				if (TutorialData[i].Tag == DesiredTutorial)
+				DifficultyLevelDialog = SNew(SUTDifficultyLevel).PlayerOwner(this).OnDialogResult(FDialogResultDelegate::CreateUObject(this, &UUTLocalPlayer::DifficultyResult));
+				if (DifficultyLevelDialog.IsValid())
 				{
-					DesiredTutorialMask = TutorialData[i].Mask;
-					break;
+					OpenDialog(DifficultyLevelDialog.ToSharedRef());
+					return;
 				}
 			}
 
-			if (!FParse::Param(FCommandLine::Get(), TEXT("skiptutcheck")))
+			if (!UTPlaylistManager->IsValidPlaylist(PlaylistId))
 			{
-				if ( !IsInAnActiveParty() && DesiredTutorialMask != 0 && !IsTutorialMaskCompleted(DesiredTutorialMask) )
+				UE_LOG(UT, Warning, TEXT("Quickmatch attempt with an invalid playlist id of %i"), PlaylistId);
+				return;
+			}
+
+			UMatchmakingContext* MatchmakingContext = Cast<UMatchmakingContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UMatchmakingContext::StaticClass()));
+			if (MatchmakingContext)
+			{
+				MatchmakingContext->StartMatchmaking(PlaylistId);
+
+				if (FUTAnalytics::IsAvailable())
 				{
-
-					for (int32 i = 0; i < TutorialData.Num(); i++)
-					{
-						if (TutorialData[i].Tag == DesiredTutorial)
-						{
-							UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
-							if (GI)
-							{
-								GI->LoadingMovieToPlay = TutorialData[i].LoadingMovie;
-								//GI->LevelLoadText = FText::FromString(TutorialData[i].LoadingText);
-								//GI->bSuppressLoadingText = true;
-							}
-						}
-					}
+					FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("QuickMatch - %s"), *Ruleset->UniqueTag));
 				}
-			}
-			// Use matchmaking for quickmatch
-			if (ServerBrowserWidget.IsValid() && ServerBrowserWidget->IsRefreshing())
-			{
-				ShowMatchmakingDialog();
-				PendingQuickmatchType = QuickMatchType;
-				GetWorld()->GetTimerManager().SetTimer(BrowerCheckHandle, this, &UUTLocalPlayer::CheckIfBrowserisDone, 1.0f, true);
-				return;
-			}
-		}
-*/
-
-		if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAI)
-		{
-			DifficultyLevelDialog = SNew(SUTDifficultyLevel).PlayerOwner(this).OnDialogResult(FDialogResultDelegate::CreateUObject(this, &UUTLocalPlayer::DifficultyResult));
-			if (DifficultyLevelDialog.IsValid())
-			{
-				OpenDialog(DifficultyLevelDialog.ToSharedRef());
-				return;
-			}
-		}
-
-
-		int32 NewPlaylistId = 0;
-		if (QuickMatchType == EEpicDefaultRuleTags::Deathmatch)
-		{
-			NewPlaylistId = 12;
-		}
-		else if (QuickMatchType == EEpicDefaultRuleTags::CTF)
-		{
-			NewPlaylistId = 11;
-		}
-		else if (QuickMatchType == EEpicDefaultRuleTags::TEAMSHOWDOWN)
-		{
-			NewPlaylistId = 13;
-		}
-		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRun)
-		{
-			NewPlaylistId = 14;
-		}
-		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIEasy)
-		{
-			NewPlaylistId = 15;
-		}
-		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAINormal)
-		{
-			NewPlaylistId = 16;
-		}
-		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIHard)
-		{
-			NewPlaylistId = 17;
-		}
-		else if (QuickMatchType == EEpicDefaultRuleTags::FlagRunVSAIHard3v5)
-		{
-			NewPlaylistId = 18;
-		}
-		else
-		{
-			UE_LOG(UT, Warning, TEXT("QuickMatch playlist not assigned for %s"), *QuickMatchType);
-			return;
-		}
-
-		UMatchmakingContext* MatchmakingContext = Cast<UMatchmakingContext>(UBlueprintContextLibrary::GetContext(GetWorld(), UMatchmakingContext::StaticClass()));
-		if (MatchmakingContext)
-		{
-			MatchmakingContext->StartMatchmaking(NewPlaylistId);
-
-			if (FUTAnalytics::IsAvailable())
-			{
-				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("QuickMatch - %s"), *QuickMatchType));
 			}
 		}
 	}
@@ -3680,20 +3586,12 @@ FText UUTLocalPlayer::PlayListIDToText(int32 PlayListId)
 	if (UTGameInstance && UTGameInstance->GetPlaylistManager())
 	{
 		FString FriendlyName;
-		UTGameInstance->GetPlaylistManager()->GetPlaylistName(PlayListId, FriendlyName);
-		return FText::FromString(TEXT("a ") + FriendlyName + TEXT(" " ));
+		FUTGameRuleset* Ruleset = UTGameInstance->GetPlaylistManager()->GetRuleset(PlayListId);
+		if (Ruleset)
+		{
+			return FText::FromString(TEXT("a ") + Ruleset->Title + TEXT(" " ));
+		}
 	}
-
-	// Fallback...
-
-	if (PlayListId == 12) return NSLOCTEXT("PlayListNames","Deathmatch","a Deathmatch ");
-	if (PlayListId == 11) return NSLOCTEXT("PlayListNames","CTF","a Capture the Flag ");
-	if (PlayListId == 13) return NSLOCTEXT("PlayListNames","TSD","a Team Showdown ");
-	if (PlayListId == 14) return NSLOCTEXT("PlayListNames","Blitz","a Blitz ");
-	if (PlayListId == 15) return NSLOCTEXT("PlayListNames","BlitzVSa","a Blitz Co-Op (Normal) ");
-	if (PlayListId == 16) return NSLOCTEXT("PlayListNames","BlitzVSb","a Blitz Co-Op (Hard) ");
-	if (PlayListId == 17) return NSLOCTEXT("PlayListNames","BlitzVSc","a Blitz Co-Op (Hard) ");
-	if (PlayListId == 18) return NSLOCTEXT("PlayListNames","BlitzVSd","a Blitz Co-Op 3v5 ");
 
 	return FText::GetEmpty();
 
@@ -3703,27 +3601,7 @@ void UUTLocalPlayer::DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16
 {
 	if (ButtonID != UTDIALOG_BUTTON_CANCEL && DifficultyLevelDialog.IsValid())
 	{
-		FString QuickMatchType = TEXT("");
-		switch (DifficultyLevelDialog->GetDifficulty())
-		{
-			case 1 : 
-				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAINormal; 
-				break;
-
-			case 2: 
-				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIHard; 
-				break;
-
-			case 3:
-				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIHard3v5;
-				break;
-
-			default: 
-				QuickMatchType = EEpicDefaultRuleTags::FlagRunVSAIEasy; 
-				break;
-
-		}
-		StartQuickMatch(QuickMatchType);
+		StartQuickMatch(DifficultyLevelDialog->GetDifficulty() == 2 ? 17 : 16);
 		DifficultyLevelDialog.Reset();
 	}
 }
@@ -4947,9 +4825,6 @@ void UUTLocalPlayer::ChallengeCompleted(FName ChallengeTag, int32 Stars)
 	}
 }
 
-
-
-
 bool UUTLocalPlayer::QuickMatchCheckFull()
 {
 #if !UE_SERVER
@@ -4975,169 +4850,11 @@ void UUTLocalPlayer::RestartQuickMatch()
 #endif
 }
 
-void UUTLocalPlayer::EnumerateTitleFiles()
-{
-	if (OnlineTitleFileInterface.IsValid())
-	{
-		if (LoginPhase != ELoginPhase::LoggedIn)
-		{
-			LoginPhase = ELoginPhase::GettingTitleUpdate;
-		}
-
-		// We queue here what title files we want to read.  Once started, this step won't be skilled until the queue is empty.
-		TitleFileQueue.Add(GetMCPStorageFilename());
-		TitleFileQueue.Add(GetOnlineSettingsFilename());
-		TitleFileQueue.Add(GetMCPAnnouncementFilename());
-		TitleFileQueue.Add(GetMCPGameRulesUpdateFilename());
-
-		OnlineTitleFileInterface->EnumerateFiles();
-	}
-	else if (LoginPhase != ELoginPhase::LoggedIn)
-	{
-		FinalizeLogin();
-	}
-}
-
-void UUTLocalPlayer::OnEnumerateTitleFilesComplete(bool bWasSuccessful)
-{
-	if (bWasSuccessful)
-	{
-		// Queue up all of the title file reads...
-		if (OnlineTitleFileInterface.IsValid())
-		{
-			for (int32 i=0; i < TitleFileQueue.Num(); i++)
-			{
-				OnlineTitleFileInterface->ReadFile(TitleFileQueue[i]);
-			}
-		}
-	}
-}
-
-void UUTLocalPlayer::OnReadTitleFileComplete(bool bWasSuccessful, const FString& Filename)
-{
-	if (Filename == GetMCPStorageFilename())
-	{
-		FString JsonString = TEXT("");
-		if (bWasSuccessful)
-		{
-
-#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
-			if (FParse::Param(FCommandLine::Get(), TEXT("localUTMCPS")))
-			{
-				FString Path = FPaths::GameContentDir() + TEXT("EpicInternal/MCP/UnrealTournmentMCPStorage.json");
-				FFileHelper::LoadFileToString(JsonString, *Path);
-			}
-#endif
-			if (JsonString.IsEmpty())
-			{
-				TArray<uint8> FileContents;
-				OnlineTitleFileInterface->GetFileContents(GetMCPStorageFilename(), FileContents);
-				FileContents.Add(0);
-				JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
-			}
-		}
-
-		if (JsonString != TEXT(""))
-		{
-			FMCPPulledData PulledData;
-			if ( FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &PulledData, 0,0) )
-			{
-				MCPPulledData = PulledData;
-				MCPPulledData.bValid = true;
-
-				UUTGameEngine* GameEngine = Cast<UUTGameEngine>(GEngine);
-				if ( GameEngine && GameEngine->GetChallengeManager().IsValid() )
-				{
-					GameEngine->GetChallengeManager()->UpdateChallengeFromMCP(MCPPulledData);
-
-					// Check to see if we have a new daily challenge.  And if we do, update the profile.
-					if (GameEngine->GetChallengeManager()->CheckDailyChallenge(CurrentProgression))
-					{
-						SaveProfileSettings();
-					}
-				}
-			}
-		}
-
-		UpdateCheck();
-	}
-	else if (Filename == GetOnlineSettingsFilename())
-	{
-		ActiveRankedPlaylists.Empty();
-
-		FString JsonString = TEXT("");
-		if (bWasSuccessful)
-		{
-			TArray<uint8> FileContents;
-			OnlineTitleFileInterface->GetFileContents(GetOnlineSettingsFilename(), FileContents);
-			FileContents.Add(0);
-			JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
-
-			if (JsonString != TEXT(""))
-			{
-				FUTOnlineSettings UTOnlineSettings;
-				if (FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &UTOnlineSettings, 0, 0))
-				{
-					ActiveRankedPlaylists = UTOnlineSettings.ActiveRankedPlaylists;
-
-					RankedEloRange = UTOnlineSettings.RankedEloRange;
-					RankedMinEloRangeBeforeHosting = UTOnlineSettings.RankedMinEloRangeBeforeHosting;
-					RankedMinEloSearchStep = UTOnlineSettings.RankedMinEloSearchStep;
-					QMEloRange = UTOnlineSettings.QMEloRange;
-					QMMinEloRangeBeforeHosting = UTOnlineSettings.QMMinEloRangeBeforeHosting;
-					QMMinEloSearchStep = UTOnlineSettings.QMMinEloSearchStep;
-				}
-			}
-		}
-
-		OnRankedPlaylistsChanged.Broadcast();
-	}
-	else if (Filename == GetMCPAnnouncementFilename())
-	{
-		if (bWasSuccessful)
-		{
-			FString JsonString = TEXT("");
-			TArray<uint8> FileContents;
-			OnlineTitleFileInterface->GetFileContents(GetMCPAnnouncementFilename(), FileContents);
-			FileContents.Add(0);
-			JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
-
-			if (JsonString != TEXT(""))
-			{
-				FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &MCPAnnouncements, 0, 0);
-			}
-		}
-	}
-
-	else if (Filename == GetMCPGameRulesUpdateFilename())
-	{
-		if (bWasSuccessful)
-		{
-			FString JsonString = TEXT("");
-			TArray<uint8> FileContents;
-			OnlineTitleFileInterface->GetFileContents(GetMCPGameRulesUpdateFilename(), FileContents);
-			FileContents.Add(0);
-			JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
-
-			
-			UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
-			if (UTGameEngine)
-			{
-				UTGameEngine->ProcessMCPRulesetUpdate(JsonString);
-			}
-		}
-	}
-
-	int32 Index = TitleFileQueue.Find(Filename);
-	if (Index != INDEX_NONE) TitleFileQueue.RemoveAt(Index);
-	if (TitleFileQueue.Num() == 0 && LoginPhase != ELoginPhase::LoggedIn)
-	{
-		LoginProcessComplete();
-	}
-}
 
 bool UUTLocalPlayer::IsRankedMatchmakingEnabled(int32 PlaylistId)
 {
+	return true;
+
 	int32 MatchesPlayed = 0;
 	if (PlayerController && PlayerController->PlayerState)
 	{
@@ -6153,7 +5870,7 @@ void UUTLocalPlayer::LoginProcessComplete()
 void UUTLocalPlayer::FinalizeLogin()
 {
 	LoginPhase = ELoginPhase::LoggedIn;
-	if (bLaunchTutorialOnLogin) LaunchTutorial(ETutorialTags::TUTTAG_NewPlayerLaunchTutorial, TEXT(""));
+	if (bLaunchTutorialOnLogin) LaunchTutorial(ETutorialTags::TUTTAG_DM);
 }
 
 void UUTLocalPlayer::QoSComplete()
@@ -6302,7 +6019,18 @@ void UUTLocalPlayer::SocialInitialized()
 #endif
 
 	PushChallengeStarsToMCP();
-	EnumerateTitleFiles();
+
+	UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(GetGameInstance());
+	if (UTGameInstance)
+	{
+		if (LoginPhase != ELoginPhase::LoggedIn)
+		{
+			LoginPhase = ELoginPhase::GettingTitleUpdate;
+		}
+
+		// Grab the title files from the MCP
+		UTGameInstance->AcquireTitleFilesFromMCP();
+	}
 }
 
 void UUTLocalPlayer::PushChallengeStarsToMCP()
@@ -6438,14 +6166,9 @@ FText UUTLocalPlayer::GetMenuCommandTooltipText(FName MenuCommand) const
 	return FText::GetEmpty();
 }
 
-void UUTLocalPlayer::LaunchTutorial(FName TutorialName, const FString& DesiredQuickmatchType)
+void UUTLocalPlayer::LaunchTutorial(FName TutorialName)
 {
 	LastTutorial = TutorialName;
-	if (!DesiredQuickmatchType.IsEmpty())
-	{
-		PendingQuickmatchType = DesiredQuickmatchType;
-		bQuickmatchOnLevelChange = true;
-	}
 
 	if (TutorialName == ETutorialTags::TUTTAG_Progress)
 	{
@@ -6514,7 +6237,7 @@ void UUTLocalPlayer::NextTutorial()
 			int32 NextTutorialIndex = (i + 1) % TutorialData.Num();
 			if (TutorialData.IsValidIndex(NextTutorialIndex))
 			{
-				LaunchTutorial(TutorialData[NextTutorialIndex].Tag, TEXT(""));
+				LaunchTutorial(TutorialData[NextTutorialIndex].Tag);
 				break;
 			}
 		}
@@ -6530,7 +6253,7 @@ void UUTLocalPlayer::PrevTutorial()
 			int32 PrevTutorialIndex = (i - 1) % TutorialData.Num();
 			if (TutorialData.IsValidIndex(PrevTutorialIndex))
 			{
-				LaunchTutorial(TutorialData[PrevTutorialIndex].Tag, TEXT(""));
+				LaunchTutorial(TutorialData[PrevTutorialIndex].Tag);
 				break;
 			}
 		}
@@ -7020,7 +6743,7 @@ void UUTLocalPlayer::UpdateCheck()
 {
 #if !UE_SERVER
 
-	uint32 MyVersion = FNetworkVersion::GetNetworkCompatibleChangelist();
+	uint32 MyVersion = FNetworkVersion::GetLocalNetworkVersion();
 
 	if ((uint32)MCPPulledData.CurrentVersionNumber > MyVersion )
 	{
@@ -7068,7 +6791,7 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 	{
 		if (Ruleset->bCustomRuleset)
 		{
-			FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("MainMenu - Custom Game - %s"),*Ruleset->GameMode));
+			FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("MainMenu - Custom Game - %s"),*Ruleset->Data.GameMode));
 		}
 
 	}
@@ -7079,11 +6802,11 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 		{
 			if (Ruleset->bCustomRuleset)
 			{
-				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("LanGame - Custom Game - %s"),*Ruleset->GameMode));
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("LanGame - Custom Game - %s"),*Ruleset->Data.GameMode));
 			}
 			else
 			{
-				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("LanGame - Predefined Game Type - %s"),*Ruleset->GameMode));
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("LanGame - Predefined Game Type - %s"),*Ruleset->Data.GameMode));
 			}
 		}
 
@@ -7140,17 +6863,17 @@ void UUTLocalPlayer::CreateNewMatch(ECreateInstanceTypes::Type InstanceType, AUT
 	}
 	else if (InstanceType == ECreateInstanceTypes::Standalone)
 	{
-		CheckLoadingMovie(Ruleset->GameMode);
+		CheckLoadingMovie(Ruleset->Data.GameMode);
 
 		if (FUTAnalytics::IsAvailable())
 		{
 			if (Ruleset->bCustomRuleset)
 			{
-				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("MainMenu - Custom Game Type - %s"),*Ruleset->GameMode));
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("MainMenu - Custom Game Type - %s"),*Ruleset->Data.GameMode));
 			}
 			else
 			{
-				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("MainMenu - Predefined Game Type - %s"),*Ruleset->GameMode));
+				FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerController), FString::Printf(TEXT("MainMenu - Predefined Game Type - %s"),*Ruleset->Data.GameMode));
 			}
 		}
 
@@ -7348,6 +7071,85 @@ void UUTLocalPlayer::CenterMouseCursor()
 			UTViewportClient->GetViewportSize(ViewportSize);
 			ViewportSize *= 0.5f;
 			Viewport->SetMouse(ViewportSize.X, ViewportSize.Y);
+		}
+	}
+}
+
+void UUTLocalPlayer::ProcessTitleFile(const FString& Filename, const TArray<uint8> FileContents)
+{
+	if (Filename == GetMCPStorageFilename())
+	{
+		FString JsonString = TEXT("");
+
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+		if (FParse::Param(FCommandLine::Get(), TEXT("localUTMCPS")))
+		{
+			FString Path = FPaths::GameContentDir() + TEXT("EpicInternal/MCP/UnrealTournmentMCPStorage.json");
+			FFileHelper::LoadFileToString(JsonString, *Path);
+		}
+#endif
+		if (JsonString.IsEmpty())
+		{
+			JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
+		}
+
+		if (JsonString != TEXT(""))
+		{
+			FMCPPulledData PulledData;
+			if ( FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &PulledData, 0,0) )
+			{
+				MCPPulledData = PulledData;
+				MCPPulledData.bValid = true;
+
+				UUTGameEngine* GameEngine = Cast<UUTGameEngine>(GEngine);
+				if ( GameEngine && GameEngine->GetChallengeManager().IsValid() )
+				{
+					GameEngine->GetChallengeManager()->UpdateChallengeFromMCP(MCPPulledData);
+
+					// Check to see if we have a new daily challenge.  And if we do, update the profile.
+					if (GameEngine->GetChallengeManager()->CheckDailyChallenge(CurrentProgression))
+					{
+						SaveProfileSettings();
+					}
+				}
+			}
+		}
+
+		UpdateCheck();
+	}
+	else if (Filename == GetOnlineSettingsFilename())
+	{
+		ActiveRankedPlaylists.Empty();
+
+		FString JsonString = TEXT("");
+		JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
+
+		if (JsonString != TEXT(""))
+		{
+			FUTOnlineSettings UTOnlineSettings;
+			if (FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &UTOnlineSettings, 0, 0))
+			{
+				ActiveRankedPlaylists = UTOnlineSettings.ActiveRankedPlaylists;
+
+				RankedEloRange = UTOnlineSettings.RankedEloRange;
+				RankedMinEloRangeBeforeHosting = UTOnlineSettings.RankedMinEloRangeBeforeHosting;
+				RankedMinEloSearchStep = UTOnlineSettings.RankedMinEloSearchStep;
+				QMEloRange = UTOnlineSettings.QMEloRange;
+				QMMinEloRangeBeforeHosting = UTOnlineSettings.QMMinEloRangeBeforeHosting;
+				QMMinEloSearchStep = UTOnlineSettings.QMMinEloSearchStep;
+			}
+		}
+
+		OnRankedPlaylistsChanged.Broadcast();
+	}
+	else if (Filename == GetMCPAnnouncementFilename())
+	{
+		FString JsonString = TEXT("");
+		JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
+
+		if (JsonString != TEXT(""))
+		{
+			FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &MCPAnnouncements, 0, 0);
 		}
 	}
 }

@@ -2,50 +2,35 @@
 
 #pragma once
 
+#include "UTATypes.h"
 #include "UTPlaylistManager.generated.h"
 
+
 USTRUCT()
-struct FPlaylistItem
+struct UNREALTOURNAMENT_API FPlaylistItemStorage
 {
 	GENERATED_USTRUCT_BODY()
+public:
+	
+	UPROPERTY()
+	TArray<FPlaylistItem> NewItems;
 
-	UPROPERTY()
-	FString FriendlyName;
-	UPROPERTY()
-	int32 PlaylistId;
-	UPROPERTY()
-	bool bRanked;
-	UPROPERTY()
-	bool bSkipEloChecks;
-	UPROPERTY()
-	int32 MaxTeamCount;
-	UPROPERTY()
-	int32 MaxTeamSize;
-	UPROPERTY()
-	int32 MaxPartySize;
-	UPROPERTY()
-	FString GameMode;
-	UPROPERTY()
-	FString ExtraCommandline;
-	UPROPERTY()
-	FString TeamEloRating;
-	UPROPERTY()
-	TArray<FString> MapNames;
-	UPROPERTY()
-	FString SlateBadgeName;
-	UPROPERTY()
-	int32 RequiredTutorialMask;
+	FPlaylistItemStorage()
+	{
+	}
 };
+
 
 UCLASS(config = Game, notplaceable)
 class UNREALTOURNAMENT_API UUTPlaylistManager : public UObject
 {
 	GENERATED_BODY()
 
-		UPROPERTY(Config)
-		TArray<FPlaylistItem> Playlist;
+	TArray<FPlaylistItem> Playlist;
 
 public:
+	FUTGameRuleset* GetRuleset(int32 PlaylistId);
+
 	/**
 	 * Get the largest team count and team size for any zoneids on the specified playlist
 	 *
@@ -60,20 +45,27 @@ public:
 
 	bool GetTeamEloRatingForPlaylist(int32 PlaylistId, FString& TeamEloRating);
 
-	void UpdatePlaylistFromMCP(int32 PlaylistId, FString InExtraCommandline, TArray<FString>& InMapNames, bool bSkipEloChecks);
+	void UpdatePlaylistFromMCP(const FPlaylistItemStorage& MCPPlaylist);
 
 	int32 GetNumPlaylists() { return Playlist.Num(); }
 
 	bool GetPlaylistId(int32 PlaylistIndex, int32& PlaylistId);
 
-	bool GetPlaylistName(int32 PlaylistId, FString& OutPlaylistName);
-
 	FName GetPlaylistSlateBadge(int32 PlaylistId);
-
-	int32 GetPlaylistRequireTutorialMask(int32 PlaylistId);
 
 	bool GetGameModeForPlaylist(int32 PlaylistId, FString& GameMode);
 
+	int32 GetBotDifficulty(int32 PlaylistId);
+	bool AreBotsAllowed(int32 PlaylistId);
+
 	bool IsPlaylistRanked(int32 PlaylistId);
 	bool ShouldPlaylistSkipElo(int32 PlaylistId);
+
+	int32 HowManyRanked();
+	int32 HowManyQuickPlay();
+
+	bool IsValidPlaylist(int32 PlaylistId);
+
+	void GetPlaylist(bool bRanked, TArray<FPlaylistItem*>& outList);
+
 };

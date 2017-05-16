@@ -2817,20 +2817,13 @@ bool AUTGameMode::PrepareMapVote()
 	{
 		// Get a pointer to the active ruleset.
 
-		UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
-		if (UTGameEngine)
+		UUTGameInstance* UTGameInstance= Cast<UUTGameInstance>(GetWorld()->GetGameInstance());
+		if (UTGameInstance)
 		{
-			FUTGameRuleset* ActiveRuleset = UTGameEngine->GetRuleset(ActiveRuleTag);
+			FUTGameRuleset* ActiveRuleset = UTGameInstance->GetRuleset(ActiveRuleTag);
 			if (ActiveRuleset)
 			{
-				if (bIsQuickMatch)
-				{
-					ActiveRuleset->GetQuickMatchMapList(MapList);
-				}
-				else
-				{
-					ActiveRuleset->GetCompleteMapList(MapList);
-				}
+				ActiveRuleset->GetCompleteMapList(MapList);
 
 				// Now, ensure full names
 				for (FString& Map : MapList)

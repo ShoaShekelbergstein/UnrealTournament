@@ -463,8 +463,6 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 	FString BuildVersion = FString::FromInt(FNetworkVersion::GetLocalNetworkVersion());
 
 	TSharedPtr<SOverlay> Final;
-	TSharedPtr<SHorizontalBox> QuickPlayBox;
-
 	SAssignNew(Final, SOverlay)
 
 		// Announcement box
@@ -606,7 +604,29 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 				[
 					SNew(SBox).WidthOverride(800).HeightOverride(270)
 					[
-						SAssignNew(QuickPlayBox, SHorizontalBox)
+						SNew(SOverlay)
+						+SOverlay::Slot()
+						[
+							SAssignNew(QuickPlayBox, SHorizontalBox)
+							.Visibility(this, &SUTHomePanel::QuickplayVis,0)
+						]
+						+SOverlay::Slot()
+						[
+							SAssignNew(NoQuickPlayBox, SVerticalBox)
+							.Visibility(this, &SUTHomePanel::QuickplayVis,1)
+							+SVerticalBox::Slot().AutoHeight()
+							[
+								SNew(STextBlock)
+								.Text(FText::FromString(TEXT("QUICK PLAY")))
+								.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
+							]
+							+SVerticalBox::Slot().AutoHeight()
+							[
+								SNew(STextBlock)
+								.Text(this, &SUTHomePanel::GetQuickPlayUnavailableText)
+								.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Tween")
+							]
+						]
 					]
 				]
 			]
@@ -643,15 +663,46 @@ TSharedRef<SWidget> SUTHomePanel::BuildHomePanel()
 			]
 		];
 
-
-	BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.TeamShowdownBadge"), NSLOCTEXT("SUTHomePanel", "QP_FlagRunVSAI", "Blitz Co-Op"), EMenuCommand::MC_QuickPlayShowdown);
-	BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.CTFBadge"), NSLOCTEXT("SUTHomePanel", "QP_FlagRun", "Blitz"), EMenuCommand::MC_QuickPlayFlagrun, 25.0f);
-	BuildQuickplayButton(QuickPlayBox, TEXT("UT.HomePanel.DMBadge"), NSLOCTEXT("SUTHomePanel","QP_DM","Deathmatch"), EMenuCommand::MC_QuickPlayDM);
+	BuildQuickPlayPanel();
 
 	return Final.ToSharedRef();
 }
 
-void SUTHomePanel::BuildQuickplayButton(TSharedPtr<SHorizontalBox> QuickPlayBox, FName BackgroundTexture, FText Caption, FName QuickMatchType, float Padding)
+FText SUTHomePanel::GetQuickPlayUnavailableText() const
+{
+	if (PlayerOwner->IsLoggedIn())
+	{
+		return NSLOCTEXT("SUTHomePanel","QPNotAvailableLoggedIn","The quick play service is currently unavailable.");
+	}
+	else
+	{
+		return NSLOCTEXT("SUTHomePanel","QPNotAvailableNotLoggedIn","Not logged in!  Quick play is disabled.");
+	}
+
+}
+
+EVisibility SUTHomePanel::QuickplayVis(int32 Index) const
+{
+	EVisibility Result = EVisibility::Collapsed;
+	UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(PlayerOwner->GetGameInstance());
+	if (UTGameInstance && UTGameInstance->GetPlaylistManager())
+	{
+		int32 NoQuickPlays = UTGameInstance->GetPlaylistManager()->HowManyQuickPlay();
+		if (!PlayerOwner->IsLoggedIn()) NoQuickPlays = 0;
+		if (Index == 0)
+		{
+			Result = NoQuickPlays > 0 ? EVisibility::Visible : EVisibility::Collapsed;
+		}	
+		else
+		{
+			Result = NoQuickPlays == 0 ? EVisibility::Visible : EVisibility::Collapsed;
+		}
+	}
+
+	return Result;
+}
+
+void SUTHomePanel::BuildQuickplayButton(FName BackgroundTexture, FText Caption, int32 PlaylistId, float Padding)
 {
 	QuickPlayBox->AddSlot()
 		.Padding(Padding,0.0,Padding,0.0)
@@ -662,8 +713,7 @@ void SUTHomePanel::BuildQuickplayButton(TSharedPtr<SHorizontalBox> QuickPlayBox,
 				SNew(SUTButton)
 				.ButtonStyle(SUTStyle::Get(), "UT.HomePanel.Button")
 				.bSpringButton(true)
-				.OnClicked(this, &SUTHomePanel::QuickPlayClick, QuickMatchType)
-				.ToolTipText( TAttribute<FText>::Create(TAttribute<FText>::FGetter::CreateUObject(PlayerOwner.Get(), &UUTLocalPlayer::GetMenuCommandTooltipText, QuickMatchType) ) )
+				.OnClicked(this, &SUTHomePanel::QuickPlayClick, PlaylistId)
 				.ContentPadding(FMargin(2.0f, 2.0f, 2.0f, 2.0f))
 				[
 					SNew(SOverlay)
@@ -770,14 +820,12 @@ TSharedRef<SBox> SUTHomePanel::BuildHomePanelButton(FName ButtonTag, FName Backg
 
 
 
-FReply SUTHomePanel::QuickPlayClick(FName QuickMatchType)
+FReply SUTHomePanel::QuickPlayClick(int32 PlaylistId)
 {
 	TSharedPtr<SUTMainMenu> MainMenu = StaticCastSharedPtr<SUTMainMenu>(GetParentWindow());
 	if (MainMenu.IsValid())
 	{
-		if (QuickMatchType == EMenuCommand::MC_QuickPlayDM) MainMenu->QuickPlay(EEpicDefaultRuleTags::Deathmatch);
-		else if (QuickMatchType == EMenuCommand::MC_QuickPlayFlagrun) MainMenu->QuickPlay(EEpicDefaultRuleTags::FlagRun);
-		else if (QuickMatchType == EMenuCommand::MC_QuickPlayShowdown) MainMenu->QuickPlay(EEpicDefaultRuleTags::FlagRunVSAI);
+		MainMenu->QuickPlay(PlaylistId);
 	}
 
 	return FReply::Handled();
@@ -901,95 +949,99 @@ TSharedRef<SWidget> SUTHomePanel::BuildRankedPlaylist()
 			]
 		];
 			
+		TArray<FPlaylistItem*> RankedPlaylist;
+		UTGameInstance->GetPlaylistManager()->GetPlaylist(true, RankedPlaylist);
+
 		int32 ButtonCount = 0;
-		int32 NumPlaylists = UTGameInstance->GetPlaylistManager()->GetNumPlaylists();
-
-		for (int32 i = 0; i < NumPlaylists; i++)
+		for (int32 i = 0; i < RankedPlaylist.Num(); i++)
 		{
-			FString PlaylistName;
-			int32 MaxTeamCount, MaxTeamSize, MaxPartySize, PlaylistId;
+			int32 PlaylistId = RankedPlaylist[i]->PlaylistId;
+			FUTGameRuleset* Ruleset = UTGameInstance->GetPlaylistManager()->GetRuleset(PlaylistId);
+			if (Ruleset == nullptr || !PlayerOwner->IsRankedMatchmakingEnabled(PlaylistId)) continue;
 
-			if (UTGameInstance->GetPlaylistManager()->GetPlaylistId(i, PlaylistId) &&
-				UTGameInstance->GetPlaylistManager()->GetPlaylistName(PlaylistId, PlaylistName) &&
-				UTGameInstance->GetPlaylistManager()->GetMaxTeamInfoForPlaylist(PlaylistId, MaxTeamCount, MaxTeamSize, MaxPartySize))
-			{
-				FString PlaylistPlayerCount = FString::Printf(TEXT("%dv%d"), MaxTeamSize, MaxTeamSize);
-				FName SlateBadgeName = UTGameInstance->GetPlaylistManager()->GetPlaylistSlateBadge(PlaylistId);
-				if (SlateBadgeName == NAME_None) SlateBadgeName = FName(TEXT("UT.HomePanel.DMBadge"));
+			int32 MaxTeamCount = 0;
+			int32 MaxTeamSize = 0;
+			int32 MaxPartySize = 0;
 
-				ButtonCount++;
-				RankedBox->AddSlot()
-				.AutoWidth()
+			UTGameInstance->GetPlaylistManager()->GetMaxTeamInfoForPlaylist(PlaylistId, MaxTeamCount, MaxTeamSize,MaxPartySize);
 
-				.Padding(FMargin(2.0f, 0.0f))
+			FString PlaylistPlayerCount = FString::Printf(TEXT("%dv%d"), MaxTeamSize, MaxTeamSize);
+			FName SlateBadgeName = FName(*RankedPlaylist[i]->SlateBadgeName);
+			if (SlateBadgeName == NAME_None) SlateBadgeName = FName(TEXT("UT.HomePanel.DMBadge"));
+
+			ButtonCount++;
+			RankedBox->AddSlot()
+			.AutoWidth()
+
+			.Padding(FMargin(2.0f, 0.0f))
+			[
+				SNew(SUTButton)
+				.ButtonStyle(SUTStyle::Get(), "UT.HomePanel.Button")
+				.bSpringButton(true)
+				.OnClicked(FOnClicked::CreateSP(this, &SUTHomePanel::OnStartRankedPlaylist, PlaylistId))
+				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTHomePanel","Ranked","Play a ranked match and earn XP.")))
+				.Visibility(this, &SUTHomePanel::RankedButtonVis, PlaylistId)
 				[
-					SNew(SUTButton)
-					.ButtonStyle(SUTStyle::Get(), "UT.HomePanel.Button")
-					.bSpringButton(true)
-					.OnClicked(FOnClicked::CreateSP(this, &SUTHomePanel::OnStartRankedPlaylist, PlaylistId))
-					.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTHomePanel","Ranked","Play a ranked match and earn XP.")))
-					.Visibility(this, &SUTHomePanel::RankedButtonVis, PlaylistId)
-					[
 
-						SNew(SOverlay)
-						+ SOverlay::Slot()
+					SNew(SOverlay)
+					+ SOverlay::Slot()
+					[
+						SNew(SBox)
+						.WidthOverride(128)
+						.HeightOverride(128)
 						[
-							SNew(SBox)
-							.WidthOverride(128)
-							.HeightOverride(128)
-							[
-								SNew(SImage)
-								.Image(SUTStyle::Get().GetBrush(SlateBadgeName))
-							]
+							SNew(SImage)
+							.Image(SUTStyle::Get().GetBrush(SlateBadgeName))
 						]
-						+ SOverlay::Slot()
+					]
+					+ SOverlay::Slot()
+					[
+						SNew(SBox)
+						.WidthOverride(128)
+						.HeightOverride(128)
 						[
-							SNew(SBox)
-							.WidthOverride(128)
-							.HeightOverride(128)
+							SNew(SVerticalBox)
+							+SVerticalBox::Slot()
+							.HAlign(HAlign_Center)
+							.VAlign(VAlign_Top)
+							.FillHeight(1.0f)
 							[
-								SNew(SVerticalBox)
-								+SVerticalBox::Slot()
-								.HAlign(HAlign_Center)
-								.VAlign(VAlign_Top)
-								.FillHeight(1.0f)
+								SNew(STextBlock)
+								.Text(FText::FromString(Ruleset->Title))
+								.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small.Bold")
+							]
+							+SVerticalBox::Slot()
+							.HAlign(HAlign_Fill)
+							.VAlign(VAlign_Center)
+							.AutoHeight()
+							[
+								SNew(SBorder)
+								.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Shaded"))
 								[
-									SNew(STextBlock)
-									.Text(FText::FromString(PlaylistName))
-									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small.Bold")
-								]
-								+SVerticalBox::Slot()
-								.HAlign(HAlign_Fill)
-								.VAlign(VAlign_Center)
-								.AutoHeight()
-								[
-									SNew(SBorder)
-									.BorderImage(SUTStyle::Get().GetBrush("UT.HeaderBackground.Shaded"))
+									SNew(SVerticalBox)
+									+SVerticalBox::Slot()
+									.AutoHeight()
+									.HAlign(HAlign_Center)
+									.VAlign(VAlign_Center)
+									.Padding(0.0f, 0.0f, 0.0f, 2.0f)
 									[
-										SNew(SVerticalBox)
-										+SVerticalBox::Slot()
-										.AutoHeight()
-										.HAlign(HAlign_Center)
-										.VAlign(VAlign_Center)
-										.Padding(0.0f, 0.0f, 0.0f, 2.0f)
-										[
-											SNew(STextBlock)
-											.Text(FText::FromString(PlaylistPlayerCount))
-											.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
-										]
+										SNew(STextBlock)
+										.Text(FText::FromString(PlaylistPlayerCount))
+										.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Medium.Bold")
 									]
 								]
 							]
 						]
 					]
-				];					
-			}
+				]
+			];					
 		}
 
 		if (ButtonCount > 0)
 		{
 			return FinalBox.ToSharedRef();
 		}
+
 		FinalBox->ClearChildren();
 	}
 	return SNullWidget::NullWidget;
@@ -1058,5 +1110,26 @@ EVisibility SUTHomePanel::RankedButtonVis(int32 PlaylistId) const
 {
 	return ( PlayerOwner->IsRankedMatchmakingEnabled(PlaylistId) ) ? EVisibility::Visible : EVisibility::Collapsed;
 }
+
+void SUTHomePanel::BuildQuickPlayPanel()
+{
+	UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(PlayerOwner->GetGameInstance());
+	if (UTGameInstance && UTGameInstance->GetPlaylistManager())
+	{
+		TArray<FPlaylistItem*> QuickPlayPlaylist;
+		UTGameInstance->GetPlaylistManager()->GetPlaylist(false, QuickPlayPlaylist);
+		for (int32 i=0; i < QuickPlayPlaylist.Num(); i++)
+		{
+			FPlaylistItem* Item = QuickPlayPlaylist[i];
+			if (!Item->bHideInUI)
+			{
+				FUTGameRuleset* Ruleset = UTGameInstance->GetPlaylistManager()->GetRuleset(Item->PlaylistId);
+				float Padding = (i & 0x01) == 0x01 ? 25.0f : 0.0f;
+				BuildQuickplayButton(FName(*Item->SlateBadgeName), FText::FromString(Ruleset->Title), Item->PlaylistId, Padding);
+			}
+		}
+	}				
+}
+
 
 #endif

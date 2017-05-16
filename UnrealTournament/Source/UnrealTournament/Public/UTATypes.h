@@ -1227,6 +1227,9 @@ namespace EQuickMatchResults
 	const FName Join = FName(TEXT("Join"));
 }
 
+/**
+ *	NOTE: For each Epic Default Ruletags, there has to be an associated rule setup in UTEpicDefaultRulesets
+ **/
 namespace EEpicDefaultRuleTags
 {
 	const FString Deathmatch = TEXT("DEATHMATCH");
@@ -1243,11 +1246,20 @@ namespace EEpicDefaultRuleTags
 	const FString iCTFT = TEXT("iCTF+T");
 	const FString FlagRun = TEXT("FlagRun");
 	const FString FlagRunVSAI = TEXT("FlagRunVSAI");
-	const FString FlagRunVSAIEasy = TEXT("FlagRunVSAIEasy");
-	const FString FlagRunVSAINormal = TEXT("FlagRunVSAINormal");
-	const FString FlagRunVSAIHard = TEXT("FlagRunVSAIHard");
-	const FString FlagRunVSAIHard3v5 = TEXT("FlagRunVSAIHard3v5");
 	const FString Siege = TEXT("Siege");
+
+	// Quick play Rules
+
+	const FString QuickPlay_Deathmatch = TEXT("QuickPlay_DEATHMATCH");
+	const FString QuickPlay_FlagRun = TEXT("QuickPlay_FlagRun");
+	const FString QuickPlay_FlagRunVSAINormal = TEXT("QuickPlay_FlagRunVSAINormal");
+	const FString QuickPlay_FlagRunVSAIHard = TEXT("QuickPlay_FlagRunVSAIHard");
+
+	// Ranked Rules
+	const FString Ranked_DUEL = TEXT("Ranked_DUEL");
+	const FString Ranked_TEAMSHOWDOWN = TEXT("Ranked_TEAMSHOWDOWN");
+	const FString Ranked_CTF = TEXT("Ranked_CTF");
+	const FString Ranked_FlagRun = TEXT("Ranked_FlagRun");
 }
 
 namespace EPlayerListContentCommand
@@ -2468,15 +2480,24 @@ public:
 	UPROPERTY()
 	FString DefaultMap;
 
-	UPROPERTY()
-	TArray<FString> QuickPlayMaps;
-
 	UPROPERTY(Config)
 	TArray<FString> CustomMapList;
 
 	// The number of players allowed in this match.  NOTE: it must be duplicated in the GameOptions string.
 	UPROPERTY()
 	int32 MaxPlayers;
+
+	// The Max # of teams available with this ruleset
+	UPROPERTY()
+	int32 MaxTeamCount;
+
+	// The # of players per team max
+	UPROPERTY()
+	int32 MaxTeamSize;
+
+	// The max # of players allowed in a single party
+	UPROPERTY()
+	int32 MaxPartySize;
 
 	// Holds a string reference to the material to display that represents this rule
 	UPROPERTY()
@@ -2527,10 +2548,12 @@ public:
 		, OptionFlags(GAME_OPTION_FLAGS_All)
 		, bHideFromUI(false)
 		, EpicForceUIVisibility(0)
+		, MaxTeamCount(0)
+		, MaxPartySize(0)
+		, MaxTeamSize(0)
 	{
 		Categories.Empty();
 		MapPrefixes.Empty();
-		QuickPlayMaps.Empty();
 		CustomMapList.Empty();
 		RequiredPackages.Empty();
 	}
@@ -2555,15 +2578,24 @@ public:
 		}
 	}
 
-	void GetQuickMatchMapList(TArray<FString>& OutMapList)
+	FString GenerateURL(const FString& StartingMap, bool bAllowBots, int32 BotDifficulty, bool bRequireFilled)
 	{
-		OutMapList.Empty();
-		for (int32 i=0; i < QuickPlayMaps.Num(); i++)
+		FString URL = StartingMap;
+		URL += FString::Printf(TEXT("?Game=%s"), *GameMode);
+		URL += FString::Printf(TEXT("?MaxPlayers=%i"), MaxPlayers);
+		URL += GameOptions;
+		if (!UGameplayStatics::HasOption(URL, TEXT("Difficulty")))
 		{
-			OutMapList.Add(QuickPlayMaps[i]);
+			URL += bAllowBots ? FString::Printf(TEXT("?Difficulty=%i"), FMath::Clamp<int32>(BotDifficulty, 0, 7)) : TEXT("?ForceNoBots=1");
 		}
-	}
 
+		if (bRequireFilled) URL += TEXT("?RequireFull=1");
+		if (bCompetitiveMatch) URL += TEXT("?NoJIP");
+
+		// Let the game know what ruleset this is.
+		URL += FString::Printf(TEXT("?ART=%s"), *UniqueTag );
+		return URL;	
+	}
 };
 
 
@@ -2604,6 +2636,55 @@ public:
 	{
 		GameModeClass = inGameModeClass;
 		PlayCount = 0;
+	}
+
+};
+
+USTRUCT()
+struct FPlaylistItem
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	int32 PlaylistId;
+
+	UPROPERTY()
+	bool bRanked;
+
+	UPROPERTY()
+	bool bSkipEloChecks;
+
+	UPROPERTY()
+	FString TeamEloRating;
+
+	UPROPERTY()
+	bool bAllowBots;
+
+	UPROPERTY()
+	int32 BotDifficulty;
+
+	// NOTE: We want the ability to have a play list show a different slate badge then
+	// the ruleset in the menus.  So allow it to be set here.
+	UPROPERTY()
+	FString SlateBadgeName;
+
+	// When the play list is updated, it will be sorted based on this...
+	UPROPERTY()
+	float SortWeight;
+
+	// The Tag of the ruleset that this play list uses.
+	UPROPERTY()
+	FString RulesetTag;
+
+	UPROPERTY()
+	bool bHideInUI;
+
+	FPlaylistItem()
+		: bAllowBots(true)
+		, BotDifficulty(3)
+		, SortWeight(0.0f)
+		, bHideInUI(false)
+	{
 	}
 
 };

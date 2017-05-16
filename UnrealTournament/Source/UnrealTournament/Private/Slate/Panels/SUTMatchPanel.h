@@ -179,7 +179,7 @@ public:
 			}
 			else if ( MatchInfo->CurrentRuleset.IsValid() )
 			{
-				return FText::FromString(MatchInfo->CurrentRuleset->Title);
+				return FText::FromString(MatchInfo->CurrentRuleset->Data.Title);
 			}
 			else if (MatchInfo->bDedicatedMatch)
 			{
@@ -216,7 +216,7 @@ public:
 			else
 			{
 				FinalMapName = MatchInfo->InitialMapInfo.IsValid() ? MatchInfo->InitialMapInfo->Title : MatchInfo->InitialMap;
-				FinalGameName = MatchInfo->CurrentRuleset->Title;
+				FinalGameName = MatchInfo->CurrentRuleset->Data.Title;
 			}
 		}
 		else

@@ -182,7 +182,7 @@ void AUTLobbyPC::Say(FString Message)
 			UE_LOG(UT,Log,TEXT("======================================="));
 			if (UTLobbyPlayerState->CurrentMatch->CurrentRuleset.IsValid())
 			{
-				UE_LOG(UT,Log,TEXT("--- Ruleset [%s]"), *UTLobbyPlayerState->CurrentMatch->CurrentRuleset->Title);
+				UE_LOG(UT,Log,TEXT("--- Ruleset [%s]"), *UTLobbyPlayerState->CurrentMatch->CurrentRuleset->Data.Title);
 			}
 			else
 			{

@@ -41,10 +41,11 @@ void AUTGameSessionRanked::RegisterServer()
 void AUTGameSessionRanked::StartServer()
 {
 	// Dedicated server now enumerates on startup, just wait for it to be done
-	UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
-	if (UTEngine && UTEngine->bReceivedTitleFiles)
+
+	UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(GetWorld()->GetGameInstance());
+	if (UTGameInstance&& UTGameInstance->bReceivedTitleFiles)
 	{
-		OnEnumerateTitleFilesComplete(true);
+		StartServerInternal();
 	}
 	else
 	{
@@ -54,6 +55,7 @@ void AUTGameSessionRanked::StartServer()
 
 void AUTGameSessionRanked::OnReadTitleFileComplete(bool bWasSuccessful, const FString& Filename)
 {
+/*
 	if (Filename == GetMCPRankedPlaylistFilename())
 	{
 		const auto OnlineSub = IOnlineSubsystem::Get();
@@ -100,6 +102,7 @@ void AUTGameSessionRanked::OnReadTitleFileComplete(bool bWasSuccessful, const FS
 		// Wait for any other processes to finish/cleanup before we start advertising
 		GetWorldTimerManager().SetTimer(StartServerTimerHandle, this, &ThisClass::StartServerInternal, 0.1f);
 	}
+*/
 }
 
 void AUTGameSessionRanked::OnEnumerateTitleFilesComplete(bool bWasSuccessful)

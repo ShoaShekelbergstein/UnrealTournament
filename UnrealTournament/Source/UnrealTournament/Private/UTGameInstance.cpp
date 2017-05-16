@@ -15,6 +15,7 @@
 #include "UTLevelSummary.h"
 #include "UTWorldSettings.h"
 #include "Classes/Engine/ActorChannel.h"
+#include "UTEpicDefaultRulesets.h"
 
 #include "UserActivityTracking.h"
 
@@ -81,6 +82,70 @@ void UUTGameInstance::Init()
 		PlaylistManager = NewObject<UUTPlaylistManager>(this);
 	}
 	
+
+	// Search the rules directory for any rules JSON files
+
+	FString RulesDir = FString::Printf(TEXT("%s/Rulesets"), *FPaths::GeneratedConfigDir());
+	TArray<FString> RuleJsonFiles;
+
+	// Grab a list of files in there.
+	IFileManager::Get().FindFiles(RuleJsonFiles, *RulesDir, TEXT("*.json"));
+
+	for (int32 j=0; j < RuleJsonFiles.Num(); j++)
+	{
+		// Load the custom game rulesets from their json file if it exists
+		FString CustomGameRulesetFilename = FString::Printf(TEXT("%s/Rulesets/%s"), *FPaths::GeneratedConfigDir(), *RuleJsonFiles[j]);
+
+		FString RulesJson;
+		FFileHelper::LoadFileToString(RulesJson, *CustomGameRulesetFilename);
+
+		if (!RulesJson.IsEmpty())
+		{
+			FUTGameRulesetStorage JsonGameRules;
+			if ( FJsonObjectConverter::JsonObjectStringToUStruct(RulesJson, &JsonGameRules, 0,0) )
+			{
+				GameRulesets.AddZeroed(JsonGameRules.Rules.Num());
+				for (int32 i=0; i < JsonGameRules.Rules.Num(); i++)
+				{
+					GameRulesets[i] = JsonGameRules.Rules[i];
+					GameRulesets[i].UniqueTag = GameRulesets[i].UniqueTag.Replace(TEXT(" " ), TEXT("_"), ESearchCase::IgnoreCase);
+				}
+			}
+		}
+	}
+
+	// Now add any epic rulesets.  
+
+	TArray<FString> EpicRules;
+	UUTEpicDefaultRulesets::GetEpicRulesets(EpicRules);
+
+	if (EpicRules.Num() > 0)
+	{
+		for (int32 i=0; i < EpicRules.Num(); i++)
+		{
+			FUTGameRuleset NewRuleset;
+			NewRuleset.UniqueTag = EpicRules[i];
+			int32 ExistingIndex = GameRulesets.Find(NewRuleset);
+			if (ExistingIndex != INDEX_NONE)
+			{
+				InsureEpicDefaults(&GameRulesets[ExistingIndex]);
+			}
+			else
+			{
+				InsureEpicDefaults(&NewRuleset);
+				GameRulesets.AddUnique(NewRuleset);
+			}
+		}
+	}
+
+	// If this is a dedicated server, acquire the title files from the MCP right now.  Local clients will acquire them
+	// upon login.
+
+	if (IsRunningDedicatedServer())
+	{
+		AcquireTitleFilesFromMCP();
+	}
+
 #if USE_SQLITE
 	FString DatabasePath = FPaths::GameSavedDir() / "Mods.db";
 	if (sqlite3_open_v2(TCHAR_TO_ANSI(*DatabasePath), &Database, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX, nullptr) == SQLITE_OK)
@@ -1190,5 +1255,231 @@ int32 UUTGameInstance::GetBotSkillForTeamElo(int32 TeamElo)
 	}
 
 	return 1;
+}
+
+void UUTGameInstance::AcquireTitleFilesFromMCP()
+{
+	if (RequestedTitleFiles.Num() > 0) return; // Already in progress
+
+	bReceivedTitleFiles = false;
+
+	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+	if (OnlineSubsystem) 
+	{
+		IOnlineTitleFilePtr OnlineTitleFileInterface = OnlineSubsystem->GetTitleFileInterface();
+		if (OnlineTitleFileInterface.IsValid())
+		{
+			OnReadTitleFileCompleteDelegate = OnlineTitleFileInterface->AddOnReadFileCompleteDelegate_Handle(FOnReadFileCompleteDelegate::CreateUObject(this, &ThisClass::OnReadTitleFileComplete));
+			OnEnumerateTitleFilesCompleteDelegate = OnlineTitleFileInterface->AddOnEnumerateFilesCompleteDelegate_Handle(FOnEnumerateFilesCompleteDelegate::CreateUObject(this, &ThisClass::OnEnumerateTitleFilesComplete));
+
+			RequestedTitleFiles.Add(UUTLocalPlayer::GetMCPStorageFilename());
+			RequestedTitleFiles.Add(UUTLocalPlayer::GetOnlineSettingsFilename());
+			RequestedTitleFiles.Add(UUTLocalPlayer::GetMCPAnnouncementFilename());
+			RequestedTitleFiles.Add(UUTLocalPlayer::GetMCPGameRulesUpdateFilename());
+			RequestedTitleFiles.Add(UUTLocalPlayer::GetMCPPlaylistFilename());
+
+			OnlineTitleFileInterface->EnumerateFiles();
+			return;
+		}
+	}
+}
+
+void UUTGameInstance::OnEnumerateTitleFilesComplete(bool bWasSuccessful)
+{
+	if (bWasSuccessful && RequestedTitleFiles.Num() > 0)
+	{
+		IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+		if (OnlineSubsystem) 
+		{
+			IOnlineTitleFilePtr OnlineTitleFileInterface = OnlineSubsystem->GetTitleFileInterface();
+			if (OnlineTitleFileInterface.IsValid())
+			{
+				OnlineTitleFileInterface->ReadFile(RequestedTitleFiles[0]);
+			}
+		}
+	}
+}
+
+
+void UUTGameInstance::OnReadTitleFileComplete(bool bWasSuccessful, const FString& Filename)
+{
+	if (Filename == UUTLocalPlayer::GetMCPGameRulesUpdateFilename())
+	{
+		if (bWasSuccessful)
+		{
+			IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+			if (OnlineSubsystem) 
+			{
+				IOnlineTitleFilePtr OnlineTitleFileInterface = OnlineSubsystem->GetTitleFileInterface();
+				if (OnlineTitleFileInterface.IsValid())
+				{
+					FString JsonString = TEXT("");
+					TArray<uint8> FileContents;
+					OnlineTitleFileInterface->GetFileContents(UUTLocalPlayer::GetMCPGameRulesUpdateFilename(), FileContents);
+					FileContents.Add(0);
+					JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
+					ProcessMCPRulesetUpdate(JsonString);
+				}
+			}
+		}
+	}
+	else if (Filename == UUTLocalPlayer::GetMCPPlaylistFilename())
+	{
+		if (bWasSuccessful)
+		{
+			IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+			if (OnlineSubsystem) 
+			{
+				IOnlineTitleFilePtr OnlineTitleFileInterface = OnlineSubsystem->GetTitleFileInterface();
+				if (OnlineTitleFileInterface.IsValid())
+				{
+					FString JsonString = TEXT("");
+					TArray<uint8> FileContents;
+					OnlineTitleFileInterface->GetFileContents(UUTLocalPlayer::GetMCPPlaylistFilename(), FileContents);
+					FileContents.Add(0);
+					JsonString = ANSI_TO_TCHAR((char*)FileContents.GetData());
+				
+					FPlaylistItemStorage PlaylistItemStorage;
+					if ( FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &PlaylistItemStorage, 0,0) )
+					{
+						if (PlaylistManager)
+						{
+							PlaylistManager->UpdatePlaylistFromMCP(PlaylistItemStorage);
+						}
+					}
+				}
+			}
+		}
+	}
+	else if (bWasSuccessful)
+	{
+		IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+		if (OnlineSubsystem) 
+		{
+			IOnlineTitleFilePtr OnlineTitleFileInterface = OnlineSubsystem->GetTitleFileInterface();
+			if (OnlineTitleFileInterface.IsValid())
+			{
+				TArray<uint8> FileContents;
+				OnlineTitleFileInterface->GetFileContents(UUTLocalPlayer::GetMCPPlaylistFilename(), FileContents);
+				FileContents.Add(0);		
+	
+				UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(GetFirstGamePlayer());
+				if (UTLocalPlayer)
+				{
+					UTLocalPlayer->ProcessTitleFile(Filename, FileContents);
+				}
+			}
+		}
+	}
+
+	int32 Index = RequestedTitleFiles.Find(Filename);
+	if (Index != INDEX_NONE) RequestedTitleFiles.RemoveAt(Index);
+
+	if (RequestedTitleFiles.Num() > 0)
+	{
+		OnEnumerateTitleFilesComplete(true);
+	}
+	else
+	{
+
+		bReceivedTitleFiles = true;
+
+		UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(GetFirstGamePlayer());
+		if (UTLocalPlayer && UTLocalPlayer->LoginPhase != ELoginPhase::LoggedIn)
+		{
+			UTLocalPlayer->FinalizeLogin();
+		}
+
+		IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+		if (OnlineSubsystem) 
+		{
+			IOnlineTitleFilePtr OnlineTitleFileInterface = OnlineSubsystem->GetTitleFileInterface();
+			if (OnlineTitleFileInterface.IsValid())
+			{
+				OnlineTitleFileInterface->ClearOnReadFileCompleteDelegate_Handle(OnReadTitleFileCompleteDelegate);
+				OnlineTitleFileInterface->ClearOnEnumerateFilesCompleteDelegate_Handle(OnEnumerateTitleFilesCompleteDelegate);
+			}
+		}
+	}
+}
+
+void UUTGameInstance::InsureEpicDefaults(FUTGameRuleset* NewRuleset)
+{
+	// First, attempt to apply the hard coded rules.
+	UUTEpicDefaultRulesets::InsureEpicDefaults(NewRuleset);
+}
+
+FUTGameRuleset* UUTGameInstance::GetRuleset(const FString& RulesetTag)
+{
+	for (int32 i=0; i < GameRulesets.Num(); i++)
+	{
+		if (GameRulesets[i].UniqueTag == RulesetTag)
+		{
+			return &GameRulesets[i];
+		}
+	}
+
+	return nullptr;
+}
+
+void UUTGameInstance::ProcessMCPRulesetUpdate(FString MCPRulesetJson)
+{
+	if (MCPRulesetJson.IsEmpty()) return;
+
+	FUTGameRulesetStorage JsonGameRules;
+	if ( FJsonObjectConverter::JsonObjectStringToUStruct(MCPRulesetJson, &JsonGameRules, 0,0) )
+	{
+		for (int32 i = 0; i < JsonGameRules.Rules.Num(); i++)
+		{
+			// Look to see if this rule already exists in the database
+			
+			bool bUpdated = false;
+			for (int32 j=0; j < GameRulesets.Num(); j++)
+			{
+				if ( GameRulesets[j] == JsonGameRules.Rules[i] )
+				{
+					GameRulesets[j].UniqueTag = JsonGameRules.Rules[i].UniqueTag;
+
+					// Remove spaces in the UniqueTag
+					GameRulesets[j].UniqueTag = GameRulesets[j].UniqueTag.Replace(TEXT(" " ), TEXT("_"), ESearchCase::IgnoreCase);
+
+					GameRulesets[j].Categories = JsonGameRules.Rules[i].Categories;
+					GameRulesets[j].Title = JsonGameRules.Rules[i].Title;
+					GameRulesets[j].Tooltip = JsonGameRules.Rules[i].Tooltip;
+					GameRulesets[j].Description = JsonGameRules.Rules[i].Description;
+					GameRulesets[j].MapPrefixes = JsonGameRules.Rules[i].MapPrefixes;
+					GameRulesets[j].EpicMaps = JsonGameRules.Rules[i].EpicMaps;
+					GameRulesets[j].DefaultMap = JsonGameRules.Rules[i].DefaultMap;
+					GameRulesets[j].CustomMapList = JsonGameRules.Rules[i].CustomMapList;
+					GameRulesets[j].MaxPlayers = JsonGameRules.Rules[i].MaxPlayers;
+					GameRulesets[j].DisplayTexture = JsonGameRules.Rules[i].DisplayTexture;
+					GameRulesets[j].GameMode = JsonGameRules.Rules[i].GameMode;
+					GameRulesets[j].GameOptions = JsonGameRules.Rules[i].GameOptions;
+					GameRulesets[j].RequiredPackages = JsonGameRules.Rules[i].RequiredPackages;
+					GameRulesets[j].bTeamGame = JsonGameRules.Rules[i].bTeamGame;
+					GameRulesets[j].bCompetitiveMatch = JsonGameRules.Rules[i].bCompetitiveMatch;
+					GameRulesets[j].OptionFlags = JsonGameRules.Rules[i].OptionFlags;
+
+					if (JsonGameRules.Rules[i].EpicForceUIVisibility < 0)
+					{
+						GameRulesets[j].bHideFromUI = true;
+					}
+					else if (JsonGameRules.Rules[i].EpicForceUIVisibility > 0)
+					{
+						GameRulesets[j].bHideFromUI = false;
+					}
+
+					bUpdated = true;
+					break;
+				}			
+			}
+		
+			if (!bUpdated)
+			{
+				// This is a new rule pushed from Epic.. add it.
+				GameRulesets.AddUnique(JsonGameRules.Rules[i]);
+			}
+		}
+	}
 }
 

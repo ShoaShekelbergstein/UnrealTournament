@@ -252,7 +252,7 @@ void AUTLobbyGameMode::GetInstanceData(TArray<TSharedPtr<FServerInstanceData>>& 
 
 			if (MatchInfo && MatchInfo->ShouldShowInDock())
 			{
-				FString GameModeClassname = MatchInfo->CurrentRuleset.IsValid() ? MatchInfo->CurrentRuleset->GameMode : TEXT("");
+				FString GameModeClassname = MatchInfo->CurrentRuleset.IsValid() ? MatchInfo->CurrentRuleset->Data.GameMode : TEXT("");
 
 				int32 CurrentNumPlayers = MatchInfo->NumPlayersInMatch();
 				TSharedPtr<FServerInstanceData> Data;
@@ -272,7 +272,7 @@ void AUTLobbyGameMode::GetInstanceData(TArray<TSharedPtr<FServerInstanceData>>& 
 					}
 
 					FString Map = (MatchInfo->InitialMapInfo.IsValid() ? MatchInfo->InitialMapInfo->Title : MatchInfo->InitialMap);
-					Data = FServerInstanceData::Make(MatchInfo->UniqueMatchID, MatchInfo->CurrentRuleset->Title, MatchInfo->CurrentRuleset->UniqueTag, GameModeClassname, Map, MatchInfo->CurrentRuleset->MaxPlayers, MatchInfo->GetMatchFlags(), MatchInfo->RankCheck, MatchInfo->CurrentRuleset->bTeamGame, MatchInfo->bJoinAnytime || !MatchInfo->IsInProgress(), MatchInfo->bSpectatable, MatchInfo->CurrentRuleset->Description, MatchInfo->CustomGameName);
+					Data = FServerInstanceData::Make(MatchInfo->UniqueMatchID, MatchInfo->CurrentRuleset->Data.Title, MatchInfo->CurrentRuleset->Data.UniqueTag, GameModeClassname, Map, MatchInfo->CurrentRuleset->Data.MaxPlayers, MatchInfo->GetMatchFlags(), MatchInfo->RankCheck, MatchInfo->CurrentRuleset->Data.bTeamGame, MatchInfo->bJoinAnytime || !MatchInfo->IsInProgress(), MatchInfo->bSpectatable, MatchInfo->CurrentRuleset->Data.Description, MatchInfo->CustomGameName);
 				}
 
 				Data->MatchData = MatchInfo->MatchUpdate;

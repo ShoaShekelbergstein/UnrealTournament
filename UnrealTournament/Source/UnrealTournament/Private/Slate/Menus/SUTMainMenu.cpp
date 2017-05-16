@@ -206,10 +206,10 @@ TSharedRef<SWidget> SUTMainMenu::AddPlayNow()
 		.ContentHAlign(HAlign_Left)
 	];
 
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayDM", "QuickPlay Deathmatch"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch,	EEpicDefaultRuleTags::Deathmatch));
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRun", "QuickPlay Blitz"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRun));
-	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_QuickMatch_PlayFlagRunVSAI", "QuickPlay Blitz Coop vs AI"), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch, EEpicDefaultRuleTags::FlagRunVSAI));
+	BuildQuickPlaySubMenu(DropDownButton);
+
 	DropDownButton->AddSpacer();
+
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_ChallengesGame", "Single Player Challenges"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowGamePanel));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_CreateGame", "Custom Single Player Match"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowCustomGamePanel));
 	DropDownButton->AddSubMenuItem(NSLOCTEXT("SUTMenuBase", "MenuBar_StartLANGame", "Start LAN Match"), FOnClicked::CreateSP(this, &SUTMainMenu::OnShowCustomGamePanel));
@@ -307,52 +307,53 @@ void SUTMainMenu::OpenDelayedMenu()
 		TArray<FAssetData> MapAssets;
 		GetAllAssetData(UWorld::StaticClass(), MapAssets, false);
 
-		UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
-
-		for (int32 i=0; i < UTGameEngine->GameRulesets.Num(); i++)
+		UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(PlayerOwner->GetGameInstance());
+		if (UTGameInstance)
 		{
-			UE_LOG(UT,Verbose,TEXT("Loading Rule %s"), *UTGameEngine->GameRulesets[i].UniqueTag)
-			if (!UTGameEngine->GameRulesets[i].bHideFromUI)
+			for (int32 i=0; i < UTGameInstance->GameRulesets.Num(); i++)
 			{
-				bool bExistsAlready = false;
-				for (int32 j=0; j < AvailableGameRulesets.Num(); j++)
+				UE_LOG(UT,Verbose,TEXT("Loading Rule %s"), *UTGameInstance->GameRulesets[i].UniqueTag)
+				if (!UTGameInstance->GameRulesets[i].bHideFromUI)
 				{
-					if ( AvailableGameRulesets[j]->UniqueTag.Equals(UTGameEngine->GameRulesets[i].UniqueTag, ESearchCase::IgnoreCase) || AvailableGameRulesets[j]->Title.ToLower() == UTGameEngine->GameRulesets[i].Title.ToLower() )
+					bool bExistsAlready = false;
+					for (int32 j=0; j < AvailableGameRulesets.Num(); j++)
 					{
-						bExistsAlready = true;
-						break;
-					}
-				}
-
-				if ( !bExistsAlready )
-				{
-					FActorSpawnParameters Params;
-					Params.Owner = PlayerOwner->GetWorld()->GetGameState();
-					AUTReplicatedGameRuleset* NewReplicatedRuleset = PlayerOwner->GetWorld()->SpawnActor<AUTReplicatedGameRuleset>(Params);
-					if (NewReplicatedRuleset)
-					{
-						// Build out the map info
-						NewReplicatedRuleset->SetRules(UTGameEngine->GameRulesets[i], MapAssets);
-
-						// If this ruleset doesn't have any maps, then don't use it
-						if (NewReplicatedRuleset->MapList.Num() > 0)
+						if ( AvailableGameRulesets[j]->Data.UniqueTag.Equals(UTGameInstance->GameRulesets[i].UniqueTag, ESearchCase::IgnoreCase) || AvailableGameRulesets[j]->Data.Title.ToLower() == UTGameInstance->GameRulesets[i].Title.ToLower() )
 						{
-							AvailableGameRulesets.Add(NewReplicatedRuleset);
-						}
-						else
-						{
-							UE_LOG(UT,Warning,TEXT("Detected a ruleset [%s] that has no maps"), *UTGameEngine->GameRulesets[i].UniqueTag);
-							NewReplicatedRuleset->Destroy();
+							bExistsAlready = true;
+							break;
 						}
 					}
-				}
-				else
-				{
-					UE_LOG(UT,Verbose,TEXT("Rule already exists."));
+
+					if ( !bExistsAlready )
+					{
+						FActorSpawnParameters Params;
+						Params.Owner = PlayerOwner->GetWorld()->GetGameState();
+						AUTReplicatedGameRuleset* NewReplicatedRuleset = PlayerOwner->GetWorld()->SpawnActor<AUTReplicatedGameRuleset>(Params);
+						if (NewReplicatedRuleset)
+						{
+							// Build out the map info
+							NewReplicatedRuleset->SetRules(UTGameInstance->GameRulesets[i], MapAssets);
+
+							// If this ruleset doesn't have any maps, then don't use it
+							if (NewReplicatedRuleset->MapList.Num() > 0)
+							{
+								AvailableGameRulesets.Add(NewReplicatedRuleset);
+							}
+							else
+							{
+								UE_LOG(UT,Warning,TEXT("Detected a ruleset [%s] that has no maps"), *UTGameInstance->GameRulesets[i].UniqueTag);
+								NewReplicatedRuleset->Destroy();
+							}
+						}
+					}
+					else
+					{
+						UE_LOG(UT,Verbose,TEXT("Rule already exists."));
+					}
 				}
 			}
-		}
-	
+		}	
 		for (int32 i=0; i < AvailableGameRulesets.Num(); i++)
 		{
 			AvailableGameRulesets[i]->BuildSlateBadge();
@@ -380,14 +381,14 @@ void SUTMainMenu::OpenDelayedMenu()
 	PlayerOwner->HideContentLoadingMessage();
 }
 
-FReply SUTMainMenu::OnPlayQuickMatch(FString QuickMatchType)
+FReply SUTMainMenu::OnPlayQuickMatch(int32 PlaylistId)
 {
-	QuickPlay(QuickMatchType);
+	QuickPlay(PlaylistId);
 	return FReply::Handled();
 }
 
 
-void SUTMainMenu::QuickPlay(const FString& QuickMatchType)
+void SUTMainMenu::QuickPlay(int32 PlaylistId)
 {
 	if (!PlayerOwner->IsPartyLeader())
 	{
@@ -401,8 +402,7 @@ void SUTMainMenu::QuickPlay(const FString& QuickMatchType)
 		return;
 	}
 
-	UE_LOG(UT,Log,TEXT("QuickMatch: %s"),*QuickMatchType);
-	PlayerOwner->StartQuickMatch(QuickMatchType);
+	PlayerOwner->StartQuickMatch(PlaylistId);
 }
 
 
@@ -581,6 +581,25 @@ void SUTMainMenu::OnMenuOpened(const FString& Parameters)
 		OnShowServerBrowser();
 	}
 
+}
+
+void SUTMainMenu::BuildQuickPlaySubMenu(TSharedPtr<SUTComboButton> Button)
+{
+	UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(PlayerOwner->GetGameInstance());
+	if (UTGameInstance && UTGameInstance->GetPlaylistManager())
+	{
+		TArray<FPlaylistItem*> QuickPlayPlaylist;
+		UTGameInstance->GetPlaylistManager()->GetPlaylist(false, QuickPlayPlaylist);
+		for (int32 i=0; i < QuickPlayPlaylist.Num(); i++)
+		{
+			FPlaylistItem* Item = QuickPlayPlaylist[i];
+			if (!Item->bHideInUI)
+			{
+				FUTGameRuleset* Ruleset = UTGameInstance->GetPlaylistManager()->GetRuleset(Item->PlaylistId);
+				Button->AddSubMenuItem( FText::Format( NSLOCTEXT("SUTMenuBase", "QuickPlay_Format", "QuickPlay - {0}"), FText::FromString(Ruleset->Title)), FOnClicked::CreateSP(this, &SUTMainMenu::OnPlayQuickMatch,	Item->PlaylistId));
+			}
+		}
+	}				
 }
 
 #endif

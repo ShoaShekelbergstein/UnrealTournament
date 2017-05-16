@@ -121,9 +121,9 @@ void SUTGameSetupDialog::BuildCategories()
 	int32 TabIndex = 0;
 	for (int32 i=0; i < GameRulesets.Num(); i++)
 	{
-		for (int32 CatIndex = 0; CatIndex < GameRulesets[i]->Categories.Num(); CatIndex++)
+		for (int32 CatIndex = 0; CatIndex < GameRulesets[i]->Data.Categories.Num(); CatIndex++)
 		{
-			FName Category = GameRulesets[i]->Categories[CatIndex];
+			FName Category = GameRulesets[i]->Data.Categories[CatIndex];
 			if (!Categories.Contains(Category) && Category != CustomCategory)
 			{
 				Categories.Add(Category);
@@ -301,13 +301,13 @@ void SUTGameSetupDialog::BuildRuleList(FName Category)
 	int32 Cnt = 0;
 	for (int32 i=0;i<GameRulesets.Num();i++)
 	{
-		if (GameRulesets[i] && GameRulesets[i]->Categories.Find(Category) != INDEX_NONE)
+		if (GameRulesets[i] && GameRulesets[i]->Data.Categories.Find(Category) != INDEX_NONE)
 		{
 			int32 Row = Cnt / 6;
 			int32 Col = Cnt % 6;
 
-			FString Title = GameRulesets[i]->Title.IsEmpty() ? TEXT("") : GameRulesets[i]->Title;
-			FString NewToolTip = GameRulesets[i]->Tooltip.IsEmpty() ? TEXT("") : GameRulesets[i]->Tooltip;
+			FString Title = GameRulesets[i]->Data.Title.IsEmpty() ? TEXT("") : GameRulesets[i]->Data.Title;
+			FString NewToolTip = GameRulesets[i]->Data.Tooltip.IsEmpty() ? TEXT("") : GameRulesets[i]->Data.Tooltip;
 			
 			TSharedPtr<SUTTabButton> Button;
 
@@ -381,8 +381,8 @@ FReply SUTGameSetupDialog::OnRuleClick(int32 RuleIndex)
 			BuildMapList();
 		}
 
-		cbRequireFull->SetIsChecked(SelectedRuleset->bCompetitiveMatch ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
-		cbUseBots->SetIsChecked(SelectedRuleset->bCompetitiveMatch ? ECheckBoxState::Unchecked : ECheckBoxState::Checked);
+		cbRequireFull->SetIsChecked(SelectedRuleset->Data.bCompetitiveMatch ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
+		cbUseBots->SetIsChecked(SelectedRuleset->Data.bCompetitiveMatch ? ECheckBoxState::Unchecked : ECheckBoxState::Checked);
 	}
 
 	return FReply::Handled();
@@ -713,7 +713,7 @@ void SUTGameSetupDialog::OnStoreReturnResult(TSharedPtr<SCompoundWidget> Widget,
 
 FText SUTGameSetupDialog::GetMatchRulesTitle() const
 {
-	return SelectedRuleset.IsValid() ? FText::FromString(FString::Printf(TEXT("GAME MODE: %s"), *SelectedRuleset.Get()->Title)) : NSLOCTEXT("SUTGameSetupDialog","PickGameMode","Choose your game mode....");
+	return SelectedRuleset.IsValid() ? FText::FromString(FString::Printf(TEXT("GAME MODE: %s"), *SelectedRuleset.Get()->Data.Title)) : NSLOCTEXT("SUTGameSetupDialog","PickGameMode","Choose your game mode....");
 }
 
 FText SUTGameSetupDialog::GetMatchRulesDescription() const
@@ -924,17 +924,17 @@ TSharedRef<SWidget> SUTGameSetupDialog::BuildBotSkill()
 
 EVisibility SUTGameSetupDialog::GetAllowBotsVis() const
 {
-	return (!SelectedRuleset.IsValid() || CurrentCategory == FName(TEXT("Custom")) || (SelectedRuleset->OptionFlags & GAME_OPTION_FLAGS_AllowBots) > 0) ? EVisibility::Visible : EVisibility::Collapsed;
+	return (!SelectedRuleset.IsValid() || CurrentCategory == FName(TEXT("Custom")) || (SelectedRuleset->Data.OptionFlags & GAME_OPTION_FLAGS_AllowBots) > 0) ? EVisibility::Visible : EVisibility::Collapsed;
 }
 
 EVisibility SUTGameSetupDialog::GetBotSkillVis() const
 {
-	return (!SelectedRuleset.IsValid() || CurrentCategory == FName(TEXT("Custom")) || (SelectedRuleset->OptionFlags & GAME_OPTION_FLAGS_BotSkill) > 0) ? EVisibility::Visible : EVisibility::Collapsed;
+	return (!SelectedRuleset.IsValid() || CurrentCategory == FName(TEXT("Custom")) || (SelectedRuleset->Data.OptionFlags & GAME_OPTION_FLAGS_BotSkill) > 0) ? EVisibility::Visible : EVisibility::Collapsed;
 }
 
 EVisibility SUTGameSetupDialog::GetRequireFullVis() const
 {
-	return (!SelectedRuleset.IsValid() || CurrentCategory == FName(TEXT("Custom")) || (SelectedRuleset->OptionFlags & GAME_OPTION_FLAGS_RequireFull) > 0) ? EVisibility::Visible : EVisibility::Collapsed;
+	return (!SelectedRuleset.IsValid() || CurrentCategory == FName(TEXT("Custom")) || (SelectedRuleset->Data.OptionFlags & GAME_OPTION_FLAGS_RequireFull) > 0) ? EVisibility::Visible : EVisibility::Collapsed;
 }
 
 
@@ -1059,7 +1059,7 @@ void SUTGameSetupDialog::ConfigureMatch(ECreateInstanceTypes::Type InstanceType)
 			}
 			else
 			{
-				LobbyPlayerState->ServerCreateInstance(GetGameNameText().ToString(), SelectedRuleset->UniqueTag, StartingMap, bIsInParty, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled, cbHostControl->IsChecked());					
+				LobbyPlayerState->ServerCreateInstance(GetGameNameText().ToString(), SelectedRuleset->Data.UniqueTag, StartingMap, bIsInParty, bRankLocked, bSpectatable, bPrivateMatch, bBeginnerMatch, bUseBots, BotDifficulty, bRequireFilled, cbHostControl->IsChecked());					
 			}
 		}
 	}

@@ -255,9 +255,9 @@ public:
 	TSharedPtr<class SUTStatsViewerPanel> GetStatsViewer();
 	TSharedPtr<class SUTCreditsPanel> GetCreditsPanel();
 	
-	FString CurrentQuickMatchType;
+	int32 CurrentQuickMatchType;
 
-	void StartQuickMatch(FString QuickMatchType);
+	void StartQuickMatch(int32 PlaylistId);
 	void CloseQuickMatch();
 
 	TSharedPtr<class SUTMenuBase> GetCurrentMenu()
@@ -578,9 +578,6 @@ private:
 	FDelegateHandle OnDestroySessionCompleteDelegate;
 	FDelegateHandle OnFindFriendSessionCompleteDelegate;
 
-	FDelegateHandle OnReadTitleFileCompleteDelegate;
-	FDelegateHandle OnEnumerateTitleFilesCompleteDelegate;
-
 	FDelegateHandle OnReadProfileCompleteDelegate;
 	FDelegateHandle OnReadProgressionCompleteDelegate;
 
@@ -622,11 +619,6 @@ protected:
 	virtual void OnWriteUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
 	virtual void OnDeleteUserFileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
 	virtual void OnEnumerateUserFilesComplete(bool bWasSuccessful, const FUniqueNetId& InUserId);
-
-	void EnumerateTitleFiles();
-	virtual void OnReadTitleFileComplete(bool bWasSuccessful, const FString& Filename);
-	virtual void OnEnumerateTitleFilesComplete(bool bWasSuccessful);
-
 
 	virtual void OnReadProfileComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
 	virtual void OnReadProgressionComplete(bool bWasSuccessful, const FUniqueNetId& InUserId, const FString& FileName);
@@ -1044,6 +1036,12 @@ public:
 		return MCPAnnouncementFilename;
 	}
 
+	static const FString& GetMCPPlaylistFilename()
+	{
+		const static FString MCPPlaylistFilename = "UTMCPPlaylists.json";
+		return MCPPlaylistFilename;
+	}
+
 
 	bool IsRankedMatchmakingEnabled(int32 PlaylistId);
 	TArray<int32> ActiveRankedPlaylists;
@@ -1279,7 +1277,7 @@ public:
 	virtual bool IsTutorialCompleted(FName TutorialName) const;
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
-	virtual void LaunchTutorial(FName TutorialName, const FString& DesiredQuickmatchType = TEXT(""));
+	virtual void LaunchTutorial(FName TutorialName);
 
 	UFUNCTION(BlueprintCallable, Category="Tutorial")
 	virtual bool LaunchPendingQuickmatch();
@@ -1308,7 +1306,7 @@ protected:
 	bool bQuickmatchOnLevelChange;
 	
 	UPROPERTY()
-	FString PendingQuickmatchType;
+	int32 PendingQuickmatchType;
 
 	UPROPERTY()
 	FName LastTutorial;
@@ -1431,10 +1429,12 @@ public:
 #endif
 
 	bool bLaunchTutorialOnLogin;
+	void ProcessTitleFile(const FString& Filename, const TArray<uint8> FileContents);
+
+	virtual void FinalizeLogin();
 
 protected:
 
-	virtual void FinalizeLogin();
 
 #if !UE_SERVER
 	void ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID, bool bSpectatorPassword);

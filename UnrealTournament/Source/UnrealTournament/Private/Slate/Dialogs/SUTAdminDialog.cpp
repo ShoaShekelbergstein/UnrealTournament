@@ -702,8 +702,8 @@ void SUTAdminDialog::UpdateMatchInfo()
 		MatchInfo->FillPlayerColumnsForDisplay(ColumnA, ColumnB, Spectators);
 		if (MatchInfo->CurrentRuleset.IsValid())
 		{
-			bTeamGame = MatchInfo->CurrentRuleset->bTeamGame;
-			RulesList = MatchInfo->CurrentRuleset->Description;
+			bTeamGame = MatchInfo->CurrentRuleset->Data.bTeamGame;
+			RulesList = MatchInfo->CurrentRuleset->Data.Description;
 		}
 		else if (MatchInfo->bDedicatedMatch)
 		{

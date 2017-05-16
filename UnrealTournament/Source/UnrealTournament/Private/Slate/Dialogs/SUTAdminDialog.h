@@ -126,7 +126,7 @@ struct FRconMatchData :  public TSharedFromThis<FRconMatchData>
 	{
 		if (MatchInfo.IsValid())
 		{
-			return FText::FromString(MatchInfo->CurrentRuleset.IsValid() ? MatchInfo->CurrentRuleset->Title : TEXT("<none>"));
+			return FText::FromString(MatchInfo->CurrentRuleset.IsValid() ? MatchInfo->CurrentRuleset->Data.Title : TEXT("<none>"));
 		}
 		return FText::FromString(TEXT("N/A"));
 	}

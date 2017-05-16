@@ -48,7 +48,7 @@ protected:
 	virtual FReply OnCommunityClick();
 
 
-	virtual FReply OnPlayQuickMatch(FString QuickMatchType);
+	virtual FReply OnPlayQuickMatch(int32 PlaylistId);
 	virtual FReply OnShowGamePanel();
 	virtual FReply OnShowCustomGamePanel();
 		
@@ -64,6 +64,7 @@ protected:
 	TSharedPtr<SUTChallengePanel> ChallengePanel;
 	TSharedPtr<SUTUMGPanel> TutorialPanel;
 
+	void BuildQuickPlaySubMenu(TSharedPtr<SUTComboButton> Button);
 
 public:
 	virtual ~SUTMainMenu();
@@ -77,7 +78,7 @@ public:
 	virtual void OpenTutorialMenu();
 	virtual void RecentReplays();
 	virtual void ShowLiveGameReplays();
-	virtual void QuickPlay(const FString& QuickMatchType);
+	virtual void QuickPlay(int32 PlaylistId);
 	virtual void DeactivatePanel(TSharedPtr<class SUTPanelBase> PanelToDeactivate);
 
 	virtual void OnMenuOpened(const FString& Parameters);

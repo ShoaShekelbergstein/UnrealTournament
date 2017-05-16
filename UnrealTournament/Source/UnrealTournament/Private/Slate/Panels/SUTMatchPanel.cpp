@@ -639,8 +639,8 @@ TSharedRef<SWidget> SUTMatchPanel::OnGetPopupContent(TSharedPtr<SUTPopOverAnchor
 			TrackedMatch->MatchInfo->FillPlayerColumnsForDisplay(ColumnA, ColumnB, Spectators);
 			if (TrackedMatch->MatchInfo->CurrentRuleset.IsValid())
 			{
-				bTeamGame = TrackedMatch->MatchInfo->CurrentRuleset->bTeamGame;
-				RulesList = TrackedMatch->MatchInfo->CurrentRuleset->Description;
+				bTeamGame = TrackedMatch->MatchInfo->CurrentRuleset->Data.bTeamGame;
+				RulesList = TrackedMatch->MatchInfo->CurrentRuleset->Data.Description;
 			}
 			else if (TrackedMatch->MatchInfo->bDedicatedMatch)
 			{
@@ -1092,7 +1092,7 @@ FReply SUTMatchPanel::JoinMatchButtonClicked(TSharedPtr<FTrackedMatch> InItem)
 						{
 							if (InItem.IsValid() && InItem->MatchInfo.IsValid() && InItem->MatchInfo->CurrentRuleset.IsValid())
 							{
-								FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("HUB - Join - %s"), *InItem->MatchInfo->CurrentRuleset->GameMode));
+								FUTAnalytics::FireEvent_EnterMatch(Cast<AUTPlayerController>(PlayerOwner->PlayerController), FString::Printf(TEXT("HUB - Join - %s"), *InItem->MatchInfo->CurrentRuleset->Data.GameMode));
 							}
 						}
 

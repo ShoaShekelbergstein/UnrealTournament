@@ -117,7 +117,7 @@ TArray<int32> AUTLobbyMatchInfo::GetTeamSizes() const
 {
 	// get the team sizes;
 	TArray<int32> TeamSizes;
-	if (CurrentRuleset.IsValid() && CurrentRuleset->bTeamGame)
+	if (CurrentRuleset.IsValid() && CurrentRuleset->Data.bTeamGame)
 	{
 		TeamSizes.SetNumZeroed(2);
 
@@ -175,7 +175,7 @@ void AUTLobbyMatchInfo::AddPlayer(AUTLobbyPlayerState* PlayerToAdd, bool bIsOwne
 			return;
 		}
 		
-		if (CurrentRuleset.IsValid() && CurrentRuleset->bTeamGame)
+		if (CurrentRuleset.IsValid() && CurrentRuleset->Data.bTeamGame)
 		{
 			TArray<int32> TeamSizes = GetTeamSizes();
 			int32 BestTeam = 0;
@@ -409,7 +409,7 @@ FText AUTLobbyMatchInfo::GetDebugInfo()
 	FFormatNamedArguments Args;
 	Args.Add(TEXT("OwnerName"), OwnerText);
 	Args.Add(TEXT("CurrentState"), FText::FromName(CurrentState));
-	Args.Add(TEXT("CurrentRuleSet"), FText::FromString(CurrentRuleset.IsValid() ? CurrentRuleset->Title : TEXT("None")));
+	Args.Add(TEXT("CurrentRuleSet"), FText::FromString(CurrentRuleset.IsValid() ? CurrentRuleset->Data.Title : TEXT("None")));
 	Args.Add(TEXT("ShouldShowInDock"), FText::AsNumber(ShouldShowInDock()));
 	Args.Add(TEXT("InProgress"), FText::AsNumber(IsInProgress()));
 
@@ -441,10 +441,10 @@ void AUTLobbyMatchInfo::SetRedirects()
 	if (BaseGame != NULL)
 	{
 		Redirects.Empty();
-		for (int32 i = 0; i < CurrentRuleset->RequiredPackages.Num(); i++)
+		for (int32 i = 0; i < CurrentRuleset->Data.RequiredPackages.Num(); i++)
 		{
 			FPackageRedirectReference Redirect;
-			if (BaseGame->FindRedirect(CurrentRuleset->RequiredPackages[i], Redirect))
+			if (BaseGame->FindRedirect(CurrentRuleset->Data.RequiredPackages[i], Redirect))
 			{
 				Redirects.Add(Redirect);
 			}
@@ -456,11 +456,11 @@ void AUTLobbyMatchInfo::SetRedirects()
 		{
 			Redirects.Add(Redirect);
 		}
-		if (BaseGame->FindRedirect(GetModPakFilenameFromPath(CurrentRuleset->GameMode), Redirect))
+		if (BaseGame->FindRedirect(GetModPakFilenameFromPath(CurrentRuleset->Data.GameMode), Redirect))
 		{
 			Redirects.Add(Redirect);
 		}
-		FString AllMutators = UGameplayStatics::ParseOption(CurrentRuleset->GameOptions, TEXT("Mutator"));
+		FString AllMutators = UGameplayStatics::ParseOption(CurrentRuleset->Data.GameOptions, TEXT("Mutator"));
 		while (AllMutators.Len() > 0)
 		{
 			FString MutPath;
@@ -496,7 +496,7 @@ void AUTLobbyMatchInfo::AssignTeams()
 		{
 			if (!Players[i]->bIsSpectator)
 			{
-				if (CurrentRuleset->bTeamGame)
+				if (CurrentRuleset->Data.bTeamGame)
 				{
 					// If player is in a party, they are most likely already on the correct team
 					if (Players[i]->PartySize == 1)
@@ -515,10 +515,10 @@ void AUTLobbyMatchInfo::AssignTeams()
 
 void AUTLobbyMatchInfo::SetRules(TWeakObjectPtr<AUTReplicatedGameRuleset> NewRuleset, const FString& StartingMap)
 {
-	bool bOldTeamGame = CurrentRuleset.IsValid() ? CurrentRuleset->bTeamGame : false;
+	bool bOldTeamGame = CurrentRuleset.IsValid() ? CurrentRuleset->Data.bTeamGame : false;
 	CurrentRuleset = NewRuleset;
 
-	if (bOldTeamGame != CurrentRuleset->bTeamGame)
+	if (bOldTeamGame != CurrentRuleset->Data.bTeamGame)
 	{
 		AssignTeams();
 	}
@@ -661,7 +661,7 @@ void AUTLobbyMatchInfo::OnRep_RedirectsChanged()
 
 void AUTLobbyMatchInfo::FillPlayerColumnsForDisplay(TArray<FMatchPlayerListStruct>& FirstColumn, TArray<FMatchPlayerListStruct>& SecondColumn, FString& Spectators)
 {
-	bool bIsTeamGame = CurrentRuleset.IsValid() ? CurrentRuleset->bTeamGame : (bDedicatedMatch ? bDedicatedTeamGame : false);
+	bool bIsTeamGame = CurrentRuleset.IsValid() ? CurrentRuleset->Data.bTeamGame : (bDedicatedMatch ? bDedicatedTeamGame : false);
 
 	if (bIsTeamGame)
 	{
@@ -910,7 +910,7 @@ void AUTLobbyMatchInfo::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject)
 }
 void AUTLobbyMatchInfo::ProcessStartMatch(const FMatchUpdate& NewMatchUpdate)
 {
-	if (CurrentRuleset.IsValid() && CurrentRuleset->bCompetitiveMatch)
+	if (CurrentRuleset.IsValid() && CurrentRuleset->Data.bCompetitiveMatch)
 	{
 		bPrivateMatch = true;		
 	}

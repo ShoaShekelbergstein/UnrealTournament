@@ -1947,11 +1947,11 @@ void FUTAnalytics::FireEvent_UTHubNewInstance(AUTLobbyMatchInfo* NewGameInfo, co
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), GameState->HubGuid));
 		}
 
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), NewGameInfo->CurrentRuleset->GameMode));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), NewGameInfo->CurrentRuleset->Data.GameMode));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MapName), NewGameInfo->InitialMap));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsCustomRuleset), (int32)(NewGameInfo->CurrentRuleset->bCustomRuleset)));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameOptions), NewGameInfo->CurrentRuleset->GameOptions));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RequiredPackages), NewGameInfo->CurrentRuleset->RequiredPackages));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameOptions), NewGameInfo->CurrentRuleset->Data.GameOptions));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RequiredPackages), NewGameInfo->CurrentRuleset->Data.RequiredPackages));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::CurrentGameState), NewGameInfo->CurrentState.ToString()));
 
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), HostId));
@@ -2025,11 +2025,11 @@ void FUTAnalytics::FireEvent_UTHubPlayerEnterInstance(AUTLobbyMatchInfo* GameInf
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), GameState->HubGuid));
 		}
 
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), GameInfo->CurrentRuleset->Title));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), GameInfo->CurrentRuleset->Data.Title));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MapName), GameInfo->InitialMap));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsCustomRuleset), (int32)(GameInfo->CurrentRuleset->bCustomRuleset)));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameOptions), GameInfo->CurrentRuleset->GameOptions));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RequiredPackages), GameInfo->CurrentRuleset->RequiredPackages));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameOptions), GameInfo->CurrentRuleset->Data.GameOptions));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RequiredPackages), GameInfo->CurrentRuleset->Data.RequiredPackages));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::CurrentGameState), GameInfo->CurrentState.ToString()));
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsSpectator), bAsSpectator));
 

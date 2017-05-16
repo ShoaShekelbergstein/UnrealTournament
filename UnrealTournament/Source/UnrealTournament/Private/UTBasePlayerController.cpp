@@ -1562,47 +1562,50 @@ FText AUTBasePlayerController::GetPrevTutorialName()
 
 void AUTBasePlayerController::ExportGameRulesets(FString Filename)
 {
-	UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
-	FUTGameRulesetStorage Storage;
-	for (int32 i =0 ; i < 16; i++)
+	UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(GetWorld()->GetGameInstance());
+	if (UTGameInstance )
 	{
-		FString Tag;
-		switch (i)
+		FUTGameRulesetStorage Storage;
+		for (int32 i =0 ; i < 16; i++)
 		{
-			case 0 : Tag = EEpicDefaultRuleTags::FlagRun; break;
-			case 1 : Tag = EEpicDefaultRuleTags::FlagRunVSAI; break;
-			case 2 : Tag = EEpicDefaultRuleTags::Deathmatch; break;
-			case 3 : Tag = EEpicDefaultRuleTags::Siege; break;
-			case 4 : Tag = EEpicDefaultRuleTags::CTF; break;
-			case 5 : Tag = EEpicDefaultRuleTags::TDM; break;
-			case 6 : Tag = EEpicDefaultRuleTags::BIGCTF; break;
-			case 7 : Tag = EEpicDefaultRuleTags::COMPCTF; break;
-			case 8 : Tag = EEpicDefaultRuleTags::SHOWDOWN; break;
-			case 9 : Tag = EEpicDefaultRuleTags::TEAMSHOWDOWN; break;
-			case 11: Tag = EEpicDefaultRuleTags::DUEL; break;
-			case 12: Tag = EEpicDefaultRuleTags::iDM; break;
-			case 13: Tag = EEpicDefaultRuleTags::iTDM; break;
-			case 14: Tag = EEpicDefaultRuleTags::iCTF; break;
-			case 15: Tag = EEpicDefaultRuleTags::iCTFT; break;
+			FString Tag;
+			switch (i)
+			{
+				case 0 : Tag = EEpicDefaultRuleTags::FlagRun; break;
+				case 1 : Tag = EEpicDefaultRuleTags::FlagRunVSAI; break;
+				case 2 : Tag = EEpicDefaultRuleTags::Deathmatch; break;
+				case 3 : Tag = EEpicDefaultRuleTags::Siege; break;
+				case 4 : Tag = EEpicDefaultRuleTags::CTF; break;
+				case 5 : Tag = EEpicDefaultRuleTags::TDM; break;
+				case 6 : Tag = EEpicDefaultRuleTags::BIGCTF; break;
+				case 7 : Tag = EEpicDefaultRuleTags::COMPCTF; break;
+				case 8 : Tag = EEpicDefaultRuleTags::SHOWDOWN; break;
+				case 9 : Tag = EEpicDefaultRuleTags::TEAMSHOWDOWN; break;
+				case 11: Tag = EEpicDefaultRuleTags::DUEL; break;
+				case 12: Tag = EEpicDefaultRuleTags::iDM; break;
+				case 13: Tag = EEpicDefaultRuleTags::iTDM; break;
+				case 14: Tag = EEpicDefaultRuleTags::iCTF; break;
+				case 15: Tag = EEpicDefaultRuleTags::iCTFT; break;
+			}
+
+			FUTGameRuleset Ruleset;
+			Ruleset.UniqueTag = Tag;
+			UTGameInstance->InsureEpicDefaults(&Ruleset);
+			Storage.Rules.Add(Ruleset);
 		}
 
-		FUTGameRuleset Ruleset;
-		Ruleset.UniqueTag = Tag;
-		UTGameEngine->InsureEpicDefaults(&Ruleset);
-		Storage.Rules.Add(Ruleset);
-	}
+		if (Filename.Equals(TEXT("CustomGameRules.json")))
+		{
+			Filename = TEXT("new_") + Filename;
+		}
 
-	if (Filename.Equals(TEXT("CustomGameRules.json")))
-	{
-		Filename = TEXT("new_") + Filename;
-	}
-
-	if (Storage.Rules.Num() > 0)
-	{
-		FString JsonString;
-		FJsonObjectConverter::UStructToJsonObjectString(Storage, JsonString);
-		FString SaveFilename = FString::Printf(TEXT("%s/%s"), *FPaths::GeneratedConfigDir(), *Filename);
-		FFileHelper::SaveStringToFile(JsonString,*SaveFilename);
+		if (Storage.Rules.Num() > 0)
+		{
+			FString JsonString;
+			FJsonObjectConverter::UStructToJsonObjectString(Storage, JsonString);
+			FString SaveFilename = FString::Printf(TEXT("%s/%s"), *FPaths::GeneratedConfigDir(), *Filename);
+			FFileHelper::SaveStringToFile(JsonString,*SaveFilename);
+		}
 	}
 }
 

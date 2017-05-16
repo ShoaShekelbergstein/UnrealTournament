@@ -760,18 +760,18 @@ AUTReplicatedGameRuleset* AUTBaseGameMode::CreateCustomReplicateGameRuleset(UWor
 		if (NewReplicatedRuleset)
 		{
 			// Look up the game mode in the AllowedGameData array and get the text description.
-			NewReplicatedRuleset->Title = TEXT("Custom Rule");
-			NewReplicatedRuleset->Tooltip = TEXT("");
-			NewReplicatedRuleset->Description = Description;
+			NewReplicatedRuleset->Data.Title = TEXT("Custom Rule");
+			NewReplicatedRuleset->Data.Tooltip = TEXT("");
+			NewReplicatedRuleset->Data.Description = Description;
 		
 			int32 PlayerCount = 20;
-			NewReplicatedRuleset->GameMode = GameMode;
+			NewReplicatedRuleset->Data.GameMode = GameMode;
 			FString FinalGameOptions = TEXT("");
 
 			AUTGameMode* CustomGameModeDefaultObject = NewReplicatedRuleset->GetDefaultGameModeObject();
 			if (CustomGameModeDefaultObject)
 			{
-				NewReplicatedRuleset->Title = FString::Printf(TEXT("Custom %s"), *CustomGameModeDefaultObject->DisplayName.ToString());
+				NewReplicatedRuleset->Data.Title = FString::Printf(TEXT("Custom %s"), *CustomGameModeDefaultObject->DisplayName.ToString());
 
 				TArray< TSharedPtr<TAttributePropertyBase> > AllowedProps;
 				CustomGameModeDefaultObject->CreateGameURLOptions(AllowedProps);
@@ -807,11 +807,11 @@ AUTReplicatedGameRuleset* AUTBaseGameMode::CreateCustomReplicateGameRuleset(UWor
 				}
 			}
 
-			NewReplicatedRuleset->MaxPlayers = (DesiredPlayerCount > 0) ? DesiredPlayerCount : CustomGameModeDefaultObject->DefaultMaxPlayers;
-			NewReplicatedRuleset->GameOptions = FinalGameOptions;
-			NewReplicatedRuleset->DisplayTexture = "Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_Custom.GB_Custom'";
+			NewReplicatedRuleset->Data.MaxPlayers = (DesiredPlayerCount > 0) ? DesiredPlayerCount : CustomGameModeDefaultObject->DefaultMaxPlayers;
+			NewReplicatedRuleset->Data.GameOptions = FinalGameOptions;
+			NewReplicatedRuleset->Data.DisplayTexture = "Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_Custom.GB_Custom'";
 			NewReplicatedRuleset->bCustomRuleset = true;
-			NewReplicatedRuleset->bTeamGame = bTeamGame;
+			NewReplicatedRuleset->Data.bTeamGame = bTeamGame;
 		}
 	}
 

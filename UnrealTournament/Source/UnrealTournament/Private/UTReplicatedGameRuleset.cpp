@@ -17,30 +17,17 @@ AUTReplicatedGameRuleset::AUTReplicatedGameRuleset(const class FObjectInitialize
 	bAlwaysRelevant = true;
 	bReplicateMovement = false;
 	bNetLoadOnClient = false;
-
-	OptionFlags = GAME_OPTION_FLAGS_All;
-
 }
 
 void AUTReplicatedGameRuleset::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AUTReplicatedGameRuleset, UniqueTag);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, Categories);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, Title);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, Tooltip);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, Description);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, MaxMapsInList);
+	DOREPLIFETIME(AUTReplicatedGameRuleset, Data);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, MapList);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, MaxPlayers);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, OptimalPlayers);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, DisplayTexture);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, bCustomRuleset);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, GameMode);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, bTeamGame);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, bCompetitiveMatch);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, OptionFlags);
 }
 
 int32 AUTReplicatedGameRuleset::AddMapAssetToMapList(const FAssetData& Asset)
@@ -56,18 +43,7 @@ int32 AUTReplicatedGameRuleset::AddMapAssetToMapList(const FAssetData& Asset)
 
 void AUTReplicatedGameRuleset::SetRules(const FUTGameRuleset& NewRules, const TArray<FAssetData>& MapAssets)
 {
-	UniqueTag			= NewRules.UniqueTag;
-	Categories			= NewRules.Categories;
-	Title				= NewRules.Title;
-	Tooltip				= NewRules.Tooltip;
-	Description			= Fixup(NewRules.Description);
-	MaxPlayers			= NewRules.MaxPlayers;
-	bTeamGame			= NewRules.bTeamGame;
-	DefaultMap			= NewRules.DefaultMap;
-	QuickPlayMaps		= NewRules.QuickPlayMaps;
-	bCompetitiveMatch	= NewRules.bCompetitiveMatch;
-	MaxMapsInList		= NewRules.MaxMapsInList;
-	OptionFlags			= NewRules.OptionFlags;
+	Data = NewRules;
 
 	// First add the Epic maps.
 	if (!NewRules.EpicMaps.IsEmpty())
@@ -103,8 +79,6 @@ void AUTReplicatedGameRuleset::SetRules(const FUTGameRuleset& NewRules, const TA
 	// Now add the custom maps..
 	for (int32 i = 0; i < NewRules.CustomMapList.Num(); i++)
 	{
-		if (MaxMapsInList > 0 && MapList.Num() >= MaxMapsInList) break;
-
 		FString MapPackageName = NewRules.CustomMapList[i];
 		if ( FPackageName::IsShortPackageName(MapPackageName) )
 		{
@@ -172,26 +146,22 @@ void AUTReplicatedGameRuleset::SetRules(const FUTGameRuleset& NewRules, const TA
 		}
 	}
 
-	RequiredPackages = NewRules.RequiredPackages;
-	DisplayTexture = NewRules.DisplayTexture;
-	GameMode = NewRules.GameMode;
-	GameOptions = NewRules.GameOptions;
 	BuildSlateBadge();
 
 	// Fix up the Description
 	TArray<FString> PropertyLookups;
-	int32 Left = Description.Find(TEXT("%"),ESearchCase::IgnoreCase, ESearchDir::FromStart, 0);
+	int32 Left = Data.Description.Find(TEXT("%"),ESearchCase::IgnoreCase, ESearchDir::FromStart, 0);
 	while (Left != INDEX_NONE)
 	{
-		int32 Right = Description.Find(TEXT("%"),ESearchCase::IgnoreCase, ESearchDir::FromStart, Left + 1);
+		int32 Right = Data.Description.Find(TEXT("%"),ESearchCase::IgnoreCase, ESearchDir::FromStart, Left + 1);
 		if (Right > Left)
 		{
-			FString PropertyString = Description.Mid(Left, Right-Left + 1);
+			FString PropertyString = Data.Description.Mid(Left, Right-Left + 1);
 			if (PropertyLookups.Find(PropertyString) == INDEX_NONE)
 			{
 				PropertyLookups.Add(PropertyString);
 			}
-			Left = Description.Find(TEXT("%"),ESearchCase::IgnoreCase, ESearchDir::FromStart, Right +1);	
+			Left = Data.Description.Find(TEXT("%"),ESearchCase::IgnoreCase, ESearchDir::FromStart, Right +1);	
 		}
 		else
 		{
@@ -204,7 +174,7 @@ void AUTReplicatedGameRuleset::SetRules(const FUTGameRuleset& NewRules, const TA
 	{
 		if ( PropertyLookups[i].Equals(TEXT("%maxplayers%"),ESearchCase::IgnoreCase) )		
 		{
-			Description = Description.Replace(*PropertyLookups[i], *FString::FromInt(MaxPlayers), ESearchCase::IgnoreCase);
+			Data.Description = Data.Description.Replace(*PropertyLookups[i], *FString::FromInt(Data.MaxPlayers), ESearchCase::IgnoreCase);
 		}
 		else
 		{
@@ -213,9 +183,9 @@ void AUTReplicatedGameRuleset::SetRules(const FUTGameRuleset& NewRules, const TA
 			FString Value = TEXT("");
 
 			// First search the url for PropName=
-			if (UGameplayStatics::HasOption(GameOptions, *PropName))
+			if (UGameplayStatics::HasOption(Data.GameOptions, *PropName))
 			{
-				Value = UGameplayStatics::ParseOption(GameOptions,  PropName);
+				Value = UGameplayStatics::ParseOption(Data.GameOptions,  PropName);
 			}
 			else if (DefaultGameObject)
 			{
@@ -240,7 +210,7 @@ void AUTReplicatedGameRuleset::SetRules(const FUTGameRuleset& NewRules, const TA
 				Value = TEXT("Off");
 			}
 
-			Description = Description.Replace(*PropertyLookups[i], *Value, ESearchCase::IgnoreCase);
+			Data.Description = Data.Description.Replace(*PropertyLookups[i], *Value, ESearchCase::IgnoreCase);
 		}
 	}
 }
@@ -257,9 +227,9 @@ void AUTReplicatedGameRuleset::BuildSlateBadge()
 {
 #if !UE_SERVER
 	SlateBadge = nullptr;
-	if (!DisplayTexture.IsEmpty())
+	if (!Data.DisplayTexture.IsEmpty())
 	{
-		BadgeTexture = LoadObject<UTexture2D>(nullptr, *DisplayTexture, nullptr, LOAD_None, nullptr);
+		BadgeTexture = LoadObject<UTexture2D>(nullptr, *Data.DisplayTexture, nullptr, LOAD_None, nullptr);
 		if (BadgeTexture)
 		{
 			SlateBadge = new FSlateDynamicImageBrush(BadgeTexture, FVector2D(256.0f, 256.0f), NAME_None);
@@ -275,15 +245,12 @@ const FSlateBrush* AUTReplicatedGameRuleset::GetSlateBadge() const
 }
 #endif
 
-void AUTReplicatedGameRuleset::GotTag()
-{
-}
 
 AUTGameMode* AUTReplicatedGameRuleset::GetDefaultGameModeObject()
 {
-	if (!GameMode.IsEmpty())
+	if (!Data.GameMode.IsEmpty())
 	{
-		FString LongGameModeClassname = UGameMapsSettings::GetGameModeForName(GameMode);
+		FString LongGameModeClassname = UGameMapsSettings::GetGameModeForName(Data.GameMode);
 		UClass* GModeClass = LoadClass<AUTGameMode>(NULL, *LongGameModeClassname, NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
 		if (GModeClass)
 		{
@@ -293,29 +260,29 @@ AUTGameMode* AUTReplicatedGameRuleset::GetDefaultGameModeObject()
 	}
 	else
 	{
-		UE_LOG(UT, Warning, TEXT("%s Empty GameModeClass for Ruleset %s"), *GetName(), *Title);
+		UE_LOG(UT, Warning, TEXT("%s Empty GameModeClass for Ruleset %s"), *GetName(), *Data.Title);
 	}
 	return NULL;
 }
 
 FString AUTReplicatedGameRuleset::GetDescription()
 {
-	return Description;
+	return Data.Description;
 }
 
 void AUTReplicatedGameRuleset::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject)
 {
-	JsonObject->SetStringField(TEXT("Title"), Title);
-	JsonObject->SetStringField(TEXT("GameMode"), GameMode);
-	JsonObject->SetStringField(TEXT("GameOptions"), GameOptions);
+	JsonObject->SetStringField(TEXT("Title"), Data.Title);
+	JsonObject->SetStringField(TEXT("GameMode"), Data.GameMode);
+	JsonObject->SetStringField(TEXT("GameOptions"), Data.GameOptions);
 
-	JsonObject->SetNumberField(TEXT("MaxPlayers"), MaxPlayers);
+	JsonObject->SetNumberField(TEXT("MaxPlayers"), Data.MaxPlayers);
 	JsonObject->SetNumberField(TEXT("OptimalPlayers"), OptimalPlayers);
 
-	JsonObject->SetBoolField(TEXT("bCompetitiveMatch"), bCompetitiveMatch);
-	JsonObject->SetBoolField(TEXT("bTeamGame"), bTeamGame);
+	JsonObject->SetBoolField(TEXT("bCompetitiveMatch"), Data.bCompetitiveMatch);
+	JsonObject->SetBoolField(TEXT("bTeamGame"), Data.bTeamGame);
 
-	JsonObject->SetStringField(TEXT("DefaultMap"), DefaultMap);
+	JsonObject->SetStringField(TEXT("DefaultMap"), Data.DefaultMap);
 
 	TArray<TSharedPtr<FJsonValue>> MapArray;
 	for (int32 i=0; i < MapList.Num(); i++)
@@ -327,13 +294,13 @@ void AUTReplicatedGameRuleset::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject
 
 	JsonObject->SetArrayField(TEXT("MapLIst"), MapArray);
 
-	if (RequiredPackages.Num() > 0)
+	if (Data.RequiredPackages.Num() > 0)
 	{
 		TArray<TSharedPtr<FJsonValue>> ReqArray;
-		for (int32 i=0; i < RequiredPackages.Num(); i++)
+		for (int32 i=0; i < Data.RequiredPackages.Num(); i++)
 		{
 			TSharedPtr<FJsonObject> ReqJson = MakeShareable(new FJsonObject);
-			ReqJson->SetStringField(TEXT("Package"), RequiredPackages[i]);
+			ReqJson->SetStringField(TEXT("Package"), Data.RequiredPackages[i]);
 			ReqArray.Add( MakeShareable( new FJsonValueObject( ReqJson )));			
 		}
 
@@ -343,19 +310,5 @@ void AUTReplicatedGameRuleset::MakeJsonReport(TSharedPtr<FJsonObject> JsonObject
 
 FString AUTReplicatedGameRuleset::GenerateURL(const FString& StartingMap, bool bAllowBots, int32 BotDifficulty, bool bRequireFilled)
 {
-	FString URL = StartingMap;
-	URL += FString::Printf(TEXT("?Game=%s"), *GameMode);
-	URL += FString::Printf(TEXT("?MaxPlayers=%i"), MaxPlayers);
-	URL += GameOptions;
-	if (!UGameplayStatics::HasOption(URL, TEXT("Difficulty")))
-	{
-		URL += bAllowBots ? FString::Printf(TEXT("?Difficulty=%i"), FMath::Clamp<int32>(BotDifficulty, 0, 7)) : TEXT("?ForceNoBots=1");
-	}
-
-	if (bRequireFilled) URL += TEXT("?RequireFull=1");
-	if (bCompetitiveMatch) URL += TEXT("?NoJIP");
-
-	// Let the game know what ruleset this is.
-	URL += FString::Printf(TEXT("?ART=%s"), *UniqueTag );
-	return URL;
+	return Data.GenerateURL(StartingMap, bAllowBots, BotDifficulty, bRequireFilled);
 }

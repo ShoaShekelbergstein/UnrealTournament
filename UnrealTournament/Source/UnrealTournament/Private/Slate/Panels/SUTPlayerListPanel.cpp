@@ -140,7 +140,7 @@ void SUTPlayerListPanel::CheckFlags(bool &bIsHost, bool &bIsTeamGame)
 		if (LobbyPlayerState)
 		{
 			bIsHost = (LobbyPlayerState->CurrentMatch && LobbyPlayerState->CurrentMatch->OwnerId == LobbyPlayerState->UniqueId);
-			bIsTeamGame = (LobbyPlayerState->CurrentMatch && LobbyPlayerState->CurrentMatch->CurrentRuleset.IsValid() && LobbyPlayerState->CurrentMatch->CurrentRuleset->bTeamGame);
+			bIsTeamGame = (LobbyPlayerState->CurrentMatch && LobbyPlayerState->CurrentMatch->CurrentRuleset.IsValid() && LobbyPlayerState->CurrentMatch->CurrentRuleset->Data.bTeamGame);
 			return;
 		}
 	}
@@ -507,7 +507,7 @@ void SUTPlayerListPanel::Tick( const FGeometry& AllottedGeometry, const double I
 
 				uint8 TeamNum = PlayerState->GetTeamNum();
 
-				if (LobbyPlayerState && LobbyPlayerState->CurrentMatch && LobbyPlayerState->CurrentMatch->CurrentRuleset.IsValid() && !LobbyPlayerState->CurrentMatch->CurrentRuleset->bTeamGame)
+				if (LobbyPlayerState && LobbyPlayerState->CurrentMatch && LobbyPlayerState->CurrentMatch->CurrentRuleset.IsValid() && !LobbyPlayerState->CurrentMatch->CurrentRuleset->Data.bTeamGame)
 				{
 					TeamNum = 255;
 				}

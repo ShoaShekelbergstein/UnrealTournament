@@ -56,11 +56,11 @@ protected:
 	TSharedPtr<SUTBorder> AnimWidget;
 
 	virtual void AnimEnd();
-	virtual void BuildQuickplayButton(TSharedPtr<SHorizontalBox> QuickPlayBox, FName BackgroundTexture, FText Caption, FName QuickMatchType, float Padding=0.0f);
+	virtual void BuildQuickplayButton(FName BackgroundTexture, FText Caption, int32 PlayListId, float Padding=0.0f);
 	
 	virtual TSharedRef<SBox> BuildHomePanelButton(FName ButtonTag, FName BackgroundTexture, const FText& Caption);
 
-	FReply QuickPlayClick(FName QuickMatchType);
+	FReply QuickPlayClick(int32 PlaylistId);
 
 	TSharedRef<SWidget> BuildRankedPlaylist();
 	FReply OnStartRankedPlaylist(int32 PlaylistId);
@@ -89,6 +89,13 @@ protected:
 	TSharedPtr<SHorizontalBox> RankedBox;
 	EVisibility RankedBoxVisibile() const;
 	EVisibility RankedButtonVis(int32 PlaylistId) const;
+
+	TSharedPtr<SHorizontalBox> QuickPlayBox;
+	TSharedPtr<SVerticalBox> NoQuickPlayBox;
+
+	EVisibility QuickplayVis(int32 Index) const;
+	FText GetQuickPlayUnavailableText() const;
+	void BuildQuickPlayPanel();
 };
 
 #endif

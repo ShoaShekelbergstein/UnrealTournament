@@ -68,10 +68,11 @@ void AUTLobbyGameState::PostInitializeComponents()
 
 void AUTLobbyGameState::RulesetsAreLoaded()
 {
-	UUTGameEngine* UTGameEngine = Cast<UUTGameEngine>(GEngine);
+
+	UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(GetWorld()->GetGameInstance());
 
 	// If we aren't authority, or if the GameEngine hasn't received it's title files yet, just exit out.
-	if (UTGameEngine == nullptr || Role != ROLE_Authority || !UTGameEngine->bReceivedTitleFiles) return;
+	if (UTGameInstance == nullptr || Role != ROLE_Authority || !UTGameInstance->bReceivedTitleFiles) return;
 
 	// Clear the timer that got us here
 	GetWorldTimerManager().ClearTimer(RuleWaitHandle);
@@ -81,14 +82,14 @@ void AUTLobbyGameState::RulesetsAreLoaded()
 	TArray<FAssetData> MapAssets;
 	FindAllPlayableMaps(MapAssets);
 
-	for (int32 i=0; i < UTGameEngine->GameRulesets.Num(); i++)
+	for (int32 i=0; i < UTGameInstance->GameRulesets.Num(); i++)
 	{
-		if (!UTGameEngine->GameRulesets[i].bHideFromUI)
+		if (!UTGameInstance->GameRulesets[i].bHideFromUI)
 		{
 			bool bExistsAlready = false;
 			for (int32 j=0; j < AvailableGameRulesets.Num(); j++)
 			{
-				if ( AvailableGameRulesets[j]->UniqueTag.Equals(UTGameEngine->GameRulesets[i].UniqueTag, ESearchCase::IgnoreCase) || AvailableGameRulesets[j]->Title.ToLower() == UTGameEngine->GameRulesets[i].Title.ToLower() )
+				if ( AvailableGameRulesets[j]->Data.UniqueTag.Equals(UTGameInstance->GameRulesets[i].UniqueTag, ESearchCase::IgnoreCase) || AvailableGameRulesets[j]->Data.Title.ToLower() == UTGameInstance->GameRulesets[i].Title.ToLower() )
 				{
 					bExistsAlready = true;
 					break;
@@ -103,7 +104,7 @@ void AUTLobbyGameState::RulesetsAreLoaded()
 				if (NewReplicatedRuleset)
 				{
 					// Build out the map info
-					NewReplicatedRuleset->SetRules(UTGameEngine->GameRulesets[i], MapAssets);
+					NewReplicatedRuleset->SetRules(UTGameInstance->GameRulesets[i], MapAssets);
 
 					// If this ruleset doesn't have any maps, then don't use it
 					if (NewReplicatedRuleset->MapList.Num() > 0)
@@ -112,7 +113,7 @@ void AUTLobbyGameState::RulesetsAreLoaded()
 					}
 					else
 					{
-						UE_LOG(UT,Warning,TEXT("Detected a ruleset [%s] that has no maps"), *UTGameEngine->GameRulesets[i].UniqueTag);
+						UE_LOG(UT,Warning,TEXT("Detected a ruleset [%s] that has no maps"), *UTGameInstance->GameRulesets[i].UniqueTag);
 						NewReplicatedRuleset->Destroy();
 					}
 				}
@@ -261,7 +262,7 @@ TWeakObjectPtr<AUTReplicatedGameRuleset> AUTLobbyGameState::FindRuleset(FString 
 {
 	for (int32 i=0; i < AvailableGameRulesets.Num(); i++)
 	{
-		if ( AvailableGameRulesets[i] != nullptr && AvailableGameRulesets[i]->UniqueTag.Equals(TagToFind, ESearchCase::IgnoreCase) )
+		if ( AvailableGameRulesets[i] != nullptr && AvailableGameRulesets[i]->Data.UniqueTag.Equals(TagToFind, ESearchCase::IgnoreCase) )
 		{
 			return AvailableGameRulesets[i];
 		}

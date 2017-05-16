@@ -149,7 +149,7 @@ FText SUTStartMatchWindow::GetMinorText() const
 			if (FunnyIndex < 0 || !Funny.IsValidIndex(FunnyIndex))
 			{
 				FString MapName = LobbyPlayerState->CurrentMatch->InitialMapInfo.IsValid() ? LobbyPlayerState->CurrentMatch->InitialMapInfo->Title : LobbyPlayerState->CurrentMatch->InitialMap;
-				return FText::Format(NSLOCTEXT("SUTStartMatchWindow","ConfigMatchMinorFormat","Settings up {0} on {1}"), FText::FromString(LobbyPlayerState->CurrentMatch->CurrentRuleset->Title), FText::FromString(MapName) );
+				return FText::Format(NSLOCTEXT("SUTStartMatchWindow","ConfigMatchMinorFormat","Settings up {0} on {1}"), FText::FromString(LobbyPlayerState->CurrentMatch->CurrentRuleset->Data.Title), FText::FromString(MapName) );
 			}
 			else
 			{

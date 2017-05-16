@@ -2,16 +2,35 @@
 
 #include "UnrealTournament.h"
 #include "UTPlaylistManager.h"
+#include "UTGameEngine.h"
 
-bool UUTPlaylistManager::GetMaxTeamInfoForPlaylist(int32 PlaylistId, int32& MaxTeamCount, int32& MaxTeamSize, int32& MaxPartySize)
+
+
+FUTGameRuleset* UUTPlaylistManager::GetRuleset(int32 PlaylistId)
 {
+	// Find the play list
 	for (const FPlaylistItem& PlaylistEntry : Playlist)
 	{
 		if (PlaylistEntry.PlaylistId == PlaylistId)
 		{
-			MaxTeamCount = PlaylistEntry.MaxTeamCount;
-			MaxTeamSize = PlaylistEntry.MaxTeamSize;
-			MaxPartySize = PlaylistEntry.MaxPartySize;
+			UUTGameInstance* UTGameInstance = Cast<UUTGameInstance>(GetOuter());
+			if (UTGameInstance )
+			{
+				return UTGameInstance ->GetRuleset(PlaylistEntry.RulesetTag);
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+bool UUTPlaylistManager::IsValidPlaylist(int32 PlaylistId)
+{
+	// Find the play list
+	for (const FPlaylistItem& PlaylistEntry : Playlist)
+	{
+		if (PlaylistEntry.PlaylistId == PlaylistId)
+		{
 			return true;
 		}
 	}
@@ -19,19 +38,19 @@ bool UUTPlaylistManager::GetMaxTeamInfoForPlaylist(int32 PlaylistId, int32& MaxT
 	return false;
 }
 
-bool UUTPlaylistManager::GetPlaylistName(int32 PlaylistId, FString& OutPlaylistName)
+
+bool UUTPlaylistManager::GetMaxTeamInfoForPlaylist(int32 PlaylistId, int32& MaxTeamCount, int32& MaxTeamSize, int32& MaxPartySize)
 {
-	for (const FPlaylistItem& PlaylistEntry : Playlist)
+	FUTGameRuleset* Ruleset = GetRuleset(PlaylistId);
+	if (Ruleset)
 	{
-		if (PlaylistEntry.PlaylistId == PlaylistId)
-		{
-			OutPlaylistName = PlaylistEntry.FriendlyName;
-			return true;
-		}
+		MaxTeamCount = Ruleset != nullptr ? Ruleset->MaxTeamCount : -1;
+		MaxTeamSize = Ruleset != nullptr ? Ruleset->MaxTeamSize : -1;
+		MaxPartySize = Ruleset != nullptr ? Ruleset->MaxPartySize : -1;
+		return true;
 	}
 
 	return false;
-
 }
 
 bool UUTPlaylistManager::IsPlaylistRanked(int32 PlaylistId)
@@ -75,6 +94,32 @@ bool UUTPlaylistManager::GetTeamEloRatingForPlaylist(int32 PlaylistId, FString& 
 	return false;
 }
 
+int32 UUTPlaylistManager::GetBotDifficulty(int32 PlaylistId)
+{
+	for (const FPlaylistItem& PlaylistEntry : Playlist)
+	{
+		if (PlaylistEntry.PlaylistId == PlaylistId)
+		{
+			return PlaylistEntry.BotDifficulty;
+		}
+	}
+
+	return 0;
+}
+
+bool UUTPlaylistManager::AreBotsAllowed(int32 PlaylistId)
+{
+	for (const FPlaylistItem& PlaylistEntry : Playlist)
+	{
+		if (PlaylistEntry.PlaylistId == PlaylistId)
+		{
+			return PlaylistEntry.bAllowBots;
+		}
+	}
+
+	return false;
+}
+
 bool UUTPlaylistManager::GetPlaylistId(int32 PlaylistIndex, int32& PlaylistId)
 {
 	if (Playlist.IsValidIndex(PlaylistIndex))
@@ -88,13 +133,11 @@ bool UUTPlaylistManager::GetPlaylistId(int32 PlaylistIndex, int32& PlaylistId)
 
 bool UUTPlaylistManager::GetGameModeForPlaylist(int32 PlaylistId, FString& GameMode)
 {
-	for (const FPlaylistItem& PlaylistEntry : Playlist)
+	FUTGameRuleset* Ruleset = GetRuleset(PlaylistId);
+	if (Ruleset)
 	{
-		if (PlaylistEntry.PlaylistId == PlaylistId)
-		{
-			GameMode = PlaylistEntry.GameMode;
-			return true;
-		}
+		GameMode = Ruleset->GameMode;
+		return true;
 	}
 
 	return false;
@@ -102,43 +145,41 @@ bool UUTPlaylistManager::GetGameModeForPlaylist(int32 PlaylistId, FString& GameM
 
 bool UUTPlaylistManager::GetURLForPlaylist(int32 PlaylistId, FString& URL)
 {
-	for (const FPlaylistItem& PlaylistEntry : Playlist)
+	FUTGameRuleset* Ruleset = GetRuleset(PlaylistId);
+	if (Ruleset)
 	{
-		if (PlaylistEntry.PlaylistId == PlaylistId)
+		// Get a list of usable maps
+		TArray<FString> MapList;
+		Ruleset->EpicMaps.ParseIntoArray(MapList,TEXT(","), true);
+
+		FString StartingMap = MapList[FMath::RandRange(0, MapList.Num() - 1)];
+		URL = Ruleset->GenerateURL(StartingMap, AreBotsAllowed(PlaylistId), GetBotDifficulty(PlaylistId), true);
+		URL += TEXT("?MatchmakingSession=1");
+		if (IsPlaylistRanked(PlaylistId))
 		{
-			URL = PlaylistEntry.MapNames[FMath::RandRange(0, PlaylistEntry.MapNames.Num() - 1)];
-			URL += TEXT("?game=") + PlaylistEntry.GameMode;
-			URL += PlaylistEntry.ExtraCommandline;
-
-			URL += TEXT("?MatchmakingSession=1");
-
-			if (PlaylistEntry.bRanked)
-			{
-				URL += TEXT("?Ranked=1");
-			}
-			else
-			{
-				URL += TEXT("?QuickMatch=1");
-			}
-
-			return true;
+			URL += TEXT("?Ranked=1");
 		}
+		else
+		{
+			URL += TEXT("?QuickMatch=1");
+		}
+
+		return true;
 	}
 
 	return false;
 }
 
-void UUTPlaylistManager::UpdatePlaylistFromMCP(int32 PlaylistId, FString InExtraCommandline, TArray<FString>& InMapNames, bool bSkipEloChecks)
+void UUTPlaylistManager::UpdatePlaylistFromMCP(const FPlaylistItemStorage& MCPPlaylist)
 {
-	for (FPlaylistItem& PlaylistEntry : Playlist)
-	{
-		if (PlaylistEntry.PlaylistId == PlaylistId)
-		{
-			PlaylistEntry.ExtraCommandline = InExtraCommandline;
-			PlaylistEntry.MapNames = InMapNames;
-			PlaylistEntry.bSkipEloChecks = bSkipEloChecks;
-		}
-	}
+	Playlist = MCPPlaylist.NewItems;
+	Playlist.Sort([&](const FPlaylistItem &A, const FPlaylistItem &B)
+			{
+				return A.SortWeight < B.SortWeight;
+			}
+	);
+
+
 }
 
 FName UUTPlaylistManager::GetPlaylistSlateBadge(int32 PlaylistId)
@@ -154,15 +195,31 @@ FName UUTPlaylistManager::GetPlaylistSlateBadge(int32 PlaylistId)
 	return NAME_None;
 }
 
-int32 UUTPlaylistManager::GetPlaylistRequireTutorialMask(int32 PlaylistId)
+void UUTPlaylistManager::GetPlaylist(bool bRanked, TArray<FPlaylistItem*>& outList)
 {
-	for (FPlaylistItem& PlaylistEntry : Playlist)
+	for (int32 i=0; i < Playlist.Num(); i++)
 	{
-		if (PlaylistEntry.PlaylistId == PlaylistId )
+		if (Playlist[i].bRanked == bRanked) 
 		{
-			return PlaylistEntry.RequiredTutorialMask;
+			outList.Add(&Playlist[i]);
 		}
 	}
+}
 
-	return 0x00;
+
+
+// TODO: Look at caching the counts 
+int32 UUTPlaylistManager::HowManyRanked()
+{
+	int32 Cnt = 0;
+	for (FPlaylistItem& PlaylistEntry : Playlist)
+	{
+		if (PlaylistEntry.bRanked) Cnt++;
+	}
+	return Cnt;
+}
+
+int32 UUTPlaylistManager::HowManyQuickPlay()
+{
+	return Playlist.Num() - HowManyRanked();
 }
