@@ -16,6 +16,8 @@
 #include "IAnalyticsProvider.h"
 #include "UTBotCharacter.h"
 #include "UTEpicDefaultRulesets.h"
+#include "UserActivityTracking.h"
+
 #if !UE_SERVER
 #include "SlateBasics.h"
 #include "MoviePlayer.h"
@@ -699,6 +701,9 @@ void UUTGameEngine::IndexExpansionContent()
 		for (const auto& PakPath : FoundPaks)
 		{
 			FString PakFilename = FPaths::GetBaseFilename(PakPath);
+
+			//Log user activity so Crash Reporter knows if we crash during PakLoading
+			FUserActivityTracking::SetActivity(FUserActivity(FString::Printf(TEXT("LoadingCustomContentPAK:_%s"),*PakFilename)));
 
 			// If dedicated server, mount the pak
 			if (bAltPaks && FCoreDelegates::OnMountPak.IsBound())

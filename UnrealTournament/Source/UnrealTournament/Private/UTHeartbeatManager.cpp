@@ -12,6 +12,9 @@
 #include "UTLobbyGameState.h"
 #include "UTDemoRecSpectator.h"
 #include "UTMatchmaking.h"
+#include "UTGameEngine.h"
+
+#include "UserActivityTracking.h"
 
 UUTHeartbeatManager::UUTHeartbeatManager(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -159,6 +162,14 @@ void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 				}
 
 				FUTAnalytics::FireEvent_PlayerContextLocationPerMinute(UTPC, PlayerConxtextLocation, NumPartyMembers, PlaylistID);
+			
+				//Setting context for User Activity Tracking
+				UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
+				if (UTEngine && ((UTEngine->LocalContentChecksums.Num() + UTEngine->MountedDownloadedContentChecksums.Num()) > 0))
+				{
+					PlayerConxtextLocation.Append(TEXT("_CustomContent"));
+				}
+				FUserActivityTracking::SetActivity(FUserActivity(PlayerConxtextLocation));
 			}
 		}
 	}

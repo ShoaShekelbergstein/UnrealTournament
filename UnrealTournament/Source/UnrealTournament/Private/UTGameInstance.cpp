@@ -16,6 +16,8 @@
 #include "UTWorldSettings.h"
 #include "Classes/Engine/ActorChannel.h"
 
+#include "UserActivityTracking.h"
+
 #if !UE_SERVER
 #include "SUTStyle.h"
 #include "SlateBasics.h"
@@ -91,11 +93,8 @@ void UUTGameInstance::Init()
 	}
 #endif
 
-	if (!FParse::Param(FCommandLine::Get(), TEXT("server")))
-	{
-		FCoreUObjectDelegates::PreLoadMap.AddUObject(this, &UUTGameInstance::BeginLevelLoading);
-		FCoreUObjectDelegates::PostLoadMap.AddUObject(this, &UUTGameInstance::EndLevelLoading);
-	}
+	FCoreUObjectDelegates::PreLoadMap.AddUObject(this, &UUTGameInstance::BeginLevelLoading);
+	FCoreUObjectDelegates::PostLoadMap.AddUObject(this, &UUTGameInstance::EndLevelLoading);
 }
 
 bool UUTGameInstance::ExecDatabaseCommand(const FString& DatabaseCommand, TArray<FDatabaseRow>& DatabaseRows)
@@ -732,149 +731,154 @@ void UUTGameInstance::BeginLevelLoading(const FString& LevelName)
 
 	bLevelIsLoading	 = true;
 
+	//Log user activity so Crash Reporter knows if we crash during level loading
+	FUserActivityTracking::SetActivity(FUserActivity(FString::Printf(TEXT("BeginLevelLoading:_%s"), *LevelName)));
+
 #if !UE_SERVER
-	bool bIsEpicMap = false;
-	bool bIsMeshedMap = false;
-	bool bHasRights = false;
-
-	bShowCommunityBadge = false;
-	AUTBaseGameMode* DefaultGameModeObject = AUTBaseGameMode::StaticClass()->GetDefaultObject<AUTBaseGameMode>();
-	if (DefaultGameModeObject)
+	if (!IsDedicatedServerInstance())
 	{
-		DefaultGameModeObject->CheckMapStatus(LevelName, bIsEpicMap, bIsMeshedMap, bHasRights);
-		bShowCommunityBadge = !bIsEpicMap;
-	}
+		bool bIsEpicMap = false;
+		bool bIsMeshedMap = false;
+		bool bHasRights = false;
 
-	LoadingMapFriendlyName = TEXT("");
-
-	TArray<FAssetData> MapAssets;
-	GetAllAssetData(UWorld::StaticClass(), MapAssets);
-
-	for (const FAssetData& Asset : MapAssets)
-	{
-		if (Asset.PackageName.ToString() == LevelName)
+		bShowCommunityBadge = false;
+		AUTBaseGameMode* DefaultGameModeObject = AUTBaseGameMode::StaticClass()->GetDefaultObject<AUTBaseGameMode>();
+		if (DefaultGameModeObject)
 		{
-			const FString* Title = Asset.TagsAndValues.Find(NAME_MapInfo_Title);
-			if (Title != nullptr)
-			{
-				LoadingMapFriendlyName = *Title; 
-			}
-			break;
+			DefaultGameModeObject->CheckMapStatus(LevelName, bIsEpicMap, bIsMeshedMap, bHasRights);
+			bShowCommunityBadge = !bIsEpicMap;
 		}
-	}
 
-	if (LoadingMapFriendlyName.IsEmpty())
-	{
-		int32 Pos = INDEX_NONE;
-		LevelName.FindLastChar('/', Pos);
-		LoadingMapFriendlyName = (Pos == INDEX_NONE) ? LevelName : LevelName.Right(LevelName.Len() - Pos -1);
-	}
+		LoadingMapFriendlyName = TEXT("");
 
-	// Find the map title 
+		TArray<FAssetData> MapAssets;
+		GetAllAssetData(UWorld::StaticClass(), MapAssets);
 
-	if (LevelLoadText.IsEmpty())
-	{
-		LevelLoadText = FText::Format(NSLOCTEXT("UTGameInstance","GenericMapLoading","Loading {0}"), FText::FromString(LoadingMapFriendlyName));
-	}
-
-	AUTBaseGameMode* GM = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
-	if (GM)
-	{
-		GM->OnLoadingMovieBegin();
-	}
-
-	// Grab just the map name, minus the path
-
-	FString CleanLevelName = FPaths::GetCleanFilename(LevelName);
-	FString MovieList = TEXT("");
-
-	// This is mostly for the benefit of local replay recording
-	// The preload delegate really needs the loading world context piped through now
-	bool bTransitioningToSameMap = false;
-	if (GetWorldContext() && GetWorldContext()->World())
-	{
-		bTransitioningToSameMap = GetWorldContext()->World()->GetName() == CleanLevelName;
-	}
-
-	MovieVignettes.Empty();
-	VignetteIndex = 0;
-
-	if (LevelLoadText.ToString().Contains(TEXT("UT-Entry")))
-	{
-		LevelLoadText = NSLOCTEXT("UTGameInstance","MainMenu","Returning to Main Menu");
-	}
-
-	IUnrealTournamentFullScreenMovieModule* const FullScreenMovieModule = FModuleManager::LoadModulePtr<IUnrealTournamentFullScreenMovieModule>("UnrealTournamentFullScreenMovie");
-	if (FullScreenMovieModule != nullptr)
-	{
-		FullScreenMovieModule->OnClipFinished().Clear();
-		FullScreenMovieModule->OnClipFinished().AddUObject(this, &UUTGameInstance::OnMovieClipFinished);
-	}
-
-	if ( FParse::Param( FCommandLine::Get(), TEXT( "nomovie" )) || CleanLevelName.Equals(TEXT("ut-entry"),ESearchCase::IgnoreCase) )
-	{
-		MovieVignettes.Add( FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
-		PlayLoadingMovies(true);	
-		return;
-	}
-
-	if (CleanLevelName.ToLower() == TEXT("tut-movementtraining") )
-	{
-		UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetFirstGamePlayer());
-		if (LocalPlayer)
+		for (const FAssetData& Asset : MapAssets)
 		{
-			if ( !LocalPlayer->IsTutorialMaskCompleted(TUTORIAL_Movement) )
+			if (Asset.PackageName.ToString() == LevelName)
 			{
-				MovieVignettes.Add( FMapVignetteInfo(TEXT("intro_full"), FText::GetEmpty()));
-				MovieVignettes.Add( FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
-				PlayLoadingMovies(false);	
-				return;
+				const FString* Title = Asset.TagsAndValues.Find(NAME_MapInfo_Title);
+				if (Title != nullptr)
+				{
+					LoadingMapFriendlyName = *Title;
+				}
+				break;
 			}
 		}
-	}
 
-	if ( !LoadingMovieToPlay.IsEmpty() )
-	{
-		MovieVignettes.Add( FMapVignetteInfo(LoadingMovieToPlay, FText::GetEmpty()));
-		MovieVignettes.Add( FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
-		LoadingMovieToPlay = TEXT("");
-		PlayLoadingMovies(!bSuppressLoadingText);	
-		return;
-	}
-
-	// Now Try to find the map asset for this map.
-
-	TArray<FMapVignetteInfo> MapVignettes;
-	for (const FAssetData& Asset : MapAssets)
-	{
-		if (Asset.PackageName.ToString() == LevelName)
+		if (LoadingMapFriendlyName.IsEmpty())
 		{
-			const FString* VignetteArrayAsString = Asset.TagsAndValues.Find(NAME_Vignettes);
-			if (VignetteArrayAsString != nullptr)
+			int32 Pos = INDEX_NONE;
+			LevelName.FindLastChar('/', Pos);
+			LoadingMapFriendlyName = (Pos == INDEX_NONE) ? LevelName : LevelName.Right(LevelName.Len() - Pos - 1);
+		}
+
+		// Find the map title 
+
+		if (LevelLoadText.IsEmpty())
+		{
+			LevelLoadText = FText::Format(NSLOCTEXT("UTGameInstance", "GenericMapLoading", "Loading {0}"), FText::FromString(LoadingMapFriendlyName));
+		}
+
+		AUTBaseGameMode* GM = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
+		if (GM)
+		{
+			GM->OnLoadingMovieBegin();
+		}
+
+		// Grab just the map name, minus the path
+
+		FString CleanLevelName = FPaths::GetCleanFilename(LevelName);
+		FString MovieList = TEXT("");
+
+		// This is mostly for the benefit of local replay recording
+		// The preload delegate really needs the loading world context piped through now
+		bool bTransitioningToSameMap = false;
+		if (GetWorldContext() && GetWorldContext()->World())
+		{
+			bTransitioningToSameMap = GetWorldContext()->World()->GetName() == CleanLevelName;
+		}
+
+		MovieVignettes.Empty();
+		VignetteIndex = 0;
+
+		if (LevelLoadText.ToString().Contains(TEXT("UT-Entry")))
+		{
+			LevelLoadText = NSLOCTEXT("UTGameInstance", "MainMenu", "Returning to Main Menu");
+		}
+
+		IUnrealTournamentFullScreenMovieModule* const FullScreenMovieModule = FModuleManager::LoadModulePtr<IUnrealTournamentFullScreenMovieModule>("UnrealTournamentFullScreenMovie");
+		if (FullScreenMovieModule != nullptr)
+		{
+			FullScreenMovieModule->OnClipFinished().Clear();
+			FullScreenMovieModule->OnClipFinished().AddUObject(this, &UUTGameInstance::OnMovieClipFinished);
+		}
+
+		if (FParse::Param(FCommandLine::Get(), TEXT("nomovie")) || CleanLevelName.Equals(TEXT("ut-entry"), ESearchCase::IgnoreCase))
+		{
+			MovieVignettes.Add(FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
+			PlayLoadingMovies(true);
+			return;
+		}
+
+		if (CleanLevelName.ToLower() == TEXT("tut-movementtraining"))
+		{
+			UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetFirstGamePlayer());
+			if (LocalPlayer)
 			{
-				FindField<UProperty>(UUTLevelSummary::StaticClass(), NAME_Vignettes)->ImportText(**VignetteArrayAsString, &MapVignettes, 0, nullptr);
+				if (!LocalPlayer->IsTutorialMaskCompleted(TUTORIAL_Movement))
+				{
+					MovieVignettes.Add(FMapVignetteInfo(TEXT("intro_full"), FText::GetEmpty()));
+					MovieVignettes.Add(FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
+					PlayLoadingMovies(false);
+					return;
+				}
 			}
 		}
-	}
 
-	while (MapVignettes.Num() > 0)
-	{
-		int32 Next = int32( float(MapVignettes.Num()) * FMath::FRand());
-		if (!MapVignettes[Next].MovieFilename.IsEmpty())
+		if (!LoadingMovieToPlay.IsEmpty())
 		{
-			MovieVignettes.Add(MapVignettes[Next]);
+			MovieVignettes.Add(FMapVignetteInfo(LoadingMovieToPlay, FText::GetEmpty()));
+			MovieVignettes.Add(FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
+			LoadingMovieToPlay = TEXT("");
+			PlayLoadingMovies(!bSuppressLoadingText);
+			return;
 		}
-		MapVignettes.RemoveAt(Next);	
+
+		// Now Try to find the map asset for this map.
+
+		TArray<FMapVignetteInfo> MapVignettes;
+		for (const FAssetData& Asset : MapAssets)
+		{
+			if (Asset.PackageName.ToString() == LevelName)
+			{
+				const FString* VignetteArrayAsString = Asset.TagsAndValues.Find(NAME_Vignettes);
+				if (VignetteArrayAsString != nullptr)
+				{
+					FindField<UProperty>(UUTLevelSummary::StaticClass(), NAME_Vignettes)->ImportText(**VignetteArrayAsString, &MapVignettes, 0, nullptr);
+				}
+			}
+		}
+
+		while (MapVignettes.Num() > 0)
+		{
+			int32 Next = int32(float(MapVignettes.Num()) * FMath::FRand());
+			if (!MapVignettes[Next].MovieFilename.IsEmpty())
+			{
+				MovieVignettes.Add(MapVignettes[Next]);
+			}
+			MapVignettes.RemoveAt(Next);
+		}
+
+		if (MovieVignettes.Num() == 0)
+		{
+			MovieVignettes.Add(FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
+		}
+
+		VignetteIndex = 0;
+		PlayLoadingMovies(true);
 	}
-
-	if (MovieVignettes.Num() == 0)
-	{
-		MovieVignettes.Add( FMapVignetteInfo(TEXT("load_generic_nosound"), FText::GetEmpty()));
-	}
-
-	VignetteIndex = 0;
-	PlayLoadingMovies(true);
-
 #endif
 }
 
@@ -913,19 +917,24 @@ void UUTGameInstance::EndLevelLoading()
 	bLevelIsLoading	 = false;
 	LevelLoadText = FText::GetEmpty();
 
+	//Log user activity so Crash Reporter knows if we crash after leaving level loading
+	FUserActivityTracking::SetActivity(FUserActivity(TEXT("EndLevelLoading")));
+
 #if !UE_SERVER
-
-	if (!GIsRequestingExit)
+	if (!IsDedicatedServerInstance())
 	{
-		if (GetMoviePlayer().IsValid() && GetMoviePlayer()->IsMovieCurrentlyPlaying())
+		if (!GIsRequestingExit)
 		{
-			GetMoviePlayer()->OnMoviePlaybackFinished().Clear();
-			GetMoviePlayer()->OnMoviePlaybackFinished().AddUObject(this, &UUTGameInstance::OnMoviePlaybackFinished);
-
-			IUnrealTournamentFullScreenMovieModule* const FullScreenMovieModule = FModuleManager::LoadModulePtr<IUnrealTournamentFullScreenMovieModule>("UnrealTournamentFullScreenMovie");
-			if (FullScreenMovieModule != nullptr)
+			if (GetMoviePlayer().IsValid() && GetMoviePlayer()->IsMovieCurrentlyPlaying())
 			{
-				FullScreenMovieModule->WaitForMovieToFinished();
+				GetMoviePlayer()->OnMoviePlaybackFinished().Clear();
+				GetMoviePlayer()->OnMoviePlaybackFinished().AddUObject(this, &UUTGameInstance::OnMoviePlaybackFinished);
+
+				IUnrealTournamentFullScreenMovieModule* const FullScreenMovieModule = FModuleManager::LoadModulePtr<IUnrealTournamentFullScreenMovieModule>("UnrealTournamentFullScreenMovie");
+				if (FullScreenMovieModule != nullptr)
+				{
+					FullScreenMovieModule->WaitForMovieToFinished();
+				}
 			}
 		}
 	}

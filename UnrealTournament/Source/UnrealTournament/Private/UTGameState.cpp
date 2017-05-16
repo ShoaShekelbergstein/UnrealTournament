@@ -32,6 +32,7 @@
 #include "UTTeamPlayerStart.h"
 #include "UTDemoRecSpectator.h"
 #include "UTGameVolume.h"
+#include "UserActivityTracking.h"
 
 AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -1001,6 +1002,9 @@ void AUTGameState::SortPRIArray()
 
 void AUTGameState::HandleMatchHasStarted()
 {
+	//Log user activity so Crash Reporter knows if we crash during Match
+	FUserActivityTracking::SetActivity(FUserActivity(TEXT("MatchStarted")));
+
 	if (GetNetMode() == NM_Client || GetNetMode() == NM_DedicatedServer || GetNetMode() == NM_Standalone)
 	{
 		bRunFPSChart = true;
@@ -1019,6 +1023,9 @@ void AUTGameState::HandleMatchHasStarted()
 
 void AUTGameState::HandleMatchHasEnded()
 {
+	//Log user activity so Crash Reporter knows if we crash during Match
+	FUserActivityTracking::SetActivity(FUserActivity(TEXT("MatchEnded")));
+
 	MatchEndTime = GetWorld()->TimeSeconds;
 
 	StopFPSCharts();
