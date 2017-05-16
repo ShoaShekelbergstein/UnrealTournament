@@ -56,8 +56,9 @@ class UNREALTOURNAMENT_API AUTWeap_ShockRifle : public AUTWeapon
 	/** set (client only) to last time user recorded a kill while holding this weapon, used to change on-mesh screen display */
 	UPROPERTY(BlueprintReadWrite, Category = Mesh)
 	float LastClientKillTime;
-	
-	virtual void AttachToOwner_Implementation() override;
+
+	virtual void SetupSpecialMaterials() override;
+
 	UFUNCTION()
 	virtual void UpdateScreenTexture(UCanvas* C, int32 Width, int32 Height);
 	virtual void Tick(float DeltaTime) override;

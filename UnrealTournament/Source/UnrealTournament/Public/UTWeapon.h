@@ -364,6 +364,9 @@ class UNREALTOURNAMENT_API AUTWeapon : public AUTInventory
 	UPROPERTY()
 	UUTWeaponSkin* WeaponSkin;
 
+	UFUNCTION(BlueprintCallable, Category = Effects)
+	virtual void SetupSpecialMaterials();
+
 	UFUNCTION()
 	virtual void AttachToHolster();
 

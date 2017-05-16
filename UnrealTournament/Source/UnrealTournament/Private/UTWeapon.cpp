@@ -874,6 +874,11 @@ bool AUTWeapon::PutDown()
 	}
 }
 
+void AUTWeapon::SetupSpecialMaterials()
+{
+	//DO nothing by default
+}
+
 void AUTWeapon::UnEquip()
 {
 
@@ -901,6 +906,8 @@ void AUTWeapon::AttachToOwner_Implementation()
 	{
 		return;
 	}
+
+	SetupSpecialMaterials();
 
 	if (bMustBeHolstered)
 	{
@@ -3010,6 +3017,8 @@ void AUTWeapon::SetSkin(UMaterialInterface* NewSkin)
 			}
 		}
 	}
+
+	SetupSpecialMaterials();
 }
 
 float AUTWeapon::GetDamageRadius_Implementation(uint8 TestMode) const

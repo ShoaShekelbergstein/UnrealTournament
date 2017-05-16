@@ -40,9 +40,9 @@ AUTWeap_ShockRifle::AUTWeap_ShockRifle(const FObjectInitializer& ObjectInitializ
 	VeryLowMeshOffset = FVector(0.f, 0.f, -15.f);
 }
 
-void AUTWeap_ShockRifle::AttachToOwner_Implementation()
+void AUTWeap_ShockRifle::SetupSpecialMaterials()
 {
-	Super::AttachToOwner_Implementation();
+	Super::SetupSpecialMaterials();
 
 	if (!IsRunningDedicatedServer() && Mesh != NULL && ScreenMaterialID < Mesh->GetNumMaterials())
 	{
