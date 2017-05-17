@@ -3516,7 +3516,7 @@ void AUTPlayerController::ClientNotifyTakeHit_Implementation(bool bFriendlyFire,
 	}
 }
 
-void AUTPlayerController::ClientNotifyCausedHit_Implementation(AActor* HitActor, uint8 Damage, bool bArmorDamage)
+void AUTPlayerController::ClientNotifyCausedHit_Implementation(AActor* HitActor, uint8 Damage, bool bArmorDamage, bool bOverhealth)
 {
 	// by default we only show HUD hitconfirms for hits that the player could conceivably see (i.e. target is in LOS)
 	if (HitActor != NULL && HitActor->GetRootComponent() != NULL && MyUTHUD != NULL)
@@ -3534,7 +3534,7 @@ void AUTPlayerController::ClientNotifyCausedHit_Implementation(AActor* HitActor,
 		}
 		if (GetWorld()->TimeSeconds - VictimLastRenderTime < 0.15f)
 		{
-			MyUTHUD->CausedDamage(HitActor, Damage, bArmorDamage);
+			MyUTHUD->CausedDamage(HitActor, Damage, bArmorDamage, bOverhealth);
 		}
 	}
 }

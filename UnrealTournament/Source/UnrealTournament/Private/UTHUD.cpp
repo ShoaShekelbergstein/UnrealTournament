@@ -1177,7 +1177,7 @@ void AUTHUD::DrawDamageIndicators()
 	}
 }
 
-void AUTHUD::CausedDamage(AActor* HitActor, int32 Damage, bool bArmorDamage)
+void AUTHUD::CausedDamage(AActor* HitActor, int32 Damage, bool bArmorDamage, bool bOverhealth)
 {
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 	if (HitActor && (HitActor != UTPlayerOwner->GetViewTarget()) && (GS == NULL || !GS->OnSameTeam(HitActor, PlayerOwner)))
@@ -1202,7 +1202,7 @@ void AUTHUD::CausedDamage(AActor* HitActor, int32 Damage, bool bArmorDamage)
 			{
 				// save amount, scale , 2D location
 				float HalfHeight = Cast<ACharacter>(HitActor) ? 1.15f * ((ACharacter *)(HitActor))->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight() : 0.f;
-				DamageNumbers.Add(FEnemyDamageNumber(Cast<APawn>(HitActor), GetWorld()->GetTimeSeconds(), FMath::Min(Damage, 255), HitActor->GetActorLocation() + FVector(0.f, 0.f, HalfHeight), 0.75f, bArmorDamage));
+				DamageNumbers.Add(FEnemyDamageNumber(Cast<APawn>(HitActor), GetWorld()->GetTimeSeconds(), FMath::Min(Damage, 255), HitActor->GetActorLocation() + FVector(0.f, 0.f, HalfHeight), 0.75f, bArmorDamage, bOverhealth));
 			}
 		}
 	}
@@ -1236,7 +1236,11 @@ void AUTHUD::DrawDamageNumbers()
 			float OutlineScale = 1.075f*NumberScale;
 			float Rise = RenderScale * (10.f + (DamageNumbers[i].Scale - 1.f) * 75.f);
 			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*OutlineScale, ScreenPosition.Y - OutlineScale * 0.5f*YL - Rise, OutlineScale, OutlineScale, TextRenderInfo);
-			FLinearColor NumberColor = DamageNumbers[i].bArmorDamage ? GOLDCOLOR : REDHUDCOLOR;
+			FLinearColor NumberColor = DamageNumbers[i].bOverhealth ? FLinearColor(0.f, 0.2f, 1.f, 1.f) : REDHUDCOLOR;
+			if (DamageNumbers[i].bArmorDamage)
+			{
+				NumberColor = GOLDCOLOR;
+			}
 			NumberColor.A = Alpha;
 			Canvas->SetLinearDrawColor(NumberColor);
 			Canvas->DrawText(MediumFont, DamageString, ScreenPosition.X - 0.5f*XL*NumberScale, ScreenPosition.Y - NumberScale * 0.5f*YL - Rise, NumberScale, NumberScale, TextRenderInfo);

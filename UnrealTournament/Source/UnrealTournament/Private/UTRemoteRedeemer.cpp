@@ -833,7 +833,7 @@ float AUTRemoteRedeemer::TakeDamage(float Damage, const FDamageEvent& DamageEven
 					AUTPlayerController* InstigatedByPC = Cast<AUTPlayerController>(EventInstigator);
 					if (InstigatedByPC != NULL)
 					{
-						InstigatedByPC->ClientNotifyCausedHit(this, FMath::Clamp(ResultDamage, 0, 255), false); 
+						InstigatedByPC->ClientNotifyCausedHit(this, FMath::Clamp(ResultDamage, 0, 255), false, false); 
 					}
 				}
 				ProjHealth -= ActualDamage;

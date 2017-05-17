@@ -128,11 +128,11 @@ void AUTDemoRecSpectator::ViewPlayerState(APlayerState* PS)
 	QueuedPlayerStateToView = PS;
 }
 
-void AUTDemoRecSpectator::DemoNotifyCausedHit_Implementation(APawn* InstigatorPawn, AUTCharacter* HitPawn, uint8 AppliedDamage, FVector Momentum, const FDamageEvent& DamageEvent, bool bArmorDamage)
+void AUTDemoRecSpectator::DemoNotifyCausedHit_Implementation(APawn* InstigatorPawn, AUTCharacter* HitPawn, uint8 AppliedDamage, FVector Momentum, const FDamageEvent& DamageEvent, bool bArmorDamage, bool bOverhealth)
 {
 	if (GetViewTarget() == InstigatorPawn)
 	{
-		ClientNotifyCausedHit(HitPawn, AppliedDamage, bArmorDamage);
+		ClientNotifyCausedHit(HitPawn, AppliedDamage, bArmorDamage, bOverhealth);
 	}
 	if (GetViewTarget() == HitPawn)
 	{

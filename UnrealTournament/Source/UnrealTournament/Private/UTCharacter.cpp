@@ -1537,6 +1537,8 @@ void AUTCharacter::NotifyTakeHit(AController* InstigatedBy, int32 AppliedDamage,
 		APawn* InstigatorPawn = InstigatedBy ? InstigatedBy->GetPawn() : nullptr;
 		uint8 CompressedDamage = FMath::Clamp(AppliedDamage, 0, 255);
 		bool bArmorDamage = (AppliedDamage > 0) && (Health + AppliedDamage > HealthMax) && (int32((Health + AppliedDamage)/AppliedDamage) != int32(HealthMax /AppliedDamage));
+		bool bOverhealth = bArmorDamage && (Health > HealthMax) && (GetArmorAmount() == 0);
+		bArmorDamage = bArmorDamage && !bOverhealth;
 		const UDamageType* const DamageTypeCDO = (DamageEvent.DamageTypeClass != nullptr) ? DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType>() : GetDefault<UDamageType>();
 		const UUTDamageType* const UTDamageTypeCDO = Cast<UUTDamageType>(DamageTypeCDO); // warning: may be NULL
 		if (UTDamageTypeCDO && !UTDamageTypeCDO->bBlockedByArmor)
@@ -1546,7 +1548,7 @@ void AUTCharacter::NotifyTakeHit(AController* InstigatedBy, int32 AppliedDamage,
 			
 		if (InstigatedByPC != NULL)
 		{
-			InstigatedByPC->ClientNotifyCausedHit(this, CompressedDamage, bArmorDamage);
+			InstigatedByPC->ClientNotifyCausedHit(this, CompressedDamage, bArmorDamage, bOverhealth);
 		}
 		else
 		{
@@ -1588,11 +1590,11 @@ void AUTCharacter::NotifyTakeHit(AController* InstigatedBy, int32 AppliedDamage,
 				AUTPlayerController* PC = Cast<AUTPlayerController>(*It);
 				if (PC != NULL && (PC != InstigatedByPC) && PC->GetViewTarget() == InstigatorPawn && PC->GetPawn() != this)
 				{
-					PC->ClientNotifyCausedHit(this, CompressedDamage, bArmorDamage);
+					PC->ClientNotifyCausedHit(this, CompressedDamage, bArmorDamage, bOverhealth);
 				}
 				else if (Cast<AUTDemoRecSpectator>(PC))
 				{
-					((AUTDemoRecSpectator*)(PC))->DemoNotifyCausedHit(InstigatorPawn, this, CompressedDamage, Momentum, DamageEvent, bArmorDamage);
+					((AUTDemoRecSpectator*)(PC))->DemoNotifyCausedHit(InstigatorPawn, this, CompressedDamage, Momentum, DamageEvent, bArmorDamage, bOverhealth);
 				}
 			}
 		}

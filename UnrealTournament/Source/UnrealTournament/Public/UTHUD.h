@@ -64,12 +64,15 @@ struct FEnemyDamageNumber
 	UPROPERTY()
 		bool bArmorDamage;
 
+	UPROPERTY()
+		bool bOverhealth;
+
 	FEnemyDamageNumber()
-		: DamagedPawn(NULL), DamageTime(0.f), DamageAmount(0), WorldPosition(FVector(0.f)), Scale(1.f), bArmorDamage(false)
+		: DamagedPawn(NULL), DamageTime(0.f), DamageAmount(0), WorldPosition(FVector(0.f)), Scale(1.f), bArmorDamage(false), bOverhealth(false)
 	{
 	}
 
-	FEnemyDamageNumber(APawn* InPawn, float InTime, uint8 InDamage, FVector InLoc, float InScale, bool InbArmorDamage) : DamagedPawn(InPawn), DamageTime(InTime), DamageAmount(InDamage), WorldPosition(InLoc), Scale(InScale), bArmorDamage(InbArmorDamage) {};
+	FEnemyDamageNumber(APawn* InPawn, float InTime, uint8 InDamage, FVector InLoc, float InScale, bool InbArmorDamage, bool InOverhealth) : DamagedPawn(InPawn), DamageTime(InTime), DamageAmount(InDamage), WorldPosition(InLoc), Scale(InScale), bArmorDamage(InbArmorDamage), bOverhealth(InOverhealth) {};
 };
 
 class UUTRadialMenu;
@@ -317,7 +320,7 @@ public:
 	virtual void DrawDamageIndicators();
 
 	/** called when PlayerOwner caused damage to HitPawn */
-	virtual void CausedDamage(AActor *HitActor, int32 Damage, bool bArmorDamage);
+	virtual void CausedDamage(AActor *HitActor, int32 Damage, bool bArmorDamage, bool bOverhealth);
 
 	virtual class UFont* GetFontFromSizeIndex(int32 FontSize) const;
 
