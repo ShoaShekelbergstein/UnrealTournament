@@ -194,7 +194,6 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 
 	FName SavedCameraStyle = CameraStyle;
 	CameraStyle = GetCameraStyleWithOverrides();
-	UE_LOG(UT, Warning, TEXT("Camera style is %s viewtarget is %s vt %s"), *CameraStyle.ToString(), PCOwner->GetViewTarget() ? *PCOwner->GetViewTarget()->GetName() : TEXT("NONE"), OutVT.Target ? *OutVT.Target->GetName() : TEXT("NONE"));
 	bool bUseDeathCam = false;
 	//if we have a line up active, change our ViewTarget to be the line-up target and setup camera settings
 	if (CameraStyle == NAME_LineUpCam)
