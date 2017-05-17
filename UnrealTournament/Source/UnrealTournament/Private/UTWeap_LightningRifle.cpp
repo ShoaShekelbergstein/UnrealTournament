@@ -261,7 +261,7 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 		{
 			// FIXMESTEVE get charge value through timeline
 			UTOwner->SetAmbientSound(ChargeSound, false);
-			ChargePct = FMath::Min(1.f, ChargePct + ChargeSpeed*DeltaTime);
+			ChargePct = FMath::Min(1.f, ChargePct + ChargeSpeed*DeltaTime*UTOwner->GetFireRateMultiplier()); 
 			UTOwner->ChangeAmbientSoundPitch(ChargeSound, ChargePct);
 			bool bWasFullyPowered = bIsFullyPowered;
 			bIsFullyPowered = (ChargePct >= 1.f);
