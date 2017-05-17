@@ -312,6 +312,16 @@ void AUTCarriedObject::OnHolderChanged()
 	}
 }
 
+void AUTCarriedObject::OnRep_Team()
+{
+	UpdateHolderTrailTeam();
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		UpdateOutline();
+	}
+}
+
+
 uint8 AUTCarriedObject::GetTeamNum() const
 {
 	return (Team != NULL) ? Team->GetTeamNum() : 255;

@@ -176,10 +176,7 @@ public:
 
 	// Allow children to know when the team changes
 	UFUNCTION()
-	virtual void OnRep_Team()
-	{
-		UpdateHolderTrailTeam();
-	}
+		virtual void OnRep_Team();
 
 	// Where to display this object relative to the home base
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = GameObject)
