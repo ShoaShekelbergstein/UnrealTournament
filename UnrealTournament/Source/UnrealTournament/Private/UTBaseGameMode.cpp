@@ -55,7 +55,19 @@ void AUTBaseGameMode::InitGame( const FString& MapName, const FString& Options, 
 	{
 		DefaultPawnClass = Cast<UClass>(StaticLoadObject(UClass::StaticClass(), NULL, *PlayerPawnObject.ToStringReference().ToString(), NULL, LOAD_NoWarn));
 	}
-
+	if (!PawnClassOverride.IsEmpty())
+	{
+		TSubclassOf<APawn> OverrideClass = Cast<UClass>(StaticLoadObject(UClass::StaticClass(), NULL, *PawnClassOverride, NULL, LOAD_NoWarn));
+		if (OverrideClass)
+		{
+			UE_LOG(UT, Warning, TEXT("Overriding pawn class with %s"), *OverrideClass->GetName());
+			DefaultPawnClass = OverrideClass;
+		}
+		else
+		{
+			UE_LOG(UT, Warning, TEXT("FAILED Overriding pawn class with %s"), *OverrideClass->GetName());
+		}
+	}
 	// Grab the InstanceID if it's there.
 	LobbyInstanceID = UGameplayStatics::GetIntOption(Options, TEXT("InstanceID"), 0);
 

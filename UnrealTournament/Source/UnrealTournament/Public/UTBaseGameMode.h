@@ -147,6 +147,9 @@ public:
 	UPROPERTY(GlobalConfig)
 	FString TestString;
 
+	UPROPERTY(GlobalConfig)
+		FString PawnClassOverride;
+
 	/**
 	 * Converts a string to a bool.  If the string is empty, it will return the default.
 	 **/
