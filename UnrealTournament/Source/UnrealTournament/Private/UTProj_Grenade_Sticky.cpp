@@ -14,6 +14,7 @@ AUTProj_Grenade_Sticky::AUTProj_Grenade_Sticky(const class FObjectInitializer& O
 	MinimumLifeTime = 0.2f;
 	bAlwaysShootable = true;
 	CollisionComp->SetCollisionProfileName(TEXT("ProjectileShootable"));
+	bReplicateUTMovement = true;
 }
 
 void AUTProj_Grenade_Sticky::BeginPlay()
