@@ -6897,12 +6897,12 @@ void UUTLocalPlayer::TrackGamePlayed(const FString& GameMode)
 		GameModeClassName = UGameMapsSettings::GetGameModeForName(GameModeClassName);
 	}
 
-	int32 FindIndex = INDEX_NONE;
 	for (int32 i=0; i < GameModeCounts.Num(); i++)
 	{
 		if (GameModeCounts[i].GameModeClass.Equals(GameModeClassName, ESearchCase::IgnoreCase))		
 		{
-			GameModeCounts[FindIndex].PlayCount++;
+			GameModeCounts[i].PlayCount++;
+			SaveConfig();
 			return;
 		}
 	}
@@ -6992,7 +6992,7 @@ void UUTLocalPlayer::CheckLoadingMovie(const FString& GameMode)
 
 	
 		// Look to see if this tutorial has been completed
-		if ((GetProfileSettings()->TutorialMask & DesiredTutorial) != DesiredTutorial && PlayCount < 4)
+		if ((GetProfileSettings()->TutorialMask & DesiredTutorial) != DesiredTutorial && PlayCount < 3)
 		{
 			// Set the loading movie
 			UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());

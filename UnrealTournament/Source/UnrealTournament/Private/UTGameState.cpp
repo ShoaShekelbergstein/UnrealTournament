@@ -1233,9 +1233,24 @@ void AUTGameState::TrackGame()
 {
 	if (GameModeClass != nullptr)
 	{
-		const AUTGameMode* DefaultGame = Cast<AUTGameMode>(GameModeClass.GetDefaultObject());
+		AUTGameMode* DefaultGame = Cast<AUTGameMode>(GameModeClass.GetDefaultObject());
 		if (DefaultGame != nullptr)
 		{
+			// If this is a blueprint class, get the parent class.
+
+			if (DefaultGame->IsInBlueprint())
+			{
+				TSubclassOf<AUTGameMode> ParentClass = GameModeClass->GetSuperClass();
+				if (ParentClass != nullptr)
+				{
+					AUTGameMode* ParentGame = Cast<AUTGameMode>(ParentClass.GetDefaultObject());
+					if (ParentGame != nullptr)
+					{
+						DefaultGame = ParentGame;
+					}
+				}
+			}
+
 			for (auto It = GetGameInstance()->GetLocalPlayerIterator(); It; ++It)
 			{
 				UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(*It);
