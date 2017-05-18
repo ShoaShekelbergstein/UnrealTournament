@@ -196,9 +196,10 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 	CameraStyle = GetCameraStyleWithOverrides();
 	bool bUseDeathCam = false;
 	//if we have a line up active, change our ViewTarget to be the line-up target and setup camera settings
-	if (CameraStyle == NAME_LineUpCam)
+	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
+	UCameraComponent* LineUpCam = ((CameraStyle == NAME_LineUpCam) && (GameState && GameState->LineUpHelper)) ? GameState->GetCameraComponentForLineUp(GameState->LineUpHelper->LastActiveType) : nullptr;
+	if (LineUpCam)
 	{
-		AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
 
 		OutVT.POV.FOV = DefaultFOV;
 		OutVT.POV.OrthoWidth = DefaultOrthoWidth;
@@ -206,24 +207,15 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		OutVT.POV.ProjectionMode = bIsOrthographic ? ECameraProjectionMode::Orthographic : ECameraProjectionMode::Perspective;
 		OutVT.POV.PostProcessBlendWeight = 1.0f;
 
-		UCameraComponent* LineUpCam = (GameState && GameState->LineUpHelper) ?  GameState->GetCameraComponentForLineUp(GameState->LineUpHelper->LastActiveType) : nullptr;
-		if (LineUpCam)
-		{
-			//Set target to line up zone that owns this camera
-			OutVT.Target = LineUpCam->GetOwner();
-			OutVT.POV.Location = LineUpCam->GetComponentLocation();
-			OutVT.POV.Rotation = LineUpCam->GetComponentRotation();
+		//Set target to line up zone that owns this camera
+		OutVT.Target = LineUpCam->GetOwner();
+		OutVT.POV.Location = LineUpCam->GetComponentLocation();
+		OutVT.POV.Rotation = LineUpCam->GetComponentRotation();
 
-			ApplyCameraModifiers(DeltaTime, OutVT.POV);
+		ApplyCameraModifiers(DeltaTime, OutVT.POV);
 
-			// Synchronize the actor with the view target results
-			SetActorLocationAndRotation(OutVT.POV.Location, OutVT.POV.Rotation, false);
-		}
-		else
-		{
-			//if we don't have a camera setup, just use FreeCam
-			CameraStyle = NAME_FreeCam;
-		}
+		// Synchronize the actor with the view target results
+		SetActorLocationAndRotation(OutVT.POV.Location, OutVT.POV.Rotation, false);
 	}
 	
 	// smooth third person camera all the time
@@ -238,7 +230,6 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		ApplyCameraModifiers(DeltaTime, OutVT.POV);
 		
 		// if not during active gameplay, use spawn location/rotation
-		AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
 		AUTPlayerController* UTPC = Cast<AUTPlayerController>(PCOwner);
 		if (UTPC && (!GameState || (GameState->GetMatchState() == MatchState::CountdownToBegin) || (GameState->GetMatchState() == MatchState::WaitingToStart) || (GameState->GetMatchState() == MatchState::MatchIntermission)))
 		{

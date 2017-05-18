@@ -108,7 +108,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	bNoDefaultLeaderHat = true;
 
 	bHasRespawnChoices = false;
-	MaxWaitForPlayers = 180;
+	MaxWaitForPlayers = 120;
 	QuickWaitForPlayers = 120;
 	ShortWaitForPlayers = 60;
 	MatchSummaryDelay = 9.f;

@@ -92,7 +92,7 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	GameStateClass = AUTFlagRunGameState::StaticClass();
 	bAllowBoosts = false;
 	bGameHasImpactHammer = false;
-	FlagPickupDelay = 15;
+	FlagPickupDelay = 20;
 	bTrackKillAssists = true;
 	CTFScoringClass = AUTFlagRunScoring::StaticClass();
 	DefaultMaxPlayers = 10;
