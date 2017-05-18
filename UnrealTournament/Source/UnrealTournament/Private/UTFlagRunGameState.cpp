@@ -772,6 +772,10 @@ void AUTFlagRunGameState::AddMinorRoundHighlights(AUTPlayerState* PS)
 			PS->MatchHighlights[0] = HappyNames[HiredGunCount % 3];
 			HiredGunCount++;
 		}
+		else if (PS->RoundDamageDone > 150)
+		{
+			PS->MatchHighlights[0] = HighlightNames::DamageAward;
+		}
 		else
 		{
 			FName HappyNames[2] = { HighlightNames::HappyToBeHere, HighlightNames::NotSureIfSerious };
