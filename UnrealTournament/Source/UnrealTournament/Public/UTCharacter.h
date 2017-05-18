@@ -1622,6 +1622,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = FFA)
 		uint8 FFAColor;
 
+	/**Whether character data can override character blueprint defaults. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = CharacterData)
+		bool bAllowCharacterDataOverride;
+
 	// Temp replacement for CharacterData->GetDefaultObject() until 4.9 enables that in blueprints
 	UFUNCTION(BlueprintCallable, Category = Character)
 	AUTCharacterContent* GetCharacterData() const;

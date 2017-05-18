@@ -124,6 +124,7 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 	HeadBone = FName(TEXT("head"));
 	UnfeignCount = 0;
 	bAlwaysRelevant = true;
+	bAllowCharacterDataOverride = true;
 
 	BobTime = 0.f;
 	WeaponBobMagnitude = FVector(0.f, 0.8f, 0.4f);
@@ -5241,6 +5242,10 @@ AUTCharacterContent* AUTCharacter::GetCharacterData() const
 
 void AUTCharacter::ApplyCharacterData(TSubclassOf<AUTCharacterContent> CharType)
 {
+	if (!bAllowCharacterDataOverride)
+	{
+		return;
+	}
 	AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
 	if (CharType != NULL)
 	{
