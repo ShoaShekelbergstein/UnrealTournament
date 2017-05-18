@@ -826,12 +826,26 @@ bool AUTFlagRunGameState::InOrder(AUTPlayerState* P1, AUTPlayerState* P2)
 	}
 	if (P1->Score == P2->Score)
 	{
-		// if score tied, use round kills to sort
-		if (P1->RoundKills > P2->RoundKills)
+		// if score tied, use roundkills then remaininglives to sort
+		if (P1->RoundKills < P2->RoundKills)
+		{
 			return false;
+		}
+		if (P1->RoundKills > P2->RoundKills)
+		{
+			return true;
+		}
 
+		if (P1->RemainingLives < P2->RemainingLives)
+		{
+			return false;
+		}
+		if (P1->RemainingLives > P2->RemainingLives)
+		{
+			return true;
+		}
 		// keep local player highest on list
-		if ((P1->RoundKills == P2->RoundKills) && (Cast<APlayerController>(P2->GetOwner()) != NULL))
+		if (Cast<APlayerController>(P2->GetOwner()) != NULL)
 		{
 			ULocalPlayer* LP2 = Cast<ULocalPlayer>(Cast<APlayerController>(P2->GetOwner())->Player);
 			if (LP2 != NULL)
