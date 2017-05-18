@@ -127,6 +127,10 @@ AUTPlayerController::AUTPlayerController(const class FObjectInitializer& ObjectI
 	static ConstructorHelpers::FObjectFinder<USoundBase> BoostActivateSoundFinder(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/BoostActivated.BoostActivated'"));
 	BoostActivateSound = BoostActivateSoundFinder.Object;
 
+	static ConstructorHelpers::FObjectFinder<USoundBase> StartRallySoundFinder(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/StartRally.StartRally'"));
+	StartRallySound = StartRallySoundFinder.Object;
+
+
 	LastBuyMenuOpenTime = 0.0f;
 	BuyMenuToggleDelay = 0.25f;
 
@@ -316,6 +320,7 @@ void AUTPlayerController::ClientStartRally_Implementation(AUTRallyPoint* RallyTa
 		UTPlayerState->SavedRallyTarget = RallyTarget;
 	}
 	static FName NAME_PreRallyCam(TEXT("PreRallyCam"));
+	UTClientPlaySound(StartRallySound);
 	SetCameraMode(NAME_PreRallyCam);
 }
 

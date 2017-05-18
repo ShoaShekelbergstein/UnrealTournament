@@ -137,6 +137,9 @@ public:
 		USoundBase* BoostActivateSound;
 
 	UPROPERTY(BlueprintReadWrite, Category = Sounds)
+		USoundBase* StartRallySound;
+
+	UPROPERTY(BlueprintReadWrite, Category = Sounds)
 		FCustomSoundAmplification FootStepAmp;
 
 	UPROPERTY(BlueprintReadWrite, Category = Sounds)
