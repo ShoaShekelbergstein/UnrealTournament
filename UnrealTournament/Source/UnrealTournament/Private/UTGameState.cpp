@@ -1231,7 +1231,7 @@ FText AUTGameState::ServerRules()
 
 void AUTGameState::TrackGame()
 {
-	if (GameModeClass != nullptr)
+	if (!GIsEditor && GameModeClass != nullptr)
 	{
 		AUTGameMode* DefaultGame = Cast<AUTGameMode>(GameModeClass.GetDefaultObject());
 		if (DefaultGame != nullptr)
