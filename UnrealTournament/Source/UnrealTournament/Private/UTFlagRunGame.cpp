@@ -151,6 +151,11 @@ void AUTFlagRunGame::InitGame(const FString& MapName, const FString& Options, FS
 
 	InOpt = UGameplayStatics::ParseOption(Options, TEXT("SlowFC"));
 	bSlowFlagCarrier = EvalBoolOptions(InOpt, bSlowFlagCarrier);
+
+	if (bBasicTrainingGame)
+	{
+		NumRounds = 2;
+	}
 }
 
 void AUTFlagRunGame::InitGameState()
@@ -1217,7 +1222,7 @@ void AUTFlagRunGame::HandleMatchIntermission()
 	{
 		GS->UpdateRoundHighlights();
 	}
-	if ((GS == nullptr) || (GS->CTFRound < GS->NumRounds - 3))
+	if ((GS == nullptr) || (GS->CTFRound < GS->NumRounds - 3) || bBasicTrainingGame)
 	{
 		return;
 	}

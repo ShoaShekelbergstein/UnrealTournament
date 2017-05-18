@@ -5870,7 +5870,7 @@ void UUTLocalPlayer::LoginProcessComplete()
 void UUTLocalPlayer::FinalizeLogin()
 {
 	LoginPhase = ELoginPhase::LoggedIn;
-	if (bLaunchTutorialOnLogin) LaunchTutorial(ETutorialTags::TUTTAG_DM);
+	if (bLaunchTutorialOnLogin) LaunchTutorial(ETutorialTags::TUTTAG_Flagrun);
 }
 
 void UUTLocalPlayer::QoSComplete()
