@@ -88,7 +88,7 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 	if (SectionToReset == EProfileResetType::All || SectionToReset == EProfileResetType::Input)
 	{
 		bEnableMouseSmoothing = DefaultInputSettings ? DefaultInputSettings->bEnableMouseSmoothing : true;
-		MouseAcceleration = 0.00005f;
+		MouseAcceleration = 0.000005f;
 		MouseAccelerationPower = 0.0f;
 		MouseAccelerationMax = 1.0f;
 		DoubleClickTime = 0.3f;

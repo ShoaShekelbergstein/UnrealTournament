@@ -339,7 +339,7 @@ TSharedRef<SWidget> SUTControlSettingsDialog::BuildMouseTab()
 {
 	UUTProfileSettings* ProfileSettings = PlayerOwner->GetProfileSettings();
 
-	MouseAccelerationRange = FVector2D(0.000001f, .000005f);
+	MouseAccelerationRange = FVector2D(0.000001f, 0.000005f);
 	MouseAccelerationMaxRange = FVector2D(0.2f, 1.5f);
 		
 	return SNew(SBox)
@@ -411,7 +411,7 @@ TSharedRef<SWidget> SUTControlSettingsDialog::BuildMouseTab()
 				[
 					SNew(STextBlock)
 					.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
-					.Text(NSLOCTEXT("SUTControlSettingsDialog", "MouseSensitivity", "Mouse Sensitivity (0-20)"))
+					.Text(NSLOCTEXT("SUTControlSettingsDialog", "MouseSensitivity", "Mouse Sensitivity (0-10)"))
 				]
 			]
 			+ SHorizontalBox::Slot()
@@ -894,7 +894,7 @@ void SUTControlSettingsDialog::EditSensitivity(const FText& Input, ETextCommit::
 {
 	float ChangedSensitivity = FCString::Atof(*Input.ToString());
 
-	if (ChangedSensitivity >= 0.0f && ChangedSensitivity <= 20.0f)
+	if (ChangedSensitivity >= 0.0f && ChangedSensitivity <= 10.0f)
 	{
 		ChangedSensitivity *= 0.1f;
 		MouseSensitivity->SetValue(ChangedSensitivity);
