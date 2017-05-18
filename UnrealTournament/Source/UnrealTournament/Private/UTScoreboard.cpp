@@ -123,18 +123,6 @@ void UUTScoreboard::Draw_Implementation(float RenderDelta)
 	float YOffset = 48.f*RenderScale;
 	DrawGamePanel(RenderDelta, YOffset);
 	DrawTeamPanel(RenderDelta, YOffset);
-	if (UTGameState != nullptr && UTGameState->GetMatchState() != MatchState::CountdownToBegin && UTGameState->GetMatchState() != MatchState::PlayerIntro)
-	{
-		DrawScorePanel(RenderDelta, YOffset);
-	}
-	if (ShouldDrawScoringStats())
-	{
-		DrawScoringStats(RenderDelta, YOffset);
-	}
-	else
-	{
-		DrawCurrentLifeStats(RenderDelta, YOffset);
-	}
 
 	if (UTHUDOwner && UTHUDOwner->bDisplayMatchSummary && !bIsInteractive)
 	{
@@ -142,6 +130,18 @@ void UUTScoreboard::Draw_Implementation(float RenderDelta)
 	}
 	else
 	{
+		if (UTGameState != nullptr && UTGameState->GetMatchState() != MatchState::CountdownToBegin && UTGameState->GetMatchState() != MatchState::PlayerIntro)
+		{
+			DrawScorePanel(RenderDelta, YOffset);
+		}
+		if (ShouldDrawScoringStats())
+		{
+			DrawScoringStats(RenderDelta, YOffset);
+		}
+		else
+		{
+			DrawCurrentLifeStats(RenderDelta, YOffset);
+		}
 		DrawMinimap(RenderDelta);
 	}
 }
@@ -288,8 +288,9 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 			XPValueItem.Position.X = XPBarX + XPBarWidth;
 			Canvas->DrawItem(XPValueItem);
 
+			int32 NewLevel = GetLevelForXP(LP->GetOnlineXP());
 			FFormatNamedArguments Args;
-			Args.Add("LevelNum", FText::AsNumber(Level));
+			Args.Add("LevelNum", FText::AsNumber(bGiveReward ? NewLevel : Level));
 			FText LevelText = FText::Format(NSLOCTEXT("UTScoreboard", "Level", "Level {LevelNum}"), Args);
 			FUTCanvasTextItem LevelTextItem(FVector2D(XPBarX, XPBarY+1.5f*XPBarHeight), LevelText, UTHUDOwner->MediumFont, HighlightTextColor, NULL);
 			LevelTextItem.Scale = FVector2D(RenderScale, RenderScale);
@@ -322,7 +323,6 @@ void UUTScoreboard::DrawMatchSummary(float RenderDelta)
 			LevelUpRewards[50] = FString(TEXT("/Game/RestrictedAssets/ProfileItems/NecrisMale04.NecrisMale04"));
 
 			int32 OldLevel = Level;
-			int32 NewLevel = GetLevelForXP(LP->GetOnlineXP());
 			if (SummaryTime > XPUpdateStart)
 			{
 				if (SummaryTime - RenderDelta <= XPUpdateStart)
