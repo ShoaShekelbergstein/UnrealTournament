@@ -210,15 +210,6 @@ void AUTPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 	DOREPLIFETIME_CONDITION(AUTPlayerController, VoiceChatLoginToken, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerController, VoiceChatJoinToken, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTPlayerController, VoiceChatChannel, COND_OwnerOnly);
-
-}
-void AUTPlayerController::ClientSetSpectatorLocation_Implementation(FVector NewLocation, FRotator NewRotation)
-{
-	if (GetSpectatorPawn())
-	{
-		GetSpectatorPawn()->TeleportTo(NewLocation, NewRotation, false, true);
-		SetControlRotation(NewRotation);
-	}
 }
 
 void AUTPlayerController::SendPersonalMessage(TSubclassOf<ULocalMessage> Message, int32 Switch, APlayerState* RelatedPlayerState_1, APlayerState* RelatedPlayerState_2, UObject* OptionalObject)
@@ -604,15 +595,7 @@ void AUTPlayerController::SetPlayer(UPlayer* InPlayer)
 
 void AUTPlayerController::SetPawn(APawn* InPawn)
 {
-	if (InPawn == NULL)
-	{
-		// Attempt to move the PC to the current camera location if no pawn was specified
-		const FVector NewLocation = (PlayerCameraManager != NULL) ? PlayerCameraManager->GetCameraLocation() : GetSpawnLocation();
-		SetSpawnLocation(NewLocation);
-	}
-
 	AController::SetPawn(InPawn);
-
 	UTCharacter = Cast<AUTCharacter>(InPawn);
 
 	if (Player && IsLocalPlayerController())
@@ -2542,7 +2525,6 @@ void AUTPlayerController::ServerToggleWarmup_Implementation()
 			Char->PlayerSuicide();
 		}
 		bPlayerIsWaiting = true;
-		ViewStartSpot();
 	}
 }
 
@@ -3150,6 +3132,7 @@ void AUTPlayerController::ServerViewSelf_Implementation(FViewTargetTransitionPar
 		ClientViewSpectatorPawn(TransitionParams);
 	}
 }
+
 void AUTPlayerController::ClientViewSpectatorPawn_Implementation(FViewTargetTransitionParams TransitionParams)
 {
 	if (GetViewTarget() != GetSpectatorPawn())
@@ -4132,15 +4115,6 @@ void AUTPlayerController::UTLogOutBugItGoToLogFile(const FString& InScreenShotDe
 #endif // ALLOW_DEBUG_FILES
 }
 
-void AUTPlayerController::ClientSetLocation_Implementation(FVector NewLocation, FRotator NewRotation)
-{
-	Super::ClientSetLocation_Implementation(NewLocation, NewRotation);
-	if (!GetPawn())
-	{
-		SetSpawnLocation(NewLocation);
-	}
-}
-
 void AUTPlayerController::OnRep_CastingGuide()
 {
 	// we need the game state to work
@@ -5114,7 +5088,6 @@ void AUTPlayerController::DumpMapVote()
 	{
 		UE_LOG(UT,Log,TEXT("Nothing in the mapvote list!"));
 	}
-
 }
 
 bool AUTPlayerController::CanPerformRally() const
@@ -5123,18 +5096,17 @@ bool AUTPlayerController::CanPerformRally() const
 	return (GameState && UTPlayerState && UTPlayerState->bCanRally && UTPlayerState->Team && GameState->bAttackersCanRally && ((UTPlayerState->Team->TeamIndex == 0) == GameState->bRedToCap));
 }
 
-void AUTPlayerController::ViewStartSpot()
+void AUTPlayerController::SetInitialLocationAndRotation(const FVector& NewLocation, const FRotator& NewRotation)
 {
-	if (StartSpot != nullptr)
+	AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
+	if (WS)
 	{
-		ChangeState(NAME_Spectating);
-		ClientReset();
-		// Set the player controller / camera in this new location
-		ClientViewSpectatorPawn(FViewTargetTransitionParams());
-		FRotator InitialControllerRot = StartSpot->GetActorRotation();
-		InitialControllerRot.Roll = 0.f;
-		SetInitialLocationAndRotation(StartSpot->GetActorLocation(), InitialControllerRot);
-		ClientSetSpectatorLocation(StartSpot->GetActorLocation(), InitialControllerRot);
+		WS->GetLoadingCameraPosition(SpawnLocation, SpawnRotation);
+		ControlRotation = SpawnRotation;
+		if (GetSpectatorPawn())
+		{
+			GetSpectatorPawn()->TeleportTo(SpawnLocation, SpawnRotation, false, true);
+		}
 	}
 }
 
@@ -5225,37 +5197,8 @@ void AUTPlayerController::ClientSetActiveLineUp_Implementation()
 			else
 			{
 				AUTLineUpHelper::CleanUpPlayerAfterLineUp(this);
-				SetCountdownCam();
 			}
 		}
-	}
-}
-
-void AUTPlayerController::SetCountdownCam()
-{
-	AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
-	if (WS)
-	{
-		SpawnLocation = WS->LoadingCameraLocation;
-		SpawnRotation = WS->LoadingCameraRotation;
-	}
-	AUTSpectatorCamera* BestCamera = nullptr;
-	for (TActorIterator<AUTSpectatorCamera> It(GetWorld()); It; ++It)
-	{
-		if (BestCamera == nullptr)
-		{
-			BestCamera = *It;
-		}
-		else if (It->bLoadingCamera)
-		{
-			BestCamera = *It;
-			break;
-		}
-	}
-	if (BestCamera)
-	{
-		SpawnLocation = BestCamera->GetActorLocation();
-		SpawnRotation = BestCamera->GetActorRotation();
 	}
 }
 

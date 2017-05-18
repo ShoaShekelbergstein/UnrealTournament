@@ -294,15 +294,6 @@ bool AUTTeamGameMode::ChangeTeam(AController* Player, uint8 NewTeam, bool bBroad
 			if (MovePlayerToTeam(Player, PS, NewTeam))
 			{
 				AUTPlayerController* PC = Cast<AUTPlayerController>(Player);
-				if (PC && !HasMatchStarted() && bUseTeamStarts)
-				{
-					AActor* const StartSpot = FindPlayerStart(PC);
-					if (StartSpot != NULL)
-					{
-						PC->StartSpot = StartSpot;
-						PC->ViewStartSpot();
-					}
-				}
 				if (Cast<APlayerController>(Player) && GetWorldSettings()->Pauser)
 				{
 					CheckBotTeams();

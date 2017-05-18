@@ -146,7 +146,6 @@ void AUTLineUpHelper::CleanUpPlayerAfterLineUp(AUTPlayerController* UTPC)
 		UTPC->FlushPressedKeys();
 
 		UTPC->SetViewTarget(UTPC->GetPawn());
-		UTPC->SetCountdownCam();
 	}
 }
 

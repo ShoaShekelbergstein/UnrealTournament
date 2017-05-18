@@ -6690,24 +6690,13 @@ FSceneView* UUTLocalPlayer::CalcSceneView(class FSceneViewFamily* ViewFamily, FV
 				AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
 				if (WS)
 				{
-					ActorPlayerController->SetActorLocationAndRotation(WS->LoadingCameraLocation, WS->LoadingCameraRotation);
-				}
-				AUTSpectatorCamera* BestCamera = nullptr;
-				for (TActorIterator<AUTSpectatorCamera> It(GetWorld()); It; ++It)
-				{
-					if (BestCamera == nullptr)
+					FVector CamLoc(0.f);
+					FRotator CamRot(0.f);
+					if (WS->GetLoadingCameraPosition(CamLoc, CamRot))
 					{
-						BestCamera = *It;
+						ActorPlayerController->SetActorLocationAndRotation(CamLoc, CamRot);
+						PlayerController->SetControlRotation(CamRot);
 					}
-					else if (It->bLoadingCamera)
-					{
-						ActorPlayerController->SetActorLocationAndRotation(It->GetActorLocation(), It->GetActorRotation());
-						break;
-					}
-				}
-				if (BestCamera && ActorPlayerController->GetActorLocation().IsNearlyZero())
-				{
-					ActorPlayerController->SetActorLocationAndRotation(BestCamera->GetActorLocation(), BestCamera->GetActorRotation());
 				}
 			}
 		}

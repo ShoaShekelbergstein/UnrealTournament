@@ -227,18 +227,6 @@ void AUTFlagRunGame::BeginGame()
 	IntermissionDuration = bBasicTrainingGame ? 12.f : 6.f;
 	SetMatchState(MatchState::MatchIntermission);
 	IntermissionDuration = RealIntermissionDuration;
-
-	if ((!GetWorld() || !GetWorld()->GetGameState<AUTGameState>() || !GetWorld()->GetGameState<AUTGameState>()->LineUpHelper || !GetWorld()->GetGameState<AUTGameState>()->LineUpHelper->bIsActive))
-	{
-		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-		{
-			AUTPlayerController* PC = Cast<AUTPlayerController>(It->Get());
-			if (PC)
-			{
-				PC->ViewStartSpot();
-			}
-		}
-	}
 }
 
 

@@ -140,11 +140,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameSettings)
 	bool bAllowSideSwitching;
 
+	/** Camera location to use when  don't have a view target - overridden by spectator cams if they exist. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = LevelSettings)
 	FVector LoadingCameraLocation;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = LevelSettings)
 	FRotator LoadingCameraRotation;
+
+	/** Returns true if a good camera position was found, with recommended position returned in CamLoc and CamRot. */
+	virtual bool GetLoadingCameraPosition(FVector& CamLoc, FRotator& CamRot) const;
 
 	/** level music */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = LevelSettings)

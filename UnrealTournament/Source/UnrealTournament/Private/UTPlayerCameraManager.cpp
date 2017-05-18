@@ -240,11 +240,22 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 		// if not during active gameplay, use spawn location/rotation
 		AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
 		AUTPlayerController* UTPC = Cast<AUTPlayerController>(PCOwner);
-		if (UTPC && (!GameState || (GameState->GetMatchState() == MatchState::CountdownToBegin) || (GameState->GetMatchState() == MatchState::MatchIntermission)) && IsValidCamLocation(PCOwner->GetSpawnLocation()))
+		if (UTPC && (!GameState || (GameState->GetMatchState() == MatchState::CountdownToBegin) || (GameState->GetMatchState() == MatchState::WaitingToStart) || (GameState->GetMatchState() == MatchState::MatchIntermission)))
 		{
-			//FIXMESTEVE - set the bestcam location at start and always use here, not just in some situations
-			OutVT.POV.Location = PCOwner->GetSpawnLocation();
-			OutVT.POV.Rotation = UTPC->SpawnRotation;
+			if (GameState && (GameState->GetMatchState() == MatchState::CountdownToBegin) && UTPC->UTPlayerState && UTPC->UTPlayerState->RespawnChoiceA)
+			{
+				OutVT.POV.Location = UTPC->UTPlayerState->RespawnChoiceA->GetActorLocation();
+				OutVT.POV.Rotation = UTPC->UTPlayerState->RespawnChoiceA->GetActorRotation();
+			}
+			else
+			{
+				if (PCOwner->GetSpawnLocation().IsZero())
+				{
+					PCOwner->SetInitialLocationAndRotation(OutVT.POV.Location, OutVT.POV.Rotation);
+				}
+				OutVT.POV.Location = PCOwner->GetSpawnLocation();
+				OutVT.POV.Rotation = UTPC->SpawnRotation;
+			}
 		}
 		else if (OutVT.POV.Location.IsZero() || IsValidCamLocation(PCOwner->GetFocalLocation()))
 		{

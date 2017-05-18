@@ -168,20 +168,15 @@ public:
 	virtual void ProcessPlayerInput(const float DeltaTime, const bool bGamePaused) override;
 	virtual void PawnPendingDestroy(APawn* InPawn) override;
 	virtual void ClientRestart_Implementation(APawn* NewPawn) override;
-	virtual void ClientSetLocation_Implementation(FVector NewLocation, FRotator NewRotation) override;
 	virtual void BeginInactiveState() override;
 	virtual FRotator GetControlRotation() const override;
 	virtual void SetPlayer(UPlayer* InPlayer) override;
 	virtual AActor* GetViewTarget() const override;
 	virtual void BeginSpectatingState() override;
-
-	virtual void ViewStartSpot();
+	virtual void SetInitialLocationAndRotation(const FVector& NewLocation, const FRotator& NewRotation) override;
 
 	UFUNCTION(Reliable, Client)
 		void ClientReceivePersonalMessage(TSubclassOf<ULocalMessage> Message, int32 Switch = 0, class APlayerState* RelatedPlayerState_1 = NULL, class APlayerState* RelatedPlayerState_2 = NULL, class UObject* OptionalObject = NULL);
-
-	UFUNCTION(Reliable, Client)
-		void ClientSetSpectatorLocation(FVector NewLocation, FRotator NewRotation);
 
 	virtual void CheckAutoWeaponSwitch(class AUTWeapon* TestWeapon);
 
@@ -300,8 +295,6 @@ public:
 
 	UFUNCTION(client, reliable)
 		virtual void ClientSetActiveLineUp();
-
-		virtual void SetCountdownCam();
 
 	UPROPERTY()
 		FRotator SpawnRotation;

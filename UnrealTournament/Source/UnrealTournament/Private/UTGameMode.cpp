@@ -3165,6 +3165,10 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 			return UTPS->RespawnChoiceB;
 		}
 	}
+	else if (UTPS->RespawnChoiceA != nullptr)
+	{
+		return UTPS->RespawnChoiceA;
+	}
 
 	if (PlayerStarts.Num() == 0)
 	{
@@ -3301,7 +3305,7 @@ float AUTGameMode::RatePlayerStart(APlayerStart* P, AController* Player)
 				}
 				Score += AdjustNearbyPlayerStartScore(Player, OtherController, OtherCharacter, StartLoc, P);
 			}
-			if (bHasRespawnChoices && (bCheckAgainstPotentialStarts || !OtherCharacter) && OtherController->PlayerState && !OtherController->PlayerState->bOnlySpectator)
+			if ((bCheckAgainstPotentialStarts || !OtherCharacter) && OtherController->PlayerState && !OtherController->PlayerState->bOnlySpectator)
 			{
 				// make sure no one else has this start as a pending choice
 				AUTPlayerState* OtherUTPS = Cast<AUTPlayerState>(OtherController->PlayerState);
@@ -3689,17 +3693,6 @@ void AUTGameMode::HandlePlayerIntro()
 
 void AUTGameMode::EndPlayerIntro()
 {
-	if (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive)
-	{
-		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-		{
-			AUTPlayerController* PC = Cast<AUTPlayerController>(It->Get());
-			if (PC)
-			{
-				PC->ViewStartSpot();
-			}
-		}
-	}
 	bCheckAgainstPotentialStarts = true;
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
@@ -3707,13 +3700,20 @@ void AUTGameMode::EndPlayerIntro()
 		if (PC && PC->UTPlayerState)
 		{
 			PC->UTPlayerState->bIsWarmingUp = false;
-			if (bHasRespawnChoices && !PC->UTPlayerState->bIsSpectator)
+			PC->UTPlayerState->RespawnChoiceA = nullptr;
+			PC->UTPlayerState->RespawnChoiceB = nullptr;
+			if (!PC->UTPlayerState->bIsSpectator)
 			{
-				PC->UTPlayerState->RespawnChoiceA = nullptr;
-				PC->UTPlayerState->RespawnChoiceB = nullptr;
 				PC->UTPlayerState->RespawnChoiceA = Cast<APlayerStart>(ChoosePlayerStart(PC));
-				PC->UTPlayerState->RespawnChoiceB = Cast<APlayerStart>(ChoosePlayerStart(PC));
+				if (bHasRespawnChoices)
+				{
+					PC->UTPlayerState->RespawnChoiceB = Cast<APlayerStart>(ChoosePlayerStart(PC));
+				}
 				PC->UTPlayerState->bChosePrimaryRespawnChoice = true;
+				if (PC->GetSpectatorPawn() && PC->UTPlayerState->RespawnChoiceA)
+				{
+					PC->GetSpectatorPawn()->SetActorLocationAndRotation(PC->UTPlayerState->RespawnChoiceA->GetActorLocation(), PC->UTPlayerState->RespawnChoiceA->GetActorRotation());
+				}
 			}
 		}
 	}

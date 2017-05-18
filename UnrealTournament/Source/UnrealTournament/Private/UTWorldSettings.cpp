@@ -5,6 +5,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "UTGameEngine.h"
 #include "UTLevelSummary.h"
+#include "UTSpectatorCamera.h"
 #include "UTKillcamPlayback.h"
 
 AUTWorldSettings::AUTWorldSettings(const FObjectInitializer& ObjectInitializer)
@@ -519,3 +520,35 @@ bool AUTWorldSettings::EffectIsRelevant(AActor* RelevantActor, const FVector& Sp
 
 	return true;
 }
+
+bool AUTWorldSettings::GetLoadingCameraPosition(FVector& CamLoc, FRotator& CamRot) const
+{
+	bool bHaveGoodLoc = false;
+	if (!LoadingCameraLocation.IsZero())
+	{
+		CamLoc = LoadingCameraLocation;
+		CamRot = LoadingCameraRotation;
+		bHaveGoodLoc = true;
+	}
+	AUTSpectatorCamera* BestCamera = nullptr;
+	for (TActorIterator<AUTSpectatorCamera> It(GetWorld()); It; ++It)
+	{
+		if (BestCamera == nullptr)
+		{
+			BestCamera = *It;
+		}
+		else if (It->bLoadingCamera)
+		{
+			BestCamera = *It;
+			break;
+		}
+	}
+	if (BestCamera)
+	{
+		CamLoc = BestCamera->GetActorLocation();
+		CamRot = BestCamera->GetActorRotation();
+		bHaveGoodLoc = true;
+	}
+	return bHaveGoodLoc;
+}
+
