@@ -602,15 +602,15 @@ void AUTHUD::ToggleScoreboard(bool bShow)
 	UUTLocalPlayer* UTLocalPlayer = UTPlayerOwner ? Cast<UUTLocalPlayer>(UTPlayerOwner->Player) : NULL;
 	if (UTGameState && UTLocalPlayer && bShow && bShowScores != Old)
 	{
-		// Refresh the friends state of everyone on the scoreboard.
+	// Refresh the friends state of everyone on the scoreboard.
 		for (int32 i=0; i < UTGameState->PlayerArray.Num(); i++)
+	{
+		if (UTGameState->PlayerArray[i] != UTPlayerOwner->PlayerState)
 		{
-			if (UTGameState->PlayerArray[i] != UTPlayerOwner->PlayerState)
-			{
-				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
-				UTPlayerState->bIsFriend = UTLocalPlayer->IsAFriend(UTPlayerState->UniqueId);
-			}
+			AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+			UTPlayerState->bIsFriend = UTLocalPlayer->IsAFriend(UTPlayerState->UniqueId);
 		}
+	}
 	}
 }
 
@@ -660,7 +660,7 @@ void AUTHUD::NotifyMatchStateChange()
 			{
 				UTLP->HideMenu();
 			}
-			
+
 			if (UTPlayerOwner->UTPlayerState && UTPlayerOwner->UTPlayerState->bIsWarmingUp)
 			{
 				UTPlayerOwner->ClientReceiveLocalizedMessage(UUTGameMessage::StaticClass(), 16, nullptr, nullptr, nullptr);
@@ -693,8 +693,12 @@ void AUTHUD::NotifyMatchStateChange()
 
 void AUTHUD::OpenMatchSummary()
 {
-	bDisplayMatchSummary = true;
-	MatchSummaryTime = GetWorld()->GetTimeSeconds();
+	// not in replays
+	if (Cast<AUTDemoRecSpectator>(UTPlayerOwner) == nullptr)
+	{
+		bDisplayMatchSummary = true;
+		MatchSummaryTime = GetWorld()->GetTimeSeconds();
+	}
 }
 
 void AUTHUD::PostRender()
