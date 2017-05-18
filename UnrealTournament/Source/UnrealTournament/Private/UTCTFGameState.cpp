@@ -342,15 +342,15 @@ void AUTCTFGameState::SpawnLineUpZoneOnFlagBase(AUTCTFFlagBase* BaseToSpawnOn, L
 
 		if (TypeToSpawn == LineUpTypes::Intro)
 		{
-			NewZone->DefaultCreateForTeamIntro();
+			NewZone->DefaultCreateForIntro();
 		}
 		else if (TypeToSpawn == LineUpTypes::Intermission)
 		{
-			NewZone->DefaultCreateForTeamIntermission();
+			NewZone->DefaultCreateForIntermission();
 		}
 		else if (TypeToSpawn == LineUpTypes::PostMatch)
 		{
-			NewZone->DefaultCreateForTeamEndMatch();
+			NewZone->DefaultCreateForEndMatch();
 		}
 		
 		//See if the new zone's camera is stuck inside of a wall

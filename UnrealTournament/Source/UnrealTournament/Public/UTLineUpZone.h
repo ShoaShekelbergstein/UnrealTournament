@@ -14,6 +14,30 @@ enum class LineUpTypes : uint8
 	None UMETA(Hidden)
 };
 
+UENUM()
+enum class LineUpSpawnTypes : uint8
+{
+	Invalid,
+	FFA,
+	Team1,
+	Team2,
+	WinningTeam,
+	LosingTeam,
+	None UMETA(Hidden)
+};
+
+USTRUCT()
+struct FLineUpSpawn
+{
+	GENERATED_USTRUCT_BODY();
+
+	UPROPERTY(EditAnywhere)
+	LineUpSpawnTypes SpawnType;
+
+	UPROPERTY(EditAnywhere)
+	FTransform Location;
+};
+
 /**This class represents a collection of spawn points to use for an In Game Intro Zone based on a particular TeamNum. Note multiple AUTInGameIntroZones might use the same TeamSpawnPointList. **/
 UCLASS()
 class UNREALTOURNAMENT_API AUTLineUpZone : public AActor
@@ -35,25 +59,67 @@ class UNREALTOURNAMENT_API AUTLineUpZone : public AActor
 	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List")
 	bool bIsTeamSpawnList;
 
-	/** During any game mode that wants to display a winning team, this holds the winning team spawn locations. Otherwise it is used for the Red Team. **/
-	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List", meta = (EditCondition="bIsTeamSpawnList",MakeEditWidget=""))
-	TArray<FTransform> RedAndWinningTeamSpawnLocations;
-	 
-	/** During any game mode that wants to display a winning team, this holds the losing team spawn locations. Otherwise it is used for the Blue Team. **/
-	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List", meta = (EditCondition="bIsTeamSpawnList",MakeEditWidget=""))
-	TArray<FTransform> BlueAndLosingTeamSpawnLocations;
+	/** Determines if the default spawn list should be used, or if you'd like to override the default **/
+	UPROPERTY(EditInstanceOnly)
+	bool bUseCustomSpawnList;
 
-	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List", meta = (EditCondition="!bIsTeamSpawnList",MakeEditWidget=""))
-	TArray<FTransform> FFATeamSpawnLocations;
+	UPROPERTY(EditInstanceOnly)
+	bool bUseCustomCameraTransform;
 
 	UPROPERTY(Instanced, EditAnywhere, Category = "Camera")
 	UCameraComponent* Camera;
+
+	/** Camera Animation to play during this line-up **/
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	UCameraAnim* CameraAnimation;
 
 	/** If set, certain game modes will use this reference to pick between different Line-Ups. In CTF, this should reference the flag base of the team associated with this LineUpZone.*/
 	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List")
 	AUTGameObjective* GameObjectiveReference;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Team Spawn Point List")
+	UPROPERTY(EditInstanceOnly, meta = (EditCondition = "bUseCustomCameraTransform", MakeEditWidget = ""))
+	FTransform CameraLocation;
+
+	UPROPERTY(EditInstanceOnly, meta = (EditCondition = "bUseCustomSpawnList", MakeEditWidget = ""))
+	TArray<FLineUpSpawn> SpawnLocations;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	TArray<FLineUpSpawn> TeamIntroSpawnLocations;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	TArray<FLineUpSpawn> TeamIntermissionSpawnLocations;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	TArray<FLineUpSpawn> TeamPostMatchSpawnLocations;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	TArray<FLineUpSpawn> SoloIntroSpawnLocations;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	TArray<FLineUpSpawn> SoloIntermissionSpawnLocations;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	TArray<FLineUpSpawn> SoloPostMatchSpawnLocations;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	FTransform SoloIntroCameraLocation;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	FTransform SoloIntermissionCameraLocation;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	FTransform SoloPostMatchCameraLocation;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	FTransform TeamIntroCameraLocation;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	FTransform TeamIntermissionCameraLocation;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	FTransform TeamPostMatchCameraLocation;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
 	TSubclassOf<AUTLineUpZoneVisualizationCharacter> EditorVisualizationCharacter;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -99,12 +165,16 @@ class UNREALTOURNAMENT_API AUTLineUpZone : public AActor
 	virtual void SetIsTemporarilyHiddenInEditor(bool bIsHidden);
 #endif // WITH_EDITOR
 
+	public:
+	virtual void PostInitProperties() override;
+
 public:
-	void DefaultCreateForTeamIntro();
-	void DefaultCreateForTeamIntermission();
-	void DefaultCreateForTeamEndMatch();
-	void DefaultCreateForFFAIntro();
-	void DefaultCreateForFFAIntermission();
-	void DefaultCreateForFFAEndMatch();
+	void DefaultCreateForIntro();
+	void DefaultCreateForIntermission();
+	void DefaultCreateForEndMatch();
 	void DefaultCreateForOnly1Character();
+
+private:
+	void CallAppropriateCreate();
+	void DefaultCreate();
 };

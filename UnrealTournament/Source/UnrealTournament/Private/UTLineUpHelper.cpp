@@ -594,16 +594,8 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 	{
 		AUTTeamGameMode* TeamGM = Cast<AUTTeamGameMode>(UTGM);
 
-		TArray<FTransform> RedOrWinnerSpawns;
-		TArray<FTransform> BlueOrLoserSpawns;
-		TArray<FTransform> FFASpawns;
-
-		int RedOrWinIndex = 0;
-		int BlueOrLoseIndex = 0;
-		int FFAIndex = 0;
-
-		int RedOrWinningTeamNumber = 0;
-		int BlueOrLosingTeamNumber = 1;
+		int Team1Number = 0;
+		int Team2Number = 1;
 
 		//Spawn using Winning / Losing teams instead of team color based teams. This means the red list = winning team and blue list = losing team.
 		if (TeamGM && TeamGM->UTGameState && (LineUpType == LineUpTypes::PostMatch || LineUpType == LineUpTypes::Intermission))
@@ -611,67 +603,78 @@ void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType
 			uint8 WinningTeamNum = TeamGM->GetWinningTeamForLineUp();
 			if (WinningTeamNum != 255)
 			{
-				RedOrWinningTeamNumber = WinningTeamNum;
-				BlueOrLosingTeamNumber = 1 - RedOrWinningTeamNumber;
+				Team1Number = WinningTeamNum;
+				Team2Number = 1 - WinningTeamNum;
 			}
 		}
 
 		TArray<AUTCharacter*> PreviewsMarkedForDestroy;
 		bool bSkipSpawnPlacement = false;
+		int SpawnIndex = 0;
+
+		TArray<FTransform> Team1Spawns;
+		TArray<FTransform> Team2Spawns;
+		TArray<FTransform> FFASpawns;
+
+		int Team1SpawnIndex = 0;
+		int Team2SpawnIndex = 0;
+		int FFASpawnIndex = 0;
 
 		AUTLineUpZone* SpawnList = UTGS->GetAppropriateSpawnList(LineUpType);
 		if (SpawnList)
 		{
-			RedOrWinnerSpawns = SpawnList->RedAndWinningTeamSpawnLocations;
-			BlueOrLoserSpawns = SpawnList->BlueAndLosingTeamSpawnLocations;
-			FFASpawns = SpawnList->FFATeamSpawnLocations;
-		
-			for (AUTCharacter* PreviewChar : PlayerPreviewCharacters)
+			TArray<FLineUpSpawn>& Spawns = SpawnList->SpawnLocations;
+			for (int index = 0; index < Spawns.Num(); ++index)
 			{
-				FTransform SpawnTransform = SpawnList->GetActorTransform();
-
-				if ((PreviewChar->GetTeamNum() == RedOrWinningTeamNumber) && (RedOrWinnerSpawns.Num() > RedOrWinIndex))
+				if ((Spawns[index].SpawnType == LineUpSpawnTypes::Team1) || (Spawns[index].SpawnType == LineUpSpawnTypes::WinningTeam))
 				{
-					SpawnTransform = RedOrWinnerSpawns[RedOrWinIndex] * SpawnTransform;
-					++RedOrWinIndex;
+					Team1Spawns.Add(Spawns[index].Location);
 				}
-				else if ((PreviewChar->GetTeamNum() == BlueOrLosingTeamNumber) && (BlueOrLoserSpawns.Num() > BlueOrLoseIndex))
+				else if ((Spawns[index].SpawnType == LineUpSpawnTypes::Team2) || (Spawns[index].SpawnType == LineUpSpawnTypes::LosingTeam))
 				{
-					SpawnTransform = BlueOrLoserSpawns[BlueOrLoseIndex] * SpawnTransform;
-					++BlueOrLoseIndex;
+					Team2Spawns.Add(Spawns[index].Location);
 				}
-				else if (FFASpawns.Num() > FFAIndex)
-				{
-					//If we are in a team game mode and its intermission or post match, still only show winners even in FFA spawns.
-					if (UTGM && UTGM->bTeamGame && (LineUpType == LineUpTypes::PostMatch || LineUpType == LineUpTypes::Intermission) && (PreviewChar->GetTeamNum() != RedOrWinningTeamNumber))
-					{
-						PreviewsMarkedForDestroy.Add(PreviewChar);
-						continue;
-					}
-
-					SpawnTransform = FFASpawns[FFAIndex] * SpawnTransform;
-					++FFAIndex;
-				}
-				//If they are not part of the line up display... remove them
 				else
 				{
-					PreviewsMarkedForDestroy.Add(PreviewChar);
-					continue;
+					FFASpawns.Add(Spawns[index].Location);
 				}
-
-				PreviewChar->bIsTranslocating = true; // Hack to get rid of teleport effect
-
-				PreviewChar->TeleportTo(SpawnTransform.GetTranslation(), SpawnTransform.GetRotation().Rotator(), false, true);
-				PreviewChar->Controller->SetControlRotation(SpawnTransform.GetRotation().Rotator());
-				PreviewChar->Controller->ClientSetRotation(SpawnTransform.GetRotation().Rotator());
-
-				PreviewChar->bIsTranslocating = false;
 			}
 		}
-		else
+		
+		FTransform SpawnTransform = SpawnList->GetActorTransform();
+
+		for (AUTCharacter* PreviewChar : PlayerPreviewCharacters)
 		{
-			//UTGM->HandleDefaultLineupSpawns(LineUpType, PlayerPreviewCharacters, PreviewsMarkedForDestroy);
+			if ((PreviewChar->GetTeamNum() == Team1Number) && (Team1Spawns.IsValidIndex(Team1SpawnIndex)))
+			{
+				SpawnTransform = SpawnList->SpawnLocations[Team1SpawnIndex].Location * SpawnTransform;
+				++Team1SpawnIndex;
+			}
+			else if ((PreviewChar->GetTeamNum() == Team2Number) && (Team1Spawns.IsValidIndex(Team2SpawnIndex)))
+			{
+				SpawnTransform = SpawnList->SpawnLocations[Team2SpawnIndex].Location * SpawnTransform;
+				++Team2SpawnIndex;
+			}
+			else if (FFASpawns.IsValidIndex(FFASpawnIndex))
+			{
+				SpawnTransform = SpawnList->SpawnLocations[FFASpawnIndex].Location * SpawnTransform;
+				++FFASpawnIndex;
+			}
+			else
+			{
+				PreviewsMarkedForDestroy.Add(PreviewChar);
+				continue;
+			}
+			
+			PreviewChar->bIsTranslocating = true; // Hack to get rid of teleport effect
+
+			PreviewChar->TeleportTo(SpawnTransform.GetTranslation(), SpawnTransform.GetRotation().Rotator(), false, true);
+			PreviewChar->Controller->SetControlRotation(SpawnTransform.GetRotation().Rotator());
+			PreviewChar->Controller->ClientSetRotation(SpawnTransform.GetRotation().Rotator());
+
+			PreviewChar->bIsTranslocating = false;
 		}
+		
 
 		for (AUTCharacter* DestroyCharacter : PreviewsMarkedForDestroy)
 		{

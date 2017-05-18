@@ -113,30 +113,15 @@ int32 UUTResetLineUpDefaultsCommandlet::Main(const FString& Params)
 				{
 					if (It->ZoneType == LineUpTypes::Intro)
 					{
-						It->DefaultCreateForTeamIntro();
+						It->DefaultCreateForIntro();
 					}
 					else if (It->ZoneType == LineUpTypes::Intermission)
 					{
-						It->DefaultCreateForTeamIntermission();
+						It->DefaultCreateForIntermission();
 					}
 					else if (It->ZoneType == LineUpTypes::PostMatch)
 					{
-						It->DefaultCreateForTeamEndMatch();
-					}
-				}
-				else
-				{
-					if (It->ZoneType == LineUpTypes::Intro)
-					{
-						It->DefaultCreateForFFAIntro();
-					}
-					else if (It->ZoneType == LineUpTypes::Intermission)
-					{
-						It->DefaultCreateForFFAIntermission();
-					}
-					else if (It->ZoneType == LineUpTypes::PostMatch)
-					{
-						It->DefaultCreateForFFAEndMatch();
+						It->DefaultCreateForEndMatch();
 					}
 				}
 

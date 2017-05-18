@@ -11,6 +11,8 @@
 #include "UTReplicatedGameRuleset.h"
 #include "UTEpicDefaultRulesets.h"
 #include "UTAnalytics.h"
+#include "UserActivityTracking.h"
+
 #if WITH_PROFILE
 #include "UtMcpProfileManager.h"
 #endif
