@@ -874,6 +874,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category = Pawn)
 	bool bSpawnProtectionEligible;
 
+	UPROPERTY(BlueprintReadWrite, Category = Pawn)
+		float SpawnProtectionStartTime;
+
 	/** returns whether spawn protection currently applies for this character (valid on client) */
 	UFUNCTION(BlueprintCallable, Category = Damage)
 	bool IsSpawnProtected();

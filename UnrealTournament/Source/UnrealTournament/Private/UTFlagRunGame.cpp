@@ -103,9 +103,6 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 
 	ActivatedPowerupPlaceholderObject = FStringAssetReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_ActivatedPowerup_UDamage.BP_ActivatedPowerup_UDamage_C"));
 
-	static ConstructorHelpers::FObjectFinder<UClass> AfterImageFinder(TEXT("Blueprint'/Game/RestrictedAssets/Weapons/Translocator/TransAfterImage.TransAfterImage_C'"));
-	AfterImageType = AfterImageFinder.Object;
-
 	static ConstructorHelpers::FObjectFinder<USoundBase> RallyFinalSoundFinder(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RallyFailed.RallyFailed'"));
 	RallyFailedSound = RallyFinalSoundFinder.Object;
 }
@@ -994,7 +991,7 @@ bool AUTFlagRunGame::HandleRallyRequest(AController* C)
 		UTPlayerState->RallyPoint = GS->CurrentRallyPoint;
 		UTCharacter->bTriggerRallyEffect = true;
 		UTCharacter->OnTriggerRallyEffect();
-		UTPlayerState->BeginRallyTo(UTPlayerState->RallyPoint, UTPlayerState->RallyLocation, 1.2f);
+		UTPlayerState->BeginRallyTo(UTPlayerState->RallyPoint, UTPlayerState->RallyLocation, 1.f);
 		UTCharacter->SpawnRallyDestinationEffectAt(UTPlayerState->RallyLocation);
 		if (UTCharacter->UTCharacterMovement)
 		{
@@ -1007,11 +1004,27 @@ bool AUTFlagRunGame::HandleRallyRequest(AController* C)
 	return false;
 }
 
-void AUTFlagRunGame::CompleteRallyRequest(AController* C)
+void AUTFlagRunGame::FinishRallyRequest(AController *C)
+{
+	AUTCharacter* UTCharacter = Cast<AUTCharacter>(C->GetPawn());
+	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
+
+	if (!UTCharacter || !IsMatchInProgress() || !GS || GS->IsMatchIntermission() || UTCharacter->IsPendingKillPending())
+	{
+		return;
+	}
+	if (UTCharacter->UTCharacterMovement)
+	{
+		UTCharacter->UTCharacterMovement->SetDefaultMovementMode();
+	}
+	UTCharacter->DisallowWeaponFiring(false);
+}
+
+bool AUTFlagRunGame::CompleteRallyRequest(AController* C)
 {
 	if (C == nullptr)
 	{
-		return;
+		return false;
 	}
 	AUTPlayerController* RequestingPC = Cast<AUTPlayerController>(C);
 	AUTCharacter* UTCharacter = Cast<AUTCharacter>(C->GetPawn());
@@ -1022,21 +1035,16 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 	AUTTeamInfo* Team = UTPlayerState ? UTPlayerState->Team : nullptr;
 	if (!UTCharacter || !IsMatchInProgress() || !GS || GS->IsMatchIntermission() || UTCharacter->IsPendingKillPending())
 	{
-		return;
+		return false;
 	}
 	UTCharacter->bTriggerRallyEffect = false;
-	if (UTCharacter->UTCharacterMovement)
-	{
-		UTCharacter->UTCharacterMovement->SetDefaultMovementMode();
-	}
-	UTCharacter->DisallowWeaponFiring(false);
 	if (!UTCharacter->bCanRally)
 	{
 		if (RequestingPC != nullptr)
 		{
 			RequestingPC->ClientPlaySound(RallyFailedSound);
 		}
-		return;
+		return false;
 	}
 
 	if (Team && ((Team->TeamIndex == 0) == GS->bRedToCap) && GS->FlagBases.IsValidIndex(Team->TeamIndex) && GS->FlagBases[Team->TeamIndex] != nullptr)
@@ -1062,7 +1070,7 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 			{
 				RequestingPC->ClientPlaySound(RallyFailedSound);
 			}
-			return;
+			return false;
 		}
 		UTCharacter->GetCapsuleComponent()->SetCollisionObjectType(SavedObjectType);
 
@@ -1096,17 +1104,6 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 			SpawnParams.Instigator = UTCharacter;
 			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 			SpawnParams.Owner = UTCharacter;
-			if (AfterImageType != NULL)
-			{
-				AUTWeaponRedirector* AfterImage = GetWorld()->SpawnActor<AUTWeaponRedirector>(AfterImageType, SavedPlayerTransform.GetLocation(), SavedPlayerTransform.GetRotation().Rotator(), SpawnParams);
-				if (AfterImage != NULL)
-				{
-					float HalfHeight = UTCharacter->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
-					float Radius = UTCharacter->GetCapsuleComponent()->GetUnscaledCapsuleRadius();
-					FCollisionShape PlayerCapsule = FCollisionShape::MakeCapsule(Radius, HalfHeight);
-					AfterImage->InitFor(UTCharacter, FRepCollisionShape(PlayerCapsule), SavedPlayerBase, UTCharacter->GetTransform());
-				}
-			}
 
 			// announce
 			AActor* RallySpot = nullptr;
@@ -1161,7 +1158,11 @@ void AUTFlagRunGame::CompleteRallyRequest(AController* C)
 				FUTAnalytics::FireEvent_PlayerUsedRally(this, UTPlayerState);
 			}
 		}
+		UTCharacter->bSpawnProtectionEligible = true;
+		UTCharacter->SpawnProtectionStartTime = GetWorld()->GetTimeSeconds() - GS->SpawnProtectionTime + 0.8f;
+		return true;
 	}
+	return false;
 }
 
 void AUTFlagRunGame::HandleMatchIntermission()

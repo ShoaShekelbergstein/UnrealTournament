@@ -484,12 +484,7 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 		AssistIndex = AssistTracking.Add(NewAssist);
 	}
 
-	// Remove any spawn protection the pawn might have
-	if (HoldingPawn->bSpawnProtectionEligible)
-	{
-		HoldingPawn->DeactivateSpawnProtection();
-	}
-
+	HoldingPawn->DeactivateSpawnProtection();
 	Holder->SetCarriedObject(this);
 	Holder->bSpecialTeamPlayer = true;
 	if (GetNetMode() != NM_DedicatedServer)

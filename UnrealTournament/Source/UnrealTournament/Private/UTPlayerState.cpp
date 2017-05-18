@@ -758,10 +758,11 @@ void AUTPlayerState::BeginRallyTo(AUTRallyPoint* RallyTarget, const FVector& New
 	{
 		GetWorldTimerManager().SetTimer(RallyTimerHandle, this, &AUTPlayerState::CompleteRally, Delay, false);
 	}
+	SavedRallyTarget = RallyTarget;
 	AUTPlayerController* PC = Cast<AUTPlayerController>(GetOwner());
 	if (PC != nullptr)
 	{
-		PC->ClientStartRally(RallyTarget, NewRallyLocation, Delay);
+		PC->ClientStartRally(RallyTarget, NewRallyLocation);
 	}
 }
 
@@ -771,19 +772,43 @@ void AUTPlayerState::CompleteRally()
 	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
 	if (GameMode && GameMode->IsMatchInProgress() && GS && !GS->IsMatchIntermission())
 	{
-		GameMode->CompleteRallyRequest(Cast<AController>(GetOwner()));
-		AUTPlayerController* PC = Cast<AUTPlayerController>(GetOwner());
-		if (PC != nullptr)
+		if (GameMode->CompleteRallyRequest(Cast<AController>(GetOwner())))
 		{
-			PC->ClientCompleteRally();
-		}
-		else
-		{
-			AUTBot* B = Cast<AUTBot>(GetOwner());
-			if (B != nullptr)
+			float ZoomTime = 0.5f;
+			// set timer to finish
+			if (!GetWorldTimerManager().IsTimerActive(FinishRallyTimerHandle))
 			{
-				B->WhatToDoNext();
+				GetWorldTimerManager().SetTimer(FinishRallyTimerHandle, this, &AUTPlayerState::FinishRally, ZoomTime, false);
 			}
+			AUTPlayerController* PC = Cast<AUTPlayerController>(GetOwner());
+			if (PC != nullptr)
+			{
+				PC->ClientProgressRally(ZoomTime);
+			}
+		}
+		else FinishRally();
+	}
+}
+
+void AUTPlayerState::FinishRally()
+{
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+	if (GameMode && GameMode->IsMatchInProgress() && GS && !GS->IsMatchIntermission())
+	{
+		GameMode->FinishRallyRequest(Cast<AController>(GetOwner()));
+	}
+	AUTPlayerController* PC = Cast<AUTPlayerController>(GetOwner());
+	if (PC != nullptr)
+	{
+		PC->ClientCompleteRally();
+	}
+	else
+	{
+		AUTBot* B = Cast<AUTBot>(GetOwner());
+		if (B != nullptr)
+		{
+			B->WhatToDoNext();
 		}
 	}
 }

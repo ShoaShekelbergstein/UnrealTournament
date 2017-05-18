@@ -865,8 +865,9 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category="Game")
 	bool PlayerCanAltRestart( APlayerController* Player );
 
-	virtual bool HandleRallyRequest(AController* C) { return false; }
-	virtual void CompleteRallyRequest(AController* C) {}
+	virtual bool HandleRallyRequest(AController* C) { return false; };
+	virtual bool CompleteRallyRequest(AController* C) { return false; };
+	virtual void FinishRallyRequest(AController *C) {};
 
 	virtual void GetGameURLOptions(const TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps, TArray<FString>& OptionsList, int32& DesiredPlayerCount);
 

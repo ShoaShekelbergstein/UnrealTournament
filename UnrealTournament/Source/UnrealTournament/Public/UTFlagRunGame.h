@@ -13,11 +13,6 @@ class UNREALTOURNAMENT_API AUTFlagRunGame : public AUTCTFRoundGame
 	GENERATED_UCLASS_BODY()
 
 public:
-
-	/** optional class spawned at source location after translocating that continues to receive damage for a short duration */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TSubclassOf<class AUTWeaponRedirector> AfterImageType;
-
 	/** Used for periodic defense warnings about unguarded routes. */
 	UPROPERTY()
 		float LastEntryDefenseWarningTime;
@@ -163,7 +158,8 @@ public:
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	virtual float OverrideRespawnTime(AUTPickupInventory* Pickup, TSubclassOf<AUTInventory> InventoryType) override;
 	virtual bool HandleRallyRequest(AController* C) override;
-	virtual void CompleteRallyRequest(AController* C) override;
+	virtual bool CompleteRallyRequest(AController* C) override;
+	virtual void FinishRallyRequest(AController *C) override;
 	virtual int32 PickCheatWinTeam() override;
 	virtual bool AvoidPlayerStart(class AUTPlayerStart* P) override;
 	virtual void InitDelayedFlag(class AUTCarriedObject* Flag);

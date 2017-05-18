@@ -259,7 +259,7 @@ void AUTCharacter::OnWalkingOffLedge_Implementation(const FVector& PreviousFloor
 void AUTCharacter::BeginPlay()
 {
 	GetMesh()->SetOwnerNoSee(false); // compatibility with old content, we're doing this through UpdateHiddenComponents() now
-
+	SpawnProtectionStartTime = GetWorld()->GetTimeSeconds();
 	if (GetWorld()->GetNetMode() != NM_DedicatedServer)
 	{
 		APlayerController* PC = GEngine->GetFirstLocalPlayerController(GetWorld());
@@ -604,12 +604,7 @@ void AUTCharacter::DeactivateSpawnProtection()
 
 bool AUTCharacter::IsSpawnProtected()
 {
-	if (bSpawnProtectionEligible)
-	{
-		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		return (GS != NULL && GS->SpawnProtectionTime > 0.0f && GetWorld()->TimeSeconds - CreationTime < GS->SpawnProtectionTime);
-	}
-	return false;
+	return bSpawnProtectionEligible;
 }
 
 void AUTCharacter::SetHeadScale(float NewHeadScale)
@@ -4689,7 +4684,7 @@ void AUTCharacter::Tick(float DeltaTime)
 		float ShaderValue = 0.0f;
 		if (bSpawnProtectionEligible && GS->SpawnProtectionTime > 0.0f)
 		{
-			float Pct = 1.0f - (GetWorld()->TimeSeconds - CreationTime) / GS->SpawnProtectionTime;
+			float Pct = 1.0f - (GetWorld()->TimeSeconds - SpawnProtectionStartTime) / GS->SpawnProtectionTime;
 			if (Pct > 0.0f)
 			{
 				// clamp remaining time so that the final portion of the effect snaps instead of fading
@@ -4708,6 +4703,14 @@ void AUTCharacter::Tick(float DeltaTime)
 					}
 				}
 			}
+			else
+			{
+				bSpawnProtectionEligible = false;
+			}
+		}
+		else
+		{
+			bSpawnProtectionEligible = false;
 		}
 		for (UMaterialInstanceDynamic* MI : BodyMIs)
 		{

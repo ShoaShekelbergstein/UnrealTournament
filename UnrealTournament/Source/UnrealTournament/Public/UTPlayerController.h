@@ -279,7 +279,10 @@ public:
 		virtual void ServerRequestRally();
 
 	UFUNCTION(client, reliable)
-		virtual void ClientStartRally(AUTRallyPoint* RallyTarget, const FVector& NewRallyLocation, float Delay);
+		virtual void ClientStartRally(AUTRallyPoint* RallyTarget, const FVector& NewRallyLocation);
+
+	UFUNCTION(client, reliable)
+		virtual void ClientProgressRally(float Delay);
 
 	UFUNCTION(client, reliable)
 		virtual void ClientCompleteRally();

@@ -307,23 +307,32 @@ void AUTPlayerController::ServerMutate_Implementation(const FString& MutateStrin
 	}
 }
 
-void AUTPlayerController::ClientStartRally_Implementation(AUTRallyPoint* RallyTarget, const FVector& NewRallyLocation, float Delay)
+void AUTPlayerController::ClientStartRally_Implementation(AUTRallyPoint* RallyTarget, const FVector& NewRallyLocation)
 {
-	if (RallyTarget)
+	// client side
+	if (UTPlayerState != nullptr)
 	{
-		// client side
-		if (UTPlayerState != nullptr)
-		{
-			UTPlayerState->RallyLocation = NewRallyLocation;
-		}
-		EndRallyTime = GetWorld()->GetTimeSeconds() + Delay;
-		static FName NAME_RallyCam(TEXT("RallyCam"));
-		SetCameraMode(NAME_RallyCam);
-		SetViewTarget(RallyTarget);
-		FRotator NewRotation = RallyTarget->GetActorRotation();
+		UTPlayerState->RallyLocation = NewRallyLocation;
+		UTPlayerState->SavedRallyTarget = RallyTarget;
+	}
+	static FName NAME_PreRallyCam(TEXT("PreRallyCam"));
+	SetCameraMode(NAME_PreRallyCam);
+}
+
+void AUTPlayerController::ClientProgressRally_Implementation(float Delay)
+{
+	EndRallyTime = GetWorld()->GetTimeSeconds() + Delay;
+	static FName NAME_RallyCam(TEXT("RallyCam"));
+	SetCameraMode(NAME_RallyCam);
+	if (UTPlayerState->SavedRallyTarget)
+	{
+		FRotator NewRotation = UTPlayerState->SavedRallyTarget->GetActorRotation();
 		NewRotation.Pitch = 0.f;
 		NewRotation.Roll = 0.f;
 		SetControlRotation(NewRotation);
+		EndRallyTime = GetWorld()->GetTimeSeconds() + Delay;
+		static FName NAME_RallyCam(TEXT("RallyCam"));
+		SetCameraMode(NAME_RallyCam);
 	}
 }
 
@@ -2731,6 +2740,7 @@ bool AUTPlayerController::IsBehindView() const
 	if (PlayerCameraManager != NULL)
 	{
 		static FName NAME_FreeCam(TEXT("FreeCam"));
+		static FName NAME_PreRallyCam(TEXT("PreRallyCam"));
 		static FName NAME_RallyCam(TEXT("RallyCam"));
 
 		AUTPlayerCameraManager* UTCam = Cast<AUTPlayerCameraManager>(PlayerCameraManager);
@@ -2739,7 +2749,7 @@ bool AUTPlayerController::IsBehindView() const
 			return true;
 		}
 		FName CameraStyle = (UTCam != NULL) ? UTCam->GetCameraStyleWithOverrides() : PlayerCameraManager->CameraStyle;
-		return (CameraStyle == NAME_FreeCam) || (CameraStyle == NAME_RallyCam);
+		return (CameraStyle == NAME_FreeCam) || (CameraStyle == NAME_RallyCam) || (CameraStyle == NAME_PreRallyCam);
 	}
 	else
 	{

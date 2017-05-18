@@ -340,18 +340,19 @@ public:
 	FVector RallyLocation;
 
 	UPROPERTY()
+		AUTRallyPoint* SavedRallyTarget;
+
+	UPROPERTY()
 	class AUTRallyPoint* RallyPoint;
 
 	virtual void BeginRallyTo(AUTRallyPoint* RallyTarget, const FVector& NewRallyLocation, float Delay);
 
 	FTimerHandle RallyTimerHandle;
-	// valid server side only
-	bool IsCurrentlyRallying()
-	{
-		return GetWorldTimerManager().IsTimerActive(RallyTimerHandle);
-	}
+	FTimerHandle FinishRallyTimerHandle;
 
 	virtual void CompleteRally();
+
+	virtual void FinishRally();
 
 	UPROPERTY(BlueprintReadOnly, Category = PlayerState, replicated)
 	bool bIsRconAdmin;

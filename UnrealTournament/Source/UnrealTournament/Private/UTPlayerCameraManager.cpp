@@ -73,6 +73,7 @@ FName AUTPlayerCameraManager::GetCameraStyleWithOverrides() const
 	static const FName NAME_FirstPerson = FName(TEXT("FirstPerson"));
 	static const FName NAME_Default = FName(TEXT("Default"));
 	static const FName NAME_LineUpCam = FName(TEXT("LineUpCam"));
+	static const FName NAME_PreRallyCam = FName(TEXT("PreRallyCam"));
 	static const FName NAME_RallyCam = FName(TEXT("RallyCam"));
 
 	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
@@ -188,6 +189,7 @@ static const FName NAME_FirstPerson = FName(TEXT("FirstPerson"));
 void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTime)
 {
 	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
+	static const FName NAME_PreRallyCam = FName(TEXT("PreRallyCam"));
 	static const FName NAME_RallyCam = FName(TEXT("RallyCam"));
 	static const FName NAME_GameOver = FName(TEXT("GameOver"));
 	static const FName NAME_LineUpCam = FName(TEXT("LineUpCam"));
@@ -254,25 +256,51 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 			OutVT.POV.Rotation = PCOwner->GetControlRotation();
 		}
 	}
-	else if (CameraStyle == NAME_RallyCam)
+	else if (CameraStyle == NAME_PreRallyCam)
 	{
 		AUTPlayerController* UTPC = Cast<AUTPlayerController>(PCOwner);
-		OutVT.POV.FOV = DefaultFOV + (170.f - DefaultFOV) * ((UTPC != nullptr) ? FMath::Clamp(UTPC->EndRallyTime - GetWorld()->GetTimeSeconds(), 0.f, 1.f) : 0.f);
+		OutVT.POV.FOV = DefaultFOV;
 		OutVT.POV.OrthoWidth = DefaultOrthoWidth;
 		OutVT.POV.bConstrainAspectRatio = false;
 		OutVT.POV.ProjectionMode = bIsOrthographic ? ECameraProjectionMode::Orthographic : ECameraProjectionMode::Perspective;
 		OutVT.POV.PostProcessBlendWeight = 1.0f;
 
-		if (UTPC && UTPC->UTPlayerState)
-		{
-			OutVT.POV.Location = UTPC->UTPlayerState->RallyLocation;
-			OutVT.POV.Rotation = UTPC->GetViewTarget()->GetActorRotation();
-		}
-		else
-		{
-			OutVT.POV.Location = PCOwner->GetFocalLocation();
-			OutVT.POV.Rotation = PCOwner->GetControlRotation();
-		}
+		AActor* TargetActor = OutVT.Target;
+		FVector Loc = OutVT.Target->GetActorLocation();
+
+		float CameraDistance = FreeCamDistance;
+		FVector CameraOffset = FreeCamOffset;
+		FRotator Rotator = (!UTPC || UTPC->bSpectatorMouseChangesView) ? PCOwner->GetControlRotation() : UTPC->GetSpectatingRotation(Loc, DeltaTime);
+
+		FVector Pos = Loc + FRotationMatrix(Rotator).TransformVector(CameraOffset) - Rotator.Vector() * CameraDistance;
+		FHitResult Result;
+		CheckCameraSweep(Result, TargetActor, Loc, Pos);
+		OutVT.POV.Location = !Result.bBlockingHit ? Pos : Result.Location;
+		OutVT.POV.Rotation = Rotator;
+		ApplyCameraModifiers(DeltaTime, OutVT.POV);
+
+		// Synchronize the actor with the view target results
+		SetActorLocationAndRotation(OutVT.POV.Location, OutVT.POV.Rotation, false);
+	}
+	else if (CameraStyle == NAME_RallyCam)
+	{
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(PCOwner);
+		float TimeScaling = 2.f * ((UTPC != nullptr) ? FMath::Clamp(UTPC->EndRallyTime - GetWorld()->GetTimeSeconds(), 0.f, 1.f) : 0.f);
+		OutVT.POV.FOV = DefaultFOV + (170.f - DefaultFOV) * TimeScaling;
+		OutVT.POV.OrthoWidth = DefaultOrthoWidth;
+		OutVT.POV.bConstrainAspectRatio = false;
+		OutVT.POV.ProjectionMode = bIsOrthographic ? ECameraProjectionMode::Orthographic : ECameraProjectionMode::Perspective;
+		OutVT.POV.PostProcessBlendWeight = 1.0f;
+		FVector Loc = OutVT.Target->GetActorLocation();
+		float CameraDistance = FreeCamDistance;
+		FVector CameraOffset = FreeCamOffset;
+
+		FRotator Rotator = (!UTPC || UTPC->bSpectatorMouseChangesView) ? PCOwner->GetControlRotation() : UTPC->GetSpectatingRotation(Loc, DeltaTime);
+		FVector Pos = Loc + FRotationMatrix(Rotator).TransformVector(CameraOffset) - Rotator.Vector() * CameraDistance;
+		FHitResult Result;
+		CheckCameraSweep(Result, OutVT.Target, Loc, Pos);
+		OutVT.POV.Location = !Result.bBlockingHit ? Pos : Result.Location;
+		OutVT.POV.Rotation = Rotator;
 		ApplyCameraModifiers(DeltaTime, OutVT.POV);
 
 		// Synchronize the actor with the view target results
