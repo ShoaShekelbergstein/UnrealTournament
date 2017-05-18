@@ -4551,6 +4551,7 @@ void UUTLocalPlayer::CloseAllUI(bool bExceptDialogs)
 	CloseQuickChat();
 	CloseWebMessage();
 	CloseSavingWidget();
+	CloseAbuseDialog();
 
 	while (WindowStack.Num() > 0)
 	{
