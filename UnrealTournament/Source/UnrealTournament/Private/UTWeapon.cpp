@@ -26,6 +26,7 @@
 #include "UTProj_ShockBall.h"
 #include "UTTeamDeco.h"
 #include "UTProj_WeaponScreen.h"
+#include "Classes/Kismet/KismetMaterialLibrary.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUTWeapon, Log, All);
 
@@ -2808,9 +2809,17 @@ void AUTWeapon::UpdateOverlaysShared(AActor* WeaponActor, AUTCharacter* InOwner,
 			if (TopOverlay.Material != nullptr)
 			{
 				InOverlayMesh->SetHiddenInGame(false);
+
+				static FName FNameScale = TEXT("Scale");
+				UMaterialInstanceDynamic* MID = UKismetMaterialLibrary::CreateDynamicMaterialInstance(GetWorld(), TopOverlay.Material);
+				if (MID)
+				{
+					MID->SetScalarParameterValue(FNameScale, WeaponRenderScale);
+				}
+
 				for (int32 i = 0; i < InOverlayMesh->GetNumMaterials(); i++)
 				{
-					InOverlayMesh->SetMaterial(i, TopOverlay.Material);
+					InOverlayMesh->SetMaterial(i, MID);
 				}
 			}
 			else
