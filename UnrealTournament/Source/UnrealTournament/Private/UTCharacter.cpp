@@ -5061,7 +5061,7 @@ void AUTCharacter::TakeDrowningDamage()
 {
 	FUTPointDamageEvent DamageEvent(DrowningDamagePerSecond, FHitResult(this, GetCapsuleComponent(), GetActorLocation(), FVector(0.0f, 0.0f, 1.0f)), FVector(0.0f, 0.0f, -1.0f), UUTDmgType_Drown::StaticClass());
 	TakeDamage(DrowningDamagePerSecond, DamageEvent, Controller, this);
-	UUTGameplayStatics::UTPlaySound(GetWorld(), CharacterData.GetDefaultObject()->DrowningSound, this, SRT_None);
+	UUTGameplayStatics::UTPlaySound(GetWorld(), CharacterData.GetDefaultObject()->DrowningSound, this, SRT_All);
 }
 
 uint8 AUTCharacter::GetTeamNum() const
