@@ -277,7 +277,7 @@ public:
 	virtual void RulesetsAreLoaded();
 
 protected:
-	void ManageMusicVolume(float DeltaTime) { }
+	virtual void ManageMusicVolume(float DeltaTime) override { }
 	USoundBase* LobbyMusic;
 
 	FTimerHandle RuleWaitHandle;

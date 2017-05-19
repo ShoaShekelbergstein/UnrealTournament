@@ -720,7 +720,7 @@ protected:
 	TArray<TSharedRef<const FUniqueNetId>> CurrentUsersToQuery;
 
 	/** Allows the game to change the client's music volume based on the state of the game */
-	void ManageMusicVolume(float DeltaTime);
+	virtual void ManageMusicVolume(float DeltaTime);
 
 	/** Holds a list of any line ups that have been spawned. 
 		Line Ups are only spawned when the level is missing them. **/

@@ -105,6 +105,27 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 
 	static ConstructorHelpers::FObjectFinder<USoundBase> RallyFinalSoundFinder(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RallyFailed.RallyFailed'"));
 	RallyFailedSound = RallyFinalSoundFinder.Object;
+
+	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderG(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/ActionMusicG.ActionMusicG'"));
+	RampUpMusic.Add(RampUpMusicFinderG.Object);
+	RampUpTime.Add(14.1f);
+
+	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderA(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RampUpMusicA.RampUpMusicA'"));
+	RampUpMusic.Add(RampUpMusicFinderA.Object);
+	RampUpTime.Add(12.9f);
+
+	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderC(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RampUpMusicC.RampUpMusicC'"));
+	RampUpMusic.Add(RampUpMusicFinderC.Object);
+	RampUpTime.Add(10.f);
+
+	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderD(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RampUpMusicD.RampUpMusicD'"));
+	RampUpMusic.Add(RampUpMusicFinderD.Object);
+	RampUpTime.Add(10.2f);
+
+	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderE(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RampUpMusicE.RampUpMusicE'"));
+	RampUpMusic.Add(RampUpMusicFinderE.Object);
+	RampUpTime.Add(19.1f);
+
 }
 
 void AUTFlagRunGame::CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps)
@@ -2093,6 +2114,13 @@ void AUTFlagRunGame::InitRound()
 		}
 		FTimerHandle TempHandle;
 		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTFlagRunGame::FlagCountDown, 1.f*GetActorTimeDilation(), false);
+		FTimerHandle RampHandle;
+		AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(CTFGameState);
+		if (RCTFGameState)
+		{
+			RCTFGameState->RampStartTime = FlagPickupDelay - RampUpTime[RCTFGameState->CTFRound % RampUpMusic.Num()] - 1;
+			GetWorldTimerManager().SetTimer(RampHandle, this, &AUTFlagRunGame::PlayRampUpMusic, FlagPickupDelay - RampUpTime[RCTFGameState->CTFRound % RampUpMusic.Num()], false);
+		}
 	}
 	else
 	{
@@ -2110,6 +2138,18 @@ void AUTFlagRunGame::InitRound()
 	for (AUTTeamInfo* Team : Teams)
 	{
 		Team->ReinitSquads();
+	}
+}
+
+void AUTFlagRunGame::PlayRampUpMusic()
+{
+	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+		if (PC != nullptr)
+		{
+			PC->UTClientPlaySound(RampUpMusic[CTFGameState->CTFRound % RampUpMusic.Num()]);
+		}
 	}
 }
 

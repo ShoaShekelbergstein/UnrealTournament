@@ -55,6 +55,17 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
 		USoundBase* RallyFailedSound;
 
+	/** Sound to play during countdown to flag available. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Intro)
+		TArray<USoundBase*> RampUpMusic;
+
+	/** Sound to play during countdown to flag available. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Intro)
+		TArray<float> RampUpTime;
+
+	UFUNCTION()
+		virtual void PlayRampUpMusic();
+
 	/** Last spawn group used by attackers (used to spread out spawns). */
 	UPROPERTY()
 		FName LastAttackerSpawnGroup;

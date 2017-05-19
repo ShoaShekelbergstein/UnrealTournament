@@ -11,6 +11,7 @@
 #include "UTAnnouncer.h"
 #include "UTCTFMajorMessage.h"
 #include "UTRallyPoint.h"
+#include "UTWorldSettings.h"
 
 AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -35,6 +36,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	DefendText = NSLOCTEXT("UUTHUDWidget_TeamGameClock", "DefendingRole", "Rd {RoundNum}: Defending on");
 	TiebreakValue = 0;
 	RemainingPickupDelay = 0;
+	RampStartTime = 99;
 
 	HighlightMap.Add(HighlightNames::MostKillsTeam, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
 	HighlightMap.Add(HighlightNames::BadMF, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
@@ -132,6 +134,7 @@ void AUTFlagRunGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	DOREPLIFETIME(AUTFlagRunGameState, CurrentRallyPoint);
 	DOREPLIFETIME(AUTFlagRunGameState, bEnemyRallyPointIdentified);
 	DOREPLIFETIME(AUTFlagRunGameState, RemainingPickupDelay);
+	DOREPLIFETIME(AUTFlagRunGameState, RampStartTime);
 	DOREPLIFETIME(AUTFlagRunGameState, FlagRunMessageSwitch);
 	DOREPLIFETIME(AUTFlagRunGameState, FlagRunMessageTeam);
 	DOREPLIFETIME(AUTFlagRunGameState, bAttackersCanRally);
@@ -140,6 +143,19 @@ void AUTFlagRunGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	DOREPLIFETIME(AUTFlagRunGameState, bAllowBoosts);
 	DOREPLIFETIME(AUTFlagRunGameState, OffenseSelectablePowerups);
 	DOREPLIFETIME(AUTFlagRunGameState, DefenseSelectablePowerups);
+}
+
+void AUTFlagRunGameState::ManageMusicVolume(float DeltaTime)
+{
+	AUTWorldSettings* Settings = Cast<AUTWorldSettings>(GetWorldSettings());
+	if (Settings && Settings->MusicComp)
+	{
+		UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
+		float DesiredVolume = IsMatchInProgress() && !IsMatchIntermission() && (RemainingPickupDelay < RampStartTime) ? UserSettings->GetSoundClassVolume(EUTSoundClass::GameMusic) : 1.f;
+		if (bLocalMenusAreActive) DesiredVolume = 1.0f;
+		MusicVolume = MusicVolume * (1.f - 0.5f*DeltaTime) + 0.5f*DeltaTime*DesiredVolume;
+		Settings->MusicComp->SetVolumeMultiplier(MusicVolume);
+	}
 }
 
 void AUTFlagRunGameState::OnBonusLevelChanged()

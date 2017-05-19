@@ -63,6 +63,9 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFGameState
 		int32 RemainingPickupDelay;
 
 	UPROPERTY(Replicated)
+		int32 RampStartTime;
+
+	UPROPERTY(Replicated)
 		class AUTTeamInfo* FlagRunMessageTeam;
 
 	UPROPERTY(BlueprintReadOnly, Replicated)
@@ -148,6 +151,7 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFGameState
 
 protected:
 	virtual void UpdateTimeMessage() override;
+	virtual void ManageMusicVolume(float DeltaTime) override;
 
 	virtual void CachePowerupAnnouncement(class UUTAnnouncer* Announcer, TSubclassOf<AUTInventory> PowerupClass) const;
 
