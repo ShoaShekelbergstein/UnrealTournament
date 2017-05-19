@@ -327,8 +327,6 @@ void AUTPlayerController::ClientStartRally_Implementation(AUTRallyPoint* RallyTa
 void AUTPlayerController::ClientProgressRally_Implementation(float Delay)
 {
 	EndRallyTime = GetWorld()->GetTimeSeconds() + Delay;
-	static FName NAME_RallyCam(TEXT("RallyCam"));
-	SetCameraMode(NAME_RallyCam);
 	if (UTPlayerState->SavedRallyTarget)
 	{
 		FRotator NewRotation = UTPlayerState->SavedRallyTarget->GetActorRotation();

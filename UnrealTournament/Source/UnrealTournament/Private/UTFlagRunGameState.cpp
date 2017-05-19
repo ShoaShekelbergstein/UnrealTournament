@@ -428,6 +428,14 @@ bool AUTFlagRunGameState::IsTeamOnDefenseNextRound(int32 TeamNumber) const
 	return IsTeamOnOffense(TeamNumber);
 }
 
+float AUTFlagRunGameState::GetClockTime()
+{
+	RemainingTime -= EarlyEndTime;
+	float ClockTime = Super::GetClockTime();
+	RemainingTime += EarlyEndTime;
+	return ClockTime;
+}
+
 void AUTFlagRunGameState::CheckTimerMessage()
 {
 	RemainingTime -= EarlyEndTime;

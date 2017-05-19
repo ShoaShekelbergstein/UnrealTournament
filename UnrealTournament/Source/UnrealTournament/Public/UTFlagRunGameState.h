@@ -137,16 +137,14 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFGameState
 	virtual FText GetRoundStatusText(bool bForScoreboard);
 
 	virtual FText GetGameStatusText(bool bForScoreboard) override;
-
 	virtual FLinearColor GetGameStatusColor() override;
-
 	virtual void UpdateRoundHighlights() override;
 
 	virtual void AddMinorRoundHighlights(AUTPlayerState* PS);
 
 	virtual int32 NumHighlightsNeeded() override;
-
 	virtual bool InOrder(class AUTPlayerState* P1, class AUTPlayerState* P2) override;
+	virtual float GetClockTime() override;
 
 protected:
 	virtual void UpdateTimeMessage() override;
