@@ -898,9 +898,9 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildGraphicsTab()
 		&SUTSystemSettingsDialog::OnViewDistanceSelected, QualitySettings.ViewDistanceQuality,
 		NSLOCTEXT("SUTSystemSettingsDialog", "ViewDistance_Tooltip", "Controls how fast models change level of detail in the distance."))
 
-		+ AddGeneralScalabilityWidget(NSLOCTEXT("SUTSystemSettingsDialog", "ShadowQuality", "Shadow Quality").ToString(), ShadowQuality, SelectedShadowQuality,
+		+ AddGeneralScalabilityWidget(NSLOCTEXT("SUTSystemSettingsDialog", "ShadowQuality", "Lighting and Shadow Quality").ToString(), ShadowQuality, SelectedShadowQuality,
 		&SUTSystemSettingsDialog::OnShadowQualitySelected, QualitySettings.ShadowQuality,
-		NSLOCTEXT("SUTSystemSettingsDialog", "ShadowQuality_Tooltip", "Controls the quality of shadows, lower setting can improve performance on both CPU and GPU."))
+		NSLOCTEXT("SUTSystemSettingsDialog", "ShadowQuality_Tooltip", "Controls the quality of lighting and shadows, lower setting can improve performance on both CPU and GPU.  Lowest setting enables forward renderer which can result in substantially improved performanc."))
 
 		+ SVerticalBox::Slot()
 		.AutoHeight()
