@@ -1854,7 +1854,11 @@ void AUTPlayerController::HearSound(USoundBase* InSoundCue, AActor* SoundPlayer,
 		{
 			if (!InSoundCue->AttenuationSettings)
 			{
-			UE_LOG(UT, Warning, TEXT("NO ATTENUATION SETTINGS OBJECT FOR %s"), *InSoundCue->GetName());
+				UE_LOG(UT, Warning, TEXT("NO ATTENUATION SETTINGS OBJECT FOR %s"), *InSoundCue->GetName());
+			}
+			else
+			{
+				UE_LOG(UT, Warning, TEXT("ATTENUATION SETTINGS FOR %s is %s"), *InSoundCue->GetName(), *InSoundCue->AttenuationSettings->GetName());
 			}
 			
 			if (InSoundCue->GetAttenuationSettingsToApply()->bAttenuateWithLPF)
