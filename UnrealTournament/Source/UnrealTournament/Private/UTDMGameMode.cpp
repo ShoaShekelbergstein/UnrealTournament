@@ -41,6 +41,13 @@ APlayerController* AUTDMGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRol
 				UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
 				UTPC->VoiceChatChannel = DMVoiceChatChannel;
 				VoiceChatToken->GenerateClientJoinToken(UTPC->VoiceChatPlayerName, UTPC->VoiceChatChannel, UTPC->VoiceChatJoinToken);
+
+#if WITH_EDITOR
+				if (UTPC->IsLocalPlayerController())
+				{
+					UTPC->OnRepVoiceChatJoinToken();
+				}
+#endif
 			}
 		}
 	}

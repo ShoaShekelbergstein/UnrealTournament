@@ -333,6 +333,13 @@ bool AUTTeamGameMode::MovePlayerToTeam(AController* Player, AUTPlayerState* PS, 
 			UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
 			UTPC->VoiceChatChannel = PS->Team->VoiceChatChannel;
 			VoiceChatToken->GenerateClientJoinToken(UTPC->VoiceChatPlayerName, UTPC->VoiceChatChannel, UTPC->VoiceChatJoinToken);
+
+#if WITH_EDITOR
+			if (UTPC->IsLocalPlayerController())
+			{
+				UTPC->OnRepVoiceChatJoinToken();
+			}
+#endif
 		}
 
 		PS->ForceNetUpdate();

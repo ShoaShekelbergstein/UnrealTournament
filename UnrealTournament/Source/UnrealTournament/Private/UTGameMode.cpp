@@ -834,6 +834,12 @@ void AUTGameMode::SendVoiceChatLoginToken(AUTPlayerController* PC)
 			PC->VoiceChatPlayerName = FString::Printf(TEXT(".%s."), *PS->PlayerName);
 
 			VoiceChatToken->GenerateClientLoginToken(PC->VoiceChatPlayerName, PC->VoiceChatLoginToken);
+#if WITH_EDITOR
+			if (PC->IsLocalPlayerController())
+			{
+				PC->OnRepVoiceChatLoginToken();
+			}
+#endif
 		}
 	}
 }
