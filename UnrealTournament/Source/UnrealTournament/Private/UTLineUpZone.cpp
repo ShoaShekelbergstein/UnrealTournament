@@ -341,7 +341,7 @@ void AUTLineUpZone::UpdateSpawnLocationsWithVisualizationMove()
 				SpawnLocations[MeshIndex].Location = MeshVisualizations[MeshIndex]->GetRootComponent()->GetRelativeTransform();
 			}
 
-			if ((Mesh->TeamNum == 0))
+			if (Mesh->TeamNum == 0)
 			{
 				SpawnLocations[MeshIndex].SpawnType = LineUpSpawnTypes::Team1;
 			}
