@@ -5416,6 +5416,7 @@ void AUTPlayerController::OnRepVoiceChatJoinToken()
 {
 	static const FName VoiceChatFeatureName("VoiceChat");
 	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName) &&
+		!VoiceChatPlayerName.IsEmpty() &&
 		!VoiceChatJoinToken.IsEmpty() && !VoiceChatChannel.IsEmpty() && 
 		VoiceChatJoinTokenCurrent != VoiceChatJoinToken && VoiceChatChannelCurrent != VoiceChatChannel)
 	{
