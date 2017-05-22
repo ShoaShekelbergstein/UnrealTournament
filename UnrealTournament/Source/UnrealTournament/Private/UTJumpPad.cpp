@@ -72,7 +72,7 @@ void AUTJumpPad::Launch_Implementation(AActor* Actor)
 {
 	// For now just filter for ACharacter. Maybe certain projectiles/vehicles/ragdolls/etc should bounce in the future
 	ACharacter* Char = Cast<ACharacter>(Actor);
-	if (Char != NULL)
+	if (Char && !Char->IsPendingKillPending())
 	{
 		//Launch the character to the target
 		Char->LaunchCharacter(CalculateJumpVelocity(Char), !bMaintainVelocity, true);
