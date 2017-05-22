@@ -3719,6 +3719,7 @@ void AUTGameMode::EndPlayerIntro()
 				if (PC->GetSpectatorPawn() && PC->UTPlayerState->RespawnChoiceA)
 				{
 					PC->GetSpectatorPawn()->SetActorLocationAndRotation(PC->UTPlayerState->RespawnChoiceA->GetActorLocation(), PC->UTPlayerState->RespawnChoiceA->GetActorRotation());
+					PC->SetControlRotation(PC->UTPlayerState->RespawnChoiceA->GetActorRotation());
 				}
 			}
 		}
