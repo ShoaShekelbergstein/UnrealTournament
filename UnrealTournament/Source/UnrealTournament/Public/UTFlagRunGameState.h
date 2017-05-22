@@ -47,7 +47,7 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFGameState
 	UPROPERTY()
 		bool bHaveEstablishedFlagRunner;
 
-	UPROPERTY(ReplicatedUsing = OnBonusLevelChanged)
+	UPROPERTY(Replicated)
 		uint8 BonusLevel;
 
 	UPROPERTY(Replicated)
@@ -102,8 +102,7 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFGameState
 	UPROPERTY(BlueprintReadWrite)
 		int32 DestroyerCount;
 
-	UFUNCTION()
-	virtual void OnBonusLevelChanged();
+	virtual void PlayTimeWarningSound();
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void BeginPlay() override;

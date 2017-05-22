@@ -158,20 +158,17 @@ void AUTFlagRunGameState::ManageMusicVolume(float DeltaTime)
 	}
 }
 
-void AUTFlagRunGameState::OnBonusLevelChanged()
+void AUTFlagRunGameState::PlayTimeWarningSound()
 {
-	if (BonusLevel < 3)
+	USoundBase* SoundToPlay = UUTCountDownMessage::StaticClass()->GetDefaultObject<UUTCountDownMessage>()->TimeEndingSound;
+	if (SoundToPlay != NULL)
 	{
-		USoundBase* SoundToPlay = UUTCountDownMessage::StaticClass()->GetDefaultObject<UUTCountDownMessage>()->TimeEndingSound;
-		if (SoundToPlay != NULL)
+		for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
 		{
-			for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+			AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
+			if (PC && PC->IsLocalPlayerController())
 			{
-				AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
-				if (PC && PC->IsLocalPlayerController())
-				{
-					PC->UTClientPlaySound(SoundToPlay);
-				}
+				PC->UTClientPlaySound(SoundToPlay);
 			}
 		}
 	}
@@ -182,20 +179,29 @@ void AUTFlagRunGameState::UpdateTimeMessage()
 	if (!bIsAtIntermission && (GetNetMode() != NM_DedicatedServer) && IsMatchInProgress())
 	{
 		// bonus time countdowns
-		if (RemainingTime <= GoldBonusThreshold + 7)
+		// add first stinger, fix delay for playing bonus level change
+		if (RemainingTime <= GoldBonusThreshold + 9)
 		{
 			if (RemainingTime > GoldBonusThreshold)
 			{
-				for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+				if ((RemainingTime <= GoldBonusThreshold + 5) || (RemainingTime == GoldBonusThreshold + 9))
 				{
-					AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
-					if (PC != NULL)
+					for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
 					{
-						PC->ClientReceiveLocalizedMessage(UUTCountDownMessage::StaticClass(), 4000 + RemainingTime - GoldBonusThreshold);
+						AUTPlayerController* PC = Cast<AUTPlayerController>(It->PlayerController);
+						if (PC != NULL)
+						{
+							PC->ClientReceiveLocalizedMessage(UUTCountDownMessage::StaticClass(), 4000 + RemainingTime - GoldBonusThreshold);
+						}
+					}
+					if (RemainingTime == GoldBonusThreshold + 1)
+					{
+						FTimerHandle TempHandle;
+						GetWorldTimerManager().SetTimer(TempHandle, this, &AUTFlagRunGameState::PlayTimeWarningSound, 0.9f, false);
 					}
 				}
 			}
-			else if ((RemainingTime <= SilverBonusThreshold + 7) && (RemainingTime > SilverBonusThreshold))
+			else if ((RemainingTime > SilverBonusThreshold) && ((RemainingTime <= SilverBonusThreshold + 5) || (RemainingTime == SilverBonusThreshold + 9)))
 			{
 				for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
 				{
@@ -204,6 +210,11 @@ void AUTFlagRunGameState::UpdateTimeMessage()
 					{
 						PC->ClientReceiveLocalizedMessage(UUTCountDownMessage::StaticClass(), 3000 + RemainingTime - SilverBonusThreshold);
 					}
+				}
+				if (RemainingTime == SilverBonusThreshold + 1)
+				{
+					FTimerHandle TempHandle;
+					GetWorldTimerManager().SetTimer(TempHandle, this, &AUTFlagRunGameState::PlayTimeWarningSound, 0.9f, false);
 				}
 			}
 		}

@@ -405,7 +405,6 @@ void AUTFlagRunGame::CheckRoundTimeVictory()
 		}
 		if (OldBonusLevel != FRGS->BonusLevel)
 		{
-			FRGS->OnBonusLevelChanged();
 			FRGS->ForceNetUpdate();
 		}
 	}

@@ -43,26 +43,8 @@ class UNREALTOURNAMENT_API UUTCountDownMessage : public UUTLocalMessage
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Message)
 		FName SilverBonusName;
 
-	virtual FName GetAnnouncementName_Implementation(int32 Switch, const UObject* OptionalObject, const class APlayerState* RelatedPlayerState_1, const class APlayerState* RelatedPlayerState_2) const override
-	{
-		if (Switch >= 1000)
-		{
-			if (Switch == 4007)
-			{
-				return GoldBonusName;
-			}
-			else if (Switch == 3007)
-			{
-				return SilverBonusName;
-			}
-			else if ((Switch < 2001+RoundName.Num()) && (Switch > 2000))
-			{
-				return RoundName[Switch - 2001];
-			}
-			return NAME_None;
-		}
-		return FName(*FString::Printf(TEXT("CD%i"), Switch));
-	}
+	virtual FName GetAnnouncementName_Implementation(int32 Switch, const UObject* OptionalObject, const class APlayerState* RelatedPlayerState_1, const class APlayerState* RelatedPlayerState_2) const override;
+
 	virtual void GetArgs(FFormatNamedArguments& Args, int32 Switch = 0, bool bTargetsPlayerState1 = false,class APlayerState* RelatedPlayerState_1 = NULL,class APlayerState* RelatedPlayerState_2 = NULL,class UObject* OptionalObject = NULL) const;
 	virtual FText GetText(int32 Switch,bool bTargetsPlayerState1,class APlayerState* RelatedPlayerState_1,class APlayerState* RelatedPlayerState_2,class UObject* OptionalObject) const override;
 	virtual void PrecacheAnnouncements_Implementation(UUTAnnouncer* Announcer) const override;

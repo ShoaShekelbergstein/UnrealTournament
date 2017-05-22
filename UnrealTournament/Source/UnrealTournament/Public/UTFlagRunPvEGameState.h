@@ -42,8 +42,7 @@ public:
 	int32 ExtraLivesGained;
 
 	virtual FText GetRoundStatusText(bool bForScoreboard) override;
-	virtual void OnBonusLevelChanged() override
-	{}
+
 	virtual void UpdateSelectablePowerups() override
 	{
 		// GameMode sets this via SetSelectablePowerups()

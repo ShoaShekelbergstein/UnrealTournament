@@ -29,6 +29,10 @@ UUTCountDownMessage::UUTCountDownMessage(const class FObjectInitializer& ObjectI
 	RoundName.Add(TEXT("Round4"));
 	RoundName.Add(TEXT("Round5"));
 	RoundName.Add(TEXT("Round6"));
+
+//	static ConstructorHelpers::FObjectFinder<USoundBase> TimeStartSoundFinder(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Gameplay/A_Powerup_Invulnerability_Pickup.A_Powerup_Invulnerability_Pickup'"));
+//	TimeStartSound = TimeStartSoundFinder.Object;
+
 	static ConstructorHelpers::FObjectFinder<USoundBase> TimeWarningSoundFinder(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Gameplay/A_Powerup_Invulnerability_Warning.A_Powerup_Invulnerability_Warning'"));
 	TimeWarningSound = TimeWarningSoundFinder.Object;
 
@@ -63,6 +67,27 @@ void UUTCountDownMessage::ClientReceive(const FClientReceiveData& ClientData) co
 			PC->UTClientPlaySound(TimeWarningSound);
 		}
 	}
+}
+
+FName UUTCountDownMessage::GetAnnouncementName_Implementation(int32 Switch, const UObject* OptionalObject, const class APlayerState* RelatedPlayerState_1, const class APlayerState* RelatedPlayerState_2) const
+{
+	if (Switch >= 1000)
+	{
+		if (Switch == 4009)
+		{
+			return GoldBonusName;
+		}
+		else if (Switch == 3009)
+		{
+			return SilverBonusName;
+		}
+		else if ((Switch < 2001 + RoundName.Num()) && (Switch > 2000))
+		{
+			return RoundName[Switch - 2001];
+		}
+		return NAME_None;
+	}
+	return FName(*FString::Printf(TEXT("CD%i"), Switch));
 }
 
 float UUTCountDownMessage::GetScaleInSize_Implementation(int32 MessageIndex) const
