@@ -868,8 +868,8 @@ public:
 		return bInvisible;
 	}
 
-	/** whether spawn protection may potentially be applied (still must meet time since spawn check in UTGameMode)
-	 * set to false after firing weapon or any other action that is considered offensive
+	/** whether spawn protection is currently applied.
+	 * set to false after firing weapon or any other action that is considered offensive, or spawn protection time runs out
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category = Pawn)
 	bool bSpawnProtectionEligible;
