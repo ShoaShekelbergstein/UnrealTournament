@@ -3,6 +3,7 @@
 #include "UTCTFSquadAI.h"
 #include "UTCTFFlag.h"
 #include "UTDefensePoint.h"
+#include "UTGamestate.h"
 
 AUTCTFSquadAI::AUTCTFSquadAI(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -370,6 +371,13 @@ bool AUTCTFSquadAI::RecoverFriendlyFlag(AUTBot* B)
 
 bool AUTCTFSquadAI::CheckSquadObjectives(AUTBot* B)
 {
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (GS && !GS->HasMatchStarted())
+	{
+		// no flag in warm up
+		return Super::CheckSquadObjectives(B);
+	}
+
 	// make bot with the flag Leader if possible
 	if (B->GetUTChar() != nullptr && B->GetUTChar()->GetCarriedObject() != nullptr && Cast<APlayerController>(Leader) == nullptr)
 	{
