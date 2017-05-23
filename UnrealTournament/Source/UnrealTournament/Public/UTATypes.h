@@ -2237,7 +2237,7 @@ namespace ETutorialTags
 	const FName TUTTAG_Progress = FName(TEXT("NextTutorialProgression"));
 
 	// Used to set what tutorial should be auto-launched during new player onboarding.
-	const FName TUTTAG_NewPlayerLaunchTutorial = TUTTAG_DM;
+	const FName TUTTAG_NewPlayerLaunchTutorial = TUTTAG_Flagrun;
 }
 
 UENUM()

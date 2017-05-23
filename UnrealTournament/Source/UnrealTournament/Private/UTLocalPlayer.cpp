@@ -2939,7 +2939,7 @@ void UUTLocalPlayer::ReturnToMainMenu()
 			bLaunchTutorialOnLogin &&
 			!UTPC->SkipTutorialCheck() &&
 			!IsTutorialCompleted(ETutorialTags::TUTTAG_NewPlayerLaunchTutorial) &&
-			(UTGM->bBasicTrainingGame))
+			UTGM && UTGM->bBasicTrainingGame)
 		{
 			FUTAnalytics::FireEvent_UTCancelOnboarding(UTPC);
 		}
@@ -5855,7 +5855,7 @@ void UUTLocalPlayer::LoginProcessComplete()
 void UUTLocalPlayer::FinalizeLogin()
 {
 	LoginPhase = ELoginPhase::LoggedIn;
-	if (bLaunchTutorialOnLogin) LaunchTutorial(ETutorialTags::TUTTAG_Flagrun);
+	if (bLaunchTutorialOnLogin) LaunchTutorial(ETutorialTags::TUTTAG_NewPlayerLaunchTutorial);
 }
 
 void UUTLocalPlayer::QoSComplete()
