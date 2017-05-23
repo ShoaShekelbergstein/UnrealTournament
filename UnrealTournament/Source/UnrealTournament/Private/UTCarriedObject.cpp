@@ -170,22 +170,14 @@ void AUTCarriedObject::DetachFrom(USkeletalMeshComponent* AttachToMesh)
 
 void AUTCarriedObject::UpdateHolderTrailTeam()
 {
-	if (!HolderTrail)
+	if (HolderTrail)
 	{
-		return;
-	}
-	float TrailLength = 0.f;
-	if (Team)
-	{
-		HolderTrail->SetColorParameter(FName(TEXT("Color")), Team->TeamColor);
-		for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+		if (Team)
 		{
-			AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
-			TrailLength = (PC && GetTeamNum() == PC->GetTeamNum()) ? 0.5f : 0.f;
-			break;
+			HolderTrail->SetColorParameter(FName(TEXT("Color")), Team->TeamColor);
 		}
+		HolderTrail->SetFloatParameter(FName(TEXT("Lifespan")), 0.f);
 	}
-	HolderTrail->SetFloatParameter(FName(TEXT("Lifespan")), TrailLength);
 }
 
 void AUTCarriedObject::ClientUpdateAttachment(bool bNowAttached)
