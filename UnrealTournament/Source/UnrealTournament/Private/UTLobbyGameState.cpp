@@ -462,6 +462,13 @@ void AUTLobbyGameState::LaunchGameInstance(AUTLobbyMatchInfo* MatchOwner, FStrin
 			GameURL += TEXT("?Private=1");
 		}
 
+		if (!LobbyGame->ServerPassword.IsEmpty())
+		{
+			GameURL += FString::Printf(TEXT("?ServerPassword=%s"), *LobbyGame->ServerPassword);
+		}
+
+		GameURL += FString::Printf(TEXT("?HubGUID=%s"), *LobbyGame->ServerInstanceGUID.ToString());
+
 		int32 InstancePort = LobbyGame->StartingInstancePort + (LobbyGame->InstancePortStep * GameInstances.Num());
 
 		FGuid LaunchGuid = FGuid::NewGuid();

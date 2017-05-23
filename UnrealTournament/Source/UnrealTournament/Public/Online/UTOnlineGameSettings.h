@@ -14,6 +14,9 @@
 /** Setting describing the trust level of the session (value is FString) */
 #define SETTING_TRUSTLEVEL FName(TEXT("UT_SERVERTRUSTLEVEL"))
 
+/** Setting holds the HUB GUID of a server that is hosting an instance.  Usually it's not set */
+#define SETTING_HUBGUID FName(TEXT("UT_HUBGUID"))
+
 #define GAMEMODE_EMPTY	TEXT("EMPTY")
 
 /** Named interface reference for storing beacon state between levels */

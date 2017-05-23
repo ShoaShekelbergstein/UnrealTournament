@@ -289,4 +289,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = Chat)
 	bool AllowTextMessage(FString& Msg, bool bIsTeamMessage, AUTBasePlayerController* Sender);
 
+	UPROPERTY(BlueprintReadOnly, Category=Game)
+	FString HubGUIDString;
+
 };

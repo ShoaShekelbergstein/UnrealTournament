@@ -2999,7 +2999,7 @@ void UUTLocalPlayer::InvalidateLastSession()
 }
 
 #if !UE_SERVER
-void UUTLocalPlayer::ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID, bool bSpectatorPassword)
+void UUTLocalPlayer::ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID, bool bAsSpectator)
 {
 	if (ButtonID == UTDIALOG_BUTTON_OK)
 	{
@@ -3007,7 +3007,7 @@ void UUTLocalPlayer::ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, u
 		if (Box.IsValid())
 		{
 			PendingJoinSessionPassword = Box->GetInputText();
-			JoinSession(LastSession, bSpectatorPassword, ConnectDesiredTeam, PendingInstanceID );
+			JoinSession(LastSession, bAsSpectator, ConnectDesiredTeam, PendingInstanceID );
 		}
 	}
 }
@@ -3035,16 +3035,23 @@ bool UUTLocalPlayer::JoinSession(const FOnlineSessionSearchResult& SearchResult,
 
 #if !UE_SERVER
 
-	bool bServerRequiresPassword = bSpectate 
-			? (ServerFlags & SERVERFLAG_RequiresSpectatorPassword) == SERVERFLAG_RequiresSpectatorPassword  
-			: (ServerFlags & SERVERFLAG_RequiresPassword) == SERVERFLAG_RequiresPassword;
-
+	bool bServerRequiresPassword = (ServerFlags & SERVERFLAG_RequiresPassword) == SERVERFLAG_RequiresPassword;
 	if ( bServerRequiresPassword && PendingJoinSessionPassword.IsEmpty())
 	{
 		// Attempt to look up the password
 		FString ServerGUID;
 		SearchResult.Session.SessionSettings.Get(SETTING_SERVERINSTANCEGUID, ServerGUID);
-		PendingJoinSessionPassword = RetrievePassword(ServerGUID, bSpectate);	
+		FString HubGUID;
+		SearchResult.Session.SessionSettings.Get(SETTING_HUBGUID, HubGUID);
+		
+		if (!HubGUID.IsEmpty())
+		{
+			PendingJoinSessionPassword = RetrievePassword(HubGUID);	
+		}
+		else
+		{
+			PendingJoinSessionPassword = RetrievePassword(ServerGUID);	
+		}
 
 		if (PendingJoinSessionPassword.IsEmpty())
 		{
@@ -3184,7 +3191,7 @@ void UUTLocalPlayer::OnJoinSessionComplete(FName SessionName, EOnJoinSessionComp
 			FString Password = TEXT("");
 			if (!PendingJoinSessionPassword.IsEmpty())
 			{
-				Password = (bWantsToConnectAsSpectator ? TEXT("?specpassword=") : TEXT("?password=")) + PendingJoinSessionPassword;
+				Password = TEXT("?password=") + PendingJoinSessionPassword;
 
 				FString ServerGUID;
 				PendingSession.Session.SessionSettings.Get(SETTING_SERVERINSTANCEGUID, ServerGUID);
@@ -5191,52 +5198,30 @@ void UUTLocalPlayer::HandleProfileNotification(const FOnlineNotification& Notifi
 	}
 }
 
-void UUTLocalPlayer::CachePassword(FString ServerGUID, FString Password, bool bSpectator)
+void UUTLocalPlayer::CachePassword(FString ServerGUID, FString Password)
 {
-	if (bSpectator)
+	if (CachedPasswords.Contains(ServerGUID))
 	{
-		if (CachedSpecPasswords.Contains(ServerGUID))
-		{
-			CachedSpecPasswords[ServerGUID] = Password;
-		}
-		else
-		{
-			CachedSpecPasswords.Add(ServerGUID, Password);
-		}
+		CachedPasswords[ServerGUID] = Password;
 	}
 	else
 	{
-		if (CachedPasswords.Contains(ServerGUID))
-		{
-			CachedPasswords[ServerGUID] = Password;
-		}
-		else
-		{
-			CachedPasswords.Add(ServerGUID, Password);
-		}
+		CachedPasswords.Add(ServerGUID, Password);
 	}
 }
 
-FString UUTLocalPlayer::RetrievePassword(FString ServerGUID, bool bSpectator)
+FString UUTLocalPlayer::RetrievePassword(FString ServerGUID)
 {
-	if (bSpectator)
-	{
-		if (CachedSpecPasswords.Contains(ServerGUID))
-		{
-			return FString::Printf(TEXT("%s"), *CachedSpecPasswords[ServerGUID]);
-		}
-	}
-	else if (CachedPasswords.Contains(ServerGUID))
+	if (CachedPasswords.Contains(ServerGUID))
 	{
 		return FString::Printf(TEXT("%s"), *CachedPasswords[ServerGUID]);
 	}
 	return TEXT("");
 }
 
-void UUTLocalPlayer::RemoveCachedPassword(const FString& ServerID, bool bSpectator)
+void UUTLocalPlayer::RemoveCachedPassword(const FString& ServerID)
 {
-	if (!bSpectator && CachedPasswords.Contains(ServerID)) CachedPasswords.Remove(ServerID);
-	if (bSpectator && CachedSpecPasswords.Contains(ServerID)) CachedSpecPasswords.Remove(ServerID);
+	if (CachedPasswords.Contains(ServerID)) CachedPasswords.Remove(ServerID);
 }
 
 FString UUTLocalPlayer::StripOptionsFromAddress(FString HostAddress) const
@@ -5275,8 +5260,7 @@ void UUTLocalPlayer::Reconnect(bool bSpectator)
 	}
 	else
 	{
-		FString Password = bWantsToConnectAsSpectator ? "?specpassword=" : "?password=";
-		Password = Password + RetrievePassword(LastConnectToIP, bSpectator);
+		FString Password = TEXT("?password=") + RetrievePassword(LastConnectToIP);
 		ConsoleCommand(TEXT("open ") + LastConnectToIP + Password);
 	}
 }

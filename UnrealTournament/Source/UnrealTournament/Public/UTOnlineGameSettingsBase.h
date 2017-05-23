@@ -29,10 +29,10 @@
 #define SETTING_UTMATCHDURATION FName(TEXT("UT_MATCHDURATION"))
 #define SETTING_UTMATCHELAPSEDTIME FName(TEXT("UT_MATCHELAPSEDTIME"))
 
+#define SETTING_HUBGUID FName(TEXT("UT_HUBGUID"))
 
 // Requires a password to join
 #define SERVERFLAG_RequiresPassword 0x00000001
-#define SERVERFLAG_RequiresSpectatorPassword 0x00000004
 
 
 // This server is restricted for some reason.  

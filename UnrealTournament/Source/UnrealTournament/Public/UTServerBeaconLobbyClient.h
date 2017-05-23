@@ -79,9 +79,6 @@ class UNREALTOURNAMENT_API AUTServerBeaconLobbyClient : public AOnlineBeaconClie
 	virtual void AuthorizeDedicatedInstance(FGuid HubGuid, int32 InstanceID);
 
 	UFUNCTION(client, reliable)
-	virtual void Instance_ReceiveHubID(FGuid HubGuid);
-
-	UFUNCTION(client, reliable)
 	virtual void Instance_ReceieveRconMessage(const FString& TargetUniqueId, const FString& AdminMessage);
 
 	UFUNCTION(client, reliable)

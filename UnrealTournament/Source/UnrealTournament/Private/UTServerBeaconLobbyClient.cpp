@@ -100,11 +100,11 @@ bool AUTServerBeaconLobbyClient::Lobby_NotifyInstanceIsReady_Validate(uint32 Ins
 void AUTServerBeaconLobbyClient::Lobby_NotifyInstanceIsReady_Implementation(uint32 InstanceID, FGuid InstanceGUID, const FString& MapName)
 {
 	UE_LOG(UT,Verbose,TEXT("[Hub] NotifyInstanceIsReady: Instance %i [%s]"), InstanceID, *InstanceGUID.ToString());
+
 	AUTLobbyGameState* LobbyGameState = GetWorld()->GetGameState<AUTLobbyGameState>();
 	if (LobbyGameState)
 	{
 		LobbyGameState->GameInstance_Ready(InstanceID, InstanceGUID, MapName, this);
-		Instance_ReceiveHubID(LobbyGameState->HubGuid);
 	}
 
 
@@ -188,16 +188,6 @@ void AUTServerBeaconLobbyClient::AuthorizeDedicatedInstance_Implementation(FGuid
 	{
 		GameInstanceID = InstanceID;
 		CurrentGameMode->BecomeDedicatedInstance(HubGuid, InstanceID);
-	}
-}
-
-void AUTServerBeaconLobbyClient::Instance_ReceiveHubID_Implementation(FGuid HubGuid)
-{
-	UE_LOG(UT,Verbose,TEXT("[Instance] Instance has received Hub GUID: %s"), *HubGuid.ToString());
-	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-	if (UTGameState)
-	{
-		UTGameState->HubGuid = HubGuid;
 	}
 }
 

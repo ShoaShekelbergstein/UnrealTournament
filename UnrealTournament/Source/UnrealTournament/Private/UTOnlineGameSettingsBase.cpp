@@ -53,6 +53,8 @@ void FUTOnlineGameSettingsBase::ApplyGameSettings(FOnlineSessionSettings* InSett
 
 		InSettings->Set(SETTING_UTMATCHDURATION, GameState->TimeLimit, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 		InSettings->Set(SETTING_UTMATCHELAPSEDTIME, GameState->ElapsedTime);
+
+		InSettings->Set(SETTING_HUBGUID, GameState->HubGuid.ToString(), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	}
 
 	InSettings->Set(SETTING_UTREDTEAMSIZE, RedTeamSize, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
@@ -82,7 +84,6 @@ void FUTOnlineGameSettingsBase::ApplyGameSettings(FOnlineSessionSettings* InSett
 
 	InSettings->Set(SETTING_UTMAXPLAYERS, CurrentSession->MaxPlayers, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	InSettings->Set(SETTING_UTMAXSPECTATORS, CurrentSession->MaxSpectators, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-
 
 	InSettings->Set(SETTING_UTMATCHSTATE, CurrentGame->GetMatchState().ToString(), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 }

@@ -1103,13 +1103,12 @@ public:
 	void InvalidateLastSession();
 	void Reconnect(bool bAsSpectator);
 
-	void CachePassword(FString ServerID, FString Password, bool bSpectator);		
-	FString RetrievePassword(FString ServerID, bool bSpectator);
-	void RemoveCachedPassword(const FString& ServerID, bool bSpectator = false);
+	void CachePassword(FString ServerID, FString Password);		
+	FString RetrievePassword(FString ServerID);
+	void RemoveCachedPassword(const FString& ServerID);
 
 protected:
 	TMap<FString /*ServerGUID*/, FString /*Password*/> CachedPasswords;
-	TMap<FString /*ServerGUID*/, FString /*Password*/> CachedSpecPasswords;
 
 protected:
 	UPROPERTY(Config)
@@ -1440,7 +1439,7 @@ protected:
 
 
 #if !UE_SERVER
-	void ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID, bool bSpectatorPassword);
+	void ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID, bool bAsSpectator);
 #endif
 
 	void CenterMouseCursor();

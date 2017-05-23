@@ -79,10 +79,16 @@ void AUTBaseGameMode::InitGame( const FString& MapName, const FString& Options, 
 	// If we are a lobby instance, then we always want to generate a ServerInstanceID
 	if (LobbyInstanceID > 0)
 	{
+		if (UGameplayStatics::HasOption(Options, TEXT("HubGUID")))
+		{
+			HubGUIDString = UGameplayStatics::ParseOption(Options, TEXT("HubGUID"));
+		}
+
 		ServerInstanceGUID = FGuid::NewGuid();
 	}
 	else   // Otherwise, we want to try and load our instance id from the config so we are consistent.
 	{
+		HubGUIDString = TEXT("");
 		if (ServerInstanceID.IsEmpty())
 		{
 			CreateServerID();
@@ -177,6 +183,15 @@ void AUTBaseGameMode::InitGameState()
 			GS->HostIdString = HostIdString;
 			UE_LOG(UT,Log,TEXT("This Server is hosted by %s"), *GS->HostIdString)
 		}
+
+		if (!HubGUIDString.IsEmpty())
+		{
+			if ( !FGuid::Parse(HubGUIDString, GS->HubGuid) )
+			{
+				UE_LOG(UT,Warning,TEXT("Illegal Hub GUID detected: %s"), *GS->HubGuid.ToString());
+			}
+		}
+
 	}
 
 	//Context is actually init inside of InitGame, but we want the gamestate populated so we can get data

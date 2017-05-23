@@ -487,6 +487,7 @@ protected:
 
 	bool bShowPrivateHub;
 	EVisibility GetPrivateHubVis() const;
+	EVisibility GetHbInstanceListHubVis() const;
 
 };
 

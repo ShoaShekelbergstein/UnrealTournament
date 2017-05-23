@@ -297,10 +297,9 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 
 		if (FailureType == ENetworkFailure::PendingConnectionFailure)
 		{
-			if (ErrorString == TEXT("NEEDPASS") || ErrorString == TEXT("NEEDSPECPASS"))
+			if ( ErrorString == TEXT("NEEDPASS") )
 			{
 				// If we have gotten here, then any password used is invalid.. So remove it.
-				bool bNeedSpectator = ErrorString == TEXT("NEEDSPECPASS");
 				if (NetDriver != NULL && NetDriver->ServerConnection != NULL)
 				{
 					// If we are in a session, we we have already attempted to use a cached password and it would have failed.  So just popup the dialog
@@ -322,7 +321,7 @@ void UUTGameViewportClient::PeekNetworkFailureMessages(UWorld *InWorld, UNetDriv
 					}
 
 					FirstPlayer->OpenDialog(SNew(SUTInputBoxDialog)
-						.OnDialogResult( FDialogResultDelegate::CreateUObject(this, &UUTGameViewportClient::ConnectPasswordResult, ErrorString == TEXT("NEEDSPECPASS")))
+						.OnDialogResult( FDialogResultDelegate::CreateUObject(this, &UUTGameViewportClient::ConnectPasswordResult))
 						.PlayerOwner(FirstPlayer)
 						.DialogTitle(NSLOCTEXT("UTGameViewportClient", "PasswordRequireTitle", "Password is Required"))
 						.MessageText(NSLOCTEXT("UTGameViewportClient", "PasswordRequiredText", "This server requires a password:"))
@@ -664,7 +663,7 @@ void UUTGameViewportClient::NetworkFailureDialogResult(TSharedPtr<SCompoundWidge
 	ReconnectDialog.Reset();
 }
 
-void UUTGameViewportClient::ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID, bool bSpectatorPassword)
+void UUTGameViewportClient::ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, uint16 ButtonID)
 {
 #if !UE_SERVER
 	if (ButtonID != UTDIALOG_BUTTON_CANCEL)
@@ -681,14 +680,14 @@ void UUTGameViewportClient::ConnectPasswordResult(TSharedPtr<SCompoundWidget> Wi
 				{
 					FString ServerGUID;
 					FirstPlayer->LastSession.Session.SessionSettings.Get(SETTING_SERVERINSTANCEGUID, ServerGUID);
-					FirstPlayer->CachePassword(ServerGUID, InputText, bSpectatorPassword);
+					FirstPlayer->CachePassword(ServerGUID, InputText);
 				}						
 				else
 				{
-					FirstPlayer->CachePassword(FirstPlayer->LastConnectToIP, InputText, bSpectatorPassword);
+					FirstPlayer->CachePassword(FirstPlayer->LastConnectToIP, InputText);
 				}
 
-				FirstPlayer->Reconnect(bSpectatorPassword);
+				FirstPlayer->Reconnect(false);
 			}
 		}
 	}

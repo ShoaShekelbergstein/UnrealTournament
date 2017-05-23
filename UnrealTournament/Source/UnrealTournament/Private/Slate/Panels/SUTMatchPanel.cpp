@@ -156,6 +156,7 @@ void SUTMatchPanel::Construct(const FArguments& InArgs)
 			]
 
 			+SOverlay::Slot()
+			
 			[
 				SNew(SVerticalBox)
 				+SVerticalBox::Slot()
@@ -173,6 +174,7 @@ void SUTMatchPanel::Construct(const FArguments& InArgs)
 						.OnGenerateRow( this, &SUTMatchPanel::OnGenerateWidgetForMatchList )
 						.SelectionMode(ESelectionMode::Single)
 						.OnMouseButtonDoubleClick(this, &SUTMatchPanel::OnListMouseButtonDoubleClick)
+						.Visibility(this, &SUTMatchPanel::GetHbInstanceListHubVis)
 					]
 				]
 			]
@@ -191,6 +193,11 @@ void SUTMatchPanel::Construct(const FArguments& InArgs)
 EVisibility SUTMatchPanel::GetPrivateHubVis() const
 {
 	return (bShowPrivateHub) ? EVisibility::Visible : EVisibility::Collapsed;
+}
+
+EVisibility SUTMatchPanel::GetHbInstanceListHubVis() const
+{
+	return (bShowPrivateHub) ? EVisibility::Collapsed : EVisibility::Visible;
 }
 
 bool SUTMatchPanel::ShouldUseLiveData()

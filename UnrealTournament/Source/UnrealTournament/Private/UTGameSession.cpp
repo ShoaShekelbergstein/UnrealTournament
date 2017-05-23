@@ -168,21 +168,11 @@ FString AUTGameSession::ApproveLogin(const FString& Options)
 		if (GetNetMode() != NM_Standalone && !GetWorld()->IsPlayInEditor())
 		{
 			FString Password = UGameplayStatics::ParseOption(Options, TEXT("Password"));
-			if (!bSpectator && !UTBaseGameMode->ServerPassword.IsEmpty())
+			if (!UTBaseGameMode->ServerPassword.IsEmpty())
 			{
-				UE_LOG(UT,Log,TEXT("Pass: %s v %s"), Password.IsEmpty() ? TEXT("") : *Password, *UTBaseGameMode->ServerPassword);
 				if (Password.IsEmpty() || !UTBaseGameMode->ServerPassword.Equals(Password, ESearchCase::CaseSensitive))
 				{
 					return TEXT("NEEDPASS");
-				}
-			}
-			FString SpecPassword = UGameplayStatics::ParseOption(Options, TEXT("SpecPassword"));
-			if (bSpectator && !UTBaseGameMode->SpectatePassword.IsEmpty())
-			{
-				UE_LOG(UT,Log,TEXT("Spec: %s v %s"), SpecPassword.IsEmpty() ? TEXT("") : *SpecPassword, *UTBaseGameMode->SpectatePassword);
-				if (SpecPassword.IsEmpty() || !UTBaseGameMode->SpectatePassword.Equals(SpecPassword, ESearchCase::CaseSensitive))
-				{
-					return TEXT("NEEDSPECPASS");
 				}
 			}
 		}
