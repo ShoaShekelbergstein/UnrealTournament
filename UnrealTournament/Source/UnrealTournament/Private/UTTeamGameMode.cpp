@@ -326,20 +326,23 @@ bool AUTTeamGameMode::MovePlayerToTeam(AController* Player, AUTPlayerState* PS, 
 		Teams[NewTeam]->AddToTeam(Player);
 		PS->bPendingTeamSwitch = false;
 
-		AUTPlayerController* UTPC = Cast<AUTPlayerController>(Player);
-		static const FName VoiceChatTokenFeatureName("VoiceChatToken");
-		if (UTPC && PS && PS->Team && !PS->bOnlySpectator && IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
+		if (GetMatchState() != MatchState::WaitingPostMatch)
 		{
-			UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
-			UTPC->VoiceChatChannel = PS->Team->VoiceChatChannel;
-			VoiceChatToken->GenerateClientJoinToken(UTPC->VoiceChatPlayerName, UTPC->VoiceChatChannel, UTPC->VoiceChatJoinToken);
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(Player);
+			static const FName VoiceChatTokenFeatureName("VoiceChatToken");
+			if (UTPC && PS && PS->Team && !PS->bOnlySpectator && IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
+			{
+				UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
+				UTPC->VoiceChatChannel = PS->Team->VoiceChatChannel;
+				VoiceChatToken->GenerateClientJoinToken(UTPC->VoiceChatPlayerName, UTPC->VoiceChatChannel, UTPC->VoiceChatJoinToken);
 
 #if WITH_EDITOR
-			if (UTPC->IsLocalPlayerController())
-			{
-				UTPC->OnRepVoiceChatJoinToken();
-			}
+				if (UTPC->IsLocalPlayerController())
+				{
+					UTPC->OnRepVoiceChatJoinToken();
+				}
 #endif
+			}
 		}
 
 		PS->ForceNetUpdate();
@@ -1204,4 +1207,34 @@ void AUTTeamGameMode::GetGood()
 #endif
 }
 
+void AUTTeamGameMode::HandleMatchHasEnded()
+{
+	Super::HandleMatchHasEnded();
 
+	FString PostMatchVoiceChatChannel = FBase64::Encode(FGuid::NewGuid().ToString());
+
+	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		APlayerController* Controller = Iterator->Get();
+		if (Controller)
+		{
+			APlayerState* PS = Controller->PlayerState;
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(Controller);
+
+			static const FName VoiceChatTokenFeatureName("VoiceChatToken");
+			if (UTPC && PS && !PS->bOnlySpectator && IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
+			{
+				UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
+				UTPC->VoiceChatChannel = PostMatchVoiceChatChannel;
+				VoiceChatToken->GenerateClientJoinToken(UTPC->VoiceChatPlayerName, UTPC->VoiceChatChannel, UTPC->VoiceChatJoinToken);
+
+#if WITH_EDITOR
+				if (UTPC->IsLocalPlayerController())
+				{
+					UTPC->OnRepVoiceChatJoinToken();
+				}
+#endif
+			}
+		}
+	}
+}
