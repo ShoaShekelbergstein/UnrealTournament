@@ -192,6 +192,15 @@ bool UUTGameplayStatics::ComponentIsVisibleFrom(UPrimitiveComponent* VictimComp,
 			}
 		}
 	}
+	if (bHadBlockingHit && OutHitResult.Component != VictimComp)
+	{
+		// if victim is a character, also trace to head
+		AUTCharacter* VictimChar = Cast<AUTCharacter>(VictimComp->GetOwner());
+		if (VictimChar && (VictimComp == VictimChar->GetCapsuleComponent()))
+		{
+			bHadBlockingHit = World->LineTraceSingleByChannel(OutHitResult, TraceStart, TraceEnd + FVector(0.f, 0.f, 0.9f*VictimChar->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()), COLLISION_TRACE_WEAPON, LineParams, ResponseParams);
+		}
+	}
 
 	// If there was a blocking hit, it will be the last one
 	if (bHadBlockingHit)
