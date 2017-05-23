@@ -151,18 +151,13 @@ bool FLinuxPlatformMemory::PageProtect(void* const Ptr, const SIZE_T Size, const
 }
 
 void* FLinuxPlatformMemory::BinnedAllocFromOS( SIZE_T Size )
-{	
-	return mmap(nullptr, Size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+{
+	return FGenericPlatformMemory::BinnedAllocFromOS(Size);
 }
 
 void FLinuxPlatformMemory::BinnedFreeToOS( void* Ptr, SIZE_T Size )
 {
-	if (munmap(Ptr, Size) != 0)
-	{
-		const int ErrNo = errno;
-		UE_LOG(LogHAL, Fatal, TEXT("munmap(addr=%p, len=%llu) failed with errno = %d (%s)"), Ptr, Size,
-			ErrNo, StringCast< TCHAR >(strerror(ErrNo)).Get());
-	}
+	return FGenericPlatformMemory::BinnedFreeToOS(Ptr, Size);
 }
 
 namespace LinuxPlatformMemory
@@ -329,6 +324,7 @@ const FPlatformMemoryConstants& FLinuxPlatformMemory::GetConstants()
 		MemoryConstants.TotalVirtual = MaxVirtualRAMBytes;
 		MemoryConstants.TotalPhysicalGB = (MemoryConstants.TotalPhysical + 1024 * 1024 * 1024 - 1) / 1024 / 1024 / 1024;
 		MemoryConstants.PageSize = sysconf(_SC_PAGESIZE);
+		MemoryConstants.BinnedPageSize = FMath::Max((SIZE_T)65536, MemoryConstants.PageSize);
 	}
 
 	return MemoryConstants;	

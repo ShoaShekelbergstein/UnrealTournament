@@ -32,6 +32,9 @@ struct FGenericPlatformMemoryConstants
 	/** The size of a page, in bytes. */
 	SIZE_T PageSize;
 
+	/** The size of a "page" in Binned2 malloc terms, in bytes. Should be at least 64KB. BinnedMalloc expects memory returned from BinnedAllocFromOS() to be aligned on BinnedPageSize boundary. */
+	SIZE_T BinnedPageSize;
+
 	/** 
 	* For platforms that support multiple page sizes this is non-zero and smaller than PageSize.
 	* If non-zero, then BinnedAllocFromOS will take allocation requests aligned to this size and return blocks aligned to PageSize
@@ -50,7 +53,8 @@ struct FGenericPlatformMemoryConstants
 	FGenericPlatformMemoryConstants()
 		: TotalPhysical( 0 )
 		, TotalVirtual( 0 )
-		, PageSize( 0 )
+		, PageSize(0)
+		, BinnedPageSize(0)
 		, OsAllocationGranularity(0)
 		, AddressLimit((uint64)0xffffffff + 1)
 		, TotalPhysicalGB( 1 )
@@ -61,6 +65,7 @@ struct FGenericPlatformMemoryConstants
 		: TotalPhysical( Other.TotalPhysical )
 		, TotalVirtual( Other.TotalVirtual )
 		, PageSize( Other.PageSize )
+		, BinnedPageSize(Other.BinnedPageSize)
 		, OsAllocationGranularity(Other.OsAllocationGranularity)
 		, AddressLimit(Other.AddressLimit)
 		, TotalPhysicalGB(Other.TotalPhysicalGB)
