@@ -385,8 +385,25 @@ void AUTDualWeapon::PlayFiringEffects()
 		}
 		else
 		{
-			PlayFiringSound(CurrentFireMode);
-			
+			if (UTOwner != nullptr)
+			{
+				//UE_LOG(UT, Warning, TEXT("PlayFiringEffects at %f"), GetWorld()->GetTimeSeconds());
+				uint8 EffectFiringMode = (Role == ROLE_Authority || UTOwner->Controller != NULL) ? CurrentFireMode : UTOwner->FireMode;
+				PlayFiringSound(EffectFiringMode);
+
+				// reload sound on local shooter
+				if ((GetNetMode() != NM_DedicatedServer) && UTOwner && UTOwner->GetLocalViewer())
+				{
+					if ((Ammo <= LowAmmoThreshold) && (Ammo > 0) && (LowAmmoSound != nullptr))
+					{
+						AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
+						if (!GameMode || GameMode->bAmmoIsLimited)
+						{
+							GetWorldTimerManager().SetTimer(PlayLowAmmoSoundHandle, this, &AUTWeapon::PlayLowAmmoSound, LowAmmoSoundDelay, false);
+						}
+					}
+				}
+			}
 			if (ShouldPlay1PVisuals())
 			{
 				UAnimInstance* HandAnimInstance = UTOwner->FirstPersonMesh ? UTOwner->FirstPersonMesh->GetAnimInstance() : nullptr;
