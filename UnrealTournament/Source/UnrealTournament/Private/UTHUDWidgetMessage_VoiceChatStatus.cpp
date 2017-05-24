@@ -70,7 +70,7 @@ void UUTHUDWidgetMessage_VoiceChatStatus::DrawTalker(const FString& PlayerName, 
 		Canvas->DrawColor = FColor(188,7,7);
 	}
 	
-	FCanvasTileItem TileItem(RenderPos, GWhiteTexture, FVector2D(XL, YL), FVector2D(0, 0), FVector2D(1, 1), Canvas->DrawColor);
+	FCanvasTileItem TileItem(RenderPos, GWhiteTexture, FVector2D(XL + 2, YL), FVector2D(0, 0), FVector2D(1, 1), Canvas->DrawColor);
 	TileItem.BlendMode = ESimpleElementBlendMode::SE_BLEND_Translucent;
 	Canvas->DrawItem(TileItem);
 
@@ -81,7 +81,10 @@ void UUTHUDWidgetMessage_VoiceChatStatus::DrawTalker(const FString& PlayerName, 
 	float V = ChatIconUVs.V / UTHUDOwner->HUDAtlas->Resource->GetSizeY();
 	float UL = U + (ChatIconUVs.UL / UTHUDOwner->HUDAtlas->Resource->GetSizeX());
 	float VL = V + (ChatIconUVs.VL / UTHUDOwner->HUDAtlas->Resource->GetSizeY());
-	FCanvasTileItem ImageItem(RenderPos, UTHUDOwner->HUDAtlas->Resource, FVector2D(26 * RenderScale, 23 * RenderScale), FVector2D(U, V), FVector2D(UL, VL), FLinearColor::White);
+	FVector2D ChatIconRenderPos = RenderPos;
+	ChatIconRenderPos.X += 2;
+	ChatIconRenderPos.Y += 2;
+	FCanvasTileItem ImageItem(ChatIconRenderPos, UTHUDOwner->HUDAtlas->Resource, FVector2D(23 * RenderScale, 20 * RenderScale), FVector2D(U, V), FVector2D(UL, VL), FLinearColor::White);
 	ImageItem.BlendMode = ESimpleElementBlendMode::SE_BLEND_Translucent;
 	Canvas->DrawItem(ImageItem);
 
