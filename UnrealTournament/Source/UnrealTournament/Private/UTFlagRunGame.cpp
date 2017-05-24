@@ -2117,7 +2117,7 @@ void AUTFlagRunGame::InitRound()
 		AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(CTFGameState);
 		if (RCTFGameState)
 		{
-			RCTFGameState->RampStartTime = FlagPickupDelay - RampUpTime[RCTFGameState->CTFRound % RampUpMusic.Num()] - 1;
+			RCTFGameState->RampStartTime = FMath::Max(int32(RampUpTime[RCTFGameState->CTFRound % RampUpMusic.Num()] + 0.5f), 1);
 			GetWorldTimerManager().SetTimer(RampHandle, this, &AUTFlagRunGame::PlayRampUpMusic, FlagPickupDelay - RampUpTime[RCTFGameState->CTFRound % RampUpMusic.Num()], false);
 		}
 	}

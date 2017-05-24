@@ -36,7 +36,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	DefendText = NSLOCTEXT("UUTHUDWidget_TeamGameClock", "DefendingRole", "Rd {RoundNum}: Defending on");
 	TiebreakValue = 0;
 	RemainingPickupDelay = 0;
-	RampStartTime = 99;
+	RampStartTime = 1;
 
 	HighlightMap.Add(HighlightNames::MostKillsTeam, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
 	HighlightMap.Add(HighlightNames::BadMF, NSLOCTEXT("AUTGameMode", "MostKillsTeam", "Most Kills for Team ({0})"));
