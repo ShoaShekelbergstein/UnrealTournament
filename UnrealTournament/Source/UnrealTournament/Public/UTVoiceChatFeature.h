@@ -2,7 +2,10 @@
 
 #pragma once
 
+#include "Delegate.h"
 #include "Runtime/Core/Public/Features/IModularFeature.h"
+
+DECLARE_MULTICAST_DELEGATE(FVoiceChatChannelJoinFailed);
 
 class UTVoiceChatFeature : public IModularFeature
 {
@@ -14,6 +17,9 @@ public:
 	virtual void Logout(const FString& PlayerName) = 0;
 	virtual void JoinChannelUsingToken(const FString& PlayerName, const FString& Channel, const FString& Token) = 0;
 	virtual void LeaveChannel(const FString& PlayerName, const FString& Channel) = 0;
+
+	virtual FDelegateHandle RegisterChannelJoinFailedDelegate_Handle(const FVoiceChatChannelJoinFailed::FDelegate& Delegate) = 0;
+	virtual void UnregisterChannelJoinFailedDelegate_Handle(FDelegateHandle Handle) = 0;
 
 	virtual void SetPlaybackVolume(float InVolume) = 0;
 	virtual void SetRecordVolume(float InVolume) = 0;

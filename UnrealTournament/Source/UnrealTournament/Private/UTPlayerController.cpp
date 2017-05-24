@@ -58,6 +58,7 @@
 #include "BlueprintContextLibrary.h"
 #include "PartyContext.h"
 #include "UTVoiceChatFeature.h"
+#include "UTVoiceChatTokenFeature.h"
 
 static TAutoConsoleVariable<float> CVarUTKillcamStartDelay(
 	TEXT("UT.KillcamStartDelay"),
@@ -5297,6 +5298,33 @@ void AUTPlayerController::ClientAnnounceRoundScore_Implementation(AUTTeamInfo* W
 	}
 }
 
+void AUTPlayerController::VoiceChatChannelJoinFailed()
+{
+	VoiceChatChannelCurrent.Empty();
+	VoiceChatJoinTokenCurrent.Empty();
+	ServerVoiceChatRejoinChannel();
+}
+
+bool AUTPlayerController::ServerVoiceChatRejoinChannel_Validate()
+{
+	return true;
+}
+
+void AUTPlayerController::ServerVoiceChatRejoinChannel_Implementation()
+{
+	static const FName VoiceChatTokenFeatureName("VoiceChatToken");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
+	{
+		UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
+		VoiceChatToken->GenerateClientJoinToken(VoiceChatPlayerName, VoiceChatChannel, VoiceChatJoinToken);
+
+		if (IsLocalPlayerController())
+		{
+			OnRepVoiceChatJoinToken();
+		}
+	}
+}
+
 void AUTPlayerController::LeaveVoiceChat()
 {
 	if (bVoiceChatSentLogin)
@@ -5305,6 +5333,8 @@ void AUTPlayerController::LeaveVoiceChat()
 		if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
 		{
 			UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+			VoiceChat->UnregisterChannelJoinFailedDelegate_Handle(VoiceChatChannelJoinFailedHandle);
+			VoiceChatChannelJoinFailedHandle.Reset();
 			VoiceChat->Logout(VoiceChatPlayerName);
 		}
 
@@ -5427,6 +5457,12 @@ void AUTPlayerController::OnRepVoiceChatJoinToken()
 		}
 
 		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+
+		if (!VoiceChatChannelJoinFailedHandle.IsValid())
+		{
+			VoiceChatChannelJoinFailedHandle = VoiceChat->RegisterChannelJoinFailedDelegate_Handle(FVoiceChatChannelJoinFailed::FDelegate::CreateUObject(this, &ThisClass::VoiceChatChannelJoinFailed));
+		}
+
 		/*
 		if (!VoiceChatChannelCurrent.IsEmpty())
 		{

@@ -836,6 +836,14 @@ public:
 	UPROPERTY()
 	FString VoiceChatChannelCurrent;
 
+	UFUNCTION()
+	void VoiceChatChannelJoinFailed();
+
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerVoiceChatRejoinChannel();
+
+	FDelegateHandle VoiceChatChannelJoinFailedHandle;
+
 protected:
 
 	// If set, this will be the final viewtarget this pawn can see.
