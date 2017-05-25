@@ -38,7 +38,7 @@ void UUTConsole::FakeGotoState(FName NextStateName)
 		UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(GEngine->GetFirstGamePlayer(World));
 		if (LP)
 		{
-			if (World->GetNetMode() == NM_Standalone)
+			if ((World->GetNetMode() == NM_Standalone) && LP->PlayerController)
 			{
 				LP->PlayerController->SetPause(false);
 			}
