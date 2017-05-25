@@ -44,7 +44,7 @@ struct FFlagTrailPos
 		FVector MidPoints[3];
 
 	UPROPERTY()
-		bool bIsInNoRallyZone;
+		bool bIsInNoRallyZone; // FIXMESTEVE REMOVE ONCE DETERMINE DONT WANT
 
 	UPROPERTY()
 		bool bEnteringNoRallyZone;

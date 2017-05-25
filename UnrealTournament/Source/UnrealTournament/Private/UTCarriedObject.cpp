@@ -751,7 +751,6 @@ void AUTCarriedObject::Drop(AController* Killer)
 void AUTCarriedObject::RemoveInvalidPastPositions()
 {
 	AUTGameVolume* GV = Cast<AUTGameVolume>(Collision->GetPhysicsVolume());
-	bool bInNoRallyZone = GV && (GV->bIsDefenderBase || GV->bIsTeamSafeVolume);
 	bool bRemovingPositions = true;
 	while ((PastPositions.Num() > 0) && bRemovingPositions)
 	{
@@ -761,7 +760,7 @@ void AUTCarriedObject::RemoveInvalidPastPositions()
 			PastPositions.RemoveAt(PastPositions.Num() - 1);
 			bRemovingPositions = true;
 		}
-		else if (!bInNoRallyZone && PastPositions[PastPositions.Num() - 1].bIsInNoRallyZone)
+		else if (PastPositions[PastPositions.Num() - 1].bIsInNoRallyZone)
 		{
 			PastPositions.RemoveAt(PastPositions.Num() - 1);
 			bRemovingPositions = true;

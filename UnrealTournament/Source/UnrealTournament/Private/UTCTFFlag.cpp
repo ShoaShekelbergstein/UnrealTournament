@@ -435,7 +435,6 @@ void AUTCTFFlag::Tick(float DeltaTime)
 		{
 			bool bAddedReturnSpot = false;
 			FVector PreviousPos = (PastPositions.Num() > 0) ? PastPositions[PastPositions.Num() - 1].Location : (HomeBase ? HomeBase->GetActorLocation() : FVector(0.f));
-			bool bAlreadyPlacedInNoRallyZone = (PastPositions.Num() > 0) && PastPositions[PastPositions.Num() - 1].bIsInNoRallyZone;
 			if (HoldingPawn->GetCharacterMovement() && HoldingPawn->GetCharacterMovement()->IsWalking() && (!HoldingPawn->GetMovementBase() || !MovementBaseUtility::UseRelativeLocation(HoldingPawn->GetMovementBase())))
 			{
 				bool bAlreadyInNoRallyZone = (PastPositions.Num() > 0) && (PastPositions[PastPositions.Num() - 1].bIsInNoRallyZone || PastPositions[PastPositions.Num() - 1].bEnteringNoRallyZone);
@@ -447,21 +446,12 @@ void AUTCTFFlag::Tick(float DeltaTime)
 					RecentPosition[1] = RecentPosition[0];
 					RecentPosition[0] = HoldingPawn->GetActorLocation();
 				}
-				if ((!bAlreadyPlacedInNoRallyZone || !bNowInNoRallyZone) && ((HoldingPawn->GetActorLocation() - PreviousPos).Size() > (bJustTransitionedToNoRallyZone ? 0.3f*MinGradualReturnDist : MinGradualReturnDist)))
+				if ((!bAlreadyInNoRallyZone || !bNowInNoRallyZone) && ((HoldingPawn->GetActorLocation() - PreviousPos).Size() > (bJustTransitionedToNoRallyZone ? 0.3f*MinGradualReturnDist : MinGradualReturnDist)))
 				{
-					bool bFullyInNoRallyZone = !bJustTransitionedToNoRallyZone && bNowInNoRallyZone;
-					if (PastPositions.Num() > 0)
-					{
-						for (int32 i = 0; i < NUM_MIDPOINTS; i++)
-						{
-							PastPositions[PastPositions.Num() - 1].MidPoints[i] = bFullyInNoRallyZone ? FVector::ZeroVector : MidPoints[i];
-						}
-					}
 					FFlagTrailPos NewPosition;
 					NewPosition.Location = PendingNewPosition;
 					NewPosition.MidPoints[0] = FVector::ZeroVector;
 					NewPosition.bEnteringNoRallyZone = bJustTransitionedToNoRallyZone;
-					NewPosition.bIsInNoRallyZone = bFullyInNoRallyZone;
 					PastPositions.Add(NewPosition);
 					MidPointPos = 0;
 					bAddedReturnSpot = true;
