@@ -62,9 +62,9 @@ AUTLineUpZone::AUTLineUpZone(const FObjectInitializer& ObjectInitializer)
 #endif //WITH_EDITORONLY_DATA
 }
 
-void AUTLineUpZone::PostInitProperties()
+void AUTLineUpZone::BeginPlay()
 {
-	Super::PostInitProperties();
+	Super::BeginPlay();
 
 	CallAppropriateCreate();
 }
@@ -85,6 +85,7 @@ void AUTLineUpZone::PostRegisterAllComponents()
 	if (GetWorld() && GetWorld()->WorldType == EWorldType::Editor)
 	{
 		InitializeMeshVisualizations();
+		CallAppropriateCreate();
 	}
 }
 
@@ -304,7 +305,7 @@ void AUTLineUpZone::SnapToFloor()
 
 		for (int index = 0; index < SpawnLocations.Num(); ++index)
 		{
-			FTransform TestLocation = SpawnLocations[index].Location;
+			FTransform TestLocation = SpawnLocations[index].Location + ActorToWorld();
 			
 			FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 500.0f);
 			FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 10000.0f);
@@ -314,7 +315,7 @@ void AUTLineUpZone::SnapToFloor()
 			if (Hit.bBlockingHit)
 			{
 				FVector NewLocation = SpawnLocations[index].Location.GetLocation();
-				NewLocation.Z = (Hit.Location - GetActorLocation()).Z + SnapFloorOffset;
+				NewLocation.Z = (Hit.Location.Z + SnapFloorOffset) - ActorToWorld().GetLocation().Z;
 				SpawnLocations[index].Location.SetLocation(NewLocation);
 			}
 		}

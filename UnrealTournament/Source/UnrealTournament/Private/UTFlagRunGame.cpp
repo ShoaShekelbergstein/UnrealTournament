@@ -1225,10 +1225,7 @@ void AUTFlagRunGame::HandleMatchIntermission()
 			}
 		}
 
-		if (UTGameState->LineUpHelper)
-		{
-			UTGameState->LineUpHelper->HandleLineUp(LineUpTypes::Intermission);
-		}
+		UTGameState->CreateLineUp(LineUpTypes::Intermission);
 	}
 
 	if (CTFGameState)
@@ -1779,10 +1776,10 @@ uint8 AUTFlagRunGame::GetWinningTeamForLineUp() const
 
 void AUTFlagRunGame::RestartPlayer(AController* aPlayer)
 {
-	if ((!IsMatchInProgress() && bPlacingPlayersAtIntermission) || (GetMatchState() == MatchState::MatchIntermission) || (UTGameState && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive && UTGameState->LineUpHelper->bIsPlacingPlayers))
+	if ((!IsMatchInProgress() && bPlacingPlayersAtIntermission) || (GetMatchState() == MatchState::MatchIntermission) || (UTGameState && UTGameState->IsLineUpActive()))
 	{
 		// placing players during intermission
-		if (bPlacingPlayersAtIntermission || (UTGameState && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive && UTGameState->LineUpHelper->bIsPlacingPlayers))
+		if (bPlacingPlayersAtIntermission || (UTGameState && UTGameState->IsLineUpActive()))
 		{
 			AGameMode::RestartPlayer(aPlayer);
 		}
@@ -1941,10 +1938,7 @@ void AUTFlagRunGame::HandleExitingIntermission()
 	CTFGameState->SetTimeLimit(TimeLimit);		// Reset the GameClock for the second time.
 	SetMatchState(MatchState::InProgress);
 
-	if (UTGameState->LineUpHelper)
-	{
-		UTGameState->LineUpHelper->CleanUp();
-	}
+	UTGameState->ClearLineUp();
 }
 
 void AUTFlagRunGame::ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType)
@@ -2268,7 +2262,7 @@ void AUTFlagRunGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 
 			if (BaseToView)
 			{
-				if (UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive)
+				if (UTGameState->IsLineUpActive())
 				{
 					Controller->GameHasEnded(Controller->GetPawn(), (Controller->UTPlayerState->Team && (Controller->UTPlayerState->Team->TeamIndex == Winner->TeamIndex)));
 				}

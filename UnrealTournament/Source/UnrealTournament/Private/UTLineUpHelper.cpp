@@ -20,23 +20,170 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogUTLineUp, Log, All);
 
+void AUTLineUpHelper::InitializeLineUp(LineUpTypes LineUpType)
+{
+	ActiveType = LineUpType;
+	StartLineUpWithDelay(CalculateLineUpDelay());
+}
+
+void AUTLineUpHelper::CalculateLineUpSlots()
+{
+	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
+	if (UTGameState)
+	{
+		AUTLineUpZone* ZoneToUse = UTGameState->GetAppropriateSpawnList(ActiveType);
+		if (ZoneToUse)
+		{
+			TArray<AController*> UnassignedControllers;
+			for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+			{
+				UnassignedControllers.Add(Iterator->Get());
+			}
+			SortControllers(UnassignedControllers);
+
+			AUTTeamGameMode* TeamGM = Cast<AUTTeamGameMode>(GetWorld()->GetAuthGameMode());
+			int Team1Number = 0;
+			int Team2Number = 1;
+
+			//Spawn using Winning / Losing teams instead of team color based teams. This means the red list = winning team and blue list = losing team.
+			if (TeamGM && TeamGM->UTGameState && (ActiveType == LineUpTypes::PostMatch || ActiveType == LineUpTypes::Intermission))
+			{
+				uint8 WinningTeamNum = TeamGM->GetWinningTeamForLineUp();
+				if (WinningTeamNum != 255)
+				{
+					Team1Number = WinningTeamNum;
+					Team2Number = 1 - WinningTeamNum;
+				}
+			}
+
+			for (FLineUpSpawn& Spawn : ZoneToUse->SpawnLocations)
+			{
+				FLineUpSlot NewSlot;
+				NewSlot.SpotLocation = Spawn.Location * ZoneToUse->GetActorTransform();
+
+				//Find the highest rated player controller to fill in this spot
+				int TeamNumberToFill = -1;
+				switch (Spawn.SpawnType)
+				{	
+					case LineUpSpawnTypes::Team1:
+					case LineUpSpawnTypes::WinningTeam:
+					{
+						TeamNumberToFill = Team1Number;
+						break;
+					}
+					case LineUpSpawnTypes::Team2:
+					case LineUpSpawnTypes::LosingTeam:
+					{
+						TeamNumberToFill = Team2Number;
+						break;
+					}
+					//Do nothing
+					case LineUpSpawnTypes::FFA:
+					default:
+					{
+						break;
+					}
+				}
+
+				// This is a team slot, need to fill with someone on the correct team
+				if (TeamNumberToFill >= 0)
+				{
+					for (int index = 0; index < UnassignedControllers.Num(); ++index)
+					{
+						const IUTTeamInterface* TeamInterface = Cast<IUTTeamInterface>(UnassignedControllers[index]);
+						if (TeamInterface)
+						{
+							static const int FFATeamNum = 255;
+							if ((TeamInterface->GetTeamNum() == TeamNumberToFill) || (TeamInterface->GetTeamNum() == FFATeamNum))
+							{
+								NewSlot.ControllerInSpot = UnassignedControllers[index];
+								UnassignedControllers.RemoveAt(index);
+
+								//Found highest rated fit, don't need to look further
+								LineUpSlots.Add(NewSlot);
+								break;
+							}
+						}
+					}
+				}
+				//Just grab highest rated person for this spot as its FFA
+				else
+				{
+					if (UnassignedControllers.Num() > 0)
+					{
+						NewSlot.ControllerInSpot = UnassignedControllers[0];
+						UnassignedControllers.RemoveAt(0);
+
+						LineUpSlots.Add(NewSlot);
+					}
+				}
+			}
+		}
+	}
+}
+
+void AUTLineUpHelper::StartLineUpWithDelay(float TimeDelay)
+{
+	GetWorld()->GetTimerManager().ClearTimer(DelayedLineUpHandle);
+	if ((TimeDelay > SMALL_NUMBER))
+	{
+		GetWorld()->GetTimerManager().SetTimer(DelayedLineUpHandle, FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::PerformLineUp), TimeDelay, false);
+	}
+	else
+	{
+		PerformLineUp();
+	}
+}
+
+bool AUTLineUpHelper::IsActive()
+{
+	return !GetWorld()->GetTimerManager().IsTimerActive(DelayedLineUpHandle);
+}
+
+float AUTLineUpHelper::CalculateLineUpDelay()
+{
+	float TimeDelay = 0.0f;
+	switch (ActiveType)
+	{
+		case LineUpTypes::Intro:
+		{
+			TimeDelay = TimerDelayForIntro;
+			break;
+		}
+		case LineUpTypes::Intermission:
+		{
+			TimeDelay = TimerDelayForIntermission;
+			break;
+		}
+		case LineUpTypes::PostMatch:
+		{
+			TimeDelay = TimerDelayForEndMatch;
+			break;
+		}
+	}
+	
+	return TimeDelay;
+}
+
 AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	bIsPlacingPlayers = false;
 	bAlwaysRelevant = true;
 
 	TimerDelayForIntro = 0.f;
 	TimerDelayForIntermission = 9.f;
 	TimerDelayForEndMatch = 9.f;
+
+	bIsPlacingPlayers = false;
 }
 
 void AUTLineUpHelper::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AUTLineUpHelper, bIsActive);
-	DOREPLIFETIME(AUTLineUpHelper, LastActiveType);
+	DOREPLIFETIME(AUTLineUpHelper, ActiveType);
+	DOREPLIFETIME(AUTLineUpHelper, bIsPlacingPlayers);
+	DOREPLIFETIME(AUTLineUpHelper, LineUpSlots);
 }
 
 void AUTLineUpHelper::BeginPlay()
@@ -46,77 +193,38 @@ void AUTLineUpHelper::BeginPlay()
 	BuildMapWeaponList();
 }
 
-void AUTLineUpHelper::HandleLineUp(LineUpTypes ZoneType)
-{
-	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
-	if (UTGS && (UTGS->GetAppropriateSpawnList(ZoneType) != nullptr))
-	{
-		LastActiveType = ZoneType;
-
-		if (GetWorld())
-		{
-			if (ZoneType == LineUpTypes::Intro)
-			{
-				HandleIntro(ZoneType);
-			}
-			else if (ZoneType == LineUpTypes::Intermission)
-			{
-				HandleIntermission(ZoneType);
-			}
-			else if (ZoneType == LineUpTypes::PostMatch)
-			{
-				HandleEndMatchSummary(ZoneType);
-			}
-		}
-	}
-}
-
-void AUTLineUpHelper::HandleIntro(LineUpTypes IntroType)
-{
-	bIsActive = true;
-	MovePlayersDelayed(IntroType, IntroHandle, TimerDelayForIntro);
-}
 
 void AUTLineUpHelper::CleanUp()
 {
-	if (bIsActive)
+	ActiveType = LineUpTypes::Invalid;
+
+	if (GetWorld())
 	{
-		if (SelectedCharacter.IsValid())
+		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 		{
-			SelectedCharacter.Reset();
-		}
-
-		bIsActive = false;
-		LastActiveType = LineUpTypes::Invalid;
-
-		if (GetWorld())
-		{
-			for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+			AUTPlayerState* UTPS = Cast<AUTPlayerState>((*Iterator)->PlayerState);
+			if (UTPS)
 			{
-				AUTPlayerState* UTPS = Cast<AUTPlayerState>((*Iterator)->PlayerState);
-				if (UTPS)
-				{
-					UTPS->LineUpLocation = INDEX_NONE;
-				}
-
-				AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
-				if (UTPC)
-				{
-					CleanUpPlayerAfterLineUp(UTPC);
-				}
+				UTPS->LineUpLocation = INDEX_NONE;
 			}
 
-			AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
-			if (UTGS)
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
+			if (UTPC)
 			{
-				UTGS->LeadLineUpPlayer = nullptr;
+				CleanUpPlayerAfterLineUp(UTPC);
+			}
+		}
 
-				//If we are in the end game / map vote we don't need to destroy our spawned clones and should 
-				//let them stick around and look fancy while voting / stats are being displayed
-				if ((UTGS->GetMatchState() != MatchState::WaitingPostMatch) && (UTGS->GetMatchState() != MatchState::MapVoteHappening))
-				{
-					DestroySpawnedClones();
-				}
+		AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+		if (UTGS)
+		{
+			UTGS->LeadLineUpPlayer = nullptr;
+
+			//If we are in the end game / map vote we don't need to destroy our spawned clones and should 
+			//let them stick around and look fancy while voting / stats are being displayed
+			if ((UTGS->GetMatchState() != MatchState::WaitingPostMatch) && (UTGS->GetMatchState() != MatchState::MapVoteHappening))
+			{
+				DestroySpawnedClones();
 			}
 		}
 	}
@@ -149,191 +257,101 @@ void AUTLineUpHelper::CleanUpPlayerAfterLineUp(AUTPlayerController* UTPC)
 	}
 }
 
-void AUTLineUpHelper::DestroySpawnedClones()
+void AUTLineUpHelper::PerformLineUp()
 {
-	if (PlayerPreviewCharacters.Num() > 0)
-	{
-		for (int index = 0; index < PlayerPreviewCharacters.Num(); ++index)
-		{
-			if (PlayerPreviewCharacters[index])
-			{
-				PlayerPreviewCharacters[index]->Destroy();
-			}
-		}
-		PlayerPreviewCharacters.Empty();
-	}
-
-	if (PreviewWeapons.Num() > 0)
-	{
-		for (int index = 0; index < PreviewWeapons.Num(); ++index)
-		{
-			if (PreviewWeapons[index])
-			{
-				PreviewWeapons[index]->Destroy();
-			}
-		}
-		PreviewWeapons.Empty();
-	}
-}
-
-void AUTLineUpHelper::HandleIntermission(LineUpTypes IntermissionType)
-{
-	MovePlayersDelayed(IntermissionType, IntermissionHandle, TimerDelayForIntermission);
-}
-
-void AUTLineUpHelper::MovePlayersDelayed(LineUpTypes ZoneType, FTimerHandle& TimerHandleToStart, float TimeDelay)
-{
-	GetWorld()->GetTimerManager().ClearTimer(IntroHandle);
-	GetWorld()->GetTimerManager().ClearTimer(IntermissionHandle);
-	GetWorld()->GetTimerManager().ClearTimer(MatchSummaryHandle);
-	
 	AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
+	if (UTGM)
+	{
+		//Set the line up weapons before we remove the pawns so that we can see what weapon was equipped going into line up.
+		SetLineUpWeapons();
+		UTGM->RemoveAllPawns();
 
-	if ((TimeDelay > SMALL_NUMBER))
-	{
-		SetupDelayedLineUp();
-		GetWorld()->GetTimerManager().SetTimer(TimerHandleToStart, FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::MovePlayers, ZoneType), TimeDelay, false);
-	}
-	else
-	{
-		MovePlayers(ZoneType);
+		CalculateLineUpSlots();
+		SpawnCharactersToSlots();
+		FlagFixUp();
+		NotifyClientsOfLineUp();
+
+		// freeze all Pawns on server
+		for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
+		{
+			if (It->IsValid() && !Cast<ASpectatorPawn>(It->Get()))
+			{
+				It->Get()->TurnOff();
+			}
+		}
 	}
 }
 
-void AUTLineUpHelper::SetupDelayedLineUp()
+void AUTLineUpHelper::SpawnCharactersToSlots()
+{	
+	AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
+	if (UTGM)
+	{
+		//Go through all controllers and spawn/respawn pawns
+		bIsPlacingPlayers = true;
+		for (FLineUpSlot& Slot : LineUpSlots)
+		{
+			if (Slot.ControllerInSpot)
+			{
+				AUTCharacter* UTChar = Cast<AUTCharacter>(Slot.ControllerInSpot->GetPawn());
+				if (!UTChar || UTChar->IsDead() || UTChar->IsRagdoll())
+				{
+					if (Slot.ControllerInSpot->GetPawn())
+					{
+						Slot.ControllerInSpot->UnPossess();
+					}
+					UTGM->RestartPlayer(Slot.ControllerInSpot);
+					if (Slot.ControllerInSpot->GetPawn())
+					{
+						UTChar = Cast<AUTCharacter>(Slot.ControllerInSpot->GetPawn());
+					}
+				}
+
+				if (UTChar && !UTChar->IsDead())
+				{
+					PlayerPreviewCharacters.Add(UTChar);
+					UTChar->TeleportTo(Slot.SpotLocation.GetTranslation(), Slot.SpotLocation.GetRotation().Rotator(), false, true);
+					UTChar->Controller->SetControlRotation(Slot.SpotLocation.GetRotation().Rotator());
+					UTChar->Controller->ClientSetRotation(Slot.SpotLocation.GetRotation().Rotator());
+				}
+			}
+		}
+		bIsPlacingPlayers = false;
+	}
+}
+
+void AUTLineUpHelper::SetLineUpWeapons()
+{
+	//Setup Line-Up weapon to be what is currently equipped
+	for (FLineUpSlot& Slot : LineUpSlots)
+	{
+		if (Slot.ControllerInSpot != nullptr)
+		{
+			AUTPlayerState* UTPS = Cast<AUTPlayerState>(Slot.ControllerInSpot->PlayerState);
+			{
+				UTPS->LineUpWeapon = UTPS->LineUpWeapon = (UTPS->FavoriteWeapon != NULL) ? UTPS->FavoriteWeapon : NULL;
+
+				//Either we didn't have an existing favorite weapon, or its not valid in this map
+				if (UTPS->LineUpWeapon == NULL || (!MapWeaponTypeList.Contains(UTPS->LineUpWeapon)))
+				{
+					AUTCharacter* UTChar = Cast<AUTCharacter>(Slot.ControllerInSpot->GetPawn());
+					UTPS->LineUpWeapon = (UTChar) ? UTChar->GetWeaponClass() : nullptr;
+				}
+			}
+		}
+	}
+}
+
+void AUTLineUpHelper::NotifyClientsOfLineUp()
 {
 	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 	{
 		AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
 		if (UTPC)
 		{
-			UTPC->FlushPressedKeys();
+			UTPC->ClientPrepareForLineUp();
 		}
 	}
-}
-
-void AUTLineUpHelper::OnRep_LineUpInfo()
-{
-	//Make sure that we have received both bIsActive and LastActiveType before calling ClientSetActiveLineUp
-	//This means that we either have a valid LastActiveType and bIsActive is true, or an Invalid LastActiveType and bIsActive is false
-	if ( GetWorld() && ((bIsActive && (LastActiveType != LineUpTypes::Invalid) && (LastActiveType != LineUpTypes::None)) || (!bIsActive && LastActiveType == LineUpTypes::Invalid)) ) 
-	{
-		AUTPlayerController* UTPC = Cast<AUTPlayerController>(GetWorld()->GetFirstPlayerController());
-		if (UTPC)
-		{
-			UTPC->ClientSetActiveLineUp();
-		}
-	}
-}
-
-void AUTLineUpHelper::MovePlayers(LineUpTypes ZoneType)
-{	
-	bIsPlacingPlayers = true;
-	bIsActive = true;
-
-	if (GetWorld() && GetWorld()->GetAuthGameMode())
-	{
-		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
-		{
-			AUTPlayerController* UTPC = Cast<AUTPlayerController>(*Iterator);
-			if (UTPC)
-			{
-				UTPC->FlushPressedKeys();
-				UTPC->ClientPrepareForLineUp();
-			}
-		}
-
-		AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
-		
-		//Setup LineUp weapon. Favorite weapon if set, current weapon otherwise
-		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
-		{
-			AController* C = Cast<AController>(*Iterator);
-			if (C)
-			{
-				AUTPlayerState* UTPS = Cast<AUTPlayerState>(C->PlayerState);
-				if (UTPS)
-				{
-					UTPS->LineUpWeapon = (UTPS->FavoriteWeapon != NULL)? UTPS->FavoriteWeapon : NULL;
-					
-					//Either we didn't have an existing favorite weapon, or its not valid in this map
-					if (UTPS->LineUpWeapon == NULL || (!MapWeaponTypeList.Contains(UTPS->LineUpWeapon)))
-					{
-						AUTCharacter* UTChar = Cast<AUTCharacter>(C->GetPawn());
-						UTPS->LineUpWeapon = (UTChar) ? UTChar->GetWeaponClass() : nullptr;
-					}
-				}
-			}
-		}
-
-		if (UTGM)
-		{
-			UTGM->RemoveAllPawns();
-		}
-
-		//Go through all controllers and spawn/respawn pawns
-		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
-		{
-			AController* C = Cast<AController>(*Iterator);
-			if (C)
-			{
-				AUTCharacter* UTChar = Cast<AUTCharacter>(C->GetPawn());
-				if (!UTChar || UTChar->IsDead() || UTChar->IsRagdoll())
-				{
-					if (C->GetPawn())
-					{
-						C->UnPossess();
-					}
-					UTGM->RestartPlayer(C);
-					if (C->GetPawn())
-					{
-						UTChar = Cast<AUTCharacter>(C->GetPawn());
-					}
-				}
-					
-				if (UTChar && !UTChar->IsDead())
-				{
-					PlayerPreviewCharacters.Add(UTChar);
-				}
-			}
-		}
-
-		FlagFixUp();
-		SortPlayers();
-		MovePreviewCharactersToLineUpSpawns(ZoneType);
-
-		//Setup LeadPlayer, not done in Sort because players will be deleted as part of MovePreivewCharactersToLineUpSpawns
-		if (PlayerPreviewCharacters.Num() > 0)
-		{
-			AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
-			if (UTGS)
-			{
-				UTGS->LeadLineUpPlayer = Cast<AUTPlayerState>(PlayerPreviewCharacters[0]->PlayerState);
-			}
-		}
-
-		//Go back through characters now that they are moved and turn them off
-		for (int32 PlayerIndex = 0; PlayerIndex < PlayerPreviewCharacters.Num(); ++PlayerIndex)
-		{
-			AUTCharacter* UTChar = PlayerPreviewCharacters[PlayerIndex];
-			if (UTChar)
-			{
-				UTChar->TurnOff();
-				UTChar->DeactivateSpawnProtection();
-				ForceCharacterAnimResetForLineUp(UTChar);
-				SpawnPlayerWeapon(UTChar);
-
-				//Set each player's position in the line up
-				AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTChar->PlayerState);
-				if (UTPlayerState)
-				{
-					UTPlayerState->LineUpLocation = PlayerIndex;
-				}
-			}
-		}
-	}
-
-	bIsPlacingPlayers = false;
 }
 
 void AUTLineUpHelper::FlagFixUp()
@@ -585,127 +603,10 @@ void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
 	}
 }
 
-void AUTLineUpHelper::MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType)
+void AUTLineUpHelper::SortControllers(TArray<AController*>& ControllersToSort)
 {
-	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
-	AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
-
-	if (UTGS && UTGM)
-	{
-		AUTTeamGameMode* TeamGM = Cast<AUTTeamGameMode>(UTGM);
-
-		int Team1Number = 0;
-		int Team2Number = 1;
-
-		//Spawn using Winning / Losing teams instead of team color based teams. This means the red list = winning team and blue list = losing team.
-		if (TeamGM && TeamGM->UTGameState && (LineUpType == LineUpTypes::PostMatch || LineUpType == LineUpTypes::Intermission))
-		{
-			uint8 WinningTeamNum = TeamGM->GetWinningTeamForLineUp();
-			if (WinningTeamNum != 255)
-			{
-				Team1Number = WinningTeamNum;
-				Team2Number = 1 - WinningTeamNum;
-			}
-		}
-
-		TArray<AUTCharacter*> PreviewsMarkedForDestroy;
-		bool bSkipSpawnPlacement = false;
-		int SpawnIndex = 0;
-
-		TArray<FTransform> Team1Spawns;
-		TArray<FTransform> Team2Spawns;
-		TArray<FTransform> FFASpawns;
-
-		int Team1SpawnIndex = 0;
-		int Team2SpawnIndex = 0;
-		int FFASpawnIndex = 0;
-
-		AUTLineUpZone* SpawnList = UTGS->GetAppropriateSpawnList(LineUpType);
-		if (SpawnList)
-		{
-			TArray<FLineUpSpawn>& Spawns = SpawnList->SpawnLocations;
-			for (int index = 0; index < Spawns.Num(); ++index)
-			{
-				if ((Spawns[index].SpawnType == LineUpSpawnTypes::Team1) || (Spawns[index].SpawnType == LineUpSpawnTypes::WinningTeam))
-				{
-					Team1Spawns.Add(Spawns[index].Location);
-				}
-				else if ((Spawns[index].SpawnType == LineUpSpawnTypes::Team2) || (Spawns[index].SpawnType == LineUpSpawnTypes::LosingTeam))
-				{
-					Team2Spawns.Add(Spawns[index].Location);
-				}
-				else
-				{
-					FFASpawns.Add(Spawns[index].Location);
-				}
-			}
-		}
-		
-		FTransform SpawnTransform = SpawnList->GetActorTransform();
-
-		for (AUTCharacter* PreviewChar : PlayerPreviewCharacters)
-		{
-			if ((PreviewChar->GetTeamNum() == Team1Number) && (Team1Spawns.IsValidIndex(Team1SpawnIndex)))
-			{
-				SpawnTransform = SpawnList->SpawnLocations[Team1SpawnIndex].Location * SpawnTransform;
-				++Team1SpawnIndex;
-			}
-			else if ((PreviewChar->GetTeamNum() == Team2Number) && (Team1Spawns.IsValidIndex(Team2SpawnIndex)))
-			{
-				SpawnTransform = SpawnList->SpawnLocations[Team2SpawnIndex].Location * SpawnTransform;
-				++Team2SpawnIndex;
-			}
-			else if (FFASpawns.IsValidIndex(FFASpawnIndex))
-			{
-				SpawnTransform = SpawnList->SpawnLocations[FFASpawnIndex].Location * SpawnTransform;
-				++FFASpawnIndex;
-			}
-			else
-			{
-				PreviewsMarkedForDestroy.Add(PreviewChar);
-				continue;
-			}
-			
-			PreviewChar->bIsTranslocating = true; // Hack to get rid of teleport effect
-
-			PreviewChar->TeleportTo(SpawnTransform.GetTranslation(), SpawnTransform.GetRotation().Rotator(), false, true);
-			PreviewChar->Controller->SetControlRotation(SpawnTransform.GetRotation().Rotator());
-			PreviewChar->Controller->ClientSetRotation(SpawnTransform.GetRotation().Rotator());
-
-			PreviewChar->bIsTranslocating = false;
-		}
-		
-
-		for (AUTCharacter* DestroyCharacter : PreviewsMarkedForDestroy)
-		{
-			//Destroy any carried objects before destroying pawn.
-			if (DestroyCharacter->GetCarriedObject())
-			{
-				DestroyCharacter->GetCarriedObject()->Destroy();
-			}
-
-			AUTPlayerController* UTPC = Cast<AUTPlayerController>(DestroyCharacter->GetController());
-			if (UTPC)
-			{
-				UTPC->UnPossess();
-			}
-
-			PlayerPreviewCharacters.Remove(DestroyCharacter);
-			DestroyCharacter->Destroy();
-		}
-		PreviewsMarkedForDestroy.Empty();
-	}
-}
-
-void AUTLineUpHelper::HandleEndMatchSummary(LineUpTypes SummaryType)
-{
-	MovePlayersDelayed(SummaryType, MatchSummaryHandle, TimerDelayForEndMatch);
-}
-
-void AUTLineUpHelper::SortPlayers()
-{
-	bool(*SortFunc)(const AUTCharacter&, const AUTCharacter&);
-	SortFunc = [](const AUTCharacter& A, const AUTCharacter& B)
+	bool(*SortFunc)(AController&, AController&);
+	SortFunc = [](AController& A, AController& B)
 	{
 		AUTPlayerState* PSA = Cast<AUTPlayerState>(A.PlayerState);
 		AUTPlayerState* PSB = Cast<AUTPlayerState>(B.PlayerState);
@@ -723,7 +624,7 @@ void AUTLineUpHelper::SortPlayers()
 
 		return !PSB || (AUTFlagA) || (PSA && (PSA->Score > PSB->Score) && !AUTFlagB);
 	};
-	PlayerPreviewCharacters.Sort(SortFunc);
+	ControllersToSort.Sort(SortFunc);
 }
 
 void AUTLineUpHelper::OnPlayerChange()
@@ -735,15 +636,10 @@ void AUTLineUpHelper::OnPlayerChange()
 		{
 			if (UTGM->UTGameState->GetMatchState() == MatchState::WaitingToStart)
 			{
-				ClientUpdatePlayerClones();
+				//ClientUpdatePlayerClones();
 			}
 		}
 	}
-}
-
-void AUTLineUpHelper::ClientUpdatePlayerClones()
-{
-
 }
 
 bool AUTLineUpHelper::CanInitiateGroupTaunt(AUTPlayerState* PlayerToCheck)
@@ -751,9 +647,35 @@ bool AUTLineUpHelper::CanInitiateGroupTaunt(AUTPlayerState* PlayerToCheck)
 	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
 	return (UTGS &&
 		    PlayerToCheck &&
-			bIsActive &&
-			(LastActiveType != LineUpTypes::Invalid) &&
-			(LastActiveType != LineUpTypes::None) &&
-			(LastActiveType != LineUpTypes::Intro) && //no group taunts during intro line ups
+			(ActiveType != LineUpTypes::Invalid) &&
+			(ActiveType != LineUpTypes::None) &&
+			(ActiveType != LineUpTypes::Intro) && //no group taunts during intro line ups
 			(PlayerToCheck == UTGS->LeadLineUpPlayer));
+}
+
+void AUTLineUpHelper::DestroySpawnedClones()
+{
+	if (PlayerPreviewCharacters.Num() > 0)
+	{
+		for (int index = 0; index < PlayerPreviewCharacters.Num(); ++index)
+		{
+			if (PlayerPreviewCharacters[index])
+			{
+				PlayerPreviewCharacters[index]->Destroy();
+			}
+		}
+		PlayerPreviewCharacters.Empty();
+	}
+
+	if (PreviewWeapons.Num() > 0)
+	{
+		for (int index = 0; index < PreviewWeapons.Num(); ++index)
+		{
+			if (PreviewWeapons[index])
+			{
+				PreviewWeapons[index]->Destroy();
+			}
+		}
+		PreviewWeapons.Empty();
+	}
 }

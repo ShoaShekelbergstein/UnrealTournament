@@ -458,7 +458,7 @@ void UUTScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 		Canvas->StrLen(UTHUDOwner->MediumFont, TEXT("TEST"), NameX, MessageY);
 	}
 
-	if (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive || (UTGameState && UTGameState->HasMatchStarted()))
+	if (!UTGameState || !UTGameState->IsLineUpActive() || (UTGameState && UTGameState->HasMatchStarted()))
 	{
 		DrawText((UTHUDOwner->GetNetMode() == NM_Standalone) ? InteractiveStandaloneText : InteractiveText, 0.5f*Canvas->ClipX, YOffset - 24.f*RenderScale, UTHUDOwner->SmallFont, RenderScale, 1.f, FLinearColor::White, ETextHorzPos::Center, ETextVertPos::Center);
 	}
@@ -487,7 +487,7 @@ float UUTScoreboard::DrawGameOptions(float RenderDelta, float& YOffset, float Ri
 	float Length = 0.f;
 	if (UTGameState)
 	{
-		bool bShouldDrawTime = (!UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive || UTGameState->HasMatchStarted());
+		bool bShouldDrawTime = (!UTGameState->IsLineUpActive() || UTGameState->HasMatchStarted());
 		float DisplayedTime = UTGameState ? UTGameState->GetClockTime() : 0.f;
 		FText Timer = UTHUDOwner->ConvertTime(FText::GetEmpty(), FText::GetEmpty(), DisplayedTime, false, true, true);
 		FText StatusText = UTGameState->GetGameStatusText(true);
@@ -545,7 +545,7 @@ void UUTScoreboard::DrawScorePanel(float RenderDelta, float& YOffset)
 		SelectionStack.Empty();
 	}
 	LastScorePanelYOffset = YOffset;
-	if (UTGameState && (!UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive || (UTHUDOwner && UTHUDOwner->bShowScores) || (UTHUDOwner && UTHUDOwner->bDisplayMatchSummary && bIsInteractive)))
+	if (UTGameState && (!UTGameState->IsLineUpActive() || (UTHUDOwner && UTHUDOwner->bShowScores) || (UTHUDOwner && UTHUDOwner->bDisplayMatchSummary && bIsInteractive)))
 	{
 		DrawScoreHeaders(RenderDelta, YOffset);
 		DrawPlayerScores(RenderDelta, YOffset);

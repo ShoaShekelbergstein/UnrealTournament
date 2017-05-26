@@ -378,10 +378,7 @@ void AUTCTFBaseGame::HandleMatchIntermission()
 	CTFGameState->bStopGameClock = true;
 	CTFGameState->IntermissionTime = IntermissionDuration;
 
-	if (UTGameState->LineUpHelper)
-	{
-		UTGameState->LineUpHelper->HandleLineUp(LineUpTypes::Intermission);
-	}
+	UTGameState->CreateLineUp(LineUpTypes::Intermission);
 }
 
 int32 AUTCTFBaseGame::IntermissionTeamToView(AUTPlayerController* PC)
@@ -441,10 +438,7 @@ void AUTCTFBaseGame::HandleExitingIntermission()
 	SetMatchState(MatchState::InProgress);
 
 	//Clear active line up for intermission
-	if (CTFGameState->LineUpHelper)
-	{
-		CTFGameState->LineUpHelper->CleanUp();
-	}
+	CTFGameState->ClearLineUp();
 }
 
 void AUTCTFBaseGame::EndGame(AUTPlayerState* Winner, FName Reason)

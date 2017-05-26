@@ -2421,7 +2421,7 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 
 	//If we are in a line-up, hide all pickups
 	AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
-	if (UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive)
+	if (UTGS && UTGS->IsLineUpActive())
 	{
 		for (FActorIterator It(GetWorld()); It; ++It)
 		{
@@ -2844,10 +2844,7 @@ void AUTPlayerController::ClientGameEnded_Implementation(AActor* EndGameFocus, b
 		AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
 		if (UTGS)
 		{
-			if (UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive)
-			{
-				bIsInGameIntroHandlingEndGameSummary = UTGS->LineUpHelper->bIsActive;
-			}
+			bIsInGameIntroHandlingEndGameSummary = UTGS->IsLineUpActive();
 		}
 	}
 
@@ -3633,7 +3630,7 @@ void AUTPlayerController::PlayGroupTaunt()
 	if (GetWorld()->GetRealTimeSeconds() - LastEmoteTime > EmoteCooldownTime)
 	{
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-		if (GS && GS->LineUpHelper && GS->LineUpHelper->CanInitiateGroupTaunt(UTPlayerState))
+		if (GS && GS->ActiveLineUpHelper && GS->ActiveLineUpHelper->CanInitiateGroupTaunt(UTPlayerState))
 		{
 			ServerPlayGroupTaunt();
 			LastEmoteTime = GetWorld()->GetRealTimeSeconds();
@@ -5147,25 +5144,16 @@ void AUTPlayerController::PlayTutorialAnnouncement(int32 Index, UObject* Optiona
 bool AUTPlayerController::IsLineUpActive() const
 {
 	AUTGameState* UTGS = GetWorld() ? Cast<AUTGameState>(GetWorld()->GetGameState()) : nullptr;
-	return (UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive) ? true : false;
+	return (UTGS && UTGS->IsLineUpActive()) ? true : false;
 }
 
 void AUTPlayerController::ClientPrepareForLineUp_Implementation()
 {
 	FlushPressedKeys();
-	
+	TurnOffPawns();
+
 	if (GetWorld())
 	{
-		AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
-		if (UTGS && UTGS->LineUpHelper)
-		{
-			AUTCharacter* UTChar = GetUTCharacter();
-			if (UTChar)
-			{
-				UTChar->TurnOff();
-				UTGS->LineUpHelper->ForceCharacterAnimResetForLineUp(UTChar);
-			}
-		}
 		for (FActorIterator It(GetWorld()); It; ++It)
 		{
 			AActor* TestActor = *It;
@@ -5173,51 +5161,19 @@ void AUTPlayerController::ClientPrepareForLineUp_Implementation()
 			{
 				TestActor->Destroy();
 			}
-		}
-	}
-}
 
-void AUTPlayerController::ClientSetActiveLineUp_Implementation()
-{
-	if (GetWorld())
-	{
-		AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
-		if (UTGS && UTGS->LineUpHelper)
-		{
-			for (FActorIterator It(GetWorld()); It; ++It)
+			AUTCharacter* UTChar = Cast<AUTCharacter>(*It);
+			if (UTChar)
 			{
-				AActor* TestActor = *It;
-				if (TestActor && !TestActor->IsPendingKill() && TestActor->IsA<AUTProjectile>())
-				{
-					TestActor->Destroy();
-				}
-
-				AUTCharacter* UTChar = Cast<AUTCharacter>(*It);
-				if (UTChar && UTChar->IsDead())
+				if (UTChar->IsDead())
 				{
 					UTChar->Destroy();
 				}
 			}
-
-			if (UTGS->LineUpHelper->bIsActive)
-			{
-				ToggleScoreboard(false);
-
-				for (FActorIterator It(GetWorld()); It; ++It)
-				{
-					AUTCharacter* UTChar = Cast<AUTCharacter>(*It);
-					if (UTChar)
-					{
-						UTGS->LineUpHelper->ForceCharacterAnimResetForLineUp(UTChar);
-					}
-				}
-			}
-			else
-			{
-				AUTLineUpHelper::CleanUpPlayerAfterLineUp(this);
-			}
 		}
 	}
+
+	ToggleScoreboard(false);
 }
 
 bool AUTPlayerController::LineOfSightTo(const class AActor* Other, FVector ViewPoint, bool bAlternateChecks) const

@@ -1781,7 +1781,7 @@ void AUTGameMode::DiscardInventory(APawn* Other, AController* Killer)
 	AUTCharacter* UTC = Cast<AUTCharacter>(Other);
 	if (UTC != NULL)
 	{
-		if (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive)
+		if (!UTGameState || !UTGameState->IsLineUpActive())
 		{
 			// toss weapon
 			if (UTC->GetWeapon() != NULL)
@@ -2092,9 +2092,9 @@ void AUTGameMode::HandleMatchHasStarted()
 	AnnounceMatchStart();
 
 	//Make sure we aren't still in a line up.
-	if (UTGameState && UTGameState->LineUpHelper)
+	if (UTGameState)
 	{
-		UTGameState->LineUpHelper->CleanUp();
+		UTGameState->ClearLineUp();
 	}
 
 	if (IsGameInstanceServer() && LobbyBeacon)
@@ -2988,7 +2988,7 @@ void AUTGameMode::RestartPlayer(AController* aPlayer)
 	}
 	AUTPlayerController* UTPC = Cast<AUTPlayerController>(aPlayer);
 	bool bWantsToWarmUp = UTPC ? UTPC->UTPlayerState  && UTPC->UTPlayerState->bIsWarmingUp : true;
-	if (!IsMatchInProgress() && ((GetMatchState() != MatchState::WaitingToStart) || !bWantsToWarmUp || (GetNetMode() == NM_Standalone)) && (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsPlacingPlayers))
+	if (!IsMatchInProgress() && ((GetMatchState() != MatchState::WaitingToStart) || !bWantsToWarmUp || (GetNetMode() == NM_Standalone)) && (!UTGameState || !UTGameState->ActiveLineUpHelper || !UTGameState->ActiveLineUpHelper->bIsPlacingPlayers))
 	{
 		return;
 	}
@@ -3301,7 +3301,7 @@ float AUTGameMode::RatePlayerStart(APlayerStart* P, AController* Player)
 			AController* OtherController = Iterator->Get();
 			ACharacter* OtherCharacter = Cast<ACharacter>( OtherController->GetPawn());
 
-			if ( OtherCharacter && OtherCharacter->PlayerState && (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive) )
+			if ( OtherCharacter && OtherCharacter->PlayerState && (!UTGameState || !UTGameState->IsLineUpActive()) )
 			{
 				if (FMath::Abs(StartLoc.Z - OtherCharacter->GetActorLocation().Z) < P->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + OtherCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()
 					&& (StartLoc - OtherCharacter->GetActorLocation()).Size2D() < P->GetCapsuleComponent()->GetScaledCapsuleRadius() + OtherCharacter->GetCapsuleComponent()->GetScaledCapsuleRadius())
@@ -3652,10 +3652,7 @@ void AUTGameMode::HandleMatchHasEnded()
 		NavData->SaveMapLearningData();
 	}
 
-	if (UTGameState->LineUpHelper)
-	{
-		UTGameState->LineUpHelper->HandleLineUp(LineUpTypes::PostMatch);
-	}
+	UTGameState->CreateLineUp(LineUpTypes::PostMatch);
 }
 
 void AUTGameMode::HandleEnteringOvertime()
@@ -3673,7 +3670,7 @@ void AUTGameMode::HandlePlayerIntro()
 {
 	RemoveExtraBots();
 	CheckBotCount();
-	if (!UTGameState || !UTGameState->LineUpHelper || !UTGameState->LineUpHelper->bIsActive)
+	if (!UTGameState || !UTGameState->IsLineUpActive())
 	{
 		RemoveAllPawns();
 	}
@@ -3688,9 +3685,9 @@ void AUTGameMode::HandlePlayerIntro()
 		}
 	}
 
-	if (UTGameState && UTGameState->LineUpHelper)
+	if (UTGameState)
 	{
-		UTGameState->LineUpHelper->HandleLineUp(LineUpTypes::Intro);
+		UTGameState->CreateLineUp(LineUpTypes::Intro);
 	}
 
 	FTimerHandle TempHandle;
@@ -3726,10 +3723,7 @@ void AUTGameMode::EndPlayerIntro()
 	}
 
 	//Make sure we aren't still in a line up.
-	if (UTGameState->LineUpHelper)
-	{
-		UTGameState->LineUpHelper->CleanUp();
-	}
+	UTGameState->ClearLineUp();
 
 	bCheckAgainstPotentialStarts = false;
 	SetMatchState(MatchState::CountdownToBegin);
@@ -3924,9 +3918,9 @@ void AUTGameMode::PostLogin( APlayerController* NewPlayer )
 	if (UTGameState)
 	{
 		UTGameState->SetRemainingTime(UTGameState->GetRemainingTime());
-		if (UTGameState->LineUpHelper)
+		if (UTGameState->ActiveLineUpHelper)
 		{
-			UTGameState->LineUpHelper->OnPlayerChange();
+			UTGameState->ActiveLineUpHelper->OnPlayerChange();
 		}
 	}
 	if (UTPC && FUTAnalytics::IsAvailable() && (GetNetMode() == NM_DedicatedServer))
@@ -4068,9 +4062,9 @@ void AUTGameMode::Logout(AController* Exiting)
 		UTGameSession->CheckForPossibleRestart();
 	}
 
-	if (UTGameState && UTGameState->LineUpHelper)
+	if (UTGameState && UTGameState->ActiveLineUpHelper)
 	{
-		UTGameState->LineUpHelper->OnPlayerChange();
+		UTGameState->ActiveLineUpHelper->OnPlayerChange();
 	}
 }
 

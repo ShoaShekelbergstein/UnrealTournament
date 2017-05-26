@@ -3,75 +3,70 @@
 #include "UTLineUpZone.h"
 #include "UTLineUpHelper.generated.h"
 
+
+USTRUCT()
+struct FLineUpSlot
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	FTransform SpotLocation;
+
+	UPROPERTY()
+	AController* ControllerInSpot;
+};
+
 UCLASS()
 class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 {
 	GENERATED_UCLASS_BODY()
 
 	UFUNCTION()
-	void HandleLineUp(LineUpTypes IntroType);
-
-	UFUNCTION()
-	void OnPlayerChange();
+	static void ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar);
 
 	UFUNCTION()
 	bool CanInitiateGroupTaunt(AUTPlayerState* PlayerToCheck);
 
 	UFUNCTION()
-	void CleanUp();
-
-	void ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar);
-
-	void SetupDelayedLineUp();
+	void OnPlayerChange();
 
 	UFUNCTION()
-	void OnRep_LineUpInfo();
+	void InitializeLineUp(LineUpTypes LineUpType);
 
-	UPROPERTY(Replicated, ReplicatedUsing = OnRep_LineUpInfo)
-	bool bIsActive;
-
-	UPROPERTY(Replicated, ReplicatedUsing = OnRep_LineUpInfo)
-	LineUpTypes LastActiveType;
-
-	UPROPERTY()
-	bool bIsPlacingPlayers;
+	UFUNCTION()
+	void CleanUp();
 	
+	UPROPERTY(Replicated)
+	LineUpTypes ActiveType;
+	
+	UPROPERTY(Replicated)
+	bool bIsPlacingPlayers;
+
 	/*Handles all the clean up for a particular player when a line-up is ending*/
 	static void CleanUpPlayerAfterLineUp(AUTPlayerController* UTPC);
 
 	virtual void BeginPlay() override;
 
+	UFUNCTION()
+	bool IsActive();
+
 protected:
-
-	void ClientUpdatePlayerClones();
-
-	UFUNCTION()
-	void HandleIntro(LineUpTypes ZoneType);
-
-	UFUNCTION()
-	void HandleIntermission(LineUpTypes IntermissionType);
-
-	UFUNCTION()
-	void HandleEndMatchSummary(LineUpTypes SummaryType);
-
-	UFUNCTION()
-	void SortPlayers();
-
-	UFUNCTION()
-	void MovePlayers(LineUpTypes ZoneType);
-
-	UFUNCTION()
-	void MovePlayersDelayed(LineUpTypes ZoneType, FTimerHandle& TimerHandleToStart, float TimeDelay);
-
-	UFUNCTION()
-	void SpawnPlayerWeapon(AUTCharacter* UTChar);
 
 	UFUNCTION()
 	void DestroySpawnedClones();
-	
-	UFUNCTION()
-	void MovePreviewCharactersToLineUpSpawns(LineUpTypes LineUpType);
 
+	UFUNCTION()
+	void SpawnCharactersToSlots();
+
+	UFUNCTION()
+	void PerformLineUp();
+
+	UFUNCTION()
+	void SetLineUpWeapons();
+
+	UFUNCTION()
+	void SpawnPlayerWeapon(AUTCharacter* UTChar);
+	
 	/*Flag can be in a bad state since we recreate pawns during Line Up. This function re-assigns the flag to the correct player pawn*/
 	UFUNCTION()
 	void FlagFixUp();
@@ -79,15 +74,14 @@ protected:
 	UFUNCTION()
 	void BuildMapWeaponList();
 
-	TWeakPtr<AUTCharacter> SelectedCharacter;
+	UFUNCTION()
+	void NotifyClientsOfLineUp();
 
 	float TimerDelayForIntro;
 	float TimerDelayForIntermission;
 	float TimerDelayForEndMatch;
 
-	FTimerHandle IntroHandle;
-	FTimerHandle IntermissionHandle;
-	FTimerHandle MatchSummaryHandle;
+	FTimerHandle DelayedLineUpHandle;
 
 	/** preview actors */
 	UPROPERTY()
@@ -103,4 +97,14 @@ protected:
 	UPROPERTY()
 	TArray<TSubclassOf<AUTWeapon>> MapWeaponTypeList;
 
+	UPROPERTY(Replicated)
+	TArray<FLineUpSlot> LineUpSlots;
+
+private:
+
+	float CalculateLineUpDelay();
+	void CalculateLineUpSlots();
+	void StartLineUpWithDelay(float TimeDelay);
+	
+	void SortControllers(TArray<AController*>& ControllersToSort);
 };

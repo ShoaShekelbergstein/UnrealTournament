@@ -89,7 +89,7 @@ public:
 	virtual bool ShowScorePanel() override
 	{
 		AUTFlagRunPvEGameState* GS = GetWorld()->GetGameState<AUTFlagRunPvEGameState>();
-		if (GS != nullptr && GS->HasMatchEnded() && GS->LineUpHelper != nullptr && GS->LineUpHelper->bIsActive)
+		if (GS != nullptr && GS->HasMatchEnded() && GS->IsLineUpActive())
 		{
 			return false;
 		}

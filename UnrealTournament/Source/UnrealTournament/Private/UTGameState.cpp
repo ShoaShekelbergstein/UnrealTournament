@@ -296,6 +296,8 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 
 	MapVoteListCount = -1;
 	AIDifficulty = 0;
+
+	ActiveLineUpHelper = nullptr;
 }
 
 void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const
@@ -348,7 +350,6 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 
 	DOREPLIFETIME_CONDITION(AUTGameState, ServerInstanceGUID, COND_InitialOnly);
 
-	DOREPLIFETIME(AUTGameState, LineUpHelper);
 	DOREPLIFETIME(AUTGameState, ReplayID);
 	DOREPLIFETIME(AUTGameState, LeadLineUpPlayer);
 
@@ -358,6 +359,7 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 
 	DOREPLIFETIME(AUTGameState, HostIdString);
 
+	DOREPLIFETIME(AUTGameState, ActiveLineUpHelper);
 }
 
 void AUTGameState::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
@@ -574,15 +576,6 @@ void AUTGameState::BeginPlay()
 
 	bIsAlreadyPendingUserQuery = false;
 	AddAllUsersToInfoQuery();
-
-	if ((GetNetMode() != NM_Client) && (LineUpHelper == nullptr))
-	{
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-		LineUpHelper = GetWorld()->SpawnActor<AUTLineUpHelper>(Params);
-
-		LineUpHelper->SetReplicates(true);
-	}
 	SpawnDefaultLineUpZones();
 }
 
@@ -1198,7 +1191,7 @@ void AUTGameState::OnWinnerReceived()
 
 FName AUTGameState::OverrideCameraStyle(APlayerController* PCOwner, FName CurrentCameraStyle)
 {
-	if (LineUpHelper && LineUpHelper->bIsActive)
+	if (IsLineUpActive())
 	{
 		return FName(TEXT("LineUpCam"));
 	}
@@ -1899,7 +1892,7 @@ bool AUTGameState::IsAllowedSpawnPoint_Implementation(AUTPlayerState* Chooser, A
 
 bool AUTGameState::PreventWeaponFire()
 {
-	return (IsMatchIntermission() || HasMatchEnded() || (LineUpHelper && LineUpHelper->bIsActive));
+	return (IsMatchIntermission() || HasMatchEnded() || IsLineUpActive());
 }
 
 void AUTGameState::ClearHighlights()
@@ -2373,6 +2366,33 @@ AUTLineUpZone* AUTGameState::GetAppropriateSpawnList(LineUpTypes ZoneType)
 	return FoundPotentialMatch;
 }
 
+void AUTGameState::CreateLineUp(LineUpTypes LineUpType)
+{
+	if (ActiveLineUpHelper)
+	{
+		ClearLineUp();
+	}
+
+	if ((GetNetMode() != NM_Client) && (ActiveLineUpHelper == nullptr))
+	{
+		ActiveLineUpHelper = GetWorld()->SpawnActor<AUTLineUpHelper>();
+		ActiveLineUpHelper->InitializeLineUp(LineUpType);
+
+		ActiveLineUpHelper->SetReplicates(true);
+	}
+}
+
+void AUTGameState::ClearLineUp()
+{
+	if (ActiveLineUpHelper)
+	{
+		ActiveLineUpHelper->CleanUp();
+		ActiveLineUpHelper->Destroy();
+
+		ActiveLineUpHelper = nullptr;
+	}
+}
+
 AUTLineUpZone* AUTGameState::CreateLineUpAtPlayerStart(LineUpTypes LineUpType, APlayerStart* PlayerSpawn)
 {
 	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
@@ -2564,3 +2584,7 @@ bool AUTGameState::HasMatchEnded() const
 	return Super::HasMatchEnded();
 }
 
+bool AUTGameState::IsLineUpActive()
+{
+	return ((ActiveLineUpHelper != nullptr) && ActiveLineUpHelper->IsActive());
+}

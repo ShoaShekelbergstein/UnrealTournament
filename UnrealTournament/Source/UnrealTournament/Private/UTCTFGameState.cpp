@@ -241,7 +241,7 @@ bool AUTCTFGameState::IsMatchIntermission() const
 
 FName AUTCTFGameState::OverrideCameraStyle(APlayerController* PCOwner, FName CurrentCameraStyle)
 {
-	if (LineUpHelper && LineUpHelper->bIsActive)
+	if (IsLineUpActive())
 	{
 		return FName(TEXT("LineUpCam"));
 	}

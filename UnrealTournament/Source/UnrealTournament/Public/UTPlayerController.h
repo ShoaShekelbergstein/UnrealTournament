@@ -299,9 +299,6 @@ public:
 	UFUNCTION(client, reliable)
 	virtual void ClientPrepareForLineUp();
 
-	UFUNCTION(client, reliable)
-		virtual void ClientSetActiveLineUp();
-
 	UPROPERTY()
 		FRotator SpawnRotation;
 

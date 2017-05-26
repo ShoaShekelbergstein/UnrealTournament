@@ -166,7 +166,7 @@ class UNREALTOURNAMENT_API AUTLineUpZone : public AActor
 #endif // WITH_EDITOR
 
 	public:
-	virtual void PostInitProperties() override;
+	virtual void BeginPlay() override;
 
 public:
 	void DefaultCreateForIntro();

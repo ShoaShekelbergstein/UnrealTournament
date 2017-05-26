@@ -3708,7 +3708,7 @@ void AUTPlayerState::OnRep_ActiveGroupTaunt()
 	}
 
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (GS && GS->LineUpHelper && GS->LineUpHelper->CanInitiateGroupTaunt(this) && ActiveGroupTaunt != nullptr)
+	if (GS && GS->ActiveLineUpHelper && GS->ActiveLineUpHelper->CanInitiateGroupTaunt(this) && ActiveGroupTaunt != nullptr)
 	{
 		for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
 		{
@@ -3739,9 +3739,8 @@ void AUTPlayerState::OnRep_ActiveGroupTaunt()
 void AUTPlayerState::PlayGroupTaunt()
 {
 	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-	if (UTGameState && 
-		UTGameState->LineUpHelper && 
-		UTGameState->LineUpHelper->bIsActive && 
+	if (UTGameState &&  
+		UTGameState->IsLineUpActive() && 
 		ActiveGroupTaunt == NULL) //If this is set, we have already played a group taunt
 	{
 		// SetEmoteSpeed here to make sure that it gets unfrozen if freezing isn't allowed

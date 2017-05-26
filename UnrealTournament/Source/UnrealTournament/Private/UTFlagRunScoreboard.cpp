@@ -671,7 +671,7 @@ void UUTFlagRunScoreboard::DrawMinimap(float RenderDelta)
 void UUTFlagRunScoreboard::DrawGamePanel(float RenderDelta, float& YOffset)
 {
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-	if (!GS || ((GS->GetMatchState() != MatchState::MatchIntermission) && !GS->HasMatchEnded() && (!GS->LineUpHelper || !GS->LineUpHelper->bIsActive)))
+	if (!GS || ((GS->GetMatchState() != MatchState::MatchIntermission) && !GS->HasMatchEnded() && (!GS->IsLineUpActive())))
 	{
 		Super::DrawGamePanel(RenderDelta, YOffset);
 	}

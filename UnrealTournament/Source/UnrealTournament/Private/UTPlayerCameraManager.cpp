@@ -79,7 +79,7 @@ FName AUTPlayerCameraManager::GetCameraStyleWithOverrides() const
 	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
 	if (GameState)
 	{
-		if (GameState->LineUpHelper && GameState->LineUpHelper->bIsActive)
+		if (GameState->ActiveLineUpHelper && GameState->IsLineUpActive())
 		{
 			return NAME_LineUpCam;
 		}
@@ -199,7 +199,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 	bool bUseDeathCam = false;
 	//if we have a line up active, change our ViewTarget to be the line-up target and setup camera settings
 	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
-	UCameraComponent* LineUpCam = ((CameraStyle == NAME_LineUpCam) && (GameState && GameState->LineUpHelper)) ? GameState->GetCameraComponentForLineUp(GameState->LineUpHelper->LastActiveType) : nullptr;
+	UCameraComponent* LineUpCam = ((CameraStyle == NAME_LineUpCam) && (GameState && GameState->ActiveLineUpHelper)) ? GameState->GetCameraComponentForLineUp(GameState->ActiveLineUpHelper->ActiveType) : nullptr;
 	if (LineUpCam)
 	{
 

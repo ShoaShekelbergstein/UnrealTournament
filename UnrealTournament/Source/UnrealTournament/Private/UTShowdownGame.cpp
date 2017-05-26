@@ -481,7 +481,7 @@ void AUTShowdownGame::StartIntermission()
 
 void AUTShowdownGame::RestartPlayer(AController* aPlayer)
 {
-	if (GetMatchState() == MatchState::WaitingToStart || (UTGameState && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive))
+	if (GetMatchState() == MatchState::WaitingToStart || (UTGameState && UTGameState->IsLineUpActive()))
 	{
 		// warmup or line-up
 		Super::RestartPlayer(aPlayer);

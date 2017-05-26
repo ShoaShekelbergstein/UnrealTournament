@@ -1986,7 +1986,7 @@ void AUTCharacter::PlayDying()
 	SetOutlineLocal(false);
 
 	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
-	bool bIsInLineUp = UTGS && UTGS->LineUpHelper && UTGS->LineUpHelper->bIsActive;
+	bool bIsInLineUp = UTGS && UTGS->IsLineUpActive();
 	if (!bIsInLineUp)
 	{
 		SpawnBloodDecal(GetActorLocation() - FVector(0.0f, 0.0f, GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()), FVector(0.0f, 0.0f, -1.0f));
@@ -5423,7 +5423,7 @@ void AUTCharacter::PlayerSuicide()
 		FHitResult FakeHit(this, NULL, GetActorLocation(), GetActorRotation().Vector());
 		FUTPointDamageEvent FakeDamageEvent(0, FakeHit, FVector(0, 0, 0), UUTDmgType_Suicide::StaticClass());
 		AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
-		if (!UTGS || !UTGS->LineUpHelper || !UTGS->LineUpHelper->bIsActive)
+		if (!UTGS || !UTGS->IsLineUpActive())
 		{
 			UUTGameplayStatics::UTPlaySound(GetWorld(), CharacterData.GetDefaultObject()->PainSound, this, SRT_All, false, FVector::ZeroVector, Cast<AUTPlayerController>(Controller), NULL, false, SAT_PainSound);
 		}
@@ -5755,7 +5755,7 @@ void AUTCharacter::OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
 void AUTCharacter::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
 {
 	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (GS && GS->LineUpHelper && GS->LineUpHelper->bIsActive)
+	if (GS && GS->IsLineUpActive())
 	{
 		PostRenderForInGameIntro(PC, Canvas, CameraPosition, CameraDir);
 		return;

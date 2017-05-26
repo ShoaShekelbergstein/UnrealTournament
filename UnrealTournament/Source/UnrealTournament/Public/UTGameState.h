@@ -733,14 +733,20 @@ public:
 	FGuid ServerInstanceGUID;
 
 	UPROPERTY(Replicated)
-	AUTLineUpHelper* LineUpHelper;
+	AUTPlayerState* LeadLineUpPlayer;
 
 	UPROPERTY(Replicated)
-	AUTPlayerState* LeadLineUpPlayer;
+	AUTLineUpHelper* ActiveLineUpHelper;
+
+	virtual bool IsLineUpActive();
 
 	virtual AUTLineUpZone* GetAppropriateSpawnList(LineUpTypes ZoneType);
 
 	virtual void SpawnDefaultLineUpZones();
+
+	virtual void CreateLineUp(LineUpTypes LineUpType);
+
+	virtual void ClearLineUp();
 
 	virtual UCameraComponent* GetCameraComponentForLineUp(LineUpTypes ZoneType);
 	

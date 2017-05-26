@@ -223,9 +223,9 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 				if (IntermissionTime > 0)
 				{
 					FFormatNamedArguments Args;
-					if ((IntermissionTime > 6) && UTGameState->LineUpHelper && UTGameState->LineUpHelper->bIsActive && UTPS->GetUTCharacter())
+					if ((IntermissionTime > 6) && UTGameState->IsLineUpActive() && UTPS->GetUTCharacter())
 					{
-						if (UTGameState->LineUpHelper && UTGameState->LineUpHelper->CanInitiateGroupTaunt(UTPS) && !UTPS->ActiveGroupTaunt)
+						if (UTGameState->ActiveLineUpHelper && UTGameState->ActiveLineUpHelper->CanInitiateGroupTaunt(UTPS) && !UTPS->ActiveGroupTaunt)
 						{
 							Args.Add("GroupTaunt", UTHUDOwner->GroupTauntLabel);
 							SpectatorMessage = FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "GroupTaunt", "Press {GroupTaunt} to start a group taunt."), Args);
