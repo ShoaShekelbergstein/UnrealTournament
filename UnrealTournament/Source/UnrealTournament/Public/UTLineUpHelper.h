@@ -76,6 +76,9 @@ protected:
 
 	UFUNCTION()
 	void NotifyClientsOfLineUp();
+	
+	UFUNCTION()
+	void SetupCharactersForLineUp();
 
 	float TimerDelayForIntro;
 	float TimerDelayForIntermission;
