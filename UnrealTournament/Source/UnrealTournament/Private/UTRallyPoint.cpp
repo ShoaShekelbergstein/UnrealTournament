@@ -50,7 +50,7 @@ AUTRallyPoint::AUTRallyPoint(const FObjectInitializer& ObjectInitializer)
 	bCollideWhenPlacing = true;
 
 	RallyReadyDelay = 3.f;
-	MinimumRallyTime = 10.f;
+	MinimumRallyTime = 20.f;
 	MinPersistentRemaining = 1.f;
 	UpdateRallyReadyCountdown(RallyReadyDelay);
 	bIsEnabled = true;
