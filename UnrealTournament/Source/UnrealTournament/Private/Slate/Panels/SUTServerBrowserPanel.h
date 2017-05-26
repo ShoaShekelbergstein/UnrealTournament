@@ -736,7 +736,7 @@ protected:
 	virtual void FilterAllServers();
 	virtual void FilterServer(TSharedPtr< FServerData > NewServer, bool bSortAndUpdate = true, int32 BestPing = 0);
 	virtual void FilterAllHUBs();
-	virtual void FilterHUB(TSharedPtr< FServerData > NewServer, bool bSortAndUpdate = true, int32 BestPing = 0);
+	virtual void FilterHUB(TSharedPtr< FServerData > NewServer, bool bSortAndUpdate = true);
 
 	FDelegateHandle PlayerOnlineStatusChangedDelegate;
 	virtual void OwnerLoginStatusChanged(UUTLocalPlayer* LocalPlayerOwner, ELoginStatus::Type NewStatus, const FUniqueNetId& UniqueID);
@@ -835,15 +835,15 @@ private:
 
 
 protected:
-	ECheckBoxState ShouldHideUnresponsiveServers() const;
-	void OnHideUnresponsiveServersChanged(const ECheckBoxState NewState);
-	TSharedPtr<SCheckBox> HideUnresponsiveServersCheckbox;
-	bool bHideUnresponsiveServers;
-
-	bool IsUnresponsive(TSharedPtr<FServerData> Server, int32 BestPing = 0);
+	ECheckBoxState ShouldShowAllEmptyServers() const;
+	void OnShowAllEmptyServersChanged(const ECheckBoxState NewState);
+	TSharedPtr<SCheckBox> ShowAllEmptyServersCheckbox;
+	bool bShowAllEmptyServers;
 
 	bool bWantsAFullRefilter;
 
+	int32 NumEmptyHubs;
+	int32 NumEmptyServers;
 	int32 TotalPlayersPlaying;
 
 

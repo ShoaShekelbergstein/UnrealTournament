@@ -126,7 +126,7 @@ void SUTServerBrowserPanel::ConstructPanel(FVector2D ViewportSize)
 
 
 	bWantsAFullRefilter = false;
-	bHideUnresponsiveServers = true;	
+	bShowAllEmptyServers = false;	
 	bShowingHubs = false;
 	bAutoRefresh = false;
 	TSharedRef<SScrollBar> ExternalScrollbar = SNew(SScrollBar);
@@ -295,11 +295,11 @@ void SUTServerBrowserPanel::ConstructPanel(FVector2D ViewportSize)
 								.Padding(16.0f, 0.0f, 0.0f, 0.0f)
 								.AutoWidth()
 								[
-									SAssignNew(HideUnresponsiveServersCheckbox, SCheckBox)
+									SAssignNew(ShowAllEmptyServersCheckbox, SCheckBox)
 									.Style(SUTStyle::Get(), "UT.CheckBox")
 									.ForegroundColor(FLinearColor::White)
-									.IsChecked(this, &SUTServerBrowserPanel::ShouldHideUnresponsiveServers)
-									.OnCheckStateChanged(this, &SUTServerBrowserPanel::OnHideUnresponsiveServersChanged)
+									.IsChecked(this, &SUTServerBrowserPanel::ShouldShowAllEmptyServers)
+									.OnCheckStateChanged(this, &SUTServerBrowserPanel::OnShowAllEmptyServersChanged)
 								]
 								+SHorizontalBox::Slot()
 								.VAlign(VAlign_Center)
@@ -308,7 +308,7 @@ void SUTServerBrowserPanel::ConstructPanel(FVector2D ViewportSize)
 								[
 									SNew(STextBlock)
 									.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
-									.Text(NSLOCTEXT("SUWSeverBrowser", "HideUnresponsive", "Hide Unresponsive Servers"))
+									.Text(NSLOCTEXT("SUTServerBrowserPanel", "ShowEmpty", "Show all empty hubs/servers"))
 								]
 
 							]
@@ -397,6 +397,8 @@ void SUTServerBrowserPanel::ConstructPanel(FVector2D ViewportSize)
 
 	FilteredServersSource.Empty();
 	FilteredHubsSource.Empty();
+	NumEmptyServers = 0;
+	NumEmptyHubs = 0;
 
 	InternetServerList->RequestListRefresh();
 	HUBServerList->RequestListRefresh();
@@ -828,14 +830,14 @@ TSharedRef<SWidget> SUTServerBrowserPanel::BuildLobbyBrowser()
 		];
 }
 
-ECheckBoxState SUTServerBrowserPanel::ShouldHideUnresponsiveServers() const
+ECheckBoxState SUTServerBrowserPanel::ShouldShowAllEmptyServers() const
 {
-	return bHideUnresponsiveServers ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+	return bShowAllEmptyServers ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
-void SUTServerBrowserPanel::OnHideUnresponsiveServersChanged(const ECheckBoxState NewState)
+void SUTServerBrowserPanel::OnShowAllEmptyServersChanged(const ECheckBoxState NewState)
 {
-	bHideUnresponsiveServers = NewState == ECheckBoxState::Checked;
+	bShowAllEmptyServers = NewState == ECheckBoxState::Checked;
 	if (bShowingHubs)
 	{
 		FilterAllHUBs();
@@ -1816,18 +1818,13 @@ void SUTServerBrowserPanel::ConnectTo(FServerData ServerData,bool bSpectate)
 	CleanupQoS();
 }
 
-
 void SUTServerBrowserPanel::FilterAllServers()
 {
 	FilteredServersSource.Empty();
+	NumEmptyServers = 0;
 	if (AllInternetServers.Num() > 0)
 	{
-		int32 BestPing = AllInternetServers[0]->Ping;
-		for (int32 i=0;i<AllInternetServers.Num();i++)
-		{
-			if (AllInternetServers[i]->Ping < BestPing) BestPing = AllInternetServers[i]->Ping;
-		}
-
+		AllInternetServers.StableSort(FCompareServerByPing());
 		for (int32 i=0;i<AllInternetServers.Num();i++)
 		{
 			FilterServer(AllInternetServers[i], false);
@@ -1843,10 +1840,18 @@ void SUTServerBrowserPanel::FilterServer(TSharedPtr< FServerData > NewServer, bo
 	{
 		if (QuickFilterText->GetText().IsEmpty() || NewServer->Name.Find(QuickFilterText->GetText().ToString()) >= 0)
 		{
-
-			if ( !IsUnresponsive(NewServer, BestPing) )
+			if (bShowAllEmptyServers || ((NewServer->Ping >= 0) && (NewServer->NumPlayers > 0)))
 			{
 				FilteredServersSource.Add(NewServer);
+			}
+			else if (NewServer->Ping >= 0)
+			{
+				// zero players on hub
+				if (NumEmptyServers < 8)
+				{
+					FilteredServersSource.Add(NewServer);
+					NumEmptyServers++;
+				}
 			}
 		}
 	}
@@ -1860,40 +1865,34 @@ void SUTServerBrowserPanel::FilterServer(TSharedPtr< FServerData > NewServer, bo
 void SUTServerBrowserPanel::FilterAllHUBs()
 {
 	FilteredHubsSource.Empty();
+	NumEmptyHubs = 0;
 	if (AllHubServers.Num() > 0)
 	{
-		int32 BestPing = AllHubServers[0]->Ping;
+		AllHubServers.StableSort(FCompareHub());
 		for (int32 i=0;i<AllHubServers.Num();i++)
 		{
-			if (AllHubServers[i]->Ping < BestPing) BestPing = AllHubServers[i]->Ping;
-		}
-
-		for (int32 i=0;i<AllHubServers.Num();i++)
-		{
-			FilterHUB(AllHubServers[i], false, BestPing);
+			FilterHUB(AllHubServers[i], false);
 		}
 		SortHUBs();
 	}
-}
+}	
 
-
-void SUTServerBrowserPanel::FilterHUB(TSharedPtr< FServerData > NewServer, bool bSortAndUpdate, int32 BestPing)
+void SUTServerBrowserPanel::FilterHUB(TSharedPtr< FServerData > NewServer, bool bSortAndUpdate)
 {
 	if (QuickFilterText->GetText().IsEmpty() || NewServer->Name.Find(QuickFilterText->GetText().ToString()) >= 0)
 	{
 		int32 BaseRank = PlayerOwner->GetBaseELORank();
-		if (NewServer->bFakeHUB)
+		if (NewServer->bFakeHUB || bShowAllEmptyServers || ((NewServer->Ping >=0) && (NewServer->NumPlayers > 0)))
 		{
 			FilteredHubsSource.Add(NewServer);
 		}
-		else
+		else if (NewServer->Ping >= 0)
 		{
-			if ( (NewServer->MinRank <= 0 || BaseRank >= NewServer->MinRank) && (NewServer->MaxRank <= 0 || BaseRank <= NewServer->MaxRank))
+			// zero players on hub
+			if (NumEmptyHubs < 5)
 			{
-				if ( !IsUnresponsive(NewServer, BestPing) )
-				{
-					FilteredHubsSource.Add(NewServer);
-				}
+				FilteredHubsSource.Add(NewServer);
+				NumEmptyHubs++;
 			}
 		}
 	}
@@ -1902,26 +1901,6 @@ void SUTServerBrowserPanel::FilterHUB(TSharedPtr< FServerData > NewServer, bool 
 	{
 		SortHUBs();
 	}
-}
-
-bool SUTServerBrowserPanel::IsUnresponsive(TSharedPtr<FServerData> Server, int32 BestPing)
-{
-	// If we aren't hiding unresponsive servers, we don't care so just return false.
-	if (!bHideUnresponsiveServers)
-	{
-		return false;
-	}
-
-	if (Server->Ping >= 0)			
-	{
-		int32  WorstPing = FMath::Max<int32>(BestPing * 2, 100);
-		if ( Server->NumPlayers > 0 || Server->Ping <= WorstPing )
-		{
-			return false;
-		}
-	}
-
-	return true;
 }
 
 void SUTServerBrowserPanel::Tick( const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime )
