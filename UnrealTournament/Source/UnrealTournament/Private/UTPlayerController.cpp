@@ -5169,6 +5169,10 @@ void AUTPlayerController::ClientPrepareForLineUp_Implementation()
 				{
 					UTChar->Destroy();
 				}
+				else
+				{
+					AUTLineUpHelper::ForceCharacterAnimResetForLineUp(UTChar);
+				}
 			}
 		}
 	}

@@ -268,17 +268,10 @@ void AUTLineUpHelper::PerformLineUp()
 
 		CalculateLineUpSlots();
 		SpawnCharactersToSlots();
+		SetupCharactersForLineUp();
 		FlagFixUp();
+	
 		NotifyClientsOfLineUp();
-
-		// freeze all Pawns on server
-		for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
-		{
-			if (It->IsValid() && !Cast<ASpectatorPawn>(It->Get()))
-			{
-				It->Get()->TurnOff();
-			}
-		}
 	}
 }
 
@@ -313,6 +306,9 @@ void AUTLineUpHelper::SpawnCharactersToSlots()
 					UTChar->TeleportTo(Slot.SpotLocation.GetTranslation(), Slot.SpotLocation.GetRotation().Rotator(), false, true);
 					UTChar->Controller->SetControlRotation(Slot.SpotLocation.GetRotation().Rotator());
 					UTChar->Controller->ClientSetRotation(Slot.SpotLocation.GetRotation().Rotator());
+					UTChar->DeactivateSpawnProtection();
+
+					SpawnPlayerWeapon(UTChar);
 				}
 			}
 		}
@@ -350,6 +346,21 @@ void AUTLineUpHelper::NotifyClientsOfLineUp()
 		if (UTPC)
 		{
 			UTPC->ClientPrepareForLineUp();
+		}
+	}
+}
+
+void AUTLineUpHelper::SetupCharactersForLineUp()
+{
+	for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
+	{
+		if (It->IsValid() && !Cast<ASpectatorPawn>(It->Get()))
+		{
+			// freeze all Pawns on server
+			It->Get()->TurnOff();
+
+			// Setup custom animations
+			AUTLineUpHelper::ForceCharacterAnimResetForLineUp(Cast<AUTCharacter>(*It));
 		}
 	}
 }
