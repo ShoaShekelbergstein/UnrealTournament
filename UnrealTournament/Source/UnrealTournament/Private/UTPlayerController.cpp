@@ -5171,7 +5171,7 @@ void AUTPlayerController::ClientPrepareForLineUp_Implementation()
 				}
 				else
 				{
-					AUTLineUpHelper::ForceCharacterAnimResetForLineUp(UTChar);
+					AUTLineUpHelper::ApplyCharacterAnimsForLineUp(UTChar);
 				}
 			}
 		}

@@ -137,7 +137,7 @@ void AUTLineUpHelper::StartLineUpWithDelay(float TimeDelay)
 
 bool AUTLineUpHelper::IsActive()
 {
-	return !GetWorld()->GetTimerManager().IsTimerActive(DelayedLineUpHandle);
+	return bIsActive;
 }
 
 float AUTLineUpHelper::CalculateLineUpDelay()
@@ -175,12 +175,14 @@ AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 	TimerDelayForEndMatch = 9.f;
 
 	bIsPlacingPlayers = false;
+	bIsActive = false;
 }
 
 void AUTLineUpHelper::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(AUTLineUpHelper, bIsActive);
 	DOREPLIFETIME(AUTLineUpHelper, ActiveType);
 	DOREPLIFETIME(AUTLineUpHelper, bIsPlacingPlayers);
 	DOREPLIFETIME(AUTLineUpHelper, LineUpSlots);
@@ -259,6 +261,8 @@ void AUTLineUpHelper::CleanUpPlayerAfterLineUp(AUTPlayerController* UTPC)
 
 void AUTLineUpHelper::PerformLineUp()
 {
+	bIsActive = true;
+
 	AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
 	if (UTGM)
 	{
@@ -270,7 +274,7 @@ void AUTLineUpHelper::PerformLineUp()
 		SpawnCharactersToSlots();
 		SetupCharactersForLineUp();
 		FlagFixUp();
-	
+
 		NotifyClientsOfLineUp();
 	}
 }
@@ -359,8 +363,19 @@ void AUTLineUpHelper::SetupCharactersForLineUp()
 			// freeze all Pawns on server
 			It->Get()->TurnOff();
 
-			// Setup custom animations
-			AUTLineUpHelper::ForceCharacterAnimResetForLineUp(Cast<AUTCharacter>(*It));
+			AUTCharacter* UTChar = Cast<AUTCharacter>(*It);
+			if (UTChar)
+			{
+				// Setup custom animations
+				AUTLineUpHelper::ApplyCharacterAnimsForLineUp(UTChar);
+
+				//Start Intro Anims if they haven't been set
+				if (UTChar->ActiveLineUpIntroIndex != GetIntroMontageIndex(UTChar))
+				{
+					UTChar->ActiveLineUpIntroIndex = GetIntroMontageIndex(UTChar);
+					AUTLineUpHelper::PlayIntroForCharacter(UTChar);
+				}
+			}
 		}
 	}
 }
@@ -581,7 +596,7 @@ void AUTLineUpHelper::BuildMapWeaponList()
 	}
 }
 
-void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
+void AUTLineUpHelper::ApplyCharacterAnimsForLineUp(AUTCharacter* UTChar)
 {
 	if (UTChar)
 	{
@@ -610,6 +625,35 @@ void AUTLineUpHelper::ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar)
 			//Turn off local physics sim and collisions during line-ups
 			UTChar->GetMesh()->SetSimulatePhysics(false);
 			UTChar->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
+}
+
+UAnimMontage* AUTLineUpHelper::GetIntroMontage(AUTCharacter* UTChar)
+{
+	if (UTChar)
+	{
+		AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTChar->PlayerState);
+		if (UTPS && (UTPS->TauntClass != NULL))
+		{
+			AUTTaunt* UTTaunt = Cast<AUTTaunt>(UTPS->TauntClass->GetDefaultObject());
+			return UTTaunt ? UTTaunt->TauntMontage : nullptr;
+		}
+	}
+
+	return nullptr;
+}
+
+void AUTLineUpHelper::PlayIntroForCharacter(AUTCharacter* UTChar)
+{
+	if (UTChar)
+	{
+		//Initial Spawn Anim
+		UAnimInstance* AnimInstance = UTChar->GetMesh()->GetAnimInstance();
+		UAnimMontage* SpawnMontage = AUTLineUpHelper::GetIntroMontage(UTChar);
+		if (AnimInstance && SpawnMontage)
+		{
+			AnimInstance->Montage_Play(SpawnMontage);
 		}
 	}
 }
@@ -689,4 +733,25 @@ void AUTLineUpHelper::DestroySpawnedClones()
 		}
 		PreviewWeapons.Empty();
 	}
+}
+
+int AUTLineUpHelper::GetIntroMontageIndex(AUTCharacter* UTChar)
+{
+	if (UTChar && UTChar->GetWorld())
+	{
+		AUTGameState* UTGameState = UTChar->GetWorld()->GetGameState<AUTGameState>();
+		if (UTGameState)
+		{
+			AUTLineUpZone* ZoneToUse = UTGameState->GetAppropriateSpawnList(LineUpTypes::Intro);
+			if (ZoneToUse)
+			{
+				if (ZoneToUse->DefaultIntroMontages.Num() > 0)
+				{
+					return FMath::RandHelper(ZoneToUse->DefaultIntroMontages.Num());
+				}
+			}
+		}
+	}
+
+	return -1;
 }

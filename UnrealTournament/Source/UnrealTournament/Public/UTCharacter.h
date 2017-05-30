@@ -396,6 +396,12 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 
 	virtual void SetEmoteSpeed(float NewEmoteSpeed);
 
+	UPROPERTY(ReplicatedUsing = OnRepActiveLineUpIntro)
+	int ActiveLineUpIntroIndex;
+
+	UFUNCTION()
+	virtual void OnRepActiveLineUpIntro();
+
 	UFUNCTION(BlueprintCallable, Category = Taunt)
 	void PlayTauntByClass(TSubclassOf<AUTTaunt> TauntToPlay, float EmoteSpeed = 1.0f);
 
@@ -427,7 +433,7 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	UAudioComponent* CurrentTauntAudioComponent;
 
 	UPROPERTY()
-	UAnimMontage* CurrentFirstPersonTaunt;
+	UAnimMontage* CurrentFirstPersonTaunt; 
 
 	// Keep track of emote count so we can clear CurrentEmote
 	UPROPERTY(BlueprintReadOnly, Category=Taunt)

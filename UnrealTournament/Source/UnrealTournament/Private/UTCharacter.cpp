@@ -206,6 +206,8 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 
 	MaxSpeedPctModifier = 1.0f;
 	MinNetUpdateFrequency = 100.0f;
+
+	ActiveLineUpIntroIndex = -1;
 }
 
 float AUTCharacter::GetWeaponBobScaling()
@@ -3531,6 +3533,8 @@ void AUTCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 	DOREPLIFETIME(AUTCharacter, bServerOutline);
 	DOREPLIFETIME(AUTCharacter, bOutlineWhenUnoccluded);
 	DOREPLIFETIME(AUTCharacter, ServerOutlineTeamMask);
+
+	DOREPLIFETIME(AUTCharacter, ActiveLineUpIntroIndex);
 }
 
 static AUTWeapon* SavedWeapon = NULL;
@@ -7452,4 +7456,7 @@ void AUTCharacter::ServerDropBoots_Implementation()
 	}
 }
 
-
+void AUTCharacter::OnRepActiveLineUpIntro()
+{
+	AUTLineUpHelper::PlayIntroForCharacter(this);
+}

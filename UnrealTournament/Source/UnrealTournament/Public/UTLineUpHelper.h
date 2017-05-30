@@ -22,7 +22,16 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 	GENERATED_UCLASS_BODY()
 
 	UFUNCTION()
-	static void ForceCharacterAnimResetForLineUp(AUTCharacter* UTChar);
+	static void ApplyCharacterAnimsForLineUp(AUTCharacter* UTChar);
+
+	UFUNCTION()
+	static UAnimMontage* GetIntroMontage(AUTCharacter* UTChar);
+
+	UFUNCTION()
+	static int GetIntroMontageIndex(AUTCharacter* UTChar);
+
+	UFUNCTION()
+	static void PlayIntroForCharacter(AUTCharacter* UTChar);
 
 	UFUNCTION()
 	bool CanInitiateGroupTaunt(AUTPlayerState* PlayerToCheck);
@@ -36,6 +45,9 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 	UFUNCTION()
 	void CleanUp();
 	
+	UPROPERTY(Replicated)
+	bool bIsActive;
+
 	UPROPERTY(Replicated)
 	LineUpTypes ActiveType;
 	

@@ -122,6 +122,9 @@ class UNREALTOURNAMENT_API AUTLineUpZone : public AActor
 	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
 	TSubclassOf<AUTLineUpZoneVisualizationCharacter> EditorVisualizationCharacter;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	TArray<UAnimMontage*> DefaultIntroMontages;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USceneComponent* SceneRoot;
 
