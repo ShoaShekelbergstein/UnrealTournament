@@ -156,7 +156,7 @@ FRadialDamageParams AUTProj_FlakShard::GetDamageParams_Implementation(AActor* Ot
 	if (OtherActor == Instigator)
 	{
 		// attenuate self damage
-		Result.BaseDamage = FMath::Max<float>(0.f, Result.BaseDamage - SelfDamageAttenuation * FMath::Max<float>(0.0f, GetWorld()->GetTimeSeconds() - CreationTime - SelfDamageAttenuationDelay));
+		Result.BaseDamage = FMath::Max<float>(1.f, Result.BaseDamage - SelfDamageAttenuation * FMath::Max<float>(0.0f, GetWorld()->GetTimeSeconds() - CreationTime - SelfDamageAttenuationDelay));
 	}
 	else
 	{
