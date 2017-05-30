@@ -991,7 +991,7 @@ void AUTRallyPoint::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVecto
 			float Border = 2.f*Scale;
 			float Height = 0.75*YL + 0.7f * YL;
 			float Width = TextXL + 2.f*Border;
-			float PartialFill = (RallyPointState == RallyPointStates::Powered) ? 0.1f * RallyTimeRemaining : 1.f;
+			float PartialFill = (RallyPointState == RallyPointStates::Powered) ? RallyTimeRemaining/FMath::Max(MinimumRallyTime, 0.1f) : 1.f;
 			Canvas->DrawTile(Canvas->DefaultTexture, XPos - Border, YPos - YL - Border, Width * PartialFill, Height + 2.f*Border, 0, 0, 1, 1);
 			if (PartialFill < 1.f)
 			{
