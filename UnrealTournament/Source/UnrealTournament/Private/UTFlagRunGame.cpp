@@ -1776,7 +1776,7 @@ uint8 AUTFlagRunGame::GetWinningTeamForLineUp() const
 
 void AUTFlagRunGame::RestartPlayer(AController* aPlayer)
 {
-	if ((!IsMatchInProgress() && bPlacingPlayersAtIntermission) || (GetMatchState() == MatchState::MatchIntermission) || (UTGameState && UTGameState->IsLineUpActive()))
+	if ((!IsMatchInProgress() && bPlacingPlayersAtIntermission) || (GetMatchState() == MatchState::MatchIntermission) || (UTGameState && UTGameState->IsLineUpActive() && UTGameState->ActiveLineUpHelper && UTGameState->ActiveLineUpHelper->bIsPlacingPlayers))
 	{
 		// placing players during intermission
 		if (bPlacingPlayersAtIntermission || (UTGameState && UTGameState->IsLineUpActive()))
