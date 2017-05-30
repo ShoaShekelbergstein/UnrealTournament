@@ -888,7 +888,7 @@ public:
 
 	/** set to prevent firing (does not stop already started firing, call StopFiring() for that) */
 protected:
-	UPROPERTY(BlueprintReadOnly, Category = Pawn)
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=UpdateWeaponFiring, Category = Pawn)
 	bool bDisallowWeaponFiring;
 
 	UPROPERTY(BlueprintReadOnly, Category = Pawn)
@@ -900,6 +900,9 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = Pawn)
 	virtual void DisallowWeaponFiring(bool bDisallowed);
+
+	UFUNCTION()
+		virtual void UpdateWeaponFiring();
 
 	/** Call after calling DissallowWeaponFiring(true) to re-enable weapon switching without enabling weapon firing.  NOT replicated. */
 	UFUNCTION(BlueprintCallable, Category = Pawn)
@@ -1352,6 +1355,9 @@ public:
 
 	UPROPERTY(ReplicatedUsing=OnTriggerRallyEffect, BlueprintReadWrite)
 		bool bTriggerRallyEffect;
+
+	UPROPERTY(Replicated, BlueprintReadOnly)
+		bool bRallyInProgress;
 
 	UPROPERTY()
 		float RallyCompleteTime;

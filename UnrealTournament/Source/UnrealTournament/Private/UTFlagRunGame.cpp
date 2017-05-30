@@ -1010,6 +1010,7 @@ bool AUTFlagRunGame::HandleRallyRequest(AController* C)
 		UTPlayerState->RallyLocation = GS->CurrentRallyPoint->GetRallyLocation(UTCharacter);
 		UTPlayerState->RallyPoint = GS->CurrentRallyPoint;
 		UTCharacter->bTriggerRallyEffect = true;
+		UTCharacter->bRallyInProgress = true;
 		UTCharacter->OnTriggerRallyEffect();
 		UTPlayerState->BeginRallyTo(UTPlayerState->RallyPoint, UTPlayerState->RallyLocation, 1.f);
 		UTCharacter->SpawnRallyDestinationEffectAt(UTPlayerState->RallyLocation);
@@ -1028,7 +1029,10 @@ void AUTFlagRunGame::FinishRallyRequest(AController *C)
 {
 	AUTCharacter* UTCharacter = Cast<AUTCharacter>(C->GetPawn());
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-
+	if (UTCharacter)
+	{
+		UTCharacter->bRallyInProgress = false;
+	}
 	if (!UTCharacter || !IsMatchInProgress() || !GS || GS->IsMatchIntermission() || UTCharacter->IsPendingKillPending())
 	{
 		return;
@@ -1055,6 +1059,10 @@ bool AUTFlagRunGame::CompleteRallyRequest(AController* C)
 	AUTTeamInfo* Team = UTPlayerState ? UTPlayerState->Team : nullptr;
 	if (!UTCharacter || !IsMatchInProgress() || !GS || GS->IsMatchIntermission() || UTCharacter->IsPendingKillPending())
 	{
+		if (UTCharacter)
+		{
+			UTCharacter->bRallyInProgress = false;
+		}
 		return false;
 	}
 	UTCharacter->bTriggerRallyEffect = false;

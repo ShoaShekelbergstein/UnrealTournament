@@ -2257,7 +2257,7 @@ bool AUTCharacter::ServerFeignDeath_Validate()
 }
 void AUTCharacter::ServerFeignDeath_Implementation()
 {
-	if (bInRagdollRecovery)
+	if (bInRagdollRecovery || bRallyInProgress || (UTCharacterMovement && (UTCharacterMovement->MovementMode == MOVE_None)))
 	{
 		return;
 	}
@@ -3494,7 +3494,9 @@ void AUTCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 	DOREPLIFETIME_CONDITION(AUTCharacter, WeaponClass, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(AUTCharacter, WeaponAttachmentClass, COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(AUTCharacter, bApplyWallSlide, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(AUTCharacter, bDisallowWeaponFiring, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTCharacter, bTriggerRallyEffect, COND_None);
+	DOREPLIFETIME_CONDITION(AUTCharacter, bRallyInProgress, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AUTCharacter, PulseTarget, COND_SkipOwner);
 
 	DOREPLIFETIME_CONDITION(AUTCharacter, HolsteredWeaponAttachmentClass, COND_SkipOwner);
@@ -6813,33 +6815,38 @@ void AUTCharacter::DisallowWeaponFiring(bool bDisallowed)
 	if (bDisallowed != bDisallowWeaponFiring)
 	{
 		bDisallowWeaponFiring = bDisallowed;
-		if (Weapon != NULL)
+		UpdateWeaponFiring();
+	}
+}
+
+void AUTCharacter::UpdateWeaponFiring()
+{
+	if (Weapon != NULL)
+	{
+		if (bDisallowWeaponFiring)
 		{
-			if (bDisallowWeaponFiring)
+			for (int32 i = 0; i < PendingFire.Num(); i++)
 			{
-				for (int32 i = 0; i < PendingFire.Num(); i++)
+				if (PendingFire[i])
 				{
-					if (PendingFire[i])
-					{
-						StopFire(i);
-					}
+					StopFire(i);
 				}
-				if (Weapon != NULL) // StopFire() could have killed us
+			}
+			if (Weapon != NULL) // StopFire() could have killed us
+			{
+				for (UUTWeaponStateFiring* FiringState : Weapon->FiringState)
 				{
-					for (UUTWeaponStateFiring* FiringState : Weapon->FiringState)
+					if (FiringState != NULL)
 					{
-						if (FiringState != NULL)
-						{
-							FiringState->WeaponBecameInactive();
-						}
+						FiringState->WeaponBecameInactive();
 					}
 				}
 			}
-			else if (Cast<AUTPlayerController>(GetController()))
-			{
-				// client-side check fire buttons if weapon not firing, and fire
-				((AUTPlayerController*)GetController())->ClientVerifyFiringInputs();
-			}
+		}
+		else if (Cast<AUTPlayerController>(GetController()))
+		{
+			// client-side check fire buttons if weapon not firing, and fire
+			((AUTPlayerController*)GetController())->ClientVerifyFiringInputs();
 		}
 	}
 	bDisallowWeaponSwitching = bDisallowWeaponFiring;
