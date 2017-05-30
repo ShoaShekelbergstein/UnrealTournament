@@ -480,7 +480,7 @@ public:
 	bool bIsInstanceServer;
 
 	// the GUID of the hub the player should return when they leave.  
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, ReplicatedUsing=OnReceiveHubGuid)
 	FGuid HubGuid;
 
 	/** Game specific rating of a player as a desireable camera focus for spectators. */
@@ -773,4 +773,8 @@ public:
 protected:
 	virtual AUTLineUpZone* CreateLineUpAtPlayerStart(LineUpTypes LineUpType, class APlayerStart* PlayerSpawn);
 	void TrackGame();
+
+	UFUNCTION()
+	void OnReceiveHubGuid();
+
 };

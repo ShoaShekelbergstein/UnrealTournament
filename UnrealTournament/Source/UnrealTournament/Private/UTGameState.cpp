@@ -2588,3 +2588,16 @@ bool AUTGameState::IsLineUpActive()
 {
 	return ((ActiveLineUpHelper != nullptr) && ActiveLineUpHelper->IsActive());
 }
+
+void AUTGameState::OnReceiveHubGuid()
+{
+	// Pass the HubGuid replicated from the server on to all local players so they know where to return to.
+	for (FLocalPlayerIterator It(GEngine, GetWorld()); It; ++It)
+	{
+		UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(*It);
+		if (UTLocalPlayer)
+		{
+			UTLocalPlayer->ReturnDestinationGuidString = HubGuid.IsValid() ? HubGuid.ToString() : TEXT("");
+		}
+	}
+}

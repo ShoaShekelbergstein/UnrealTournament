@@ -919,6 +919,10 @@ void AUTLobbyGameState::AuthorizeDedicatedInstance(AUTServerBeaconLobbyClient* B
 {
 	// Look through the current matches to see if this key is in use
 
+	AUTLobbyGameMode* LobbyGame = GetWorld()->GetAuthGameMode<AUTLobbyGameMode>();
+	if (LobbyGame == nullptr) return;
+
+
 	UE_LOG(UT,Verbose,TEXT("...Checking for existing instance!"));
 
 	for (int32 i=0; i < AvailableMatches.Num(); i++)
@@ -949,7 +953,7 @@ void AUTLobbyGameState::AuthorizeDedicatedInstance(AUTServerBeaconLobbyClient* B
 			{
 				UE_LOG(UT,Verbose,TEXT("... !!! Authorized !!!"),*AccessKeys[i], *HubKey);
 				// authorize the instance and pass my ServerInstanceGUID
-				Beacon->AuthorizeDedicatedInstance(HubGuid, GameInstanceID);
+				Beacon->AuthorizeDedicatedInstance(LobbyGame->ServerInstanceGUID, GameInstanceID);
 			}
 			break;
 		}

@@ -128,7 +128,7 @@ public:
 	virtual void ClientMatchmakingGameComplete();
 
 	UFUNCTION(Client, Reliable)
-	virtual void ClientReturnToLobby(bool bKicked=false);
+	virtual void ClientReturnToLobby(bool bKicked = false, bool bIdle = false);
 
 	UFUNCTION(Client, Reliable)
 	virtual void ClientRankedGameAbandoned();
@@ -360,7 +360,7 @@ public:
 
 	// Kicks the player, but allows enough time for the kick message to replicate.
 	UFUNCTION()
-	virtual void GuaranteedKick( const FText& KickReason);
+	virtual void GuaranteedKick( const FText& KickReason, bool bKickToHubIfPossible = false);
 
 	void ClientWasKicked_Implementation(const FText& KickReason) override;
 

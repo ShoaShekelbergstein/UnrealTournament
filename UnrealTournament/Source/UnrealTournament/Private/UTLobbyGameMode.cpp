@@ -82,7 +82,6 @@ void AUTLobbyGameMode::InitGameState()
 	{
 		UTLobbyGameState->bAllowInstancesToStartWithBots = bAllowInstancesToStartWithBots;
 		UTLobbyGameState->bTrainingGround = bTrainingGround;
-		UTLobbyGameState->HubGuid = ServerInstanceGUID;
 
 		// Setupo the beacons to listen for updates from Game Server Instances
 		UTLobbyGameState->SetupLobbyBeacons();

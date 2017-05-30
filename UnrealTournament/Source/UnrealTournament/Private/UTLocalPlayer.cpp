@@ -5253,6 +5253,14 @@ void UUTLocalPlayer::Reconnect(bool bSpectator)
 		LastRankedMatchTimeString.Empty();
 		SaveConfig();
 	}
+	else if (!ReturnDestinationGuidString.IsEmpty())
+	{
+		AUTBasePlayerController* BasePlayerController = Cast<AUTBasePlayerController>(PlayerController);
+		if (BasePlayerController != nullptr)
+		{
+			BasePlayerController->ConnectToServerViaGUID(ReturnDestinationGuidString, false);
+		}
+	}
 	else if (LastSession.IsValid())
 	{
 		bAttemptingForceJoin = false;

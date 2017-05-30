@@ -1447,5 +1447,11 @@ protected:
 	UPROPERTY(Config)
 	TArray<FUTGameModeCountStorage> GameModeCounts;
 
+public:
+	// Holds the string version of a server guid that the player should attempt to use when disconnected or returning to the lobby.
+	// This will only be valid on instances.
+	UPROPERTY(BlueprintReadOnly,Category=Online)
+	FString ReturnDestinationGuidString;
+
 };
 

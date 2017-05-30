@@ -414,7 +414,7 @@ void AUTBasePlayerController::ClientMatchmakingGameComplete_Implementation()
 	}
 }
 
-void AUTBasePlayerController::ClientReturnToLobby_Implementation(bool bKicked)
+void AUTBasePlayerController::ClientReturnToLobby_Implementation(bool bKicked, bool bIdle)
 {
 	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
 	if (LP)
@@ -427,13 +427,13 @@ void AUTBasePlayerController::ClientReturnToLobby_Implementation(bool bKicked)
 
 	if (bKicked)
 	{
-		ClientWasKicked(NSLOCTEXT("General", "IdleKick", "You were kicked for being idle."));
+		ClientWasKicked(bIdle ? NSLOCTEXT("General", "IdleKick", "You were kicked for being idle.") : NSLOCTEXT("General", "HostKick", "You were kicked by the host or admin.") );
 	}
 
 	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
-	if (GameState && GameState->HubGuid.IsValid())
+	if (LP && !LP->ReturnDestinationGuidString.IsEmpty())
 	{
-		ConnectToServerViaGUID(GameState->HubGuid.ToString(), false);
+		ConnectToServerViaGUID(LP->ReturnDestinationGuidString, false);
 	}
 	else
 	{
@@ -877,16 +877,19 @@ void AUTBasePlayerController::RconKick(FString NameOrUIDStr, bool bBan, FString 
 bool AUTBasePlayerController::ServerRconKick_Validate(const FString& NameOrUIDStr, bool bBan, const FString& Reason) { return true; }
 void AUTBasePlayerController::ServerRconKick_Implementation(const FString& NameOrUIDStr, bool bBan, const FString& Reason)
 {
-	// Quick out if we haven't been authenticated.
-	if (UTPlayerState == nullptr || !UTPlayerState->bIsRconAdmin)
-	{
-		ClientSay(UTPlayerState, TEXT("Rcon not authenticated"), ChatDestinations::System);
-		return;
-	}
-
 	AUTBaseGameMode* GM = GetWorld()->GetAuthGameMode<AUTBaseGameMode>();
 	if (GM)
 	{
+		// Quick out if we haven't been authenticated.
+		if (UTPlayerState == nullptr || !UTPlayerState->bIsRconAdmin)
+		{
+			if (GM->GetMatchState() != MatchState::WaitingToStart || GM->GetHostId().IsEmpty() || GM->GetHostId() != UTPlayerState->UniqueId.ToString())
+			{
+				ClientSay(UTPlayerState, TEXT("Rcon not authenticated"), ChatDestinations::System);
+				return;
+			}
+		}
+
 		GM->RconKick(NameOrUIDStr, bBan, Reason);
 	}
 }
@@ -1511,11 +1514,20 @@ void AUTBasePlayerController::InitializeHeartbeatManager()
 	}
 }
 
-void AUTBasePlayerController::GuaranteedKick( const FText& KickReason)
+void AUTBasePlayerController::GuaranteedKick( const FText& KickReason, bool bKickToHubIfPossible)
 {
 	if (!AuthKickHandle.IsValid())
 	{
-		ClientWasKicked(KickReason);
+
+		if (bKickToHubIfPossible)
+		{
+			ClientReturnToLobby(true,false);
+		}
+		else
+		{
+			ClientWasKicked(KickReason);
+		}
+
 		GetWorldTimerManager().SetTimer(AuthKickHandle, this, &AUTBasePlayerController::TimedKick, 1.0f, false);
 	}
 }

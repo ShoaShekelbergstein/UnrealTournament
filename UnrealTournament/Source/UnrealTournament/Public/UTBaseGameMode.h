@@ -292,4 +292,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category=Game)
 	FString HubGUIDString;
 
+	UFUNCTION(BlueprintCallable, Category = Game)
+	FString GetHostId()
+	{
+		return HostIdString;
+	}
+
 };

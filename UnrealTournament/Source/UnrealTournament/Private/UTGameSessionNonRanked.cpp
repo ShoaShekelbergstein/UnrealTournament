@@ -457,7 +457,7 @@ bool AUTGameSessionNonRanked::KickPlayer(APlayerController* KickedPlayer, const 
 		AUTBasePlayerController* KickedBasePlayer = Cast<AUTBasePlayerController>(KickedPlayer);
 		if (KickedBasePlayer != nullptr)
 		{
-			KickedBasePlayer->GuaranteedKick(KickReason);
+			KickedBasePlayer->GuaranteedKick(KickReason, true);
 		}
 		return true;
 	}
