@@ -70,7 +70,7 @@ void UUTHUDWidgetMessage_VoiceChatStatus::DrawTalker(const FString& PlayerName, 
 		Canvas->DrawColor = FColor(188,7,7);
 	}
 	
-	FCanvasTileItem TileItem(RenderPos, GWhiteTexture, FVector2D(XL + 2, YL), FVector2D(0, 0), FVector2D(1, 1), Canvas->DrawColor);
+	FCanvasTileItem TileItem(RenderPos, GWhiteTexture, FVector2D(XL + 2 * RenderScale, YL), FVector2D(0, 0), FVector2D(1, 1), Canvas->DrawColor);
 	TileItem.BlendMode = ESimpleElementBlendMode::SE_BLEND_Translucent;
 	Canvas->DrawItem(TileItem);
 

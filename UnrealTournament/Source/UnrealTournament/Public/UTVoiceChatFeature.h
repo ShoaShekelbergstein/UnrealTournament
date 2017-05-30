@@ -38,4 +38,8 @@ public:
 
 	virtual void SetCustomInputDevice(const FString& CustomInputDevice) = 0;
 	virtual void SetCustomOutputDevice(const FString& CustomOutputDevice) = 0;
+
+	virtual bool IsConnected() = 0;
+	virtual bool IsLoggedIn() = 0;
+	virtual FString GetChannelName() = 0;
 };
