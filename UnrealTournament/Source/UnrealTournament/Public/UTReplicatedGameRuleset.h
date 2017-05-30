@@ -13,7 +13,7 @@ class UNREALTOURNAMENT_API AUTReplicatedGameRuleset : public AInfo
 
 public:
 
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset, ReplicatedUsing = OnReceiveData)
 	FUTGameRuleset Data;
 
 	// This is the list of maps that are available to this rule
@@ -53,6 +53,9 @@ public:
 	virtual FString GetDescription();
 
 protected:
+
+	UFUNCTION()
+	void OnReceiveData();
 
 	FString Fixup(FString OldText);
 	int32 AddMapAssetToMapList(const FAssetData& Asset);

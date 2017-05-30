@@ -30,6 +30,11 @@ void AUTReplicatedGameRuleset::GetLifetimeReplicatedProps(TArray< FLifetimePrope
 	DOREPLIFETIME(AUTReplicatedGameRuleset, bCustomRuleset);
 }
 
+void AUTReplicatedGameRuleset::OnReceiveData()
+{
+	BuildSlateBadge();
+}
+
 int32 AUTReplicatedGameRuleset::AddMapAssetToMapList(const FAssetData& Asset)
 {
 	AUTGameState* GameState = GetWorld()->GetGameState<AUTGameState>();
@@ -44,6 +49,7 @@ int32 AUTReplicatedGameRuleset::AddMapAssetToMapList(const FAssetData& Asset)
 void AUTReplicatedGameRuleset::SetRules(const FUTGameRuleset& NewRules, const TArray<FAssetData>& MapAssets)
 {
 	Data = NewRules;
+	MaxPlayers = Data.MaxPlayers;
 
 	// First add the Epic maps.
 	if (!NewRules.EpicMaps.IsEmpty())
