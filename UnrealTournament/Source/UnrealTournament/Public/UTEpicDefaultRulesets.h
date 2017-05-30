@@ -436,8 +436,8 @@ public:
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTDMGameMode");
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=10?GoalScore=0"));
 			NewRuleset->bTeamGame = false;
-			NewRuleset->MaxTeamCount = -1;
-			NewRuleset->MaxTeamSize = -1;
+			NewRuleset->MaxTeamCount = 1;
+			NewRuleset->MaxTeamSize = 8;
 			NewRuleset->MaxPartySize = 5;
 
 			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/DM-Outpost23";
@@ -509,7 +509,7 @@ public:
 			NewRuleset->MaxPlayers = 5;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_CTF.GB_CTF'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTFlagRunGame");
-			NewRuleset->GameOptions = FString(TEXT("?Difficulty=4.0?VSAI=1"));
+			NewRuleset->GameOptions = FString(TEXT("?Difficulty=4.0?VSAI=1?RequireFull=0"));
 			NewRuleset->bTeamGame = true;
 			NewRuleset->MaxTeamCount = 1;
 			NewRuleset->MaxTeamSize = 5;

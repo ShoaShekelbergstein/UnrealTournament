@@ -152,17 +152,12 @@ bool UUTPlaylistManager::GetURLForPlaylist(int32 PlaylistId, FString& URL)
 		TArray<FString> MapList;
 		Ruleset->EpicMaps.ParseIntoArray(MapList,TEXT(","), true);
 
+		bool bIsRanked = IsPlaylistRanked(PlaylistId);
+
 		FString StartingMap = MapList[FMath::RandRange(0, MapList.Num() - 1)];
-		URL = Ruleset->GenerateURL(StartingMap, AreBotsAllowed(PlaylistId), GetBotDifficulty(PlaylistId), true);
+		URL = Ruleset->GenerateURL(StartingMap, AreBotsAllowed(PlaylistId), GetBotDifficulty(PlaylistId), bIsRanked);
 		URL += TEXT("?MatchmakingSession=1");
-		if (IsPlaylistRanked(PlaylistId))
-		{
-			URL += TEXT("?Ranked=1");
-		}
-		else
-		{
-			URL += TEXT("?QuickMatch=1");
-		}
+		URL += (bIsRanked) ? TEXT("?Ranked=1") : TEXT("?QuickMatch=1");
 
 		return true;
 	}
