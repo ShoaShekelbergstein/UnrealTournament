@@ -34,7 +34,6 @@
 #include "UTATypes.h"
 #include "UTGameVolume.h"
 #include "Animation/AnimInstance.h"
-#include "UTFlagRunGameMessage.h"
 #include "UTAnalytics.h"
 #include "UTRallyPoint.h"
 #include "UTRemoteRedeemer.h"
@@ -415,10 +414,7 @@ void AUTFlagRunGame::InitDelayedFlag(AUTCarriedObject* Flag)
 {
 	if (Flag != nullptr)
 	{
-		Flag->bEnemyCanPickup = false;
 		Flag->bFriendlyCanPickup = false;
-		Flag->bTeamPickupSendsHome = false;
-		Flag->bEnemyPickupSendsHome = false;
 		if (IsTeamOnOffense(Flag->GetTeamNum()))
 		{
 			Flag->SetActorHiddenInGame(true);
@@ -434,21 +430,12 @@ void AUTFlagRunGame::InitFlagForRound(AUTCarriedObject* Flag)
 {
 	if (Flag != nullptr)
 	{
-		Flag->AutoReturnTime = 8.f;
-		Flag->bGradualAutoReturn = true;
-		Flag->bDisplayHolderTrail = true;
-		Flag->bShouldPingFlag = true;
 		Flag->bSlowsMovement = bSlowFlagCarrier;
 		Flag->ClearGhostFlags();
-		Flag->bSendHomeOnScore = false;
 		if (IsTeamOnOffense(Flag->GetTeamNum()))
 		{
-			Flag->MessageClass = UUTFlagRunGameMessage::StaticClass();
-			Flag->SetActorHiddenInGame(false);
-			Flag->bEnemyCanPickup = false;
 			Flag->bFriendlyCanPickup = true;
-			Flag->bTeamPickupSendsHome = false;
-			Flag->bEnemyPickupSendsHome = false;
+			Flag->SetActorHiddenInGame(false);
 			Flag->bWaitingForFirstPickup = true;
 			GetWorldTimerManager().SetTimer(Flag->NeedFlagAnnouncementTimer, Flag, &AUTCarriedObject::SendNeedFlagAnnouncement, 5.f, false);
 			ActiveFlag = Flag;

@@ -31,15 +31,12 @@ AUTFlag::AUTFlag(const FObjectInitializer& ObjectInitializer)
 	GetMesh()->bEnablePhysicsOnDedicatedServer = false;
 	MovementComponent->ProjectileGravityScale = 1.3f;
 	MovementComponent->bKeepPhysicsVolumeWhenStopped = true;
-	MessageClass = UUTCTFGameMessage::StaticClass();
 	bAlwaysRelevant = true;
-	bTeamPickupSendsHome = true;
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
 	ClothBlendHome = 0.f;
 	ClothBlendHeld = 0.5f;
-	bEnemyCanPickup = true;
 	PingedDuration = 2.f;
 	TargetPingedDuration = 0.5f;
 	bShouldPingFlag = false;
@@ -145,12 +142,6 @@ void AUTFlag::OnObjectStateChanged()
 		}
 	}
 	GetMesh()->ClothBlendWeight = (ObjectState == CarriedObjectState::Held) ? ClothBlendHeld : ClothBlendHome;
-}
-
-void AUTFlag::SendHome()
-{
-	PlayReturnedEffects();
-	Super::SendHome();
 }
 
 bool AUTFlag::IsNearTeammate(AUTCharacter* TeamChar)

@@ -2,12 +2,16 @@
 #include "UnrealTournament.h"
 #include "Net/UnrealNetwork.h"
 #include "UTCTFFlag.h"
+#include "UTCTFGameMessage.h"
 
 static FName NAME_Wipe(TEXT("Wipe"));
 
 AUTCTFFlag::AUTCTFFlag(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
+	bTeamPickupSendsHome = true;
+	bEnemyCanPickup = true;
+	MessageClass = UUTCTFGameMessage::StaticClass();
 }
 
 void AUTCTFFlag::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

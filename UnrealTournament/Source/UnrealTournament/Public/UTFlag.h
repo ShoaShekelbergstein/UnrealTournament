@@ -74,7 +74,7 @@ public:
 	/** plays effects for flag returning
 	* NOTE: for 'despawn' end of effect to work this needs to be called BEFORE moving the flag
 	*/
-	virtual void PlayReturnedEffects();
+	virtual void PlayReturnedEffects() override;
 
 	USkeletalMeshComponent* GetMesh() const
 	{
@@ -89,7 +89,6 @@ public:
 	virtual void OnObjectStateChanged();
 
 	FTimerHandle SendHomeWithNotifyHandle;
-	virtual void SendHome() override;
 	virtual void SendHomeWithNotify() override;
 	virtual void Drop(AController* Killer) override;
 	virtual void MoveToHome() override;

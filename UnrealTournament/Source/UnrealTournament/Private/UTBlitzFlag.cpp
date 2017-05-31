@@ -6,6 +6,7 @@
 #include "UTFlagRunGame.h"
 #include "UTCTFFlagBase.h"
 #include "UTCTFRewardMessage.h"
+#include "UTFlagRunGameMessage.h"
 
 static FName NAME_Wipe(TEXT("Wipe"));
 
@@ -13,6 +14,15 @@ AUTBlitzFlag::AUTBlitzFlag(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	bGradualAutoReturn = true;
+	AutoReturnTime = 8.f;
+	bDisplayHolderTrail = true;
+	bShouldPingFlag = true;
+	bSendHomeOnScore = false;
+	MessageClass = UUTFlagRunGameMessage::StaticClass();
+	bEnemyCanPickup = false;
+	bFriendlyCanPickup = true;
+	bTeamPickupSendsHome = false;
+	bEnemyPickupSendsHome = false;
 }
 
 void AUTBlitzFlag::SendHomeWithNotify()

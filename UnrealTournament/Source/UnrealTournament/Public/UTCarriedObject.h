@@ -166,13 +166,13 @@ private:
 	TArray<AUTGhostFlag*> MyGhostFlags;
 
 public:
-
 	UPROPERTY(BlueprintReadWrite, Category = Flag)
 	bool bSingleGhostFlag;
 
 	virtual AUTGhostFlag* PutGhostFlagAt(FFlagTrailPos NewPosition, bool bShowTimer = true, bool bSuppressTrails = false, uint8 TeamNum = 255);
 
 	virtual void ClearGhostFlags();
+	virtual void PlayReturnedEffects() {};
 
 	// Allow children to know when the team changes
 	UFUNCTION()
@@ -201,7 +201,7 @@ public:
 	uint32 bAnyoneCanPickup:1;
 
 	// if true, then enemy of this object's team can pick this object up
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = GameObject)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameObject)
 		uint32 bEnemyCanPickup : 1;
 
 	// if true, then player on this object's team can pick this object up
@@ -384,7 +384,7 @@ public:
 	UPROPERTY()
 		int32 MidPointPos;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category = GameObject)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = GameObject)
 		bool bGradualAutoReturn;
 
 	/** If bGradualAutoReturn, don't move if player that can pick flag up is nearby. */
@@ -396,7 +396,7 @@ public:
 		float MinGradualReturnDist;
 
 	/** If true, attach holder trail to character carrying this object. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category = GameObject)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = GameObject)
 		bool bDisplayHolderTrail;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = GameObject)

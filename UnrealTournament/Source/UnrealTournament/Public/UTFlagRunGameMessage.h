@@ -1,7 +1,7 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #pragma once
-
+#include "UTCTFGameMessage.h"
 #include "UTFlagRunGameMessage.generated.h"
 
 UCLASS()

@@ -134,11 +134,8 @@ void AUTCarriedObject::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & 
 	DOREPLIFETIME(AUTCarriedObject, bMovementEnabled);
 	DOREPLIFETIME_CONDITION(AUTCarriedObject, HomeBase, COND_InitialOnly);
 	DOREPLIFETIME(AUTCarriedObject, FlagReturnTime);
-	DOREPLIFETIME(AUTCarriedObject, bEnemyCanPickup);
 	DOREPLIFETIME(AUTCarriedObject, bFriendlyCanPickup);
 	DOREPLIFETIME(AUTCarriedObject, bCurrentlyPinged);
-	DOREPLIFETIME(AUTCarriedObject, bDisplayHolderTrail);
-	DOREPLIFETIME(AUTCarriedObject, bGradualAutoReturn);
 	DOREPLIFETIME(AUTCarriedObject, bSlowsMovement);
 	DOREPLIFETIME(AUTCarriedObject, AutoReturnTime);
 }
@@ -829,6 +826,7 @@ AUTGhostFlag* AUTCarriedObject::PutGhostFlagAt(FFlagTrailPos NewPosition, bool b
 
 void AUTCarriedObject::SendHome()
 {
+	PlayReturnedEffects();
 	LastTeleportedTime = GetWorld()->GetTimeSeconds();
 	LastTeleportedLoc = GetActorLocation();
 
