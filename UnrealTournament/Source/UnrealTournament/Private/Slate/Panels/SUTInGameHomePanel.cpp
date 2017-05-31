@@ -673,10 +673,43 @@ FReply SUTInGameHomePanel::OnKeyDown(const FGeometry& MyGeometry, const FKeyEven
 				SB->SelectionClick();
 				return FReply::Handled();
 			}
+			else
+			{
+				TArray<FKey> Keys;
+				PC->ResolveKeybindToFKey(TEXT("PushToTalk"), Keys);
+				for (int i = 0; i < Keys.Num(); i++)
+				{
+					if (Keys[i] == InKeyboardEvent.GetKey())
+					{
+						PC->StartVOIPTalking();
+						return FReply::Handled();
+					}
+				}
+			}
 		}
 	}
-	return FReply::Unhandled();
 
+	return FReply::Unhandled();
+}
+
+FReply SUTInGameHomePanel::OnKeyUp(const FGeometry& MyGeometry, const FKeyEvent& InKeyboardEvent)
+{
+	AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+	if (PC)
+	{
+		TArray<FKey> Keys;
+		PC->ResolveKeybindToFKey(TEXT("PushToTalk"), Keys);
+		for (int i = 0; i < Keys.Num(); i++)
+		{
+			if (Keys[i] == InKeyboardEvent.GetKey())
+			{
+				PC->StopVOIPTalking();
+				return FReply::Handled();
+			}
+		}
+	}
+
+	return FReply::Unhandled();
 }
 
 TSharedPtr<SWidget> SUTInGameHomePanel::GetInitialFocus()
