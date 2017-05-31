@@ -3602,7 +3602,8 @@ bool AUTPlayerController::ServerEmote_Validate(int32 EmoteIndex)
 
 void AUTPlayerController::ServerEmote_Implementation(int32 EmoteIndex)
 {
-	if (UTPlayerState != nullptr)
+	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+	if (UTPlayerState != nullptr && (!UTGS || !UTGS->ActiveLineUpHelper || (UTGS->ActiveLineUpHelper->ActiveType != LineUpTypes::Intro)))
 	{
 		UTPlayerState->PlayTauntByIndex(EmoteIndex);
 	}

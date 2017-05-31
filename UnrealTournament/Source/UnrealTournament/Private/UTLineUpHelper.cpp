@@ -120,6 +120,8 @@ void AUTLineUpHelper::CalculateLineUpSlots()
 				}
 			}
 		}
+	
+		UTGameState->LeadLineUpPlayer = ((LineUpSlots.Num() > 0) && (LineUpSlots[0].ControllerInSpot)) ? Cast<AUTPlayerState>(LineUpSlots[0].ControllerInSpot->PlayerState) : nullptr;
 	}
 }
 
@@ -372,7 +374,7 @@ void AUTLineUpHelper::SetupCharactersForLineUp()
 				AUTLineUpHelper::ApplyCharacterAnimsForLineUp(UTChar);
 
 				//Start Intro Anims if they haven't been set
-				if (UTChar->ActiveLineUpIntroIndex != GetIntroMontageIndex(UTChar))
+				if ((ActiveType == LineUpTypes::Intro) && (UTChar->ActiveLineUpIntroIndex != GetIntroMontageIndex(UTChar)))
 				{
 					UTChar->ActiveLineUpIntroIndex = GetIntroMontageIndex(UTChar);
 					AUTLineUpHelper::PlayIntroForCharacter(UTChar);
@@ -634,11 +636,14 @@ UAnimMontage* AUTLineUpHelper::GetIntroMontage(AUTCharacter* UTChar)
 {
 	if (UTChar)
 	{
-		AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTChar->PlayerState);
-		if (UTPS && (UTPS->TauntClass != NULL))
+		AUTGameState* UTGS = Cast<AUTGameState>(UTChar->GetWorld()->GetGameState());
+		if (UTGS)
 		{
-			AUTTaunt* UTTaunt = Cast<AUTTaunt>(UTPS->TauntClass->GetDefaultObject());
-			return UTTaunt ? UTTaunt->TauntMontage : nullptr;
+			AUTLineUpZone* LineUpZone = UTGS->GetAppropriateSpawnList(LineUpTypes::Intro);
+			if (LineUpZone && (LineUpZone->DefaultIntroMontages.Num() > 0))
+			{
+				return  (LineUpZone->DefaultIntroMontages.IsValidIndex(UTChar->ActiveLineUpIntroIndex)) ? LineUpZone->DefaultIntroMontages[UTChar->ActiveLineUpIntroIndex] : LineUpZone->DefaultIntroMontages[0];
+			}
 		}
 	}
 
