@@ -52,15 +52,18 @@ void AUTMutator_WeaponReplacement::ModifyPlayer_Implementation(APawn* Other, boo
 	if (bIsNewSpawn)
 	{
 		AUTCharacter* UTCharacter = Cast<AUTCharacter>(Other);
-		for (int32 i = 0; i < UTCharacter->DefaultCharacterInventory.Num(); i++)
+		if (UTCharacter)
 		{
-			for (int32 j = 0; j < WeaponsToReplace.Num(); j++)
+			for (int32 i = 0; i < UTCharacter->DefaultCharacterInventory.Num(); i++)
 			{
-				FReplacementInfo info = WeaponsToReplace[j];
-				UClass* oldWeapon = StaticLoadClass(AUTWeapon::StaticClass(), nullptr, *info.OldClassPath);
-				if (UTCharacter->DefaultCharacterInventory[i] == oldWeapon)
+				for (int32 j = 0; j < WeaponsToReplace.Num(); j++)
 				{
-					UTCharacter->DefaultCharacterInventory[i] = StaticLoadClass(AUTWeapon::StaticClass(), nullptr, *info.NewClassPath);
+					FReplacementInfo info = WeaponsToReplace[j];
+					UClass* oldWeapon = StaticLoadClass(AUTWeapon::StaticClass(), nullptr, *info.OldClassPath);
+					if (oldWeapon && UTCharacter->DefaultCharacterInventory[i] == oldWeapon)
+					{
+						UTCharacter->DefaultCharacterInventory[i] = StaticLoadClass(AUTWeapon::StaticClass(), nullptr, *info.NewClassPath);
+					}
 				}
 			}
 		}
