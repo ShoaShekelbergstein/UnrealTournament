@@ -1283,6 +1283,10 @@ void SUTPlayerSettingsDialog::OnGroupTauntSelected(TSharedPtr<FString> NewSelect
 	if (NewSelection.IsValid())
 	{
 		SelectedGroupTaunt->SetText(*NewSelection.Get());
+		if (GroupTauntAudio.IsValid())
+		{
+			GroupTauntAudio->Stop();
+		}
 
 		if (PlayerPreviewMesh != nullptr)
 		{
@@ -1294,10 +1298,6 @@ void SUTPlayerSettingsDialog::OnGroupTauntSelected(TSharedPtr<FString> NewSelect
 				AUTGroupTaunt* GroupTaunt = TauntClass->GetDefaultObject<AUTGroupTaunt>();
 				if (GroupTaunt != nullptr && !bSkipPlayingGroupTauntBGMusic && GroupTaunt->BGMusic)
 				{
-					if (GroupTauntAudio.IsValid())
-					{
-						GroupTauntAudio->Stop();
-					}
 					GroupTauntAudio = UGameplayStatics::SpawnSound2D(PlayerPreviewMesh->GetWorld(), GroupTaunt->BGMusic);
 				}
 			}
