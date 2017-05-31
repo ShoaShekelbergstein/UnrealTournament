@@ -198,6 +198,7 @@ void AUTLineUpHelper::BeginPlay()
 
 void AUTLineUpHelper::CleanUp()
 {
+	bIsActive = false;
 	ActiveType = LineUpTypes::Invalid;
 
 	if (GetWorld())
@@ -732,6 +733,23 @@ void AUTLineUpHelper::DestroySpawnedClones()
 			}
 		}
 		PreviewWeapons.Empty();
+	}
+
+	//Restart all controllers used in line up.
+	AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
+	if (UTGM)
+	{
+		for (FLineUpSlot& Slot : LineUpSlots)
+		{
+			if (Slot.ControllerInSpot)
+			{
+				if (Slot.ControllerInSpot->GetPawn())
+				{
+					Slot.ControllerInSpot->UnPossess();
+				}
+				UTGM->RestartPlayer(Slot.ControllerInSpot);
+			}
+		}
 	}
 }
 

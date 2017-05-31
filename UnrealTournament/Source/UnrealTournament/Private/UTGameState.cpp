@@ -2368,18 +2368,18 @@ AUTLineUpZone* AUTGameState::GetAppropriateSpawnList(LineUpTypes ZoneType)
 
 void AUTGameState::CreateLineUp(LineUpTypes LineUpType)
 {
-//	if (ActiveLineUpHelper)
-//	{
-//		ClearLineUp();
-//	}
-//
-//	if ((GetNetMode() != NM_Client) && (ActiveLineUpHelper == nullptr))
-//	{
-//		ActiveLineUpHelper = GetWorld()->SpawnActor<AUTLineUpHelper>();
-//		ActiveLineUpHelper->InitializeLineUp(LineUpType);
-//
-//		ActiveLineUpHelper->SetReplicates(true);
-//	}
+	if (ActiveLineUpHelper)
+	{
+		ClearLineUp();
+	}
+
+	if ((GetNetMode() != NM_Client) && (ActiveLineUpHelper == nullptr))
+	{
+		ActiveLineUpHelper = GetWorld()->SpawnActor<AUTLineUpHelper>();
+		ActiveLineUpHelper->InitializeLineUp(LineUpType);
+
+		ActiveLineUpHelper->SetReplicates(true);
+	}
 }
 
 void AUTGameState::ClearLineUp()
