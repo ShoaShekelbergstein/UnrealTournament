@@ -406,8 +406,7 @@ public:
 		UParticleSystemComponent* HolderTrail;
 
 	UFUNCTION()
-	virtual void UpdateOutline()
-	{}
+		virtual void UpdateOutline();
 
 	FTimerHandle NeedFlagAnnouncementTimer;
 

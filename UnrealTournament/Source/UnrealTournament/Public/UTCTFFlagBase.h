@@ -12,7 +12,7 @@ class UNREALTOURNAMENT_API AUTCTFFlagBase : public AUTGameObjective, public IUTR
 
 	// Holds a reference to the flag
 	UPROPERTY(BlueprintReadOnly, Replicated, ReplicatedUsing = OnFlagChanged, Category = Flag)
-	AUTCTFFlag* MyFlag;
+	AUTFlag* MyFlag;
 
 	/**	Called when CarriedObject's state changes and is replicated to the client*/
 	UFUNCTION()
@@ -42,7 +42,11 @@ class UNREALTOURNAMENT_API AUTCTFFlagBase : public AUTGameObjective, public IUTR
 
 	/** array of flag classes by team */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Flag)
-	TArray< TSubclassOf<AUTCTFFlag> > TeamFlagTypes;
+	TArray< TSubclassOf<AUTFlag> > TeamFlagTypes;
+
+	/** array of flag classes by team FIXMESTEVE TEMP */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Flag)
+		TArray< TSubclassOf<AUTFlag> > BlitzFlagTypes;
 
 	/** Adjustment to number of lives available to team with this base in round based CTF. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Objective)

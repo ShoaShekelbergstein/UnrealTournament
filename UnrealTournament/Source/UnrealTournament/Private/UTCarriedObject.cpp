@@ -692,6 +692,10 @@ void AUTCarriedObject::CheckTouching()
 	}
 }
 
+void AUTCarriedObject::UpdateOutline()
+{
+}
+
 bool AUTCarriedObject::TeleportTo(const FVector& DestLocation, const FRotator& DestRotation, bool bIsATest, bool bNoCheck)
 {
 	if (bNoCheck)

@@ -41,6 +41,7 @@
 #include "UTFlagRunScoring.h"
 #include "UTLineUpHelper.h"
 #include "UTShowdownStatusMessage.h"
+#include "UTBlitzFlag.h"
 
 //Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
 /*
@@ -1152,7 +1153,7 @@ bool AUTFlagRunGame::CompleteRallyRequest(AController* C)
 				RallySpot = UTCharacter->UTCharacterMovement ? UTCharacter->UTCharacterMovement->GetPhysicsVolume() : nullptr;
 				if ((RallySpot == nullptr) || (RallySpot == GetWorld()->GetDefaultPhysicsVolume()))
 				{
-					AUTCTFFlag* CarriedFlag = Cast<AUTCTFFlag>(GS->FlagBases[GS->bRedToCap ? 0 : 1]->GetCarriedObject());
+					AUTBlitzFlag* CarriedFlag = Cast<AUTBlitzFlag>(GS->FlagBases[GS->bRedToCap ? 0 : 1]->GetCarriedObject());
 					if (CarriedFlag)
 					{
 						RallySpot = CarriedFlag;

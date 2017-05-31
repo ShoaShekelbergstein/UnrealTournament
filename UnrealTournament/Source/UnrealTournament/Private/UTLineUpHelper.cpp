@@ -17,6 +17,7 @@
 #include "UTWeap_Redeemer.h"
 #include "UTWeap_Enforcer.h"
 #include "UTWeap_Translocator.h"
+#include "UTBlitzFlag.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUTLineUp, Log, All);
 
@@ -388,32 +389,31 @@ void AUTLineUpHelper::FlagFixUp()
 		AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
 		if (UTGM)
 		{
-			AUTCTFFlag* OffenseFlag = nullptr;
+			AUTFlag* OffenseFlag = nullptr;
 			AUTFlagRunGameState* UTFRGS = UTGM->GetGameState<AUTFlagRunGameState>();
 			if (UTFRGS)
 			{
 				OffenseFlag = UTFRGS->GetOffenseFlag();
-			}
+				if (OffenseFlag)
+				{
+					AController* FlagController = nullptr;
+					if (OffenseFlag->Holder)
+					{
+						FlagController = Cast<AController>(OffenseFlag->Holder->GetOwner());
+					}
+					else if (OffenseFlag->LastHolder)
+					{
+						FlagController = Cast<AController>(OffenseFlag->LastHolder->GetOwner());
+					}
 
-			if (OffenseFlag)
-			{
-				AController* FlagController = nullptr;
-				if (OffenseFlag->Holder)
-				{
-					FlagController = Cast<AController>(OffenseFlag->Holder->GetOwner());
-				}
-				else if (OffenseFlag->LastHolder)
-				{
-					FlagController = Cast<AController>(OffenseFlag->LastHolder->GetOwner());
-				}
-
-				if (FlagController && FlagController->GetPawn())
-				{
-					OffenseFlag->SetHolder(Cast<AUTCharacter>(FlagController->GetPawn()));
-				}
-				else
-				{
-					OffenseFlag->Destroy();
+					if (FlagController && FlagController->GetPawn())
+					{
+						OffenseFlag->SetHolder(Cast<AUTCharacter>(FlagController->GetPawn()));
+					}
+					else
+					{
+						OffenseFlag->Destroy();
+					}
 				}
 			}
 		}
@@ -667,15 +667,15 @@ void AUTLineUpHelper::SortControllers(TArray<AController*>& ControllersToSort)
 		AUTPlayerState* PSA = Cast<AUTPlayerState>(A.PlayerState);
 		AUTPlayerState* PSB = Cast<AUTPlayerState>(B.PlayerState);
 
-		AUTCTFFlag* AUTFlagA = nullptr;
-		AUTCTFFlag* AUTFlagB = nullptr;
+		AUTFlag* AUTFlagA = nullptr;
+		AUTFlag* AUTFlagB = nullptr;
 		if (PSA)
 		{
-			AUTFlagA = Cast<AUTCTFFlag>(PSA->CarriedObject);
+			AUTFlagA = Cast<AUTFlag>(PSA->CarriedObject);
 		}
 		if (PSB)
 		{
-			AUTFlagB = Cast<AUTCTFFlag>(PSB->CarriedObject);
+			AUTFlagB = Cast<AUTFlag>(PSB->CarriedObject);
 		}
 
 		return !PSB || (AUTFlagA) || (PSA && (PSA->Score > PSB->Score) && !AUTFlagB);

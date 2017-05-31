@@ -3,6 +3,7 @@
 #include "UTCTFFlagBase.h"
 #include "Net/UnrealNetwork.h"
 #include "UTGhostFlag.h"
+#include "UTFlagRunGame.h"
 
 AUTCTFFlagBase::AUTCTFFlagBase(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -76,7 +77,7 @@ void AUTCTFFlagBase::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AA
 	AUTCharacter* Character = Cast<AUTCharacter>(OtherActor);
 	if (Character != NULL && Role == ROLE_Authority)
 	{
-		AUTCTFFlag* CharFlag = Cast<AUTCTFFlag>(Character->GetCarriedObject());
+		AUTFlag* CharFlag = Cast<AUTFlag>(Character->GetCarriedObject());
 		if ( CharFlag != NULL && CharFlag != CarriedObject && (CarriedObject == NULL || CarriedObject->ObjectState == CarriedObjectState::Home) && CharFlag->GetTeamNum() != GetTeamNum() &&
 			!GetWorld()->LineTraceTestByChannel(OtherActor->GetActorLocation(), Capsule->GetComponentLocation(), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams) )
 		{
@@ -98,14 +99,21 @@ void AUTCTFFlagBase::CreateCarriedObject()
 	}
 	else
 	{
-		if (TeamFlagTypes.IsValidIndex(TeamNum) && TeamFlagTypes[TeamNum] != NULL)
+		if (GetWorld()->GetAuthGameMode<AUTFlagRunGame>())
+		{
+			if (BlitzFlagTypes.IsValidIndex(TeamNum) && BlitzFlagTypes[TeamNum] != NULL)
+			{
+				CarriedObjectClass = BlitzFlagTypes[TeamNum];
+			}
+		}
+		else if (TeamFlagTypes.IsValidIndex(TeamNum) && TeamFlagTypes[TeamNum] != NULL)
 		{
 			CarriedObjectClass = TeamFlagTypes[TeamNum];
 		}
 
 		Super::CreateCarriedObject();
 
-		MyFlag = Cast<AUTCTFFlag>(CarriedObject);
+		MyFlag = Cast<AUTFlag>(CarriedObject);
 		if (MyFlag && MyFlag->GetMesh())
 		{
 			MyFlag->GetMesh()->ClothBlendWeight = MyFlag->ClothBlendHome;

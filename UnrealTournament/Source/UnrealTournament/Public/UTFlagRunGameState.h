@@ -131,7 +131,7 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFGameState
 		virtual bool IsSelectedBoostValid(AUTPlayerState* PlayerState) const override;
 
 	UFUNCTION(BlueprintCallable, Category = Team)
-		virtual AUTCTFFlag* GetOffenseFlag();
+		virtual AUTBlitzFlag* GetOffenseFlag();
 
 	//Handles precaching all game announcement sounds for the local player
 	virtual void PrecacheAllPowerupAnnouncements(class UUTAnnouncer* Announcer) const;

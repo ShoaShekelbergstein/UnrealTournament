@@ -371,7 +371,7 @@ void UUTHUDWidget_QuickStats::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCa
 
 			if (UTPlayerState->CarriedObject != nullptr)
 			{
-				AUTCTFFlag* CTFFlag = Cast<AUTCTFFlag>(UTPlayerState->CarriedObject);
+				AUTFlag* CTFFlag = Cast<AUTFlag>(UTPlayerState->CarriedObject);
 				if (CTFFlag != nullptr && CTFFlag->bCurrentlyPinged)
 				{
 					FlagInfo.bUseOverlayTexture = true;

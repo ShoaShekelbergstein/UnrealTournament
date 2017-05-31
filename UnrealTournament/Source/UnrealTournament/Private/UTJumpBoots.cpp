@@ -8,7 +8,6 @@
 #include "StatNames.h"
 #include "UTJumpbootMessage.h"
 #include "UTGhostComponent.h"
-#include "UTCTFFlag.h"
 
 AUTJumpBoots::AUTJumpBoots(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -102,15 +101,7 @@ void AUTJumpBoots::OwnerEvent_Implementation(FName EventName)
 {
 	if (Role == ROLE_Authority)
 	{
-		bool bIsFlagCarrier = false;
-		if (UTOwner)
-		{
-			AUTCTFFlag* UTCTFFlag = Cast<AUTCTFFlag>(UTOwner->GetCarriedObject());
-			if (UTCTFFlag)
-			{
-				bIsFlagCarrier = true;
-			}
-		}
+		bool bIsFlagCarrier = UTOwner && UTOwner->GetCarriedObject();
 
 		if (EventName == InventoryEventName::Jump)
 		{

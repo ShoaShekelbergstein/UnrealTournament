@@ -512,7 +512,7 @@ void AUTPlayerCameraManager::CheckCameraSweep(FHitResult& OutHit, AActor* Target
 	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
 	FCollisionQueryParams BoxParams(NAME_FreeCam, false, TargetActor);
 
-	AUTCTFFlag* Flag = Cast<AUTCTFFlag>(TargetActor);
+	AUTFlag* Flag = Cast<AUTFlag>(TargetActor);
 	if (Flag)
 	{
 		if (Flag->Holder)

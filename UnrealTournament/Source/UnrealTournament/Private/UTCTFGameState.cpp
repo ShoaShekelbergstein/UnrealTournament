@@ -459,7 +459,7 @@ float AUTCTFGameState::ScoreCameraView(AUTPlayerState* InPS, AUTCharacter *Chara
 	if (InPS && Character && !InPS->CarriedObject && InPS->Team && (InPS->Team->GetTeamNum() < 2))
 	{
 		uint8 EnemyTeamNum = 1 - InPS->Team->GetTeamNum();
-		AUTCTFFlag* EnemyFlag = FlagBases[EnemyTeamNum] ? FlagBases[EnemyTeamNum]->MyFlag : NULL;
+		AUTFlag* EnemyFlag = FlagBases[EnemyTeamNum] ? FlagBases[EnemyTeamNum]->MyFlag : NULL;
 		if (EnemyFlag && ((EnemyFlag->GetActorLocation() - Character->GetActorLocation()).Size() < FlagBases[EnemyTeamNum]->LastSecondSaveDistance))
 		{
 			float MaxScoreDist = FlagBases[EnemyTeamNum]->LastSecondSaveDistance;

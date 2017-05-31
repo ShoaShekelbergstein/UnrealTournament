@@ -12,6 +12,7 @@
 #include "UTCTFMajorMessage.h"
 #include "UTRallyPoint.h"
 #include "UTWorldSettings.h"
+#include "UTBlitzFlag.h"
 
 AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -415,10 +416,10 @@ void AUTFlagRunGameState::CachePowerupAnnouncement(class UUTAnnouncer* Announcer
 	}
 }
 
-AUTCTFFlag* AUTFlagRunGameState::GetOffenseFlag()
+AUTBlitzFlag* AUTFlagRunGameState::GetOffenseFlag()
 {
 	int OffenseTeam = bRedToCap ? 0 : 1;
-	return ((FlagBases.Num() > OffenseTeam) && FlagBases[OffenseTeam]) ? FlagBases[OffenseTeam]->MyFlag : nullptr;
+	return ((FlagBases.Num() > OffenseTeam) && FlagBases[OffenseTeam]) ? Cast<AUTBlitzFlag>(FlagBases[OffenseTeam]->MyFlag) : nullptr;
 }
 
 void AUTFlagRunGameState::Tick(float DeltaTime)
@@ -429,7 +430,7 @@ void AUTFlagRunGameState::Tick(float DeltaTime)
 		uint8 OffensiveTeam = bRedToCap ? 0 : 1;
 		if (FlagBases.IsValidIndex(OffensiveTeam) && FlagBases[OffensiveTeam] != nullptr)
 		{
-			AUTCTFFlag* Flag = Cast<AUTCTFFlag>(FlagBases[OffensiveTeam]->GetCarriedObject());
+			AUTBlitzFlag* Flag = Cast<AUTBlitzFlag>(FlagBases[OffensiveTeam]->GetCarriedObject());
 			bAttackersCanRally = (CurrentRallyPoint != nullptr) && (CurrentRallyPoint->RallyPointState == RallyPointStates::Powered);
 			AUTGameVolume* GV = Flag && Flag->HoldingPawn && Flag->HoldingPawn->UTCharacterMovement ? Cast<AUTGameVolume>(Flag->HoldingPawn->UTCharacterMovement->GetPhysicsVolume()) : nullptr;
 			bool bInFlagRoom = GV && (GV->bIsDefenderBase || GV->bIsTeamSafeVolume);

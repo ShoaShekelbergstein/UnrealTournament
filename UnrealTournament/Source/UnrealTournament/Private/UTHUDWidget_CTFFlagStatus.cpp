@@ -1,6 +1,7 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #include "UnrealTournament.h"
 #include "UTHUDWidget_CTFFlagStatus.h"
+#include "UTFlag.h"
 #include "UTCTFGameState.h"
 
 UUTHUDWidget_CTFFlagStatus::UUTHUDWidget_CTFFlagStatus(const FObjectInitializer& ObjectInitializer)
@@ -77,7 +78,7 @@ void UUTHUDWidget_CTFFlagStatus::DrawIndicators(AUTCTFGameState* GameState, FVec
 			AUTTeamInfo* TeamInfo = GameState->Teams[Team];
 			AUTPlayerState* FlagHolder = GameState->GetFlagHolder(Team);
 			AUTCTFFlagBase* FlagBase = GameState->GetFlagBase(Team);
-			AUTCTFFlag* Flag = FlagBase ? Cast<AUTCTFFlag>(FlagBase->GetCarriedObject()) : nullptr;
+			AUTFlag* Flag = FlagBase ? Cast<AUTFlag>(FlagBase->GetCarriedObject()) : nullptr;
 			if (TeamInfo && FlagBase && Flag && (Flag->ObjectState != CarriedObjectState::Delivered))
 			{
 				DrawFlagStatus(GameState, PlayerViewPoint, PlayerViewRotation, TeamInfo->GetTeamNum(), TeamPositions[Team], FlagBase, Flag, FlagHolder);
@@ -88,7 +89,7 @@ void UUTHUDWidget_CTFFlagStatus::DrawIndicators(AUTCTFGameState* GameState, FVec
 	}
 }
 
-void UUTHUDWidget_CTFFlagStatus::DrawFlagStatus(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, FVector2D IndicatorPosition, AUTCTFFlagBase* FlagBase, AUTCTFFlag* Flag, AUTPlayerState* FlagHolder)
+void UUTHUDWidget_CTFFlagStatus::DrawFlagStatus(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, FVector2D IndicatorPosition, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
 {
 	// draw flag state in HUD
 	float XPos = IndicatorPosition.X;
@@ -148,7 +149,7 @@ void UUTHUDWidget_CTFFlagStatus::DrawFlagStatus(AUTCTFGameState* GameState, FVec
 	}
 }
 
-void UUTHUDWidget_CTFFlagStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTCTFFlag* Flag, AUTPlayerState* FlagHolder)
+void UUTHUDWidget_CTFFlagStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
 {
 	if (Flag)
 	{
@@ -297,12 +298,12 @@ void UUTHUDWidget_CTFFlagStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 	}
 }
 
-bool UUTHUDWidget_CTFFlagStatus::ShouldDrawFlag(AUTCTFFlag* Flag, bool bIsEnemyFlag)
+bool UUTHUDWidget_CTFFlagStatus::ShouldDrawFlag(AUTFlag* Flag, bool bIsEnemyFlag)
 {
 	return (Flag->ObjectState == CarriedObjectState::Dropped) || Flag->bCurrentlyPinged || (bIsEnemyFlag ? Flag->bEnemyCanPickup : Flag->bFriendlyCanPickup);
 }
 
-void UUTHUDWidget_CTFFlagStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTCTFFlag* Flag, AUTPlayerState* FlagHolder)
+void UUTHUDWidget_CTFFlagStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
 {
 	if (FlagBase)
 	{
@@ -324,7 +325,7 @@ void UUTHUDWidget_CTFFlagStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, F
 		bool bDrawEdgeArrow = false;
 		FVector DrawScreenPosition(0.f);
 
-		AUTCTFFlag* DefaultFlag = AUTCTFFlag::StaticClass()->GetDefaultObject<AUTCTFFlag>();
+		AUTFlag* DefaultFlag = AUTCTFFlag::StaticClass()->GetDefaultObject<AUTFlag>();
 		FVector WorldPosition = FlagBase->GetActorLocation() + FlagBase->GetActorRotation().RotateVector(DefaultFlag->HomeBaseOffset) + FVector(0.f, 0.f, DefaultFlag->Collision->GetUnscaledCapsuleHalfHeight() * 2.5f);
 		float OldFlagAlpha = FlagIconTemplate.RenderOpacity;
 		float CurrentWorldAlpha = InWorldAlpha;
@@ -464,12 +465,12 @@ void UUTHUDWidget_CTFFlagStatus::DrawEdgeArrow(FVector InWorldPosition, FVector 
 	RenderObj_TextureAtWithRotation(ArrowTemplate, FVector2D(InDrawScreenPosition.X, InDrawScreenPosition.Y), RotYaw);
 }
 
-FText UUTHUDWidget_CTFFlagStatus::GetFlagReturnTime(AUTCTFFlag* Flag)
+FText UUTHUDWidget_CTFFlagStatus::GetFlagReturnTime(AUTFlag* Flag)
 {
 	return Flag ? FText::AsNumber(Flag->FlagReturnTime) : FText::GetEmpty();
 }
 
-FText UUTHUDWidget_CTFFlagStatus::GetBaseMessage(AUTCTFFlagBase* Base, AUTCTFFlag* Flag)
+FText UUTHUDWidget_CTFFlagStatus::GetBaseMessage(AUTCTFFlagBase* Base, AUTFlag* Flag)
 {
 	return Base->GetHUDStatusMessage(UTHUDOwner);
 }

@@ -39,7 +39,7 @@ class UNREALTOURNAMENT_API UUTHUDWidget_FlagRunStatus : public UUTHUDWidget_CTFF
 
 protected:
 	virtual void DrawIndicators(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, float DeltaTime) override;
-	virtual bool ShouldDrawFlag(AUTCTFFlag* Flag, bool bIsEnemyFlag) override;
-	virtual void DrawFlagWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTCTFFlag* Flag, AUTPlayerState* FlagHolder) override;
-	virtual void DrawFlagBaseWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTCTFFlag* Flag, AUTPlayerState* FlagHolder) override;
+	virtual bool ShouldDrawFlag(AUTFlag* Flag, bool bIsEnemyFlag) override;
+	virtual void DrawFlagWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder) override;
+	virtual void DrawFlagBaseWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder) override;
 };

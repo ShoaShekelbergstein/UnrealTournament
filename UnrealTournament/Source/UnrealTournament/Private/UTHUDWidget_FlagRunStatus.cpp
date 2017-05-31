@@ -3,6 +3,7 @@
 #include "UTFlagRunGameState.h"
 #include "UTHUDWidget_FlagRunStatus.h"
 #include "UTFlagRunGameState.h"
+#include "UTBlitzFlag.h"
 
 UUTHUDWidget_FlagRunStatus::UUTHUDWidget_FlagRunStatus(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -39,7 +40,7 @@ void UUTHUDWidget_FlagRunStatus::DrawIndicators(AUTCTFGameState* GameState, FVec
 
 		if (GameState->FlagBases.IsValidIndex(OffensiveTeam) && GameState->FlagBases[OffensiveTeam] != nullptr)
 		{
-			AUTCTFFlag* Flag = Cast<AUTCTFFlag>(GameState->FlagBases[OffensiveTeam]->GetCarriedObject());
+			AUTBlitzFlag* Flag = Cast<AUTBlitzFlag>(GameState->FlagBases[OffensiveTeam]->GetCarriedObject());
 			if (Flag && (Flag->ObjectState != CarriedObjectState::Delivered))
 			{
 				if (Flag->Holder && (Flag->Holder == UTHUDOwner->UTPlayerOwner->UTPlayerState))
@@ -57,18 +58,18 @@ void UUTHUDWidget_FlagRunStatus::DrawIndicators(AUTCTFGameState* GameState, FVec
 	}
 }
 
-bool UUTHUDWidget_FlagRunStatus::ShouldDrawFlag(AUTCTFFlag* Flag, bool bIsEnemyFlag)
+bool UUTHUDWidget_FlagRunStatus::ShouldDrawFlag(AUTFlag* Flag, bool bIsEnemyFlag)
 {
 	return (Flag->ObjectState == CarriedObjectState::Dropped) || (Flag->ObjectState == CarriedObjectState::Home) || Flag->bCurrentlyPinged || !bIsEnemyFlag;
 }
 
-void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTCTFFlag* Flag, AUTPlayerState* FlagHolder)
+void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
 {
 	if (FlagBase)
 	{
 		if (Flag == nullptr)
 		{
-			AUTCTFFlag* BaseFlag = Cast<AUTCTFFlag>(FlagBase->GetCarriedObject());
+			AUTBlitzFlag* BaseFlag = Cast<AUTBlitzFlag>(FlagBase->GetCarriedObject());
 		}
 
 		bScaleByDesignedResolution = false;
@@ -125,7 +126,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, F
 	}
 }
 
-void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTCTFFlag* Flag, AUTPlayerState* FlagHolder)
+void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
 {
 	bool bSpectating = UTPlayerOwner->PlayerState && UTPlayerOwner->PlayerState->bOnlySpectator;
 	bool bIsEnemyFlag = Flag && GameState && !GameState->OnSameTeam(Flag, UTPlayerOwner);

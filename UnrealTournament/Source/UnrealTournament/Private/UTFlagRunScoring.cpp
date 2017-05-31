@@ -2,6 +2,7 @@
 #include "UnrealTournament.h"
 #include "UTFlagRunScoring.h"
 #include "UTFlagRunGameState.h"
+#include "UTBlitzFlag.h"
 #include "StatNames.h"
 
 AUTFlagRunScoring::AUTFlagRunScoring(const FObjectInitializer& ObjectInitializer)
@@ -20,7 +21,7 @@ void AUTFlagRunScoring::BeginPlay()
 void AUTFlagRunScoring::FlagHeldTimer()
 {
 	AUTFlagRunGameState* CTFGameState = GetWorld()->GetGameState<AUTFlagRunGameState>();
-	AUTCarriedObject* Flag = CTFGameState ? CTFGameState->GetOffenseFlag() : nullptr;
+	AUTBlitzFlag* Flag = CTFGameState ? CTFGameState->GetOffenseFlag() : nullptr;
 	if (Flag && Flag->Holder)
 	{
 		Flag->Holder->ModifyStatsValue(NAME_FlagHeldTime, 1.f);

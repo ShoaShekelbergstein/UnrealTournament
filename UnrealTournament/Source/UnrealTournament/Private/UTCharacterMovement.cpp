@@ -8,7 +8,6 @@
 #include "UTWaterVolume.h"
 #include "UTBot.h"
 #include "StatNames.h"
-#include "UTCTFFlag.h"
 #include "PhysicsEngine/PhysicsSettings.h"
 #include "UTCustomMovementTypes.h"
 

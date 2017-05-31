@@ -2402,23 +2402,6 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 		}
 	}
 
-	// hide aura for enemy flag
-	AUTCTFGameState* CTFGS = GetWorld()->GetGameState<AUTCTFGameState>();
-	if (CTFGS != NULL)
-	{
-		for (AUTCTFFlagBase* Base : CTFGS->FlagBases)
-		{
-			if (Base != NULL)
-			{
-				AUTCTFFlag* Flag = Cast<AUTCTFFlag>(Base->GetCarriedObject());
-				if (Flag != NULL && (Flag->GetTeamNum() != GetTeamNum() || Flag->ObjectState == CarriedObjectState::Home) && Flag->AuraSphere != NULL)
-				{
-					HiddenComponents.Add(Flag->AuraSphere->ComponentId);
-				}
-			}
-		}
-	}
-
 	//If we are in a line-up, hide all pickups
 	AUTGameState* UTGS = GetWorld()->GetGameState<AUTGameState>();
 	if (UTGS && UTGS->IsLineUpActive())
@@ -3032,7 +3015,7 @@ void AUTPlayerController::FindGoodView(const FVector& TargetLoc, bool bIsUpdate)
 	FVector CameraOffset = bGameOver ? CamMgr->EndGameFreeCamOffset : CamMgr->FreeCamOffset;
 	float UnBlockedPct = (Cast<APawn>(TestViewTarget) && (CameraDistance > 0.f)) ? 96.f / CameraDistance : 1.f;
 
-	AUTCTFFlag* Flag = Cast<AUTCTFFlag>(TestViewTarget);
+	AUTFlag* Flag = Cast<AUTFlag>(TestViewTarget);
 	if (Flag)
 	{
 		if (Flag->IsHome() && Flag->HomeBase)

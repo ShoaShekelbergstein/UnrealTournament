@@ -1,6 +1,6 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #include "UnrealTournament.h"
-#include "UTCTFFlag.h"
+#include "UTBlitzFlag.h"
 #include "UTCharacter.h"
 #include "Net/UnrealNetwork.h"
 #include "UTFlagRunGame.h"
@@ -171,7 +171,7 @@ void AUTRallyPoint::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AAc
 	if ((Role == ROLE_Authority) && bIsEnabled)
 	{
 		AUTCharacter* TouchingCharacter = Cast<AUTCharacter>(OtherActor);
-		AUTCTFFlag* CharFlag = TouchingCharacter ? Cast<AUTCTFFlag>(TouchingCharacter->GetCarriedObject()) : nullptr;
+		AUTBlitzFlag* CharFlag = TouchingCharacter ? Cast<AUTBlitzFlag>(TouchingCharacter->GetCarriedObject()) : nullptr;
 		if (CharFlag != NULL)
 		{
 			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
@@ -203,7 +203,7 @@ void AUTRallyPoint::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActo
 		AUTCharacter* TouchingCharacter = Cast<AUTCharacter>(OtherActor);
 		if (TouchingCharacter != nullptr)
 		{
-			AUTCTFFlag* CharFlag = Cast<AUTCTFFlag>(TouchingCharacter->GetCarriedObject());
+			AUTBlitzFlag* CharFlag = Cast<AUTBlitzFlag>(TouchingCharacter->GetCarriedObject());
 			if (CharFlag != nullptr)
 			{
 				EndRallyCharging();
@@ -336,11 +336,11 @@ void AUTRallyPoint::RallyPoweredComplete()
 	// go to either off or start charging again depending on if FC is touching
 	TSet<AActor*> Touching;
 	Capsule->GetOverlappingActors(Touching);
-	AUTCTFFlag* CharFlag = nullptr;
+	AUTBlitzFlag* CharFlag = nullptr;
 	TouchingFC = nullptr;
 	for (AActor* TouchingActor : Touching)
 	{
-		CharFlag = Cast<AUTCharacter>(TouchingActor) ? Cast<AUTCTFFlag>(((AUTCharacter*)TouchingActor)->GetCarriedObject()) : nullptr;
+		CharFlag = Cast<AUTCharacter>(TouchingActor) ? Cast<AUTBlitzFlag>(((AUTCharacter*)TouchingActor)->GetCarriedObject()) : nullptr;
 		if (CharFlag)
 		{
 			TouchingFC = Cast<AUTCharacter>(TouchingActor);
@@ -400,11 +400,11 @@ void AUTRallyPoint::FlagNearbyChanged(bool bIsNearby)
 			{
 				TSet<AActor*> Touching;
 				Capsule->GetOverlappingActors(Touching);
-				AUTCTFFlag* CharFlag = nullptr;
+				AUTBlitzFlag* CharFlag = nullptr;
 				TouchingFC = nullptr;
 				for (AActor* TouchingActor : Touching)
 				{
-					CharFlag = Cast<AUTCharacter>(TouchingActor) ? Cast<AUTCTFFlag>(((AUTCharacter*)TouchingActor)->GetCarriedObject()) : nullptr;
+					CharFlag = Cast<AUTCharacter>(TouchingActor) ? Cast<AUTBlitzFlag>(((AUTCharacter*)TouchingActor)->GetCarriedObject()) : nullptr;
 					if (CharFlag)
 					{
 						TouchingFC = Cast<AUTCharacter>(TouchingActor);
