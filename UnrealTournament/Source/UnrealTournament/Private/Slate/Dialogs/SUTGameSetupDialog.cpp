@@ -58,7 +58,6 @@ void SUTGameSetupDialog::Construct(const FArguments& InArgs)
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			.Padding(15.0f, 5.0f, 10.0f, 10.0f)
-			.HAlign(HAlign_Fill)
 			[
 				SNew(SOverlay)
 				+SOverlay::Slot()
@@ -208,7 +207,7 @@ void SUTGameSetupDialog::BuildRuleList(FName Category)
 		{
 			CustomBox->AddSlot().AutoHeight()
 			[
-				SNew(SBox).HeightOverride(920)
+				SNew(SBox).HeightOverride(750)
 				[
 					CustomPanel.ToSharedRef()
 				]
@@ -218,7 +217,7 @@ void SUTGameSetupDialog::BuildRuleList(FName Category)
 		{
 			CustomBox->AddSlot().AutoHeight()
 			[
-				SNew(SBox).HeightOverride(920)
+				SNew(SBox).HeightOverride(750)
 				[
 					SAssignNew(CustomPanel, SUTCreateGamePanel, GetPlayerOwner())
 				]
@@ -242,7 +241,7 @@ void SUTGameSetupDialog::BuildRuleList(FName Category)
 			}
 		}
 
-		BotSkillBox->SetVisibility(EVisibility::Collapsed);
+		//BotSkillBox->SetVisibility(EVisibility::Collapsed);
 
 		return;	
 	}

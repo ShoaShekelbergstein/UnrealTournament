@@ -307,7 +307,7 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 		// Game Settings and mutators
 		+SVerticalBox::Slot()
 		.Padding(FMargin(0.0f,15.0f,0.0f,0.0f))
-		.FillHeight(1.0f)
+		.AutoHeight()
 		[
 			SNew(SHorizontalBox)
 			// Game Settings
@@ -316,7 +316,7 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 			.Padding(FMargin(0, 0, 60, 0))
 			[
 				SNew(SBox)
-				.WidthOverride(800)
+				.WidthOverride(800).HeightOverride(600)
 				[
 					SNew(SVerticalBox)
 					// Heading
@@ -331,12 +331,18 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 					// Game config panel
 					+ SVerticalBox::Slot().AutoHeight()
 					[
-						SAssignNew(GameConfigPanel, SVerticalBox)
+						SNew(SBox).HeightOverride(400)
+						[
+							SAssignNew(GameConfigPanel, SVerticalBox)
+						]
 					]
 
 					+SVerticalBox::Slot().AutoHeight().Padding(0.0f,50.0f,0.0f,0.0f)
 					[
-						SAssignNew(BotSkillBox, SVerticalBox)
+						SNew(SBox).HeightOverride(400)
+						[
+							SAssignNew(BotSkillBox, SVerticalBox)
+						]
 					]
 				]
 			]

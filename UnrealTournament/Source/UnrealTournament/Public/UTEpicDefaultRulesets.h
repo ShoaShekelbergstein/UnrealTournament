@@ -422,6 +422,61 @@ public:
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?Mutator=Instagib"));
 			NewRuleset->bTeamGame = true;
+
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
+
+			NewRuleset->MaxTeamCount = 2;
+			NewRuleset->MaxTeamSize = 5;
+			NewRuleset->MaxPartySize = 5;
+
+			NewRuleset->MaxMapsInList=16;
+
+			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/CTF-TitanPass";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/CTF-Face";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Pistola/CTF-Pistola";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Polaris/CTF-Polaris";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Blank";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-BigRock";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Volcano";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Quick";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Plaza";
+
+			NewRuleset->DefaultMap = "/Game/RestrictedAssets/Maps/CTF-TitanPass";
+		}		
+
+		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::iCTFT, ESearchCase::IgnoreCase))
+		{
+			NewRuleset->Categories.Empty(); 
+			NewRuleset->Categories.Add(TEXT("Instagib"));
+
+			NewRuleset->Title = TEXT("Translocator iCTF");
+			NewRuleset->Tooltip = TEXT("Translocator iCTF");
+			NewRuleset->Description = TEXT("Capture the Flag with Instagib rifles and Translocators.\n\n<UT.Hub.RulesText_Small>Mutators : Instagib</>\n<UT.Hub.RulesText_Small>TimeLimit : %timelimit% with halftime</>\n<UT.Hub.RulesText_Small>Mercy Rule : On</>\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
+			NewRuleset->MaxPlayers = 20;
+			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_InstagibCTF.GB_InstagibCTF'");
+			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
+			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?Mutator=Instagib,AddTrans"));
+			NewRuleset->bTeamGame = true;
+
+			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
+
+			NewRuleset->MaxTeamCount = 2;
+			NewRuleset->MaxTeamSize = 5;
+			NewRuleset->MaxPartySize = 5;
+
+			NewRuleset->MaxMapsInList=16;
+
+			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/CTF-TitanPass";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/CTF-Face";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Pistola/CTF-Pistola";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Polaris/CTF-Polaris";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Blank";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-BigRock";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Volcano";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Quick";
+			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Plaza";
+
+			NewRuleset->DefaultMap = "/Game/RestrictedAssets/Maps/CTF-TitanPass";
 		}		
 
 
