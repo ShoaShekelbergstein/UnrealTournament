@@ -9,7 +9,6 @@
 #include "UTFlagRunGameState.h"
 #include "UTCharacterVoice.h"
 #include "UTRallyPoint.h"
-#include "UTCTFFlagBase.h"
 
 AUTGameVolume::AUTGameVolume(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
