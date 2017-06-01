@@ -965,7 +965,7 @@ void UUTGameViewportClient::DownloadRedirect(FPackageRedirectReference Redirect)
 			}
 		}
 
-		PendingDownloads.Add(FPendingRedirect(Redirect.ToString(), Redirect.PackageChecksum));
+		PendingDownloads.Add(FPendingRedirect(Redirect.ToString().TrimTrailing(), Redirect.PackageChecksum));
 
 		UUTLocalPlayer* FirstPlayer = Cast<UUTLocalPlayer>(GEngine->GetLocalPlayerFromControllerId(this, 0));	
 		if (FirstPlayer && FirstPlayer->RequiresDLCWarning() && !FirstPlayer->IsShowingDLCWarning())
