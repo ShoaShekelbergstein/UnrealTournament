@@ -2586,7 +2586,7 @@ bool AUTGameState::HasMatchEnded() const
 
 bool AUTGameState::IsLineUpActive()
 {
-	return ((ActiveLineUpHelper != nullptr) && ActiveLineUpHelper->IsActive());
+	return ((ActiveLineUpHelper != nullptr) && !ActiveLineUpHelper->IsPendingKill() && ActiveLineUpHelper->IsActive());
 }
 
 void AUTGameState::OnReceiveHubGuid()
