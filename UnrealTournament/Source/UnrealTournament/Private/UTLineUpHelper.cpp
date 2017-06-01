@@ -746,7 +746,7 @@ void AUTLineUpHelper::DestroySpawnedClones()
 	{
 		for (FLineUpSlot& Slot : LineUpSlots)
 		{
-			if (Slot.ControllerInSpot)
+			if (Slot.ControllerInSpot && Slot.ControllerInSpot->PlayerState)
 			{
 				if (Slot.ControllerInSpot->GetPawn())
 				{

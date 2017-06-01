@@ -1499,7 +1499,7 @@ bool AUTFlagRunGame::IsTeamOnOffense(int32 TeamNumber) const
 
 void AUTFlagRunGame::SendRestartNotifications(AUTPlayerState* PS, AUTPlayerController* PC)
 {
-	if (PS->Team && IsTeamOnOffense(PS->Team->TeamIndex))
+	if (PS && PS->Team && IsTeamOnOffense(PS->Team->TeamIndex))
 	{
 		LastAttackerSpawnTime = GetWorld()->GetTimeSeconds();
 	}
