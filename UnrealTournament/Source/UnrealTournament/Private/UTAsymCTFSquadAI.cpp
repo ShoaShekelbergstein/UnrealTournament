@@ -8,6 +8,7 @@
 #include "UTFlagRunGameState.h"
 #include "UTPickup.h"
 #include "UTDroppedPickup.h"
+#include "UTCTFFlagBase.h"
 
 void AUTAsymCTFSquadAI::Initialize(AUTTeamInfo* InTeam, FName InOrders)
 {

@@ -883,8 +883,8 @@ void UUTFlagRunScoreboard::DrawTeamStats(float DeltaTime, float& YPos, float XOf
 
 bool UUTFlagRunScoreboard::ShouldDrawScoringStats()
 {
-	AUTCTFGameState* CTFState = Cast<AUTCTFGameState>(UTGameState);
-	return Super::ShouldDrawScoringStats() && CTFState && (CTFState->GetScoringPlays().Num() > 0);
+	AUTFlagRunGameState* BlitzGameState = Cast<AUTFlagRunGameState>(UTGameState);
+	return Super::ShouldDrawScoringStats() && BlitzGameState && (BlitzGameState->GetScoringPlays().Num() > 0);
 }
 
 void UUTFlagRunScoreboard::DrawStatsRight(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float PageBottom)

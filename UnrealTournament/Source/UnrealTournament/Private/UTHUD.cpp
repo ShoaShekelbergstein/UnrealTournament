@@ -1585,9 +1585,9 @@ AActor* AUTHUD::FindHoveredIconActor() const
 				}
 			}
 		}
-		for (TActorIterator<AUTRallyPoint> It(GetWorld()); It; ++It)
+		for (TActorIterator<AUTGameObjective> It(GetWorld()); It; ++It)
 		{
-			AUTRallyPoint* RP = *It;
+			AUTGameObjective* RP = *It;
 			if (RP)
 			{
 				FVector2D Pos(WorldToMapToScreen(It->GetActorLocation()));
@@ -1596,24 +1596,6 @@ AActor* AUTHUD::FindHoveredIconActor() const
 				{
 					BestHovered = *It;
 					BestHoverDist = NewHoverDist;
-				}
-			}
-		}
-		AUTCTFGameState* GS = GetWorld()->GetGameState<AUTCTFGameState>();
-		if (GS != nullptr)
-		{
-			for (int32 TeamIndex = 0; TeamIndex < 2; TeamIndex++)
-			{
-				AUTCTFFlagBase* Base = GS->GetFlagBase(TeamIndex);
-				if (Base)
-				{
-					FVector2D Pos(WorldToMapToScreen(Base->GetActorLocation()));
-					float NewHoverDist = (ClickPos - Pos).Size();
-					if (NewHoverDist < BestHoverDist)
-					{
-						BestHovered = Base;
-						BestHoverDist = NewHoverDist;
-					}
 				}
 			}
 		}

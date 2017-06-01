@@ -1021,38 +1021,6 @@ void AUTFlagRunGameState::CacheFlagBase(AUTCTFFlagBase* BaseToCache)
 	}
 }
 
-AUTTeamInfo* AUTFlagRunGameState::FindLeadingTeam()
-{
-	AUTTeamInfo* LeadingTeam = NULL;
-	bool bTied = false;
-
-	if (Teams.Num() > 0)
-	{
-		LeadingTeam = Teams[0];
-		if (LeadingTeam)
-		{
-			for (int32 i = 1; i<Teams.Num(); i++)
-			{
-				if (Teams[i] != nullptr)
-				{
-					if (Teams[i]->Score == LeadingTeam->Score)
-					{
-						bTied = true;
-					}
-					else if (Teams[i]->Score > LeadingTeam->Score)
-					{
-						LeadingTeam = Teams[i];
-						bTied = false;
-					}
-				}
-			}
-		}
-
-		if (bTied) LeadingTeam = NULL;
-	}
-	return LeadingTeam;
-}
-
 FName AUTFlagRunGameState::GetFlagState(uint8 TeamNum)
 {
 	if (TeamNum < FlagBases.Num() && FlagBases[TeamNum] != NULL)

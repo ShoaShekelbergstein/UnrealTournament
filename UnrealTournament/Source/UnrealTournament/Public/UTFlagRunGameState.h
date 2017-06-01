@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "UTCTFGameState.h"
+#include "UTGameState.h"
 #include "UTFlagRunGameState.generated.h"
 
 UCLASS()
@@ -21,7 +21,7 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTGameState
 		float HalftimeScoreDelay;
 
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = CTF)
-		TArray<AUTCTFFlagBase*> FlagBases;
+		TArray<class AUTCTFFlagBase*> FlagBases;
 
 	UPROPERTY(BlueprintReadOnly, Replicated)
 		int32 CTFRound;
@@ -218,9 +218,6 @@ public:
 	virtual AUTCTFFlagBase* GetFlagBase(uint8 TeamNum);
 
 	virtual void ResetFlags();
-
-	/** Find the current team that is in the lead */
-	virtual AUTTeamInfo* FindLeadingTeam();
 
 	virtual float GetClockTime() override;
 	virtual bool IsMatchInProgress() const override;

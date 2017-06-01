@@ -4,6 +4,7 @@
 #pragma once
 #include "UTBaseScoring.h"
 #include "UTATypes.h"
+#include "UTCTFGameState.h"
 #include "UTCTFScoring.generated.h"
 
 UCLASS()

@@ -4,7 +4,7 @@
 #include "UTBlitzFlag.h"
 #include "UTFlagRunGameState.h"
 #include "UTFlagRunGame.h"
-#include "UTCTFFlagBase.h"
+#include "UTBlitzFlagSpawner.h"
 #include "UTCTFRewardMessage.h"
 #include "UTFlagRunGameMessage.h"
 
@@ -42,7 +42,7 @@ void AUTBlitzFlag::SendHomeWithNotify()
 		}
 	}
 
-	AUTCTFFlagBase* FlagBase = Cast<AUTCTFFlagBase>(HomeBase);
+	AUTBlitzFlagSpawner* FlagBase = Cast<AUTBlitzFlagSpawner>(HomeBase);
 	if (FlagBase)
 	{
 		UUTGameplayStatics::UTPlaySound(GetWorld(), FlagBase->FlagReturnedSound, this);
@@ -59,7 +59,7 @@ void AUTBlitzFlag::Drop(AController* Killer)
 	if (KillerState && KillerState->Team && (KillerState != Holder))
 	{
 		// see if this is a last second save
-		AUTCTFGameState* GameState = GetWorld()->GetGameState<AUTCTFGameState>();
+		AUTFlagRunGameState* GameState = GetWorld()->GetGameState<AUTFlagRunGameState>();
 		if (GameState)
 		{
 			AUTCTFFlagBase* OtherBase = GameState->FlagBases[1 - GetTeamNum()];

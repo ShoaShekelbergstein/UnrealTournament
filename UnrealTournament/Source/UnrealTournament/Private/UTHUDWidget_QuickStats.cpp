@@ -9,6 +9,7 @@
 #include "UTFlagRunGameState.h"
 #include "UTCTFMajorMessage.h"
 #include "UTRallyPoint.h"
+#include "UTFlag.h"
 
 const float BOUNCE_SCALE = 1.6f;			
 const float BOUNCE_TIME = 1.2f;		// SHould be (BOUNCE_SCALE - 1.0) * # of seconds

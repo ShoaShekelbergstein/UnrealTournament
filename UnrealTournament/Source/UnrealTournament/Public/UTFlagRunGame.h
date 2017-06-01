@@ -1,8 +1,6 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #pragma once
-#include "UTCTFGameState.h"
-#include "UTCTFScoring.h"
 #include "UTTeamGameMode.h"
 #include "UTATypes.h"
 #include "UTFlagRunGame.generated.h"

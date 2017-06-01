@@ -86,9 +86,6 @@ class UNREALTOURNAMENT_API AUTCTFGameState: public AUTGameState
 
 	virtual void ResetFlags();
 
-	/** Find the current team that is in the lead */
-	virtual AUTTeamInfo* FindLeadingTeam();
-
 	virtual float GetClockTime() override;
 	virtual bool IsMatchInProgress() const override;
 	virtual bool IsMatchInOvertime() const override;

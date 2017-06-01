@@ -16,6 +16,7 @@
 #include "UTHUDWidget_WeaponCrosshair.h"
 #include "UTATypes.h"
 #include "UTAnalytics.h"
+#include "UTCTFFlagBase.h"
 
 AUTRallyPoint::AUTRallyPoint(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

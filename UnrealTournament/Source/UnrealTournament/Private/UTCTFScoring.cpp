@@ -2,6 +2,7 @@
 #include "UnrealTournament.h"
 #include "UTTeamGameMode.h"
 #include "UTCTFGameMode.h"
+#include "UTCTFGameState.h"
 #include "UTCTFScoring.h"
 #include "StatNames.h"
 #include "UTATypes.h"

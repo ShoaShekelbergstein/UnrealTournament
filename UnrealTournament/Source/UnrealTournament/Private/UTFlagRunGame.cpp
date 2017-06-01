@@ -39,6 +39,7 @@
 #include "UTShowdownStatusMessage.h"
 #include "UTBlitzFlag.h"
 #include "UTAssistMessage.h"
+#include "UTCTFFlagBase.h"
 
 //Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
 /*

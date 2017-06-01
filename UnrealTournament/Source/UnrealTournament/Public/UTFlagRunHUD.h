@@ -3,17 +3,21 @@
 #pragma once
 #include "UTHUD_CTF.h"
 #include "SUTHUDWindow.h"
-#include "UTCTFGameState.h"
+#include "UTFlagRunGameState.h"
 #include "UTFlagRunHUD.generated.h"
 
 UCLASS()
-class UNREALTOURNAMENT_API AUTFlagRunHUD : public AUTHUD_CTF
+class UNREALTOURNAMENT_API AUTFlagRunHUD : public AUTHUD
 {
 	GENERATED_UCLASS_BODY()
 
 	virtual void DrawHUD() override;
 	virtual void NotifyMatchStateChange() override;
 	virtual void BeginPlay() override;
+	virtual FLinearColor GetBaseHUDColor() override;
+	virtual void DrawMinimapSpectatorIcons() override;
+	virtual bool ShouldInvertMinimap() override;
+	virtual bool ScoreboardIsUp() override;
 
 	/** icon for player starts on the minimap (foreground) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, NoClear)

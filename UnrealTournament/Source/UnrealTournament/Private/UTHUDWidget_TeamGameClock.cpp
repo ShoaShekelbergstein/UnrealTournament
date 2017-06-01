@@ -1,7 +1,6 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #include "UnrealTournament.h"
 #include "UTHUDWidget_TeamGameClock.h"
-#include "UTCTFGameState.h"
 
 UUTHUDWidget_TeamGameClock::UUTHUDWidget_TeamGameClock(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)

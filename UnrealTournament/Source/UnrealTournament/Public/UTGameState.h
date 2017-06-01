@@ -451,6 +451,9 @@ class UNREALTOURNAMENT_API AUTGameState : public AGameState
 	/** Sorts the Player State Array */
 	virtual void SortPRIArray();
 
+	/** Find the current team that is in the lead */
+	virtual AUTTeamInfo* FindLeadingTeam();
+
 	/** Returns true if the match state is InProgress or later */
 	UFUNCTION(BlueprintCallable, Category = GameState)
 	virtual bool HasMatchStarted() const;
