@@ -6,9 +6,12 @@
 #include "UTFlagRunScoreboard.generated.h"
 
 UCLASS()
-class UNREALTOURNAMENT_API UUTFlagRunScoreboard : public UUTCTFScoreboard
+class UNREALTOURNAMENT_API UUTFlagRunScoreboard : public UUTTeamScoreboard
 {
 	GENERATED_UCLASS_BODY()
+
+		UPROPERTY()
+		FText ScoringPlaysHeader;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 		float ColumnHeaderPowerupX;
@@ -118,8 +121,14 @@ class UNREALTOURNAMENT_API UUTFlagRunScoreboard : public UUTCTFScoreboard
 	UPROPERTY()
 		bool bHasAnnouncedNextRound;
 
-	virtual void AnnounceRoundScore(AUTTeamInfo* InScoringTeam, APlayerState* InScoringPlayer, uint8 InRoundBonus, uint8 InReason);
+	UPROPERTY()
+		FText ScoringPlayScore;
 
+	UPROPERTY()
+		float TimeLineOffset;
+
+	virtual void PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCanvas* InCanvas, FVector2D InCanvasCenter) override;
+	virtual void AnnounceRoundScore(AUTTeamInfo* InScoringTeam, APlayerState* InScoringPlayer, uint8 InRoundBonus, uint8 InReason);
 	virtual void NotifyMatchStateChange() override;
 
 protected:
@@ -129,7 +138,7 @@ protected:
 	virtual void DrawPlayerScore(AUTPlayerState* PlayerState, float XOffset, float YOffset, float Width, FLinearColor DrawColor) override;
 	virtual void DrawReadyText(AUTPlayerState* PlayerState, float XOffset, float YOffset, float Width);
 	virtual void DrawTeamStats(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float MaxHeight, const FStatsFontInfo& StatsFontInfo) override;
-	virtual void DrawScoringPlayInfo(const struct FCTFScoringPlay& Play, float CurrentScoreHeight, float SmallYL, float MedYL, float DeltaTime, float& YPos, float XOffset, float ScoreWidth, FFontRenderInfo TextRenderInfo, bool bIsSmallPlay) override;
+	virtual void DrawScoringPlayInfo(const struct FCTFScoringPlay& Play, float CurrentScoreHeight, float SmallYL, float MedYL, float DeltaTime, float& YPos, float XOffset, float ScoreWidth, FFontRenderInfo TextRenderInfo, bool bIsSmallPlay);
 	virtual void DrawStatsRight(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float PageBottom) override;
 	virtual void DrawStatsLeft(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float PageBottom) override;
 	virtual bool ShouldDrawScoringStats() override;
@@ -153,7 +162,7 @@ protected:
 
 	virtual float DrawWinAnnouncement(float DeltaTime, UFont* InFont);
 
-	virtual void DrawScoringPlays(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float MaxHeight) override;
+	virtual void DrawScoringPlays(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float MaxHeight);
 
 	virtual void GetScoringStars(int32& NumStars, FLinearColor& StarColor) const;
 };

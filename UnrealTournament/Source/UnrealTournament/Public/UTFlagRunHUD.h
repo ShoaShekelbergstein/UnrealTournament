@@ -1,7 +1,7 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #pragma once
-#include "UTHUD_CTF.h"
+#include "UTHUD.h"
 #include "SUTHUDWindow.h"
 #include "UTFlagRunGameState.h"
 #include "UTFlagRunHUD.generated.h"

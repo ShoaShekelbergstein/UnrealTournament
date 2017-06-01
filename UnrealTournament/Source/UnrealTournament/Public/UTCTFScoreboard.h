@@ -49,9 +49,6 @@ class UNREALTOURNAMENT_API UUTCTFScoreboard : public UUTTeamScoreboard
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
 	float ColumnHeaderReturnsX;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scoreboard")
-		float ReadyX;
-
 	UPROPERTY()
 		float TimeLineOffset;
 

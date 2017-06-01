@@ -22,7 +22,6 @@ UUTCTFScoreboard::UUTCTFScoreboard(const FObjectInitializer& ObjectInitializer)
 	ColumnHeaderCapsX = 0.735;
 	ColumnHeaderAssistsX = 0.7925;
 	ColumnHeaderReturnsX = 0.85;
-	ReadyX = 0.7f;
 
 	CH_Caps = NSLOCTEXT("UTCTFScoreboard", "ColumnHeader_PlayerCaps", "C");
 	CH_Assists = NSLOCTEXT("UTCTFScoreboard", "ColumnHeader_PlayerAssists", "A");

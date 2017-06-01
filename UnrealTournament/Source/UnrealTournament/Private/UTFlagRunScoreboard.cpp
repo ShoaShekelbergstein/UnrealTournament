@@ -22,12 +22,14 @@
 UUTFlagRunScoreboard::UUTFlagRunScoreboard(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
+	ScoringPlaysHeader = NSLOCTEXT("CTF", "ScoringPlaysHeader", "SCORING PLAYS");
 	CH_Powerup = NSLOCTEXT("UTFlagRunScoreboard", "ColumnHeader_Powerups", "");
 	ColumnHeaderPowerupX = 0.715f;
 	ColumnHeaderPowerupEndX = ColumnHeaderPowerupX + 0.0575f;
 	ColumnHeaderPowerupXDuringReadyUp = 0.82f;
-	bGroupRoundPairs = true;
 	bUseRoundKills = true;
+
+	ColumnHeaderScoreX = 0.63f;
 
 	CH_Kills = NSLOCTEXT("UTScoreboard", "ColumnHeader_PlayerKills", "K+A(K)");
 	DefendTitle = NSLOCTEXT("UTScoreboard", "Defending", "Round {RoundNum} of {NumRounds} - DEFENDING");
@@ -883,8 +885,12 @@ void UUTFlagRunScoreboard::DrawTeamStats(float DeltaTime, float& YPos, float XOf
 
 bool UUTFlagRunScoreboard::ShouldDrawScoringStats()
 {
-	AUTFlagRunGameState* BlitzGameState = Cast<AUTFlagRunGameState>(UTGameState);
-	return Super::ShouldDrawScoringStats() && BlitzGameState && (BlitzGameState->GetScoringPlays().Num() > 0);
+	if (UTGameState && ((UTGameState->GetMatchState() == MatchState::MatchIntermission) || UTGameState->HasMatchEnded()) && Cast<AUTCTFGameState>(UTGameState) && (Cast<AUTCTFGameState>(UTGameState)->IntermissionTime < 25))
+	{
+		AUTFlagRunGameState* BlitzGameState = Cast<AUTFlagRunGameState>(UTGameState);
+		return Super::ShouldDrawScoringStats() && BlitzGameState && (BlitzGameState->GetScoringPlays().Num() > 0);
+	}
+	return false;
 }
 
 void UUTFlagRunScoreboard::DrawStatsRight(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float PageBottom)
@@ -1051,13 +1057,6 @@ void UUTFlagRunScoreboard::DrawScoringPlays(float DeltaTime, float& YPos, float 
 		Canvas->DrawText(UTHUDOwner->MediumFont, ScoringPlaysHeader, XOffset + (2.f*ScoreWidth - XL) * 0.5f, YPos, RenderScale, RenderScale, TextRenderInfo);
 		YPos += 1.f * MedYL;
 	}
-	if (GS->GetScoringPlays().Num() == 0)
-	{
-		float YL;
-		Canvas->TextSize(UTHUDOwner->MediumFont, NoScoringText.ToString(), XL, YL, RenderScale, RenderScale);
-		YPos += 0.2f * MedYL;
-		DrawText(NoScoringText, XOffset + (2.f*ScoreWidth - XL) * 0.5f, YPos, UTHUDOwner->MediumFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, RenderScale, 1.f, FLinearColor::White, FLinearColor(0.0f, 0.0f, 0.0f, 0.0f), ETextHorzPos::Left, ETextVertPos::Top, TextRenderInfo);
-	}
 
 	float OldTimeLineOffset = TimeLineOffset;
 	TimeLineOffset += DeltaTime;
@@ -1104,6 +1103,13 @@ void UUTFlagRunScoreboard::DrawScoringPlays(float DeltaTime, float& YPos, float 
 			}
 		}
 	}
+}
+
+void UUTFlagRunScoreboard::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCanvas* InCanvas, FVector2D InCanvasCenter)
+{
+	Super::PreDraw(DeltaTime, InUTHUDOwner, InCanvas, InCanvasCenter);
+
+	bDrawMinimapInScoreboard = (Cast<AUTFlagRunGameState>(UTGameState) && ((UTGameState->GetMatchState() == MatchState::MatchIntermission) || UTGameState->HasMatchEnded())) ? (Cast<AUTFlagRunGameState>(UTGameState)->IntermissionTime < 25) : true;
 }
 
 
