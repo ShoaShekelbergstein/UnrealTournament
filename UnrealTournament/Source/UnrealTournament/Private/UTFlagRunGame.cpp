@@ -41,19 +41,23 @@
 #include "UTLineUpHelper.h"
 #include "UTShowdownStatusMessage.h"
 #include "UTBlitzFlag.h"
+#include "UTAssistMessage.h"
 
 //Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
 /*
 * @EventName RCTFRoundResult
 * @Trigger Sent when a round ends in an RCTF game through Score Alternate Win
 * @Type Sent by the Server
-* @EventParam FlagCapScore int32 Always 0, just shows that someone caped flag
+* @EventParam FlagCapScore int32 Always 0, just shows that someone capped flag
 * @Comments
 */
 
 AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	NumTeams = 2;
+	bUseTeamStarts = true;
+
 	TimeLimit = 5;
 	IntermissionDuration = 28.f;
 	RoundLives = 5;
@@ -65,7 +69,6 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	SquadType = AUTAsymCTFSquadAI::StaticClass();
 	NumRounds = 6;
 	MaxTimeScoreBonus = 180;
-	bGameHasTranslocator = false;
 
 	RollingAttackerRespawnDelay = 5.f;
 	LastAttackerSpawnTime = 0.f;
@@ -125,7 +128,16 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderE(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RampUpMusicE.RampUpMusicE'"));
 	RampUpMusic.Add(RampUpMusicFinderE.Object);
 	RampUpTime.Add(19.1f);
+}
 
+void AUTFlagRunGame::PreInitializeComponents()
+{
+	Super::PreInitializeComponents();
+
+	FActorSpawnParameters SpawnInfo;
+	SpawnInfo.Instigator = Instigator;
+	CTFScoring = GetWorld()->SpawnActor<AUTBaseScoring>(CTFScoringClass, SpawnInfo);
+	CTFScoring->InitFor(this);
 }
 
 void AUTFlagRunGame::CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps)
@@ -180,6 +192,9 @@ void AUTFlagRunGame::InitGameState()
 {
 	Super::InitGameState();
 
+	// Store a cached reference to the GameState
+	CTFGameState = Cast<AUTCTFGameState>(GameState);
+	CTFGameState->SetMaxNumberOfTeams(NumTeams);
 	CTFGameState->CTFRound = 1;
 	CTFGameState->NumRounds = NumRounds;
 }
@@ -1102,18 +1117,6 @@ bool AUTFlagRunGame::CompleteRallyRequest(AController* C)
 			UTCharacter->RallyCompleteTime = GetWorld()->GetTimeSeconds();
 			UTPlayerState->bRallyActivated = false;
 			UTPlayerState->ForceNetUpdate();
-			if (TranslocatorClass)
-			{
-				if (TranslocatorClass->GetDefaultObject<AUTWeap_Translocator>()->DestinationEffect != nullptr)
-				{
-					FActorSpawnParameters SpawnParams;
-					SpawnParams.Instigator = UTCharacter;
-					SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-					SpawnParams.Owner = UTCharacter;
-					GetWorld()->SpawnActor<AUTReplicatedEmitter>(TranslocatorClass->GetDefaultObject<AUTWeap_Translocator>()->DestinationEffect, UTCharacter->GetActorLocation(), UTCharacter->GetActorRotation(), SpawnParams);
-				}
-				UUTGameplayStatics::UTPlaySound(GetWorld(), TranslocatorClass->GetDefaultObject<AUTWeap_Translocator>()->TeleSound, UTCharacter, SRT_All);
-			}
 
 			// spawn effects
 			FActorSpawnParameters SpawnParams;
@@ -1329,8 +1332,29 @@ void AUTFlagRunGame::CheatScore()
 	{
 		UTGameState->SetRemainingTime(FMath::RandHelper(150));
 		IntermissionDuration = 12.f;
+		int32 ScoringTeam = PickCheatWinTeam();
+		TArray<AController*> Members = Teams[ScoringTeam]->GetTeamMembers();
+		if (Members.Num() > 0)
+		{
+			AUTPlayerState* Scorer = Cast<AUTPlayerState>(Members[FMath::RandHelper(Members.Num())]->PlayerState);
+			if (FMath::FRand() < 0.5f)
+			{
+				FAssistTracker NewAssist;
+				NewAssist.Holder = Cast<AUTPlayerState>(Members[FMath::RandHelper(Members.Num())]->PlayerState);
+				NewAssist.TotalHeldTime = 0.5f;
+				CTFGameState->FlagBases[ScoringTeam]->GetCarriedObject()->AssistTracking.Add(NewAssist);
+			}
+			if (FMath::FRand() < 0.5f)
+			{
+				CTFGameState->FlagBases[ScoringTeam]->GetCarriedObject()->HolderRescuers.Add(Members[FMath::RandHelper(Members.Num())]);
+			}
+			if (FMath::FRand() < 0.5f)
+			{
+				Cast<AUTPlayerState>(Members[FMath::RandHelper(Members.Num())]->PlayerState)->LastFlagReturnTime = GetWorld()->GetTimeSeconds() - 0.1f;
+			}
+			ScoreObject(CTFGameState->FlagBases[ScoringTeam]->GetCarriedObject(), Cast<AUTCharacter>(Cast<AController>(Scorer->GetOwner())->GetPawn()), Scorer, FName("FlagCapture"));
+		}
 	}
-	Super::CheatScore();
 }
 
 void AUTFlagRunGame::UpdateSkillRating()
@@ -1508,7 +1532,64 @@ void AUTFlagRunGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AU
 		}
 	}
 
-	Super::ScoreObject_Implementation(GameObject, HolderPawn, Holder, Reason);
+	if (Holder != NULL && Holder->Team != NULL && !CTFGameState->HasMatchEnded() && !CTFGameState->IsMatchIntermission())
+	{
+		int32 NewFlagCapScore = GetFlagCapScore();
+		CTFScoring->ScoreObject(GameObject, HolderPawn, Holder, Reason, NewFlagCapScore);
+
+		if (BaseMutator != NULL)
+		{
+			BaseMutator->ScoreObject(GameObject, HolderPawn, Holder, Reason);
+		}
+		FindAndMarkHighScorer();
+
+		if (Reason == FName("FlagCapture"))
+		{
+			// Give the team a capture.
+			int32 OldScore = Holder->Team->Score;
+			Holder->Team->Score += NewFlagCapScore;
+			Holder->Team->ForceNetUpdate();
+			LastTeamToScore = Holder->Team;
+			BroadcastCTFScore(Holder, Holder->Team, OldScore);
+			AddCaptureEventToReplay(Holder, Holder->Team);
+			if (Holder->FlagCaptures == 3)
+			{
+				BroadcastLocalized(this, UUTAssistMessage::StaticClass(), 5, Holder, NULL, Holder->Team);
+			}
+
+			for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+			{
+				AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+				if (PC)
+				{
+					if (CTFGameState->FlagBases[Holder->Team->TeamIndex] != nullptr)
+					{
+						PC->UTClientPlaySound(CTFGameState->FlagBases[Holder->Team->TeamIndex]->FlagScoreRewardSound);
+					}
+
+					AUTPlayerState* PS = Cast<AUTPlayerState>((*Iterator)->PlayerState);
+					if (PS && PS->bNeedsAssistAnnouncement)
+					{
+						PC->SendPersonalMessage(UUTAssistMessage::StaticClass(), 2, PS, Holder, NULL);
+						PS->bNeedsAssistAnnouncement = false;
+					}
+				}
+			}
+			HandleFlagCapture(HolderPawn, Holder);
+			if (IsMatchInProgress())
+			{
+				// tell bots about the cap
+				AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+				if (GS != NULL && HolderPawn != nullptr && GameObject != nullptr)
+				{
+					for (AUTTeamInfo* TeamIter : GS->Teams)
+					{
+						TeamIter->NotifyObjectiveEvent(GameObject->HomeBase, HolderPawn->Controller, FName(TEXT("FlagCap")));
+					}
+				}
+			}
+		}
+	}
 
 	if (UTGameState)
 	{
@@ -1738,7 +1819,13 @@ void AUTFlagRunGame::CheckGameTime()
 	}
 	else
 	{
-		Super::CheckGameTime();
+		if (CTFGameState->IsMatchIntermission())
+		{
+			if (CTFGameState->GetIntermissionTime() <= 0)
+			{
+				SetMatchState(MatchState::MatchExitingIntermission);
+			}
+		}
 	}
 }
 
@@ -1882,7 +1969,12 @@ int32 AUTFlagRunGame::IntermissionTeamToView(AUTPlayerController* PC)
 	{
 		return LastTeamToScore->TeamIndex;
 	}
-	return Super::IntermissionTeamToView(PC);
+	if (PC && !PC->PlayerState->bOnlySpectator && (PC->GetTeamNum() < Teams.Num()))
+	{
+		return PC->GetTeamNum();
+	}
+
+	return (Teams[1]->Score > Teams[0]->Score) ? 1 : 0;
 }
 
 void AUTFlagRunGame::HandleExitingIntermission()
@@ -1939,7 +2031,38 @@ void AUTFlagRunGame::HandleExitingIntermission()
 
 void AUTFlagRunGame::ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType)
 {
-	Super::ScoreKill_Implementation(Killer, Other, KilledPawn, DamageType);
+	CTFScoring->ScoreKill(Killer, Other, KilledPawn, DamageType);
+	if (Killer != NULL)
+	{
+		AUTPlayerState* AttackerPS = Cast<AUTPlayerState>(Killer->PlayerState);
+		if (Killer != Other)
+		{
+			AddKillEventToReplay(Killer, Other, DamageType);
+			if (AttackerPS != NULL)
+			{
+				if (!bFirstBloodOccurred)
+				{
+					BroadcastLocalized(this, UUTFirstBloodMessage::StaticClass(), 0, AttackerPS, NULL, NULL);
+					bFirstBloodOccurred = true;
+				}
+				AUTPlayerState* OtherPlayerState = Other ? Cast<AUTPlayerState>(Other->PlayerState) : NULL;
+				AttackerPS->IncrementKills(DamageType, true, OtherPlayerState);
+				TrackKillAssists(Killer, Other, KilledPawn, DamageType, AttackerPS, OtherPlayerState);
+			}
+		}
+		else
+		{
+			if (AttackerPS != nullptr)
+			{
+				AttackerPS->ModifyStatsValue(NAME_Suicides, 1);
+			}
+		}
+	}
+	if (BaseMutator != NULL)
+	{
+		BaseMutator->ScoreKill(Killer, Other, DamageType);
+	}
+	FindAndMarkHighScorer();
 
 	AUTPlayerState* OtherPS = Other ? Cast<AUTPlayerState>(Other->PlayerState) : nullptr;
 	if (OtherPS && OtherPS->Team && IsTeamOnOffense(OtherPS->Team->TeamIndex) && bRollingAttackerSpawns)
@@ -2319,3 +2442,147 @@ void AUTFlagRunGame::FlagsAreReady()
 	BroadcastLocalized(this, UUTCTFMajorMessage::StaticClass(), 21, NULL, NULL, NULL);
 	InitFlags();
 }
+
+void AUTFlagRunGame::AddCaptureEventToReplay(AUTPlayerState* Holder, AUTTeamInfo* Team)
+{
+	UDemoNetDriver* DemoNetDriver = GetWorld()->DemoNetDriver;
+	if (DemoNetDriver != nullptr && DemoNetDriver->ServerConnection == nullptr)
+	{
+		TArray<uint8> Data;
+
+		FString PlayerName = Holder ? *Holder->PlayerName : TEXT("None");
+		PlayerName.ReplaceInline(TEXT(" "), TEXT("%20"));
+
+		FString CapInfo = FString::Printf(TEXT("%s"), *PlayerName);
+
+		FMemoryWriter MemoryWriter(Data);
+		MemoryWriter.Serialize(TCHAR_TO_ANSI(*CapInfo), CapInfo.Len() + 1);
+
+		FString MetaTag = FString::FromInt(Team->TeamIndex);
+
+		DemoNetDriver->AddEvent(TEXT("FlagCaps"), MetaTag, Data);
+	}
+}
+
+void AUTFlagRunGame::AddReturnEventToReplay(AUTPlayerState* Returner, AUTTeamInfo* Team)
+{
+	UDemoNetDriver* DemoNetDriver = GetWorld()->DemoNetDriver;
+	if (Returner && DemoNetDriver != nullptr && DemoNetDriver->ServerConnection == nullptr)
+	{
+		TArray<uint8> Data;
+
+		FString PlayerName = Returner ? *Returner->PlayerName : TEXT("None");
+		PlayerName.ReplaceInline(TEXT(" "), TEXT("%20"));
+
+		FString ReturnInfo = FString::Printf(TEXT("%s"), *PlayerName);
+
+		FMemoryWriter MemoryWriter(Data);
+		MemoryWriter.Serialize(TCHAR_TO_ANSI(*ReturnInfo), ReturnInfo.Len() + 1);
+
+		FString MetaTag = Returner->StatsID;
+		if (MetaTag.IsEmpty())
+		{
+			MetaTag = Returner->PlayerName;
+		}
+		DemoNetDriver->AddEvent(TEXT("FlagReturns"), MetaTag, Data);
+	}
+}
+
+void AUTFlagRunGame::AddDeniedEventToReplay(APlayerState* KillerPlayerState, AUTPlayerState* Holder, AUTTeamInfo* Team)
+{
+	UDemoNetDriver* DemoNetDriver = GetWorld()->DemoNetDriver;
+	if (DemoNetDriver != nullptr && DemoNetDriver->ServerConnection == nullptr)
+	{
+		TArray<uint8> Data;
+
+		FString PlayerName = KillerPlayerState ? *KillerPlayerState->PlayerName : TEXT("None");
+		PlayerName.ReplaceInline(TEXT(" "), TEXT("%20"));
+
+		FString HolderName = Holder ? *Holder->PlayerName : TEXT("None");
+		HolderName.ReplaceInline(TEXT(" "), TEXT("%20"));
+
+		FString DenyInfo = FString::Printf(TEXT("%s %s"), *PlayerName, *HolderName);
+
+		FMemoryWriter MemoryWriter(Data);
+		MemoryWriter.Serialize(TCHAR_TO_ANSI(*DenyInfo), DenyInfo.Len() + 1);
+
+		FString MetaTag = FString::FromInt(Team->TeamIndex);
+
+		DemoNetDriver->AddEvent(TEXT("FlagDeny"), MetaTag, Data);
+	}
+}
+
+void AUTFlagRunGame::ScoreDamage_Implementation(int32 DamageAmount, AUTPlayerState* Victim, AUTPlayerState* Attacker)
+{
+	Super::ScoreDamage_Implementation(DamageAmount, Victim, Attacker);
+	CTFScoring->ScoreDamage(DamageAmount, Victim, Attacker);
+}
+
+void AUTFlagRunGame::GameObjectiveInitialized(AUTGameObjective* Obj)
+{
+	AUTCTFFlagBase* FlagBase = Cast<AUTCTFFlagBase>(Obj);
+	if (FlagBase != NULL)
+	{
+		CTFGameState->CacheFlagBase(FlagBase);
+	}
+}
+
+void AUTFlagRunGame::CallMatchStateChangeNotify()
+{
+	Super::CallMatchStateChangeNotify();
+
+	if (MatchState == MatchState::MatchIntermission)
+	{
+		HandleMatchIntermission();
+	}
+	else if (MatchState == MatchState::MatchExitingIntermission)
+	{
+		HandleExitingIntermission();
+	}
+}
+
+void AUTFlagRunGame::EndGame(AUTPlayerState* Winner, FName Reason)
+{
+	// Dont ever end the game in PIE
+	if (GetWorld()->WorldType == EWorldType::PIE) return;
+
+	Super::EndGame(Winner, Reason);
+
+	// Send all of the flags home...
+	CTFGameState->ResetFlags();
+}
+
+void AUTFlagRunGame::SetEndGameFocus(AUTPlayerState* Winner)
+{
+	if (!GetWorld() || !CTFGameState)
+	{
+		return;
+	}
+	int32 WinnerTeamNum = Winner ? Winner->GetTeamNum() : (LastTeamToScore ? LastTeamToScore->TeamIndex : 0);
+	AUTCTFFlagBase* WinningBase = NULL;
+	WinningBase = CTFGameState->FlagBases[WinnerTeamNum];
+
+	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
+	{
+		AUTPlayerController* Controller = Cast<AUTPlayerController>(*Iterator);
+		if (Controller && Controller->UTPlayerState)
+		{
+			AUTCTFFlagBase* BaseToView = WinningBase;
+			// If we don't have a winner, view my base
+			if (BaseToView == NULL)
+			{
+				AUTTeamInfo* MyTeam = Controller->UTPlayerState->Team;
+				if (MyTeam)
+				{
+					BaseToView = CTFGameState->FlagBases[MyTeam->GetTeamNum()];
+				}
+			}
+
+			if (BaseToView)
+			{
+				Controller->GameHasEnded(BaseToView, (Controller->UTPlayerState->Team && (Controller->UTPlayerState->Team->TeamIndex == WinnerTeamNum)));
+			}
+		}
+	}
+}
+

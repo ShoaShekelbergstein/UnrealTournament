@@ -161,6 +161,9 @@ public:
 
 	virtual void UpdateSkillAdjust(const AUTPlayerState* KillerPlayerState, const AUTPlayerState* KilledPlayerState);
 
+	virtual void NotifyFirstPickup(class AUTCarriedObject* Flag) {};
+	virtual void AddDeniedEventToReplay(APlayerState* KillerPlayerState, AUTPlayerState* Holder, AUTTeamInfo* Team) {};
+
 	/** Delay to start match after start conditions are met. */
 	UPROPERTY(EditDefaultsOnly, Category = Game)
 		float StartDelay;

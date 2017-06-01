@@ -12,7 +12,7 @@
 #include "UTGhostFlag.h"
 #include "UTGameVolume.h"
 #include "UTRallyPoint.h"
-#include "UTCTFBaseGame.h"
+#include "UTGameMode.h"
 #include "UTFlagRunGameState.h"
 
 AUTCarriedObject::AUTCarriedObject(const FObjectInitializer& ObjectInitializer)
@@ -454,10 +454,10 @@ void AUTCarriedObject::SetHolder(AUTCharacter* NewHolder)
 			if (bWaitingForFirstPickup)
 			{
 				bWaitingForFirstPickup = false;
-				AUTCTFBaseGame* CTFGame = GetWorld()->GetAuthGameMode<AUTCTFBaseGame>();
-				if (CTFGame)
+				AUTGameMode* Game = GetWorld()->GetAuthGameMode<AUTGameMode>();
+				if (Game)
 				{
-					CTFGame->NotifyFirstPickup(this);
+					Game->NotifyFirstPickup(this);
 				}
 			}
 		}

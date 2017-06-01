@@ -3,16 +3,42 @@
 #pragma once
 #include "UTCTFGameState.h"
 #include "UTCTFScoring.h"
-#include "UTCTFRoundGame.h"
+#include "UTTeamGameMode.h"
 #include "UTATypes.h"
 #include "UTFlagRunGame.generated.h"
 
 UCLASS()
-class UNREALTOURNAMENT_API AUTFlagRunGame : public AUTCTFRoundGame
+class UNREALTOURNAMENT_API AUTFlagRunGame : public AUTTeamGameMode
 {
 	GENERATED_UCLASS_BODY()
 
 public:
+
+	/** Cached reference to the CTF game state */
+	UPROPERTY(BlueprintReadOnly, Category = CTF)
+		AUTCTFGameState* CTFGameState;
+
+	/** Class of GameState associated with this GameMode. */
+	UPROPERTY(EditAnywhere, noclear, BlueprintReadWrite, Category = Classes)
+		TSubclassOf<class AUTBaseScoring> CTFScoringClass;
+
+	/** Handles individual player scoring */
+	UPROPERTY(BlueprintReadOnly, Category = CTF)
+		AUTBaseScoring* CTFScoring;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CTF)
+		int32 IntermissionDuration;
+
+	UPROPERTY(BlueprintReadOnly, Category = CTF)
+		AUTTeamInfo* LastTeamToScore;
+
+	/**Amount of score to give team for flag capture. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CTF)
+		int32 FlagCapScore;
+
+	UPROPERTY(transient)
+		bool bPlacingPlayersAtIntermission;
+
 	/** Used for periodic defense warnings about unguarded routes. */
 	UPROPERTY()
 		float LastEntryDefenseWarningTime;
@@ -160,7 +186,11 @@ public:
 
 	virtual bool UTIsHandlingReplays() override { return false; }
 	virtual void StopRCTFReplayRecording();
+	void AddCaptureEventToReplay(AUTPlayerState* Holder, AUTTeamInfo* Team);
+	void AddReturnEventToReplay(AUTPlayerState* Returner, AUTTeamInfo* Team);
+	virtual void AddDeniedEventToReplay(APlayerState* KillerPlayerState, AUTPlayerState* Holder, AUTTeamInfo* Team) override;
 
+	virtual void PreInitializeComponents() override;
 	virtual class AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = TEXT("")) override;
 	virtual void AnnounceWin(AUTTeamInfo* WinningTeam, APlayerState* ScoringPlayer, uint8 Reason);
 	virtual void NotifyFirstPickup(AUTCarriedObject* Flag) override;
@@ -171,14 +201,14 @@ public:
 	virtual bool HandleRallyRequest(AController* C) override;
 	virtual bool CompleteRallyRequest(AController* C) override;
 	virtual void FinishRallyRequest(AController *C) override;
-	virtual int32 PickCheatWinTeam() override;
+	virtual int32 PickCheatWinTeam();
 	virtual bool AvoidPlayerStart(class AUTPlayerStart* P) override;
 	virtual void InitDelayedFlag(class AUTCarriedObject* Flag);
 	virtual void InitFlagForRound(class AUTCarriedObject* Flag);
 	virtual void IntermissionSwapSides();
-	virtual int32 GetFlagCapScore() override;
+	virtual int32 GetFlagCapScore();
 	virtual int32 GetDefenseScore();
-	virtual void BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo* ScoringTeam, int32 OldScore = 0) override;
+	virtual void BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo* ScoringTeam, int32 OldScore = 0);
 	virtual void CheckRoundTimeVictory();
 	virtual void InitGameStateForRound();
 	virtual bool IsTeamOnOffense(int32 TeamNumber) const;
@@ -201,12 +231,12 @@ public:
 
 	virtual int32 GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPlayerController* Instigator, UWorld* World);
 	virtual void InitFlags();
-	virtual void HandleMatchIntermission() override;
-	virtual void CheatScore() override;
+	virtual void HandleMatchIntermission();
+	virtual void CheatScore();
 	virtual void DefaultTimer() override;
-	virtual void HandleFlagCapture(AUTCharacter* HolderPawn, AUTPlayerState* Holder) override;
-	virtual int32 IntermissionTeamToView(AUTPlayerController* PC) override;
-	virtual void HandleExitingIntermission() override;
+	virtual void HandleFlagCapture(AUTCharacter* HolderPawn, AUTPlayerState* Holder);
+	virtual int32 IntermissionTeamToView(AUTPlayerController* PC);
+	virtual void HandleExitingIntermission();
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
 	virtual void UpdateSkillRating() override;
@@ -228,6 +258,13 @@ public:
 
 	/** Update tiebreaker value based on new round bonus. Tiebreaker is positive if Red is ahead, negative if blue is ahead. */
 	virtual void UpdateTiebreak(int32 Bonus, int32 TeamIndex);
+
+	virtual void ScoreDamage_Implementation(int32 DamageAmount, AUTPlayerState* Victim, AUTPlayerState* Attacker);
+	virtual void GameObjectiveInitialized(AUTGameObjective* Obj);
+
+	virtual void CallMatchStateChangeNotify() override;
+	virtual void EndGame(AUTPlayerState* Winner, FName Reason) override;
+	virtual void SetEndGameFocus(AUTPlayerState* Winner) override;
 
 protected:
 	virtual bool IsTeamOnDefense(int32 TeamNumber) const;

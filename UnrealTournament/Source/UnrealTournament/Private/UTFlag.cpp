@@ -179,7 +179,7 @@ void AUTFlag::Drop(AController* Killer)
 			AUTCTFFlagBase* OtherBase = GameState->FlagBases[1 - GetTeamNum()];
 			if (OtherBase && (OtherBase->GetFlagState() == CarriedObjectState::Home) && OtherBase->ActorIsNearMe(this))
 			{
-				AUTCTFBaseGame* GM = GetWorld()->GetAuthGameMode<AUTCTFBaseGame>();
+				AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
 				if (GM)
 				{
 					bDelayDroppedMessage = true;
