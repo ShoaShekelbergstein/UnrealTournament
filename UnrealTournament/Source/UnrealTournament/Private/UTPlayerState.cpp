@@ -864,7 +864,7 @@ void AUTPlayerState::Tick(float DeltaTime)
 					AUTPlayerController* MyPC = Cast<AUTPlayerController>(GetOwner());
 					if (MyPC != nullptr)
 					{
-						AUTPlayerState* FC = GS->GetFlagHolder(Team->TeamIndex);
+						AUTPlayerState* FC = GS->GetFlagHolder();
 						AUTPlayerState* Speaker = FC ? FC : this;
 						Speaker->GetCharacterVoiceClass();
 						int32 Switch = Speaker->CharacterVoice.GetDefaultObject()->GetStatusIndex(StatusMessage::RallyNow);

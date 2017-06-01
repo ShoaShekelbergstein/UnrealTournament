@@ -5,6 +5,7 @@
 #include "UTFlagRunGameState.h"
 #include "UTFlagRunGame.h"
 #include "UTBlitzFlagSpawner.h"
+#include "UTBlitzDeliveryPoint.h"
 #include "UTCTFRewardMessage.h"
 #include "UTFlagRunGameMessage.h"
 
@@ -60,20 +61,16 @@ void AUTBlitzFlag::Drop(AController* Killer)
 	{
 		// see if this is a last second save
 		AUTFlagRunGameState* GameState = GetWorld()->GetGameState<AUTFlagRunGameState>();
-		if (GameState)
+		if (GameState && GameState->DeliveryPoint && GameState->DeliveryPoint->ActorIsNearMe(this))
 		{
-			AUTCTFFlagBase* OtherBase = GameState->FlagBases[1 - GetTeamNum()];
-			if (OtherBase && (OtherBase->GetFlagState() == CarriedObjectState::Home) && OtherBase->ActorIsNearMe(this))
+			AUTFlagRunGame* GM = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
+			if (GM)
 			{
-				AUTFlagRunGame* GM = GetWorld()->GetAuthGameMode<AUTFlagRunGame>();
-				if (GM)
-				{
-					bDelayDroppedMessage = true;
-					GM->BroadcastLocalized(this, UUTCTFRewardMessage::StaticClass(), 6, Killer->PlayerState, Holder, NULL);
-					GM->AddDeniedEventToReplay(Killer->PlayerState, Holder, Holder->Team);
-					KillerState->AddCoolFactorEvent(100.0f);
-					KillerState->ModifyStatsValue(NAME_FlagDenials, 1);
-				}
+				bDelayDroppedMessage = true;
+				GM->BroadcastLocalized(this, UUTCTFRewardMessage::StaticClass(), 6, Killer->PlayerState, Holder, NULL);
+				GM->AddDeniedEventToReplay(Killer->PlayerState, Holder, Holder->Team);
+				KillerState->AddCoolFactorEvent(100.0f);
+				KillerState->ModifyStatsValue(NAME_FlagDenials, 1);
 			}
 		}
 	}

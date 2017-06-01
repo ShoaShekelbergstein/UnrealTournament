@@ -13,6 +13,8 @@
 #include "UTRallyPoint.h"
 #include "UTWorldSettings.h"
 #include "UTBlitzFlag.h"
+#include "UTBlitzDeliveryPoint.h"
+#include "UTBlitzFlagSpawner.h"
 #include "UTATypes.h"
 
 AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitializer)
@@ -207,6 +209,8 @@ void AUTFlagRunGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 
 	DOREPLIFETIME(AUTFlagRunGameState, bIsAtIntermission);
 	DOREPLIFETIME(AUTFlagRunGameState, FlagBases);
+	DOREPLIFETIME(AUTFlagRunGameState, DeliveryPoint);
+	DOREPLIFETIME(AUTFlagRunGameState, FlagSpawner);
 	DOREPLIFETIME(AUTFlagRunGameState, ScoringPlays);
 	DOREPLIFETIME(AUTFlagRunGameState, CTFRound);
 	DOREPLIFETIME(AUTFlagRunGameState, NumRounds);
@@ -499,8 +503,7 @@ void AUTFlagRunGameState::CachePowerupAnnouncement(class UUTAnnouncer* Announcer
 
 AUTBlitzFlag* AUTFlagRunGameState::GetOffenseFlag()
 {
-	int OffenseTeam = bRedToCap ? 0 : 1;
-	return ((FlagBases.Num() > OffenseTeam) && FlagBases[OffenseTeam]) ? Cast<AUTBlitzFlag>(FlagBases[OffenseTeam]->MyFlag) : nullptr;
+	return FlagSpawner ? Cast<AUTBlitzFlag>(FlagSpawner->MyFlag) : nullptr;
 }
 
 void AUTFlagRunGameState::Tick(float DeltaTime)
@@ -508,10 +511,9 @@ void AUTFlagRunGameState::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if (Role == ROLE_Authority)
 	{
-		uint8 OffensiveTeam = bRedToCap ? 0 : 1;
-		if (FlagBases.IsValidIndex(OffensiveTeam) && FlagBases[OffensiveTeam] != nullptr)
+		if (FlagSpawner)
 		{
-			AUTBlitzFlag* Flag = Cast<AUTBlitzFlag>(FlagBases[OffensiveTeam]->GetCarriedObject());
+			AUTBlitzFlag* Flag = Cast<AUTBlitzFlag>(FlagSpawner->GetCarriedObject());
 			bAttackersCanRally = (CurrentRallyPoint != nullptr) && (CurrentRallyPoint->RallyPointState == RallyPointStates::Powered);
 			AUTGameVolume* GV = Flag && Flag->HoldingPawn && Flag->HoldingPawn->UTCharacterMovement ? Cast<AUTGameVolume>(Flag->HoldingPawn->UTCharacterMovement->GetPhysicsVolume()) : nullptr;
 			bool bInFlagRoom = GV && (GV->bIsDefenderBase || GV->bIsTeamSafeVolume);
@@ -1019,24 +1021,19 @@ void AUTFlagRunGameState::CacheFlagBase(AUTCTFFlagBase* BaseToCache)
 	{
 		FlagBases[TeamNum] = BaseToCache;
 	}
+	if (Cast<AUTBlitzDeliveryPoint>(BaseToCache))
+	{
+		DeliveryPoint = Cast<AUTBlitzDeliveryPoint>(BaseToCache);
+	}
+	else if (Cast<AUTBlitzFlagSpawner>(BaseToCache))
+	{
+		FlagSpawner = Cast<AUTBlitzFlagSpawner>(BaseToCache);
+	}
 }
 
-FName AUTFlagRunGameState::GetFlagState(uint8 TeamNum)
+AUTPlayerState* AUTFlagRunGameState::GetFlagHolder()
 {
-	if (TeamNum < FlagBases.Num() && FlagBases[TeamNum] != NULL)
-	{
-		return FlagBases[TeamNum]->GetFlagState();
-	}
-	return NAME_None;
-}
-
-AUTPlayerState* AUTFlagRunGameState::GetFlagHolder(uint8 TeamNum)
-{
-	if (TeamNum < FlagBases.Num() && FlagBases[TeamNum] != NULL)
-	{
-		return FlagBases[TeamNum]->GetCarriedObjectHolder();
-	}
-	return NULL;
+	return FlagSpawner ? FlagSpawner->GetCarriedObjectHolder() : nullptr;
 }
 
 AUTCTFFlagBase* AUTFlagRunGameState::GetFlagBase(uint8 TeamNum)
@@ -1130,25 +1127,25 @@ void AUTFlagRunGameState::SpawnDefaultLineUpZones()
 {
 	if (GetAppropriateSpawnList(LineUpTypes::Intro) == nullptr)
 	{
-		if (FlagBases.Num() > 0)
+		if (DeliveryPoint)
 		{
-			SpawnLineUpZoneOnFlagBase(FlagBases[0], LineUpTypes::Intro);
+			SpawnLineUpZoneOnFlagBase(DeliveryPoint, LineUpTypes::Intro);
 		}
 	}
 
 	if (GetAppropriateSpawnList(LineUpTypes::Intermission) == nullptr)
 	{
-		for (AUTCTFFlagBase* FlagBase : FlagBases)
+		if (DeliveryPoint)
 		{
-			SpawnLineUpZoneOnFlagBase(FlagBase, LineUpTypes::Intermission);
+			SpawnLineUpZoneOnFlagBase(DeliveryPoint, LineUpTypes::Intermission);
 		}
 	}
 
 	if (GetAppropriateSpawnList(LineUpTypes::PostMatch) == nullptr)
 	{
-		for (AUTCTFFlagBase* FlagBase : FlagBases)
+		if (DeliveryPoint)
 		{
-			SpawnLineUpZoneOnFlagBase(FlagBase, LineUpTypes::PostMatch);
+			SpawnLineUpZoneOnFlagBase(DeliveryPoint, LineUpTypes::PostMatch);
 		}
 	}
 
@@ -1285,72 +1282,6 @@ uint8 AUTFlagRunGameState::NearestTeamSide(AActor* InActor)
 		}
 	}
 	return 255;
-}
-
-bool AUTFlagRunGameState::GetImportantPickups_Implementation(TArray<AUTPickup*>& PickupList)
-{
-	Super::GetImportantPickups_Implementation(PickupList);
-	TMap<UClass*, TArray<AUTPickup*> > PickupGroups;
-
-	//Collect the Powerups without bOverride_TeamSide and group by class
-	for (AUTPickup* Pickup : PickupList)
-	{
-		if (!Pickup->bOverride_TeamSide)
-		{
-			UClass* PickupClass = (Cast<AUTPickupInventory>(Pickup) != nullptr) ? *Cast<AUTPickupInventory>(Pickup)->GetInventoryType() : Pickup->GetClass();
-			TArray<AUTPickup*>& PickupGroup = PickupGroups.FindOrAdd(PickupClass);
-			PickupGroup.Add(Pickup);
-		}
-	}
-
-	//Auto get the TeamSide
-	if (FlagBases.Num() > 1)
-	{
-		for (auto& Pair : PickupGroups)
-		{
-			TArray<AUTPickup*>& PickupGroup = Pair.Value;
-
-			//Find the midfield pickup for an odd number of pickups per group
-			if (PickupGroup.Num() % 2 != 0 && PickupGroup.Num() > 2)
-			{
-				AUTPickup* MidfieldPickup = nullptr;
-				float FarthestDist = 0.0;
-
-				//Find the furthest pickup that would've been returned by NearestTeamSide()
-				for (AUTPickup* Pickup : PickupGroup)
-				{
-					float ClosestFlagDist = MAX_FLT;
-					for (AUTCTFFlagBase* Flag : FlagBases)
-					{
-						if (Flag != nullptr)
-						{
-							ClosestFlagDist = FMath::Min(ClosestFlagDist, FVector::Dist(Pickup->GetActorLocation(), Flag->GetActorLocation()));
-						}
-					}
-
-					if (FarthestDist < ClosestFlagDist)
-					{
-						MidfieldPickup = Pickup;
-						FarthestDist = ClosestFlagDist;
-					}
-				}
-
-				if (MidfieldPickup != nullptr)
-				{
-					MidfieldPickup->TeamSide = 255;
-				}
-			}
-		}
-	}
-
-	//Sort the list by team and by respawn time 
-	//TODO: powerup priority so different armors sort properly
-	PickupList.Sort([](const AUTPickup& A, const AUTPickup& B) -> bool
-	{
-		return A.TeamSide > B.TeamSide || (A.TeamSide == B.TeamSide && A.RespawnTime > B.RespawnTime);
-	});
-
-	return true;
 }
 
 void AUTFlagRunGameState::UpdateHighlights_Implementation()

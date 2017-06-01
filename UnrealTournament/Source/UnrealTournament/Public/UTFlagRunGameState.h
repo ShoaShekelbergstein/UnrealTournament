@@ -10,18 +10,24 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTGameState
 {
 	GENERATED_UCLASS_BODY()
 
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = CTF)
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = Blitz)
 		uint32 bIsAtIntermission : 1;
 
 	UPROPERTY(Replicated)
 		int32 IntermissionTime;
 
 	/** Delay before bringing up scoreboard at halftime. */
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = CTF)
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = Blitz)
 		float HalftimeScoreDelay;
 
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = CTF)
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = Blitz)
 		TArray<class AUTCTFFlagBase*> FlagBases;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = Blitz)
+		class AUTBlitzDeliveryPoint* DeliveryPoint;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = Blitz)
+		class AUTBlitzFlagSpawner* FlagSpawner;
 
 	UPROPERTY(BlueprintReadOnly, Replicated)
 		int32 CTFRound;
@@ -43,8 +49,6 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTGameState
 	virtual float ScoreCameraView(AUTPlayerState* InPS, AUTCharacter *Character) override;
 
 	virtual uint8 NearestTeamSide(AActor* InActor) override;
-
-	bool GetImportantPickups_Implementation(TArray<AUTPickup*>& PickupList);
 
 	UPROPERTY(Replicated, BlueprintReadOnly)
 		uint32 bRedToCap : 1;
@@ -210,11 +214,9 @@ public:
 	/** Cache a flag by in the FlagBases array */
 	virtual void CacheFlagBase(AUTCTFFlagBase* BaseToCache);
 
-	/** Returns the current state of a given flag */
-	virtual FName GetFlagState(uint8 TeamNum);
-
 	UFUNCTION(BlueprintCallable, Category = GameState)
-		virtual AUTPlayerState* GetFlagHolder(uint8 TeamNum);
+		virtual AUTPlayerState* GetFlagHolder();
+
 	virtual AUTCTFFlagBase* GetFlagBase(uint8 TeamNum);
 
 	virtual void ResetFlags();
