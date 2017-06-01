@@ -52,8 +52,8 @@ AUTWeap_RocketLauncher::AUTWeap_RocketLauncher(const class FObjectInitializer& O
 	GracePeriod = 0.6f;
 	BurstInterval = 0.f;
 	GrenadeBurstInterval = 0.1f;
-	FullLoadSpread = 5.f;
-	SeekingLoadSpread = 12.f;
+	FullLoadSpread = 8.f;
+	SeekingLoadSpread = 16.f;
 	bAllowGrenades = false;
 
 	BasePickupDesireability = 0.78f;
@@ -488,7 +488,6 @@ AUTProjectile* AUTWeap_RocketLauncher::FireRocketProjectile()
 	}
 	const FVector SpawnLocation = GetFireStartLoc();
 	FRotator SpawnRotation = GetAdjustedAim(SpawnLocation);
-	FRotationMatrix SpawnRotMat(SpawnRotation);
 
 	FActorSpawnParameters Params;
 	Params.Instigator = UTOwner;
@@ -500,7 +499,13 @@ AUTProjectile* AUTWeap_RocketLauncher::FireRocketProjectile()
 	{
 		case 0://rockets
 		{
-			SpawnRotation.Yaw += (HasLockedTarget() ? SeekingLoadSpread : FullLoadSpread)*float((NumLoadedRockets%3)-1.f);
+			if (NumLoadedRockets > 1)
+			{
+				FVector FireDir = SpawnRotation.Vector();
+				FVector SideDir = (FireDir ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
+				FireDir = FireDir + 0.01f*SideDir * float((NumLoadedRockets % 3) - 1.f) * (HasLockedTarget() ? SeekingLoadSpread : FullLoadSpread);
+				SpawnRotation = FireDir.Rotation();
+			}
 			NetSynchRandomSeed(); 
 			
 			FVector Offset = (FMath::Sin(NumLoadedRockets*PI*0.667f)*FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::Z) + FMath::Cos(NumLoadedRockets*PI*0.667f)*FRotationMatrix(SpawnRotation).GetUnitAxis(EAxis::X)) * BarrelRadius * 2.f;
