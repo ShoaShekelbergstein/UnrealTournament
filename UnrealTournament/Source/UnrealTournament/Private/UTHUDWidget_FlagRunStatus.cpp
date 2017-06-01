@@ -2,12 +2,37 @@
 #include "UnrealTournament.h"
 #include "UTFlagRunGameState.h"
 #include "UTHUDWidget_FlagRunStatus.h"
-#include "UTFlagRunGameState.h"
 #include "UTBlitzFlag.h"
 
 UUTHUDWidget_FlagRunStatus::UUTHUDWidget_FlagRunStatus(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	YouHaveFlagText = NSLOCTEXT("CTFScore", "YouHaveFlagText", "You have the flag!");
+	YouHaveFlagTextAlt = NSLOCTEXT("CTFScore", "YouHaveFlagTextAlt", "You have the flag, take it to the enemy base!");
+	EnemyHasFlagText = NSLOCTEXT("CTFScore", "EnemyHasFlagText", "The enemy has your flag, recover it!");
+	BothFlagsText = NSLOCTEXT("CTFScore", "BothFlagsText", "You have the enemy flag - hold it until your flag is returned!");
+
+	ScreenPosition = FVector2D(0.5f, 0.0f);
+	Size = FVector2D(0.f, 0.f);
+	Origin = FVector2D(0.5f, 0.5f);
+	AnimationAlpha = 0.0f;
+	StatusScale = 1.f;
+	InWorldAlpha = 0.8f;
+	MaxIconScale = 0.75f;
+
+	bSuppressMessage = false;
+
+	OldFlagState[0] = CarriedObjectState::Home;
+	OldFlagState[1] = CarriedObjectState::Home;
+	StatusChangedScale = 10.f;
+	CurrentStatusScale[0] = 1.f;
+	CurrentStatusScale[1] = 1.f;
+	ScaleDownTime = 0.5f;
+
+	TopEdgePadding = 0.1f;
+	BottomEdgePadding = 0.18f;
+	LeftEdgePadding = 0.025f;
+	RightEdgePadding = 0.025f;
 	NormalLineBrightness = 0.025f;
 	LineGlow = 0.4f;
 	PulseLength = 0.7f;
@@ -17,7 +42,7 @@ UUTHUDWidget_FlagRunStatus::UUTHUDWidget_FlagRunStatus(const FObjectInitializer&
 
 bool UUTHUDWidget_FlagRunStatus::ShouldDraw_Implementation(bool bShowScores)
 {
-	bool bResult = Super::ShouldDraw_Implementation(bShowScores);
+	bool bResult = !bShowScores && UTGameState && UTGameState->HasMatchStarted() && !UTGameState->HasMatchEnded() && (UTGameState->GetMatchState() != MatchState::MatchIntermission);
 	if (!bResult)
 	{
 		LastFlagStatusChange = GetWorld()->GetTimeSeconds();
@@ -25,18 +50,40 @@ bool UUTHUDWidget_FlagRunStatus::ShouldDraw_Implementation(bool bShowScores)
 	return bResult;
 }
 
-void UUTHUDWidget_FlagRunStatus::DrawStatusMessage(float DeltaTime)
+void UUTHUDWidget_FlagRunStatus::Draw_Implementation(float DeltaTime)
 {
+	AUTFlagRunGameState* GameState = Cast<AUTFlagRunGameState>(UTGameState);
+	if (GameState == NULL) return;
+
+	if (bStatusDir)
+	{
+		StatusScale = FMath::Min(StatusScale + 2.f*DeltaTime, 2.0f);
+		bStatusDir = (StatusScale < 1.8f);
+	}
+	else
+	{
+		StatusScale = FMath::Max(StatusScale - 2.f*DeltaTime, 1.f);
+		bStatusDir = (StatusScale < 1.2f);
+	}
+	for (int32 i = 0; i < 2; i++)
+	{
+		CurrentStatusScale[i] = FMath::Max(1.f, CurrentStatusScale[i] - DeltaTime*(StatusChangedScale - 1.f) / ScaleDownTime);
+	}
+
+	FVector ViewPoint;
+	FRotator ViewRotation;
+
+	UTPlayerOwner->GetPlayerViewPoint(ViewPoint, ViewRotation);
+	DrawIndicators(GameState, ViewPoint, ViewRotation, DeltaTime);
 }
 
-void UUTHUDWidget_FlagRunStatus::DrawIndicators(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, float DeltaTime)
+void UUTHUDWidget_FlagRunStatus::DrawIndicators(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, float DeltaTime)
 {
 	if (GameState)
 	{
 		uint8 OwnerTeam = UTHUDOwner->UTPlayerOwner->GetTeamNum();
-		AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(GameState);
-		uint8 OffensiveTeam = (FRGS && FRGS->bRedToCap) ? 0 : 1;
-		uint8 DefensiveTeam = (FRGS && FRGS->bRedToCap) ? 1 : 0;
+		uint8 OffensiveTeam = GameState->bRedToCap ? 0 : 1;
+		uint8 DefensiveTeam = GameState->bRedToCap ? 1 : 0;
 
 		if (GameState->FlagBases.IsValidIndex(OffensiveTeam) && GameState->FlagBases[OffensiveTeam] != nullptr)
 		{
@@ -58,12 +105,131 @@ void UUTHUDWidget_FlagRunStatus::DrawIndicators(AUTCTFGameState* GameState, FVec
 	}
 }
 
+void UUTHUDWidget_FlagRunStatus::DrawFlagStatus(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, FVector2D IndicatorPosition, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
+{
+	// draw flag state in HUD
+	float XPos = IndicatorPosition.X;
+	float YPos = (8.f * RenderScale) + 0.5f * FlagIconTemplate.GetHeight();
+	FlagIconTemplate.RenderColor = (GameState && GameState->Teams.IsValidIndex(TeamNum) && GameState->Teams[TeamNum] != nullptr) ? GameState->Teams[TeamNum]->TeamColor : FLinearColor::Green;
+
+	// Draw the upper indicator
+	if (Flag)
+	{
+		float FlagStatusScale = StatusScale;
+		float AppliedStatusScale = 1.f;
+		if (TeamNum < 2)
+		{
+			if (OldFlagState[TeamNum] != Flag->ObjectState)
+			{
+				CurrentStatusScale[TeamNum] = StatusChangedScale;
+				OldFlagState[TeamNum] = Flag->ObjectState;
+			}
+			AppliedStatusScale = CurrentStatusScale[TeamNum];
+			FlagStatusScale *= AppliedStatusScale;
+		}
+		if (Flag->ObjectState == CarriedObjectState::Held)
+		{
+			YPos += 0.5f * AppliedStatusScale * FlagIconTemplate.GetHeight();
+			TakenIconTemplate.RenderColor = 0.8f * FLinearColor::Yellow;
+			RenderObj_TextureAt(TakenIconTemplate, XPos + 0.1f * FlagIconTemplate.GetWidth(), YPos + 0.1f * FlagIconTemplate.GetHeight(), 1.1f * FlagStatusScale * TakenIconTemplate.GetWidth(), 1.1f * FlagStatusScale * TakenIconTemplate.GetHeight());
+
+			if (FlagHolder)
+			{
+				if (bAlwaysDrawFlagHolderName)
+				{
+					FlagHolderNameTemplate.Text = FText::FromString(FlagHolder->PlayerName);
+					RenderObj_Text(FlagHolderNameTemplate, IndicatorPosition);
+				}
+				else if (FlagHolder == UTHUDOwner->UTPlayerOwner->UTPlayerState)
+				{
+					FlagHolderNameTemplate.Text = YouHaveFlagText;
+					RenderObj_Text(FlagHolderNameTemplate, IndicatorPosition);
+				}
+			}
+
+			float CarriedX = XPos - 0.25f * FlagIconTemplate.GetWidth() * FlagStatusScale;
+			float CarriedY = YPos - 0.25f * FlagIconTemplate.GetHeight() * FlagStatusScale;
+			RenderObj_TextureAt(FlagIconTemplate, CarriedX, CarriedY, FlagStatusScale * FlagIconTemplate.GetWidth(), FlagStatusScale * FlagIconTemplate.GetHeight());
+		}
+		else
+		{
+			YPos += 0.5f * AppliedStatusScale * DroppedIconTemplate.GetHeight();
+			RenderObj_TextureAt(FlagIconTemplate, XPos, YPos, 1.5f*AppliedStatusScale*FlagIconTemplate.GetWidth(), 1.5f*AppliedStatusScale*FlagIconTemplate.GetHeight());
+			if (Flag->ObjectState == CarriedObjectState::Dropped)
+			{
+				RenderObj_TextureAt(DroppedIconTemplate, XPos, YPos, 1.5f*AppliedStatusScale*DroppedIconTemplate.GetWidth(), 1.5f*AppliedStatusScale *DroppedIconTemplate.GetHeight());
+				UFont* TinyFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->TinyFont;
+				DrawText(GetFlagReturnTime(Flag), XPos, YPos, TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 2.f*AppliedStatusScale, UTHUDOwner->GetHUDWidgetOpacity(), FLinearColor::White, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);
+			}
+		}
+	}
+}
+
+FVector UUTHUDWidget_FlagRunStatus::GetAdjustedScreenPosition(const FVector& WorldPosition, const FVector& ViewPoint, const FVector& ViewDir, float Dist, float IconSize, bool& bDrawEdgeArrow, int32 Team)
+{
+	FVector Cross = (ViewDir ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
+	FVector DrawScreenPosition = GetCanvas()->Project(WorldPosition);
+	FVector FlagDir = (WorldPosition - ViewPoint).GetSafeNormal();
+	if ((ViewDir | FlagDir) < 0.f)
+	{
+		bDrawEdgeArrow = true;
+		FVector LeftDir = (ViewDir ^ FVector(0.f, 0.f, 1.f)).GetSafeNormal();
+		bool bLeftOfScreen = (FlagDir | LeftDir) > 0.f;
+		DrawScreenPosition.X = bLeftOfScreen ? -0.5f*GetCanvas()->ClipX * (ViewDir | FlagDir) : GetCanvas()->ClipX * (1.f + 0.5f*(ViewDir | FlagDir));
+		DrawScreenPosition.Y = (1.f - BottomEdgePadding)*GetCanvas()->ClipY - IconSize;
+		DrawScreenPosition.Z = 0.0f;
+		DrawScreenPosition.X = FMath::Clamp(DrawScreenPosition.X, IconSize + LeftEdgePadding*GetCanvas()->ClipX, GetCanvas()->ClipX - IconSize - RightEdgePadding*GetCanvas()->ClipX);
+		return DrawScreenPosition;
+	}
+	else if ((DrawScreenPosition.X < 0.f) || (DrawScreenPosition.X > GetCanvas()->ClipX))
+	{
+		bool bLeftOfScreen = (DrawScreenPosition.X < 0.f);
+		float OffScreenDistance = bLeftOfScreen ? -1.f*DrawScreenPosition.X : DrawScreenPosition.X - GetCanvas()->ClipX;
+		bDrawEdgeArrow = true;
+		DrawScreenPosition.X = bLeftOfScreen ? IconSize + LeftEdgePadding*GetCanvas()->ClipX : GetCanvas()->ClipX - IconSize - RightEdgePadding*GetCanvas()->ClipX;
+		//Y approaches 0.9*Canvas->ClipY as further off screen
+		float MaxOffscreenDistance = GetCanvas()->ClipX;
+		DrawScreenPosition.Y = (1.f - BottomEdgePadding)*GetCanvas()->ClipY + FMath::Clamp((MaxOffscreenDistance - OffScreenDistance) / MaxOffscreenDistance, 0.f, 1.f) * (DrawScreenPosition.Y - (1.f - BottomEdgePadding)*GetCanvas()->ClipY);
+		if (Team == 1)
+		{
+			DrawScreenPosition.Y += 0.05f*GetCanvas()->ClipY;
+		}
+		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, IconSize + TopEdgePadding*GetCanvas()->ClipY, GetCanvas()->ClipY - IconSize - BottomEdgePadding*GetCanvas()->ClipY);
+	}
+	else
+	{
+		DrawScreenPosition.X = FMath::Clamp(DrawScreenPosition.X, IconSize + LeftEdgePadding*GetCanvas()->ClipX, GetCanvas()->ClipX - IconSize - RightEdgePadding*GetCanvas()->ClipX);
+		DrawScreenPosition.Y = FMath::Clamp(DrawScreenPosition.Y, IconSize + TopEdgePadding*GetCanvas()->ClipY, GetCanvas()->ClipY - IconSize - BottomEdgePadding*GetCanvas()->ClipY);
+		DrawScreenPosition.Z = 0.0f;
+	}
+	return DrawScreenPosition;
+}
+
+
+void UUTHUDWidget_FlagRunStatus::DrawEdgeArrow(FVector InWorldPosition, FVector PlayerViewPoint, FRotator PlayerViewRotation, FVector InDrawScreenPosition, float CurrentWorldAlpha, float WorldRenderScale, int32 Team)
+{
+	ArrowTemplate.RenderScale = 1.1f * WorldRenderScale;
+	ArrowTemplate.RenderOpacity = CurrentWorldAlpha;
+	ArrowTemplate.RenderColor = (Team == 0) ? REDHUDCOLOR : BLUEHUDCOLOR;
+	float RotYaw = FMath::Acos(PlayerViewRotation.Vector() | (InWorldPosition - PlayerViewPoint).GetSafeNormal()) * 180.f / PI;
+	if (InDrawScreenPosition.X < 0.f)
+	{
+		RotYaw *= -1.f;
+	}
+	RenderObj_TextureAtWithRotation(ArrowTemplate, FVector2D(InDrawScreenPosition.X, InDrawScreenPosition.Y), RotYaw);
+}
+
 bool UUTHUDWidget_FlagRunStatus::ShouldDrawFlag(AUTFlag* Flag, bool bIsEnemyFlag)
 {
 	return (Flag->ObjectState == CarriedObjectState::Dropped) || (Flag->ObjectState == CarriedObjectState::Home) || Flag->bCurrentlyPinged || !bIsEnemyFlag;
 }
 
-void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
+FText UUTHUDWidget_FlagRunStatus::GetFlagReturnTime(AUTFlag* Flag)
+{
+	return Flag ? FText::AsNumber(Flag->FlagReturnTime) : FText::GetEmpty();
+}
+
+void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
 {
 	if (FlagBase)
 	{
@@ -126,7 +292,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTCTFGameState* GameState, F
 	}
 }
 
-void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
+void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
 {
 	bool bSpectating = UTPlayerOwner->PlayerState && UTPlayerOwner->PlayerState->bOnlySpectator;
 	bool bIsEnemyFlag = Flag && GameState && !GameState->OnSameTeam(Flag, UTPlayerOwner);
@@ -265,10 +431,9 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTCTFGameState* GameState, FVect
 			}
 			else if (Flag->ObjectState == CarriedObjectState::Home)
 			{
-				AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(GameState);
-				if (RCTFGameState && (RCTFGameState->RemainingPickupDelay > 0))
+				if (GameState->RemainingPickupDelay > 0)
 				{
-					DrawText(FText::AsNumber(RCTFGameState->RemainingPickupDelay), DrawNumberPosition.X, DrawNumberPosition.Y, TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 1.5f*InWorldNumberScale, 0.5f + 0.5f*CurrentNumberAlpha, FLinearColor::White, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);
+					DrawText(FText::AsNumber(GameState->RemainingPickupDelay), DrawNumberPosition.X, DrawNumberPosition.Y, TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 1.5f*InWorldNumberScale, 0.5f + 0.5f*CurrentNumberAlpha, FLinearColor::White, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);
 				}
 			}
 		}
