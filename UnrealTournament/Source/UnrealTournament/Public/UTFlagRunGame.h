@@ -15,26 +15,22 @@ class UNREALTOURNAMENT_API AUTFlagRunGame : public AUTTeamGameMode
 public:
 
 	/** Cached reference to the CTF game state */
-	UPROPERTY(BlueprintReadOnly, Category = CTF)
-		AUTCTFGameState* CTFGameState;
+	UPROPERTY(BlueprintReadOnly, Category = Blitz)
+		AUTFlagRunGameState* BlitzGameState;
 
 	/** Class of GameState associated with this GameMode. */
 	UPROPERTY(EditAnywhere, noclear, BlueprintReadWrite, Category = Classes)
-		TSubclassOf<class AUTBaseScoring> CTFScoringClass;
+		TSubclassOf<class AUTBaseScoring> BlitzScoringClass;
 
 	/** Handles individual player scoring */
-	UPROPERTY(BlueprintReadOnly, Category = CTF)
-		AUTBaseScoring* CTFScoring;
+	UPROPERTY(BlueprintReadOnly, Category = Blitz)
+		AUTBaseScoring* BlitzScoring;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CTF)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Blitz)
 		int32 IntermissionDuration;
 
-	UPROPERTY(BlueprintReadOnly, Category = CTF)
+	UPROPERTY(BlueprintReadOnly, Category = Blitz)
 		AUTTeamInfo* LastTeamToScore;
-
-	/**Amount of score to give team for flag capture. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CTF)
-		int32 FlagCapScore;
 
 	UPROPERTY(transient)
 		bool bPlacingPlayersAtIntermission;
@@ -63,11 +59,11 @@ public:
 		bool bAllowBoosts;
 
 	/*  If true, slow flag carrier */
-	UPROPERTY(BlueprintReadOnly, Category = CTF)
+	UPROPERTY(BlueprintReadOnly, Category = Blitz)
 		bool bSlowFlagCarrier;
 
 	/** Active carried object for this round. */
-	UPROPERTY(BlueprintReadOnly, Category = CTF)
+	UPROPERTY(BlueprintReadOnly, Category = Blitz)
 		class AUTCarriedObject* ActiveFlag;
 
 	TAssetSubclassOf<class AUTInventory> ActivatedPowerupPlaceholderObject;
@@ -101,26 +97,26 @@ public:
 		FName LastDefenderSpawnGroup;
 
 	/** Alternate round victory condition - get this many kills. */
-	UPROPERTY(BlueprintReadWrite, Category = CTF)
+	UPROPERTY(BlueprintReadWrite, Category = Blitz)
 		int32 RoundLives;
 
 	/* If true, use world settings round times */
-	UPROPERTY(BlueprintReadOnly, Category = CTF)
+	UPROPERTY(BlueprintReadOnly, Category = Blitz)
 		bool bUseLevelTiming;
 
 	/** Respawn wait time for team with no life limit. */
-	UPROPERTY(BlueprintReadOnly, Category = CTF)
+	UPROPERTY(BlueprintReadOnly, Category = Blitz)
 		float UnlimitedRespawnWaitTime;
 
 	/** Limited Respawn wait time. */
-	UPROPERTY(BlueprintReadOnly, Category = CTF)
+	UPROPERTY(BlueprintReadOnly, Category = Blitz)
 		float LimitedRespawnWaitTime;
 
-	UPROPERTY(BlueprintReadOnly, Category = CTF)
+	UPROPERTY(BlueprintReadOnly, Category = Blitz)
 		int32 NumRounds;
 
 	/** Last time Ace reward was announced (kill results in all five member of enemy team dead simultaneously). */
-	UPROPERTY(BlueprintReadWrite, Category = CTF)
+	UPROPERTY(BlueprintReadWrite, Category = Blitz)
 		float LastAceTime;
 
 	/** Set once first round has been initialized. */
@@ -128,7 +124,7 @@ public:
 		bool bFirstRoundInitialized;
 
 	/*  Victory due to secondary score (best total capture time) */
-	UPROPERTY(BlueprintReadOnly, Category = CTF)
+	UPROPERTY(BlueprintReadOnly, Category = Blitz)
 		bool bSecondaryWin;
 
 	/** Delay at start of round before attackers can pick up flag. */
@@ -208,7 +204,6 @@ public:
 	virtual void IntermissionSwapSides();
 	virtual int32 GetFlagCapScore();
 	virtual int32 GetDefenseScore();
-	virtual void BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo* ScoringTeam, int32 OldScore = 0);
 	virtual void CheckRoundTimeVictory();
 	virtual void InitGameStateForRound();
 	virtual bool IsTeamOnOffense(int32 TeamNumber) const;

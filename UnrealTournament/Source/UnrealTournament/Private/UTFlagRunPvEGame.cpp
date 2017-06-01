@@ -207,7 +207,7 @@ void AUTFlagRunPvEGame::HandleMatchHasStarted()
 
 void AUTFlagRunPvEGame::CheckRoundTimeVictory()
 {
-	AUTFlagRunPvEGameState* FRGS = Cast<AUTFlagRunPvEGameState>(CTFGameState);
+	AUTFlagRunPvEGameState* FRGS = Cast<AUTFlagRunPvEGameState>(BlitzGameState);
 	int32 RemainingTime = UTGameState ? UTGameState->GetRemainingTime() : 100;
 	if (RemainingTime <= 0)
 	{

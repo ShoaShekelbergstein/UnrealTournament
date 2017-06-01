@@ -1,7 +1,6 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #include "UnrealTournament.h"
 #include "UTTeamGameMode.h"
-#include "UTHUD_CTF.h"
 #include "UTFlagRunGame.h"
 #include "UTCTFGameMessage.h"
 #include "UTCTFRoleMessage.h"
@@ -11,13 +10,11 @@
 #include "UTPickup.h"
 #include "UTGameMessage.h"
 #include "UTMutator.h"
-#include "UTCTFSquadAI.h"
 #include "UTWorldSettings.h"
 #include "Widgets/SUTTabWidget.h"
 #include "Dialogs/SUTPlayerInfoDialog.h"
 #include "StatNames.h"
 #include "Engine/DemoNetDriver.h"
-#include "UTCTFScoreboard.h"
 #include "UTShowdownGameMessage.h"
 #include "UTShowdownRewardMessage.h"
 #include "UTPlayerStart.h"
@@ -61,7 +58,6 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	TimeLimit = 5;
 	IntermissionDuration = 28.f;
 	RoundLives = 5;
-	FlagCapScore = 1;
 	UnlimitedRespawnWaitTime = 2.f;
 	bForceRespawn = true;
 	bFirstRoundInitialized = false;
@@ -97,7 +93,7 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 	bGameHasImpactHammer = false;
 	FlagPickupDelay = 20;
 	bTrackKillAssists = true;
-	CTFScoringClass = AUTFlagRunScoring::StaticClass();
+	BlitzScoringClass = AUTFlagRunScoring::StaticClass();
 	DefaultMaxPlayers = 10;
 	XPMultiplier = 3.5f;
 	MatchIntroTime = 2.f;
@@ -136,8 +132,8 @@ void AUTFlagRunGame::PreInitializeComponents()
 
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.Instigator = Instigator;
-	CTFScoring = GetWorld()->SpawnActor<AUTBaseScoring>(CTFScoringClass, SpawnInfo);
-	CTFScoring->InitFor(this);
+	BlitzScoring = GetWorld()->SpawnActor<AUTBaseScoring>(BlitzScoringClass, SpawnInfo);
+	BlitzScoring->InitFor(this);
 }
 
 void AUTFlagRunGame::CreateGameURLOptions(TArray<TSharedPtr<TAttributePropertyBase>>& MenuProps)
@@ -193,10 +189,10 @@ void AUTFlagRunGame::InitGameState()
 	Super::InitGameState();
 
 	// Store a cached reference to the GameState
-	CTFGameState = Cast<AUTCTFGameState>(GameState);
-	CTFGameState->SetMaxNumberOfTeams(NumTeams);
-	CTFGameState->CTFRound = 1;
-	CTFGameState->NumRounds = NumRounds;
+	BlitzGameState = Cast<AUTFlagRunGameState>(GameState);
+	BlitzGameState->SetMaxNumberOfTeams(NumTeams);
+	BlitzGameState->CTFRound = 1;
+	BlitzGameState->NumRounds = NumRounds;
 }
 
 void AUTFlagRunGame::PostLogin(APlayerController* NewPlayer)
@@ -231,9 +227,9 @@ void AUTFlagRunGame::BeginGame()
 			TestActor->Destroy();
 		}
 	}
-	if (CTFGameState)
+	if (BlitzGameState)
 	{
-		CTFGameState->ElapsedTime = 0;
+		BlitzGameState->ElapsedTime = 0;
 	}
 
 	//Let the game session override the StartMatch function, in case it wants to wait for arbitration
@@ -241,11 +237,11 @@ void AUTFlagRunGame::BeginGame()
 	{
 		return;
 	}
-	if (CTFGameState)
+	if (BlitzGameState)
 	{
-		CTFGameState->CTFRound = 1;
-		CTFGameState->NumRounds = NumRounds;
-		CTFGameState->HalftimeScoreDelay = 0.5f;
+		BlitzGameState->CTFRound = 1;
+		BlitzGameState->NumRounds = NumRounds;
+		BlitzGameState->HalftimeScoreDelay = 0.5f;
 	}
 	for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 	{
@@ -280,15 +276,14 @@ float AUTFlagRunGame::AdjustNearbyPlayerStartScore(const AController* Player, co
 
 int32 AUTFlagRunGame::GetFlagCapScore()
 {
-	AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(UTGameState);
-	if (GS)
+	if (BlitzGameState)
 	{
-		int32 BonusTime = GS->GetRemainingTime();
-		if (BonusTime >= GS->GoldBonusThreshold)
+		int32 BonusTime = BlitzGameState->GetRemainingTime();
+		if (BonusTime >= BlitzGameState->GoldBonusThreshold)
 		{
 			return GoldScore;
 		}
-		if (BonusTime >= GS->SilverBonusThreshold)
+		if (BonusTime >= BlitzGameState->SilverBonusThreshold)
 		{
 			return SilverScore;
 		}
@@ -308,23 +303,17 @@ void AUTFlagRunGame::AnnounceWin(AUTTeamInfo* WinningTeam, APlayerState* Scoring
 	}
 }
 
-void AUTFlagRunGame::BroadcastCTFScore(APlayerState* ScoringPlayer, AUTTeamInfo* ScoringTeam, int32 OldScore)
-{
-	AnnounceWin(ScoringTeam, ScoringPlayer, 0);
-}
-
 void AUTFlagRunGame::InitGameStateForRound()
 {
-	AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(CTFGameState);
-	if (FRGS)
+	if (BlitzGameState)
 	{
-		FRGS->CTFRound++;
-		FRGS->RemainingPickupDelay = FlagPickupDelay;
-		FRGS->bRedToCap = !FRGS->bRedToCap;
-		FRGS->CurrentRallyPoint = nullptr;
-		FRGS->PendingRallyPoint = nullptr;
-		FRGS->bEnemyRallyPointIdentified = false;
-		FRGS->ScoringPlayerState = nullptr;
+		BlitzGameState->CTFRound++;
+		BlitzGameState->RemainingPickupDelay = FlagPickupDelay;
+		BlitzGameState->bRedToCap = !BlitzGameState->bRedToCap;
+		BlitzGameState->CurrentRallyPoint = nullptr;
+		BlitzGameState->PendingRallyPoint = nullptr;
+		BlitzGameState->bEnemyRallyPointIdentified = false;
+		BlitzGameState->ScoringPlayerState = nullptr;
 	}
 }
 
@@ -337,10 +326,9 @@ float AUTFlagRunGame::RatePlayerStart(APlayerStart* P, AController* Player)
 		// try to spread out spawns between volumes
 		AUTPlayerStart* Start = (AUTPlayerStart*)P;
 		AUTPlayerState* PS = Player ? Cast<AUTPlayerState>(Player->PlayerState) : nullptr;
-		AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(CTFGameState);
-		if (Start && PS && FRGS && PS->Team != NULL)
+		if (Start && PS && BlitzGameState && PS->Team != NULL)
 		{
-			const bool bIsAttacker = (FRGS->bRedToCap == (PS->Team->TeamIndex == 0));
+			const bool bIsAttacker = (BlitzGameState->bRedToCap == (PS->Team->TeamIndex == 0));
 			if (Start->PlayerStartGroup != (bIsAttacker ? LastAttackerSpawnGroup : LastDefenderSpawnGroup))
 			{
 				Result += 20.f;
@@ -370,10 +358,9 @@ AActor* AUTFlagRunGame::FindPlayerStart_Implementation(AController* Player, cons
 		LastStartSpot = Best;
 		AUTPlayerStart* Start = (AUTPlayerStart*)Best;
 		AUTPlayerState* PS = Player ? Cast<AUTPlayerState>(Player->PlayerState) : nullptr;
-		AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(CTFGameState);
-		if (Start && PS && FRGS && PS->Team != NULL)
+		if (Start && PS && BlitzGameState && PS->Team != NULL)
 		{
-			if (FRGS->bRedToCap == (PS->Team->TeamIndex == 0))
+			if (BlitzGameState->bRedToCap == (PS->Team->TeamIndex == 0))
 			{
 				LastAttackerSpawnGroup = Start->PlayerStartGroup;
 			}
@@ -398,29 +385,28 @@ int32 AUTFlagRunGame::GetDefenseScore()
 
 void AUTFlagRunGame::CheckRoundTimeVictory()
 {
-	AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(CTFGameState);
 	int32 RemainingTime = UTGameState ? UTGameState->GetRemainingTime() : 100;
 	if (RemainingTime <= 0)
 	{
 		// Round is over, defense wins.
-		ScoreAlternateWin((FRGS && FRGS->bRedToCap) ? 1 : 0, 1);
+		ScoreAlternateWin((BlitzGameState && BlitzGameState->bRedToCap) ? 1 : 0, 1);
 	}
-	else if (RemainingTime - FRGS->EarlyEndTime <= 0)
+	else if (RemainingTime - BlitzGameState->EarlyEndTime <= 0)
 	{
 		// Round is over, defense wins.
-		ScoreAlternateWin((FRGS && FRGS->bRedToCap) ? 1 : 0, 2);
+		ScoreAlternateWin((BlitzGameState && BlitzGameState->bRedToCap) ? 1 : 0, 2);
 	}
-	else if (FRGS)
+	else if (BlitzGameState)
 	{
-		uint8 OldBonusLevel = FRGS->BonusLevel;
-		FRGS->BonusLevel = (RemainingTime >= FRGS->GoldBonusThreshold) ? 3 : 2;
-		if (RemainingTime < FRGS->SilverBonusThreshold)
+		uint8 OldBonusLevel = BlitzGameState->BonusLevel;
+		BlitzGameState->BonusLevel = (RemainingTime >= BlitzGameState->GoldBonusThreshold) ? 3 : 2;
+		if (RemainingTime < BlitzGameState->SilverBonusThreshold)
 		{
-			FRGS->BonusLevel = 1;
+			BlitzGameState->BonusLevel = 1;
 		}
-		if (OldBonusLevel != FRGS->BonusLevel)
+		if (OldBonusLevel != BlitzGameState->BonusLevel)
 		{
-			FRGS->ForceNetUpdate();
+			BlitzGameState->ForceNetUpdate();
 		}
 	}
 }
@@ -476,12 +462,12 @@ void AUTFlagRunGame::NotifyFirstPickup(AUTCarriedObject* Flag)
 void AUTFlagRunGame::IntermissionSwapSides()
 {
 	// swap sides, if desired
-	CTFGameState->ChangeTeamSides(1);
+	BlitzGameState->ChangeTeamSides(1);
 }
 
 void AUTFlagRunGame::InitFlags()
 {
-	for (AUTCTFFlagBase* Base : CTFGameState->FlagBases)
+	for (AUTCTFFlagBase* Base : BlitzGameState->FlagBases)
 	{
 		if (Base != NULL && Base->MyFlag)
 		{
@@ -523,7 +509,7 @@ void AUTFlagRunGame::InitFlags()
 			}
 		}
 	}
-	for (AUTCTFFlagBase* Base : CTFGameState->FlagBases)
+	for (AUTCTFFlagBase* Base : BlitzGameState->FlagBases)
 	{
 		if (Base)
 		{
@@ -534,7 +520,7 @@ void AUTFlagRunGame::InitFlags()
 
 int32 AUTFlagRunGame::PickCheatWinTeam()
 {
-	AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(CTFGameState);
+	AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(BlitzGameState);
 	return (FRGS && FRGS->bRedToCap) ? 0 : 1;
 }
 
@@ -546,7 +532,7 @@ bool AUTFlagRunGame::CheckScore_Implementation(AUTPlayerState* Scorer)
 
 bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 {
-	if (ScoringTeam && CTFGameState && (CTFGameState->CTFRound >= NumRounds) && (CTFGameState->CTFRound % 2 == 0))
+	if (ScoringTeam && BlitzGameState && (BlitzGameState->CTFRound >= NumRounds) && (BlitzGameState->CTFRound % 2 == 0))
 	{
 		AUTTeamInfo* BestTeam = ScoringTeam;
 		bool bHaveTie = false;
@@ -602,11 +588,11 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 
 	// Check if a team has an insurmountable lead
 	// current implementation assumes 6 rounds and 2 teams
-	if (CTFGameState && (CTFGameState->CTFRound >= NumRounds - 2) && Teams[0] && Teams[1])
+	if (BlitzGameState && (BlitzGameState->CTFRound >= NumRounds - 2) && Teams[0] && Teams[1])
 	{
-		AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(CTFGameState);
+		AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(BlitzGameState);
 		bSecondaryWin = false;
-		if ((CTFGameState->CTFRound == NumRounds - 2) && (FMath::Abs(Teams[0]->Score - Teams[1]->Score) > DefenseScore + GoldScore))
+		if ((BlitzGameState->CTFRound == NumRounds - 2) && (FMath::Abs(Teams[0]->Score - Teams[1]->Score) > DefenseScore + GoldScore))
 		{
 			AUTTeamInfo* BestTeam = (Teams[0]->Score > Teams[1]->Score) ? Teams[0] : Teams[1];
 			EndTeamGame(BestTeam, FName(TEXT("scorelimit")));
@@ -633,7 +619,7 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 			}
 			return true;
 		}
-		if (CTFGameState->CTFRound == NumRounds - 1)
+		if (BlitzGameState->CTFRound == NumRounds - 1)
 		{
 			if (GS && GS->bRedToCap)
 			{
@@ -775,8 +761,8 @@ void AUTFlagRunGame::DefaultTimer()
 
 	if (UTGameState && UTGameState->IsMatchInProgress() && !UTGameState->IsMatchIntermission())
 	{
-		AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(CTFGameState);
-		if (RCTFGameState && (RCTFGameState->RemainingPickupDelay <= 0) && (GetWorld()->GetTimeSeconds() - LastEntryDefenseWarningTime > 12.f))
+		AUTFlagRunGameState* RBlitzGameState = Cast<AUTFlagRunGameState>(BlitzGameState);
+		if (RBlitzGameState && (RBlitzGameState->RemainingPickupDelay <= 0) && (GetWorld()->GetTimeSeconds() - LastEntryDefenseWarningTime > 12.f))
 		{
 			// check for uncovered routes - support up to 5 entries for now
 			AUTGameVolume* EntryRoutes[MAXENTRYROUTES];
@@ -871,7 +857,7 @@ int32 AUTFlagRunGame::GetComSwitch(FName CommandTag, AActor* ContextActor, AUTPl
 {
 	if (World == nullptr) return INDEX_NONE;
 
-	AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(CTFGameState);
+	AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(BlitzGameState);
 
 	if (Instigator == nullptr || GS == nullptr)
 	{
@@ -1205,7 +1191,7 @@ void AUTFlagRunGame::HandleMatchIntermission()
 		// view defender base, with last team to score around it
 		int32 TeamToWatch = IntermissionTeamToView(nullptr);
 
-		if ((CTFGameState == NULL) || (TeamToWatch >= CTFGameState->FlagBases.Num()) || (CTFGameState->FlagBases[TeamToWatch] == NULL))
+		if ((BlitzGameState == NULL) || (TeamToWatch >= BlitzGameState->FlagBases.Num()) || (BlitzGameState->FlagBases[TeamToWatch] == NULL))
 		{
 			return;
 		}
@@ -1227,40 +1213,39 @@ void AUTFlagRunGame::HandleMatchIntermission()
 		UTGameState->CreateLineUp(LineUpTypes::Intermission);
 	}
 
-	if (CTFGameState)
+	if (BlitzGameState)
 	{
-		CTFGameState->bIsAtIntermission = true;
-		CTFGameState->bStopGameClock = true;
-		CTFGameState->IntermissionTime = IntermissionDuration;
+		BlitzGameState->bIsAtIntermission = true;
+		BlitzGameState->bStopGameClock = true;
+		BlitzGameState->IntermissionTime = IntermissionDuration;
 	}
 
-	AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(UTGameState);
-	if (GS && GS->GetScoringPlays().Num() > 0)
+	if (BlitzGameState && BlitzGameState->GetScoringPlays().Num() > 0)
 	{
-		GS->UpdateRoundHighlights();
+		BlitzGameState->UpdateRoundHighlights();
 	}
-	if ((GS == nullptr) || (GS->CTFRound < GS->NumRounds - 3) || bBasicTrainingGame)
+	if ((BlitzGameState == nullptr) || (BlitzGameState->CTFRound < BlitzGameState->NumRounds - 3) || bBasicTrainingGame)
 	{
 		return;
 	}
 
 	// Update win requirements if last two rounds
-	AUTTeamInfo* NextAttacker = (GS->bRedToCap == GS->IsMatchIntermission()) ? GS->Teams[1] : GS->Teams[0];
-	AUTTeamInfo* NextDefender = (GS->bRedToCap == GS->IsMatchIntermission()) ? GS->Teams[0] : GS->Teams[1];
-	int32 RequiredTime = (GS->bRedToCap == GS->IsMatchIntermission()) ? GS->TiebreakValue : -1 * GS->TiebreakValue;
+	AUTTeamInfo* NextAttacker = (BlitzGameState->bRedToCap == BlitzGameState->IsMatchIntermission()) ? BlitzGameState->Teams[1] : BlitzGameState->Teams[0];
+	AUTTeamInfo* NextDefender = (BlitzGameState->bRedToCap == BlitzGameState->IsMatchIntermission()) ? BlitzGameState->Teams[0] : BlitzGameState->Teams[1];
+	int32 RequiredTime = (BlitzGameState->bRedToCap == BlitzGameState->IsMatchIntermission()) ? BlitzGameState->TiebreakValue : -1 * BlitzGameState->TiebreakValue;
 	RequiredTime = FMath::Max(RequiredTime, 0);
-	GS->FlagRunMessageTeam = nullptr;
-	GS->EarlyEndTime = 0;
-	if (GS->CTFRound == GS->NumRounds - 3)
+	BlitzGameState->FlagRunMessageTeam = nullptr;
+	BlitzGameState->EarlyEndTime = 0;
+	if (BlitzGameState->CTFRound == BlitzGameState->NumRounds - 3)
 	{
 		if (NextAttacker->Score > NextDefender->Score - 1)
 		{
-			GS->FlagRunMessageTeam = NextDefender;
-			GS->FlagRunMessageSwitch = FMath::Clamp(5 - (NextAttacker->Score - NextDefender->Score), 1, 3);
+			BlitzGameState->FlagRunMessageTeam = NextDefender;
+			BlitzGameState->FlagRunMessageSwitch = FMath::Clamp(5 - (NextAttacker->Score - NextDefender->Score), 1, 3);
 		}
 		else if (NextAttacker->Score < NextDefender->Score - 4)
 		{
-			GS->FlagRunMessageTeam = NextAttacker;
+			BlitzGameState->FlagRunMessageTeam = NextAttacker;
 			int32 BonusType = NextDefender->Score - 4 - NextAttacker->Score;
 			if (RequiredTime > 60)
 			{
@@ -1268,29 +1253,29 @@ void AUTFlagRunGame::HandleMatchIntermission()
 				RequiredTime = 0;
 			}
 			BonusType = FMath::Min(BonusType, 3);
-			GS->FlagRunMessageSwitch = 100 * RequiredTime + BonusType + 3;
-			GS->EarlyEndTime = 60 * (BonusType - 1) + RequiredTime;
+			BlitzGameState->FlagRunMessageSwitch = 100 * RequiredTime + BonusType + 3;
+			BlitzGameState->EarlyEndTime = 60 * (BonusType - 1) + RequiredTime;
 		}
 	}
-	else if (GS->CTFRound == GS->NumRounds - 2)
+	else if (BlitzGameState->CTFRound == BlitzGameState->NumRounds - 2)
 	{
 		if (NextAttacker->Score > NextDefender->Score)
 		{
-			GS->FlagRunMessageTeam = NextDefender;
+			BlitzGameState->FlagRunMessageTeam = NextDefender;
 			if (NextAttacker->Score - NextDefender->Score > 2)
 			{
 				// Defenders must stop attackers to have a chance
-				GS->FlagRunMessageSwitch = 1;
+				BlitzGameState->FlagRunMessageSwitch = 1;
 			}
 			else
 			{
 				int32 BonusType = (NextAttacker->Score - NextDefender->Score == 2) ? 1 : 2;
-				GS->FlagRunMessageSwitch = BonusType + 1;
+				BlitzGameState->FlagRunMessageSwitch = BonusType + 1;
 			}
 		}
 		else if (NextDefender->Score > NextAttacker->Score)
 		{
-			GS->FlagRunMessageTeam = NextAttacker;
+			BlitzGameState->FlagRunMessageTeam = NextAttacker;
 			
 			int32 BonusType = FMath::Max(1, (NextDefender->Score - NextAttacker->Score) - 1);
 			if (RequiredTime > 60)
@@ -1299,17 +1284,17 @@ void AUTFlagRunGame::HandleMatchIntermission()
 				RequiredTime = 0;
 			}
 			BonusType = FMath::Min(BonusType, 3);
-			GS->FlagRunMessageSwitch = 100 * RequiredTime + BonusType + 3;
-			GS->EarlyEndTime = 60 * (BonusType - 1) + RequiredTime;
+			BlitzGameState->FlagRunMessageSwitch = 100 * RequiredTime + BonusType + 3;
+			BlitzGameState->EarlyEndTime = 60 * (BonusType - 1) + RequiredTime;
 		}
 	}
-	else if (GS->CTFRound == GS->NumRounds - 1)
+	else if (BlitzGameState->CTFRound == BlitzGameState->NumRounds - 1)
 	{
 		bool bNeedTimeThreshold = false;
-		GS->FlagRunMessageTeam = NextAttacker;
+		BlitzGameState->FlagRunMessageTeam = NextAttacker;
 		if (NextDefender->Score <= NextAttacker->Score)
 		{
-			GS->FlagRunMessageSwitch = 8;
+			BlitzGameState->FlagRunMessageSwitch = 8;
 		}
 		else
 		{
@@ -1319,12 +1304,11 @@ void AUTFlagRunGame::HandleMatchIntermission()
 				BonusType++;
 				RequiredTime = 0;
 			}
-			GS->FlagRunMessageSwitch = 7 + BonusType + 100 * RequiredTime;
-			GS->EarlyEndTime = 60 * (BonusType - 1) + RequiredTime;
+			BlitzGameState->FlagRunMessageSwitch = 7 + BonusType + 100 * RequiredTime;
+			BlitzGameState->EarlyEndTime = 60 * (BonusType - 1) + RequiredTime;
 		}
 	}
 }
-
 
 void AUTFlagRunGame::CheatScore()
 {
@@ -1342,17 +1326,17 @@ void AUTFlagRunGame::CheatScore()
 				FAssistTracker NewAssist;
 				NewAssist.Holder = Cast<AUTPlayerState>(Members[FMath::RandHelper(Members.Num())]->PlayerState);
 				NewAssist.TotalHeldTime = 0.5f;
-				CTFGameState->FlagBases[ScoringTeam]->GetCarriedObject()->AssistTracking.Add(NewAssist);
+				BlitzGameState->FlagBases[ScoringTeam]->GetCarriedObject()->AssistTracking.Add(NewAssist);
 			}
 			if (FMath::FRand() < 0.5f)
 			{
-				CTFGameState->FlagBases[ScoringTeam]->GetCarriedObject()->HolderRescuers.Add(Members[FMath::RandHelper(Members.Num())]);
+				BlitzGameState->FlagBases[ScoringTeam]->GetCarriedObject()->HolderRescuers.Add(Members[FMath::RandHelper(Members.Num())]);
 			}
 			if (FMath::FRand() < 0.5f)
 			{
 				Cast<AUTPlayerState>(Members[FMath::RandHelper(Members.Num())]->PlayerState)->LastFlagReturnTime = GetWorld()->GetTimeSeconds() - 0.1f;
 			}
-			ScoreObject(CTFGameState->FlagBases[ScoringTeam]->GetCarriedObject(), Cast<AUTCharacter>(Cast<AController>(Scorer->GetOwner())->GetPawn()), Scorer, FName("FlagCapture"));
+			ScoreObject(BlitzGameState->FlagBases[ScoringTeam]->GetCarriedObject(), Cast<AUTCharacter>(Cast<AController>(Scorer->GetOwner())->GetPawn()), Scorer, FName("FlagCapture"));
 		}
 	}
 }
@@ -1463,7 +1447,7 @@ void AUTFlagRunGame::HandleTeamChange(AUTPlayerState* PS, AUTTeamInfo* OldTeam)
 
 AActor* AUTFlagRunGame::SetIntermissionCameras(uint32 TeamToWatch)
 {
-	AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(CTFGameState);
+	AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(BlitzGameState);
 	if (FRGS)
 	{
 		bool bWasCap = false;
@@ -1493,7 +1477,7 @@ AActor* AUTFlagRunGame::SetIntermissionCameras(uint32 TeamToWatch)
 
 bool AUTFlagRunGame::IsTeamOnOffense(int32 TeamNumber) const
 {
-	AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(CTFGameState);
+	AUTFlagRunGameState* FRGS = Cast<AUTFlagRunGameState>(BlitzGameState);
 	return FRGS && (FRGS->bRedToCap == (TeamNumber == 0));
 }
 
@@ -1532,10 +1516,10 @@ void AUTFlagRunGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AU
 		}
 	}
 
-	if (Holder != NULL && Holder->Team != NULL && !CTFGameState->HasMatchEnded() && !CTFGameState->IsMatchIntermission())
+	if (Holder != NULL && Holder->Team != NULL && !BlitzGameState->HasMatchEnded() && !BlitzGameState->IsMatchIntermission())
 	{
 		int32 NewFlagCapScore = GetFlagCapScore();
-		CTFScoring->ScoreObject(GameObject, HolderPawn, Holder, Reason, NewFlagCapScore);
+		BlitzScoring->ScoreObject(GameObject, HolderPawn, Holder, Reason, NewFlagCapScore);
 
 		if (BaseMutator != NULL)
 		{
@@ -1550,7 +1534,7 @@ void AUTFlagRunGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AU
 			Holder->Team->Score += NewFlagCapScore;
 			Holder->Team->ForceNetUpdate();
 			LastTeamToScore = Holder->Team;
-			BroadcastCTFScore(Holder, Holder->Team, OldScore);
+			AnnounceWin(Holder->Team, Holder, 0);
 			AddCaptureEventToReplay(Holder, Holder->Team);
 			if (Holder->FlagCaptures == 3)
 			{
@@ -1562,9 +1546,9 @@ void AUTFlagRunGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AU
 				AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
 				if (PC)
 				{
-					if (CTFGameState->FlagBases[Holder->Team->TeamIndex] != nullptr)
+					if (BlitzGameState->FlagBases[Holder->Team->TeamIndex] != nullptr)
 					{
-						PC->UTClientPlaySound(CTFGameState->FlagBases[Holder->Team->TeamIndex]->FlagScoreRewardSound);
+						PC->UTClientPlaySound(BlitzGameState->FlagBases[Holder->Team->TeamIndex]->FlagScoreRewardSound);
 					}
 
 					AUTPlayerState* PS = Cast<AUTPlayerState>((*Iterator)->PlayerState);
@@ -1650,7 +1634,7 @@ void AUTFlagRunGame::ScoreAlternateWin(int32 WinningTeamIndex, uint8 Reason /* =
 		{
 			WinningTeam->Score += IsTeamOnOffense(WinningTeamIndex) ? GetFlagCapScore() : GetDefenseScore();
 		}
-		if (CTFGameState)
+		if (BlitzGameState)
 		{
 			for (int32 i = 0; i < Teams.Num(); i++)
 			{
@@ -1661,24 +1645,24 @@ void AUTFlagRunGame::ScoreAlternateWin(int32 WinningTeamIndex, uint8 Reason /* =
 			}
 			if (Reason != 2)
 			{
-				WinningTeam->RoundBonus = FMath::Min(MaxTimeScoreBonus, CTFGameState->GetRemainingTime());
+				WinningTeam->RoundBonus = FMath::Min(MaxTimeScoreBonus, BlitzGameState->GetRemainingTime());
 				UpdateTiebreak(WinningTeam->RoundBonus, WinningTeam->TeamIndex);
 			}
 
 			FCTFScoringPlay NewScoringPlay;
 			NewScoringPlay.Team = WinningTeam;
 			NewScoringPlay.bDefenseWon = !IsTeamOnOffense(WinningTeamIndex);
-			NewScoringPlay.Period = CTFGameState->CTFRound;
+			NewScoringPlay.Period = BlitzGameState->CTFRound;
 			NewScoringPlay.bAnnihilation = (Reason == 0);
-			NewScoringPlay.TeamScores[0] = CTFGameState->Teams[0] ? CTFGameState->Teams[0]->Score : 0;
-			NewScoringPlay.TeamScores[1] = CTFGameState->Teams[1] ? CTFGameState->Teams[1]->Score : 0;
-			NewScoringPlay.RemainingTime = CTFGameState->GetRemainingTime();
-			NewScoringPlay.RedBonus = CTFGameState->Teams[0] ? CTFGameState->Teams[0]->RoundBonus : 0;
-			NewScoringPlay.BlueBonus = CTFGameState->Teams[1] ? CTFGameState->Teams[1]->RoundBonus : 0;
-			CTFGameState->AddScoringPlay(NewScoringPlay);
+			NewScoringPlay.TeamScores[0] = BlitzGameState->Teams[0] ? BlitzGameState->Teams[0]->Score : 0;
+			NewScoringPlay.TeamScores[1] = BlitzGameState->Teams[1] ? BlitzGameState->Teams[1]->Score : 0;
+			NewScoringPlay.RemainingTime = BlitzGameState->GetRemainingTime();
+			NewScoringPlay.RedBonus = BlitzGameState->Teams[0] ? BlitzGameState->Teams[0]->RoundBonus : 0;
+			NewScoringPlay.BlueBonus = BlitzGameState->Teams[1] ? BlitzGameState->Teams[1]->RoundBonus : 0;
+			BlitzGameState->AddScoringPlay(NewScoringPlay);
 
 			// force replication of server clock time
-			CTFGameState->SetRemainingTime(CTFGameState->GetRemainingTime());
+			BlitzGameState->SetRemainingTime(BlitzGameState->GetRemainingTime());
 		}
 
 		WinningTeam->ForceNetUpdate();
@@ -1705,8 +1689,8 @@ void AUTFlagRunGame::ScoreAlternateWin(int32 WinningTeamIndex, uint8 Reason /* =
 
 void AUTFlagRunGame::UpdateTiebreak(int32 Bonus, int32 TeamIndex)
 {
-	AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(CTFGameState);
-	if (RCTFGameState)
+	AUTFlagRunGameState* RBlitzGameState = Cast<AUTFlagRunGameState>(BlitzGameState);
+	if (RBlitzGameState)
 	{
 		if (Bonus == MaxTimeScoreBonus)
 		{
@@ -1721,11 +1705,11 @@ void AUTFlagRunGame::UpdateTiebreak(int32 Bonus, int32 TeamIndex)
 		}
 		if (TeamIndex == 0)
 		{
-			RCTFGameState->TiebreakValue += Bonus;
+			RBlitzGameState->TiebreakValue += Bonus;
 		}
 		else
 		{
-			RCTFGameState->TiebreakValue -= Bonus;
+			RBlitzGameState->TiebreakValue -= Bonus;
 		}
 	}
 }
@@ -1805,10 +1789,10 @@ bool AUTFlagRunGame::PlayerWonChallenge()
 
 void AUTFlagRunGame::CheckGameTime()
 {
-	AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(CTFGameState);
-	if (RCTFGameState && RCTFGameState->IsMatchIntermission())
+	AUTFlagRunGameState* RBlitzGameState = Cast<AUTFlagRunGameState>(BlitzGameState);
+	if (RBlitzGameState && RBlitzGameState->IsMatchIntermission())
 	{
-		if (RCTFGameState->IntermissionTime <= 0)
+		if (RBlitzGameState->IntermissionTime <= 0)
 		{
 			SetMatchState(MatchState::MatchExitingIntermission);
 		}
@@ -1819,9 +1803,9 @@ void AUTFlagRunGame::CheckGameTime()
 	}
 	else
 	{
-		if (CTFGameState->IsMatchIntermission())
+		if (BlitzGameState->IsMatchIntermission())
 		{
-			if (CTFGameState->GetIntermissionTime() <= 0)
+			if (BlitzGameState->GetIntermissionTime() <= 0)
 			{
 				SetMatchState(MatchState::MatchExitingIntermission);
 			}
@@ -1843,9 +1827,9 @@ uint8 AUTFlagRunGame::GetWinningTeamForLineUp() const
 		{
 			Result = FlagScorer->GetTeamNum();
 		}
-		else if (CTFGameState != nullptr && CTFGameState->GetScoringPlays().Num() > 0)
+		else if (BlitzGameState != nullptr && BlitzGameState->GetScoringPlays().Num() > 0)
 		{
-			const TArray<const FCTFScoringPlay>& ScoringPlays = CTFGameState->GetScoringPlays();
+			const TArray<const FCTFScoringPlay>& ScoringPlays = BlitzGameState->GetScoringPlays();
 			const FCTFScoringPlay& WinningPlay = ScoringPlays.Last();
 
 			if (WinningPlay.Team)
@@ -1979,8 +1963,8 @@ int32 AUTFlagRunGame::IntermissionTeamToView(AUTPlayerController* PC)
 
 void AUTFlagRunGame::HandleExitingIntermission()
 {
-	CTFGameState->bStopGameClock = false;
-	CTFGameState->HalftimeScoreDelay = 3.f;
+	BlitzGameState->bStopGameClock = false;
+	BlitzGameState->HalftimeScoreDelay = 3.f;
 	RemoveAllPawns();
 
 	if (bFirstRoundInitialized)
@@ -1989,7 +1973,7 @@ void AUTFlagRunGame::HandleExitingIntermission()
 	}
 	else
 	{
-		CTFGameState->CTFRound = 0;
+		BlitzGameState->CTFRound = 0;
 	}
 
 	InitRound();
@@ -2021,9 +2005,9 @@ void AUTFlagRunGame::HandleExitingIntermission()
 	}
 
 	// Send all flags home..
-	CTFGameState->ResetFlags();
-	CTFGameState->bIsAtIntermission = false;
-	CTFGameState->SetTimeLimit(TimeLimit);		// Reset the GameClock for the second time.
+	BlitzGameState->ResetFlags();
+	BlitzGameState->bIsAtIntermission = false;
+	BlitzGameState->SetTimeLimit(TimeLimit);		// Reset the GameClock for the second time.
 	SetMatchState(MatchState::InProgress);
 
 	UTGameState->ClearLineUp();
@@ -2031,7 +2015,7 @@ void AUTFlagRunGame::HandleExitingIntermission()
 
 void AUTFlagRunGame::ScoreKill_Implementation(AController* Killer, AController* Other, APawn* KilledPawn, TSubclassOf<UDamageType> DamageType)
 {
-	CTFScoring->ScoreKill(Killer, Other, KilledPawn, DamageType);
+	BlitzScoring->ScoreKill(Killer, Other, KilledPawn, DamageType);
 	if (Killer != NULL)
 	{
 		AUTPlayerState* AttackerPS = Cast<AUTPlayerState>(Killer->PlayerState);
@@ -2099,7 +2083,7 @@ void AUTFlagRunGame::ScoreKill_Implementation(AController* Killer, AController* 
 			if (!bFoundTeammate)
 			{
 				BroadcastLocalized(NULL, UUTShowdownRewardMessage::StaticClass(), 4);
-				CTFGameState->bStopGameClock = true;
+				BlitzGameState->bStopGameClock = true;
 
 				if (OtherPS->Team->TeamIndex == 0)
 				{
@@ -2217,7 +2201,7 @@ void AUTFlagRunGame::InitRound()
 	ResetFlags();
 	if (FlagPickupDelay > 0)
 	{
-		for (AUTCTFFlagBase* Base : CTFGameState->FlagBases)
+		for (AUTCTFFlagBase* Base : BlitzGameState->FlagBases)
 		{
 			if (Base != NULL && Base->MyFlag)
 			{
@@ -2227,11 +2211,10 @@ void AUTFlagRunGame::InitRound()
 		FTimerHandle TempHandle;
 		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTFlagRunGame::FlagCountDown, 1.f*GetActorTimeDilation(), false);
 		FTimerHandle RampHandle;
-		AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(CTFGameState);
-		if (RCTFGameState)
+		if (BlitzGameState)
 		{
-			RCTFGameState->RampStartTime = FMath::Max(int32(RampUpTime[RCTFGameState->CTFRound % RampUpMusic.Num()] + 0.5f), 1);
-			GetWorldTimerManager().SetTimer(RampHandle, this, &AUTFlagRunGame::PlayRampUpMusic, FlagPickupDelay - RampUpTime[RCTFGameState->CTFRound % RampUpMusic.Num()], false);
+			BlitzGameState->RampStartTime = FMath::Max(int32(RampUpTime[BlitzGameState->CTFRound % RampUpMusic.Num()] + 0.5f), 1);
+			GetWorldTimerManager().SetTimer(RampHandle, this, &AUTFlagRunGame::PlayRampUpMusic, FlagPickupDelay - RampUpTime[BlitzGameState->CTFRound % RampUpMusic.Num()], false);
 		}
 	}
 	else
@@ -2244,7 +2227,7 @@ void AUTFlagRunGame::InitRound()
 		AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
 		InitPlayerForRound(PS);
 	}
-	CTFGameState->SetTimeLimit(TimeLimit);
+	BlitzGameState->SetTimeLimit(TimeLimit);
 
 	// re-initialize all AI squads, in case objectives have changed sides
 	for (AUTTeamInfo* Team : Teams)
@@ -2260,14 +2243,14 @@ void AUTFlagRunGame::PlayRampUpMusic()
 		AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
 		if (PC != nullptr)
 		{
-			PC->UTClientPlaySound(RampUpMusic[CTFGameState->CTFRound % RampUpMusic.Num()]);
+			PC->UTClientPlaySound(RampUpMusic[BlitzGameState->CTFRound % RampUpMusic.Num()]);
 		}
 	}
 }
 
 void AUTFlagRunGame::ResetFlags()
 {
-	for (AUTCTFFlagBase* Base : CTFGameState->FlagBases)
+	for (AUTCTFFlagBase* Base : BlitzGameState->FlagBases)
 	{
 		if (Base != NULL && Base->MyFlag)
 		{
@@ -2344,7 +2327,7 @@ void AUTFlagRunGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 
 	if (IsGameInstanceServer() && LobbyBeacon)
 	{
-		FString MatchStats = FString::Printf(TEXT("%i"), CTFGameState->ElapsedTime);
+		FString MatchStats = FString::Printf(TEXT("%i"), BlitzGameState->ElapsedTime);
 
 		FMatchUpdate MatchUpdate;
 		MatchUpdate.GameTime = UTGameState->ElapsedTime;
@@ -2375,7 +2358,7 @@ void AUTFlagRunGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 				AUTTeamInfo* MyTeam = Controller->UTPlayerState->Team;
 				if (MyTeam)
 				{
-					BaseToView = CTFGameState->FlagBases[MyTeam->GetTeamNum()];
+					BaseToView = BlitzGameState->FlagBases[MyTeam->GetTeamNum()];
 				}
 			}
 
@@ -2421,11 +2404,11 @@ void AUTFlagRunGame::StopRCTFReplayRecording()
 
 void AUTFlagRunGame::FlagCountDown()
 {
-	AUTFlagRunGameState* RCTFGameState = Cast<AUTFlagRunGameState>(CTFGameState);
-	if (RCTFGameState && IsMatchInProgress() && (MatchState != MatchState::MatchIntermission))
+	AUTFlagRunGameState* RBlitzGameState = Cast<AUTFlagRunGameState>(BlitzGameState);
+	if (RBlitzGameState && IsMatchInProgress() && (MatchState != MatchState::MatchIntermission))
 	{
-		RCTFGameState->RemainingPickupDelay--;
-		if (RCTFGameState->RemainingPickupDelay > 0)
+		RBlitzGameState->RemainingPickupDelay--;
+		if (RBlitzGameState->RemainingPickupDelay > 0)
 		{
 			FTimerHandle TempHandle;
 			GetWorldTimerManager().SetTimer(TempHandle, this, &AUTFlagRunGame::FlagCountDown, 1.f*GetActorTimeDilation(), false);
@@ -2515,7 +2498,7 @@ void AUTFlagRunGame::AddDeniedEventToReplay(APlayerState* KillerPlayerState, AUT
 void AUTFlagRunGame::ScoreDamage_Implementation(int32 DamageAmount, AUTPlayerState* Victim, AUTPlayerState* Attacker)
 {
 	Super::ScoreDamage_Implementation(DamageAmount, Victim, Attacker);
-	CTFScoring->ScoreDamage(DamageAmount, Victim, Attacker);
+	BlitzScoring->ScoreDamage(DamageAmount, Victim, Attacker);
 }
 
 void AUTFlagRunGame::GameObjectiveInitialized(AUTGameObjective* Obj)
@@ -2523,7 +2506,7 @@ void AUTFlagRunGame::GameObjectiveInitialized(AUTGameObjective* Obj)
 	AUTCTFFlagBase* FlagBase = Cast<AUTCTFFlagBase>(Obj);
 	if (FlagBase != NULL)
 	{
-		CTFGameState->CacheFlagBase(FlagBase);
+		BlitzGameState->CacheFlagBase(FlagBase);
 	}
 }
 
@@ -2549,18 +2532,18 @@ void AUTFlagRunGame::EndGame(AUTPlayerState* Winner, FName Reason)
 	Super::EndGame(Winner, Reason);
 
 	// Send all of the flags home...
-	CTFGameState->ResetFlags();
+	BlitzGameState->ResetFlags();
 }
 
 void AUTFlagRunGame::SetEndGameFocus(AUTPlayerState* Winner)
 {
-	if (!GetWorld() || !CTFGameState)
+	if (!GetWorld() || !BlitzGameState)
 	{
 		return;
 	}
 	int32 WinnerTeamNum = Winner ? Winner->GetTeamNum() : (LastTeamToScore ? LastTeamToScore->TeamIndex : 0);
 	AUTCTFFlagBase* WinningBase = NULL;
-	WinningBase = CTFGameState->FlagBases[WinnerTeamNum];
+	WinningBase = BlitzGameState->FlagBases[WinnerTeamNum];
 
 	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 	{
@@ -2574,7 +2557,7 @@ void AUTFlagRunGame::SetEndGameFocus(AUTPlayerState* Winner)
 				AUTTeamInfo* MyTeam = Controller->UTPlayerState->Team;
 				if (MyTeam)
 				{
-					BaseToView = CTFGameState->FlagBases[MyTeam->GetTeamNum()];
+					BaseToView = BlitzGameState->FlagBases[MyTeam->GetTeamNum()];
 				}
 			}
 
