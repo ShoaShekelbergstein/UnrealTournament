@@ -3,7 +3,7 @@
 #include "UnrealTournament.h"
 #include "UTHUDWidget_Spectator.h"
 #include "UTCarriedObject.h"
-#include "UTCTFGameState.h"
+#include "UTFlagRunGameState.h"
 #include "UTDemoRecSpectator.h"
 #include "UTLineUpHelper.h"
 
@@ -240,10 +240,10 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 					else if (IntermissionTime < 10)
 					{
 						Args.Add("Time", FText::AsNumber(IntermissionTime));
-						AUTCTFGameState* CTFGameState = Cast<AUTCTFGameState>(UTGameState);
-						SpectatorMessage = !CTFGameState || (CTFGameState->CTFRound == 0)
-							? FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "HalfTime", "HALFTIME - Game resumes in {Time}"), Args)
-							: FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "Intermission", "Game resumes in {Time}"), Args);
+						AUTFlagRunGameState* BlitzGameState = Cast<AUTFlagRunGameState>(UTGameState);
+						SpectatorMessage = BlitzGameState
+							? FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "Intermission", "Game resumes in {Time}"), Args)
+							: FText::Format(NSLOCTEXT("UUTHUDWidget_Spectator", "HalfTime", "HALFTIME - Game resumes in {Time}"), Args);
 					}
 				}
 			}

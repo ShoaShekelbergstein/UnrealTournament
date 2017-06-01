@@ -190,7 +190,6 @@ void AUTFlagRunGame::InitGameState()
 
 	// Store a cached reference to the GameState
 	BlitzGameState = Cast<AUTFlagRunGameState>(GameState);
-	BlitzGameState->SetMaxNumberOfTeams(NumTeams);
 	BlitzGameState->CTFRound = 1;
 	BlitzGameState->NumRounds = NumRounds;
 }

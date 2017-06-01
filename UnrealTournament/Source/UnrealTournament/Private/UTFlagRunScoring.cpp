@@ -39,7 +39,7 @@ void AUTFlagRunScoring::ScoreObject(AUTCarriedObject* GameObject, AUTCharacter* 
 		NewScoringPlay.TeamScores[0] = CTFGameState->Teams[0] ? CTFGameState->Teams[0]->Score : 0;
 		NewScoringPlay.TeamScores[1] = CTFGameState->Teams[1] ? CTFGameState->Teams[1]->Score : 0;
 		NewScoringPlay.TeamScores[ScorerPS->Team->TeamIndex] += FlagCapScore;
-		NewScoringPlay.RemainingTime = CTFGameState->bPlayingAdvantage ? 0.f : CTFGameState->GetClockTime();
+		NewScoringPlay.RemainingTime = CTFGameState->GetClockTime();
 		NewScoringPlay.bAnnihilation = false;
 		NewScoringPlay.bDefenseWon = false;
 		NewScoringPlay.Period = CTFGameState->CTFRound;

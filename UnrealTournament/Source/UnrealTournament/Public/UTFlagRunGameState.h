@@ -6,9 +6,45 @@
 #include "UTFlagRunGameState.generated.h"
 
 UCLASS()
-class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFGameState
+class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTGameState
 {
 	GENERATED_UCLASS_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = CTF)
+		uint32 bIsAtIntermission : 1;
+
+	UPROPERTY(Replicated)
+		int32 IntermissionTime;
+
+	/** Delay before bringing up scoreboard at halftime. */
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = CTF)
+		float HalftimeScoreDelay;
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = CTF)
+		TArray<AUTCTFFlagBase*> FlagBases;
+
+	UPROPERTY(BlueprintReadOnly, Replicated)
+		int32 CTFRound;
+
+	UPROPERTY(BlueprintReadOnly, Replicated)
+		int32 NumRounds;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
+		FText RoundInProgressStatus;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
+		FText FullRoundInProgressStatus;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GameState)
+		FText IntermissionStatus;
+
+	virtual FText GetGameStatusText(bool bForScoreboard) override;
+
+	virtual float ScoreCameraView(AUTPlayerState* InPS, AUTCharacter *Character) override;
+
+	virtual uint8 NearestTeamSide(AActor* InActor) override;
+
+	bool GetImportantPickups_Implementation(TArray<AUTPickup*>& PickupList);
 
 	UPROPERTY(Replicated, BlueprintReadOnly)
 		uint32 bRedToCap : 1;
@@ -138,7 +174,6 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFGameState
 
 	virtual FText GetRoundStatusText(bool bForScoreboard);
 
-	virtual FText GetGameStatusText(bool bForScoreboard) override;
 	virtual FLinearColor GetGameStatusColor() override;
 	virtual void UpdateRoundHighlights() override;
 
@@ -146,7 +181,6 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTCTFGameState
 
 	virtual int32 NumHighlightsNeeded() override;
 	virtual bool InOrder(class AUTPlayerState* P1, class AUTPlayerState* P2) override;
-	virtual float GetClockTime() override;
 
 protected:
 	virtual void UpdateTimeMessage() override;
@@ -172,4 +206,57 @@ public:
 		FText DefendText;
 
 	virtual FText OverrideRoleText(AUTPlayerState* PS) override;
+
+	/** Cache a flag by in the FlagBases array */
+	virtual void CacheFlagBase(AUTCTFFlagBase* BaseToCache);
+
+	/** Returns the current state of a given flag */
+	virtual FName GetFlagState(uint8 TeamNum);
+
+	UFUNCTION(BlueprintCallable, Category = GameState)
+		virtual AUTPlayerState* GetFlagHolder(uint8 TeamNum);
+	virtual AUTCTFFlagBase* GetFlagBase(uint8 TeamNum);
+
+	virtual void ResetFlags();
+
+	/** Find the current team that is in the lead */
+	virtual AUTTeamInfo* FindLeadingTeam();
+
+	virtual float GetClockTime() override;
+	virtual bool IsMatchInProgress() const override;
+	virtual bool IsMatchIntermission() const override;
+	virtual float GetIntermissionTime() override;
+	virtual void DefaultTimer() override;
+
+	virtual FName OverrideCameraStyle(APlayerController* PCOwner, FName CurrentCameraStyle);
+
+	virtual void UpdateHighlights_Implementation() override;
+	virtual void AddMinorHighlights_Implementation(AUTPlayerState* PS) override;
+
+private:
+	/** list of scoring plays
+	* replicating dynamic arrays is dangerous for bandwidth and performance, but the alternative in this case is some painful code so we're as safe as possible by tightly restricting access
+	*/
+	UPROPERTY(Replicated)
+		TArray<FCTFScoringPlay> ScoringPlays;
+
+protected:
+	void SpawnLineUpZoneOnFlagBase(AUTCTFFlagBase* BaseToSpawnOn, LineUpTypes TypeToSpawn);
+
+public:
+	inline const TArray<const FCTFScoringPlay>& GetScoringPlays() const
+	{
+		return *(const TArray<const FCTFScoringPlay>*)&ScoringPlays;
+	}
+
+	virtual AUTLineUpZone* GetAppropriateSpawnList(LineUpTypes ZoneType);
+
+	/** Checks that all line up types have a valid line up zone for each line up type. If not, it creates a default to use for each type **/
+	virtual void SpawnDefaultLineUpZones();
+
+	AUTCTFFlagBase* GetLeadTeamFlagBase();
+
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = Scoring)
+		virtual void AddScoringPlay(const FCTFScoringPlay& NewScoringPlay);
+
 };
