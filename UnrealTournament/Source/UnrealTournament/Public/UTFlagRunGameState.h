@@ -21,9 +21,6 @@ class UNREALTOURNAMENT_API AUTFlagRunGameState : public AUTGameState
 		float HalftimeScoreDelay;
 
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = Blitz)
-		TArray<class AUTCTFFlagBase*> FlagBases;
-
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = Blitz)
 		class AUTBlitzDeliveryPoint* DeliveryPoint;
 
 	UPROPERTY(BlueprintReadOnly, Replicated, Category = Blitz)
@@ -211,13 +208,12 @@ public:
 
 	virtual FText OverrideRoleText(AUTPlayerState* PS) override;
 
-	/** Cache a flag by in the FlagBases array */
-	virtual void CacheFlagBase(AUTCTFFlagBase* BaseToCache);
+	virtual void CacheFlagBase(class AUTCTFFlagBase* BaseToCache);
 
 	UFUNCTION(BlueprintCallable, Category = GameState)
 		virtual AUTPlayerState* GetFlagHolder();
 
-	virtual AUTCTFFlagBase* GetFlagBase(uint8 TeamNum);
+	virtual class AUTCTFFlagBase* GetFlagBase(uint8 TeamNum);
 
 	virtual void ResetFlags();
 
@@ -240,7 +236,7 @@ private:
 		TArray<FCTFScoringPlay> ScoringPlays;
 
 protected:
-	void SpawnLineUpZoneOnFlagBase(AUTCTFFlagBase* BaseToSpawnOn, LineUpTypes TypeToSpawn);
+	void SpawnLineUpZoneOnFlagBase(class AUTCTFFlagBase* BaseToSpawnOn, LineUpTypes TypeToSpawn);
 
 public:
 	inline const TArray<const FCTFScoringPlay>& GetScoringPlays() const
@@ -253,7 +249,7 @@ public:
 	/** Checks that all line up types have a valid line up zone for each line up type. If not, it creates a default to use for each type **/
 	virtual void SpawnDefaultLineUpZones();
 
-	AUTCTFFlagBase* GetLeadTeamFlagBase();
+	class AUTCTFFlagBase* GetLeadTeamFlagBase();
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = Scoring)
 		virtual void AddScoringPlay(const FCTFScoringPlay& NewScoringPlay);

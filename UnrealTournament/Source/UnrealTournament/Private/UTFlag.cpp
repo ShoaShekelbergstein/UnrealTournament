@@ -7,6 +7,8 @@
 #include "UTCTFGameMode.h"
 #include "UTCTFRewardMessage.h"
 #include "UnrealNetwork.h"
+#include "UTFlagRunGameState.h"
+#include "UTBlitzDeliveryPoint.h"
 
 static FName NAME_Wipe(TEXT("Wipe"));
 
@@ -164,57 +166,6 @@ void AUTFlag::MoveToHome()
 	GetMesh()->ClothBlendWeight = ClothBlendHome;
 }
 
-void AUTFlag::Drop(AController* Killer)
-{
-	UUTGameplayStatics::UTPlaySound(GetWorld(), DropSound, (HoldingPawn != NULL) ? (AActor*)HoldingPawn : (AActor*)this);
-
-	bool bDelayDroppedMessage = false;
-	AUTPlayerState* KillerState = Killer ? Cast<AUTPlayerState>(Killer->PlayerState) : NULL;
-	if (KillerState && KillerState->Team && (KillerState != Holder))
-	{
-		// see if this is a last second save
-		AUTCTFGameState* GameState = GetWorld()->GetGameState<AUTCTFGameState>();
-		if (GameState)
-		{
-			AUTCTFFlagBase* OtherBase = GameState->FlagBases[1 - GetTeamNum()];
-			if (OtherBase && (OtherBase->GetFlagState() == CarriedObjectState::Home) && OtherBase->ActorIsNearMe(this))
-			{
-				AUTGameMode* GM = GetWorld()->GetAuthGameMode<AUTGameMode>();
-				if (GM)
-				{
-					bDelayDroppedMessage = true;
-					GM->BroadcastLocalized(this, UUTCTFRewardMessage::StaticClass(), 6, Killer->PlayerState, Holder, NULL);
-					GM->AddDeniedEventToReplay(Killer->PlayerState, Holder, Holder->Team);
-					KillerState->AddCoolFactorEvent(100.0f);
-					KillerState->ModifyStatsValue(NAME_FlagDenials, 1);
-				}
-			}
-		}
-	}
-
-	FlagDropTime = GetWorld()->GetTimeSeconds();
-	if (bDelayDroppedMessage)
-	{
-		FTimerHandle TempHandle;
-		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTFlag::DelayedDropMessage, 0.8f, false);
-	}
-	else
-	{
-		SendGameMessage(3, Holder, NULL);
-		LastDroppedMessageTime = GetWorld()->GetTimeSeconds();
-	}
-	NoLongerHeld();
-
-	if (HomeBase != NULL)
-	{
-		HomeBase->ObjectWasDropped(LastHoldingPawn);
-	}
-	ChangeState(CarriedObjectState::Dropped);
-
-	// Toss is out
-	TossObject(LastHoldingPawn);
-}
-
 void AUTFlag::SetHolder(AUTCharacter* NewHolder)
 {
 	Super::SetHolder(NewHolder);
@@ -316,21 +267,31 @@ void AUTFlag::Tick(float DeltaTime)
 					else if (HoldingPawn->GetController())
 					{
 						// ping if has LOS to flag base
-						AUTCTFGameState* GameState = GetWorld()->GetGameState<AUTCTFGameState>();
-						if (GameState)
+						// FIXMESTEVE move to blitz flag
+						AUTGameObjective* OtherBase = nullptr;
+						AUTCTFGameState* CTFGameState = GetWorld()->GetGameState<AUTCTFGameState>();
+						if (CTFGameState)
 						{
-							AUTCTFFlagBase* OtherBase = GameState->FlagBases[1 - GetTeamNum()];
-							if (OtherBase)
+							OtherBase = CTFGameState->FlagBases[1 - GetTeamNum()];
+						}
+						else
+						{
+							AUTFlagRunGameState* BlitzGameState = GetWorld()->GetGameState<AUTFlagRunGameState>();
+							if (BlitzGameState)
 							{
-								FVector StartLocation = HoldingPawn->GetActorLocation() + FVector(0.f, 0.f, HoldingPawn->BaseEyeHeight);
-								FVector BaseLoc = OtherBase->GetActorLocation();
-								ECollisionChannel TraceChannel = ECC_Visibility;
-								FCollisionQueryParams QueryParams(GetClass()->GetFName(), true, HoldingPawn);
-								FHitResult Hit;
-								if (!GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, BaseLoc, TraceChannel, QueryParams) || !GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, BaseLoc + FVector(0.f, 0.f, 100.f), TraceChannel, QueryParams))
-								{
-									bCurrentlyPinged = true;;
-								}
+								OtherBase = BlitzGameState->DeliveryPoint;
+							}
+						}
+						if (OtherBase)
+						{
+							FVector StartLocation = HoldingPawn->GetActorLocation() + FVector(0.f, 0.f, HoldingPawn->BaseEyeHeight);
+							FVector BaseLoc = OtherBase->GetActorLocation();
+							ECollisionChannel TraceChannel = ECC_Visibility;
+							FCollisionQueryParams QueryParams(GetClass()->GetFName(), true, HoldingPawn);
+							FHitResult Hit;
+							if (!GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, BaseLoc, TraceChannel, QueryParams) || !GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, BaseLoc + FVector(0.f, 0.f, 100.f), TraceChannel, QueryParams))
+							{
+								bCurrentlyPinged = true;;
 							}
 						}
 					}

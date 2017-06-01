@@ -9,17 +9,19 @@
 #include "UTPickup.h"
 #include "UTDroppedPickup.h"
 #include "UTCTFFlagBase.h"
+#include "UTBlitzDeliveryPoint.h"
+#include "UTBlitzFlagSpawner.h"
 
 void AUTAsymCTFSquadAI::Initialize(AUTTeamInfo* InTeam, FName InOrders)
 {
 	Super::Initialize(InTeam, InOrders);
 
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
-	if (GS != NULL && GS->FlagBases.Num() >= 2 && GS->FlagBases[0] != NULL && GS->FlagBases[1] != NULL)
+	if (GS != NULL && GS->DeliveryPoint && GS->FlagSpawner)
 	{
-		GameObjective = GS->FlagBases[GS->bRedToCap ? 1 : 0];
+		GameObjective = GS->DeliveryPoint;
 		Objective = GameObjective;
-		Flag = GS->FlagBases[GS->bRedToCap ? 0 : 1]->GetCarriedObject();
+		Flag = GS->FlagSpawner->GetCarriedObject();
 		TotalFlagRunDistance = (Flag == nullptr) ? FLT_MAX : (Objective->GetActorLocation() - Flag->GetActorLocation()).Size();
 		if (GameObjective->DefensePoints.Num() == 0)
 		{

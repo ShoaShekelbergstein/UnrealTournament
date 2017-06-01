@@ -3,6 +3,8 @@
 #include "UTFlagRunGameState.h"
 #include "UTHUDWidget_FlagRunStatus.h"
 #include "UTBlitzFlag.h"
+#include "UTBlitzFlagSpawner.h"
+#include "UTBlitzDeliveryPoint.h"
 
 UUTHUDWidget_FlagRunStatus::UUTHUDWidget_FlagRunStatus(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -85,9 +87,9 @@ void UUTHUDWidget_FlagRunStatus::DrawIndicators(AUTFlagRunGameState* GameState, 
 		uint8 OffensiveTeam = GameState->bRedToCap ? 0 : 1;
 		uint8 DefensiveTeam = GameState->bRedToCap ? 1 : 0;
 
-		if (GameState->FlagBases.IsValidIndex(OffensiveTeam) && GameState->FlagBases[OffensiveTeam] != nullptr)
+		if (GameState->FlagSpawner)
 		{
-			AUTBlitzFlag* Flag = Cast<AUTBlitzFlag>(GameState->FlagBases[OffensiveTeam]->GetCarriedObject());
+			AUTBlitzFlag* Flag = Cast<AUTBlitzFlag>(GameState->FlagSpawner->GetCarriedObject());
 			if (Flag && (Flag->ObjectState != CarriedObjectState::Delivered))
 			{
 				if (Flag->Holder && (Flag->Holder == UTHUDOwner->UTPlayerOwner->UTPlayerState))
@@ -95,12 +97,12 @@ void UUTHUDWidget_FlagRunStatus::DrawIndicators(AUTFlagRunGameState* GameState, 
 					FlagHolderNameTemplate.Text = YouHaveFlagText;
 					RenderObj_Text(FlagHolderNameTemplate, FVector2D(0.0f, 50.0f));
 				}
-				DrawFlagWorld(GameState, PlayerViewPoint, PlayerViewRotation, OffensiveTeam, GameState->FlagBases[OffensiveTeam], Flag, Flag->Holder);
+				DrawFlagWorld(GameState, PlayerViewPoint, PlayerViewRotation, OffensiveTeam, GameState->FlagSpawner, Flag, Flag->Holder);
 			}
 		}
-		if (GameState->FlagBases.IsValidIndex(DefensiveTeam) && GameState->FlagBases[DefensiveTeam] != nullptr)
+		if (GameState->DeliveryPoint)
 		{
-			DrawFlagBaseWorld(GameState, PlayerViewPoint, PlayerViewRotation, DefensiveTeam, GameState->FlagBases[DefensiveTeam], nullptr, nullptr);
+			DrawFlagBaseWorld(GameState, PlayerViewPoint, PlayerViewRotation, DefensiveTeam, GameState->DeliveryPoint, nullptr, nullptr);
 		}
 	}
 }

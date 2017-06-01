@@ -208,7 +208,6 @@ void AUTFlagRunGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AUTFlagRunGameState, bIsAtIntermission);
-	DOREPLIFETIME(AUTFlagRunGameState, FlagBases);
 	DOREPLIFETIME(AUTFlagRunGameState, DeliveryPoint);
 	DOREPLIFETIME(AUTFlagRunGameState, FlagSpawner);
 	DOREPLIFETIME(AUTFlagRunGameState, ScoringPlays);
@@ -1011,16 +1010,6 @@ FText AUTFlagRunGameState::GetGameStatusText(bool bForScoreboard)
 
 void AUTFlagRunGameState::CacheFlagBase(AUTCTFFlagBase* BaseToCache)
 {
-	if (FlagBases.Num() == 0)
-	{
-		FlagBases.Add(NULL);
-		FlagBases.Add(NULL);
-	}
-	uint8 TeamNum = BaseToCache->GetTeamNum();
-	if (FlagBases.IsValidIndex(TeamNum))
-	{
-		FlagBases[TeamNum] = BaseToCache;
-	}
 	if (Cast<AUTBlitzDeliveryPoint>(BaseToCache))
 	{
 		DeliveryPoint = Cast<AUTBlitzDeliveryPoint>(BaseToCache);
@@ -1038,21 +1027,22 @@ AUTPlayerState* AUTFlagRunGameState::GetFlagHolder()
 
 AUTCTFFlagBase* AUTFlagRunGameState::GetFlagBase(uint8 TeamNum)
 {
-	if (TeamNum < FlagBases.Num())
+	if (DeliveryPoint && (DeliveryPoint->TeamNum == TeamNum))
 	{
-		return FlagBases[TeamNum];
+		return DeliveryPoint;
 	}
-	return NULL;
+	if (FlagSpawner && (FlagSpawner->TeamNum == TeamNum))
+	{
+		return FlagSpawner;
+	}
+	return nullptr;
 }
 
 void AUTFlagRunGameState::ResetFlags()
 {
-	for (int32 i = 0; i < FlagBases.Num(); i++)
+	if (DeliveryPoint)
 	{
-		if (FlagBases[i] != NULL)
-		{
-			FlagBases[i]->RecallFlag();
-		}
+		DeliveryPoint->RecallFlag();
 	}
 }
 
@@ -1206,30 +1196,7 @@ void AUTFlagRunGameState::SpawnLineUpZoneOnFlagBase(AUTCTFFlagBase* BaseToSpawnO
 
 AUTCTFFlagBase* AUTFlagRunGameState::GetLeadTeamFlagBase()
 {
-	AUTTeamInfo* LeadTeamInfo = FindLeadingTeam();
-	if (LeadTeamInfo && LeadTeamInfo->GetTeamNum() < FlagBases.Num())
-	{
-		return FlagBases[LeadTeamInfo->GetTeamNum()];
-	}
-	else if (WinningTeam && (FlagBases.Num() > WinningTeam->GetTeamNum()))
-	{
-		return FlagBases[WinningTeam->GetTeamNum()];
-	}
-	else if (ScoringPlayerState && (FlagBases.Num() > ScoringPlayerState->GetTeamNum()))
-	{
-		return FlagBases[ScoringPlayerState->GetTeamNum()];
-	}
-	else if (ScoringPlays.Num() > 0)
-	{
-		const FCTFScoringPlay& WinningPlay = ScoringPlays.Last();
-
-		if (WinningPlay.Team && (FlagBases.Num() > WinningPlay.Team->GetTeamNum()))
-		{
-			return FlagBases[WinningPlay.Team->GetTeamNum()];
-		}
-	}
-
-	return nullptr;
+	return DeliveryPoint;
 }
 
 void AUTFlagRunGameState::AddScoringPlay(const FCTFScoringPlay& NewScoringPlay)
@@ -1246,10 +1213,10 @@ float AUTFlagRunGameState::ScoreCameraView(AUTPlayerState* InPS, AUTCharacter *C
 	if (InPS && Character && !InPS->CarriedObject && InPS->Team && (InPS->Team->GetTeamNum() < 2))
 	{
 		uint8 EnemyTeamNum = 1 - InPS->Team->GetTeamNum();
-		AUTFlag* EnemyFlag = FlagBases[EnemyTeamNum] ? FlagBases[EnemyTeamNum]->MyFlag : NULL;
-		if (EnemyFlag && ((EnemyFlag->GetActorLocation() - Character->GetActorLocation()).Size() < FlagBases[EnemyTeamNum]->LastSecondSaveDistance))
+		AUTFlag* EnemyFlag = FlagSpawner ? FlagSpawner->MyFlag : nullptr;
+		if (EnemyFlag && ((EnemyFlag->GetActorLocation() - Character->GetActorLocation()).Size() < DeliveryPoint->LastSecondSaveDistance))
 		{
-			float MaxScoreDist = FlagBases[EnemyTeamNum]->LastSecondSaveDistance;
+			float MaxScoreDist = DeliveryPoint->LastSecondSaveDistance;
 			return FMath::Clamp(10.f * (MaxScoreDist - (EnemyFlag->GetActorLocation() - Character->GetActorLocation()).Size()) / MaxScoreDist, 0.f, 10.f);
 		}
 	}
@@ -1258,7 +1225,7 @@ float AUTFlagRunGameState::ScoreCameraView(AUTPlayerState* InPS, AUTCharacter *C
 
 uint8 AUTFlagRunGameState::NearestTeamSide(AActor* InActor)
 {
-	if (FlagBases.Num() > 1)
+	if (DeliveryPoint && FlagSpawner)
 	{
 		// if there is only one of this pickup, return 255
 		bool bFoundAnother = false;
@@ -1277,8 +1244,8 @@ uint8 AUTFlagRunGameState::NearestTeamSide(AActor* InActor)
 		}
 		if (bFoundAnother)
 		{
-			float DistDiff = (InActor->GetActorLocation() - FlagBases[0]->GetActorLocation()).Size() - (InActor->GetActorLocation() - FlagBases[1]->GetActorLocation()).Size();
-			return (DistDiff < 0) ? 0 : 1;
+			float DistDiff = (InActor->GetActorLocation() - DeliveryPoint->GetActorLocation()).Size() - (InActor->GetActorLocation() - FlagSpawner->GetActorLocation()).Size();
+			return (DistDiff < 0) ? DeliveryPoint->TeamNum : FlagSpawner->TeamNum;
 		}
 	}
 	return 255;

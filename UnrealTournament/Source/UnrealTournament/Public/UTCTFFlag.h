@@ -18,4 +18,5 @@ public:
 	virtual void PreNetReceive() override;
 	virtual void PostNetReceiveLocationAndRotation() override;
 	virtual void PlayCaptureEffect() override;
+	virtual void Drop(AController* Killer) override;
 };

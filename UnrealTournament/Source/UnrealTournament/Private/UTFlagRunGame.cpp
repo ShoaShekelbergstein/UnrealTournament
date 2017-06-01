@@ -38,8 +38,11 @@
 #include "UTLineUpHelper.h"
 #include "UTShowdownStatusMessage.h"
 #include "UTBlitzFlag.h"
+#include "UTFlagRunGameState.h"
 #include "UTAssistMessage.h"
 #include "UTCTFFlagBase.h"
+#include "UTBlitzFlagSpawner.h"
+#include "UTBlitzDeliveryPoint.h"
 
 //Special markup for Analytics event so they show up properly in grafana. Should be eventually moved to UTAnalytics.
 /*
@@ -467,53 +470,43 @@ void AUTFlagRunGame::IntermissionSwapSides()
 
 void AUTFlagRunGame::InitFlags()
 {
-	for (AUTCTFFlagBase* Base : BlitzGameState->FlagBases)
+	if (BlitzGameState && BlitzGameState->FlagSpawner && BlitzGameState->FlagSpawner->MyFlag)
 	{
-		if (Base != NULL && Base->MyFlag)
-		{
-			InitFlagForRound(Base->MyFlag);
+		InitFlagForRound(BlitzGameState->FlagSpawner->MyFlag);
 
-			// check for flag carrier already here waiting
-			TArray<AActor*> Overlapping;
-			Base->MyFlag->GetOverlappingActors(Overlapping, AUTCharacter::StaticClass());
-			// try humans first, then bots
-			for (AActor* A : Overlapping)
+		// check for flag carrier already here waiting
+		TArray<AActor*> Overlapping;
+		BlitzGameState->FlagSpawner->MyFlag->GetOverlappingActors(Overlapping, AUTCharacter::StaticClass());
+		// try humans first, then bots
+		for (AActor* A : Overlapping)
+		{
+			AUTCharacter* Character = Cast<AUTCharacter>(A);
+			if (Character != nullptr && Cast<APlayerController>(Character->Controller) != nullptr)
 			{
-				AUTCharacter* Character = Cast<AUTCharacter>(A);
-				if (Character != nullptr && Cast<APlayerController>(Character->Controller) != nullptr)
+				if (!GetWorld()->LineTraceTestByChannel(Character->GetActorLocation(), BlitzGameState->FlagSpawner->MyFlag->GetActorLocation(), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams))
 				{
-					if (!GetWorld()->LineTraceTestByChannel(Character->GetActorLocation(), Base->MyFlag->GetActorLocation(), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams))
+					BlitzGameState->FlagSpawner->MyFlag->TryPickup(Character);
+					if (BlitzGameState->FlagSpawner->MyFlag->ObjectState == CarriedObjectState::Held)
 					{
-						Base->MyFlag->TryPickup(Character);
-						if (Base->MyFlag->ObjectState == CarriedObjectState::Held)
-						{
-							return;
-						}
-					}
-				}
-			}
-			for (AActor* A : Overlapping)
-			{
-				AUTCharacter* Character = Cast<AUTCharacter>(A);
-				if (Character != nullptr && Cast<APlayerController>(Character->Controller) == nullptr)
-				{
-					if (!GetWorld()->LineTraceTestByChannel(Character->GetActorLocation(), Base->MyFlag->GetActorLocation(), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams))
-					{
-						Base->MyFlag->TryPickup(Character);
-						if (Base->MyFlag->ObjectState == CarriedObjectState::Held)
-						{
-							return;
-						}
+						return;
 					}
 				}
 			}
 		}
-	}
-	for (AUTCTFFlagBase* Base : BlitzGameState->FlagBases)
-	{
-		if (Base)
+		for (AActor* A : Overlapping)
 		{
-			Base->Capsule->SetCapsuleSize(160.f, 134.0f);
+			AUTCharacter* Character = Cast<AUTCharacter>(A);
+			if (Character != nullptr && Cast<APlayerController>(Character->Controller) == nullptr)
+			{
+				if (!GetWorld()->LineTraceTestByChannel(Character->GetActorLocation(), BlitzGameState->FlagSpawner->MyFlag->GetActorLocation(), ECC_Pawn, FCollisionQueryParams(), WorldResponseParams))
+				{
+					BlitzGameState->FlagSpawner->MyFlag->TryPickup(Character);
+					if (BlitzGameState->FlagSpawner->MyFlag->ObjectState == CarriedObjectState::Held)
+					{
+						return;
+					}
+				}
+			}
 		}
 	}
 }
@@ -994,7 +987,7 @@ bool AUTFlagRunGame::HandleRallyRequest(AController* C)
 	// if can rally, teleport with transloc effect, set last rally time
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	AUTTeamInfo* Team = UTPlayerState ? UTPlayerState->Team : nullptr;
-	if (Team && UTCharacter && GS && UTPlayerState && !UTCharacter->GetCarriedObject() && GS->CurrentRallyPoint && UTPlayerState->bCanRally && !GetWorldTimerManager().IsTimerActive(UTPlayerState->RallyTimerHandle) && GS->bAttackersCanRally && IsMatchInProgress() && !GS->IsMatchIntermission() && ((Team->TeamIndex == 0) == GS->bRedToCap) && GS->FlagBases.IsValidIndex(Team->TeamIndex) && GS->FlagBases[Team->TeamIndex] != nullptr)
+	if (Team && UTCharacter && GS && UTPlayerState && !UTCharacter->GetCarriedObject() && GS->CurrentRallyPoint && UTPlayerState->bCanRally && !GetWorldTimerManager().IsTimerActive(UTPlayerState->RallyTimerHandle) && GS->bAttackersCanRally && IsMatchInProgress() && !GS->IsMatchIntermission() && ((Team->TeamIndex == 0) == GS->bRedToCap))
 	{
 		UTPlayerState->RallyLocation = GS->CurrentRallyPoint->GetRallyLocation(UTCharacter);
 		UTPlayerState->RallyPoint = GS->CurrentRallyPoint;
@@ -1064,7 +1057,7 @@ bool AUTFlagRunGame::CompleteRallyRequest(AController* C)
 		return false;
 	}
 
-	if (Team && ((Team->TeamIndex == 0) == GS->bRedToCap) && GS->FlagBases.IsValidIndex(Team->TeamIndex) && GS->FlagBases[Team->TeamIndex] != nullptr)
+	if (Team && ((Team->TeamIndex == 0) == GS->bRedToCap))
 	{
 		FVector WarpLocation = FVector::ZeroVector;
 		FRotator WarpRotation = UTPlayerState->RallyPoint ? UTPlayerState->RallyPoint->GetActorRotation() : UTCharacter->GetActorRotation();
@@ -1129,7 +1122,7 @@ bool AUTFlagRunGame::CompleteRallyRequest(AController* C)
 				RallySpot = UTCharacter->UTCharacterMovement ? UTCharacter->UTCharacterMovement->GetPhysicsVolume() : nullptr;
 				if ((RallySpot == nullptr) || (RallySpot == GetWorld()->GetDefaultPhysicsVolume()))
 				{
-					AUTBlitzFlag* CarriedFlag = Cast<AUTBlitzFlag>(GS->FlagBases[GS->bRedToCap ? 0 : 1]->GetCarriedObject());
+					AUTBlitzFlag* CarriedFlag = Cast<AUTBlitzFlag>(GS->FlagSpawner->GetCarriedObject());
 					if (CarriedFlag)
 					{
 						RallySpot = CarriedFlag;
@@ -1191,7 +1184,7 @@ void AUTFlagRunGame::HandleMatchIntermission()
 		// view defender base, with last team to score around it
 		int32 TeamToWatch = IntermissionTeamToView(nullptr);
 
-		if ((BlitzGameState == NULL) || (TeamToWatch >= BlitzGameState->FlagBases.Num()) || (BlitzGameState->FlagBases[TeamToWatch] == NULL))
+		if ((BlitzGameState == NULL) || (BlitzGameState->DeliveryPoint == nullptr))
 		{
 			return;
 		}
@@ -1326,17 +1319,17 @@ void AUTFlagRunGame::CheatScore()
 				FAssistTracker NewAssist;
 				NewAssist.Holder = Cast<AUTPlayerState>(Members[FMath::RandHelper(Members.Num())]->PlayerState);
 				NewAssist.TotalHeldTime = 0.5f;
-				BlitzGameState->FlagBases[ScoringTeam]->GetCarriedObject()->AssistTracking.Add(NewAssist);
+				BlitzGameState->FlagSpawner->GetCarriedObject()->AssistTracking.Add(NewAssist);
 			}
 			if (FMath::FRand() < 0.5f)
 			{
-				BlitzGameState->FlagBases[ScoringTeam]->GetCarriedObject()->HolderRescuers.Add(Members[FMath::RandHelper(Members.Num())]);
+				BlitzGameState->FlagSpawner->GetCarriedObject()->HolderRescuers.Add(Members[FMath::RandHelper(Members.Num())]);
 			}
 			if (FMath::FRand() < 0.5f)
 			{
 				Cast<AUTPlayerState>(Members[FMath::RandHelper(Members.Num())]->PlayerState)->LastFlagReturnTime = GetWorld()->GetTimeSeconds() - 0.1f;
 			}
-			ScoreObject(BlitzGameState->FlagBases[ScoringTeam]->GetCarriedObject(), Cast<AUTCharacter>(Cast<AController>(Scorer->GetOwner())->GetPawn()), Scorer, FName("FlagCapture"));
+			ScoreObject(BlitzGameState->FlagSpawner->GetCarriedObject(), Cast<AUTCharacter>(Cast<AController>(Scorer->GetOwner())->GetPawn()), Scorer, FName("FlagCapture"));
 		}
 	}
 }
@@ -1468,7 +1461,7 @@ AActor* AUTFlagRunGame::SetIntermissionCameras(uint32 TeamToWatch)
 		}
 		if (bWasCap || (FRGS->ScoringPlayerState == nullptr))
 		{
-			return FRGS->FlagBases[(FRGS && FRGS->bRedToCap) ? 1 : 0];
+			return FRGS->DeliveryPoint;
 		}
 		return FRGS->ScoringPlayerState;
 	}
@@ -1546,9 +1539,9 @@ void AUTFlagRunGame::ScoreObject_Implementation(AUTCarriedObject* GameObject, AU
 				AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
 				if (PC)
 				{
-					if (BlitzGameState->FlagBases[Holder->Team->TeamIndex] != nullptr)
+					if (BlitzGameState->FlagSpawner != nullptr)
 					{
-						PC->UTClientPlaySound(BlitzGameState->FlagBases[Holder->Team->TeamIndex]->FlagScoreRewardSound);
+						PC->UTClientPlaySound(BlitzGameState->FlagSpawner->FlagScoreRewardSound);
 					}
 
 					AUTPlayerState* PS = Cast<AUTPlayerState>((*Iterator)->PlayerState);
@@ -2201,12 +2194,9 @@ void AUTFlagRunGame::InitRound()
 	ResetFlags();
 	if (FlagPickupDelay > 0)
 	{
-		for (AUTCTFFlagBase* Base : BlitzGameState->FlagBases)
+		if (BlitzGameState && BlitzGameState->FlagSpawner && BlitzGameState->FlagSpawner->MyFlag)
 		{
-			if (Base != NULL && Base->MyFlag)
-			{
-				InitDelayedFlag(Base->MyFlag);
-			}
+			InitDelayedFlag(BlitzGameState->FlagSpawner->MyFlag);
 		}
 		FTimerHandle TempHandle;
 		GetWorldTimerManager().SetTimer(TempHandle, this, &AUTFlagRunGame::FlagCountDown, 1.f*GetActorTimeDilation(), false);
@@ -2250,16 +2240,17 @@ void AUTFlagRunGame::PlayRampUpMusic()
 
 void AUTFlagRunGame::ResetFlags()
 {
-	for (AUTCTFFlagBase* Base : BlitzGameState->FlagBases)
+	if (BlitzGameState)
 	{
-		if (Base != NULL && Base->MyFlag)
+		if (BlitzGameState->FlagSpawner && BlitzGameState->FlagSpawner->MyFlag)
 		{
-			Base->MyFlag->SetActorHiddenInGame(true);
-			Base->ClearDefenseEffect();
-			if (IsTeamOnDefense(Base->MyFlag->GetTeamNum()))
-			{
-				Base->SpawnDefenseEffect();
-			}
+			BlitzGameState->FlagSpawner->MyFlag->SetActorHiddenInGame(true);
+		}
+		if (BlitzGameState->DeliveryPoint)
+		{
+			BlitzGameState->DeliveryPoint->ClearDefenseEffect();
+			BlitzGameState->DeliveryPoint->SpawnDefenseEffect();
+
 		}
 	}
 }
@@ -2358,7 +2349,7 @@ void AUTFlagRunGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 				AUTTeamInfo* MyTeam = Controller->UTPlayerState->Team;
 				if (MyTeam)
 				{
-					BaseToView = BlitzGameState->FlagBases[MyTeam->GetTeamNum()];
+					BaseToView = BlitzGameState->DeliveryPoint;
 				}
 			}
 
@@ -2543,7 +2534,7 @@ void AUTFlagRunGame::SetEndGameFocus(AUTPlayerState* Winner)
 	}
 	int32 WinnerTeamNum = Winner ? Winner->GetTeamNum() : (LastTeamToScore ? LastTeamToScore->TeamIndex : 0);
 	AUTCTFFlagBase* WinningBase = NULL;
-	WinningBase = BlitzGameState->FlagBases[WinnerTeamNum];
+	WinningBase = BlitzGameState->DeliveryPoint;
 
 	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 	{
@@ -2557,7 +2548,7 @@ void AUTFlagRunGame::SetEndGameFocus(AUTPlayerState* Winner)
 				AUTTeamInfo* MyTeam = Controller->UTPlayerState->Team;
 				if (MyTeam)
 				{
-					BaseToView = BlitzGameState->FlagBases[MyTeam->GetTeamNum()];
+					BaseToView = BlitzGameState->DeliveryPoint;
 				}
 			}
 
