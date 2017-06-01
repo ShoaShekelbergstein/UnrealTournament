@@ -208,12 +208,12 @@ public:
 
 	virtual FText OverrideRoleText(AUTPlayerState* PS) override;
 
-	virtual void CacheFlagBase(class AUTCTFFlagBase* BaseToCache);
+	virtual void CacheGameObjective(class AUTGameObjective* BaseToCache);
 
 	UFUNCTION(BlueprintCallable, Category = GameState)
 		virtual AUTPlayerState* GetFlagHolder();
 
-	virtual class AUTCTFFlagBase* GetFlagBase(uint8 TeamNum);
+	virtual class AUTGameObjective* GetFlagBase(uint8 TeamNum);
 
 	virtual void ResetFlags();
 
@@ -236,7 +236,7 @@ private:
 		TArray<FCTFScoringPlay> ScoringPlays;
 
 protected:
-	void SpawnLineUpZoneOnFlagBase(class AUTCTFFlagBase* BaseToSpawnOn, LineUpTypes TypeToSpawn);
+	void SpawnLineUpZoneOnFlagBase(class AUTGameObjective* BaseToSpawnOn, LineUpTypes TypeToSpawn);
 
 public:
 	inline const TArray<const FCTFScoringPlay>& GetScoringPlays() const
@@ -249,7 +249,7 @@ public:
 	/** Checks that all line up types have a valid line up zone for each line up type. If not, it creates a default to use for each type **/
 	virtual void SpawnDefaultLineUpZones();
 
-	class AUTCTFFlagBase* GetLeadTeamFlagBase();
+	class AUTGameObjective* GetLeadTeamFlagBase();
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = Scoring)
 		virtual void AddScoringPlay(const FCTFScoringPlay& NewScoringPlay);

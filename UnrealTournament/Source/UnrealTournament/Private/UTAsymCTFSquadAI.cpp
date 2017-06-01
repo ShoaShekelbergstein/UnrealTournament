@@ -8,7 +8,6 @@
 #include "UTFlagRunGameState.h"
 #include "UTPickup.h"
 #include "UTDroppedPickup.h"
-#include "UTCTFFlagBase.h"
 #include "UTBlitzDeliveryPoint.h"
 #include "UTBlitzFlagSpawner.h"
 

@@ -97,72 +97,12 @@ void UUTHUDWidget_FlagRunStatus::DrawIndicators(AUTFlagRunGameState* GameState, 
 					FlagHolderNameTemplate.Text = YouHaveFlagText;
 					RenderObj_Text(FlagHolderNameTemplate, FVector2D(0.0f, 50.0f));
 				}
-				DrawFlagWorld(GameState, PlayerViewPoint, PlayerViewRotation, OffensiveTeam, GameState->FlagSpawner, Flag, Flag->Holder);
+				DrawFlagWorld(GameState, PlayerViewPoint, PlayerViewRotation, OffensiveTeam, Flag, Flag->Holder);
 			}
 		}
 		if (GameState->DeliveryPoint)
 		{
 			DrawFlagBaseWorld(GameState, PlayerViewPoint, PlayerViewRotation, DefensiveTeam, GameState->DeliveryPoint, nullptr, nullptr);
-		}
-	}
-}
-
-void UUTHUDWidget_FlagRunStatus::DrawFlagStatus(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, FVector2D IndicatorPosition, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
-{
-	// draw flag state in HUD
-	float XPos = IndicatorPosition.X;
-	float YPos = (8.f * RenderScale) + 0.5f * FlagIconTemplate.GetHeight();
-	FlagIconTemplate.RenderColor = (GameState && GameState->Teams.IsValidIndex(TeamNum) && GameState->Teams[TeamNum] != nullptr) ? GameState->Teams[TeamNum]->TeamColor : FLinearColor::Green;
-
-	// Draw the upper indicator
-	if (Flag)
-	{
-		float FlagStatusScale = StatusScale;
-		float AppliedStatusScale = 1.f;
-		if (TeamNum < 2)
-		{
-			if (OldFlagState[TeamNum] != Flag->ObjectState)
-			{
-				CurrentStatusScale[TeamNum] = StatusChangedScale;
-				OldFlagState[TeamNum] = Flag->ObjectState;
-			}
-			AppliedStatusScale = CurrentStatusScale[TeamNum];
-			FlagStatusScale *= AppliedStatusScale;
-		}
-		if (Flag->ObjectState == CarriedObjectState::Held)
-		{
-			YPos += 0.5f * AppliedStatusScale * FlagIconTemplate.GetHeight();
-			TakenIconTemplate.RenderColor = 0.8f * FLinearColor::Yellow;
-			RenderObj_TextureAt(TakenIconTemplate, XPos + 0.1f * FlagIconTemplate.GetWidth(), YPos + 0.1f * FlagIconTemplate.GetHeight(), 1.1f * FlagStatusScale * TakenIconTemplate.GetWidth(), 1.1f * FlagStatusScale * TakenIconTemplate.GetHeight());
-
-			if (FlagHolder)
-			{
-				if (bAlwaysDrawFlagHolderName)
-				{
-					FlagHolderNameTemplate.Text = FText::FromString(FlagHolder->PlayerName);
-					RenderObj_Text(FlagHolderNameTemplate, IndicatorPosition);
-				}
-				else if (FlagHolder == UTHUDOwner->UTPlayerOwner->UTPlayerState)
-				{
-					FlagHolderNameTemplate.Text = YouHaveFlagText;
-					RenderObj_Text(FlagHolderNameTemplate, IndicatorPosition);
-				}
-			}
-
-			float CarriedX = XPos - 0.25f * FlagIconTemplate.GetWidth() * FlagStatusScale;
-			float CarriedY = YPos - 0.25f * FlagIconTemplate.GetHeight() * FlagStatusScale;
-			RenderObj_TextureAt(FlagIconTemplate, CarriedX, CarriedY, FlagStatusScale * FlagIconTemplate.GetWidth(), FlagStatusScale * FlagIconTemplate.GetHeight());
-		}
-		else
-		{
-			YPos += 0.5f * AppliedStatusScale * DroppedIconTemplate.GetHeight();
-			RenderObj_TextureAt(FlagIconTemplate, XPos, YPos, 1.5f*AppliedStatusScale*FlagIconTemplate.GetWidth(), 1.5f*AppliedStatusScale*FlagIconTemplate.GetHeight());
-			if (Flag->ObjectState == CarriedObjectState::Dropped)
-			{
-				RenderObj_TextureAt(DroppedIconTemplate, XPos, YPos, 1.5f*AppliedStatusScale*DroppedIconTemplate.GetWidth(), 1.5f*AppliedStatusScale *DroppedIconTemplate.GetHeight());
-				UFont* TinyFont = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->TinyFont;
-				DrawText(GetFlagReturnTime(Flag), XPos, YPos, TinyFont, true, FVector2D(1.f, 1.f), FLinearColor::Black, false, FLinearColor::Black, 2.f*AppliedStatusScale, UTHUDOwner->GetHUDWidgetOpacity(), FLinearColor::White, FLinearColor(0.f, 0.f, 0.f, 0.f), ETextHorzPos::Center, ETextVertPos::Center);
-			}
 		}
 	}
 }
@@ -231,7 +171,7 @@ FText UUTHUDWidget_FlagRunStatus::GetFlagReturnTime(AUTFlag* Flag)
 	return Flag ? FText::AsNumber(Flag->FlagReturnTime) : FText::GetEmpty();
 }
 
-void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
+void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTGameObjective* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
 {
 	if (FlagBase)
 	{
@@ -294,7 +234,7 @@ void UUTHUDWidget_FlagRunStatus::DrawFlagBaseWorld(AUTFlagRunGameState* GameStat
 	}
 }
 
-void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder)
+void UUTHUDWidget_FlagRunStatus::DrawFlagWorld(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTFlag* Flag, AUTPlayerState* FlagHolder)
 {
 	bool bSpectating = UTPlayerOwner->PlayerState && UTPlayerOwner->PlayerState->bOnlySpectator;
 	bool bIsEnemyFlag = Flag && GameState && !GameState->OnSameTeam(Flag, UTPlayerOwner);

@@ -150,9 +150,8 @@ class UNREALTOURNAMENT_API UUTHUDWidget_FlagRunStatus : public UUTHUDWidget
 
 protected:
 	virtual void DrawIndicators(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, float DeltaTime);
-	virtual void DrawFlagStatus(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, FVector2D IndicatorPosition, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder);
-	virtual void DrawFlagWorld(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder);
-	virtual void DrawFlagBaseWorld(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTCTFFlagBase* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder);
+	virtual void DrawFlagWorld(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTFlag* Flag, AUTPlayerState* FlagHolder);
+	virtual void DrawFlagBaseWorld(AUTFlagRunGameState* GameState, FVector PlayerViewPoint, FRotator PlayerViewRotation, uint8 TeamNum, AUTGameObjective* FlagBase, AUTFlag* Flag, AUTPlayerState* FlagHolder);
 	virtual FText GetFlagReturnTime(AUTFlag* Flag);
 	virtual FVector GetAdjustedScreenPosition(const FVector& WorldPosition, const FVector& ViewPoint, const FVector& ViewDir, float Dist, float IconSize, bool& bDrawEdgeArrow, int32 Team);
 	virtual void DrawEdgeArrow(FVector InWorldPosition, FVector PlayerViewPoint, FRotator PlayerViewRotation, FVector ScreenPosition, float CurrentWorldAlpha, float WorldRenderScale, int32 Team);

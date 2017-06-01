@@ -2,13 +2,14 @@
 
 #include "UnrealTournament.h"
 #include "UTPlayerCameraManager.h"
-#include "UTCTFFlagBase.h"
+#include "UTGameObjective.h"
 #include "UTViewPlaceholder.h"
 #include "UTNoCameraVolume.h"
 #include "UTRemoteRedeemer.h"
 #include "UTDemoRecSpectator.h"
 #include "UTLineUpHelper.h"
 #include "UTPlayerState.h"
+#include "UTFlag.h"
 
 AUTPlayerCameraManager::AUTPlayerCameraManager(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -308,7 +309,7 @@ void AUTPlayerCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTi
 	else if (CameraStyle == NAME_FreeCam)
 	{
 		AUTCharacter* UTCharacter = Cast<AUTCharacter>(OutVT.Target);
-		AUTCTFFlagBase* UTFlagBase = Cast<AUTCTFFlagBase>(OutVT.Target);
+		AUTGameObjective* UTFlagBase = Cast<AUTGameObjective>(OutVT.Target);
 		AUTCarriedObject* UTFlag = Cast<AUTCarriedObject>(OutVT.Target);
 		OutVT.POV.FOV = DefaultFOV;
 		OutVT.POV.OrthoWidth = DefaultOrthoWidth;

@@ -40,7 +40,6 @@
 #include "UTBlitzFlag.h"
 #include "UTFlagRunGameState.h"
 #include "UTAssistMessage.h"
-#include "UTCTFFlagBase.h"
 #include "UTBlitzFlagSpawner.h"
 #include "UTBlitzDeliveryPoint.h"
 
@@ -2336,13 +2335,13 @@ void AUTFlagRunGame::EndTeamGame(AUTTeamInfo* Winner, FName Reason)
 	EndMatch();
 	AActor* EndMatchFocus = SetIntermissionCameras(Winner->TeamIndex);
 
-	AUTCTFFlagBase* WinningBase = Cast<AUTCTFFlagBase>(EndMatchFocus);
+	AUTGameObjective* WinningBase = Cast<AUTGameObjective>(EndMatchFocus);
 	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 	{
 		AUTPlayerController* Controller = Cast<AUTPlayerController>(*Iterator);
 		if (Controller && Controller->UTPlayerState)
 		{
-			AUTCTFFlagBase* BaseToView = WinningBase;
+			AUTGameObjective* BaseToView = WinningBase;
 			// If we don't have a winner, view my base
 			if (BaseToView == NULL)
 			{
@@ -2494,10 +2493,9 @@ void AUTFlagRunGame::ScoreDamage_Implementation(int32 DamageAmount, AUTPlayerSta
 
 void AUTFlagRunGame::GameObjectiveInitialized(AUTGameObjective* Obj)
 {
-	AUTCTFFlagBase* FlagBase = Cast<AUTCTFFlagBase>(Obj);
-	if (FlagBase != NULL)
+	if (BlitzGameState)
 	{
-		BlitzGameState->CacheFlagBase(FlagBase);
+		BlitzGameState->CacheGameObjective(Obj);
 	}
 }
 
@@ -2533,7 +2531,7 @@ void AUTFlagRunGame::SetEndGameFocus(AUTPlayerState* Winner)
 		return;
 	}
 	int32 WinnerTeamNum = Winner ? Winner->GetTeamNum() : (LastTeamToScore ? LastTeamToScore->TeamIndex : 0);
-	AUTCTFFlagBase* WinningBase = NULL;
+	AUTGameObjective* WinningBase = NULL;
 	WinningBase = BlitzGameState->DeliveryPoint;
 
 	for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
@@ -2541,7 +2539,7 @@ void AUTFlagRunGame::SetEndGameFocus(AUTPlayerState* Winner)
 		AUTPlayerController* Controller = Cast<AUTPlayerController>(*Iterator);
 		if (Controller && Controller->UTPlayerState)
 		{
-			AUTCTFFlagBase* BaseToView = WinningBase;
+			AUTGameObjective* BaseToView = WinningBase;
 			// If we don't have a winner, view my base
 			if (BaseToView == NULL)
 			{

@@ -1007,8 +1007,7 @@ FText AUTFlagRunGameState::GetGameStatusText(bool bForScoreboard)
 	return AUTGameState::GetGameStatusText(bForScoreboard);
 }
 
-
-void AUTFlagRunGameState::CacheFlagBase(AUTCTFFlagBase* BaseToCache)
+void AUTFlagRunGameState::CacheGameObjective(AUTGameObjective* BaseToCache)
 {
 	if (Cast<AUTBlitzDeliveryPoint>(BaseToCache))
 	{
@@ -1025,7 +1024,7 @@ AUTPlayerState* AUTFlagRunGameState::GetFlagHolder()
 	return FlagSpawner ? FlagSpawner->GetCarriedObjectHolder() : nullptr;
 }
 
-AUTCTFFlagBase* AUTFlagRunGameState::GetFlagBase(uint8 TeamNum)
+AUTGameObjective* AUTFlagRunGameState::GetFlagBase(uint8 TeamNum)
 {
 	if (DeliveryPoint && (DeliveryPoint->TeamNum == TeamNum))
 	{
@@ -1073,7 +1072,7 @@ FName AUTFlagRunGameState::OverrideCameraStyle(APlayerController* PCOwner, FName
 AUTLineUpZone* AUTFlagRunGameState::GetAppropriateSpawnList(LineUpTypes ZoneType)
 {
 	AUTLineUpZone* FoundPotentialMatch = nullptr;
-	AUTCTFFlagBase* ScoringBase = GetLeadTeamFlagBase();
+	AUTGameObjective* ScoringBase = GetLeadTeamFlagBase();
 
 	if (GetWorld())
 	{
@@ -1142,7 +1141,7 @@ void AUTFlagRunGameState::SpawnDefaultLineUpZones()
 	Super::SpawnDefaultLineUpZones();
 }
 
-void AUTFlagRunGameState::SpawnLineUpZoneOnFlagBase(AUTCTFFlagBase* BaseToSpawnOn, LineUpTypes TypeToSpawn)
+void AUTFlagRunGameState::SpawnLineUpZoneOnFlagBase(AUTGameObjective* BaseToSpawnOn, LineUpTypes TypeToSpawn)
 {
 	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
 
@@ -1194,7 +1193,7 @@ void AUTFlagRunGameState::SpawnLineUpZoneOnFlagBase(AUTCTFFlagBase* BaseToSpawnO
 	}
 }
 
-AUTCTFFlagBase* AUTFlagRunGameState::GetLeadTeamFlagBase()
+AUTGameObjective* AUTFlagRunGameState::GetLeadTeamFlagBase()
 {
 	return DeliveryPoint;
 }
