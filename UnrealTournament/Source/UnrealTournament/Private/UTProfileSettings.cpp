@@ -572,8 +572,7 @@ bool UUTProfileSettings::VersionFixup()
 	for (int32 i = 0; i < GameActions.Num(); i++)
 	{
 		if (GameActions[i].GameActionTag == FName(TEXT("TurnLeft")) || GameActions[i].GameActionTag == FName(TEXT("TurnRight")) ||
-			GameActions[i].GameActionTag == FName(TEXT("SelectTrans")) || GameActions[i].GameActionTag == FName(TEXT("BuyMenu")) ||
-			GameActions[i].GameActionTag == FName(TEXT("PushToTalk")))
+			GameActions[i].GameActionTag == FName(TEXT("SelectTrans")) || GameActions[i].GameActionTag == FName(TEXT("BuyMenu")))
 		{
 			ObsoleteKeyIndexes.Add(i);
 			continue;				
@@ -596,7 +595,7 @@ bool UUTProfileSettings::VersionFixup()
 				GameActions[i].AddActionMapping(FName("ToggleComMenu"));
 			}
 		}
-
+		
 		if (OptionalKeysFixup.Contains(GameActions[i].GameActionTag))
 		{
 			GameActions[i].bOptional = true;
