@@ -412,7 +412,7 @@ void AUTLineUpHelper::FlagFixUp()
 					{
 						OffenseFlag->SetHolder(Cast<AUTCharacter>(FlagController->GetPawn()));
 					}
-					else
+					else if (ActiveType != LineUpTypes::Intro)
 					{
 						OffenseFlag->Destroy();
 					}
