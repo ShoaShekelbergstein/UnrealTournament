@@ -98,6 +98,7 @@ void AUTProj_BioGrenade::StartFuse()
 	bBeginFuseWarning = true;
 	
 	ProjectileMovement->bRotationFollowsVelocity = false;
+	ProjectileMovement->bShouldBounce = false;
 	GetWorldTimerManager().SetTimer(FuseTimerHandle, this, &AUTProj_BioGrenade::FuseExpired, FuseTime, false);
 	PlayFuseBeep();
 	ClearTimerUFunc(this, FName(TEXT("StartFuseTimed")));
