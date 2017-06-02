@@ -50,7 +50,7 @@ bool AUTAsymCTFSquadAI::MustKeepEnemy(AUTBot* B, APawn* TheEnemy)
 	// generally must keep enemy flag holder
 	// but allow losing them in cases where they are farther from objective and not in sight, since they have to come to us to win
 	AUTCharacter* UTC = Cast<AUTCharacter>(TheEnemy);
-	return (UTC != NULL && UTC->GetCarriedObject() != NULL && (B->IsEnemyVisible(TheEnemy) || (B->GetPawn()->GetActorLocation() - B->GetEnemyLocation(TheEnemy, true)).Size() < 3000.0f + (B->GetPawn()->GetActorLocation() - Objective->GetActorLocation()).Size()));
+	return (UTC != NULL && UTC->GetCarriedObject() != NULL && (Objective != nullptr) && (B->IsEnemyVisible(TheEnemy) || (B->GetPawn()->GetActorLocation() - B->GetEnemyLocation(TheEnemy, true)).Size() < 3000.0f + (B->GetPawn()->GetActorLocation() - Objective->GetActorLocation()).Size()));
 }
 
 void AUTAsymCTFSquadAI::ModifyAggression(AUTBot* B, float& Aggressiveness)
