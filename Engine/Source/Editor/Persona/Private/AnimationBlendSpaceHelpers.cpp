@@ -184,16 +184,23 @@ FDelaunayTriangleGenerator::ECircumCircleState FDelaunayTriangleGenerator::GetCi
 
 	const float Det = M00*M11*M22+M01*M12*M20+M02*M10*M21 - (M02*M11*M20+M01*M10*M22+M00*M12*M21);
 	
-	if( FMath::Abs(Det) <= KINDA_SMALL_NUMBER )
+	// When the vertices are sorted in a counterclockwise order, the determinant is positive if and only if Testpoint lies inside the circumcircle of T.
+	if (FMath::IsNegativeFloat(Det))
 	{
-		return ECCS_On;
+		return ECCS_Outside;
 	}
-	else if( Det > 0.f )
+	else
 	{
-		return ECCS_Inside;
+		// On top of the triangle edge
+		if (FMath::IsNearlyZero(Det))
+		{
+			return ECCS_On;
+		}
+		else
+		{
+			return ECCS_Inside;
+		}
 	}
-
-	return ECCS_Outside;
 }
 
 /** 
@@ -240,7 +247,6 @@ bool FDelaunayTriangleGenerator::AllCoincident(const TArray<FPoint>& InPoints)
 
 bool FDelaunayTriangleGenerator::FlipTriangles(const int32 TriangleIndexOne, const int32 TriangleIndexTwo)
 {
-	bool bFlipped = false;
 	const FTriangle* A = TriangleList[TriangleIndexOne];
 	const FTriangle* B = TriangleList[TriangleIndexTwo];
 
@@ -253,51 +259,38 @@ bool FDelaunayTriangleGenerator::FlipTriangles(const int32 TriangleIndexOne, con
 		return false;
 	}
 
+	FTriangle NewTriangles[2];
 	int32 TrianglesMade = 0;
 
-	// otherwise, try make new triangle, and flip it
-	if (IsEligibleForTriangulation(A->Vertices[0],A->Vertices[1], TestPt))
+	for (int32 VertexIndexOne = 0; VertexIndexOne < 2; ++VertexIndexOne)
 	{
-		FTriangle NewTriangle(A->Vertices[0],A->Vertices[1], TestPt);
-		// only flip if outside
-		if (GetCircumcircleState(&NewTriangle, *A->Vertices[2])==ECCS_Outside)
+		for (int32 VertexIndexTwo = VertexIndexOne + 1; VertexIndexTwo < 3; ++VertexIndexTwo)
 		{
-			// good triangle
-			AddTriangle(NewTriangle, false);
-			bFlipped=true;
-			++TrianglesMade;
-		}
-
-	}
-
-	if (IsEligibleForTriangulation(A->Vertices[0],A->Vertices[2], TestPt))
-	{
-		FTriangle NewTriangle(A->Vertices[0],A->Vertices[2], TestPt);
-		if (GetCircumcircleState(&NewTriangle, *A->Vertices[1])==ECCS_Outside)
-		{
-			// good triangle
-			AddTriangle(NewTriangle, false);
-			bFlipped=true;
-			++TrianglesMade;
+			// Check if these vertices form a valid triangle (should be non-colinear)
+			if (IsEligibleForTriangulation(A->Vertices[VertexIndexOne], A->Vertices[VertexIndexTwo], TestPt))
+			{
+				// Create the new triangle and check if the final (original) vertex falls inside or outside of it's circumcircle
+				const FTriangle NewTriangle(A->Vertices[VertexIndexOne], A->Vertices[VertexIndexTwo], TestPt);
+				const int32 VertexIndexThree = 3 - (VertexIndexTwo + VertexIndexOne);
+				if (GetCircumcircleState(&NewTriangle, *A->Vertices[VertexIndexThree]) == ECCS_Outside)
+				{
+					// If so store the triangle and increment the number of triangles
+					checkf(TrianglesMade < 2, TEXT("Incorrect number of triangles created"));
+					NewTriangles[TrianglesMade] = NewTriangle;
+					++TrianglesMade;
+				}
+			}
 		}
 	}
-
-	if (IsEligibleForTriangulation(A->Vertices[1],A->Vertices[2], TestPt))
+	
+	// In case two triangles were generated the flip was successful so we can add them to the list
+	if (TrianglesMade == 2)
 	{
-		FTriangle NewTriangle(A->Vertices[1],A->Vertices[2], TestPt);
-		if (GetCircumcircleState(&NewTriangle, *A->Vertices[0])==ECCS_Outside)
-		{
-			// good triangle
-			AddTriangle(NewTriangle, false);
-			bFlipped=true;
-			++TrianglesMade;
-		}
+		AddTriangle(NewTriangles[0], false);
+		AddTriangle(NewTriangles[1], false);
 	}
 
-	// should be 2, if not we miss triangles
-	check (	TrianglesMade==2 );
-
-	return bFlipped;
+	return TrianglesMade == 2;
 }
 
 void FDelaunayTriangleGenerator::AddTriangle(FTriangle& newTriangle, bool bCheckHalfEdge/*=true*/)

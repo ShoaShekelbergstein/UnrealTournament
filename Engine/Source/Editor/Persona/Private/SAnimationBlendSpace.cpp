@@ -27,6 +27,7 @@ void SBlendSpaceEditor::ResampleData()
 	const FBlendParameter& BlendParamX = BlendSpace->GetBlendParameter(0);
 	const FBlendParameter& BlendParamY = BlendSpace->GetBlendParameter(1);
 	BlendSpaceGrid.SetGridInfo(BlendParamX, BlendParamY);
+	Generator.SetGridBox(BlendParamX, BlendParamY);
 
 	BlendSpace->EmptyGridElements();
 

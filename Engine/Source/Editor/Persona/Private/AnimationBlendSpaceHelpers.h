@@ -153,12 +153,23 @@ struct FTriangle
 		Edges[1] = FHalfEdge(Vertices[1], Vertices[2]);
 		Edges[2] = FHalfEdge(Vertices[2], Vertices[0]);
 	}
+	
+	FTriangle()
+	{
+		Vertices[0] = nullptr;
+		Vertices[1] = nullptr;
+		Vertices[2] = nullptr;
+	}
 
 	~FTriangle()
 	{
-		Vertices[0]->RemoveTriangle(this);
-		Vertices[1]->RemoveTriangle(this);
-		Vertices[2]->RemoveTriangle(this);
+		for (int32 VertexIndex = 0; VertexIndex < 3; ++VertexIndex)
+		{
+			if (Vertices[VertexIndex])
+			{
+				Vertices[VertexIndex]->RemoveTriangle(this);
+			}
+		}
 	}
 
 	bool Contains (const FPoint& Other) const
@@ -329,15 +340,21 @@ public:
 	const TArray<int32>& GetIndiceMapping() { return IndiceMappingTable; }
 
 	/* Set the grid box, so we can normalize the sample points */
-	void SetGridBox(const FBox& Box)
+	void SetGridBox(const FBlendParameter& BlendParamX, const FBlendParameter& BlendParamY)
 	{
-		FVector Size = Box.GetSize();
+		FBox GridBox;
+		GridBox.Min.X = BlendParamX.Min;
+		GridBox.Max.X = BlendParamX.Max;
+		GridBox.Min.Y = BlendParamY.Min;
+		GridBox.Max.Y = BlendParamY.Max;
+
+		FVector Size = GridBox.GetSize();
 
 		Size.X = FMath::Max( Size.X, DELTA );
 		Size.Y = FMath::Max( Size.Y, DELTA );
 		Size.Z = FMath::Max( Size.Z, DELTA );
 
-		GridMin = Box.Min;
+		GridMin = GridBox.Min;
 		RecipGridSize = FVector(1.0f, 1.0f, 1.0f) / Size;
 	}
 
