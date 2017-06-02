@@ -2247,9 +2247,7 @@ void AUTFlagRunGame::ResetFlags()
 		}
 		if (BlitzGameState->DeliveryPoint)
 		{
-			BlitzGameState->DeliveryPoint->ClearDefenseEffect();
 			BlitzGameState->DeliveryPoint->SpawnDefenseEffect();
-
 		}
 	}
 }

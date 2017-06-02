@@ -44,34 +44,6 @@ class UNREALTOURNAMENT_API AUTCTFFlagBase : public AUTGameObjective, public IUTR
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Flag)
 	TArray< TSubclassOf<AUTFlag> > TeamFlagTypes;
 
-	/** array of flag classes by team FIXMESTEVE TEMP */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Flag)
-		TArray< TSubclassOf<AUTFlag> > BlitzFlagTypes;
-
-	/** Adjustment to number of lives available to team with this base in round based CTF. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Objective)
-		int32 RoundLivesAdjustment;
-
-	/** effect when this base is being used as a defended objective */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objective)
-		UParticleSystem* BlueDefenseEffect;
-
-	/** effect when this base is being used as a defended objective */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objective)
-		UParticleSystem* RedDefenseEffect;
-
-	UPROPERTY()
-		UParticleSystemComponent* DefensePSC;
-
-	UPROPERTY(ReplicatedUsing = OnDefenseEffectChanged, BlueprintReadOnly, Category = Objective)
-		uint8 ShowDefenseEffect;
-
-	UFUNCTION()
-		void OnDefenseEffectChanged();
-
-	virtual void ClearDefenseEffect();
-	virtual void SpawnDefenseEffect();
-
 	virtual FName GetFlagState();
 	virtual void RecallFlag();
 
@@ -90,16 +62,9 @@ class UNREALTOURNAMENT_API AUTCTFFlagBase : public AUTGameObjective, public IUTR
 	UFUNCTION(BlueprintNativeEvent)
 	void OnObjectWasPickedUp();
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Game)
+		void Reset() override;
+
 protected:
 	virtual void CreateCarriedObject();
-
-public:
-
-	// If true, this flag base will be considered a scoring point.  
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Objective)
-	bool bScoreOnlyBase;
-
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Game)
-	void Reset() override;
-
 };

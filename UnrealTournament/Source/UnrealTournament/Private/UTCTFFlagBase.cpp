@@ -23,53 +23,12 @@ AUTCTFFlagBase::AUTCTFFlagBase(const FObjectInitializer& ObjectInitializer)
 	Capsule->InitCapsuleSize(92.f, 134.0f);
 	Capsule->OnComponentBeginOverlap.AddDynamic(this, &AUTCTFFlagBase::OnOverlapBegin);
 	Capsule->SetupAttachment(RootComponent);
-
-	RoundLivesAdjustment = 0;
-	ShowDefenseEffect = 0;
-	bScoreOnlyBase = false;
 }
 
 void AUTCTFFlagBase::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AUTCTFFlagBase, MyFlag);
-	DOREPLIFETIME(AUTCTFFlagBase, ShowDefenseEffect);
-}
-
-void AUTCTFFlagBase::ClearDefenseEffect()
-{
-	ShowDefenseEffect = 0;
-	Mesh->SetHiddenInGame(false);
-	if (DefensePSC)
-	{
-		DefensePSC->ActivateSystem(false);
-		DefensePSC->UnregisterComponent();
-		DefensePSC = nullptr;
-	}
-}
-
-void AUTCTFFlagBase::SpawnDefenseEffect()
-{
-	ClearDefenseEffect();
-	Mesh->SetHiddenInGame(true);
-	if (GetNetMode() != NM_DedicatedServer)
-	{
-		UParticleSystem* DesiredEffect = (TeamNum == 0) ? RedDefenseEffect : BlueDefenseEffect;
-		DefensePSC = UGameplayStatics::SpawnEmitterAtLocation(this, DesiredEffect, GetActorLocation() + FVector(0.f, 0.f, 80.f), GetActorRotation());
-	}
-	ShowDefenseEffect = TeamNum+1;
-}
-
-void AUTCTFFlagBase::OnDefenseEffectChanged()
-{
-	if (ShowDefenseEffect > 0)
-	{
-		SpawnDefenseEffect();
-	}
-	else
-	{
-		ClearDefenseEffect();
-	}
 }
 
 void AUTCTFFlagBase::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -93,31 +52,17 @@ void AUTCTFFlagBase::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AA
 
 void AUTCTFFlagBase::CreateCarriedObject()
 {
-	if (bScoreOnlyBase)
+	if (TeamFlagTypes.IsValidIndex(TeamNum) && TeamFlagTypes[TeamNum] != NULL)
 	{
-		SpawnDefenseEffect();
+		CarriedObjectClass = TeamFlagTypes[TeamNum];
 	}
-	else
+
+	Super::CreateCarriedObject();
+
+	MyFlag = Cast<AUTFlag>(CarriedObject);
+	if (MyFlag && MyFlag->GetMesh())
 	{
-		if (GetWorld()->GetAuthGameMode<AUTFlagRunGame>())
-		{
-			if (BlitzFlagTypes.IsValidIndex(TeamNum) && BlitzFlagTypes[TeamNum] != NULL)
-			{
-				CarriedObjectClass = BlitzFlagTypes[TeamNum];
-			}
-		}
-		else if (TeamFlagTypes.IsValidIndex(TeamNum) && TeamFlagTypes[TeamNum] != NULL)
-		{
-			CarriedObjectClass = TeamFlagTypes[TeamNum];
-		}
-
-		Super::CreateCarriedObject();
-
-		MyFlag = Cast<AUTFlag>(CarriedObject);
-		if (MyFlag && MyFlag->GetMesh())
-		{
-			MyFlag->GetMesh()->ClothBlendWeight = MyFlag->ClothBlendHome;
-		}
+		MyFlag->GetMesh()->ClothBlendWeight = MyFlag->ClothBlendHome;
 	}
 }
 
