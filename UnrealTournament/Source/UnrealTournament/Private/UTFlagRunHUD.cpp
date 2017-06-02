@@ -10,7 +10,7 @@
 #include "UTCTFRoleMessage.h"
 #include "UTRallyPoint.h"
 #include "UTMonster.h"
-#include "UTBLitzFlagSpawner.h"
+#include "UTBlitzFlagSpawner.h"
 #include "UTBlitzDeliveryPoint.h"
 
 AUTFlagRunHUD::AUTFlagRunHUD(const FObjectInitializer& ObjectInitializer)
