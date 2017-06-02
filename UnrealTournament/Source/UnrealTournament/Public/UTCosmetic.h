@@ -51,6 +51,10 @@ class UNREALTOURNAMENT_API AUTCosmetic : public AActor
 	UPROPERTY(EditDefaultsOnly)
 	bool bHideWithOverlay;
 
+	/** TEMP for cosmetics that are not scaled up to new character scale. */
+	UPROPERTY(EditDefaultsOnly)
+		bool bNeedsScaling;
+
 	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "On Cosmetic Wearer Killed Enemy"))
 	void OnFlashCountIncremented();
 	

@@ -17,6 +17,8 @@ AUTCosmetic::AUTCosmetic(const class FObjectInitializer& ObjectInitializer)
 
 	CosmeticName = TEXT("Unnamed Cosmetic");
 	CosmeticAuthor = TEXT("Anonymous");
+
+	bNeedsScaling = true;
 }
 
 void AUTCosmetic::PreInitializeComponents()
@@ -84,6 +86,11 @@ void AUTCosmetic::PostInitializeComponents()
 			if (PrimComponent->GetMaterial(i) != NULL)
 			{
 				CosmeticMIs.Add(PrimComponent->CreateAndSetMaterialInstanceDynamic(i));
+			}
+			if (bNeedsScaling)
+			{
+				UE_LOG(UT, Warning, TEXT("Scale up %s"), *GetName());
+				PrimComponent->SetRelativeScale3D(PrimComponent->RelativeScale3D * 1.15f); // FIXMESTEVE temp until cosmetics are rescaled
 			}
 		}
 	}
