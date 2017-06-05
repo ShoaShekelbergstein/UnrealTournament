@@ -831,7 +831,7 @@ void AUTGameMode::SendVoiceChatLoginToken(AUTPlayerController* PC)
 		AUTPlayerState* PS = Cast<AUTPlayerState>(PC->PlayerState);
 		if (PS)
 		{
-			PC->VoiceChatPlayerName = FString::Printf(TEXT(".%s."), *PS->PlayerName);
+			PC->VoiceChatPlayerName = FString::Printf(TEXT(".%s."), *PS->UniqueId.ToString());
 
 			VoiceChatToken->GenerateClientLoginToken(PC->VoiceChatPlayerName, PC->VoiceChatLoginToken);
 #if WITH_EDITOR
