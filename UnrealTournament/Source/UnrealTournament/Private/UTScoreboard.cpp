@@ -74,6 +74,7 @@ UUTScoreboard::UUTScoreboard(const class FObjectInitializer& ObjectInitializer) 
 	WarmupText = NSLOCTEXT("UTScoreboard", "WARMUP", "WARMUP");
 	InteractiveText = NSLOCTEXT("UTScoreboard", "InteractiveText", "Press [ESC] to toggle interactive scoreboard.");
 	InteractiveStandaloneText = NSLOCTEXT("UTScoreboard", "InteractiveStandaloneText", "Press [ESC] to toggle interactive scoreboard and pause.");
+	InteractiveHintA = NSLOCTEXT("UTScoreboard", "InteractiveHintA", "Right click on player name to see interactive options.");
 	DifficultyText[0] = NSLOCTEXT("UTScoreboard", "Normal", " vs. Normal AI");
 	DifficultyText[1] = NSLOCTEXT("UTScoreboard", "Hard", " vs. Hard AI");
 	DifficultyText[2] = NSLOCTEXT("UTScoreboard", "Inhuman", " vs. Inhuman AI");
@@ -549,6 +550,15 @@ void UUTScoreboard::DrawScorePanel(float RenderDelta, float& YOffset)
 	{
 		DrawScoreHeaders(RenderDelta, YOffset);
 		DrawPlayerScores(RenderDelta, YOffset);
+
+		if (bIsInteractive && (UTGameState->GetNetMode() != NM_Standalone))
+		{
+			YOffset += 16.f * RenderScale;
+			float XL, YL;
+			Canvas->TextSize(UTHUDOwner->TinyFont, InteractiveHintA.ToString(), XL, YL, 1.f, 1.f);
+			DrawFramedBackground(ScaledEdgeSize, YOffset, ScaledCellWidth, 1.1f*YL);
+			DrawText(InteractiveHintA, ScaledEdgeSize + 10.f*RenderScale, YOffset + 0.5f*YL, UTHUDOwner->TinyFont, RenderScale, 1.0f, FLinearColor::White, ETextHorzPos::Left, ETextVertPos::Center);
+		}
 	}
 }
 
