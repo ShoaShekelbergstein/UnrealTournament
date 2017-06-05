@@ -463,15 +463,19 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 						.Text(NSLOCTEXT("SUTInGameHomePanel","AdminKick","Admin Kick"))
 						.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small")
 					];
-					MenuBox->AddSlot()
-					.AutoHeight()
-					[
-						SNew(SUTButton)
-						.OnClicked(this, &SUTInGameHomePanel::ContextCommand, ECONTEXT_COMMAND_AdminBan, SelectedPlayer)
-						.ButtonStyle(SUTStyle::Get(),"UT.ContextMenu.Item")
-						.Text(NSLOCTEXT("SUTInGameHomePanel","AdminBan","Admin Ban"))
-						.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small")
-					];
+
+					if (OwnerPlayerState && OwnerPlayerState->bIsRconAdmin)
+					{
+						MenuBox->AddSlot()
+						.AutoHeight()
+						[
+							SNew(SUTButton)
+							.OnClicked(this, &SUTInGameHomePanel::ContextCommand, ECONTEXT_COMMAND_AdminBan, SelectedPlayer)
+							.ButtonStyle(SUTStyle::Get(),"UT.ContextMenu.Item")
+							.Text(NSLOCTEXT("SUTInGameHomePanel","AdminBan","Admin Ban"))
+							.TextStyle(SUTStyle::Get(),"UT.Font.NormalText.Small")
+						];
+					}
 				}
 			}
 		}

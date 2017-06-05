@@ -50,6 +50,7 @@ void AUTLobbyPC::OnRep_PlayerState()
 			if (UTGameViewport && !UTGameViewport->KickReason.IsEmpty())
 			{
 				LP->ShowMessage(NSLOCTEXT("UTGameViewportClient","NetworkErrorDialogTitle","Network Error"), UTGameViewport->KickReason, UTDIALOG_BUTTON_OK);			
+				UTGameViewport->KickReason = FText::GetEmpty();
 			}
 		}
 #endif
