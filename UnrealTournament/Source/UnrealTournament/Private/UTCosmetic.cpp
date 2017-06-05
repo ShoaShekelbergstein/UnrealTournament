@@ -89,7 +89,6 @@ void AUTCosmetic::PostInitializeComponents()
 			}
 			if (bNeedsScaling)
 			{
-				UE_LOG(UT, Warning, TEXT("Scale up %s"), *GetName());
 				PrimComponent->SetRelativeScale3D(PrimComponent->RelativeScale3D * 1.15f); // FIXMESTEVE temp until cosmetics are rescaled
 			}
 		}
