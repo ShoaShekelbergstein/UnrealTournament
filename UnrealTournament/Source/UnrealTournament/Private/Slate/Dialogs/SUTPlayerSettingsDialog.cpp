@@ -1419,22 +1419,28 @@ void SUTPlayerSettingsDialog::RecreatePlayerPreview()
 	int32 Index = CharacterList.Find(CharacterComboBox->GetSelectedItem());
 	FString NewCharPath = CharacterPathList.IsValidIndex(Index) ? CharacterPathList[Index] : FString();
 	bool bFoundCharacterClass = false;
+	TSubclassOf<AUTCharacterContent> CharacterClass;
 	if (NewCharPath.Len() > 0)
 	{
-		TSubclassOf<AUTCharacterContent> CharacterClass = LoadClass<AUTCharacterContent>(NULL, *NewCharPath, NULL, LOAD_None, NULL);
-		if (CharacterClass != NULL)
-		{
-			PlayerPreviewMesh->ApplyCharacterData(CharacterClass);
+		CharacterClass = LoadClass<AUTCharacterContent>(NULL, *NewCharPath, NULL, LOAD_None, NULL);
+	}
+	else
+	{
+		CharacterClass = GetDefault<AUTCharacter>()->CharacterData;
+	}
 
-			bFoundCharacterClass = true;
-			if (CharacterClass != NULL && CharacterClass.GetDefaultObject()->bIsFemale)
-			{
-				PlayerPreviewAnimBlueprint = LoadObject<UClass>(nullptr, TEXT("/Game/RestrictedAssets/UI/ABP_Female_PlayerPreview.ABP_Female_PlayerPreview_C"));
-			}
-			else
-			{
-				PlayerPreviewAnimBlueprint = LoadObject<UClass>(nullptr, TEXT("/Game/RestrictedAssets/UI/ABP_PlayerPreview.ABP_PlayerPreview_C"));
-			}
+	if (CharacterClass != NULL)
+	{
+		PlayerPreviewMesh->ApplyCharacterData(CharacterClass);
+
+		bFoundCharacterClass = true;
+		if (CharacterClass.GetDefaultObject()->bIsFemale)
+		{
+			PlayerPreviewAnimBlueprint = LoadObject<UClass>(nullptr, TEXT("/Game/RestrictedAssets/UI/ABP_Female_PlayerPreview.ABP_Female_PlayerPreview_C"));
+		}
+		else
+		{
+			PlayerPreviewAnimBlueprint = LoadObject<UClass>(nullptr, TEXT("/Game/RestrictedAssets/UI/ABP_PlayerPreview.ABP_PlayerPreview_C"));
 		}
 	}
 
