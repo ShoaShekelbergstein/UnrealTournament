@@ -2088,7 +2088,7 @@ void AUTGameState::UpdateHighlights_Implementation()
 				Index--;
 			}
 
-			if (PS->MatchHighlights[1] == NAME_None)
+			if (PS->MatchHighlights[2] == NAME_None)
 			{
 				int32 FirstIndex = (PS->MatchHighlights[0] == NAME_None) ? 0 : 1;
 				if (PS->Kills > 0)
