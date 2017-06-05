@@ -25,7 +25,6 @@ void AUTReplicatedGameRuleset::GetLifetimeReplicatedProps(TArray< FLifetimePrope
 
 	DOREPLIFETIME(AUTReplicatedGameRuleset, Data);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, MapList);
-	DOREPLIFETIME(AUTReplicatedGameRuleset, MaxPlayers);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, OptimalPlayers);
 	DOREPLIFETIME(AUTReplicatedGameRuleset, bCustomRuleset);
 }
@@ -49,7 +48,6 @@ int32 AUTReplicatedGameRuleset::AddMapAssetToMapList(const FAssetData& Asset)
 void AUTReplicatedGameRuleset::SetRules(const FUTGameRuleset& NewRules, const TArray<FAssetData>& MapAssets)
 {
 	Data = NewRules;
-	MaxPlayers = Data.MaxPlayers;
 
 	// First add the Epic maps.
 	if (!NewRules.EpicMaps.IsEmpty())

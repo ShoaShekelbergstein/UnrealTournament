@@ -636,7 +636,7 @@ bool AUTLobbyMatchInfo::MatchHasRoom(bool bForSpectator)
 				return NumSpectatorsInMatch() < LobbyGameState->MaxSpectatorsInInstance;
 			}
 
-			return NumPlayersInMatch() < CurrentRuleset->MaxPlayers;
+			return NumPlayersInMatch() < CurrentRuleset->Data.MaxPlayers;
 		}
 	
 	}

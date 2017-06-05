@@ -19,10 +19,6 @@ public:
 	// This is the list of maps that are available to this rule
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
 	TArray<AUTReplicatedMapInfo*> MapList;
-
-	// The number of players allowed in this match.  
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)
-	int32 MaxPlayers;
 	
 	// The number of players that is optimal for this rule.  The game will not display maps who optimal player counts are less than this number.
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = Ruleset)

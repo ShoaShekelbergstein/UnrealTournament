@@ -233,7 +233,7 @@ public:
 		int32 MP = MatchData.IsValid() ? MatchData->MaxPlayers : 0;
 		if ( MatchInfo.IsValid() )
 		{
-			MP = (MatchInfo->CurrentRuleset.IsValid()) ? MatchInfo->CurrentRuleset->MaxPlayers : MatchInfo->DedicatedServerMaxPlayers;
+			MP = (MatchInfo->CurrentRuleset.IsValid()) ? MatchInfo->CurrentRuleset->Data.MaxPlayers : MatchInfo->DedicatedServerMaxPlayers;
 		}
 
 		return FText::Format(NSLOCTEXT("SUTMatchPanel","MaxPlayerFormat","Out of {0}"), FText::AsNumber(MP));
@@ -357,7 +357,7 @@ public:
 
 		if (MatchInfo.IsValid())
 		{
-			return MatchInfo->NumPlayersInMatch() < (MatchInfo->CurrentRuleset.IsValid() ? MatchInfo->CurrentRuleset->MaxPlayers : 16);
+			return MatchInfo->NumPlayersInMatch() < (MatchInfo->CurrentRuleset.IsValid() ? MatchInfo->CurrentRuleset->Data.MaxPlayers : 16);
 		}
 		else if (MatchData.IsValid())
 		{
