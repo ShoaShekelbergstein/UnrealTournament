@@ -17,8 +17,10 @@
 // Workaround performance issue with shared memory bank collisions in GLSL
 #if GL4_PROFILE
 #define ATOMIC_REDUCTION	0
+#define SYNC_REDUCTION		0
 #else
 #define ATOMIC_REDUCTION	0
+#define SYNC_REDUCTION		1
 #endif
 
 #define AABB_INTERSECT		1
@@ -75,7 +77,35 @@ groupshared float TileZ[TILE_Z_SIZE];
 
 void ComputeTileMinMax(uint ThreadIndex, float SceneDepth, out float MinTileZ, out float MaxTileZ, out float MinTileZ2, out float MaxTileZ2)
 {
-#if ATOMIC_REDUCTION
+#if SYNC_REDUCTION
+
+	// Initialize per-tile variables
+	if (ThreadIndex == 0)
+	{
+		IntegerTileMinZ = 0x7F7FFFFF;
+		IntegerTileMaxZ = 0;
+		IntegerTileMinZ2 = 0x7F7FFFFF;
+		IntegerTileMaxZ2 = 0;
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	// Use shared memory atomics to build the depth bounds for this tile
+	// Each thread is assigned to a pixel at this point
+	InterlockedMin(IntegerTileMinZ, asuint(SceneDepth));
+	InterlockedMax(IntegerTileMaxZ, asuint(SceneDepth));
+
+	GroupMemoryBarrierWithGroupSync();
+
+	MinTileZ = asfloat(IntegerTileMinZ);
+	MaxTileZ = asfloat(IntegerTileMaxZ);
+
+	// required for function output, but dead code...
+	float HalfZ = .5f * (MinTileZ + MaxTileZ);
+
+	MinTileZ2 = HalfZ;
+	MaxTileZ2 = HalfZ;
+#elif ATOMIC_REDUCTION
 
 	// Initialize per-tile variables
 	if (ThreadIndex == 0) 
@@ -192,6 +222,13 @@ bool SphereVsBox( float3 SphereCenter, float SphereRadius, float3 BoxCenter, flo
 	return dot( ClosestOnBox, ClosestOnBox ) < SphereRadius * SphereRadius;
 }
 
+void LessThanIncrement(in uint Value, in uint Key, inout uint Count)
+{
+	if (Value < Key)
+	{
+		Count++;
+	}
+}
 
 // Culls reflection captures in the scene with the current tile
 // Outputs are stored in shared memory
@@ -359,7 +396,11 @@ void DoTileCulling(uint3 GroupId, uint ThreadIndex, float MinTileZ, float MaxTil
 	//@todo - parallel stream compaction could be faster than this
 	#if SORT_CAPTURES
 
-		// O(N^2) simple parallel sort
+		// O(N^2) simple parallel sort, increasing inner loop from 1 element to 4 to improve SLM load coalescing
+		uint TailSize = NumCapturesAffectingTile & 0x3;
+		uint BulkSize = NumCapturesAffectingTile - TailSize;
+		uint TailStart = BulkSize;
+
 		LOOP
 		for (uint CaptureIndex2 = ThreadIndex; CaptureIndex2 < NumCapturesAffectingTile; CaptureIndex2 += THREADGROUP_TOTALSIZE)
 		{
@@ -368,14 +409,31 @@ void DoTileCulling(uint3 GroupId, uint ThreadIndex, float MinTileZ, float MaxTil
 			uint NumSmaller = 0;
 
 			// Count how many items have a smaller key, so we can insert ourselves into the correct position, without requiring interaction between threads
-			for (uint OtherSampleIndex = 0; OtherSampleIndex < NumCapturesAffectingTile; OtherSampleIndex++) 
+			for (uint OtherSampleIndex = 0; OtherSampleIndex < BulkSize; OtherSampleIndex += 4) 
 			{
-				int OtherSortKey = TileReflectionCaptureIndices[OtherSampleIndex];
+				LessThanIncrement(TileReflectionCaptureIndices[OtherSampleIndex + 0], SortKey, NumSmaller);
+				LessThanIncrement(TileReflectionCaptureIndices[OtherSampleIndex + 1], SortKey, NumSmaller);
+				LessThanIncrement(TileReflectionCaptureIndices[OtherSampleIndex + 2], SortKey, NumSmaller);
+				LessThanIncrement(TileReflectionCaptureIndices[OtherSampleIndex + 3], SortKey, NumSmaller);
+			}
 
-				if (OtherSortKey < SortKey)
-				{
-					NumSmaller++;
-				}
+			// Handle tail code, strange that HLSL doesnt support fall through switch (where we'd only have 1 jump)
+			switch (TailSize)
+			{
+				case 3:
+					LessThanIncrement(TileReflectionCaptureIndices[TailStart + 0], SortKey, NumSmaller);
+					LessThanIncrement(TileReflectionCaptureIndices[TailStart + 1], SortKey, NumSmaller);
+					LessThanIncrement(TileReflectionCaptureIndices[TailStart + 2], SortKey, NumSmaller);
+					break;
+
+				case 2:
+					LessThanIncrement(TileReflectionCaptureIndices[TailStart + 0], SortKey, NumSmaller);
+					LessThanIncrement(TileReflectionCaptureIndices[TailStart + 1], SortKey, NumSmaller);
+					break;
+
+				case 1:
+					LessThanIncrement(TileReflectionCaptureIndices[TailStart + 0], SortKey, NumSmaller);
+					break;
 			}
 
 			// Move this entry into its sorted position
