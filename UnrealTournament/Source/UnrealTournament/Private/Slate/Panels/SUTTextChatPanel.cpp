@@ -327,6 +327,7 @@ void SUTTextChatPanel::ChatTextCommited(const FText& NewText, ETextCommit::Type 
 			if (CurrentChatDestination == ChatDestinations::Friends)	FinalText = FString::Printf(TEXT("FriendSay %s"), *FinalText);
 			if (CurrentChatDestination == ChatDestinations::Local)		FinalText = FString::Printf(TEXT("Say %s"), *FinalText);
 			if (CurrentChatDestination == ChatDestinations::Match)		FinalText = FString::Printf(TEXT("Matchchat %s"), *FinalText);
+			if (CurrentChatDestination == ChatDestinations::Team)		FinalText = FString::Printf(TEXT("TeamSay %s"), *FinalText);
 		}
 		else
 		{

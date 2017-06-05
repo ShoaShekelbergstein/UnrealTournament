@@ -118,12 +118,13 @@ void SUTMapVoteDialog::Construct(const FArguments& InArgs)
 			if (TextChatPanel.IsValid())
 			{
 				TextChatPanel->AddDestination(NSLOCTEXT("LobbyChatDestinations","Game","Game"), ChatDestinations::Local,0.0,true);
-				TextChatPanel->RouteBufferedChat();
 				
 				if (GameState->bTeamGame)
 				{
 					TextChatPanel->AddDestination(NSLOCTEXT("LobbyChatDestinations","Team","Team"), ChatDestinations::Team, 4.0, false);
 				}
+
+				TextChatPanel->RouteBufferedChat();
 			}
 		}
 
