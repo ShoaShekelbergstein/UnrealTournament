@@ -39,7 +39,7 @@ void UUTHUDWidgetMessage_VoiceChatStatus::DrawMessages(float DeltaTime)
 			if (PS && PS->bIsTalking)
 			{
 				Canvas->TextSize(UTHUDOwner->GetFontFromSizeIndex(-1), PS->PlayerName, XL, SmallYL, RenderScale, RenderScale);
-				XL += 26;
+				XL += 28 * RenderScale;
 				DrawTalker(PS->PlayerName, PS->Team ? PS->Team->GetTeamNum() : 0, 0, Y, XL, SmallYL);
 				NumTalking++;
 				Y -= SmallYL;
@@ -70,7 +70,7 @@ void UUTHUDWidgetMessage_VoiceChatStatus::DrawTalker(const FString& PlayerName, 
 		Canvas->DrawColor = FColor(188,7,7);
 	}
 	
-	FCanvasTileItem TileItem(RenderPos, GWhiteTexture, FVector2D(XL + 2 * RenderScale, YL), FVector2D(0, 0), FVector2D(1, 1), Canvas->DrawColor);
+	FCanvasTileItem TileItem(RenderPos, GWhiteTexture, FVector2D(XL, YL), FVector2D(0, 0), FVector2D(1, 1), Canvas->DrawColor);
 	TileItem.BlendMode = ESimpleElementBlendMode::SE_BLEND_Translucent;
 	Canvas->DrawItem(TileItem);
 
