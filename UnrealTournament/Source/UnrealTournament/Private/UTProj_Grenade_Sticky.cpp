@@ -239,5 +239,8 @@ void AUTProj_Grenade_Sticky::ProcessHit_Implementation(AActor* OtherActor, UPrim
 		Super::ProcessHit_Implementation(OtherActor, OtherComp, HitLocation, HitNormal);
 	}
 
-	PlayIdleEffects();
+	if (!bExploded)
+	{
+		PlayIdleEffects();
+	}
 }
