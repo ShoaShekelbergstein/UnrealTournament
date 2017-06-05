@@ -371,9 +371,8 @@ TSharedRef<SWidget> SUTCreateGamePanel::BuildGamePanel(TSubclassOf<AUTGameMode> 
 TSharedRef<SWidget> SUTCreateGamePanel::AddMutatorMenu()
 {
 	return SNew(SBox)
-		.WidthOverride(700)
+		.WidthOverride(700).HeightOverride(400)
 		[
-
 			SNew(SVerticalBox)
 			// Heading
 			+ SVerticalBox::Slot()
@@ -386,95 +385,98 @@ TSharedRef<SWidget> SUTCreateGamePanel::AddMutatorMenu()
 			]
 
 			// Mutator enabler
-			+ SVerticalBox::Slot()
+			+ SVerticalBox::Slot().AutoHeight()
 			[
-				SAssignNew(MutatorGrid, SGridPanel)
-				// All mutators
-				+ SGridPanel::Slot(0, 0)
+				SNew(SBox).HeightOverride(350)
 				[
-					SNew(SBorder)
+					SAssignNew(MutatorGrid, SGridPanel)
+					// All mutators
+					+ SGridPanel::Slot(0, 0)
 					[
 						SNew(SBorder)
-						.BorderImage(SUWindowsStyle::Get().GetBrush("UT.Background.Dark"))
-						.Padding(FMargin(5))
 						[
-							SAssignNew( AvailableMutators, SListView<UClass*> )
-							.SelectionMode( ESelectionMode::Single )
-							.ListItemsSource( &MutatorListAvailable )
-							.OnGenerateRow( this, &SUTCreateGamePanel::GenerateMutatorListRow )
-						]
-					]
-				]
-				// Mutator switch buttons
-				+ SGridPanel::Slot(1, 0)
-				[
-					SNew(SBox)
-					.VAlign(VAlign_Center)
-					.Padding(FMargin(10, 0, 10, 0))
-					[
-						SNew(SVerticalBox)
-						// Add button
-						+ SVerticalBox::Slot()
-						.AutoHeight()
-						.Padding(FMargin(0, 0, 0, 10))
-						[
-							SNew(SButton)
-							.HAlign(HAlign_Left)
-							.ButtonStyle(SUWindowsStyle::Get(), "UT.Button.White")
-							.ContentPadding(FMargin(5.0f, 5.0f, 5.0f, 5.0f))
-							.OnClicked(this, &SUTCreateGamePanel::AddMutator)
+							SNew(SBorder)
+							.BorderImage(SUWindowsStyle::Get().GetBrush("UT.Background.Dark"))
+							.Padding(FMargin(5))
 							[
-								SNew(STextBlock)
-								.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText.Black")
-								.Text(NSLOCTEXT("SUTCreateGamePanel", "MutatorAdd", "-->"))
-							]
-						]
-						// Remove Button
-						+ SVerticalBox::Slot()
-						.AutoHeight()
-						[
-							SNew(SButton)
-							.HAlign(HAlign_Left)
-							.ButtonStyle(SUWindowsStyle::Get(), "UT.Button.White")
-							.ContentPadding(FMargin(5.0f, 5.0f, 5.0f, 5.0f))
-							.OnClicked(this, &SUTCreateGamePanel::RemoveMutator)
-							[
-								SNew(STextBlock)
-								.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText.Black")
-								.Text(NSLOCTEXT("SUTCreateGamePanel", "MutatorRemove", "<--"))
+								SAssignNew( AvailableMutators, SListView<UClass*> )
+								.SelectionMode( ESelectionMode::Single )
+								.ListItemsSource( &MutatorListAvailable )
+								.OnGenerateRow( this, &SUTCreateGamePanel::GenerateMutatorListRow )
 							]
 						]
 					]
-				]
-				// Enabled mutators
-				+ SGridPanel::Slot(2, 0)
-				[
-					SNew(SBorder)
+					// Mutator switch buttons
+					+ SGridPanel::Slot(1, 0)
 					[
-						SNew(SBorder)
-						.BorderImage(SUWindowsStyle::Get().GetBrush("UT.Background.Dark"))
-						.Padding(FMargin(5))
+						SNew(SBox)
+						.VAlign(VAlign_Center)
+						.Padding(FMargin(10, 0, 10, 0))
 						[
-							SAssignNew(EnabledMutators, SListView<UClass*>)
-							.SelectionMode(ESelectionMode::Single)
-							.ListItemsSource(&MutatorListEnabled)
-							.OnGenerateRow(this, &SUTCreateGamePanel::GenerateMutatorListRow)
+							SNew(SVerticalBox)
+							// Add button
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(FMargin(0, 0, 0, 10))
+							[
+								SNew(SButton)
+								.HAlign(HAlign_Left)
+								.ButtonStyle(SUWindowsStyle::Get(), "UT.Button.White")
+								.ContentPadding(FMargin(5.0f, 5.0f, 5.0f, 5.0f))
+								.OnClicked(this, &SUTCreateGamePanel::AddMutator)
+								[
+									SNew(STextBlock)
+									.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText.Black")
+									.Text(NSLOCTEXT("SUTCreateGamePanel", "MutatorAdd", "-->"))
+								]
+							]
+							// Remove Button
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							[
+								SNew(SButton)
+								.HAlign(HAlign_Left)
+								.ButtonStyle(SUWindowsStyle::Get(), "UT.Button.White")
+								.ContentPadding(FMargin(5.0f, 5.0f, 5.0f, 5.0f))
+								.OnClicked(this, &SUTCreateGamePanel::RemoveMutator)
+								[
+									SNew(STextBlock)
+									.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText.Black")
+									.Text(NSLOCTEXT("SUTCreateGamePanel", "MutatorRemove", "<--"))
+								]
+							]
 						]
 					]
-				]
-				// Configure mutator button
-				+ SGridPanel::Slot(2, 1)
-				.Padding(FMargin(0, 5.0f, 0, 5.0f))
-				[
-					SNew(SButton)
-					.HAlign(HAlign_Center)
-					.ButtonStyle(SUWindowsStyle::Get(), "UT.Button.White")
-					.ContentPadding(FMargin(5.0f, 5.0f, 5.0f, 5.0f))
-					.OnClicked(this, &SUTCreateGamePanel::ConfigureMutator)
+					// Enabled mutators
+					+ SGridPanel::Slot(2, 0)
 					[
-						SNew(STextBlock)
-						.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.Black")
-						.Text(NSLOCTEXT("SUTCreateGamePanel", "ConfigureMutator", "Configure Mutator"))
+						SNew(SBorder)
+						[
+							SNew(SBorder)
+							.BorderImage(SUWindowsStyle::Get().GetBrush("UT.Background.Dark"))
+							.Padding(FMargin(5))
+							[
+								SAssignNew(EnabledMutators, SListView<UClass*>)
+								.SelectionMode(ESelectionMode::Single)
+								.ListItemsSource(&MutatorListEnabled)
+								.OnGenerateRow(this, &SUTCreateGamePanel::GenerateMutatorListRow)
+							]
+						]
+					]
+					// Configure mutator button
+					+ SGridPanel::Slot(2, 1)
+					.Padding(FMargin(0, 5.0f, 0, 5.0f))
+					[
+						SNew(SButton)
+						.HAlign(HAlign_Center)
+						.ButtonStyle(SUWindowsStyle::Get(), "UT.Button.White")
+						.ContentPadding(FMargin(5.0f, 5.0f, 5.0f, 5.0f))
+						.OnClicked(this, &SUTCreateGamePanel::ConfigureMutator)
+						[
+							SNew(STextBlock)
+							.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.Black")
+							.Text(NSLOCTEXT("SUTCreateGamePanel", "ConfigureMutator", "Configure Mutator"))
+						]
 					]
 				]
 			]
