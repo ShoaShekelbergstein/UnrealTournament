@@ -2021,9 +2021,13 @@ void AUTPlayerController::ClientHearSound_Implementation(USoundBase* TheSound, A
 					{
 						AttenuationOverride = CustomAmp.OccludedAttenuation;
 					}
-					else if (0.5f * MaxAudibleDistance < (PlaySoundLocation - ViewPoint).Size())
+					else if (0.4f * MaxAudibleDistance < (PlaySoundLocation - ViewPoint).Size())
 					{
 						return;
+					}
+					else
+					{
+						VolumeMultiplier *= 0.7f;
 					}
 				}
 			}
