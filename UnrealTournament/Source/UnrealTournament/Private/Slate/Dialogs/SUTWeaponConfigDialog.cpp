@@ -1063,6 +1063,8 @@ void SUTWeaponConfigDialog::RecreateWeaponPreview()
 
 FReply SUTWeaponConfigDialog::WeaponClicked(int32 NewWeaponIndex)
 {
+	FSlateApplication::Get().SetAllUserFocus(AllWeapons[NewWeaponIndex].WeaponButton, EFocusCause::SetDirectly);
+
 	if (AllWeapons.IsValidIndex(NewWeaponIndex))
 	{
 		if (AllWeapons.IsValidIndex(CurrentWeaponIndex) && AllWeapons[CurrentWeaponIndex].WeaponButton.IsValid() )
