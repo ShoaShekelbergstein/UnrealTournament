@@ -83,8 +83,19 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Intro)
 		TArray<float> RampUpTime;
 
+	/** Sound to play during countdown to flag available. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Intro)
+		USoundBase* EndMusic;
+
+	/** Sound to play during countdown to flag available. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Intro)
+		float EndMusicTime;
+
 	UFUNCTION()
 		virtual void PlayRampUpMusic();
+
+	UFUNCTION()
+		virtual void PlayEndMusic();
 
 	/** Last spawn group used by attackers (used to spread out spawns). */
 	UPROPERTY()

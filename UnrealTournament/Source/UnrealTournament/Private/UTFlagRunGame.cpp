@@ -105,28 +105,16 @@ AUTFlagRunGame::AUTFlagRunGame(const FObjectInitializer& ObjectInitializer)
 
 	ActivatedPowerupPlaceholderObject = FStringAssetReference(TEXT("/Game/RestrictedAssets/Pickups/Powerups/BP_ActivatedPowerup_UDamage.BP_ActivatedPowerup_UDamage_C"));
 
-	static ConstructorHelpers::FObjectFinder<USoundBase> RallyFinalSoundFinder(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RallyFailed.RallyFailed'"));
-	RallyFailedSound = RallyFinalSoundFinder.Object;
-
-	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderG(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/ActionMusicG.ActionMusicG'"));
-	RampUpMusic.Add(RampUpMusicFinderG.Object);
-	RampUpTime.Add(14.1f);
-
-	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderA(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RampUpMusicA.RampUpMusicA'"));
-	RampUpMusic.Add(RampUpMusicFinderA.Object);
-	RampUpTime.Add(12.9f);
-
-	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderC(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RampUpMusicC.RampUpMusicC'"));
+	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderC(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RampUpMusicC.RampUpMusicC'")); // Pre-round
 	RampUpMusic.Add(RampUpMusicFinderC.Object);
 	RampUpTime.Add(10.f);
 
-	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderD(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RampUpMusicD.RampUpMusicD'"));
-	RampUpMusic.Add(RampUpMusicFinderD.Object);
-	RampUpTime.Add(10.2f);
+	static ConstructorHelpers::FObjectFinder<USoundBase> RallyFinalSoundFinder(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RallyFailed.RallyFailed'"));
+	RallyFailedSound = RallyFinalSoundFinder.Object;
 
-	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderE(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RampUpMusicE.RampUpMusicE'"));
-	RampUpMusic.Add(RampUpMusicFinderE.Object);
-	RampUpTime.Add(19.1f);
+	static ConstructorHelpers::FObjectFinder<USoundBase> RampUpMusicFinderE(TEXT("SoundWave'/Game/RestrictedAssets/Audio/Stingers/RampUpMusicE.RampUpMusicE'")); // end of game, cut out at beat change
+	EndMusic = RampUpMusicFinderE.Object;
+	EndMusicTime = 19.1f;
 }
 
 void AUTFlagRunGame::PreInitializeComponents()
@@ -2233,6 +2221,18 @@ void AUTFlagRunGame::PlayRampUpMusic()
 		if (PC != nullptr)
 		{
 			PC->UTClientPlaySound(RampUpMusic[BlitzGameState->CTFRound % RampUpMusic.Num()]);
+		}
+	}
+}
+
+void AUTFlagRunGame::PlayEndMusic()
+{
+	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		AUTPlayerController* PC = Cast<AUTPlayerController>(*Iterator);
+		if (PC != nullptr)
+		{
+			PC->UTClientPlaySound(EndMusic);
 		}
 	}
 }
