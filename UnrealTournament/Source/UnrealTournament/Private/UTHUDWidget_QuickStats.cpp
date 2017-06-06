@@ -666,7 +666,7 @@ void UUTHUDWidget_QuickStats::DrawIconUnderlay(FVector2D StatOffset)
 	{
 		HorizontalHighlight.RenderColor = FLinearColor::Yellow;
 		HorizontalHighlight.RenderOpacity = 1.f;
-		float Height = HorizontalBackground.Size.Y * 0.1f*RallyPoint->RallyTimeRemaining;
+		float Height = HorizontalBackground.Size.Y * 0.05f*RallyPoint->RallyTimeRemaining;
 		HorizontalHighlight.Size.Y = Height;
 		HorizontalHighlight.UVs.VL = Height;
 		FVector2D DrawOffset = StatOffset;

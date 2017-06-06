@@ -255,9 +255,9 @@ void UUTHUDWidget_Paperdoll::DrawRallyIcon(float DeltaTime, AUTRallyPoint* Rally
 		FLinearColor RealColor = FlagBackground.RenderColor;
 		FlagBackground.RenderColor = FLinearColor::Gray;
 		float RealWidth = FlagBackground.Size.X;
-		FlagBackground.Size.X *= 0.1f*RallyPoint->RallyTimeRemaining;
+		FlagBackground.Size.X *= 0.05f*RallyPoint->RallyTimeRemaining;
 		float RealUVUL = FlagBackground.UVs.UL;
-		FlagBackground.UVs.UL *= 0.1f*RallyPoint->RallyTimeRemaining;
+		FlagBackground.UVs.UL *= 0.05f*RallyPoint->RallyTimeRemaining;
 		float RealPosX = FlagBackground.Position.X;
 		FlagBackground.Position.X -= 0.5f*(RealWidth - FlagBackground.Size.X);
 		RenderObj_Texture(FlagBackground);
