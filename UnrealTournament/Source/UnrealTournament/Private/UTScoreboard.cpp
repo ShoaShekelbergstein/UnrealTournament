@@ -601,7 +601,6 @@ void UUTScoreboard::DrawPlayerScores(float RenderDelta, float& YOffset)
 	int32 NumSpectators = 0;
 	int32 ColumnCnt = ((UTGameState && UTGameState->bTeamGame) || ActualPlayerCount > 16) ? 2 : 1;
 	float XOffset = ScaledEdgeSize;
-	float DrawOffset = YOffset;
 	for (int32 i=0; i<UTGameState->PlayerArray.Num(); i++)
 	{
 		AUTPlayerState* PlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
@@ -609,14 +608,9 @@ void UUTScoreboard::DrawPlayerScores(float RenderDelta, float& YOffset)
 		{
 			if (!PlayerState->bOnlySpectator)
 			{
-				DrawPlayer(Place, PlayerState, RenderDelta, XOffset, DrawOffset);
-				DrawOffset += CellHeight*RenderScale;
+				DrawPlayer(Place, PlayerState, RenderDelta, XOffset, YOffset);
+				YOffset += CellHeight*RenderScale;
 				Place++;
-				if (Place == 17)
-				{
-					XOffset = Canvas->ClipX - ScaledCellWidth - ScaledEdgeSize;
-					DrawOffset = YOffset;
-				}
 			}
 			else if (Cast<AUTDemoRecSpectator>(UTPlayerOwner) == nullptr && !PlayerState->bIsDemoRecording)
 			{
