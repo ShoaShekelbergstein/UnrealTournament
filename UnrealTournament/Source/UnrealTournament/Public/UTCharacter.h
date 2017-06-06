@@ -327,7 +327,7 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	//====================================
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Mesh)
-	class UBoxComponent* FirstPersonMeshBoundControl;
+	class USphereComponent* FirstPersonMeshBoundProxy;
 
 	/** Pawn mesh: 1st person view (arms; seen only by self) */
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category=Mesh)

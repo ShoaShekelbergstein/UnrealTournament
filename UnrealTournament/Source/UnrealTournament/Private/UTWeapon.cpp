@@ -2544,10 +2544,10 @@ void AUTWeapon::UpdateViewBob(float DeltaTime)
 	if (MyPC != NULL && Mesh != NULL && UTOwner->GetWeapon() == this && ShouldPlay1PVisuals())
 	{
 		// if weapon is up in first person, view bob with movement
-		USkeletalMeshComponent* BobbedMesh = (HandsAttachSocket != NAME_None) ? UTOwner->FirstPersonMesh : Mesh;
+		USceneComponent* BobbedMesh = (HandsAttachSocket != NAME_None) ? (USceneComponent*)UTOwner->FirstPersonMeshBoundProxy : (USceneComponent*)Mesh;
 		if (HandsAttachSocket != NAME_None)
 		{
-			FirstPMeshOffset = FVector::ZeroVector;
+			FirstPMeshOffset = UTOwner->GetClass()->GetDefaultObject<AUTCharacter>()->FirstPersonMeshBoundProxy->GetRelativeTransform().GetLocation();
 			FirstPMeshRotation = BobbedMesh->GetRelativeTransform().Rotator();
 		}
 		else if (FirstPMeshOffset.IsZero())

@@ -89,16 +89,16 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 	CharacterCameraComponent->RelativeLocation = FVector(0, 0, DefaultBaseEyeHeight); // Position the camera
 	CharacterCameraComponent->bUsePawnControlRotation = true;
 
-	FirstPersonMeshBoundControl = ObjectInitializer.CreateDefaultSubobject<UBoxComponent>(this, TEXT("CharacterMesh1PBoundControl"));
-	FirstPersonMeshBoundControl->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	FirstPersonMeshBoundControl->bGenerateOverlapEvents = false;
-	FirstPersonMeshBoundControl->SetBoxExtent(FVector(10.0f, 10.0f, 10.f), false);
-	FirstPersonMeshBoundControl->SetupAttachment(CharacterCameraComponent);
+	FirstPersonMeshBoundProxy = ObjectInitializer.CreateDefaultSubobject<USphereComponent>(this, TEXT("CharacterMesh1PBoundControl"));
+	FirstPersonMeshBoundProxy->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	FirstPersonMeshBoundProxy->bGenerateOverlapEvents = false;
+	FirstPersonMeshBoundProxy->SetSphereRadius(15.0f, false);
+	FirstPersonMeshBoundProxy->SetupAttachment(CharacterCameraComponent);
 
 	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
 	FirstPersonMesh = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("CharacterMesh1P"));
 	FirstPersonMesh->SetOnlyOwnerSee(true);
-	FirstPersonMesh->SetupAttachment(FirstPersonMeshBoundControl);
+	FirstPersonMesh->SetupAttachment(FirstPersonMeshBoundProxy);
 	FirstPersonMesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::OnlyTickPoseWhenRendered;
 	FirstPersonMesh->bCastDynamicShadow = false;
 	FirstPersonMesh->CastShadow = false;
