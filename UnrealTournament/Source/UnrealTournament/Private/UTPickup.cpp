@@ -224,7 +224,7 @@ void AUTPickup::GiveTo_Implementation(APawn* Target)
 	{
 		UTPC->ClientReceiveLocalizedMessage(UUTPickupMessage::StaticClass(), 0, NULL, NULL, GetClass());
 		AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-		if (GameMode && GameMode->bBasicTrainingGame && !GameMode->bDamageHurtsHealth && (GetNetMode() == NM_Standalone))
+		if (GameMode && GameMode->bPlayInventoryTutorialAnnouncements && (GetNetMode() == NM_Standalone))
 		{
 			for (int32 Index = 0; Index < TutorialAnnouncements.Num(); Index++)
 			{

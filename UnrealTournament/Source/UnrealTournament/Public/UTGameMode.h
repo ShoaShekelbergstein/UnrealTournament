@@ -293,6 +293,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
 	bool bBasicTrainingGame;
 
+
+	/** If true, play inventory tutorial announcements on pickup/equip. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
+		bool bPlayInventoryTutorialAnnouncements;
+
 	/** If true, don't go back to training menu at end of game. */
 	UPROPERTY(BlueprintReadWrite, Category = "Game")
 		bool bNoTrainingMenu;

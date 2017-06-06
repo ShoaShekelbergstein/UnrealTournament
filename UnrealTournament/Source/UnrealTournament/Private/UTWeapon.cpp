@@ -834,7 +834,7 @@ void AUTWeapon::BringUp(float OverflowTime)
 	}
 
 	AUTGameMode* GameMode = GetWorld()->GetAuthGameMode<AUTGameMode>();
-	AUTPlayerController* TutPlayer = (GameMode && GameMode->bBasicTrainingGame && !GameMode->bDamageHurtsHealth && UTOwner && (GetNetMode() == NM_Standalone)) ? Cast<AUTPlayerController>(UTOwner->GetController()) : nullptr;
+	AUTPlayerController* TutPlayer = (GameMode && GameMode->bPlayInventoryTutorialAnnouncements && UTOwner && (GetNetMode() == NM_Standalone)) ? Cast<AUTPlayerController>(UTOwner->GetController()) : nullptr;
 	if (TutPlayer)
 	{
 		for (int32 Index = 0; Index < TutorialAnnouncements.Num(); Index++)
