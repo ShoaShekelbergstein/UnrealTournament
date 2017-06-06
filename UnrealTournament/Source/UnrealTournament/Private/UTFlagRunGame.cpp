@@ -572,34 +572,43 @@ bool AUTFlagRunGame::CheckForWinner(AUTTeamInfo* ScoringTeam)
 	{
 		AUTFlagRunGameState* GS = Cast<AUTFlagRunGameState>(BlitzGameState);
 		bSecondaryWin = false;
-		if ((BlitzGameState->CTFRound == NumRounds - 2) && (FMath::Abs(Teams[0]->Score - Teams[1]->Score) > DefenseScore + GoldScore))
+		if (BlitzGameState->CTFRound == NumRounds - 2)
 		{
-			AUTTeamInfo* BestTeam = (Teams[0]->Score > Teams[1]->Score) ? Teams[0] : Teams[1];
-			EndTeamGame(BestTeam, FName(TEXT("scorelimit")));
-
-			if (FUTAnalytics::IsAvailable())
+			int32 ScoreDifference = FMath::Abs(Teams[0]->Score - Teams[1]->Score);
+			bool bInsurmountableLead = ScoreDifference > DefenseScore + GoldScore;
+			if (!bInsurmountableLead && (ScoreDifference == DefenseScore + GoldScore) && (FMath::Abs(GS->TiebreakValue) > 60) && ((GS->TiebreakValue > 0) == (Teams[0]->Score - Teams[1]->Score > 0)))
 			{
-				const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
-				int WinningTeamNum = 0;
-				if (ScoringTeam)
+				bInsurmountableLead = true;
+			}
+			if (bInsurmountableLead)
+			{
+				AUTTeamInfo* BestTeam = (Teams[0]->Score > Teams[1]->Score) ? Teams[0] : Teams[1];
+				EndTeamGame(BestTeam, FName(TEXT("scorelimit")));
+
+				if (FUTAnalytics::IsAvailable())
 				{
-					WinningTeamNum = ScoringTeam->GetTeamNum();
-				}
-				else
-				{
-					for (int TeamNumIndex = 0; TeamNumIndex < Teams.Num(); ++TeamNumIndex)
+					const bool bIsDefenseWin = ScoringTeam ? IsTeamOnDefense(ScoringTeam->GetTeamNum()) : true;
+					int WinningTeamNum = 0;
+					if (ScoringTeam)
 					{
-						if (IsTeamOnDefense(Teams.Num()))
+						WinningTeamNum = ScoringTeam->GetTeamNum();
+					}
+					else
+					{
+						for (int TeamNumIndex = 0; TeamNumIndex < Teams.Num(); ++TeamNumIndex)
 						{
-							WinningTeamNum = Teams[TeamNumIndex]->GetTeamNum();
+							if (IsTeamOnDefense(Teams.Num()))
+							{
+								WinningTeamNum = Teams[TeamNumIndex]->GetTeamNum();
+							}
 						}
 					}
+					FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true, WinningTeamNum);
 				}
-				FUTAnalytics::FireEvent_FlagRunRoundEnd(this, bIsDefenseWin, true, WinningTeamNum);
+				return true;
 			}
-			return true;
 		}
-		if (BlitzGameState->CTFRound == NumRounds - 1)
+		else if (BlitzGameState->CTFRound == NumRounds - 1)
 		{
 			if (GS && GS->bRedToCap)
 			{
