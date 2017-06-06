@@ -921,6 +921,7 @@ void AUTWeapon::AttachToOwner_Implementation()
 	{
 		UpdateWeaponHand();
 		Mesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, (UTOwner->FirstPersonMesh->SkeletalMesh != nullptr) ? HandsAttachSocket : NAME_None);
+		Mesh->bUseAttachParentBound = true;
 		if (ShouldPlay1PVisuals())
 		{
 			Mesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPose; // needed for anims to be ticked even if weapon is not currently displayed, e.g. sniper zoom
