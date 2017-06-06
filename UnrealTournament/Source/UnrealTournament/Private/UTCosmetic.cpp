@@ -89,7 +89,7 @@ void AUTCosmetic::PostInitializeComponents()
 			}
 			if (bNeedsScaling)
 			{
-				PrimComponent->SetRelativeScale3D(PrimComponent->RelativeScale3D * 1.15f); // FIXMESTEVE temp until cosmetics are rescaled
+				PrimComponent->SetRelativeScale3D(PrimComponent->RelativeScale3D * 1.075f); // FIXMESTEVE temp until cosmetics are rescaled
 			}
 		}
 	}
