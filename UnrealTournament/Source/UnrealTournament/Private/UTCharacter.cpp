@@ -93,7 +93,7 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 	FirstPersonMeshBoundControl->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FirstPersonMeshBoundControl->bGenerateOverlapEvents = false;
 	FirstPersonMeshBoundControl->SetBoxExtent(FVector(10.0f, 10.0f, 10.f), false);
-	FirstPersonMesh->SetupAttachment(CharacterCameraComponent);
+	FirstPersonMeshBoundControl->SetupAttachment(CharacterCameraComponent);
 
 	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
 	FirstPersonMesh = ObjectInitializer.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("CharacterMesh1P"));
