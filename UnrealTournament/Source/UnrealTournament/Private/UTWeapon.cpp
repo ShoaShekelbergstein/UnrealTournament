@@ -927,6 +927,7 @@ void AUTWeapon::AttachToOwner_Implementation()
 		}
 		if (ShouldPlay1PVisuals())
 		{
+			UTOwner->OnFirstPersonWeaponEquipped(this);
 			Mesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPose; // needed for anims to be ticked even if weapon is not currently displayed, e.g. sniper zoom
 			Mesh->LastRenderTime = GetWorld()->TimeSeconds;
 			Mesh->bRecentlyRendered = true;

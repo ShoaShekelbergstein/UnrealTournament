@@ -633,6 +633,9 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	UFUNCTION(BlueprintCallable, Category = "Pawn")
 	virtual void SwitchWeapon(AUTWeapon* NewWeapon);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Pawn")
+	void OnFirstPersonWeaponEquipped(AUTWeapon* EquippedWeapon);
+
 	inline bool IsPendingFire(uint8 InFireMode) const
 	{
 		return !IsFiringDisabled() && (InFireMode < PendingFire.Num() && PendingFire[InFireMode] != 0);
