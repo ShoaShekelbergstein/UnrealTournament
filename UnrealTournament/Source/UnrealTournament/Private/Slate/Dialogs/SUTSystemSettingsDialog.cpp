@@ -1093,9 +1093,9 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildAudioTab()
 	+AddGeneralSliderWithLabelWidget(VoiceChatRecordVolume, 
 		VoiceChatRecordVolumeLabel, 
 		&SUTSystemSettingsDialog::OnVoiceChatRecordVolumeChanged, 
-		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume", "Voice Chat Record Volume").ToString(), 
+		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume", "Voice Chat Microphone Level").ToString(), 
 		UserSettings->GetVoiceChatRecordVolume(),
-		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume_Tooltip", "Controls the voice chat record volume."))
+		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume_Tooltip", "Controls the microphone level for voice chat."))
 
 	+ SVerticalBox::Slot()
 	.AutoHeight()
