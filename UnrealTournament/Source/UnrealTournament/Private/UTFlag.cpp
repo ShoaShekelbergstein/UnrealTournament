@@ -336,7 +336,8 @@ void AUTFlag::Tick(float DeltaTime)
 					RecentPosition[1] = RecentPosition[0];
 					RecentPosition[0] = HoldingPawn->GetActorLocation();
 				}
-				if ((!bAlreadyInNoRallyZone || !bNowInNoRallyZone) && ((HoldingPawn->GetActorLocation() - PreviousPos).Size() > (bJustTransitionedToNoRallyZone ? 0.3f*MinGradualReturnDist : MinGradualReturnDist)))
+				if ((!bAlreadyInNoRallyZone || !bNowInNoRallyZone) && ((HoldingPawn->GetActorLocation() - PreviousPos).Size() > (bJustTransitionedToNoRallyZone ? 0.3f*MinGradualReturnDist : MinGradualReturnDist))
+					&& (!bNowInNoRallyZone || !GV->EncompassesPoint(PendingNewPosition)) )
 				{
 					FFlagTrailPos NewPosition;
 					NewPosition.Location = PendingNewPosition;
