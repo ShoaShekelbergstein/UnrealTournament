@@ -262,6 +262,7 @@ void AUTPickupInventory::CreatePickupMesh(AActor* Pickup, UMeshComponent*& Picku
 				PickupMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 				PickupMesh->bShouldUpdatePhysicsVolume = false;
 				PickupMesh->bUseAttachParentBound = false;
+				PickupMesh->bSingleSampleShadowFromStationaryLights = true;
 				PickupMesh->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
 
 				TArray<USceneComponent*> ChildComps = PickupMesh->GetAttachChildren();
