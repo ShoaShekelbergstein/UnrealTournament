@@ -47,7 +47,7 @@ static TAutoConsoleVariable<float> CVarSetMipMapLODBias(
 	TEXT("r.MipMapLODBias"),
 	0.0f,
 	TEXT("Apply additional mip map bias for all 2D textures, range of -15.0 to 15.0"),
-	ECVF_RenderThreadSafe | ECVF_Scalability);
+	ECVF_RenderThreadSafe | ECVF_Cheat);
 
 static TAutoConsoleVariable<int32> CVarVirtualTextureEnabled(
 	TEXT("r.VirtualTexture"),
