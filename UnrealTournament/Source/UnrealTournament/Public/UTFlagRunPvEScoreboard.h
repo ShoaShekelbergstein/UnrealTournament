@@ -8,6 +8,7 @@
 #include "StatNames.h"
 #include "UTGameEngine.h"
 #include "UTHUD.h"
+#include "UTGameState.h"
 
 #include "UTFlagRunPvEScoreboard.generated.h"
 
@@ -102,7 +103,7 @@ public:
 	virtual bool ShouldDrawScoringStats() override
 	{
 		// match rules for drawing the player score panel
-		return ShowScorePanel();
+		return UTGameState && ((UTGameState->GetMatchState() == MatchState::MatchIntermission) || UTGameState->HasMatchEnded()) && ShowScorePanel();
 	}
 	virtual void DrawStatsLeft(float DeltaTime, float& YPos, float XOffset, float ScoreWidth, float PageBottom) override
 	{
