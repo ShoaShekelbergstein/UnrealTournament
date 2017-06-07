@@ -558,11 +558,40 @@ FReply SUTInGameHomePanel::ContextCommand(int32 CommandId, TWeakObjectPtr<AUTPla
 	return FReply::Handled();
 }
 
+FReply SUTInGameHomePanel::OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
+{
+	AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+	if (PC)
+	{
+		TArray<FKey> Keys;
+		PC->ResolveKeybindToFKey(TEXT("PushToTalk"), Keys);
+		for (int i = 0; i < Keys.Num(); i++)
+		{
+			if (MouseEvent.IsMouseButtonDown(Keys[i]))
+			{
+				PC->StartVOIPTalking();
+			}
+		}
+	}
+
+	return FReply::Unhandled();
+}
+
 FReply SUTInGameHomePanel::OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
 	AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
 	if (PC && PC->MyUTHUD)
 	{
+		TArray<FKey> Keys;
+		PC->ResolveKeybindToFKey(TEXT("PushToTalk"), Keys);
+		for (int i = 0; i < Keys.Num(); i++)
+		{
+			if (MouseEvent.IsMouseButtonDown(Keys[i]))
+			{
+				PC->StopVOIPTalking();;
+			}
+		}
+
 		PC->MyUTHUD->bForceScores = true;
 		FVector2D MousePosition;
 		if (GetGameMousePosition(MousePosition))
