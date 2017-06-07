@@ -5246,6 +5246,45 @@ void AUTPlayerController::ClientAnnounceRoundScore_Implementation(AUTTeamInfo* W
 	}
 }
 
+void AUTPlayerController::VoiceChatReconnected()
+{
+	VoiceChatChannelCurrent.Empty();
+	VoiceChatJoinTokenCurrent.Empty();
+	VoiceChatLoginToken.Empty();
+	VoiceChatJoinToken.Empty();
+	ServerVoiceChatReconnected();
+}
+
+bool AUTPlayerController::ServerVoiceChatReconnected_Validate()
+{
+	return true;
+}
+
+void AUTPlayerController::ServerVoiceChatReconnected_Implementation()
+{
+	static const FName VoiceChatTokenFeatureName("VoiceChatToken");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatTokenFeatureName))
+	{
+		UTVoiceChatTokenFeature* VoiceChatToken = &IModularFeatures::Get().GetModularFeature<UTVoiceChatTokenFeature>(VoiceChatTokenFeatureName);
+		VoiceChatToken->GenerateClientLoginToken(VoiceChatPlayerName, VoiceChatLoginToken);
+
+		if (IsLocalPlayerController())
+		{
+			OnRepVoiceChatLoginToken();
+		}
+
+		if (!VoiceChatChannel.IsEmpty())
+		{
+			VoiceChatToken->GenerateClientJoinToken(VoiceChatPlayerName, VoiceChatChannel, VoiceChatJoinToken);
+
+			if (IsLocalPlayerController())
+			{
+				OnRepVoiceChatJoinToken();
+			}
+		}
+	}
+}
+
 void AUTPlayerController::VoiceChatChannelJoinFailed()
 {
 	VoiceChatChannelCurrent.Empty();
@@ -5282,6 +5321,7 @@ void AUTPlayerController::LeaveVoiceChat()
 		{
 			UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
 			VoiceChat->UnregisterChannelJoinFailedDelegate_Handle(VoiceChatChannelJoinFailedHandle);
+			VoiceChat->UnregisterReconnectedDelegate_Handle(VoiceChatReconnectedHandle);
 			VoiceChatChannelJoinFailedHandle.Reset();
 			VoiceChat->Logout(VoiceChatPlayerName);
 		}
@@ -5380,6 +5420,11 @@ void AUTPlayerController::OnRepVoiceChatLoginToken()
 		!VoiceChatPlayerName.IsEmpty() && !VoiceChatLoginToken.IsEmpty())
 	{
 		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		if (!VoiceChatReconnectedHandle.IsValid())
+		{
+			VoiceChatReconnectedHandle = VoiceChat->RegisterReconnectedDelegate_Handle(FVoiceChatReconnected::FDelegate::CreateUObject(this, &ThisClass::VoiceChatReconnected));
+		}
+
 		VoiceChat->LoginUsingToken(VoiceChatPlayerName, VoiceChatLoginToken);
 		bVoiceChatSentLogin = true;
 

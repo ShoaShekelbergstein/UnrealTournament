@@ -840,7 +840,14 @@ public:
 	void ServerVoiceChatRejoinChannel();
 
 	FDelegateHandle VoiceChatChannelJoinFailedHandle;
+	
+	UFUNCTION()
+	void VoiceChatReconnected();
 
+	UFUNCTION(reliable, server, WithValidation)
+	void ServerVoiceChatReconnected();
+
+	FDelegateHandle VoiceChatReconnectedHandle;
 protected:
 
 	// If set, this will be the final viewtarget this pawn can see.
