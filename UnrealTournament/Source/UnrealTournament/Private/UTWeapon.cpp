@@ -1007,6 +1007,7 @@ void AUTWeapon::UpdateWeaponHand()
 		{
 			UTOwner->FirstPersonMesh->SetRelativeTransform(FTransform::Identity);
 			UTOwner->FirstPersonMesh->SetRelativeLocation(UTOwner->GetClass()->GetDefaultObject<AUTCharacter>()->FirstPersonMesh->RelativeLocation);
+			UTOwner->FirstPersonMeshBoundSphere->SetRelativeLocation(UTOwner->GetClass()->GetDefaultObject<AUTCharacter>()->FirstPersonMeshBoundSphere->RelativeLocation);
 		}
 		else
 		{
