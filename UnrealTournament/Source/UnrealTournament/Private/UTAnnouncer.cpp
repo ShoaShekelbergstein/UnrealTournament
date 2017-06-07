@@ -158,6 +158,14 @@ void UUTAnnouncer::ClearAnnouncements()
 
 void UUTAnnouncer::StartNextAnnouncement(bool bUseSpacing)
 {
+	if ((QueuedAnnouncements.Num() > 0) && (GetWorld()->GetTimeSeconds() > QueuedAnnouncements[0].MessageClass.GetDefaultObject()->GetMaxAnnouncementDelay(QueuedAnnouncements[0]) + QueuedAnnouncements[0].QueueTime))
+	{
+		// waited too long, skip this announcement
+		QueuedAnnouncements.RemoveAt(0);
+
+		StartNextAnnouncement(bUseSpacing);
+		return;
+	}
 	float AnnouncementDelay = 0.f;
 	if (bUseSpacing && (QueuedAnnouncements.Num() > 0))
 	{

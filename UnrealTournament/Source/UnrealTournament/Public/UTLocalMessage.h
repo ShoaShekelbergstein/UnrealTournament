@@ -63,6 +63,12 @@ class UNREALTOURNAMENT_API UUTLocalMessage : public ULocalMessage
 	UPROPERTY(EditDefaultsOnly, Category = Message)
 		uint32 bPlayDuringInstantReplay : 1;
 	
+	/** Maximum delay after which this announcement will still play. */
+	UPROPERTY(EditDefaultsOnly, Category = Message)
+		float MaxAnnouncementDelay;
+
+	virtual float GetMaxAnnouncementDelay(const FAnnouncementInfo AnnouncementInfo) { return MaxAnnouncementDelay; };
+
 	/** Return true if announcement is still valid and should still play. */
 	virtual bool ShouldStillPlay(class AUTGameState* GS, const FAnnouncementInfo AnnouncementInfo) const;
 

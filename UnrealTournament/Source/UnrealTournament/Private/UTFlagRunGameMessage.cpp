@@ -11,6 +11,12 @@ UUTFlagRunGameMessage::UUTFlagRunGameMessage(const FObjectInitializer& ObjectIni
 	KilledMessagePostfix = NSLOCTEXT("CTFGameMessage", "KilledMessage", " killed the flag carrier!");
 	NoPowerRallyMessage = NSLOCTEXT("FlagRunGameMessage", "NoPowerRally", "You need the flag to power a rally point.");
 	NoDefenderRallyMessage = NSLOCTEXT("FlagRunGameMessage", "NoDefenderRally", "Only attackers can power a rally point.");
+	MaxAnnouncementDelay = 2.5f;
+}
+
+float UUTFlagRunGameMessage::GetMaxAnnouncementDelay(const FAnnouncementInfo AnnouncementInfo)
+{ 
+	return ((AnnouncementInfo.Switch == 2) || ((AnnouncementInfo.Switch == 4) && AnnouncementInfo.RelatedPlayerState_1 && Cast<AUTPlayerController>(AnnouncementInfo.RelatedPlayerState_1->GetOwner()))) ? 99.f : MaxAnnouncementDelay;
 }
 
 FName UUTFlagRunGameMessage::GetTeamAnnouncement(int32 Switch, uint8 TeamNum, const UObject* OptionalObject, const class APlayerState* RelatedPlayerState_1, const class APlayerState* RelatedPlayerState_2) const

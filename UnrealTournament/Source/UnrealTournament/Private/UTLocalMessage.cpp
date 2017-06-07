@@ -27,6 +27,7 @@ UUTLocalMessage::UUTLocalMessage(const class FObjectInitializer& ObjectInitializ
 	bPlayDuringIntermission = true;
 	bCombineEmphasisText = false;
 	bPlayDuringInstantReplay = true;
+	MaxAnnouncementDelay = 99.f;
 }
 
 bool UUTLocalMessage::IsOptionalSpoken(int32 MessageIndex) const
