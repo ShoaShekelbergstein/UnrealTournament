@@ -3083,7 +3083,7 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 			return UTPS->RespawnChoiceB;
 		}
 	}
-	else if (UTPS->RespawnChoiceA != nullptr)
+	else if (!bHasRespawnChoices && UTPS->RespawnChoiceA != nullptr)
 	{
 		return UTPS->RespawnChoiceA;
 	}
