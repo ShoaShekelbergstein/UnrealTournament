@@ -2075,7 +2075,8 @@ void AUTCharacter::PlayDying()
 				}
 				else
 				{
-					StartRagdoll();
+					FTimerHandle ThrowawayHandle;
+					GetWorldTimerManager().SetTimer(ThrowawayHandle, this, &AUTCharacter::StartRagdoll, 0.01f, false);
 				}
 			}
 			if (UTDmg != NULL)
