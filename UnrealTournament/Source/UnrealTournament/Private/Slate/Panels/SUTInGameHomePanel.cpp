@@ -538,13 +538,13 @@ FReply SUTInGameHomePanel::ContextCommand(int32 CommandId, TWeakObjectPtr<AUTPla
 					if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
 					{
 						UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
-						if (VoiceChat->IsPlayerMuted(TargetPlayerState->PlayerName))
+						if (VoiceChat->IsPlayerMuted(TargetPlayerState->UniqueId->ToString()))
 						{
-							VoiceChat->UnMutePlayer(TargetPlayerState->PlayerName);
+							VoiceChat->UnMutePlayer(TargetPlayerState->UniqueId->ToString());
 						}
 						else
 						{
-							VoiceChat->MutePlayer(TargetPlayerState->PlayerName);
+							VoiceChat->MutePlayer(TargetPlayerState->UniqueId->ToString());
 						}
 					}
 
