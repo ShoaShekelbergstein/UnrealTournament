@@ -29,7 +29,7 @@ UUTShowdownRewardMessage::UUTShowdownRewardMessage(const class FObjectInitialize
 
 float UUTShowdownRewardMessage::GetAnnouncementPriority(const FAnnouncementInfo AnnouncementInfo) const
 {
-	return (AnnouncementInfo.Switch == 4) ? 1.f : 0.9f;
+	return ((AnnouncementInfo.Switch == 4) || (AnnouncementInfo.Switch == 3)) ? 1.f : 0.9f;
 }
 
 void UUTShowdownRewardMessage::ClientReceive(const FClientReceiveData& ClientData) const
