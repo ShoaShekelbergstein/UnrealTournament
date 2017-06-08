@@ -82,7 +82,6 @@ class UNREALTOURNAMENT_API AUTTeamGameMode : public AUTGameMode
 	virtual bool PlayerWonChallenge() override;
 	virtual void BroadcastDeathMessage(AController* Killer, AController* Other, TSubclassOf<UDamageType> DamageType) override;
 	virtual bool AvoidPlayerStart(class AUTPlayerStart* P) override;
-	virtual void HandleMatchHasEnded() override;
 
 	virtual void CheckBotCount() override;
 	virtual void RemoveExtraBots() override;
