@@ -168,6 +168,9 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	TArray<class AUTPickup*> PerPlayerPickups;
 
+	UPROPERTY()
+	TArray<class AUTPerTeamHiddenActor*> PerTeamHiddenActors;
+
 	virtual void PostLoad() override;
 	virtual void PostDuplicate(bool bDuplicateForPIE) override;
 	virtual void PostInitProperties() override;

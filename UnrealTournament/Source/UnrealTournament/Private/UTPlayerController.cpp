@@ -59,6 +59,7 @@
 #include "PartyContext.h"
 #include "UTVoiceChatFeature.h"
 #include "UTVoiceChatTokenFeature.h"
+#include "UTPerTeamHiddenActor.h"
 
 static TAutoConsoleVariable<float> CVarUTKillcamStartDelay(
 	TEXT("UT.KillcamStartDelay"),
@@ -2226,13 +2227,18 @@ void AUTPlayerController::OnTapRightRelease()
 	}
 }
 
-static void HideComponentTree(const UPrimitiveComponent* Primitive, TSet<FPrimitiveComponentId>& HiddenComponents)
+static void HideComponentTree(const USceneComponent* SceneComp, TSet<FPrimitiveComponentId>& HiddenComponents)
 {
-	if (Primitive != NULL)
+	if (SceneComp != NULL)
 	{
-		HiddenComponents.Add(Primitive->ComponentId);
+		const UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(SceneComp);
+		if (PrimComp)
+		{
+			HiddenComponents.Add(PrimComp->ComponentId);
+		}
+
 		TArray<USceneComponent*> Children;
-		Primitive->GetChildrenComponents(true, Children);
+		SceneComp->GetChildrenComponents(true, Children);
 		for (int32 i = 0; i < Children.Num(); i++)
 		{
 			UPrimitiveComponent* ChildPrim = Cast<UPrimitiveComponent>(Children[i]);
@@ -2248,9 +2254,18 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 {
 	Super::UpdateHiddenComponents(ViewLocation, HiddenComponents);
 
+	uint8 TeamNum = GetTeamNum();
 	AUTWorldSettings* WS = Cast<AUTWorldSettings>(GetWorld()->GetWorldSettings());
 	if (WS != NULL)
 	{
+		for (AUTPerTeamHiddenActor* PTHA : WS->PerTeamHiddenActors)
+		{
+			if (TeamNum != PTHA->GetTeamNum())
+			{
+				HideComponentTree(PTHA->GetRootComponent(), HiddenComponents);
+			}
+		}
+
 		for (AUTPickup* Pickup : WS->PerPlayerPickups)
 		{
 			bool bTaken = !Pickup->State.bActive;
