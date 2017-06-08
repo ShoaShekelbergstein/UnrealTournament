@@ -329,90 +329,10 @@ public:
 			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Volcano";
 			NewRuleset->DefaultMap = "/Game/RestrictedAssets/Maps/CTF-TitanPass";
 		}
-		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::iDM, ESearchCase::IgnoreCase))
-		{
-			NewRuleset->Categories.Empty(); 
-			NewRuleset->Categories.Add(TEXT("Instagib"));
-
-			NewRuleset->Title = TEXT("Instagib DM");
-			NewRuleset->Tooltip = TEXT("One hit one kill Deathmatch.");
-			NewRuleset->Description = TEXT("One hit one kill Deathmatch.\n\n<UT.Hub.RulesText_Small>Mutators : Instagib</>\n<UT.Hub.RulesText_Small>TimeLimit : %timelimit% minutes</>\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
-			NewRuleset->MaxPlayers = 10;
-			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_InstagibDM.GB_InstagibDM'");
-			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTDMGameMode");
-			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=10?GoalScore=0?Mutator=Instagib"));
-			NewRuleset->bTeamGame = false;
-
-			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
-
-			NewRuleset->MaxTeamCount = -1;
-			NewRuleset->MaxTeamSize = -1;
-			NewRuleset->MaxPartySize = 5;
-
-			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/DM-Outpost23";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/DM-Chill";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/DM-Underland";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Unsaved/DM-Unsaved";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Backspace/DM-Backspace";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Salt/DM-Salt";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Batrankus/DM-Batrankus";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Sand";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Spacer";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Cannon";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Deadfall";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Temple";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Focus";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-NickTest1";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Solo";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Decktest";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-ASDF";
-
-			NewRuleset->DefaultMap = "/Game/RestrictedAssets/Maps/DM-Chill";
-		}
-		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::iTDM, ESearchCase::IgnoreCase))
-		{
-			NewRuleset->Categories.Empty(); 
-			NewRuleset->Categories.Add(TEXT("Instagib"));
-
-			NewRuleset->Title = TEXT("Instagib TDM");
-			NewRuleset->Tooltip = TEXT("One hit one kill Team Deathmatch.");
-			NewRuleset->Description = TEXT("One hit one kill Team Deathmatch.\n\n<UT.Hub.RulesText_Small>Mutators : Instagib</>\n<UT.Hub.RulesText_Small>TimeLimit : %timelimit% minutes</>\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
-			NewRuleset->MaxPlayers = 20;
-			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_InstagibDuel.GB_InstagibDuel'");
-			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTTeamDMGameMode");
-			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?Mutator=Instagib"));
-			NewRuleset->bTeamGame = true;
-
-			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
-
-			NewRuleset->MaxTeamCount = 2;
-			NewRuleset->MaxTeamSize = 5;
-			NewRuleset->MaxPartySize = 5;
-
-			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/DM-Outpost23";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/DM-Chill";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/DM-Underland";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Unsaved/DM-Unsaved";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Backspace/DM-Backspace";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Salt/DM-Salt";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Batrankus/DM-Batrankus";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Sand";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Spacer";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Cannon";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Deadfall";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Temple";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Focus";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-NickTest1";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Solo";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-Decktest";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/DM-ASDF";
-
-			NewRuleset->DefaultMap = "/Game/RestrictedAssets/Maps/DM-Chill";
-		}
 		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::iCTF, ESearchCase::IgnoreCase))
 		{
 			NewRuleset->Categories.Empty(); 
-			NewRuleset->Categories.Add(TEXT("Instagib"));
+			NewRuleset->Categories.Add(TEXT("Classic"));
 
 			NewRuleset->Title = TEXT("Instagib CTF");
 			NewRuleset->Tooltip = TEXT("Instagib CTF");
@@ -443,43 +363,6 @@ public:
 
 			NewRuleset->DefaultMap = "/Game/RestrictedAssets/Maps/CTF-TitanPass";
 		}		
-
-		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::iCTFT, ESearchCase::IgnoreCase))
-		{
-			NewRuleset->Categories.Empty(); 
-			NewRuleset->Categories.Add(TEXT("Instagib"));
-
-			NewRuleset->Title = TEXT("Translocator iCTF");
-			NewRuleset->Tooltip = TEXT("Translocator iCTF");
-			NewRuleset->Description = TEXT("Capture the Flag with Instagib rifles and Translocators.\n\n<UT.Hub.RulesText_Small>Mutators : Instagib</>\n<UT.Hub.RulesText_Small>TimeLimit : %timelimit% with halftime</>\n<UT.Hub.RulesText_Small>Mercy Rule : On</>\n<UT.Hub.RulesText_Small>Maximum players : %maxplayers%</>");
-			NewRuleset->MaxPlayers = 20;
-			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_InstagibCTF.GB_InstagibCTF'");
-			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTCTFGameMode");
-			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=20?GoalScore=0?Mutator=Instagib,AddTrans"));
-			NewRuleset->bTeamGame = true;
-
-			NewRuleset->OptionFlags = GAME_OPTION_FLAGS_All;
-
-			NewRuleset->MaxTeamCount = 2;
-			NewRuleset->MaxTeamSize = 5;
-			NewRuleset->MaxPartySize = 5;
-
-			NewRuleset->MaxMapsInList=16;
-
-			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/CTF-TitanPass";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/CTF-Face";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Pistola/CTF-Pistola";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/EpicInternal/Polaris/CTF-Polaris";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Blank";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-BigRock";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Volcano";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Quick";
-			NewRuleset->EpicMaps = NewRuleset->EpicMaps + ",/Game/RestrictedAssets/Maps/WIP/CTF-Plaza";
-
-			NewRuleset->DefaultMap = "/Game/RestrictedAssets/Maps/CTF-TitanPass";
-		}		
-
-
 		else if (NewRuleset->UniqueTag.Equals(EEpicDefaultRuleTags::QuickPlay_Deathmatch, ESearchCase::IgnoreCase))
 		{
 			NewRuleset->Title = TEXT("Deathmatch");
