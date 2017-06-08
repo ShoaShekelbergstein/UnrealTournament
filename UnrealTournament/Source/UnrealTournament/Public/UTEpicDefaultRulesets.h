@@ -27,10 +27,7 @@ public:
 		Rules.Add(EEpicDefaultRuleTags::COMPCTF);
 		Rules.Add(EEpicDefaultRuleTags::TEAMSHOWDOWN);
 		Rules.Add(EEpicDefaultRuleTags::DUEL);
-		Rules.Add(EEpicDefaultRuleTags::iDM);
-		Rules.Add(EEpicDefaultRuleTags::iTDM);
 		Rules.Add(EEpicDefaultRuleTags::iCTF);
-		Rules.Add(EEpicDefaultRuleTags::iCTFT);
 
 		// TODO For testing.. these should be always pushed via the MCP and not hard coded.  
 

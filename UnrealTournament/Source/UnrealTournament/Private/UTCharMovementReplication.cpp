@@ -1413,8 +1413,8 @@ void FSavedMove_UTCharacter::PostUpdate(ACharacter* Character, FSavedMove_Charac
 FNetworkPredictionData_Client* UUTCharacterMovement::GetPredictionData_Client() const
 {
 	// Should only be called on client in network games
-	check(PawnOwner != NULL);
-	check(PawnOwner->Role < ROLE_Authority);
+//	check(PawnOwner != NULL);
+//	check(PawnOwner->Role < ROLE_Authority);
 
 	// once the NM_Client bug is fixed during map transition, should re-enable this
 	//check(GetNetMode() == NM_Client);
