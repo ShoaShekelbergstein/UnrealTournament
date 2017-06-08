@@ -4,6 +4,7 @@
 #include "UTHUDWidgetMessage.h"
 #include "UTHUDWidgetMessage_VoiceChatStatus.h"
 #include "UTPlayerState.h"
+#include "UTGameViewportClient.h"
 
 UUTHUDWidgetMessage_VoiceChatStatus::UUTHUDWidgetMessage_VoiceChatStatus(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -29,13 +30,28 @@ void UUTHUDWidgetMessage_VoiceChatStatus::DrawMessages(float DeltaTime)
 
 	float XL, SmallYL;
 	Canvas->TextSize(UTHUDOwner->GetFontFromSizeIndex(-1), "TEST", XL, SmallYL, RenderScale, RenderScale);
-	if (UTGameState)
+
+	AUTGameState* GS = nullptr;
+	if (UTPlayerOwner && UTPlayerOwner->GetLocalPlayer())
+	{
+		UUTGameViewportClient* UTGVC = Cast<UUTGameViewportClient>(UTPlayerOwner->GetLocalPlayer()->ViewportClient);
+		if (UTGVC)
+		{
+			UWorld* RealWorld = UTGVC->GetWorldNoActiveWorldOverride();
+			if (RealWorld)
+			{
+				GS = RealWorld->GetGameState<AUTGameState>();
+			}
+		}
+	}
+
+	if (GS)
 	{
 		int32 NumTalking = 0;
 		float Y = 0;
-		for (int i = 0; i < UTGameState->PlayerArray.Num() && NumTalking < NumVisibleLines; i++)
+		for (int i = 0; i < GS->PlayerArray.Num() && NumTalking < NumVisibleLines; i++)
 		{
-			AUTPlayerState* PS = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+			AUTPlayerState* PS = Cast<AUTPlayerState>(GS->PlayerArray[i]);
 			if (PS && PS->bIsTalking)
 			{
 				Canvas->TextSize(UTHUDOwner->GetFontFromSizeIndex(-1), PS->PlayerName, XL, SmallYL, RenderScale, RenderScale);
