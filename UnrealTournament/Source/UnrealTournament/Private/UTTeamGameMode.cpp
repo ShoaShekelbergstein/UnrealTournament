@@ -48,7 +48,6 @@ AUTTeamGameMode::AUTTeamGameMode(const FObjectInitializer& ObjectInitializer)
 	bHasBroadcastDominating = false;
 	bAnnounceTeam = true;
 	bHighScorerPerTeamBasis = true;
-	MatchSummaryDelay = 15.f;
 	BotTeamSize = 5;
 }
 
