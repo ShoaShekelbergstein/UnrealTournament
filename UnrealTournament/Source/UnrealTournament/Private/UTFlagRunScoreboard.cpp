@@ -134,6 +134,10 @@ void UUTFlagRunScoreboard::DrawTeamPanel(float RenderDelta, float& YOffset)
 	AUTFlagRunGameState* GS = GetWorld()->GetGameState<AUTFlagRunGameState>();
 	if (GS && (GS->Teams.Num() >1) && GS->Teams[0] && GS->Teams[1] && ((GS->TiebreakValue != 0) || (PendingTiebreak != 0)))
 	{
+		if ((PendingTiebreak != 0) && (GetWorld()->GetTimeSeconds() - ScoreReceivedTime > ScoreInfoDuration))
+		{
+			PendingTiebreak = 0;
+		}
 		float Width = 0.125f*Canvas->ClipX;
 		float Height = Width * 21.f / 150.f;
 		float BackgroundY = YOffset - 2.f*Height;
@@ -332,6 +336,7 @@ void UUTFlagRunScoreboard::DrawScoreAnnouncement(float DeltaTime)
 
 	if (GS && GS->HasMatchEnded() && (CurrentTime >= 2.f + WooshStart + NumStars*WooshInterval + WooshTime + 1.f + FMath::Min(FMath::Abs(float(PendingTiebreak)), 20.f) * 0.05f + FMath::Max(0.f, FMath::Abs(float(PendingTiebreak)) - 20.f) * 0.025f))
 	{
+		PendingTiebreak = 0;
 		DrawWinAnnouncement(DeltaTime, UTHUDOwner->HugeFont);
 		return;
 	}
