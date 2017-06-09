@@ -53,6 +53,7 @@ public:
 	{}
 
 
+	virtual void EndState() override;
 	virtual void PendingFireStarted() override;
 	virtual void PendingFireStopped() override;
 	virtual bool BeginFiringSequence(uint8 FireModeNum, bool bClientFired) override;

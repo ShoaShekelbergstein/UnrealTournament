@@ -9,6 +9,13 @@ UUTWeaponStateZooming::UUTWeaponStateZooming(const FObjectInitializer& ObjectIni
 	bDrawPingAdjustedTargets = true;
 }
 
+void UUTWeaponStateZooming::EndState()
+{
+	bDelayShot = false;
+	ToggleLoopingEffects(false);
+	GetOuterAUTWeapon()->GetWorldTimerManager().ClearAllTimersForObject(this);
+}
+
 void UUTWeaponStateZooming::PendingFireStarted()
 {
 	if (GetOuterAUTWeapon()->ZoomState != EZoomState::EZS_NotZoomed)
