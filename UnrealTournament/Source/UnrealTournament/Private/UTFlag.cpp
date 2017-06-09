@@ -9,6 +9,7 @@
 #include "UnrealNetwork.h"
 #include "UTFlagRunGameState.h"
 #include "UTBlitzDeliveryPoint.h"
+#include "UTLift.h"
 
 static FName NAME_Wipe(TEXT("Wipe"));
 
@@ -372,6 +373,12 @@ void AUTFlag::Tick(float DeltaTime)
 		if ((ObjectState == CarriedObjectState::Dropped) && GetWorldTimerManager().IsTimerActive(SendHomeWithNotifyHandle))
 		{
 			FlagReturnTime = FMath::Clamp(int32(GetWorldTimerManager().GetTimerRemaining(SendHomeWithNotifyHandle) + 1.f), 0, 255);
+			// check if lift has pushed flag into wall
+			FVector Adjust(0.f);
+			if (RootComponent && RootComponent->GetAttachParent() && Cast<AUTLift>(RootComponent->GetAttachParent()->GetOwner()) && GetWorld()->EncroachingBlockingGeometry(this, GetActorLocation(), GetActorRotation(), &Adjust))
+			{
+				SendHomeWithNotify();
+			}
 		}
 	}
 	if (GetNetMode() != NM_DedicatedServer && ((ObjectState == CarriedObjectState::Dropped) || (ObjectState == CarriedObjectState::Home)))
