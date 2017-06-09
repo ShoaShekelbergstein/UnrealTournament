@@ -632,8 +632,11 @@ void AUTBasePlayerController::OnPingBeaconResult(AUTServerBeaconClient* Sender, 
 }
 void AUTBasePlayerController::OnPingBeaconFailure(AUTServerBeaconClient* Sender)
 {
-	PingBeacon->Destroy();
-	PingBeacon = nullptr;
+	if (PingBeacon != nullptr)
+	{
+		PingBeacon->Destroy();
+		PingBeacon = nullptr;
+	}
 
 	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
 	if (LP)

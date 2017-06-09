@@ -3029,6 +3029,11 @@ void UUTLocalPlayer::ConnectPasswordResult(TSharedPtr<SCompoundWidget> Widget, u
 		if (Box.IsValid())
 		{
 			PendingJoinSessionPassword = Box->GetInputText();
+
+			FString ServerGUID;
+			LastSession.Session.SessionSettings.Get(SETTING_SERVERINSTANCEGUID, ServerGUID);
+			CachePassword(ServerGUID, PendingJoinSessionPassword);
+
 			JoinSession(LastSession, bAsSpectator, ConnectDesiredTeam, PendingInstanceID );
 		}
 	}

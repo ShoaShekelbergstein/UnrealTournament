@@ -191,6 +191,10 @@ void AUTBaseGameMode::InitGameState()
 				UE_LOG(UT,Warning,TEXT("Illegal Hub GUID detected: %s"), *GS->HubGuid.ToString());
 			}
 		}
+		else
+		{
+			GS->HubGuid = ServerInstanceGUID;
+		}
 
 	}
 
