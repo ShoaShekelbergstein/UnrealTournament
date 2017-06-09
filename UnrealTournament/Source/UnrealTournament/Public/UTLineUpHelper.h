@@ -14,6 +14,12 @@ struct FLineUpSlot
 
 	UPROPERTY()
 	AController* ControllerInSpot;
+	
+	UPROPERTY()
+	AUTCharacter* CharacterInSpot;
+
+	UPROPERTY()
+	int TeamNumOfSlot;
 };
 
 UCLASS()
@@ -23,15 +29,6 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 
 	UFUNCTION()
 	static void ApplyCharacterAnimsForLineUp(AUTCharacter* UTChar);
-
-	UFUNCTION()
-	static UAnimMontage* GetIntroMontage(AUTCharacter* UTChar);
-
-	UFUNCTION()
-	static int GetIntroMontageIndex(AUTCharacter* UTChar);
-
-	UFUNCTION()
-	static void PlayIntroForCharacter(AUTCharacter* UTChar);
 
 	UFUNCTION()
 	bool CanInitiateGroupTaunt(AUTPlayerState* PlayerToCheck);
@@ -48,10 +45,10 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 	UPROPERTY(Replicated)
 	bool bIsActive;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, ReplicatedUsing = OnRep_CheckForClientIntro)
 	LineUpTypes ActiveType;
 	
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	bool bIsPlacingPlayers;
 
 	/*Handles all the clean up for a particular player when a line-up is ending*/
@@ -60,15 +57,36 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
+	bool IsLineupDataReplicated();
+
+	UFUNCTION()
 	bool IsActive();
 
 protected:
+
+	UFUNCTION()
+	void HandleIntroClientAnimations();
+
+	UFUNCTION()
+	void PlayIntroClientAnimationOnCharacter(AUTCharacter* UTChar, bool bShouldPlayFullIntro);
 
 	UFUNCTION()
 	void DestroySpawnedClones();
 
 	UFUNCTION()
 	void SpawnCharactersToSlots();
+
+	UFUNCTION()
+	AUTCharacter* SpawnCharacterFromLineUpSlot(FLineUpSlot& Slot);
+
+	UFUNCTION()
+	void MoveCharacterToLineUpSlot(AUTCharacter* UTChar, FLineUpSlot& Slot);
+
+	UFUNCTION()
+	void IntroSwapMeshComponentLocations(AUTCharacter* UTChar1, AUTCharacter* UTChar2);
+
+	UFUNCTION()
+	bool IntroCheckForPawnReplicationToComplete();
 
 	UFUNCTION()
 	void PerformLineUp();
@@ -92,9 +110,8 @@ protected:
 	UFUNCTION()
 	void SetupCharactersForLineUp();
 
-	float TimerDelayForIntro;
-	float TimerDelayForIntermission;
-	float TimerDelayForEndMatch;
+	UFUNCTION()
+	void OnRep_CheckForClientIntro();
 
 	FTimerHandle DelayedLineUpHandle;
 
@@ -112,7 +129,10 @@ protected:
 	UPROPERTY()
 	TArray<TSubclassOf<AUTWeapon>> MapWeaponTypeList;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, ReplicatedUsing = OnRep_CheckForClientIntro)
+	int NumControllersUsedInLineUp;
+
+	UPROPERTY(Replicated, ReplicatedUsing = OnRep_CheckForClientIntro)
 	TArray<FLineUpSlot> LineUpSlots;
 
 private:
@@ -122,4 +142,21 @@ private:
 	void StartLineUpWithDelay(float TimeDelay);
 	
 	void SortControllers(TArray<AController*>& ControllersToSort);
+
+	void IntroSetFirstSlotToLocalPlayer();
+	void IntroBreakSlotsIntoTeams();
+	void IntroBuildStaggeredSpawnTimerList();
+
+	void IntroSpawnDelayedCharacter();
+	void IntroTransitionToWeaponReadyAnims();
+
+	/**Variables used by clients to track introduction line-ups that happen locally **/
+	TArray<FLineUpSlot*> Intro_MyTeamLineUpSlots;
+	TArray<FLineUpSlot*> Intro_OtherTeamLineUpSlots;
+	TArray<float> Intro_TimeDelaysOnAnims;
+
+	int Intro_NextSpawnTeamMateIndex;
+
+	FTimerHandle Intro_NextClientSpawnHandle;
+	FTimerHandle Intro_ClientSwitchToWeaponFaceoffHandle;
 };

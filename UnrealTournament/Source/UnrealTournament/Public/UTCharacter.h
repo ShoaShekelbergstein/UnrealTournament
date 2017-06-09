@@ -398,13 +398,7 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	virtual float GetWeaponBobScaling();
 
 	virtual void SetEmoteSpeed(float NewEmoteSpeed);
-
-	UPROPERTY(ReplicatedUsing = OnRepActiveLineUpIntro)
-	int ActiveLineUpIntroIndex;
-
-	UFUNCTION()
-	virtual void OnRepActiveLineUpIntro();
-
+	
 	UFUNCTION(BlueprintCallable, Category = Taunt)
 	void PlayTauntByClass(TSubclassOf<AUTTaunt> TauntToPlay, float EmoteSpeed = 1.0f);
 

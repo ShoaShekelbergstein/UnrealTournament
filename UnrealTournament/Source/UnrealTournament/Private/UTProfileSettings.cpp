@@ -37,6 +37,7 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		TauntPath = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/Taunt_Boom.Taunt_Boom_C");
 		Taunt2Path = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/Taunt_Bow.Taunt_Bow_C");
 		GroupTauntPath = TEXT("/Game/RestrictedAssets/Blueprints/Taunts/GroupTaunt_FacePalm.GroupTaunt_FacePalm_C");
+		IntroPath = TEXT("");
 		CharacterPath = TEXT("");
 		MatchmakingRegion = TEXT("");
 
@@ -658,9 +659,9 @@ void UUTProfileSettings::ApplyAllSettings(UUTLocalPlayer* ProfilePlayer)
 	ProfilePlayer->SetGroupTauntPath(GroupTauntPath);
 	ProfilePlayer->SetTauntPath(TauntPath);
 	ProfilePlayer->SetTaunt2Path(Taunt2Path);
+	ProfilePlayer->SetIntroPath(IntroPath);
 	ProfilePlayer->SetHatVariant(HatVariant);
 	ProfilePlayer->SetEyewearVariant(EyewearVariant);
-
 	ApplyInputSettings(ProfilePlayer);
 }
 

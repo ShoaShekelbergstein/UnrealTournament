@@ -133,6 +133,9 @@ public:
 	FString Taunt2Path;
 
 	UPROPERTY(BlueprintReadOnly, Category = Character)
+	FString IntroPath;
+
+	UPROPERTY(BlueprintReadOnly, Category = Character)
 	FString CharacterPath;
 
 	UPROPERTY(BlueprintReadOnly, Category = Character)

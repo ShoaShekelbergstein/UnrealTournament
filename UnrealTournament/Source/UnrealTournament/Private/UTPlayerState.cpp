@@ -97,6 +97,8 @@ AUTPlayerState::AUTPlayerState(const class FObjectInitializer& ObjectInitializer
 	bDrawNameOnDeathIndicator = true;
 
 	LineUpLocation = INDEX_NONE;
+	bHasPlayedLineUpIntro = false;
+	bIsInLineUp = false;
 }
 
 void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
@@ -139,6 +141,7 @@ void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & Ou
 	DOREPLIFETIME(AUTPlayerState, SelectedCharacter);
 	DOREPLIFETIME(AUTPlayerState, TauntClass);
 	DOREPLIFETIME(AUTPlayerState, Taunt2Class);
+	DOREPLIFETIME(AUTPlayerState, IntroClass);
 	DOREPLIFETIME(AUTPlayerState, GroupTauntClass);
 	DOREPLIFETIME(AUTPlayerState, ActiveGroupTaunt);
 	DOREPLIFETIME(AUTPlayerState, bHasHighScore);
@@ -452,6 +455,12 @@ void AUTPlayerState::NotifyTeamChanged_Implementation()
 				}
 			}
 		}
+	}
+
+	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+	if (UTGS && UTGS->IsLineUpActive() && UTGS->ActiveLineUpHelper && (UTGS->ActiveLineUpHelper->ActiveType == LineUpTypes::Intro))
+	{
+		UTGS->ActiveLineUpHelper->OnPlayerChange();
 	}
 }
 
@@ -1223,6 +1232,20 @@ void AUTPlayerState::ServerReceiveTaunt2Class_Implementation(const FString& NewT
 }
 
 bool AUTPlayerState::ServerReceiveTaunt2Class_Validate(const FString& NewTauntClass)
+{
+	return true;
+}
+
+void AUTPlayerState::ServerReceiveIntroClass_Implementation(const FString& NewIntroClass)
+{
+	if (!bOnlySpectator)
+	{
+		OldIntroClass = IntroClass;
+		IntroClass = LoadClass<AUTIntro>(NULL, *NewIntroClass, NULL, GetCosmeticLoadFlags(), NULL);
+	}
+}
+
+bool AUTPlayerState::ServerReceiveIntroClass_Validate(const FString& NewIntroClass)
 {
 	return true;
 }

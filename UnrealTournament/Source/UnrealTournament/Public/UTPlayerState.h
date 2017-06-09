@@ -11,6 +11,7 @@
 #include "UTHatLeader.h"
 #include "UTEyewear.h"
 #include "UTTaunt.h"
+#include "UTIntro.h"
 #include "UTGroupTaunt.h"
 #include "Http.h"
 #include "UTProfileItem.h"
@@ -404,6 +405,12 @@ public:
 	UPROPERTY()
 	int32 ElapsedTime;
 
+	UPROPERTY(Replicated)
+	bool bIsInLineUp;
+
+	UPROPERTY()
+	bool bHasPlayedLineUpIntro;
+
 protected:
 	/** XP player had before current match, read from backend (-1 until successful read) */
 	UPROPERTY(replicated)
@@ -629,8 +636,17 @@ public:
 	UPROPERTY()
 	TSubclassOf<AUTTaunt> OldTaunt2Class;
 
+	UPROPERTY(replicated)
+	TSubclassOf<AUTIntro> IntroClass;
+
+	UPROPERTY()
+	TSubclassOf<AUTIntro> OldIntroClass;
+
 	UFUNCTION(Server, Reliable, WithValidation)
 	virtual void ServerReceiveTaunt2Class(const FString& NewTauntClass);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void ServerReceiveIntroClass(const FString& NewIntroClass);
 
 	UPROPERTY(replicated)
 	TSubclassOf<AUTGroupTaunt> GroupTauntClass;

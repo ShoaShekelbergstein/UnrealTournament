@@ -466,3 +466,23 @@ void AUTLineUpZone::DefaultCreate()
 
 	Camera->SetRelativeTransform(CameraLocation);
 }
+
+void AUTLineUpZone::OnLineUpStart_Implementation(LineUpTypes LineUpType)
+{
+}
+
+void AUTLineUpZone::OnLineUpEnd_Implementation(LineUpTypes LineUpType)
+{
+}
+
+void AUTLineUpZone::OnPlayIntroAnimationOnCharacter_Implementation(AUTCharacter* UTChar)
+{
+}
+
+void AUTLineUpZone::OnPlayWeaponReadyAnimOnCharacter_Implementation(AUTCharacter* UTChar)
+{
+}
+
+void AUTLineUpZone::OnTransitionToWeaponReadyAnims_Implementation()
+{
+}

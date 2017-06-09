@@ -123,7 +123,16 @@ class UNREALTOURNAMENT_API AUTLineUpZone : public AActor
 	TSubclassOf<AUTLineUpZoneVisualizationCharacter> EditorVisualizationCharacter;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
-	TArray<UAnimMontage*> DefaultIntroMontages;
+	TArray<TSubclassOf<AUTIntro>> DefaultIntros;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	float MinIntroSpawnTime;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	float MaxIntroSpawnTime;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global Defaults")
+	float TimeToReadyWeaponStance;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USceneComponent* SceneRoot;
@@ -156,6 +165,22 @@ class UNREALTOURNAMENT_API AUTLineUpZone : public AActor
 	void DeleteAllMeshVisualizations();
 
 	virtual void Destroyed() override;
+
+	UFUNCTION(BlueprintNativeEvent, Category = "LineUpEvents")
+	void OnLineUpStart(LineUpTypes Type);
+
+	UFUNCTION(BlueprintNativeEvent, Category = "LineUpEvents")
+	void OnLineUpEnd(LineUpTypes Type);
+
+	UFUNCTION(BlueprintNativeEvent, Category = "LineUpEvents")
+	void OnPlayIntroAnimationOnCharacter(AUTCharacter* UTChar);
+	
+	UFUNCTION(BlueprintNativeEvent, Category = "LineUpEvents")
+	void OnPlayWeaponReadyAnimOnCharacter(AUTCharacter* UTChar);
+
+	UFUNCTION(BlueprintNativeEvent, Category = "LineUpEvents")
+	void OnTransitionToWeaponReadyAnims();
+
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

@@ -2439,6 +2439,23 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 				HideComponentTree(Cast<UPrimitiveComponent>(PickupToken->GetRootComponent()), HiddenComponents);
 			}
 		}
+
+		for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
+		{
+			AUTCharacter* UTChar = Cast<AUTCharacter>(*It);
+			if (UTChar)
+			{
+				AUTPlayerState* UTPS = Cast<AUTPlayerState>(UTChar->PlayerState);
+				if ((UTGS->ActiveLineUpHelper->ActiveType == LineUpTypes::Intro) && (!UTPS || !UTPS->bHasPlayedLineUpIntro))
+				{
+					HideComponentTree(Cast<UPrimitiveComponent>(UTChar->GetRootComponent()), HiddenComponents);
+				}
+				else if (!UTPS || (UTPS->LineUpLocation == INDEX_NONE))
+				{
+					HideComponentTree(Cast<UPrimitiveComponent>(UTChar->GetRootComponent()), HiddenComponents);
+				}
+			}
+		}
 	}
 }
 

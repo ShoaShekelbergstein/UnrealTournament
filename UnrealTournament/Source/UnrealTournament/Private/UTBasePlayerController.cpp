@@ -1112,13 +1112,14 @@ void AUTBasePlayerController::SendCosmeticsToServer()
 	UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(Player);
 	if (UTLocalPlayer)
 	{
-		FString CosmeticsUsage = FString::Printf(TEXT("?Hat=%s?LeaderHat=%s?Eyewear=%s?GroupTaunt=%s?Taunt=%s?Taunt2=%s?HatVar=%d?EyewearVar=%d"), 
+		FString CosmeticsUsage = FString::Printf(TEXT("?Hat=%s?LeaderHat=%s?Eyewear=%s?GroupTaunt=%s?Taunt=%s?Taunt2=%s?Intro=%s?HatVar=%d?EyewearVar=%d?"), 
 			*UTLocalPlayer->GetHatPath(), 
 			*UTLocalPlayer->GetLeaderHatPath(),
 			*UTLocalPlayer->GetEyewearPath(), 
 			*UTLocalPlayer->GetGroupTauntPath(), 
 			*UTLocalPlayer->GetTauntPath(), 
 			*UTLocalPlayer->GetTaunt2Path(), 
+			*UTLocalPlayer->GetIntroPath(),
 			UTLocalPlayer->GetHatVariant(), 
 			UTLocalPlayer->GetEyewearVariant());
 
@@ -1156,6 +1157,11 @@ void AUTBasePlayerController::ServerReceiveCosmetics_Implementation(const FStrin
 		if (InOpt.Len() > 0)
 		{
 			PS->ServerReceiveGroupTauntClass(InOpt);
+		}
+		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("Intro"));
+		if (InOpt.Len() > 0)
+		{
+			PS->ServerReceiveIntroClass(InOpt);
 		}
 		InOpt = UGameplayStatics::ParseOption(CosmeticString, TEXT("Taunt"));
 		if (InOpt.Len() > 0)

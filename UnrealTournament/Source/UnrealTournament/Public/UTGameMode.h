@@ -607,6 +607,8 @@ public:
 	/** This is called when no LineUpZone was setup in a level as a fall back so that the Line-up can still occur. **/
 	virtual void HandleDefaultLineupSpawns(LineUpTypes LineUpType, /*OUT*/TArray<AUTCharacter*>& PlayersSpawned, /*OUT*/ TArray<AUTCharacter*>& PlayersNotSpawned);
 
+	virtual float GetLineUpTime(LineUpTypes LineUpType);
+
 protected:
 
 	/** Returns random bot character skill matched to current GameDifficulty. */

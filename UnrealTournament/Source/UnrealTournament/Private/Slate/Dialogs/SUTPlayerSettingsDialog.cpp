@@ -272,6 +272,39 @@ void SUTPlayerSettingsDialog::Construct(const FArguments& InArgs)
 		}
 	}
 
+	{
+		IntroList.Add(MakeShareable(new FString(TEXT("Random Intro"))));
+		IntroPathList.Add(TEXT(""));
+
+		TArray<FAssetData> AssetList;
+		GetAllBlueprintAssetData(AUTLineUpZone::StaticClass(), AssetList);
+		for (const FAssetData& Asset : AssetList)
+		{
+			static FName NAME_GeneratedClass(TEXT("GeneratedClass"));
+			const FString* ClassPath = Asset.TagsAndValues.Find(NAME_GeneratedClass);
+			if (ClassPath != NULL)
+			{
+				UClass* TestClass = LoadObject<UClass>(NULL, **ClassPath);
+				if (TestClass != NULL && !TestClass->HasAnyClassFlags(CLASS_Abstract) && TestClass->IsChildOf(AUTLineUpZone::StaticClass()))
+				{
+					AUTLineUpZone* LineUpZone = TestClass->GetDefaultObject<AUTLineUpZone>();
+					if (LineUpZone)
+					{
+						for (TSubclassOf<AUTIntro>& IntroClass : LineUpZone->DefaultIntros)
+						{
+							AUTIntro* Intro = IntroClass->GetDefaultObject<AUTIntro>();
+							if (Intro)
+							{
+								IntroList.Add(MakeShareable(new FString(Intro->DisplayName)));
+								IntroPathList.Add(IntroClass->GetPathName());
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	SelectedPlayerColor = GetDefault<AUTPlayerController>()->FFAPlayerColor;
 	SelectedHatVariantIndex = GetPlayerOwner()->GetHatVariant();
 	SelectedEyewearVariantIndex = GetPlayerOwner()->GetEyewearVariant();
@@ -649,6 +682,39 @@ void SUTPlayerSettingsDialog::Construct(const FArguments& InArgs)
 								]
 							]
 						]
+
+						// Line Up Intro
+						// ---------------------------------------------------------------------------------
+						+SGridPanel::Slot(0, 8)
+						.Padding(NameColumnPadding)
+						[
+							SNew(STextBlock)
+							.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+							.Text(LOCTEXT("IntroSelectionLabel", "Character Introduction"))
+						]
+
+						+ SGridPanel::Slot(1, 8)
+						.Padding(ValueColumnPadding)
+						[
+							SAssignNew(IntroComboBox, SComboBox< TSharedPtr<FString> >)
+							.InitiallySelectedItem(0)
+							.ComboBoxStyle(SUWindowsStyle::Get(), "UT.ComboBox")
+							.ButtonStyle(SUWindowsStyle::Get(), "UT.Button.White")
+							.OptionsSource(&IntroList)
+							.OnGenerateWidget(this, &SUTDialogBase::GenerateStringListWidget)
+							.OnSelectionChanged(this, &SUTPlayerSettingsDialog::OnIntroSelected)
+							.Content()
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.Padding(10.0f, 0.0f, 10.0f, 0.0f)
+								[
+									SAssignNew(SelectedIntro, STextBlock)
+									.Text(FText::FromString(TEXT("No Intros Available")))
+									.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.Black")
+								]
+							]
+						]
 					]
 
 					/*
@@ -951,6 +1017,21 @@ void SUTPlayerSettingsDialog::Construct(const FArguments& InArgs)
 			CharacterComboBox->SetSelectedItem(CharacterList[0]);
 		}
 
+		bool bFoundSelectedIntro = false;
+		for (int32 i = 0; i < IntroPathList.Num(); ++i)
+		{
+			if (IntroPathList[i] == GetPlayerOwner()->GetIntroPath())
+			{
+				IntroComboBox->SetSelectedItem(IntroList[i]);
+				bFoundSelectedIntro = true;
+				break;
+			}
+		}
+		if (!bFoundSelectedIntro && IntroPathList.Num() > 0)
+		{
+			IntroComboBox->SetSelectedItem(IntroList[0]);
+		}
+
 		if (SelectedFlag != nullptr)
 		{
 			OnFlagSelected(SelectedFlag, ESelectInfo::Direct);
@@ -1104,7 +1185,8 @@ FReply SUTPlayerSettingsDialog::OKClick()
 	GetPlayerOwner()->SetTaunt2Path(TauntPathList.IsValidIndex(Index) ? TauntPathList[Index] : FString());
 	Index = CharacterList.Find(CharacterComboBox->GetSelectedItem());
 	GetPlayerOwner()->SetCharacterPath(CharacterPathList.IsValidIndex(Index) ? CharacterPathList[Index] : FString());
-
+	Index = IntroList.Find(IntroComboBox->GetSelectedItem());
+	GetPlayerOwner()->SetIntroPath(IntroPathList.IsValidIndex(Index) ? IntroPathList[Index] : FString(TEXT("")));
 	Index = HatVariantList.Find(HatVariantComboBox->GetSelectedItem());
 	GetPlayerOwner()->SetHatVariant(Index);
 	Index = EyewearVariantList.Find(EyewearVariantComboBox->GetSelectedItem());
@@ -1339,6 +1421,14 @@ void SUTPlayerSettingsDialog::OnTaunt2Selected(TSharedPtr<FString> NewSelection,
 				//PlayerPreviewMesh->GetMesh()->PlayAnimation(TauntClass->GetDefaultObject<AUTTaunt>()->TauntMontage, true);
 			}
 		}
+	}
+}
+
+void SUTPlayerSettingsDialog::OnIntroSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
+{
+	if (NewSelection.IsValid())
+	{
+		SelectedIntro->SetText(*NewSelection.Get());
 	}
 }
 

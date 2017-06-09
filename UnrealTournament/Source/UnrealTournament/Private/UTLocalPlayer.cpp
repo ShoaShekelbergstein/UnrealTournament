@@ -2770,6 +2770,28 @@ void UUTLocalPlayer::SetTaunt2Path(const FString& NewTauntPath)
 	}
 }
 
+FString UUTLocalPlayer::GetIntroPath() const
+{
+	return (CurrentProfileSettings != NULL) ? CurrentProfileSettings->IntroPath : TEXT("");
+}
+
+void UUTLocalPlayer::SetIntroPath(const FString& NewIntroPath)
+{
+	if (CurrentProfileSettings != NULL)
+	{
+		CurrentProfileSettings->IntroPath = NewIntroPath;
+	}
+
+	if (PlayerController != NULL)
+	{
+		AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerController->PlayerState);
+		if (PS != NULL)
+		{
+			PS->ServerReceiveIntroClass(NewIntroPath);
+		}
+	}
+}
+
 FString UUTLocalPlayer::GetDefaultURLOption(const TCHAR* Key) const
 {
 	FURL DefaultURL;

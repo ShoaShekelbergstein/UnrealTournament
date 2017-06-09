@@ -132,6 +132,12 @@ protected:
 	TSharedPtr<STextBlock> SelectedCharacter;
 	void OnCharacterSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo);
 
+	TArray<TSharedPtr<FString>> IntroList;
+	TArray<FString> IntroPathList;
+	TSharedPtr< SComboBox< TSharedPtr<FString> > > IntroComboBox;
+	TSharedPtr<STextBlock> SelectedIntro;
+	void OnIntroSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo);
+
 	TArray<TWeakObjectPtr<class UUTFlagInfo> > CountryFlags;
 	TWeakObjectPtr<class UUTFlagInfo> SelectedFlag;
 	TSharedPtr<SOverlay> SelectedFlagWidget;

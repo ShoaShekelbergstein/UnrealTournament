@@ -29,6 +29,10 @@ void AUTLineUpHelper::InitializeLineUp(LineUpTypes LineUpType)
 
 void AUTLineUpHelper::CalculateLineUpSlots()
 {
+	static const int FFATeamNum = 255;
+
+	LineUpSlots.Empty();
+
 	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
 	if (UTGameState)
 	{
@@ -94,11 +98,12 @@ void AUTLineUpHelper::CalculateLineUpSlots()
 						const IUTTeamInterface* TeamInterface = Cast<IUTTeamInterface>(UnassignedControllers[index]);
 						if (TeamInterface)
 						{
-							static const int FFATeamNum = 255;
 							if ((TeamInterface->GetTeamNum() == TeamNumberToFill) || (TeamInterface->GetTeamNum() == FFATeamNum))
 							{
 								NewSlot.ControllerInSpot = UnassignedControllers[index];
 								UnassignedControllers.RemoveAt(index);
+								NewSlot.CharacterInSpot = nullptr; //initialize so this shows up null until spawned
+								NewSlot.TeamNumOfSlot = TeamNumberToFill;
 
 								//Found highest rated fit, don't need to look further
 								LineUpSlots.Add(NewSlot);
@@ -114,15 +119,34 @@ void AUTLineUpHelper::CalculateLineUpSlots()
 					{
 						NewSlot.ControllerInSpot = UnassignedControllers[0];
 						UnassignedControllers.RemoveAt(0);
+						NewSlot.CharacterInSpot = nullptr; //initialize so this shows up null until spawned
+						NewSlot.TeamNumOfSlot = FFATeamNum;
 
 						LineUpSlots.Add(NewSlot);
 					}
 				}
 			}
+			
+			// These are the controllers left
+			for (AController* Controller : UnassignedControllers)
+			{
+				AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetGameState());
+				if (UTGM)
+				{
+					UTGM->RestartPlayer(Controller);
+				}
+
+				if (Controller->GetPawn())
+				{
+					Controller->GetPawn()->Destroy();
+				}
+			}
+
 		}
-	
 		UTGameState->LeadLineUpPlayer = ((LineUpSlots.Num() > 0) && (LineUpSlots[0].ControllerInSpot)) ? Cast<AUTPlayerState>(LineUpSlots[0].ControllerInSpot->PlayerState) : nullptr;
 	}
+
+	NumControllersUsedInLineUp = LineUpSlots.Num();
 }
 
 void AUTLineUpHelper::StartLineUpWithDelay(float TimeDelay)
@@ -145,27 +169,13 @@ bool AUTLineUpHelper::IsActive()
 
 float AUTLineUpHelper::CalculateLineUpDelay()
 {
-	float TimeDelay = 0.0f;
-	switch (ActiveType)
+	AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
+	if (UTGM)
 	{
-		case LineUpTypes::Intro:
-		{
-			TimeDelay = TimerDelayForIntro;
-			break;
-		}
-		case LineUpTypes::Intermission:
-		{
-			TimeDelay = TimerDelayForIntermission;
-			break;
-		}
-		case LineUpTypes::PostMatch:
-		{
-			TimeDelay = TimerDelayForEndMatch;
-			break;
-		}
+		return UTGM->GetLineUpTime(ActiveType);
 	}
-	
-	return TimeDelay;
+
+	return 0.f;
 }
 
 AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
@@ -173,12 +183,12 @@ AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 {
 	bAlwaysRelevant = true;
 
-	TimerDelayForIntro = 0.f;
-	TimerDelayForIntermission = 9.f;
-	TimerDelayForEndMatch = 9.f;
+	NumControllersUsedInLineUp = 0;
 
 	bIsPlacingPlayers = false;
 	bIsActive = false;
+
+	Intro_NextSpawnTeamMateIndex = 0;
 }
 
 void AUTLineUpHelper::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -187,8 +197,9 @@ void AUTLineUpHelper::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 	DOREPLIFETIME(AUTLineUpHelper, bIsActive);
 	DOREPLIFETIME(AUTLineUpHelper, ActiveType);
-	DOREPLIFETIME(AUTLineUpHelper, bIsPlacingPlayers);
 	DOREPLIFETIME(AUTLineUpHelper, LineUpSlots);
+	DOREPLIFETIME(AUTLineUpHelper, NumControllersUsedInLineUp);
+
 }
 
 void AUTLineUpHelper::BeginPlay()
@@ -201,6 +212,13 @@ void AUTLineUpHelper::BeginPlay()
 
 void AUTLineUpHelper::CleanUp()
 {
+	//Notify Zone that line up is ending
+	AUTGameState* UTGS = GetWorld() ? Cast<AUTGameState>(GetWorld()->GetGameState()) : nullptr;
+	if (UTGS && UTGS->GetAppropriateSpawnList(ActiveType))
+	{
+		UTGS->GetAppropriateSpawnList(ActiveType)->OnLineUpEnd(ActiveType);
+	}
+
 	bIsActive = false;
 	ActiveType = LineUpTypes::Invalid;
 
@@ -221,7 +239,6 @@ void AUTLineUpHelper::CleanUp()
 			}
 		}
 
-		AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
 		if (UTGS)
 		{
 			UTGS->LeadLineUpPlayer = nullptr;
@@ -278,49 +295,108 @@ void AUTLineUpHelper::PerformLineUp()
 		SpawnCharactersToSlots();
 		SetupCharactersForLineUp();
 		FlagFixUp();
-
+		
 		NotifyClientsOfLineUp();
+
+		//We normally rely on On_RepCheckForIntro, but if we are a standalone, OnRep will not fire, so kick off intro here
+		if ((GetNetMode() == NM_Standalone) && (ActiveType == LineUpTypes::Intro))
+		{
+			HandleIntroClientAnimations();
+		}
+
+		//Notify Zone that line up is starting
+		if ((ActiveType != LineUpTypes::Intro) && UTGM->UTGameState && UTGM->UTGameState->GetAppropriateSpawnList(ActiveType))
+		{
+			UTGM->UTGameState->GetAppropriateSpawnList(ActiveType)->OnLineUpStart(ActiveType);
+		}
 	}
 }
 
 void AUTLineUpHelper::SpawnCharactersToSlots()
-{	
+{
+	bIsPlacingPlayers = true;
 	AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
 	if (UTGM)
 	{
 		//Go through all controllers and spawn/respawn pawns
-		bIsPlacingPlayers = true;
-		for (FLineUpSlot& Slot : LineUpSlots)
+		for (int SlotIndex = 0; SlotIndex < LineUpSlots.Num(); ++SlotIndex)
 		{
-			if (Slot.ControllerInSpot)
+			SpawnCharacterFromLineUpSlot(LineUpSlots[SlotIndex]);
+
+			if (LineUpSlots[SlotIndex].ControllerInSpot)
 			{
-				AUTCharacter* UTChar = Cast<AUTCharacter>(Slot.ControllerInSpot->GetPawn());
-				if (!UTChar || UTChar->IsDead() || UTChar->IsRagdoll())
+				AUTPlayerState* UTPS = Cast<AUTPlayerState>(LineUpSlots[SlotIndex].ControllerInSpot->PlayerState);
+				if (UTPS)
 				{
-					if (Slot.ControllerInSpot->GetPawn())
-					{
-						Slot.ControllerInSpot->UnPossess();
-					}
-					UTGM->RestartPlayer(Slot.ControllerInSpot);
-					if (Slot.ControllerInSpot->GetPawn())
-					{
-						UTChar = Cast<AUTCharacter>(Slot.ControllerInSpot->GetPawn());
-					}
-				}
-
-				if (UTChar && !UTChar->IsDead())
-				{
-					PlayerPreviewCharacters.Add(UTChar);
-					UTChar->TeleportTo(Slot.SpotLocation.GetTranslation(), Slot.SpotLocation.GetRotation().Rotator(), false, true);
-					UTChar->Controller->SetControlRotation(Slot.SpotLocation.GetRotation().Rotator());
-					UTChar->Controller->ClientSetRotation(Slot.SpotLocation.GetRotation().Rotator());
-					UTChar->DeactivateSpawnProtection();
-
-					SpawnPlayerWeapon(UTChar);
+					UTPS->LineUpLocation = SlotIndex;
 				}
 			}
 		}
-		bIsPlacingPlayers = false;
+	}
+	bIsPlacingPlayers = false;
+}
+
+AUTCharacter* AUTLineUpHelper::SpawnCharacterFromLineUpSlot(FLineUpSlot& Slot)
+{
+	if (Slot.ControllerInSpot != nullptr)
+	{
+		AUTCharacter* UTChar = Cast<AUTCharacter>(Slot.ControllerInSpot->GetPawn());
+		if (Slot.ControllerInSpot->GetPawn())
+		{
+			Slot.ControllerInSpot->UnPossess();
+		}
+
+		AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
+		if (UTGM)
+		{
+			UTGM->RestartPlayer(Slot.ControllerInSpot);
+		}
+
+		if (Slot.ControllerInSpot->GetPawn())
+		{
+			UTChar = Cast<AUTCharacter>(Slot.ControllerInSpot->GetPawn());
+		}
+
+		if (UTChar && !UTChar->IsDead())
+		{
+			UTChar->bAlwaysRelevant = true;
+			PlayerPreviewCharacters.Add(UTChar);
+			MoveCharacterToLineUpSlot(UTChar, Slot);
+			SpawnPlayerWeapon(UTChar);
+		}
+
+		return UTChar;
+	}
+
+	return nullptr;
+}
+
+void AUTLineUpHelper::MoveCharacterToLineUpSlot(AUTCharacter* UTChar, FLineUpSlot& Slot)
+{
+	if (UTChar && !UTChar->IsDead())
+	{
+		UTChar->TeleportTo(Slot.SpotLocation.GetTranslation(), Slot.SpotLocation.GetRotation().Rotator(), false, true);
+		UTChar->Controller->SetControlRotation(Slot.SpotLocation.GetRotation().Rotator());
+		UTChar->Controller->ClientSetRotation(Slot.SpotLocation.GetRotation().Rotator());
+		UTChar->DeactivateSpawnProtection();
+
+		Slot.CharacterInSpot = UTChar;
+	}
+}
+
+void AUTLineUpHelper::IntroSwapMeshComponentLocations(AUTCharacter* UTChar1, AUTCharacter* UTChar2)
+{
+	if (UTChar1 && UTChar2)
+	{
+		USkeletalMeshComponent* UTChar1Mesh = UTChar1->GetMesh();
+		USkeletalMeshComponent* UTChar2Mesh = UTChar2->GetMesh();
+		if (UTChar1Mesh && UTChar2Mesh)
+		{
+			FVector Char1DestLocation = UTChar2->GetTransform().GetLocation() + UTChar2Mesh->GetRelativeTransform().GetLocation();
+			FVector Char2DestLocation = UTChar1->GetTransform().GetLocation() + UTChar1Mesh->GetRelativeTransform().GetLocation();
+			UTChar1Mesh->SetWorldLocation(Char1DestLocation);
+			UTChar2Mesh->SetWorldLocation(Char2DestLocation);
+		}
 	}
 }
 
@@ -338,8 +414,7 @@ void AUTLineUpHelper::SetLineUpWeapons()
 				//Either we didn't have an existing favorite weapon, or its not valid in this map
 				if (UTPS->LineUpWeapon == NULL || (!MapWeaponTypeList.Contains(UTPS->LineUpWeapon)))
 				{
-					AUTCharacter* UTChar = Cast<AUTCharacter>(Slot.ControllerInSpot->GetPawn());
-					UTPS->LineUpWeapon = (UTChar) ? UTChar->GetWeaponClass() : nullptr;
+					UTPS->LineUpWeapon = (Slot.CharacterInSpot) ? Slot.CharacterInSpot->GetWeaponClass() : nullptr;
 				}
 			}
 		}
@@ -372,13 +447,6 @@ void AUTLineUpHelper::SetupCharactersForLineUp()
 			{
 				// Setup custom animations
 				AUTLineUpHelper::ApplyCharacterAnimsForLineUp(UTChar);
-
-				//Start Intro Anims if they haven't been set
-				if ((ActiveType == LineUpTypes::Intro) && (UTChar->ActiveLineUpIntroIndex != GetIntroMontageIndex(UTChar)))
-				{
-					UTChar->ActiveLineUpIntroIndex = GetIntroMontageIndex(UTChar);
-					AUTLineUpHelper::PlayIntroForCharacter(UTChar);
-				}
 			}
 		}
 	}
@@ -632,37 +700,6 @@ void AUTLineUpHelper::ApplyCharacterAnimsForLineUp(AUTCharacter* UTChar)
 	}
 }
 
-UAnimMontage* AUTLineUpHelper::GetIntroMontage(AUTCharacter* UTChar)
-{
-	if (UTChar)
-	{
-		AUTGameState* UTGS = Cast<AUTGameState>(UTChar->GetWorld()->GetGameState());
-		if (UTGS)
-		{
-			AUTLineUpZone* LineUpZone = UTGS->GetAppropriateSpawnList(LineUpTypes::Intro);
-			if (LineUpZone && (LineUpZone->DefaultIntroMontages.Num() > 0))
-			{
-				return  (LineUpZone->DefaultIntroMontages.IsValidIndex(UTChar->ActiveLineUpIntroIndex)) ? LineUpZone->DefaultIntroMontages[UTChar->ActiveLineUpIntroIndex] : LineUpZone->DefaultIntroMontages[0];
-			}
-		}
-	}
-
-	return nullptr;
-}
-
-void AUTLineUpHelper::PlayIntroForCharacter(AUTCharacter* UTChar)
-{
-	if (UTChar)
-	{
-		//Initial Spawn Anim
-		UAnimInstance* AnimInstance = UTChar->GetMesh()->GetAnimInstance();
-		UAnimMontage* SpawnMontage = AUTLineUpHelper::GetIntroMontage(UTChar);
-		if (AnimInstance && SpawnMontage)
-		{
-			AnimInstance->Montage_Play(SpawnMontage);
-		}
-	}
-}
 
 void AUTLineUpHelper::SortControllers(TArray<AController*>& ControllersToSort)
 {
@@ -690,16 +727,21 @@ void AUTLineUpHelper::SortControllers(TArray<AController*>& ControllersToSort)
 
 void AUTLineUpHelper::OnPlayerChange()
 {
-	if (GetWorld())
+	//@TODO: Handle Join In progress gracefully
+	if (GetWorld() && (LineUpSlots.Num() > 0) && (ActiveType == LineUpTypes::Intro))
 	{
-		AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
-		if (UTGM && UTGM->UTGameState)
-		{
-			if (UTGM->UTGameState->GetMatchState() == MatchState::WaitingToStart)
-			{
-				//ClientUpdatePlayerClones();
-			}
-		}
+		//if (IsLineupDataReplicated() && IntroCheckForPawnReplicationToComplete())
+		//{
+		//	//Make sure our Local Player is still in the front
+		//	CalculateLineUpSlots();
+		//	IntroBreakSlotsIntoTeams();
+		//	IntroSetFirstSlotToLocalPlayer();
+		//}
+		//else
+		//{
+		//	//We don't have pawns yet. Wait for them to replicate before starting the intro
+		//	GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::OnPlayerChange));
+		//}
 	}
 }
 
@@ -754,23 +796,256 @@ void AUTLineUpHelper::DestroySpawnedClones()
 	}
 }
 
-int AUTLineUpHelper::GetIntroMontageIndex(AUTCharacter* UTChar)
+void AUTLineUpHelper::OnRep_CheckForClientIntro()
 {
-	if (UTChar && UTChar->GetWorld())
+	//Check if we have all the needed information transmitted to us
+	if ((ActiveType == LineUpTypes::Intro) && IsLineupDataReplicated())
 	{
-		AUTGameState* UTGameState = UTChar->GetWorld()->GetGameState<AUTGameState>();
-		if (UTGameState)
+		HandleIntroClientAnimations();
+	}
+}
+
+bool AUTLineUpHelper::IsLineupDataReplicated()
+{
+	return ((NumControllersUsedInLineUp > 0) && (LineUpSlots.Num() == NumControllersUsedInLineUp));
+}
+
+void AUTLineUpHelper::HandleIntroClientAnimations()
+{
+	if (GetWorld())
+	{
+		AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
+		if (UTGS)
 		{
-			AUTLineUpZone* ZoneToUse = UTGameState->GetAppropriateSpawnList(LineUpTypes::Intro);
-			if (ZoneToUse)
+			//Make sure we have all the pawns before we start the intro
+			if (IntroCheckForPawnReplicationToComplete())
 			{
-				if (ZoneToUse->DefaultIntroMontages.Num() > 0)
+				AUTLineUpZone* IntroZone = UTGS->GetAppropriateSpawnList(LineUpTypes::Intro);
+				if (IntroZone)
 				{
-					return FMath::RandHelper(ZoneToUse->DefaultIntroMontages.Num());
+					IntroZone->OnLineUpStart(LineUpTypes::Intro);
+
+					IntroBreakSlotsIntoTeams();
+					IntroSetFirstSlotToLocalPlayer();
+					IntroBuildStaggeredSpawnTimerList();
+
+					//Start all animations on enemy team. Jump to Enemy Team Section in montage
+					for (FLineUpSlot* LineUpSlot : Intro_OtherTeamLineUpSlots)
+					{
+						PlayIntroClientAnimationOnCharacter(LineUpSlot->CharacterInSpot, false);
+					}
+
+					//On each fire of trigger, Start new team mate spawn.
+					IntroSpawnDelayedCharacter();
+
+					SetupCharactersForLineUp();
+
+					//Set timer for weapon ready
+					GetWorld()->GetTimerManager().SetTimer(Intro_ClientSwitchToWeaponFaceoffHandle, FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::IntroTransitionToWeaponReadyAnims), IntroZone->TimeToReadyWeaponStance, false);
+				}
+			}
+			else
+			{
+				//We don't have pawns yet. Wait for them to replicate before starting the intro
+				GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::HandleIntroClientAnimations));
+			}
+		}
+	}
+}
+
+bool AUTLineUpHelper::IntroCheckForPawnReplicationToComplete()
+{
+	bool bHaveAllPawns = true;
+	
+	for (FLineUpSlot& LineUpSlot : LineUpSlots)
+	{
+		if (!LineUpSlot.CharacterInSpot)
+		{
+			bHaveAllPawns = false;
+			break;
+		}
+	}
+
+	return bHaveAllPawns;
+}
+
+void AUTLineUpHelper::IntroBreakSlotsIntoTeams()
+{
+	Intro_OtherTeamLineUpSlots.Empty();
+	Intro_MyTeamLineUpSlots.Empty();
+
+	//Move local pawn to front of my team's list
+	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController());
+	if (LocalPlayer)
+	{
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(LocalPlayer->PlayerController);
+		if (UTPC)
+		{
+			int LocalTeamNum = UTPC->GetTeamNum();
+			
+			for (FLineUpSlot& LineUpSlot : LineUpSlots)
+			{
+				if (LocalTeamNum != LineUpSlot.TeamNumOfSlot)
+				{
+					Intro_OtherTeamLineUpSlots.Add(&LineUpSlot);
+				}
+				else
+				{
+					Intro_MyTeamLineUpSlots.Add(&LineUpSlot);
 				}
 			}
 		}
 	}
+}
 
-	return -1;
+void AUTLineUpHelper::IntroSetFirstSlotToLocalPlayer()
+{
+	//Move local pawn to front of my team's list
+	UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController());
+	if (LocalPlayer)
+	{
+		AUTPlayerController* UTPC = Cast<AUTPlayerController>(LocalPlayer->PlayerController);
+		if (UTPC)
+		{
+			if ((Intro_MyTeamLineUpSlots.Num() > 0) && (Intro_MyTeamLineUpSlots[0]->ControllerInSpot != UTPC))
+			{
+				FLineUpSlot* CurrentLocalPlayerSlot = nullptr;
+				for (FLineUpSlot* LineUpSlot : Intro_MyTeamLineUpSlots)
+				{
+					if (LineUpSlot->ControllerInSpot == UTPC)
+					{
+						CurrentLocalPlayerSlot = LineUpSlot;
+						LineUpSlot->ControllerInSpot = Intro_MyTeamLineUpSlots[0]->ControllerInSpot;
+						LineUpSlot->CharacterInSpot = Intro_MyTeamLineUpSlots[0]->CharacterInSpot;
+						break;
+					}
+				}
+
+				if (CurrentLocalPlayerSlot)
+				{
+					Intro_MyTeamLineUpSlots[0]->ControllerInSpot = UTPC;
+					Intro_MyTeamLineUpSlots[0]->CharacterInSpot = Cast<AUTCharacter>(UTPC->GetPawn());
+					IntroSwapMeshComponentLocations(Intro_MyTeamLineUpSlots[0]->CharacterInSpot, CurrentLocalPlayerSlot->CharacterInSpot);
+				}
+			}
+		}
+	}
+}
+
+void AUTLineUpHelper::IntroBuildStaggeredSpawnTimerList()
+{
+	AUTGameState* UTGS = GetWorld() ? Cast<AUTGameState>(GetWorld()->GetGameState()) : nullptr;
+	if (UTGS)
+	{
+		AUTLineUpZone* SpawnZone = UTGS->GetAppropriateSpawnList(LineUpTypes::Intro);
+		if (SpawnZone)
+		{
+			for (FLineUpSlot* LineUpSlot : Intro_MyTeamLineUpSlots)
+			{
+				Intro_TimeDelaysOnAnims.Add(FMath::RandRange(SpawnZone->MinIntroSpawnTime, SpawnZone->MaxIntroSpawnTime));
+			}
+
+			Intro_TimeDelaysOnAnims.Sort();
+		}
+	}
+}
+
+void AUTLineUpHelper::PlayIntroClientAnimationOnCharacter(AUTCharacter* UTChar, bool bShouldPlayFullIntro)
+{
+	//Notify Zone that we are playing an intro
+	AUTGameState* UTGS = GetWorld() ? Cast<AUTGameState>(GetWorld()->GetGameState()) : nullptr;
+	if (UTGS && UTGS->GetAppropriateSpawnList(ActiveType))
+	{
+		UTGS->GetAppropriateSpawnList(ActiveType)->OnPlayIntroAnimationOnCharacter(UTChar);
+	}
+
+	AUTPlayerState* UTPS = UTChar ? Cast<AUTPlayerState>(UTChar->PlayerState) : nullptr;
+	if (UTPS)
+	{
+		UTPS->bHasPlayedLineUpIntro = true;
+
+		//If we don't have an intro class selected, choose a random valid one
+		if (UTPS->IntroClass == NULL)
+		{
+			if (UTGS)
+			{
+				AUTLineUpZone* IntroZone = UTGS->GetAppropriateSpawnList(LineUpTypes::Intro);
+				if (IntroZone && (IntroZone->DefaultIntros.Num() > 0))
+				{
+					int randomIntroIndex = FMath::RandHelper(IntroZone->DefaultIntros.Num());
+					UTPS->IntroClass = IntroZone->DefaultIntros[randomIntroIndex];
+				}
+			}
+		}
+
+		AUTIntro* IntroToPlay = UTPS->IntroClass->GetDefaultObject<AUTIntro>();
+		if (IntroToPlay)
+		{
+			UAnimInstance* AnimInstance = UTChar->GetMesh()->GetAnimInstance();
+			UAnimMontage* SpawnMontage = IntroToPlay->IntroMontage;
+			FName& SectionName = bShouldPlayFullIntro ? IntroToPlay->SameTeamStartingSection : IntroToPlay->EnemyTeamStartingSection;
+			if (AnimInstance && SpawnMontage)
+			{
+				AnimInstance->Montage_Play(SpawnMontage);
+				AnimInstance->Montage_JumpToSection(SectionName, SpawnMontage);
+			}
+		}
+	}
+}
+
+void AUTLineUpHelper::IntroSpawnDelayedCharacter()
+{
+	if (Intro_MyTeamLineUpSlots.IsValidIndex(Intro_NextSpawnTeamMateIndex))
+	{
+		FLineUpSlot* LineUpSlot = Intro_MyTeamLineUpSlots[Intro_NextSpawnTeamMateIndex];
+		if (LineUpSlot && (LineUpSlot->CharacterInSpot))
+		{
+			PlayIntroClientAnimationOnCharacter(LineUpSlot->CharacterInSpot, true);
+		}
+		++Intro_NextSpawnTeamMateIndex;
+	}
+
+	if (Intro_TimeDelaysOnAnims.IsValidIndex(Intro_NextSpawnTeamMateIndex))
+	{
+		const float TimeToNextSpawn = (Intro_TimeDelaysOnAnims[Intro_NextSpawnTeamMateIndex] - Intro_TimeDelaysOnAnims[Intro_NextSpawnTeamMateIndex - 1]);
+		GetWorld()->GetTimerManager().SetTimer(Intro_NextClientSpawnHandle, FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::IntroSpawnDelayedCharacter), TimeToNextSpawn, false);
+	}
+}
+
+void AUTLineUpHelper::IntroTransitionToWeaponReadyAnims()
+{
+	AUTGameState* UTGS = GetWorld() ? Cast<AUTGameState>(GetWorld()->GetGameState()) : nullptr;
+	AUTLineUpZone* SpawnZone = UTGS ? UTGS->GetAppropriateSpawnList(ActiveType) : nullptr;
+	if (SpawnZone)
+	{
+		SpawnZone->OnTransitionToWeaponReadyAnims();
+	}
+
+	for (FLineUpSlot& Slot : LineUpSlots)
+	{
+		if (Slot.CharacterInSpot)
+		{
+			AUTPlayerState* UTPS = Cast<AUTPlayerState>(Slot.CharacterInSpot->PlayerState);
+			if (UTPS && (UTPS->IntroClass != NULL))
+			{
+				AUTIntro* IntroToPlay = UTPS->IntroClass->GetDefaultObject<AUTIntro>();
+				if (IntroToPlay)
+				{
+					UAnimInstance* AnimInstance = Slot.CharacterInSpot->GetMesh()->GetAnimInstance();
+					UAnimMontage* SpawnMontage = IntroToPlay->IntroMontage;
+					FName& SectionName = IntroToPlay->WeaponReadyStartingSection;
+					if (AnimInstance && SpawnMontage)
+					{
+						AnimInstance->Montage_JumpToSection(SectionName, SpawnMontage);
+					}
+
+					if (SpawnZone)
+					{
+						SpawnZone->OnPlayWeaponReadyAnimOnCharacter(Slot.CharacterInSpot);
+					}
+				}
+
+			}
+		}
+	}
 }

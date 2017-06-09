@@ -215,8 +215,6 @@ AUTCharacter::AUTCharacter(const class FObjectInitializer& ObjectInitializer)
 
 	MaxSpeedPctModifier = 1.0f;
 	MinNetUpdateFrequency = 100.0f;
-
-	ActiveLineUpIntroIndex = -1;
 }
 
 float AUTCharacter::GetWeaponBobScaling()
@@ -3543,8 +3541,6 @@ void AUTCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 	DOREPLIFETIME(AUTCharacter, bServerOutline);
 	DOREPLIFETIME(AUTCharacter, bOutlineWhenUnoccluded);
 	DOREPLIFETIME(AUTCharacter, ServerOutlineTeamMask);
-
-	DOREPLIFETIME(AUTCharacter, ActiveLineUpIntroIndex);
 }
 
 static AUTWeapon* SavedWeapon = NULL;
@@ -5770,17 +5766,23 @@ void AUTCharacter::OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
 
 void AUTCharacter::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
 {
-	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
-	if (GS && GS->IsLineUpActive())
-	{
-		PostRenderForInGameIntro(PC, Canvas, CameraPosition, CameraDir);
-		return;
-	}
 	AUTPlayerState* UTPS = Cast<AUTPlayerState>(PlayerState);
 	if (UTPS == nullptr)
 	{
 		return;
 	}
+	AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+	if (GS && GS->IsLineUpActive())
+	{
+		//make sure we are in line-up before drawing name tag
+		if (((GS->ActiveLineUpHelper->ActiveType == LineUpTypes::Intro) && (UTPS->bHasPlayedLineUpIntro)) ||
+			((GS->ActiveLineUpHelper->ActiveType != LineUpTypes::Intro) && (UTPS->LineUpLocation != INDEX_NONE)))
+		{
+			PostRenderForInGameIntro(PC, Canvas, CameraPosition, CameraDir);
+		}
+		return;
+	}
+
 	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PC);
 	const bool bSpectating = PC && PC->PlayerState && PC->PlayerState->bOnlySpectator;
 	const bool bTacCom = bSpectating && UTPC && UTPC->bTacComView;
@@ -7464,9 +7466,4 @@ void AUTCharacter::ServerDropBoots_Implementation()
 			return;
 		}
 	}
-}
-
-void AUTCharacter::OnRepActiveLineUpIntro()
-{
-	AUTLineUpHelper::PlayIntroForCharacter(this);
 }
