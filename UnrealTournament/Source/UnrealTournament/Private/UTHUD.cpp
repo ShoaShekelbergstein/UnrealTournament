@@ -32,8 +32,6 @@
 #include "OnlineSubsystemUtils.h"
 #include "UTUMGHudWidget.h"
 #include "UTGameMessage.h"
-#include "UTLineUpZone.h"
-#include "UTLineUpHelper.h"
 #include "UTRallyPoint.h"
 #include "UTFlagRunGameState.h"
 #include "UTHUDWidgetAnnouncements.h"

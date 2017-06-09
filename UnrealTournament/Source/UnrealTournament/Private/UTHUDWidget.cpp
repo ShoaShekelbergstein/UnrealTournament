@@ -18,6 +18,7 @@ UUTHUDWidget::UUTHUDWidget(const class FObjectInitializer& ObjectInitializer) : 
 	Opacity = 1.0f;
 	Origin = FVector2D(0.0f, 0.0f);
 	ScreenPosition = FVector2D(0.0f, 0.0f);
+	LineupPositionOffset = FVector2D(0.0f, 0.0f);
 	bScaleByDesignedResolution = true;
 	bMaintainAspectRatio = true;
 	DesignedResolution = 720;
@@ -427,9 +428,14 @@ void UUTHUDWidget::PreDraw(float DeltaTime, AUTHUD* InUTHUDOwner, UCanvas* InCan
 	CanvasCenter = InCanvasCenter;
 	AspectScale = Size.Y > 0 ? Size.X / Size.Y : 1.0;
 
+	FVector2D CurrentScreenPosition = ScreenPosition;
+	if (UTGameState && UTGameState->IsLineUpActive())
+	{
+		CurrentScreenPosition += LineupPositionOffset;
+	}
 	// Figure out the initial position.
-	RenderPosition.X = Canvas->ClipX * ScreenPosition.X;
-	RenderPosition.Y = Canvas->ClipY * ScreenPosition.Y;
+	RenderPosition.X = Canvas->ClipX * CurrentScreenPosition.X;
+	RenderPosition.Y = Canvas->ClipY * CurrentScreenPosition.Y;
 	RenderScale = (bScaleByDesignedResolution) ? Canvas->ClipY / DesignedResolution : 1.0f;
 	RenderScale *= GetDrawScaleOverride();
 

@@ -89,6 +89,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widgets")
 	FVector2D ScreenPosition;
 
+	// Offset if lineup is active
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
+		FVector2D LineupPositionOffset;
+
 	// If true, then this widget will attempt to scale itself by to the designed resolution.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widgets")
 	bool bScaleByDesignedResolution;

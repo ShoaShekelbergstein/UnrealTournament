@@ -11,6 +11,7 @@ UUTHUDWidgetMessage_VoiceChatStatus::UUTHUDWidgetMessage_VoiceChatStatus(const c
 	ManagedMessageArea = FName(TEXT("VoiceChatStatus"));
 	Position = FVector2D(0.0f, 0.0f);
 	ScreenPosition = FVector2D(0.01f, 0.82f);
+	LineupPositionOffset = FVector2D(0.f, -0.2f);
 	Size = FVector2D(0.0f, 0.0f);
 	Origin = FVector2D(0.0f, 0.0f);
 	NumVisibleLines = 4;
