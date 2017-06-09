@@ -3635,7 +3635,7 @@ void UUTLocalPlayer::DifficultyResult(TSharedPtr<SCompoundWidget> Widget, uint16
 {
 	if (ButtonID != UTDIALOG_BUTTON_CANCEL && DifficultyLevelDialog.IsValid())
 	{
-		StartQuickMatch(DifficultyLevelDialog->GetDifficulty() == 2 ? 17 : 16);
+		StartQuickMatch(DifficultyLevelDialog->GetDifficulty() == 1 ? 17 : 16);
 		DifficultyLevelDialog.Reset();
 	}
 }

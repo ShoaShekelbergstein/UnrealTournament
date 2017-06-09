@@ -2584,7 +2584,7 @@ public:
 		URL += FString::Printf(TEXT("?Game=%s"), *GameMode);
 		URL += FString::Printf(TEXT("?MaxPlayers=%i"), MaxPlayers);
 		URL += GameOptions;
-		if (!UGameplayStatics::HasOption(URL, TEXT("Difficulty")))
+		if (URL.Find(TEXT("difficulty="),ESearchCase::IgnoreCase) == INDEX_NONE)
 		{
 			URL += bAllowBots ? FString::Printf(TEXT("?Difficulty=%i"), FMath::Clamp<int32>(BotDifficulty, 0, 7)) : TEXT("?ForceNoBots=1");
 		}
