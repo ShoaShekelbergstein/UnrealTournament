@@ -1749,7 +1749,7 @@ void UUTLocalPlayer::OnReadProfileComplete(bool bWasSuccessful, const FUniqueNet
 		else 
 		{
 			// This player doesn't have a valid profile so assume a new player and send them through the tutorial
-			bLaunchTutorialOnLogin = true;
+		//	bLaunchTutorialOnLogin = true;
 
 			CurrentProfileSettings = NewObject<UUTProfileSettings>(GetTransientPackage(),UUTProfileSettings::StaticClass());
 			CurrentProfileSettings->ResetProfile(EProfileResetType::All);
@@ -5942,7 +5942,7 @@ void UUTLocalPlayer::SetTutorialFinished(FName TutorialTag)
 
 				if (TutorialMask == 0x01)	// We have completed the first tutorial...
 				{
-					ShowToast(NSLOCTEXT("Unlocks","FirstTimer","Achievement: No Longer a Noob!"),6.0f);			
+					ShowToast(NSLOCTEXT("Unlocks","FirstTimer","Achievement: First Timer!"),6.0f);			
 				}
 				else if (TutorialMask <= TUTORIAL_Pickups && IsTutorialMaskCompleted(TUTORIAL_SkillMoves) )
 				{
