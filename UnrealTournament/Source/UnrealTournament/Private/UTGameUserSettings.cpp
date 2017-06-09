@@ -177,15 +177,20 @@ void UUTGameUserSettings::SetAAMode(int32 NewAAMode)
 	AAModeCVar->ClearFlags(EConsoleVariableFlags::ECVF_SetBySystemSettingsIni);
 	AAModeCVar->Set(AAMode, ECVF_SetByGameSetting);
 
+
+	auto ContactShadowsCVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.ContactShadows"));
 	auto SharpenCVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.Tonemapper.Sharpen"));
 	SharpenCVar->ClearFlags(EConsoleVariableFlags::ECVF_SetBySystemSettingsIni);
+	ContactShadowsCVar->ClearFlags(EConsoleVariableFlags::ECVF_SetBySystemSettingsIni);
 	if (NewAAMode == 4)
 	{
 		SharpenCVar->Set(1, ECVF_SetByGameSetting);
+		ContactShadowsCVar->Set(1, ECVF_SetByGameSetting);
 	}
 	else
 	{
 		SharpenCVar->Set(0, ECVF_SetByGameSetting);
+		ContactShadowsCVar->Set(0, ECVF_SetByGameSetting);
 	}
 }
 
