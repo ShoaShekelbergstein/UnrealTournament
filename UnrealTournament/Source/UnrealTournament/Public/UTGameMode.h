@@ -604,9 +604,6 @@ public:
 	/** The standard IsHandlingReplays() codepath is not flexible enough for UT, this is the compromise */
 	virtual bool UTIsHandlingReplays();
 
-	/** This is called when no LineUpZone was setup in a level as a fall back so that the Line-up can still occur. **/
-	virtual void HandleDefaultLineupSpawns(LineUpTypes LineUpType, /*OUT*/TArray<AUTCharacter*>& PlayersSpawned, /*OUT*/ TArray<AUTCharacter*>& PlayersNotSpawned);
-
 	virtual float GetLineUpTime(LineUpTypes LineUpType);
 
 protected:

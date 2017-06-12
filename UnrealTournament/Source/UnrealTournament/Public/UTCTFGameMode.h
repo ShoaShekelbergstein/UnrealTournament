@@ -55,8 +55,6 @@ public:
 #if !UE_SERVER
 	virtual void CreateConfigWidgets(TSharedPtr<class SVerticalBox> MenuSpace, bool bCreateReadOnly, TArray< TSharedPtr<TAttributePropertyBase> >& ConfigProps, int32 MinimumPlayers);
 #endif
-	
-	virtual void HandleDefaultLineupSpawns(LineUpTypes LineUpType, TArray<AUTCharacter*>& PlayersSpawned, TArray<AUTCharacter*>& PlayersNotSpawned) override;
 };
 
 

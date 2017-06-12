@@ -997,16 +997,19 @@ void AUTLineUpHelper::PlayIntroClientAnimationOnCharacter(AUTCharacter* UTChar, 
 			}
 		}
 
-		AUTIntro* IntroToPlay = UTPS->IntroClass->GetDefaultObject<AUTIntro>();
-		if (IntroToPlay)
+		if (UTPS->IntroClass)
 		{
-			UAnimInstance* AnimInstance = UTChar->GetMesh()->GetAnimInstance();
-			UAnimMontage* SpawnMontage = IntroToPlay->IntroMontage;
-			FName& SectionName = bShouldPlayFullIntro ? IntroToPlay->SameTeamStartingSection : IntroToPlay->EnemyTeamStartingSection;
-			if (AnimInstance && SpawnMontage)
+			AUTIntro* IntroToPlay = UTPS->IntroClass->GetDefaultObject<AUTIntro>();
+			if (IntroToPlay)
 			{
-				AnimInstance->Montage_Play(SpawnMontage);
-				AnimInstance->Montage_JumpToSection(SectionName, SpawnMontage);
+				UAnimInstance* AnimInstance = UTChar->GetMesh()->GetAnimInstance();
+				UAnimMontage* SpawnMontage = IntroToPlay->IntroMontage;
+				FName& SectionName = bShouldPlayFullIntro ? IntroToPlay->SameTeamStartingSection : IntroToPlay->EnemyTeamStartingSection;
+				if (AnimInstance && SpawnMontage)
+				{
+					AnimInstance->Montage_Play(SpawnMontage);
+					AnimInstance->Montage_JumpToSection(SectionName, SpawnMontage);
+				}
 			}
 		}
 	}

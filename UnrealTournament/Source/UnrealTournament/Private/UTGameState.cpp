@@ -2398,11 +2398,17 @@ AUTLineUpZone* AUTGameState::CreateLineUpAtPlayerStart(LineUpTypes LineUpType, A
 	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
 	AUTLineUpZone* NewZone = nullptr;
 
+	TSubclassOf<AUTLineUpZone> LineUpClass = LoadClass<AUTLineUpZone>(NULL, TEXT("/Game/RestrictedAssets/Blueprints/LineUpZone.LineUpZone_C"), NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
+	if (LineUpClass == NULL)
+	{
+		LineUpClass = AUTLineUpZone::StaticClass();
+	}
+
 	if (PlayerSpawn)
 	{
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = PlayerSpawn;
-		NewZone = GetWorld()->SpawnActor<AUTLineUpZone>(AUTLineUpZone::StaticClass(), SpawnParams);
+		NewZone = GetWorld()->SpawnActor<AUTLineUpZone>(LineUpClass, SpawnParams);
 
 		if (NewZone)
 		{
@@ -2438,7 +2444,7 @@ void AUTGameState::SpawnDefaultLineUpZones()
 	static const FName NAME_FreeCam = FName(TEXT("FreeCam"));
 	const bool bIsTeamGame = (Teams.Num() > 0) ? true : false;
 	bool bIsTutorialGame = false;
-
+	
 	if ((GetNetMode() == NM_Standalone) && GetWorld())
 	{
 		AUTGameMode* UTGM = GetWorld()->GetAuthGameMode<AUTGameMode>();
