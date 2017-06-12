@@ -18,6 +18,7 @@
 #include "UTWeap_Enforcer.h"
 #include "UTWeap_Translocator.h"
 #include "UTBlitzFlag.h"
+#include "UTDemoRecSpectator.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUTLineUp, Log, All);
 
@@ -42,7 +43,11 @@ void AUTLineUpHelper::CalculateLineUpSlots()
 			TArray<AController*> UnassignedControllers;
 			for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 			{
-				UnassignedControllers.Add(Iterator->Get());
+				//Don't put any Demo Rec specators in the list, as they aren't in charge of characters
+				if (Cast<AUTDemoRecSpectator>(*Iterator) == nullptr)
+				{
+					UnassignedControllers.Add(Iterator->Get());
+				}
 			}
 			SortControllers(UnassignedControllers);
 
