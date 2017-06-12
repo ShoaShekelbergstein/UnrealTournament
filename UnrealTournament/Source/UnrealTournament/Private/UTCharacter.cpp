@@ -5408,6 +5408,11 @@ void AUTCharacter::NotifyTeamChanged()
 		if (Weapon != nullptr)
 		{
 			Weapon->NotifyTeamChanged();
+			// Have to reattach for some weapons
+			if (Weapon->Mesh->GetAttachParent())
+			{
+				Weapon->AttachToOwner();
+			}
 		}
 		if (WeaponAttachment != nullptr)
 		{
