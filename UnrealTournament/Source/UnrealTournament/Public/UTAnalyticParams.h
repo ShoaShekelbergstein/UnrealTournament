@@ -156,6 +156,7 @@ namespace EGenericAnalyticParam
 		FoliageQuality,
 
 		ServerName,
+		ServerID,
 		IsCustomRuleset,
 		GameOptions,
 		RequiredPackages,

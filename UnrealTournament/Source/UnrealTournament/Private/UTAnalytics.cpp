@@ -277,6 +277,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(FoliageQuality);
 
 	AddGenericParamName(ServerName);
+	AddGenericParamName(ServerID);
 	AddGenericParamName(IsCustomRuleset);
 	AddGenericParamName(GameOptions);
 	AddGenericParamName(RequiredPackages);
@@ -471,6 +472,12 @@ void FUTAnalytics::SetServerInitialParameters(TArray<FAnalyticsEventAttribute>& 
 	ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::NumClients), PerfCountersGet(TEXT("NumClients"), 0)));
 #endif
 
+	FString ServerID;
+	GConfig->GetString(TEXT("OnlineSubsystemMcp"), TEXT("ServerID"), ServerID, GEngineIni);
+	if (!ServerID.IsEmpty())
+	{
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerID), ServerID));
+	}
 }
 
 void FUTAnalytics::AddPlayerListToParameters(AUTGameMode* UTGM, TArray<FAnalyticsEventAttribute>& ParamArray)
