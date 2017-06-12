@@ -131,7 +131,7 @@ void UUTChatMessage::ClientReceiveChat(const FClientReceiveData& ClientData, FNa
 						AUTHUD* DemoHUD = Cast<AUTHUD>(Iterator->Get()->MyHUD);
 						if (DemoHUD)
 						{
-							DemoHUD->ReceiveLocalMessage(GetClass(), ClientData.RelatedPlayerState_1, ClientData.RelatedPlayerState_2, ClientData.MessageIndex, LocalMessageText, ClientData.OptionalObject);
+							DemoHUD->ReceiveLocalMessage(GetClass(), ClientData.RelatedPlayerState_1, ClientData.RelatedPlayerState_2, MessageIndex, LocalMessageText, ClientData.OptionalObject);
 						}
 					}
 				}
