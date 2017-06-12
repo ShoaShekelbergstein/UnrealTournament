@@ -284,31 +284,50 @@ void AUTLineUpHelper::PerformLineUp()
 {
 	bIsActive = true;
 
+	CalculateAllLineUpData();
+
+	if (GetNetMode() == NM_Standalone)
+	{
+		SpawnLineUp();
+	}
+	else
+	{
+		//Wait for line up data to be replicated to clients before we spawn everything in
+		static const float ReplicationDelayTime = 0.5f;
+		GetWorld()->GetTimerManager().SetTimer(ReplicationDelayHandle, FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::SpawnLineUp), ReplicationDelayTime, false);
+	}
+}
+
+void AUTLineUpHelper::CalculateAllLineUpData()
+{
+	SetLineUpWeapons();
+	CalculateLineUpSlots();
+}
+
+void AUTLineUpHelper::SpawnLineUp()
+{
 	AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
 	if (UTGM)
 	{
-		//Set the line up weapons before we remove the pawns so that we can see what weapon was equipped going into line up.
-		SetLineUpWeapons();
 		UTGM->RemoveAllPawns();
+	}
 
-		CalculateLineUpSlots();
-		SpawnCharactersToSlots();
-		SetupCharactersForLineUp();
-		FlagFixUp();
-		
-		NotifyClientsOfLineUp();
+	SpawnCharactersToSlots();
+	SetupCharactersForLineUp();
+	FlagFixUp();
 
-		//We normally rely on On_RepCheckForIntro, but if we are a standalone, OnRep will not fire, so kick off intro here
-		if ((GetNetMode() == NM_Standalone) && (ActiveType == LineUpTypes::Intro))
-		{
-			HandleIntroClientAnimations();
-		}
+	NotifyClientsOfLineUp();
 
-		//Notify Zone that line up is starting
-		if ((ActiveType != LineUpTypes::Intro) && UTGM->UTGameState && UTGM->UTGameState->GetAppropriateSpawnList(ActiveType))
-		{
-			UTGM->UTGameState->GetAppropriateSpawnList(ActiveType)->OnLineUpStart(ActiveType);
-		}
+	//We normally rely on On_RepCheckForIntro, but if we are a standalone, OnRep will not fire, so kick off intro here
+	if ((GetNetMode() == NM_Standalone) && (ActiveType == LineUpTypes::Intro))
+	{
+		HandleIntroClientAnimations();
+	}
+
+	//Notify Zone that line up is starting
+	if ((ActiveType != LineUpTypes::Intro) && UTGM->UTGameState && UTGM->UTGameState->GetAppropriateSpawnList(ActiveType))
+	{
+		UTGM->UTGameState->GetAppropriateSpawnList(ActiveType)->OnLineUpStart(ActiveType);
 	}
 }
 

@@ -65,6 +65,12 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 protected:
 
 	UFUNCTION()
+	void CalculateAllLineUpData();
+
+	UFUNCTION()
+	void SpawnLineUp();
+
+	UFUNCTION()
 	void HandleIntroClientAnimations();
 
 	UFUNCTION()
@@ -114,6 +120,7 @@ protected:
 	void OnRep_CheckForClientIntro();
 
 	FTimerHandle DelayedLineUpHandle;
+	FTimerHandle ReplicationDelayHandle;
 
 	/** preview actors */
 	UPROPERTY()

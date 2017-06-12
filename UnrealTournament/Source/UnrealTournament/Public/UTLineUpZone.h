@@ -4,7 +4,7 @@
 
 #include "UTLineUpZone.generated.h"
 
-UENUM()
+UENUM(BlueprintType)
 enum class LineUpTypes : uint8
 {
 	Invalid,
@@ -14,7 +14,7 @@ enum class LineUpTypes : uint8
 	None UMETA(Hidden)
 };
 
-UENUM()
+UENUM(BlueprintType)
 enum class LineUpSpawnTypes : uint8
 {
 	Invalid,
