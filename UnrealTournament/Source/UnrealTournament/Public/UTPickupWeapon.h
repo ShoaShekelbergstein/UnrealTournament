@@ -82,6 +82,7 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void SetInventoryType(TSubclassOf<AUTInventory> NewType) override;
 	virtual void InventoryTypeUpdated_Implementation() override;
+	virtual float GetNextPickupTime() override;
 
 	virtual void ProcessTouch_Implementation(APawn* TouchedBy) override;
 

@@ -2277,7 +2277,7 @@ void AUTPlayerController::UpdateHiddenComponents(const FVector& ViewLocation, TS
 					bTaken = true;
 					if (Pickup->TimerEffect)
 					{
-						Pickup->TimerEffect->SetFloatParameter(NAME_Progress, 1.0f - Pickup->GetRespawnTimeOffset(GetPawn()) / Pickup->RespawnTime);
+						Pickup->TimerEffect->SetFloatParameter(NAME_Progress, 1.0f - Pickup->GetRespawnTimeOffset(GetPawn()) / Pickup->GetNextPickupTime());
 					}
 				}
 				else

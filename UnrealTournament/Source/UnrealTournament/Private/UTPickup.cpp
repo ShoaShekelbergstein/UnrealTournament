@@ -491,6 +491,11 @@ void AUTPickup::PostNetReceive()
 	}
 }
 
+float AUTPickup::GetNextPickupTime()
+{
+	return RespawnTime;
+}
+
 void AUTPickup::OnRep_RespawnTimeRemaining()
 {
 	if (!State.bActive && (RespawnTimeRemaining != GetWorld()->GetTimerManager().GetTimerRemaining(WakeUpTimerHandle)))

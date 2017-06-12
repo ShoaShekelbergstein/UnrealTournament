@@ -200,6 +200,11 @@ void AUTPickupWeapon::ProcessTouch_Implementation(APawn* TouchedBy)
 	}
 }
 
+float AUTPickupWeapon::GetNextPickupTime()
+{
+	return NextPickupTime;
+}
+
 void AUTPickupWeapon::LocalPickupHandling(APawn* TouchedBy)
 {
 	new(Customers) FWeaponPickupCustomer(TouchedBy, GetWorld()->TimeSeconds + NextPickupTime);

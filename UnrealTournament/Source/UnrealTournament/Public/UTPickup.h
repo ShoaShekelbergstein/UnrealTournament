@@ -150,6 +150,8 @@ class UNREALTOURNAMENT_API AUTPickup : public AActor, public IUTResetInterface, 
 
 	virtual void SetTacCom(bool bTacComEnabled);
 
+	virtual float GetNextPickupTime();
+
 	virtual void PreNetReceive();
 	virtual void PostNetReceive();
 	virtual void PostEditImport() override;
