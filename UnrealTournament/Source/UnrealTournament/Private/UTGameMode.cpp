@@ -2670,6 +2670,7 @@ void AUTGameMode::TravelToNextMap_Implementation()
 			return;
 		}
 
+
 		if ( PrepareMapVote() )
 		{
 			SetMatchState(MatchState::MapVoteHappening);
@@ -2751,7 +2752,9 @@ bool AUTGameMode::PrepareMapVote()
 						for (const FAssetData& MapAsset : AllMaps)
 						{
 							FString PackageName = MapAsset.PackageName.ToString();
-							PackageName = PackageName.Right(PackageName.Len() - PackageName.Find(TEXT("/") - 1, ESearchCase::IgnoreCase, ESearchDir::FromEnd));
+							int32 Pos = PackageName.Find(TEXT("/"), ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+							int32 Cnt = PackageName.Len() - Pos - 1;
+							PackageName = PackageName.Right(Cnt);
 							if (Map == PackageName)
 							{
 								Map = MapAsset.PackageName.ToString();
