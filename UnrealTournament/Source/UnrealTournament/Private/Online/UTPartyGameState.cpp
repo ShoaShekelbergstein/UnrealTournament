@@ -341,7 +341,7 @@ EApprovalAction UUTPartyGameState::ProcessJoinRequest(const FUniqueNetId& Recipi
 	if ( Result == EApprovalAction::Approve)
 	{
 		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
-		if (UTGameState->bRestrictPartyJoin)
+		if (UTGameState && UTGameState->bRestrictPartyJoin)
 		{
 			DenialReason = EJoinPartyDenialReason::Busy;
 			return EApprovalAction::Deny;
