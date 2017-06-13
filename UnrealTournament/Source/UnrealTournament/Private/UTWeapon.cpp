@@ -1232,7 +1232,10 @@ void AUTWeapon::PlayFiringEffects()
 
 void AUTWeapon::PlayLowAmmoSound()
 {
-	UUTGameplayStatics::UTPlaySound(GetWorld(), LowAmmoSound, UTOwner, SRT_None);
+	if (UTOwner && UTOwner->GetLocalViewer() && Cast<AUTPlayerController>(UTOwner->GetController()))
+	{
+		((AUTPlayerController*)(UTOwner->GetController()))->UTClientPlaySound(LowAmmoSound);
+	}
 }
 
 void AUTWeapon::StopFiringEffects_Implementation()
