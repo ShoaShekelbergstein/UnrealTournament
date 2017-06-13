@@ -5628,28 +5628,7 @@ void AUTGameMode::PreloadClientAssets(TArray<UObject*>& ObjList) const
 
 float AUTGameMode::GetLineUpTime(LineUpTypes LineUpType)
 {
-	float TimeDelay = 0.f;
-	bool bIsReplayGoingToPlay = !(GetNetMode() == NM_Standalone);
-	switch (LineUpType)
-	{
-		case LineUpTypes::Intro:
-		{
-			TimeDelay = 0.f;
-			break;
-		}
-		case LineUpTypes::Intermission:
-		{
-			TimeDelay = bIsReplayGoingToPlay ? 9.f : 2.f;
-			break;
-		}
-		case LineUpTypes::PostMatch:
-		{
-			TimeDelay = bIsReplayGoingToPlay ? 9.f : 2.f;
-			break;
-		}
-	}
-
-	return TimeDelay;
+	return 3.f;
 }
 
 bool AUTGameMode::AllowTextMessage_Implementation(FString& Msg, bool bIsTeamMessage, AUTBasePlayerController* Sender)

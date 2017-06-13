@@ -194,6 +194,7 @@ public:
 	void AddCaptureEventToReplay(AUTPlayerState* Holder, AUTTeamInfo* Team);
 	void AddReturnEventToReplay(AUTPlayerState* Returner, AUTTeamInfo* Team);
 	virtual void AddDeniedEventToReplay(APlayerState* KillerPlayerState, AUTPlayerState* Holder, AUTTeamInfo* Team) override;
+	virtual float GetLineUpTime(LineUpTypes LineUpType) override;
 
 	virtual void PreInitializeComponents() override;
 	virtual class AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = TEXT("")) override;
