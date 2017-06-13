@@ -664,7 +664,7 @@ void AUTPickupInventory::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & 
 void AUTPickupInventory::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
 {
 	Super::PostRenderFor(PC, Canvas, CameraPosition, CameraDir);
-	if (!InventoryType || !InventoryType.GetDefaultObject()->PickupSpawnAnnouncement || !State.bActive)
+	if (!InventoryType || !InventoryType.GetDefaultObject()->PickupSpawnAnnouncement)
 	{
 		return;
 	}
@@ -689,14 +689,22 @@ void AUTPickupInventory::PostRenderFor(APlayerController* PC, UCanvas* Canvas, F
 	Canvas->TextSize(SmallFont, RedeemerText.ToString(), TextXL, YL, Scale, Scale);
 	FVector ViewDir = UTPC->GetControlRotation().Vector();
 	float Dist = (CameraPosition - GetActorLocation()).Size();
+	if (!State.bActive && ((Dist > 2000.f) || (GetWorld()->TimeSeconds - GetLastRenderTime() > 0.2f)))
+	{
+		return;
+	}
 	bool bDrawEdgeArrow = false;
 	FVector ScreenPosition = GetAdjustedScreenPosition(Canvas, WorldPosition, CameraPosition, ViewDir, Dist, 20.f, bDrawEdgeArrow);
+	if (bDrawEdgeArrow)
+	{
+		return;
+	}
 	float XPos = ScreenPosition.X - 0.5f*TextXL;
 	float YPos = ScreenPosition.Y - YL - 16.f*Scale;
 	if (XPos < Canvas->ClipX || XPos + TextXL < 0.0f)
 	{
 		bool bPulse = false;
-		if (bViewerOnOffense && UTPC->GetUTCharacter())
+		if (bViewerOnOffense && UTPC->GetUTCharacter() && State.bActive)
 		{
 			AUTGameVolume* GameVolume = Cast<AUTGameVolume>(UTPC->GetUTCharacter()->GetPawnPhysicsVolume());
 			if (GameVolume && GameVolume->bIsTeamSafeVolume)
@@ -705,10 +713,14 @@ void AUTPickupInventory::PostRenderFor(APlayerController* PC, UCanvas* Canvas, F
 			}
 		}
 			
-		FLinearColor TeamColor = FLinearColor::Yellow;
+		FLinearColor TeamColor = State.bActive? FLinearColor::Yellow : FLinearColor::Gray;
 		float CenterFade = 1.f;
 		float PctFromCenter = (ScreenPosition - FVector(0.5f*Canvas->ClipX, 0.5f*Canvas->ClipY, 0.f)).Size() / Canvas->ClipX;
 		CenterFade = CenterFade * FMath::Clamp(10.f*PctFromCenter, 0.15f, 1.f);
+		if (!State.bActive)
+		{
+			CenterFade *= FMath::Min(500.f/Dist, 1.f);
+		}
 		TeamColor.A = 0.2f * CenterFade;
 		UTexture* BarTexture = AUTHUD::StaticClass()->GetDefaultObject<AUTHUD>()->HUDAtlas;
 
