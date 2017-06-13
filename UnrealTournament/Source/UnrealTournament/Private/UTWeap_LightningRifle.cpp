@@ -119,6 +119,10 @@ void AUTWeap_LightningRifle::OnRep_ZoomState_Implementation()
 	{
 		bZoomHeld = false;
 		ChargePct = 0.f;
+		if (bIsFullyPowered && (UTOwner->GetWeapon() == this) && (Role == ROLE_Authority))
+		{
+			UTOwner->SetFlashExtra(0, CurrentFireMode);
+		}
 		bIsFullyPowered = false;
 	}
 	else if (ZoomState == EZoomState::EZS_ZoomingIn)
@@ -252,9 +256,12 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 						}
 					}
 				}
+				bIsCharging = (ZoomState == EZoomState::EZS_Zoomed || ZoomState == EZoomState::EZS_ZoomingIn) && !IsFiring();
 			}
-
-			bIsCharging = (ZoomState == EZoomState::EZS_Zoomed || ZoomState == EZoomState::EZS_ZoomingIn) && !IsFiring();
+			else
+			{
+				bIsCharging = false;
+			}
 		}
 		if (bIsCharging)
 		{
@@ -266,9 +273,9 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 			bIsFullyPowered = (ChargePct >= 1.f);
 			if (bIsFullyPowered && !bWasFullyPowered)
 			{
+				UTOwner->SetFlashExtra(4, CurrentFireMode);
 				if (Cast<AUTPlayerController>(UTOwner->GetController()))
 				{
-					UTOwner->SetFlashExtra(4, CurrentFireMode);
 					Cast<AUTPlayerController>(UTOwner->GetController())->UTClientPlaySound(FullyPoweredSound);
 				}
 				else
@@ -281,9 +288,17 @@ void AUTWeap_LightningRifle::Tick(float DeltaTime)
 					}
 				}
 			}
+			else if (bWasFullyPowered && !bIsFullyPowered)
+			{
+				UTOwner->SetFlashExtra(0, CurrentFireMode);
+			}
 		}
 		else
 		{
+			if (bIsFullyPowered && (UTOwner->GetWeapon() == this))
+			{
+				UTOwner->SetFlashExtra(0, CurrentFireMode);
+			}
 			ChargePct = 0.0f;
 			bIsFullyPowered = false;
 			UTOwner->SetAmbientSound(ChargeSound, true);
