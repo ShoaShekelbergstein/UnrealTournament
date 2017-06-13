@@ -913,7 +913,7 @@ void FSlateRHIRenderer::DrawWindows_Private( FSlateDrawBuffer& WindowDrawBuffer 
 {
 	checkSlow( IsThreadSafeForSlateRendering() );
 
-	// Enqueue a command to unlock the draw buffer after all windows have been drawn
+
 	ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER( SlateBeginDrawingWindowsCommand, 
 		FSlateRHIRenderingPolicy&, Policy, *RenderingPolicy,
 	{

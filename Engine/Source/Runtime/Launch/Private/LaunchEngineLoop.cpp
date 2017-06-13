@@ -1652,7 +1652,8 @@ int32 FEngineLoop::PreInit( const TCHAR* CmdLine )
 		{
 			GetDerivedDataCacheRef();
 		}
-
+		
+		CreateMoviePlayer();
 		// In order to be able to use short script package names get all script
 		// package names from ini files and register them with FPackageName system.
 		FPackageName::RegisterShortPackageNamesForUObjectModules();

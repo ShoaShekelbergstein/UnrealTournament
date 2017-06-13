@@ -20,7 +20,15 @@ class FDefaultGameMoviePlayer : public FTickableObjectRenderThread, public IGame
 	public TSharedFromThis<FDefaultGameMoviePlayer>
 {
 public:
-	static TSharedPtr<FDefaultGameMoviePlayer> Get();
+	static void Create()
+	{
+		check(IsInGameThread() && !IsInSlateThread());
+		check(!MoviePlayer.IsValid());
+
+		MoviePlayer = MakeShareable(new FDefaultGameMoviePlayer);
+	}
+
+	static FDefaultGameMoviePlayer* Get();
 	~FDefaultGameMoviePlayer();
 
 	/** IGameMoviePlayer Interface */

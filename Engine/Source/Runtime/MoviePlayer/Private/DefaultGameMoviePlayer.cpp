@@ -90,13 +90,9 @@ protected:
 
 TSharedPtr<FDefaultGameMoviePlayer> FDefaultGameMoviePlayer::MoviePlayer;
 
-TSharedPtr<FDefaultGameMoviePlayer> FDefaultGameMoviePlayer::Get()
+FDefaultGameMoviePlayer* FDefaultGameMoviePlayer::Get()
 {
-	if (!MoviePlayer.IsValid())
-	{
-		MoviePlayer = MakeShareable(new FDefaultGameMoviePlayer);
-	}
-	return MoviePlayer;
+	return MoviePlayer.Get();
 }
 
 FDefaultGameMoviePlayer::FDefaultGameMoviePlayer()

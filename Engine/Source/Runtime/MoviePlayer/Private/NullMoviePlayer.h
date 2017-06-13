@@ -10,13 +10,17 @@ class FNullGameMoviePlayer : public IGameMoviePlayer,
 	public TSharedFromThis<FNullGameMoviePlayer>
 {
 public:
-	static TSharedPtr<FNullGameMoviePlayer> Get()
+	static void Create()
 	{
-		if (!MoviePlayer.IsValid())
-		{
-			MoviePlayer = MakeShareable(new FNullGameMoviePlayer);
-		}
-		return MoviePlayer;
+		check(IsInGameThread() && !IsInSlateThread());
+		check(!MoviePlayer.IsValid());
+
+		MoviePlayer = MakeShareable(new FNullGameMoviePlayer);
+	}
+
+	static FNullGameMoviePlayer* Get()
+	{
+		return MoviePlayer.Get();
 	}
 
 	/** IGameMoviePlayer Interface */

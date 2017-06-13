@@ -990,7 +990,7 @@ void UUTGameInstance::EndLevelLoading()
 	{
 		if (!GIsRequestingExit)
 		{
-			if (GetMoviePlayer().IsValid() && GetMoviePlayer()->IsMovieCurrentlyPlaying())
+			if (GetMoviePlayer()->IsMovieCurrentlyPlaying())
 			{
 				GetMoviePlayer()->OnMoviePlaybackFinished().Clear();
 				GetMoviePlayer()->OnMoviePlaybackFinished().AddUObject(this, &UUTGameInstance::OnMoviePlaybackFinished);
@@ -1014,7 +1014,7 @@ FText UUTGameInstance::GetLevelLoadText() const
 	{
 		return LevelLoadText;
 	}
-	else if (bMovieWillAutocompleteWhenLoadFinishes)
+	else if (GetMoviePlayer()->WillAutoCompleteWhenLoadFinishes())
 	{
 		return FText::GetEmpty();
 	}
@@ -1190,7 +1190,7 @@ void UUTGameInstance::PlayLoadingMovies(bool bStopWhenLoadingIsComnpleted)
 		PlayMovie(MovieName, LoadingMovieOverlay, true, bStopWhenLoadingIsComnpleted, EMoviePlaybackType::MT_LoadingLoop, true);
 
 		bMovieWillAutocompleteWhenLoadFinishes = false;
-		if (GetMoviePlayer().IsValid())
+		if (GetMoviePlayer())
 		{
 			bMovieWillAutocompleteWhenLoadFinishes = GetMoviePlayer()->WillAutoCompleteWhenLoadFinishes();
 		}

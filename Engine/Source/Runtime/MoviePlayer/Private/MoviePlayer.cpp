@@ -66,10 +66,20 @@ TSharedRef<SWidget> FLoadingScreenAttributes::NewTestLoadingScreenWidget()
 }
 
 
-TSharedPtr<IGameMoviePlayer> GetMoviePlayer()
+void CreateMoviePlayer()
 {
-	check(!IsInSlateThread());
+	if (!IsMoviePlayerEnabled() || GUsingNullRHI)
+	{
+		return FNullGameMoviePlayer::Create();
+	}
+	else
+	{
+		return FDefaultGameMoviePlayer::Create();
+	}
+}
 
+IGameMoviePlayer* GetMoviePlayer()
+{
 	if (!IsMoviePlayerEnabled() || GUsingNullRHI)
 	{
 		return FNullGameMoviePlayer::Get();
@@ -78,6 +88,11 @@ TSharedPtr<IGameMoviePlayer> GetMoviePlayer()
 	{
 		return FDefaultGameMoviePlayer::Get();
 	}
+}
+
+IGameMoviePlayer& GetMoviePlayerRef()
+{
+	return *GetMoviePlayer();
 }
 
 bool IsMoviePlayerEnabled()

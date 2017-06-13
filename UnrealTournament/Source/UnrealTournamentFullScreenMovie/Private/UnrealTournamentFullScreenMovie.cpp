@@ -26,11 +26,8 @@ public:
 
 		LoadingScreen.MoviePaths.Empty();
 		LoadingScreen.MoviePaths.Add(TEXT("engine_startup"));
-		if (GetMoviePlayer().IsValid()) 
-		{
-			GetMoviePlayer()->SetupLoadingScreen(LoadingScreen);
-			GetMoviePlayer()->OnMovieClipFinished().AddRaw(this, &FUnrealTournamentFullScreenMovieModule::OnMovieClipFinished);
-		}
+		GetMoviePlayerRef().SetupLoadingScreen(LoadingScreen);
+		GetMoviePlayerRef().OnMovieClipFinished().AddRaw(this, &FUnrealTournamentFullScreenMovieModule::OnMovieClipFinished);
 #endif
 	}
 
@@ -76,36 +73,30 @@ public:
 			LoadingScreen.PlaybackType = PlaybackType;
 			LoadingScreen.WidgetLoadingScreen = SlateOverlayWidget; 
 
-			if (GetMoviePlayer().IsValid())
-			{
-				GetMoviePlayer()->SetupLoadingScreen(LoadingScreen);
-				GetMoviePlayer()->PlayMovie();
-			}
+			GetMoviePlayerRef().SetupLoadingScreen(LoadingScreen);
+			GetMoviePlayerRef().PlayMovie();
 		}
 	}
 
 	virtual void StopMovie() override
 	{
-		if (GetMoviePlayer().IsValid()) GetMoviePlayer()->StopMovie();
+		GetMoviePlayerRef().StopMovie();
 	}
 
 	virtual void WaitForMovieToFinished() 
 	{
-		if (GetMoviePlayer().IsValid())
-		{
-			GetMoviePlayer()->WaitForMovieToFinish();
-		}
+		GetMoviePlayerRef().WaitForMovieToFinish();
 	}
 
 
 	virtual bool IsMoviePlaying() override
 	{
-		return GetMoviePlayer().IsValid() ? GetMoviePlayer()->IsMovieCurrentlyPlaying() : false;
+		return GetMoviePlayerRef().IsMovieCurrentlyPlaying();
 	}
 
 	virtual void SetSlateOverlayWidget(TSharedPtr<SWidget> NewSlateOverlayWidget) override
 	{
-		if (GetMoviePlayer().IsValid()) GetMoviePlayer()->SetSlateOverlayWidget(NewSlateOverlayWidget);
+		GetMoviePlayerRef().SetSlateOverlayWidget(NewSlateOverlayWidget);
 	}
 
 protected:
