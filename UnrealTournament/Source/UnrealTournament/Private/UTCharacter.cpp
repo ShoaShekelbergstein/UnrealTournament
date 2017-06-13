@@ -5273,19 +5273,16 @@ void AUTCharacter::ApplyCharacterData(TSubclassOf<AUTCharacterContent> CharType)
 		// Animation is wiped out when context is reregistered
 		ResetTaunt();
 
-		if (Data->OverideMaterials1p.Num() > 0)
+		FirstPersonMesh->OverrideMaterials = Data->OverideMaterials1p;
+		FFAColor = (Data->DMSkinType == EDMSkin_Base) ? 255 : 0;
+		if ((PS != NULL && PS->Team != NULL) || (FFAColor != 255))
 		{
-			FirstPersonMesh->OverrideMaterials = Data->OverideMaterials1p;
-			FFAColor = (Data->DMSkinType == EDMSkin_Base) ? 255 : 0;
-			if ((PS != NULL && PS->Team != NULL) || (FFAColor != 255))
+			FirstPersonMesh->OverrideMaterials.SetNumZeroed(FMath::Min<int32>(FirstPersonMesh->GetNumMaterials(), Data->TeamMaterials1p.Num()));
+			for (int32 i = FirstPersonMesh->OverrideMaterials.Num() - 1; i >= 0; i--)
 			{
-				FirstPersonMesh->OverrideMaterials.SetNumZeroed(FMath::Min<int32>(FirstPersonMesh->GetNumMaterials(), Data->TeamMaterials1p.Num()));
-				for (int32 i = FirstPersonMesh->OverrideMaterials.Num() - 1; i >= 0; i--)
+				if (Data->TeamMaterials1p[i] != NULL)
 				{
-					if (Data->TeamMaterials1p[i] != NULL)
-					{
-						FirstPersonMesh->OverrideMaterials[i] = Data->TeamMaterials1p[i];
-					}
+					FirstPersonMesh->OverrideMaterials[i] = Data->TeamMaterials1p[i];
 				}
 			}
 		}
