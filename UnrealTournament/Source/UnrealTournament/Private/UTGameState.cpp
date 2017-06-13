@@ -197,6 +197,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	HighlightMap.Add(HighlightNames::MostHeadShots, NSLOCTEXT("AUTGameMode", "MostHeadShots", "Most Headshots ({0})"));
 	HighlightMap.Add(HighlightNames::MostAirRockets, NSLOCTEXT("AUTGameMode", "MostAirRockets", "Most Air Rockets ({0})"));
 	HighlightMap.Add(HighlightNames::KillsAward, NSLOCTEXT("AUTGameMode", "KillsAward", "{0} Kills"));
+	HighlightMap.Add(HighlightNames::KillingBlowsAward, NSLOCTEXT("AUTGameMode", "KillingBlowsAward", "{0} Killing Blows"));
 	HighlightMap.Add(HighlightNames::DamageAward, NSLOCTEXT("AUTGameMode", "DamageAward", "{0} Damage Done"));
 	HighlightMap.Add(HighlightNames::ParticipationAward, NSLOCTEXT("AUTGameMode", "ParticipationAward", "Was there, more or less"));
 
@@ -242,6 +243,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	ShortHighlightMap.Add(NAME_SpreeKillLevel3, NSLOCTEXT("AUTGameMode", "ShortSpreeKillLevel3", "Unstoppable"));
 	ShortHighlightMap.Add(NAME_SpreeKillLevel4, NSLOCTEXT("AUTGameMode", "ShortSpreeKillLevel4", "Godlike"));
 	ShortHighlightMap.Add(HighlightNames::KillsAward, NSLOCTEXT("AUTGameMode", "ShortKillsAward", "Kills"));
+	ShortHighlightMap.Add(HighlightNames::KillingBlowsAward, NSLOCTEXT("AUTGameMode", "ShortKillingBlowsAward", "Killing Blows"));
 	ShortHighlightMap.Add(HighlightNames::DamageAward, NSLOCTEXT("AUTGameMode", "ShortDamageAward", "I'd hit that"));
 
 	HighlightPriority.Add(HighlightNames::TopScorer, 10.f);
@@ -270,6 +272,7 @@ AUTGameState::AUTGameState(const class FObjectInitializer& ObjectInitializer)
 	HighlightPriority.Add(NAME_SpreeKillLevel3, 3.5f);
 	HighlightPriority.Add(NAME_SpreeKillLevel4, 4.f);
 	HighlightPriority.Add(HighlightNames::KillsAward, 0.2f);
+	HighlightPriority.Add(HighlightNames::KillingBlowsAward, 0.18f);
 	HighlightPriority.Add(HighlightNames::DamageAward, 0.15f);
 	HighlightPriority.Add(HighlightNames::ParticipationAward, 0.1f);
 
@@ -2076,40 +2079,45 @@ void AUTGameState::UpdateHighlights_Implementation()
 				PS->AddMatchHighlight(HighlightNames::LeastDeaths, LeastDeaths->Deaths);
 			}
 
-			//remove extra highlights
-			int32 Index = 4;
-			while (Index >= NumHighlightsNeeded())
+			int32 FirstIndex = 5;
+			for (int32 i = 0; i < 5; i++)
 			{
-				if ((PS->MatchHighlights[Index] != NAME_None) && (HighlightPriority.FindRef(PS->MatchHighlights[Index]) < 2.f))
+				if (PS->MatchHighlights[i] == NAME_None)
 				{
-					PS->MatchHighlights[Index] = NAME_None;
-					PS->MatchHighlightData[Index] = 0.f;
+					FirstIndex = i;
+					break;
 				}
-				Index--;
 			}
-
-			if (PS->MatchHighlights[2] == NAME_None)
+			if (FirstIndex < 5)
 			{
-				int32 FirstIndex = (PS->MatchHighlights[0] == NAME_None) ? 0 : 1;
 				if (PS->Kills > 0)
 				{
-					PS->MatchHighlights[FirstIndex] = HighlightNames::KillsAward;
+					PS->MatchHighlights[FirstIndex] = HighlightNames::KillingBlowsAward;
 					PS->MatchHighlightData[FirstIndex] = PS->Kills;
-					if (PS->DamageDone > 0)
-					{
-						PS->MatchHighlights[FirstIndex+1] = HighlightNames::DamageAward;
-						PS->MatchHighlightData[FirstIndex+1] = PS->DamageDone;
-					}
+					FirstIndex++;
 				}
-				else if (PS->DamageDone > 0)
+			}
+			if (FirstIndex < 5)
+			{
+				if (PS->KillAssists > 0)
 				{
-					PS->MatchHighlights[FirstIndex] = HighlightNames::DamageAward;
-					PS->MatchHighlightData[FirstIndex] = PS->DamageDone;
+					PS->MatchHighlights[FirstIndex] = HighlightNames::KillsAward;
+					PS->MatchHighlightData[FirstIndex] = PS->Kills + PS->KillAssists;
+					FirstIndex++;
 				}
-				else
+			}
+			if (FirstIndex < 5)
+			{
+				if (PS->DamageDone > 0)
 				{
-					PS->MatchHighlights[FirstIndex] = HighlightNames::ParticipationAward;
+					PS->MatchHighlights[FirstIndex + 1] = HighlightNames::DamageAward;
+					PS->MatchHighlightData[FirstIndex + 1] = PS->DamageDone;
+					FirstIndex++;
 				}
+			}
+			if (FirstIndex < 2)
+			{
+				PS->MatchHighlights[FirstIndex] = HighlightNames::ParticipationAward;
 			}
 		}
 	}

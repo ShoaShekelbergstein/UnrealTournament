@@ -143,7 +143,6 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	HighlightMap.Add(HighlightNames::RedeemerRejection, NSLOCTEXT("AUTGameMode", "RedeemerRejection", "Rejected Redeemer"));
 	HighlightMap.Add(HighlightNames::FlagDenials, NSLOCTEXT("AUTGameMode", "FlagDenials", "{0} Denials"));
 	HighlightMap.Add(HighlightNames::WeaponKills, NSLOCTEXT("AUTGameMode", "WeaponKills", "{0} kills with {1}"));
-	HighlightMap.Add(HighlightNames::KillingBlowsAward, NSLOCTEXT("AUTGameMode", "KillingBlowsAward", "{0} killing blows"));
 	HighlightMap.Add(HighlightNames::MostKillingBlowsAward, NSLOCTEXT("AUTGameMode", "MostKillingBlowsAward", "Most killing blows ({0})"));
 	HighlightMap.Add(HighlightNames::CoupDeGrace, NSLOCTEXT("AUTGameMode", "MostKillingBlowsAward", "Most killing blows ({0})"));
 	HighlightMap.Add(HighlightNames::HardToKill, NSLOCTEXT("AUTGameMode", "HardToKill", "Only died {0} times"));
@@ -179,7 +178,6 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	ShortHighlightMap.Add(HighlightNames::RedeemerRejection, NSLOCTEXT("AUTGameMode", "ShortRejection", "Redeem this"));
 	ShortHighlightMap.Add(HighlightNames::FlagDenials, NSLOCTEXT("AUTGameMode", "ShortDenials", "You shall not pass"));
 	ShortHighlightMap.Add(HighlightNames::WeaponKills, NSLOCTEXT("AUTGameMode", "ShortWeaponKills", "Weapon Master"));
-	ShortHighlightMap.Add(HighlightNames::KillingBlowsAward, NSLOCTEXT("AUTGameMode", "ShortKillingBlowsAward", "Nice Shot"));
 	ShortHighlightMap.Add(HighlightNames::MostKillingBlowsAward, NSLOCTEXT("AUTGameMode", "ShortMostKillingBlowsAward", "Punisher"));
 	ShortHighlightMap.Add(HighlightNames::CoupDeGrace, NSLOCTEXT("AUTGameMode", "CoupDeGrace", "Coup de Grace"));
 	ShortHighlightMap.Add(HighlightNames::HardToKill, NSLOCTEXT("AUTGameMode", "ShortHardToKill", "Hard to Kill"));
@@ -1266,14 +1264,7 @@ void AUTFlagRunGameState::UpdateHighlights_Implementation()
 			{
 				TopFlagCaps[TeamIndex] = PS;
 			}
-			if (PS->Assists > (TopAssists[TeamIndex] ? TopAssists[TeamIndex]->Assists : 0))
-			{
-				TopAssists[TeamIndex] = PS;
-			}
-			if (PS->FlagReturns > (TopFlagReturns[TeamIndex] ? TopFlagReturns[TeamIndex]->FlagReturns : 0))
-			{
-				TopFlagReturns[TeamIndex] = PS;
-			}
+			PS->Score = PS->Kills + PS->KillAssists;
 		}
 	}
 
@@ -1290,22 +1281,6 @@ void AUTFlagRunGameState::UpdateHighlights_Implementation()
 			else if (PS->FlagCaptures > 0)
 			{
 				PS->AddMatchHighlight(HighlightNames::FlagCaptures, PS->FlagCaptures);
-			}
-			if ((TopAssists[TeamIndex] != NULL) && (PS->Assists == TopAssists[TeamIndex]->Assists))
-			{
-				PS->AddMatchHighlight((TeamIndex == 0) ? HighlightNames::TopAssistsRed : HighlightNames::TopAssistsBlue, PS->Assists);
-			}
-			else if (PS->Assists > 0)
-			{
-				PS->AddMatchHighlight(HighlightNames::Assists, PS->Assists);
-			}
-			if ((TopFlagReturns[TeamIndex] != NULL) && (PS->FlagReturns == TopFlagReturns[TeamIndex]->FlagReturns))
-			{
-				PS->AddMatchHighlight((TeamIndex == 0) ? HighlightNames::TopFlagReturnsRed : HighlightNames::TopFlagReturnsBlue, PS->FlagReturns);
-			}
-			else if (PS->FlagReturns > 0)
-			{
-				PS->AddMatchHighlight(HighlightNames::FlagReturns, PS->FlagReturns);
 			}
 		}
 	}
