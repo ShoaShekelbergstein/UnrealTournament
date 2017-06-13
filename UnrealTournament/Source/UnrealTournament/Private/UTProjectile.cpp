@@ -65,6 +65,7 @@ AUTProjectile::AUTProjectile(const class FObjectInitializer& ObjectInitializer)
 	InstigatorVelocityPct = 0.f;
 	bDamageOnBounce = true;
 	InstigatorTeamNum = 255;
+	Slomo = 1.f;
 
 	SetReplicates(true);
 	bNetTemporary = false;
