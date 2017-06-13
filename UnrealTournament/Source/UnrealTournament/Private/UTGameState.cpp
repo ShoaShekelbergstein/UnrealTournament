@@ -1785,6 +1785,18 @@ AUTReplicatedMapInfo* AUTGameState::CreateMapInfo(const FAssetData& MapAsset)
 
 void AUTGameState::CreateMapVoteInfo(const FString& MapPackage,const FString& MapTitle, const FString& MapScreenshotReference)
 {
+
+	//Make sure we don't already have a map info for this package
+
+	for (int32 i=0; i < MapVoteList.Num(); i++)
+	{
+		if (MapVoteList[i]->MapPackageName.Equals(MapPackage, ESearchCase::IgnoreCase) && !MapVoteList[i]->IsPendingKillPending())
+		{
+			// Already exists, just quick out.
+			return;
+		}
+	}
+
 	FActorSpawnParameters Params;
 	Params.Owner = this;
 	AUTReplicatedMapInfo* MapVoteInfo = GetWorld()->SpawnActor<AUTReplicatedMapInfo>(Params);
