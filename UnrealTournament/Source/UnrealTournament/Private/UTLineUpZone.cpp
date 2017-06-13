@@ -314,7 +314,6 @@ void AUTLineUpZone::SnapToFloor()
 			GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
 			if (Hit.bBlockingHit)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Index: %i \nStart: X:%f Y:%f Z:%f \nEnd: X:%f Y:%f Z:%f  \nHit: X:%f Y:%f Z:%f"),index , Start.X, Start.Y, Start.Z, End.X, End.Y, End.Z, Hit.Location.X, Hit.Location.Y, Hit.Location.Z);
 				FVector NewLocation = SpawnLocations[index].Location.GetLocation();
 				NewLocation.Z = (Hit.Location - ActorToWorld().GetLocation()).Z + SnapFloorOffset;
 				SpawnLocations[index].Location.SetLocation(NewLocation);
