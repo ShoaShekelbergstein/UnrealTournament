@@ -376,7 +376,7 @@ void AUTBasePlayerController::ClientSay_Implementation(AUTPlayerState* Speaker, 
 	UUTProfileSettings* ProfileSettings = GetProfileSettings();
 	if (ProfileSettings != nullptr && Speaker != nullptr)
 	{
-		if (!ProfileSettings->ComFilter == EComFilter::AllComs)
+		if (ProfileSettings->ComFilter != EComFilter::AllComs)
 		{
 			if (ProfileSettings->ComFilter == EComFilter::NoComs)
 			{
@@ -389,7 +389,7 @@ void AUTBasePlayerController::ClientSay_Implementation(AUTPlayerState* Speaker, 
 					return;
 				}
 			}
-			else if (ProfileSettings->ComFilter == EComFilter::TeamComs)
+			else if (ProfileSettings->ComFilter == EComFilter::FriendComs)
 			{
 				if (!Speaker->bIsFriend)
 				{
