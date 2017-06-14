@@ -1037,3 +1037,14 @@ void UUTGameplayStatics::ReloadModConfig()
 {
 	GConfig->Flush(true, FPaths::GeneratedConfigDir() + TEXT("Mod.ini"));
 }
+
+bool UUTGameplayStatics::IsForcingSingleSampleShadowFromStationaryLights()
+{
+	static IConsoleVariable* CVarForceSingleSampleShadowingFromStationary = IConsoleManager::Get().FindConsoleVariable(TEXT("r.Shadow.ForceSingleSampleShadowingFromStationary"));
+	return CVarForceSingleSampleShadowingFromStationary->GetInt() == 1;
+}
+
+void UUTGameplayStatics::SetIndirectLightingCacheQuality(UPrimitiveComponent* PrimComp, EIndirectLightingCacheQuality Quality)
+{
+	PrimComp->IndirectLightingCacheQuality = Quality;
+}
