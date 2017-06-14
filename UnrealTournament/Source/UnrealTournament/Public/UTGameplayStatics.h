@@ -140,10 +140,7 @@ class UNREALTOURNAMENT_API UUTGameplayStatics : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintCallable, Category = "UT")
 	static bool IsForcingSingleSampleShadowFromStationaryLights();
-
-	UFUNCTION(BlueprintCallable, Category = "UT")
-	static void SetIndirectLightingCacheQuality(UPrimitiveComponent* PrimComp, EIndirectLightingCacheQuality Quality);
-
+	
 	/** Not replicated. Plays a sound cue on an actor, sound wave may change depending on team affiliation compared to the listener */
 	UFUNCTION(BlueprintCosmetic, BlueprintCallable, Category = "UT", meta = (DefaultToSelf = "SoundTarget"))
 	static class UAudioComponent* PlaySoundTeamAdjusted(USoundCue* SoundToPlay, AActor* SoundInstigator, AActor* SoundTarget, bool Attached);
