@@ -1449,11 +1449,20 @@ protected:
 	UPROPERTY(Config)
 	TArray<FUTGameModeCountStorage> GameModeCounts;
 
+	// Holds a list of Unique Net Ids that have been locally muted.
+	UPROPERTY()
+	TArray<FString> GameMuteList;
+
 public:
 	// Holds the string version of a server guid that the player should attempt to use when disconnected or returning to the lobby.
 	// This will only be valid on instances.
 	UPROPERTY(BlueprintReadOnly,Category=Online)
 	FString ReturnDestinationGuidString;
+	// Mute/Unmute a player at the game level
+	void GameMutePlayer(const FString& PlayerId);
+
+	// Called whenver a new player's unique id is received.  Update player controller's mute list based on their com settings
+	void UpdateVoiceMuteList();
 
 };
 

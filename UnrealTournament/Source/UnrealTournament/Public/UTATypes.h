@@ -2688,3 +2688,16 @@ struct FPlaylistItem
 	}
 
 };
+
+UENUM()
+namespace EComFilter
+{
+	enum Type
+	{
+		AllComs,
+		TeamComs, 
+		FriendComs,
+		NoComs,
+		MAX,
+	};
+}

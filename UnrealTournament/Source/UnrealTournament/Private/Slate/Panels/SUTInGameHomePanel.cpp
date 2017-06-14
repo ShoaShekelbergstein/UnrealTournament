@@ -521,33 +521,7 @@ FReply SUTInGameHomePanel::ContextCommand(int32 CommandId, TWeakObjectPtr<AUTPla
 				case ECONTEXT_COMMAND_AdminBan:		PC->RconKick(TargetPlayerState->UniqueId.ToString(), true,TEXT("Banned by Host/Admin")); break;
 				case ECONTEXT_COMMAND_MutePlayer:
 				{
-					TSharedPtr<const FUniqueNetId> Id = TargetPlayerState->UniqueId.GetUniqueNetId();
-					if (Id.IsValid())
-					{
-						if (PlayerOwner->PlayerController->IsPlayerMuted(Id.ToSharedRef().Get()))
-						{
-							PC->ServerUnmutePlayer(TargetPlayerState->UniqueId);
-						}
-						else
-						{
-							PC->ServerMutePlayer(TargetPlayerState->UniqueId);
-						}
-					}
-					
-					static const FName VoiceChatFeatureName("VoiceChat");
-					if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
-					{
-						UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
-						if (VoiceChat->IsPlayerMuted(TargetPlayerState->UniqueId->ToString()))
-						{
-							VoiceChat->UnMutePlayer(TargetPlayerState->UniqueId->ToString());
-						}
-						else
-						{
-							VoiceChat->MutePlayer(TargetPlayerState->UniqueId->ToString());
-						}
-					}
-
+					PlayerOwner->GameMutePlayer(TargetPlayerState->UniqueId.ToString());
 					HideContextMenu();
 					break;
 				}

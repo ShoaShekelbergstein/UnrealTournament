@@ -16,6 +16,7 @@ UUTProfileSettings::UUTProfileSettings(const FObjectInitializer& ObjectInitializ
 {
 	bNeedProfileWriteOnLevelChange = false;
 	DefaultBotSkillLevel = 2;
+	ComFilter = EComFilter::AllComs;
 	ClanName = TEXT("");
 }
 
@@ -136,6 +137,7 @@ void UUTProfileSettings::ResetProfile(EProfileResetType::Type SectionToReset)
 		DefaultBotSkillLevel = 2;
 
 		TutorialVideoWatchCount.Empty();
+		ComFilter = EComFilter::AllComs;
 	}
 
 	if (SectionToReset == EProfileResetType::All || SectionToReset == EProfileResetType::Weapons)
@@ -552,6 +554,11 @@ bool UUTProfileSettings::VersionFixup()
 	if (SettingsRevisionNum < CLANNAME_FIXUP_VERSION)
 	{
 		ClanName = TEXT("");
+	}
+
+	if (SettingsRevisionNum < COMFILTER_FIXUP_VERSION)
+	{
+		ComFilter = EComFilter::AllComs;
 	}
 
 	int32 WeaponWheelIndex = -1;

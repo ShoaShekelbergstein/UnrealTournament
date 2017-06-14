@@ -350,6 +350,11 @@ void SUTSystemSettingsDialog::Construct(const FArguments& InArgs)
 	VOIPOptions.Add(MakeShareable(new FString(NSLOCTEXT("SUTSystemSettingsDialog", "VOIPA", "Open Mic - You always send voice chat to other players").ToString())));
 	VOIPOptions.Add(MakeShareable(new FString(NSLOCTEXT("SUTSystemSettingsDialog", "VOIPB", "Push to Talk - You need to use your Push to Talk key to send voice chat").ToString())));
 
+	ComFilterItems.Add(MakeShareable(new FString(NSLOCTEXT("SUTSystemSettingsDialog", "ComFilterA", "Allow All Communication").ToString())));
+	ComFilterItems.Add(MakeShareable(new FString(NSLOCTEXT("SUTSystemSettingsDialog", "ComFilterB", "Teammates Only").ToString())));
+	ComFilterItems.Add(MakeShareable(new FString(NSLOCTEXT("SUTSystemSettingsDialog", "ComFilterC", "Friends Only").ToString())));
+	ComFilterItems.Add(MakeShareable(new FString(NSLOCTEXT("SUTSystemSettingsDialog", "ComFilterD", "None").ToString())));
+
 	if (DialogContent.IsValid())
 	{
 		DialogContent->ClearChildren();
@@ -480,6 +485,11 @@ void SUTSystemSettingsDialog::Construct(const FArguments& InArgs)
 	if (ProfileSettings && !ProfileSettings->MatchmakingRegion.IsEmpty())
 	{
 		MatchmakingRegion->SetSelectedItem( MatchmakingRegionList[ProfileSettings->MatchmakingRegion.Equals(TEXT("eu"), ESearchCase::IgnoreCase) ? 1 :0]);
+		uint8 ComFilterValue = uint8(ProfileSettings->ComFilter);
+		if (ComFilterItems.IsValidIndex(ComFilterValue))
+		{
+			ComFilterCombo->SetSelectedItem(ComFilterItems[ComFilterValue]);
+		}
 	}
 	bChangedMatchmakingRegion = false;
 
@@ -802,6 +812,48 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildGeneralTab()
 			SAssignNew(KeyboardLightingCheckbox, SCheckBox)
 			.Style(SUWindowsStyle::Get(), "UT.Common.CheckBox")
 			.IsChecked(UserSettings->IsKeyboardLightingEnabled() ? ESlateCheckBoxState::Checked : ESlateCheckBoxState::Unchecked)
+		]
+	]
+	+ SVerticalBox::Slot()
+	.AutoHeight()
+	.Padding(FMargin(10.0f, 5.0f, 10.0f, 5.0f))
+	[
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.VAlign(VAlign_Center)
+		[
+			SNew(SBox)
+			.WidthOverride(650)
+			[
+				SNew(STextBlock)
+				.TextStyle(SUWindowsStyle::Get(), "UT.Common.NormalText")
+				.Text(NSLOCTEXT("SUTSystemSettingsDialog", "ComFilter", "Communication Filter"))
+				.ToolTip(SUTUtils::CreateTooltip(NSLOCTEXT("SUTSystemSettingsDialog", "ComFilter_Tooltip", "Select what types of commuications you wish to allow.")))
+			]
+		]
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.VAlign(VAlign_Center)
+		[
+			SAssignNew(ComFilterCombo, SComboBox<TSharedPtr<FString>>)
+			.InitiallySelectedItem(ComFilterItems[0])
+			.ComboBoxStyle(SUWindowsStyle::Get(), "UT.ComboBox")
+			.ButtonStyle(SUWindowsStyle::Get(), "UT.Button.White")
+			.OptionsSource(&ComFilterItems)
+			.OnGenerateWidget(this, &SUTDialogBase::GenerateStringListWidget)
+			.OnSelectionChanged(this, &SUTSystemSettingsDialog::OnComFilterSelected)
+			.Content()
+			[
+				SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot()
+				.Padding(10.0f, 0.0f, 10.0f, 0.0f)
+				[
+					SAssignNew(SelectedComFilter, STextBlock)
+					.Text(FText::FromString(*ComFilterItems[0].Get()))
+					.TextStyle(SUWindowsStyle::Get(), "UT.Common.ButtonText.Black")
+				]
+			]
 		]
 	];
 }
@@ -1416,6 +1468,9 @@ FReply SUTSystemSettingsDialog::OKClick()
 	UUTProfileSettings* ProfileSettings = GetPlayerOwner()->GetProfileSettings();
 	if (ProfileSettings)
 	{
+		ProfileSettings->ComFilter = GetComFilterSelection();
+		PlayerOwner->UpdateVoiceMuteList();
+	
 		bool bProfileNeedsUpdate = false;
 		TSharedPtr<FString> MatchmakingRegionSelection = MatchmakingRegion->GetSelectedItem();
 		if (MatchmakingRegionSelection.IsValid() && bChangedMatchmakingRegion)
@@ -1625,5 +1680,28 @@ void SUTSystemSettingsDialog::OnVoiceChatPlaybackVolumeChanged(float NewValue)
 {
 
 }
+
+void SUTSystemSettingsDialog::OnComFilterSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
+{
+	if (NewSelection.IsValid())
+	{
+		SelectedComFilter->SetText(*NewSelection.Get());
+	}
+}
+
+TEnumAsByte<EComFilter::Type> SUTSystemSettingsDialog::GetComFilterSelection()
+{
+	FString* SelectedText = ComFilterCombo->GetSelectedItem().Get();
+	for (int32 i=0; i < ComFilterItems.Num();i++)
+	{
+		if (SelectedText == ComFilterItems[i].Get())
+		{
+			return static_cast<EComFilter::Type>(i);
+		}
+	}
+
+	return EComFilter::AllComs;
+}
+
 
 #endif

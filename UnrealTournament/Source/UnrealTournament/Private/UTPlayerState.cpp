@@ -2093,6 +2093,7 @@ void AUTPlayerState::OnRep_UniqueId()
 	if (LP != NULL)
 	{
 		bIsFriend = LP->IsAFriend(UniqueId);
+		LP->UpdateVoiceMuteList();
 	}
 
 	ForceUpdatePlayerInfo();

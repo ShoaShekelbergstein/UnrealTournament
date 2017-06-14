@@ -83,6 +83,7 @@
 #include "UTSpectatorCamera.h"
 #include "UTReplicatedGameRuleset.h"
 #include "SUTDifficultyLevel.h"
+#include "UTVoiceChatFeature.h"
 
 #if WITH_SOCIAL
 #include "Social.h"
@@ -7180,6 +7181,66 @@ void UUTLocalPlayer::ProcessTitleFile(const FString& Filename, const TArray<uint
 		if (JsonString != TEXT(""))
 		{
 			FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &MCPAnnouncements, 0, 0);
+		}
+	}
+}
+
+void UUTLocalPlayer::GameMutePlayer(const FString& PlayerId)
+{
+	int32 Index = GameMuteList.Find(PlayerId);
+	if ( Index != INDEX_NONE)
+	{
+		GameMuteList.RemoveAt(Index,1);
+	}
+	else
+	{
+		GameMuteList.Add(PlayerId);
+	}
+
+	UpdateVoiceMuteList();
+}
+
+void UUTLocalPlayer::UpdateVoiceMuteList()
+{
+	static const FName VoiceChatFeatureName("VoiceChat");
+	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+	{
+		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
+
+		if (VoiceChat && UTGameState)
+		{
+			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
+			{
+				if (UTGameState->PlayerArray[i] != nullptr)
+				{
+					AUTPlayerState* UTPlayerState = Cast<AUTPlayerState>(UTGameState->PlayerArray[i]);
+					FString IdString = UTPlayerState->UniqueId.ToString();
+					if (UTPlayerState != nullptr)
+					{
+						bool bShouldBeMuted = false;
+
+						if ( (GameMuteList.Find(IdString) != INDEX_NONE)  ||
+							 (CurrentProfileSettings->ComFilter == EComFilter::NoComs) ||
+							 (CurrentProfileSettings->ComFilter == EComFilter::FriendComs && !UTPlayerState->bIsFriend) ||
+							 (CurrentProfileSettings->ComFilter == EComFilter::TeamComs && !UTGameState->bTeamGame) )
+						{
+							bShouldBeMuted = true;
+						}
+
+						bool bIsMuted = VoiceChat->IsPlayerMuted(IdString);
+
+						if ( bIsMuted && !bShouldBeMuted)
+						{
+							VoiceChat->UnMutePlayer(IdString);
+						}
+						else if (!bIsMuted && bShouldBeMuted)
+						{
+							VoiceChat->MutePlayer(IdString);
+						}
+					}
+				}
+			}
 		}
 	}
 }

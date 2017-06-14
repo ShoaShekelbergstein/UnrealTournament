@@ -12,7 +12,7 @@
 #include "UTProfileSettings.generated.h"
 
 
-static const uint32 CURRENT_PROFILESETTINGS_VERSION = 42;
+static const uint32 CURRENT_PROFILESETTINGS_VERSION = 43;
 static const uint32 VALID_PROFILESETTINGS_VERSION = 32;
 static const uint32 WEAPONBAR_FIXUP_VERSION = 33;
 static const uint32 COMMENU_FIXUP_VERSION = 34;
@@ -21,6 +21,7 @@ static const uint32 DEFAULT_GROUPTAUNT_FIXUP_VERSION = 38;
 static const uint32 FRAMECAP_FIXUP_VERSION = 40;
 static const uint32 CLANNAME_FIXUP_VERSION = 41;
 static const uint32 LIGHTNING_RIFLE_FIXUP_VERSION = 42;
+static const uint32 COMFILTER_FIXUP_VERSION = 43;
 
 class UUTLocalPlayer;
 
@@ -376,6 +377,9 @@ public:
 	/** Holds the default bot skill level this player wants to use */
 	UPROPERTY(BlueprintReadOnly, Category = System)
 	int32 DefaultBotSkillLevel;
+
+	UPROPERTY(BlueprintReadOnly, Category = System)
+	TEnumAsByte<EComFilter::Type> ComFilter;
 
 public:
 

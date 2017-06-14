@@ -370,6 +370,35 @@ bool AUTBasePlayerController::ForwardDirectSay(AUTPlayerState* SenderPlayerState
 
 void AUTBasePlayerController::ClientSay_Implementation(AUTPlayerState* Speaker, const FString& Message, FName Destination)
 {
+
+	// Vaidate the say
+
+	UUTProfileSettings* ProfileSettings = GetProfileSettings();
+	if (ProfileSettings != nullptr && Speaker != nullptr)
+	{
+		if (!ProfileSettings->ComFilter == EComFilter::AllComs)
+		{
+			if (ProfileSettings->ComFilter == EComFilter::NoComs)
+			{
+				return;
+			}
+			else if (ProfileSettings->ComFilter == EComFilter::TeamComs)
+			{
+				if (Speaker->GetTeamNum() != GetTeamNum())			
+				{
+					return;
+				}
+			}
+			else if (ProfileSettings->ComFilter == EComFilter::TeamComs)
+			{
+				if (!Speaker->bIsFriend)
+				{
+					return;
+				}
+			}
+		}
+	}
+
 	FClientReceiveData ClientData;
 	ClientData.LocalPC = this;
 	ClientData.MessageIndex = (Destination == ChatDestinations::Team) ? 1 : 0;

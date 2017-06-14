@@ -228,6 +228,12 @@ protected:
 
 	TArray<TSharedRef<SSlateConsoleVarDelegate>> CVarDelegates;
 
+	TSharedPtr< SComboBox< TSharedPtr<FString> > > ComFilterCombo;
+	TArray<TSharedPtr<FString> > ComFilterItems;
+	TSharedPtr<STextBlock> SelectedComFilter;
+
+	TEnumAsByte<EComFilter::Type> GetComFilterSelection();
+
 	// widgets only shown in advanced mode
 	TArray<TSharedRef<SWidget>> AdvancedWidgets;
 
@@ -291,6 +297,9 @@ protected:
 	SVerticalBox::FSlot& AddConsoleVarCheckboxWidget(TSharedRef<SSlateConsoleVarDelegate> CVar, const FText& Label);
 	SVerticalBox::FSlot& AddGeneralSliderWithLabelWidget(TSharedPtr<SSlider>& SliderWidget, TSharedPtr<STextBlock>& LabelWidget, void(SUTSystemSettingsDialog::*SelectionFunc)(float), const FString& InitialLabel, float SettingValue, const TAttribute<FText>& TooltipText = TAttribute<FText>());
 	SVerticalBox::FSlot& AddTopLevelConsoleVarCheckboxWidget(TSharedRef<SSlateConsoleVarDelegate> CVar, const FText& Label);
+
+	void OnComFilterSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo);
+
 };
 
 #endif
