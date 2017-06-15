@@ -4,7 +4,7 @@
 
 #include "UTIntro.generated.h"
 
-UCLASS(Blueprintable, Abstract)
+UCLASS(Blueprintable, Abstract, HideCategories=(Tick,Rendering, Replication, INPUT, Actor))
 class UNREALTOURNAMENT_API AUTIntro : public AActor
 {
 	GENERATED_UCLASS_BODY()
