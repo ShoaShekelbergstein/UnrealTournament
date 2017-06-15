@@ -299,8 +299,11 @@ public:
 	UFUNCTION(client, reliable)
 	virtual void ClientPrepareForLineUp();
 
+	UFUNCTION(client, reliable)
+	virtual void ClientLineUpIntroPlayerChange(AUTPlayerState* PlayerChanged);
+
 	UPROPERTY()
-		FRotator SpawnRotation;
+	FRotator SpawnRotation;
 
 	UFUNCTION(client, reliable)
 	virtual void ClientToggleScoreboard(bool bShow);

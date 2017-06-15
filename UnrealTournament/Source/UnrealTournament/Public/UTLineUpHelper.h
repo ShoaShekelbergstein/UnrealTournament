@@ -34,7 +34,10 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 	bool CanInitiateGroupTaunt(AUTPlayerState* PlayerToCheck);
 
 	UFUNCTION()
-	void OnPlayerChange();
+	void ServerOnPlayerChange(AUTPlayerState* PlayerChanged);
+
+	UFUNCTION()
+	void ClientOnPlayerChange(AUTPlayerState* PlayerChanged);
 
 	UFUNCTION()
 	void InitializeLineUp(LineUpTypes LineUpType);
@@ -157,12 +160,14 @@ private:
 	void IntroSpawnDelayedCharacter();
 	void IntroTransitionToWeaponReadyAnims();
 
+	FLineUpSlot* Intro_GetRandomUnSpawnedLineUpSlot();
+
 	/**Variables used by clients to track introduction line-ups that happen locally **/
 	TArray<FLineUpSlot*> Intro_MyTeamLineUpSlots;
 	TArray<FLineUpSlot*> Intro_OtherTeamLineUpSlots;
 	TArray<float> Intro_TimeDelaysOnAnims;
 
-	int Intro_NextSpawnTeamMateIndex;
+	int Intro_TotalSpawnedPlayers;
 
 	FTimerHandle Intro_NextClientSpawnHandle;
 	FTimerHandle Intro_ClientSwitchToWeaponFaceoffHandle;

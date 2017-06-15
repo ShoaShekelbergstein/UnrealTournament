@@ -193,7 +193,7 @@ AUTLineUpHelper::AUTLineUpHelper(const FObjectInitializer& ObjectInitializer)
 	bIsPlacingPlayers = false;
 	bIsActive = false;
 
-	Intro_NextSpawnTeamMateIndex = 0;
+	Intro_TotalSpawnedPlayers = 0;
 }
 
 void AUTLineUpHelper::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -749,24 +749,74 @@ void AUTLineUpHelper::SortControllers(TArray<AController*>& ControllersToSort)
 	ControllersToSort.Sort(SortFunc);
 }
 
-void AUTLineUpHelper::OnPlayerChange()
+void AUTLineUpHelper::ServerOnPlayerChange(AUTPlayerState* PlayerChanged)
 {
-	//@TODO: Handle Join In progress gracefully
-	if (GetWorld() && (LineUpSlots.Num() > 0) && (ActiveType == LineUpTypes::Intro))
+	//TArray<AController*> ControllersThatNeedRearrange;
+	//TArray<FLineUpSlot*> OpenSlots;
+
+	////CalculateLineUpSlots();
+
+	//if (PlayerChanged && GetWorld() && (LineUpSlots.Num() > 0) && (ActiveType == LineUpTypes::Intro))
+	//{
+	//	AController* Controller = Cast<AController>(PlayerChanged->GetOwner());
+	//	if (Controller)
+	//	{
+	//		ControllersThatNeedRearrange.Add(Controller);
+	//	}
+
+	//	for (FLineUpSlot& Slot : LineUpSlots)
+	//	{
+	//		AUTCharacter* UTChar = Slot.ControllerInSpot ? Cast<AUTCharacter>(Slot.ControllerInSpot->GetPawn()) : nullptr;
+	//		if (!UTChar)
+	//		{
+	//			OpenSlots.Add(&Slot);
+	//		}
+	//		else if (UTChar && (UTChar->GetTeamNum() != Slot.TeamNumOfSlot))
+	//		{
+	//			ControllersThatNeedRearrange.Add(Slot.ControllerInSpot);
+	//		}
+	//	}
+
+	//	for (int CharIndex = 0; CharIndex < ControllersThatNeedRearrange.Num(); ++CharIndex)
+	//	{
+	//		IUTTeamInterface* TeamInterface = Cast<IUTTeamInterface>(ControllersThatNeedRearrange[CharIndex]);
+	//		if (TeamInterface)
+	//		{
+	//			for (int SlotIndex = 0; SlotIndex < OpenSlots.Num(); ++SlotIndex)
+	//			{
+	//				if (OpenSlots[SlotIndex]->TeamNumOfSlot == TeamInterface->GetTeamNum())
+	//				{
+	//					OpenSlots[SlotIndex]->ControllerInSpot = ControllersThatNeedRearrange[CharIndex];
+	//					OpenSlots[SlotIndex]->CharacterInSpot = nullptr;
+
+	//					bIsPlacingPlayers = true;
+	//					SpawnCharacterFromLineUpSlot(*OpenSlots[SlotIndex]);
+	//					bIsPlacingPlayers = false;
+	//					
+	//					OpenSlots.RemoveAt(SlotIndex);
+	//					break;
+	//				}
+	//			}
+	//		}
+	//	}
+
+	//	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PlayerChanged->GetOwner());
+	//	if (UTPC)
+	//	{
+	//		UTPC->ClientLineUpIntroPlayerChange(PlayerChanged);
+	//	}
+	//}
+}
+
+void AUTLineUpHelper::ClientOnPlayerChange(AUTPlayerState* PlayerChanged)
+{
+	/*IntroBreakSlotsIntoTeams();
+	IntroSetFirstSlotToLocalPlayer();
+
+	if (PlayerChanged)
 	{
-		//if (IsLineupDataReplicated() && IntroCheckForPawnReplicationToComplete())
-		//{
-		//	//Make sure our Local Player is still in the front
-		//	CalculateLineUpSlots();
-		//	IntroBreakSlotsIntoTeams();
-		//	IntroSetFirstSlotToLocalPlayer();
-		//}
-		//else
-		//{
-		//	//We don't have pawns yet. Wait for them to replicate before starting the intro
-		//	GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::OnPlayerChange));
-		//}
-	}
+		PlayIntroClientAnimationOnCharacter(PlayerChanged->GetUTCharacter(), false);
+	}*/
 }
 
 bool AUTLineUpHelper::CanInitiateGroupTaunt(AUTPlayerState* PlayerToCheck)
@@ -853,10 +903,15 @@ void AUTLineUpHelper::HandleIntroClientAnimations()
 					IntroSetFirstSlotToLocalPlayer();
 					IntroBuildStaggeredSpawnTimerList();
 
-					//Start all animations on enemy team. Jump to Enemy Team Section in montage
-					for (FLineUpSlot* LineUpSlot : Intro_OtherTeamLineUpSlots)
+					//Spawn in local player first before spawning in random players
+					if (Intro_MyTeamLineUpSlots.Num() > 0)
 					{
-						PlayIntroClientAnimationOnCharacter(LineUpSlot->CharacterInSpot, false);
+						AUTPlayerState* UTPS = Intro_MyTeamLineUpSlots[0]->CharacterInSpot ? Cast<AUTPlayerState>(Intro_MyTeamLineUpSlots[0]->CharacterInSpot->PlayerState) : nullptr;
+						if (UTPS && !UTPS->bHasPlayedLineUpIntro)
+						{
+							PlayIntroClientAnimationOnCharacter(Intro_MyTeamLineUpSlots[0]->CharacterInSpot, true);
+							++Intro_TotalSpawnedPlayers;
+						}
 					}
 
 					//On each fire of trigger, Start new team mate spawn.
@@ -958,18 +1013,23 @@ void AUTLineUpHelper::IntroSetFirstSlotToLocalPlayer()
 
 void AUTLineUpHelper::IntroBuildStaggeredSpawnTimerList()
 {
-	AUTGameState* UTGS = GetWorld() ? Cast<AUTGameState>(GetWorld()->GetGameState()) : nullptr;
-	if (UTGS)
+	if (Intro_TimeDelaysOnAnims.Num() != LineUpSlots.Num())
 	{
-		AUTLineUpZone* SpawnZone = UTGS->GetAppropriateSpawnList(LineUpTypes::Intro);
-		if (SpawnZone)
-		{
-			for (FLineUpSlot* LineUpSlot : Intro_MyTeamLineUpSlots)
-			{
-				Intro_TimeDelaysOnAnims.Add(FMath::RandRange(SpawnZone->MinIntroSpawnTime, SpawnZone->MaxIntroSpawnTime));
-			}
+		Intro_TimeDelaysOnAnims.Empty();
 
-			Intro_TimeDelaysOnAnims.Sort();
+		AUTGameState* UTGS = GetWorld() ? Cast<AUTGameState>(GetWorld()->GetGameState()) : nullptr;
+		if (UTGS)
+		{
+			AUTLineUpZone* SpawnZone = UTGS->GetAppropriateSpawnList(LineUpTypes::Intro);
+			if (SpawnZone)
+			{
+				for (FLineUpSlot& LineUpSlot : LineUpSlots)
+				{
+					Intro_TimeDelaysOnAnims.Add(FMath::RandRange(SpawnZone->MinIntroSpawnTime, SpawnZone->MaxIntroSpawnTime));
+				}
+
+				Intro_TimeDelaysOnAnims.Sort();
+			}
 		}
 	}
 }
@@ -1013,28 +1073,92 @@ void AUTLineUpHelper::PlayIntroClientAnimationOnCharacter(AUTCharacter* UTChar, 
 				if (AnimInstance && SpawnMontage)
 				{
 					AnimInstance->Montage_Play(SpawnMontage);
-					AnimInstance->Montage_JumpToSection(SectionName, SpawnMontage);
+
+					if (!SectionName.IsNone())
+					{
+						AnimInstance->Montage_JumpToSection(SectionName, SpawnMontage);
+					}
 				}
 			}
+		}
+		else
+		{
+			UE_LOG(LogUTLineUp, Warning, TEXT("FAIL 2"));
 		}
 	}
 }
 
-void AUTLineUpHelper::IntroSpawnDelayedCharacter()
+FLineUpSlot* AUTLineUpHelper::Intro_GetRandomUnSpawnedLineUpSlot()
 {
-	if (Intro_MyTeamLineUpSlots.IsValidIndex(Intro_NextSpawnTeamMateIndex))
+	FLineUpSlot* FoundSlot = nullptr;
+
+	if (LineUpSlots.Num() > 0)
 	{
-		FLineUpSlot* LineUpSlot = Intro_MyTeamLineUpSlots[Intro_NextSpawnTeamMateIndex];
-		if (LineUpSlot && (LineUpSlot->CharacterInSpot))
+		int StartingIndex = FMath::RandHelper(LineUpSlots.Num());
+	
+		//Search from random point forward
+		for (int SlotIndex = StartingIndex; SlotIndex < LineUpSlots.Num(); ++SlotIndex)
 		{
-			PlayIntroClientAnimationOnCharacter(LineUpSlot->CharacterInSpot, true);
+			AUTPlayerState* UTPS = (LineUpSlots[SlotIndex].CharacterInSpot) ? Cast<AUTPlayerState>(LineUpSlots[SlotIndex].CharacterInSpot->PlayerState) : nullptr;
+			if (UTPS)
+			{
+				if (!UTPS->bHasPlayedLineUpIntro)
+				{
+					FoundSlot = &LineUpSlots[SlotIndex];
+					break;
+				}
+			}
 		}
-		++Intro_NextSpawnTeamMateIndex;
+
+		//Search from beginning to random point
+		if (nullptr == FoundSlot)
+		{
+			for (int SlotIndex = 0; SlotIndex < StartingIndex; ++SlotIndex)
+			{
+				AUTPlayerState* UTPS = (LineUpSlots[SlotIndex].CharacterInSpot) ? Cast<AUTPlayerState>(LineUpSlots[SlotIndex].CharacterInSpot->PlayerState) : nullptr;
+				if (UTPS)
+				{
+					if (!UTPS->bHasPlayedLineUpIntro)
+					{
+						FoundSlot =& LineUpSlots[SlotIndex];
+						break;
+					}
+				}
+			}
+		}
 	}
 
-	if (Intro_TimeDelaysOnAnims.IsValidIndex(Intro_NextSpawnTeamMateIndex))
+	return FoundSlot;
+}
+
+void AUTLineUpHelper::IntroSpawnDelayedCharacter()
+{
+
+	if (LineUpSlots.IsValidIndex(Intro_TotalSpawnedPlayers))
 	{
-		const float TimeToNextSpawn = (Intro_TimeDelaysOnAnims[Intro_NextSpawnTeamMateIndex] - Intro_TimeDelaysOnAnims[Intro_NextSpawnTeamMateIndex - 1]);
+		UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController());
+		if (LocalPlayer)
+		{
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(LocalPlayer->PlayerController);
+			if (UTPC)
+			{
+				int LocalTeamNum = UTPC->GetTeamNum();
+
+				const FLineUpSlot* LineUpSlot = Intro_GetRandomUnSpawnedLineUpSlot();
+				if (LineUpSlot && LineUpSlot->CharacterInSpot)
+				{
+					const bool bIsOnSameTeamAsLocalPlayer = (LineUpSlot->CharacterInSpot->GetTeamNum() == LocalTeamNum);
+					PlayIntroClientAnimationOnCharacter(LineUpSlot->CharacterInSpot, bIsOnSameTeamAsLocalPlayer);
+
+					++Intro_TotalSpawnedPlayers;
+				}
+			}
+		}
+	}
+
+	if (LineUpSlots.IsValidIndex(Intro_TotalSpawnedPlayers))
+	{
+		const float TimeToNextSpawn = (Intro_TimeDelaysOnAnims[Intro_TotalSpawnedPlayers] - Intro_TimeDelaysOnAnims[Intro_TotalSpawnedPlayers - 1]);
 		GetWorld()->GetTimerManager().SetTimer(Intro_NextClientSpawnHandle, FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::IntroSpawnDelayedCharacter), TimeToNextSpawn, false);
 	}
 }

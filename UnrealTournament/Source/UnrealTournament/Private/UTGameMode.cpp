@@ -3835,7 +3835,7 @@ void AUTGameMode::PostLogin( APlayerController* NewPlayer )
 		UTGameState->SetRemainingTime(UTGameState->GetRemainingTime());
 		if (UTGameState->ActiveLineUpHelper)
 		{
-			UTGameState->ActiveLineUpHelper->OnPlayerChange();
+			UTGameState->ActiveLineUpHelper->ServerOnPlayerChange(Cast<AUTPlayerState>(NewPlayer->PlayerState));
 		}
 	}
 	if (UTPC && FUTAnalytics::IsAvailable() && (GetNetMode() == NM_DedicatedServer))
@@ -3979,7 +3979,7 @@ void AUTGameMode::Logout(AController* Exiting)
 
 	if (UTGameState && UTGameState->ActiveLineUpHelper)
 	{
-		UTGameState->ActiveLineUpHelper->OnPlayerChange();
+		//UTGameState->ActiveLineUpHelper->OnPlayerChange();
 	}
 }
 

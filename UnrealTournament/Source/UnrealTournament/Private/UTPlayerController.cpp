@@ -5200,6 +5200,15 @@ void AUTPlayerController::ClientPrepareForLineUp_Implementation()
 	ToggleScoreboard(false);
 }
 
+void AUTPlayerController::ClientLineUpIntroPlayerChange_Implementation(AUTPlayerState* PlayerChanged)
+{
+	AUTGameState* UTGS = GetWorld() ? Cast<AUTGameState>(GetWorld()->GetGameState()) : nullptr;
+	if (UTGS && UTGS->ActiveLineUpHelper)
+	{
+		UTGS->ActiveLineUpHelper->ClientOnPlayerChange(PlayerChanged);
+	}
+}
+
 bool AUTPlayerController::LineOfSightTo(const class AActor* Other, FVector ViewPoint, bool bAlternateChecks) const
 {
 	if (Other == NULL)
