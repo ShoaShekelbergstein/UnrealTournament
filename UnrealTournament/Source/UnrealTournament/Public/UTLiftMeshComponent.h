@@ -21,8 +21,11 @@ public:
 	void SetIndirectLightingCacheQuality(EIndirectLightingCacheQuality Quality)
 	{
 		IndirectLightingCacheQuality = Quality;
-		DestroyRenderState_Concurrent();
-		FlushRenderingCommands();
-		CreateRenderState_Concurrent();
+		if (!IsRunningDedicatedServer())
+		{
+			DestroyRenderState_Concurrent();
+			FlushRenderingCommands();
+			CreateRenderState_Concurrent();
+		}
 	}
 };
