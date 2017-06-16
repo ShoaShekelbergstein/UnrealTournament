@@ -193,8 +193,6 @@ namespace UnrealTournamentGame.Automation
 						Deployment2Command("deployment_create", AwsNaHub2, "true", 1);
 						Deployment2Command("deployment_create", AwsEuHub1, "true", 1);
 						Deployment2Command("deployment_create", AwsEuHub2, "true", 1);
-						Deployment2Command("deployment_create", AwsAuHub1, "true", 1);
-						Deployment2Command("deployment_create", AwsSaHub1, "true", 1);
 
 						// verify MM servers deployed
 						Deployment2Command("deployment_create", AwsArgsNa1, "get_pending", MaxRetries);
@@ -204,8 +202,6 @@ namespace UnrealTournamentGame.Automation
 						Deployment2Command("deployment_create", AwsNaHub2, "get_pending", MaxRetries);
 						Deployment2Command("deployment_create", AwsEuHub1, "get_pending", MaxRetries);
 						Deployment2Command("deployment_create", AwsEuHub2, "get_pending", MaxRetries);
-						Deployment2Command("deployment_create", AwsAuHub1, "get_pending", MaxRetries);
-						Deployment2Command("deployment_create", AwsSaHub1, "get_pending", MaxRetries);
 						break;
 					case UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentPublicTest:
 						Deployment2Command("deployment_create", AwsArgsNa1, "true", 1);
