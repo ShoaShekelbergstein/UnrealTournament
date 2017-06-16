@@ -808,7 +808,7 @@ void UUTScoreboard::DrawPlayer(int32 Index, AUTPlayerState* PlayerState, float R
 	}
 	
 	// Draw the muted indicator
-	if (PlayerState->bIsMuted)
+	if (UTHUDOwner->UTPlayerOwner->IsPlayerGameMuted(PlayerState))
 	{
 		bool bLeft = (XOffset < Canvas->ClipX * 0.5f);
 		float TalkingXOffset = bLeft ? ScaledCellWidth + (10.0f *RenderScale) : (-36.0f * RenderScale);

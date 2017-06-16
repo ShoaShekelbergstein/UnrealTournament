@@ -373,6 +373,10 @@ public:
 	UFUNCTION(exec)
 	void ExportGameRulesets(FString Filename);
 
+	UFUNCTION(BlueprintCallable, Category="UT")
+	virtual bool IsPlayerGameMuted(AUTPlayerState* PlayerToCheck);
+
+
 protected:
 	FTimerHandle AuthKickHandle;
 

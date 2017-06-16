@@ -38,6 +38,7 @@ class UUTUMGWidget;
 class UUTUMGWidget_Toast;
 class AUTReplicatedGameRuleset;
 class SUTDifficultyLevel;
+class SUTDLCWarningDialog;
 
 enum class EMatchmakingCompleteResult : uint8;
 
@@ -773,7 +774,7 @@ protected:
 #if !UE_SERVER
 	TWeakPtr<SUTDialogBase> ConnectingDialog;
 	TSharedPtr<SUTDownloadAllDialog> DownloadAllDialog;
-	TSharedPtr<SUTDialogBase> DLCWarningDialog;
+	TSharedPtr<SUTDLCWarningDialog> DLCWarningDialog;
 #endif
 
 	// Holds a list of servers where the DLC warning has been accepted.  If the current server is in this list
@@ -1463,6 +1464,6 @@ public:
 
 	// Called whenver a new player's unique id is received.  Update player controller's mute list based on their com settings
 	void UpdateVoiceMuteList();
-
+	bool IsPlayerGameMuted(AUTPlayerState* PlayerToCheck);
 };
 

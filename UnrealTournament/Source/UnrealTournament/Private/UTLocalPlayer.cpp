@@ -84,6 +84,7 @@
 #include "UTReplicatedGameRuleset.h"
 #include "SUTDifficultyLevel.h"
 #include "UTVoiceChatFeature.h"
+#include "SUTDLCWarningDialog.h"
 
 #if WITH_SOCIAL
 #include "Social.h"
@@ -3864,11 +3865,27 @@ void UUTLocalPlayer::ShowDLCWarning()
 
 	if (RequiresDLCWarning())
 	{
-		// Ask player if they want to try to rejoin last ranked game
-		DLCWarningDialog = ShowMessage(NSLOCTEXT("UTLocalPlayer","ContentWarningTitle","!! Content Warning !!"),
-			NSLOCTEXT("UTLocalPlayer","ContentWarningText","This server is attempting to send you third party content that has not been verified by Epic Games.  You should only accept content from servers that you trust.  Continue download?"),
-			UTDIALOG_BUTTON_YES + UTDIALOG_BUTTON_NO,
-			FDialogResultDelegate::CreateUObject(this, &UUTLocalPlayer::ContentAcceptResult));
+		int32 TrustLevel = 2;
+
+		// Look at the trust level of the current session
+		IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+		if (OnlineSub)
+		{
+			IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
+			FOnlineSessionSettings* Settings = SessionInterface->GetSessionSettings(TEXT("Game"));
+
+			if (Settings != nullptr)
+			{
+				Settings->Get(SETTING_TRUSTLEVEL, TrustLevel);
+			}
+		}
+
+		SAssignNew(DLCWarningDialog, SUTDLCWarningDialog)
+			.PlayerOwner(this)
+			.MessageText(NSLOCTEXT("UTLocalPlayer","ContentWarningText","This community server is sending you custom content that will offer a different experience from official servers. Continue download?"))
+			.OnDialogResult(FDialogResultDelegate::CreateUObject(this, &UUTLocalPlayer::ContentAcceptResult));
+
+		OpenDialog(DLCWarningDialog.ToSharedRef());
 	}
 #endif
 }
@@ -7208,7 +7225,7 @@ void UUTLocalPlayer::UpdateVoiceMuteList()
 		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
 		AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
 
-		if (VoiceChat && UTGameState)
+		if (VoiceChat && VoiceChat->IsLoggedIn() && VoiceChat->IsConnected() && !VoiceChat->GetChannelName().IsEmpty() && UTGameState)
 		{
 			for (int32 i = 0; i < UTGameState->PlayerArray.Num(); i++)
 			{
@@ -7243,4 +7260,9 @@ void UUTLocalPlayer::UpdateVoiceMuteList()
 			}
 		}
 	}
+}
+
+bool UUTLocalPlayer::IsPlayerGameMuted(AUTPlayerState* PlayerToCheck)
+{
+	return PlayerToCheck && GameMuteList.Find(PlayerToCheck->UniqueId.ToString()) != INDEX_NONE;
 }

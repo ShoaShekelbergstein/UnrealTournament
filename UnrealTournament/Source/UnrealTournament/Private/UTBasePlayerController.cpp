@@ -1659,3 +1659,8 @@ void AUTBasePlayerController::ExportGameRulesets(FString Filename)
 	}
 }
 
+bool AUTBasePlayerController::IsPlayerGameMuted(AUTPlayerState* PlayerToCheck)
+{
+	UUTLocalPlayer* LP = Cast<UUTLocalPlayer>(Player);
+	return (LP && LP->IsPlayerGameMuted(PlayerToCheck));
+}
