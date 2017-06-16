@@ -142,18 +142,14 @@ float AUTProj_Grenade_Sticky::TakeDamage(float DamageAmount, struct FDamageEvent
 
 	if (NewDamageAmount > 0.0f && !bExploded)
 	{
-		if (bArmed)
+		if (bArmed && (EventInstigator != GetInstigatorController()))
 		{
-			AUTPlayerController* UTPC = Cast<AUTPlayerController>(EventInstigator);
-			if (UTPC)
+			AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
+			if (!GS || !GS->OnSameTeam(InstigatorController, EventInstigator))
 			{
-				uint8 DamagerTeamNum = UTPC->GetTeamNum();
-				if (DamagerTeamNum != GetInstigatorTeamNum())
-				{
-					PlayDamagedDetonationEffects();
-					InstigatorController = UTPC;
-					Explode(GetActorLocation(), FVector(0,0,1), nullptr);
-				}
+				PlayDamagedDetonationEffects();
+				InstigatorController = EventInstigator;
+				Explode(GetActorLocation(), FVector(0, 0, 1), nullptr);
 			}
 		}
 	}
