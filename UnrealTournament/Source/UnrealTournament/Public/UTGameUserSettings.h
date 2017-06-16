@@ -63,9 +63,7 @@ public:
 	virtual bool IsVoiceChatEnabled();
 	virtual void SetVoiceChatEnabled(bool NewChatEnabled);
 	virtual float GetVoiceChatPlaybackVolume();
-	virtual float GetVoiceChatRecordVolume();
 	virtual void SetVoiceChatPlaybackVolume(float InVolume);
-	virtual void SetVoiceChatRecordVolume(float InVolume);
 	virtual FString GetVoiceChatInputDevice();
 	virtual void SetVoiceChatInputDevice(const FString& CustomInputDevice);
 
@@ -131,10 +129,7 @@ protected:
 
 	UPROPERTY(config)
 	float VoiceChatPlaybackVolume;
-
-	UPROPERTY(config)
-	float VoiceChatRecordVolume;
-
+	
 	UPROPERTY(config)
 	FString VoiceChatInputDevice;
 

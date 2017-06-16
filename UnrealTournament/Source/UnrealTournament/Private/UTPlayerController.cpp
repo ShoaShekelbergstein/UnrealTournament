@@ -5513,7 +5513,6 @@ void AUTPlayerController::OnRepVoiceChatJoinToken()
 		if (GS)
 		{
 			GS->SetVoiceChatPlaybackVolume(GS->GetVoiceChatPlaybackVolume());
-			GS->SetVoiceChatRecordVolume(GS->GetVoiceChatRecordVolume());
 		}
 		UUTProfileSettings* ProfileSettings = GetProfileSettings();
 		if (ProfileSettings)

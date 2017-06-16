@@ -25,7 +25,6 @@ UUTGameUserSettings::UUTGameUserSettings(const class FObjectInitializer& ObjectI
 	SoundClassVolumes[EUTSoundClass::Music_Stingers] = 1.0f;
 	SoundClassVolumes[EUTSoundClass::GameMusic] = 0.f;
 	VoiceChatPlaybackVolume = 0.5f;
-	VoiceChatRecordVolume = 0.5f;
 	bVoiceChatEnabled = true;
 	InitialBenchmarkState = -1;
 	bBenchmarkInProgress=false;
@@ -56,7 +55,6 @@ void UUTGameUserSettings::SetToDefaults()
 	SoundClassVolumes[EUTSoundClass::GameMusic] = 0.f;
 	FullscreenMode = EWindowMode::Fullscreen;
 	VoiceChatPlaybackVolume = 0.5f;
-	VoiceChatRecordVolume = 0.5f;
 	bVoiceChatEnabled = true;
 	ScreenPercentage = 100;
 	InitialBenchmarkState = -1;
@@ -76,7 +74,6 @@ void UUTGameUserSettings::ApplySettings(bool bCheckForCommandLineOverrides)
 	SetHRTFEnabled(bHRTFEnabled);
 	SetVoiceChatEnabled(bVoiceChatEnabled);
 	SetVoiceChatPlaybackVolume(VoiceChatPlaybackVolume);
-	SetVoiceChatRecordVolume(VoiceChatRecordVolume);
 	SetBotSpeech(BotSpeech);
 }
 
@@ -273,11 +270,6 @@ float UUTGameUserSettings::GetVoiceChatPlaybackVolume()
 	return VoiceChatPlaybackVolume;
 }
 
-float UUTGameUserSettings::GetVoiceChatRecordVolume()
-{
-	return VoiceChatRecordVolume;
-}
-
 void UUTGameUserSettings::SetVoiceChatPlaybackVolume(float InVolume)
 {
 	VoiceChatPlaybackVolume = InVolume;
@@ -287,18 +279,6 @@ void UUTGameUserSettings::SetVoiceChatPlaybackVolume(float InVolume)
 	{
 		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
 		VoiceChat->SetPlaybackVolume(VoiceChatPlaybackVolume);
-	}
-}
-
-void UUTGameUserSettings::SetVoiceChatRecordVolume(float InVolume)
-{
-	VoiceChatRecordVolume = InVolume;
-
-	static const FName VoiceChatFeatureName("VoiceChat");
-	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
-	{
-		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
-		VoiceChat->SetRecordVolume(VoiceChatRecordVolume);
 	}
 }
 

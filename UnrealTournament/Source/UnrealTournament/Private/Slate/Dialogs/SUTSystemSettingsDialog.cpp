@@ -1142,13 +1142,6 @@ TSharedRef<SWidget> SUTSystemSettingsDialog::BuildAudioTab()
 		UserSettings->GetVoiceChatPlaybackVolume(),
 		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatPlaybackVolume_Tooltip", "Controls the voice chat playback volume."))
 		
-	+AddGeneralSliderWithLabelWidget(VoiceChatRecordVolume, 
-		VoiceChatRecordVolumeLabel, 
-		&SUTSystemSettingsDialog::OnVoiceChatRecordVolumeChanged, 
-		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume", "Voice Chat Microphone Level").ToString(), 
-		UserSettings->GetVoiceChatRecordVolume(),
-		NSLOCTEXT("SUTSystemSettingsDialog", "VoiceChatRecordVolume_Tooltip", "Controls the microphone level for voice chat."))
-
 	+ SVerticalBox::Slot()
 	.AutoHeight()
 	.Padding(FMargin(10.0f, 50.0f, 10.0f, 5.0f))
@@ -1397,7 +1390,6 @@ FReply SUTSystemSettingsDialog::OKClick()
 
 	UserSettings->SetVoiceChatEnabled(VoiceChatCheckBox->IsChecked());
 	UserSettings->SetVoiceChatPlaybackVolume(VoiceChatPlaybackVolume->GetValue());
-	UserSettings->SetVoiceChatRecordVolume(VoiceChatRecordVolume->GetValue());
 	UserSettings->SetVoiceChatInputDevice(VOIPInputOptionsText->GetText().ToString());
 
 	//UserSettings->SetSoundClassVolume(EUTSoundClass::VOIP, SoundVolumes[EUTSoundClass::VOIP]->GetValue() * 2.0f);
@@ -1485,14 +1477,14 @@ FReply SUTSystemSettingsDialog::OKClick()
 			ProfileSettings->bPushToTalk = bWantsPushToTalk;
 			GetPlayerOwner()->PlayerController->ToggleSpeaking(!ProfileSettings->bPushToTalk);
 			bProfileNeedsUpdate = true;
+		}
 
-			// If we're push to talk now, mute the mic. If we are clearing it, unmute the mic.
-			static const FName VoiceChatFeatureName("VoiceChat");
-			if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
-			{
-				UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
-				VoiceChat->SetAudioInputDeviceMuted(ProfileSettings->bPushToTalk);
-			}
+		// If we're push to talk now, mute the mic. If we are clearing it, unmute the mic.
+		static const FName VoiceChatFeatureName("VoiceChat");
+		if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
+		{
+			UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
+			VoiceChat->SetAudioInputDeviceMuted(ProfileSettings->bPushToTalk);
 		}
 
 		if (bProfileNeedsUpdate) GetPlayerOwner()->SaveProfileSettings();
@@ -1669,11 +1661,6 @@ void SUTSystemSettingsDialog::OnVOIPInputChanged(TSharedPtr<FString> NewSelectio
 	{
 		VOIPInputOptionsText->SetText(*NewSelection.Get());
 	}
-}
-
-void SUTSystemSettingsDialog::OnVoiceChatRecordVolumeChanged(float NewValue)
-{
-
 }
 
 void SUTSystemSettingsDialog::OnVoiceChatPlaybackVolumeChanged(float NewValue)

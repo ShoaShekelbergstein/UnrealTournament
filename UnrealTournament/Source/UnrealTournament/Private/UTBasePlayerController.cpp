@@ -1378,8 +1378,7 @@ void AUTBasePlayerController::ClientEnableNetworkVoice_Implementation(bool bEnab
 void AUTBasePlayerController::StartVOIPTalking()
 {
 	UUTProfileSettings* ProfileSettings = GetProfileSettings();
-	UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
-	if (ProfileSettings && ProfileSettings->bPushToTalk && UserSettings && UserSettings->GetVoiceChatRecordVolume() > SMALL_NUMBER)
+	if (ProfileSettings && ProfileSettings->bPushToTalk)
 	{
 		ToggleSpeaking(true);
 		
