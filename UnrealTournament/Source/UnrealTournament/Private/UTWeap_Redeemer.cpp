@@ -274,7 +274,7 @@ void AUTWeap_Redeemer::DrawWeaponCrosshair_Implementation(UUTHUDWidget* WeaponHu
 	FText FireText = NSLOCTEXT("Redeemer", "PressFire", "Press [FIRE] to launch guided missile.");
 	FText DotText = NSLOCTEXT("Redeemer", "Dot", "*");
 
-	float RenderScale = WeaponHudWidget->GetRenderScale();
+	float RenderScale = 1.f;
 	float PosX = 50.f * RenderScale;
 	float PosY = 0.f;
 	float TimeShown = GetWorld()->GetTimeSeconds() - EquipStartTime;
