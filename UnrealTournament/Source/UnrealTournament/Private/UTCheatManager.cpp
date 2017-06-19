@@ -463,6 +463,24 @@ void UUTCheatManager::God()
 	}
 }
 
+void UUTCheatManager::UnlimitedHealth()
+{
+	AUTCharacter* UTChar = Cast<AUTCharacter>(GetOuterAPlayerController()->GetPawn());
+	if (UTChar != NULL)
+	{
+		if (UTChar->bUnlimitedHealth)
+		{
+			UTChar->bUnlimitedHealth = false;
+			GetOuterAPlayerController()->ClientMessage(TEXT("Unlimited health off"));
+		}
+		else
+		{
+			UTChar->bUnlimitedHealth = true;
+			GetOuterAPlayerController()->ClientMessage(TEXT("Unlimited health on"));
+		}
+	}
+}
+
 void UUTCheatManager::Teleport()
 {
 	AUTCharacter* UTChar = Cast<AUTCharacter>(GetOuterAPlayerController()->GetPawn());

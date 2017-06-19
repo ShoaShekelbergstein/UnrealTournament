@@ -69,6 +69,9 @@ class UNREALTOURNAMENT_API UUTCheatManager : public UCheatManager
 	virtual void BugItWorker(FVector TheLocation, FRotator TheRotation) override;
 
 	virtual void God() override;
+	
+	UFUNCTION(exec)
+	void UnlimitedHealth();
 
 	UFUNCTION(exec)
 	void McpGrantItem(const FString& ItemId);

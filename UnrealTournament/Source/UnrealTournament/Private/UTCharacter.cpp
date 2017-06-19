@@ -979,6 +979,12 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 			if (bApplyDamageToCharacter)
 			{
 				Health -= ResultDamage;
+
+				if (!bUnlimitedHealth)
+				{
+					Health = FMath::Max(1, Health);
+				}
+
 				OnHealthUpdated();
 				bWasFallingWhenDamaged = (GetCharacterMovement() != NULL && (GetCharacterMovement()->MovementMode == MOVE_Falling));
 				if (Health < 0)

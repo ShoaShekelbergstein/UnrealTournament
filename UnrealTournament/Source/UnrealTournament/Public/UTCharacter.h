@@ -484,42 +484,42 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 	void GetSimplifiedSavedPositions(TArray<FSavedPosition>& OutPositions, bool bStopAtTeleport) const;
 
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Pawn")
-		bool bCanRally;
+	bool bCanRally;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Pawn")
-		bool bWasInWarningZone;
+	bool bWasInWarningZone;
 
 	protected:
-		UPROPERTY(BlueprintReadWrite, Category = Pawn, ReplicatedUsing=OnArmorUpdated)
-			int32 ArmorAmount;
+	UPROPERTY(BlueprintReadWrite, Category = Pawn, ReplicatedUsing=OnArmorUpdated)
+	int32 ArmorAmount;
 
-		UPROPERTY()
-			int32 OldArmorAmount;
+	UPROPERTY()
+	int32 OldArmorAmount;
 
 	public:
-		UFUNCTION()
-			virtual void OnArmorUpdated();
+	UFUNCTION()
+	virtual void OnArmorUpdated();
 
-		/** Limit to armor stacking */
+	/** Limit to armor stacking */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Pawn")
 	int32 MaxStackedArmor;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pawn", ReplicatedUsing = UpdateArmorOverlay)
-		class AUTArmor* ArmorType;
+	class AUTArmor* ArmorType;
 
 	UFUNCTION(BlueprintCallable, Category = Pawn)
-		virtual void GiveArmor(class AUTArmor* InArmorType);
+	virtual void GiveArmor(class AUTArmor* InArmorType);
 
 	UFUNCTION(BlueprintCallable, Category = Pawn)
-		virtual void RemoveArmor(int32 Amount);
+	virtual void RemoveArmor(int32 Amount);
 
 	/** Returns current total armor amount. */
 	UFUNCTION(BlueprintCallable, Category = Pawn)
-		virtual int32 GetArmorAmount() const;
+	virtual int32 GetArmorAmount() const;
 
 	/** Updates armor overlay to reflect current armor value. */
 	UFUNCTION(BlueprintCallable, Category = Pawn)
-		virtual void UpdateArmorOverlay();
+	virtual void UpdateArmorOverlay();
 
 	/** return total effective health of this Pawn as a percentage/multiplier of its starting value
 	 * this is used by AI as part of evaluating enemy strength
@@ -776,6 +776,9 @@ class UNREALTOURNAMENT_API AUTCharacter : public ACharacter, public IUTTeamInter
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
 	bool bDamageHurtsHealth;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
+	bool bUnlimitedHealth;
 
 	/** head bone/socket for headshots */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pawn)
