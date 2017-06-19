@@ -149,7 +149,8 @@ public:
 	virtual bool IsTickable() const override;
 	virtual bool IsTickableWhenPaused() const override;
 	virtual void Tick( float DeltaTime ) override;
-
+	
+	void SetFullscreenMode(EWindowMode::Type InFullscreenMode);
 
 private:
 #if !UE_SERVER

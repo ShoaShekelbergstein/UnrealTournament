@@ -5,6 +5,18 @@
 #include "UTGameUserSettings.h"
 #include "UTVoiceChatFeature.h"
 
+#if PLATFORM_WINDOWS
+#undef ERROR_SUCCESS
+#undef ERROR_IO_PENDING
+#undef E_NOTIMPL
+#undef E_FAIL
+#undef S_OK
+#include "AllowWindowsPlatformTypes.h"
+#include "WindowsHWrapper.h"
+#include "WinUser.h"
+#include "HideWindowsPlatformTypes.h"
+#endif
+
 namespace EUTGameUserSettingsVersion
 {
 	enum Type
@@ -75,6 +87,22 @@ void UUTGameUserSettings::ApplySettings(bool bCheckForCommandLineOverrides)
 	SetVoiceChatEnabled(bVoiceChatEnabled);
 	SetVoiceChatPlaybackVolume(VoiceChatPlaybackVolume);
 	SetBotSpeech(BotSpeech);
+}
+
+void UUTGameUserSettings::SetFullscreenMode(EWindowMode::Type InFullscreenMode)
+{
+	Super::SetFullscreenMode(InFullscreenMode);
+
+#if PLATFORM_WINDOWS
+	if (InFullscreenMode == EWindowMode::Fullscreen)
+	{
+		LockSetForegroundWindow(LSFW_LOCK);
+	}
+	else
+	{
+		LockSetForegroundWindow(LSFW_UNLOCK);
+	}
+#endif
 }
 
 void UUTGameUserSettings::SetSoundClassVolume(EUTSoundClass::Type Category, float NewValue)
