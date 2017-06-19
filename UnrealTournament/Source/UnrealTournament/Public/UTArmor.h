@@ -28,7 +28,8 @@ class UNREALTOURNAMENT_API AUTArmor : public AUTInventory
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
 	FOverlayEffect OverlayEffect;
 
-	UPROPERTY(EditDefaultsOnly, Category = Effects)
+	// Deprecated, everything new should use overlay effect
+	UPROPERTY(VisibleDefaultsOnly, Category = Effects)
 	UMaterialInterface* OverlayMaterial;
 
 	/** Hold a descriptive tag that describes what type of armor this is. */
