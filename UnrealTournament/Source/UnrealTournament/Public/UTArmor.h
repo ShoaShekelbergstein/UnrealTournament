@@ -27,11 +27,11 @@ class UNREALTOURNAMENT_API AUTArmor : public AUTInventory
 	/** character overlay applied while this armor is equipped */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
 	FOverlayEffect OverlayEffect;
-
-	// Deprecated, everything new should use overlay effect
-	UPROPERTY(VisibleDefaultsOnly, Category = Effects)
-	UMaterialInterface* OverlayMaterial;
-
+	
+	/** character overlay applied while this armor (armor level > 100) is equipped */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
+	FOverlayEffect ShieldOverlayEffect;
+	
 	/** Hold a descriptive tag that describes what type of armor this is. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Armor)
 	FName ArmorType;
@@ -41,7 +41,7 @@ class UNREALTOURNAMENT_API AUTArmor : public AUTInventory
 
 	/** Effect to spawn on armor hit when above 100 armor. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
-		UParticleSystem* ShieldImpactEffect;
+	UParticleSystem* ShieldImpactEffect;
 
 	/** Effect to spawn on armor hit when 100 armor or less. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
@@ -49,7 +49,7 @@ class UNREALTOURNAMENT_API AUTArmor : public AUTInventory
 
 	/** Sound when attempt to pick up armor fails (can't stack). */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Effects)
-		USoundBase* NoPickupSound;
+	USoundBase* NoPickupSound;
 
 	virtual void AddOverlayMaterials_Implementation(AUTGameState* GS) const override
 	{
@@ -57,9 +57,10 @@ class UNREALTOURNAMENT_API AUTArmor : public AUTInventory
 		{
 			GS->AddOverlayEffect(OverlayEffect);
 		}
-		else
+
+		if (ShieldOverlayEffect.IsValid())
 		{
-			GS->AddOverlayEffect(FOverlayEffect(OverlayMaterial));
+			GS->AddOverlayEffect(ShieldOverlayEffect);
 		}
 	}
 

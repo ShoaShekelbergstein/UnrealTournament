@@ -5543,39 +5543,58 @@ void AUTCharacter::OnArmorUpdated()
 
 void AUTCharacter::UpdateArmorOverlay()
 {
-	if (ArmorType && (ArmorAmount > 50))
+	if (ArmorType && ArmorAmount > 100)
 	{
-		SetCharacterOverlayEffect(ArmorType->OverlayEffect.IsValid() ? ArmorType->OverlayEffect : FOverlayEffect(ArmorType->OverlayMaterial), true);
-		UMaterialInstanceDynamic* MID = OverlayMesh ? Cast<UMaterialInstanceDynamic>(OverlayMesh->GetMaterial(0)) : nullptr;
-		if (MID && (GetNetMode() != NM_DedicatedServer))
+		if (ArmorType->ShieldOverlayEffect.IsValid())
 		{
-			static const FName NAME_Fresnel = FName(TEXT("Fresnel"));
-			float FresnelValue = (ArmorAmount > 100) ? 15.f : 1.f;
-			MID->SetScalarParameterValue(NAME_Fresnel, FresnelValue);
-			static const FName NAME_PushDistance = FName(TEXT("PushDistance"));
-			float PushValue = (ArmorAmount > 100) ? 4.f : 0.2f;
-			MID->SetScalarParameterValue(NAME_PushDistance, PushValue);
-			static const FName NAME_Opacity = FName(TEXT("Opacity"));
-			float OpacityValue = -0.25f;
-			MID->SetScalarParameterValue(NAME_Opacity, OpacityValue);
-
-			AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
-			if (PS != NULL)
+			SetCharacterOverlayEffect(ArmorType->ShieldOverlayEffect, true);
+			SetCharacterOverlayEffect(ArmorType->OverlayEffect, false);
+			UMaterialInstanceDynamic* MID = OverlayMesh ? Cast<UMaterialInstanceDynamic>(OverlayMesh->GetMaterial(0)) : nullptr;
+			if (MID && (GetNetMode() != NM_DedicatedServer))
 			{
-				if (PS->Team != NULL)
+				AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+				if (PS != NULL)
 				{
-					static FName NAME_TeamColor(TEXT("TeamColor"));
-					MID->SetVectorParameterValue(NAME_TeamColor, PS->Team->TeamColor);
+					if (PS->Team != NULL)
+					{
+						static FName NAME_TeamColor(TEXT("TeamColor"));
+						MID->SetVectorParameterValue(NAME_TeamColor, PS->Team->TeamColor);
+					}
+					FLinearColor BaseColor = (PS->Team && (PS->Team->TeamIndex == 1)) ? FLinearColor(1.f, 1.f, 0.f, 1.f) : FLinearColor(0.75f, 0.75f, 0.1f, 1.f);
+					static FName NAME_Color(TEXT("Color"));
+					MID->SetVectorParameterValue(NAME_Color, BaseColor);
 				}
-				FLinearColor BaseColor = (PS->Team && (PS->Team->TeamIndex == 1)) ? FLinearColor(1.f, 1.f, 0.f, 1.f) : FLinearColor(0.75f, 0.75f, 0.1f, 1.f);
-				static FName NAME_Color(TEXT("Color"));
-				MID->SetVectorParameterValue(NAME_Color, BaseColor);
+			}
+		}
+	}
+	else if (ArmorType && ArmorAmount > 50)
+	{
+		if (ArmorType->OverlayEffect.IsValid())
+		{
+			SetCharacterOverlayEffect(ArmorType->ShieldOverlayEffect, false);
+			SetCharacterOverlayEffect(ArmorType->OverlayEffect, true);
+			UMaterialInstanceDynamic* MID = OverlayMesh ? Cast<UMaterialInstanceDynamic>(OverlayMesh->GetMaterial(0)) : nullptr;
+			if (MID && (GetNetMode() != NM_DedicatedServer))
+			{
+				AUTPlayerState* PS = Cast<AUTPlayerState>(PlayerState);
+				if (PS != NULL)
+				{
+					if (PS->Team != NULL)
+					{
+						static FName NAME_TeamColor(TEXT("TeamColor"));
+						MID->SetVectorParameterValue(NAME_TeamColor, PS->Team->TeamColor);
+					}
+					FLinearColor BaseColor = (PS->Team && (PS->Team->TeamIndex == 1)) ? FLinearColor(1.f, 1.f, 0.f, 1.f) : FLinearColor(0.75f, 0.75f, 0.1f, 1.f);
+					static FName NAME_Color(TEXT("Color"));
+					MID->SetVectorParameterValue(NAME_Color, BaseColor);
+				}
 			}
 		}
 	}
 	else if (ArmorType)
 	{
-		SetCharacterOverlayEffect(ArmorType->OverlayEffect.IsValid() ? ArmorType->OverlayEffect : FOverlayEffect(ArmorType->OverlayMaterial), false);
+		SetCharacterOverlayEffect(ArmorType->ShieldOverlayEffect, false);
+		SetCharacterOverlayEffect(ArmorType->OverlayEffect, false);
 	}
 }
 
