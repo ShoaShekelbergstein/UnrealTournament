@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreNet.h"
+#include "Misc/ConfigCacheIni.h"
 
 /**
  * This value indicates which packet version the server is sending. Clients with
