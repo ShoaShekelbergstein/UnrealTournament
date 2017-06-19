@@ -290,8 +290,8 @@ void AUTLineUpZone::SnapToFloor()
 		{
 			FTransform TestLocation = ActorToWorld();
 
-			FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 500.f);
-			FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 1000.f);
+			FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 250.f);
+			FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 500.0f);
 
 			FHitResult Hit;
 			GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
@@ -307,8 +307,8 @@ void AUTLineUpZone::SnapToFloor()
 		{
 			FTransform TestLocation = SpawnLocations[index].Location * ActorToWorld();
 			
-			FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 500.0f);
-			FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 1000.0f);
+			FVector Start(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z + 250.0f);
+			FVector End(TestLocation.GetTranslation().X, TestLocation.GetTranslation().Y, TestLocation.GetTranslation().Z - 500.0f);
 
 			FHitResult Hit;
 			GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, COLLISION_TRACE_WEAPON, FCollisionShape::MakeBox(FVector(12.f)), FCollisionQueryParams(NAME_FreeCam, false, this));
@@ -371,7 +371,7 @@ void AUTLineUpZone::DefaultCreateForOnly1Character()
 	DefaultCameraRotation.Pitch = 0.f;
 	DefaultCameraRotation.Yaw = -180.f;
 	
-	CameraLocation.SetLocation(FVector(200.f, 0.f, 30.f));
+	CameraLocation.SetLocation(FVector(500.f, 0.f, 30.f));
 	CameraLocation.SetRotation(DefaultCameraRotation.Quaternion());
 
 	FTransform StartLocation;
