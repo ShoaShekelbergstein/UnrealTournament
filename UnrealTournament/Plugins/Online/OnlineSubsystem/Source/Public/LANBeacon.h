@@ -165,6 +165,14 @@ public:
 		LanNonce(0),
 		LanQueryTimeLeft(0.0f)
 	{
+		if (!GConfig->GetInt(TEXT("LANSession"), TEXT("LanAnnouncePort"), LanAnnouncePort, GEngineIni))
+		{
+			LanAnnouncePort = LAN_ANNOUNCE_PORT;
+		}
+		if (!GConfig->GetInt(TEXT("LANSession"), TEXT("LanGameUniqueId"), LanGameUniqueId, GEngineIni))
+		{
+			LanGameUniqueId = LAN_UNIQUE_ID;
+		}
 	}
 
 	virtual ~FLANSession()
