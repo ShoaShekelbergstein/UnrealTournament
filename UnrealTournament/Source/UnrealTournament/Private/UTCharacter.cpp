@@ -980,7 +980,7 @@ float AUTCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AC
 			{
 				Health -= ResultDamage;
 
-				if (!bUnlimitedHealth)
+				if (bUnlimitedHealth)
 				{
 					Health = FMath::Max(1, Health);
 				}
