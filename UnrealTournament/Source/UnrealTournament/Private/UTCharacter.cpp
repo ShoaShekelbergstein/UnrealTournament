@@ -7061,7 +7061,7 @@ void AUTCharacter::LeaderHatStatusChanged_Implementation()
 		}
 		if (Hat)
 		{
-			Hat->SetActorHiddenInGame(false);
+			Hat->SetActorHiddenInGame(bInvisible);
 		}
 	}
 }
