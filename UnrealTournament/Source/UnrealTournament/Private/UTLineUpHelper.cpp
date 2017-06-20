@@ -832,19 +832,6 @@ bool AUTLineUpHelper::CanInitiateGroupTaunt(AUTPlayerState* PlayerToCheck)
 
 void AUTLineUpHelper::DestroySpawnedClones()
 {
-	//Restart all controllers used in line up.
-	AUTGameMode* UTGM = Cast<AUTGameMode>(GetWorld()->GetAuthGameMode());
-	if (UTGM)
-	{
-		for (FLineUpSlot& Slot : LineUpSlots)
-		{
-			if (Slot.ControllerInSpot && Slot.ControllerInSpot->PlayerState)
-			{
-				UTGM->RestartPlayer(Slot.ControllerInSpot);
-			}
-		}
-	}
-
 	if (PlayerPreviewCharacters.Num() > 0)
 	{
 		for (int index = 0; index < PlayerPreviewCharacters.Num(); ++index)
