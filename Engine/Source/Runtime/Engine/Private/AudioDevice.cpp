@@ -2608,7 +2608,7 @@ void FAudioDevice::HandlePause(bool bGameTicking, bool bGlobalPause)
 		{
 			Sources[i]->SetPauseByGame(false);
 		}
-		else if ( (!bGameTicking || bGlobalPause) && !Sources[i]->IsPausedByGame())
+		else if ( (!bGameTicking || bGlobalPause) && !GIsEditor && !Sources[i]->IsPausedByGame())
 		{
 			Sources[i]->SetPauseByGame(true);
 		}

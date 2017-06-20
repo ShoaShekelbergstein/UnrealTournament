@@ -21,7 +21,7 @@ void SUTDLCWarningDialog::Construct(const FArguments& InArgs)
 							.DialogPosition(InArgs._DialogPosition)
 							.DialogAnchorPoint(InArgs._DialogAnchorPoint)
 							.ContentPadding(InArgs._ContentPadding)
-							.ButtonMask(UTDIALOG_BUTTON_OK + UTDIALOG_BUTTON_CANCEL)
+							.ButtonMask(UTDIALOG_BUTTON_YES + UTDIALOG_BUTTON_NO)
 							.OnDialogResult(InArgs._OnDialogResult)
 						);
 

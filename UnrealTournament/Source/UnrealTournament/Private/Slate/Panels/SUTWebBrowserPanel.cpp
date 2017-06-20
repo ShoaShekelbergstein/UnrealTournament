@@ -171,7 +171,7 @@ bool SUTWebBrowserPanel::BeforePopup(FString TargetURL, FString FrameName)
 		return OnBeforePopup.Execute(TargetURL, FrameName);
 	}
 
-	if (TargetURL.Find(TEXT("https://www.epicgames.com/"),ESearchCase::IgnoreCase) == 0 || TargetURL.Find(TEXT("https://www.epic.gm/"),ESearchCase::IgnoreCase) == 0)
+	if (TargetURL.Find(TEXT("https://www.epicgames.com/"),ESearchCase::IgnoreCase) == 0 || TargetURL.Find(TEXT("https://www.epic.gm/"),ESearchCase::IgnoreCase) == 0 || TargetURL.Find(TEXT("https://www.youtube.com/"), ESearchCase::IgnoreCase) == 0)
 	{
 		FPlatformProcess::LaunchURL(*TargetURL, NULL, NULL);
 		return true;
