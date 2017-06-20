@@ -128,7 +128,7 @@ class UNREALTOURNAMENT_API SUTSystemSettingsDialog : public SUTDialogBase
 {
 public:
 	SLATE_BEGIN_ARGS(SUTSystemSettingsDialog)
-	: _DialogSize(FVector2D(1000,900))
+	: _DialogSize(FVector2D(1100,900))
 	, _bDialogSizeIsRelative(false)
 	, _DialogPosition(FVector2D(0.5f,0.5f))
 	, _DialogAnchorPoint(FVector2D(0.5f,0.5f))
