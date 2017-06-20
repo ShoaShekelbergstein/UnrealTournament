@@ -399,6 +399,8 @@ void AUTBasePlayerController::ClientSay_Implementation(AUTPlayerState* Speaker, 
 		}
 	}
 
+	if (IsPlayerGameMuted(Speaker)) return;
+
 	FClientReceiveData ClientData;
 	ClientData.LocalPC = this;
 	ClientData.MessageIndex = (Destination == ChatDestinations::Team) ? 1 : 0;
