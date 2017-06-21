@@ -98,7 +98,7 @@ AUTGameMode::AUTGameMode(const class FObjectInitializer& ObjectInitializer)
 	TimeLimit = 15;
 	bUseSeamlessTravel = false;
 	CountDown = 3;
-	MatchIntroTime = 7.f;
+	MatchIntroTime = 10.f;
 	bPauseable = false;
 	RespawnWaitTime = 2.f;
 	ForceRespawnTime = 5.f;
