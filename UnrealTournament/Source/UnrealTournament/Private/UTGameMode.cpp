@@ -1017,7 +1017,7 @@ AUTBotPlayer* AUTGameMode::AddAssetBot(const FStringAssetReference& BotAssetPath
 
 AUTBotPlayer* AUTGameMode::ForceAddBot(uint8 TeamNum)
 {
-	if (bOfflineChallenge)
+	if (bOfflineChallenge || bBasicTrainingGame)
 	{
 		return NULL;
 	}
@@ -1026,7 +1026,7 @@ AUTBotPlayer* AUTGameMode::ForceAddBot(uint8 TeamNum)
 }
 AUTBotPlayer* AUTGameMode::ForceAddNamedBot(const FString& BotName, uint8 TeamNum)
 {
-	if (bOfflineChallenge)
+	if (bOfflineChallenge || bBasicTrainingGame)
 	{
 		return NULL;
 	}
@@ -1035,7 +1035,7 @@ AUTBotPlayer* AUTGameMode::ForceAddNamedBot(const FString& BotName, uint8 TeamNu
 
 void AUTGameMode::SetBotCount(uint8 NewCount)
 {
-	if (bOfflineChallenge)
+	if (bOfflineChallenge || bBasicTrainingGame)
 	{
 		return;
 	}
@@ -1044,7 +1044,7 @@ void AUTGameMode::SetBotCount(uint8 NewCount)
 
 void AUTGameMode::AddBots(uint8 Num)
 {
-	if (bOfflineChallenge)
+	if (bOfflineChallenge || bBasicTrainingGame)
 	{
 		return;
 	}
@@ -1053,7 +1053,7 @@ void AUTGameMode::AddBots(uint8 Num)
 
 void AUTGameMode::KillBots()
 {
-	if (bOfflineChallenge)
+	if (bOfflineChallenge || bBasicTrainingGame)
 	{
 		return;
 	}
@@ -1071,7 +1071,7 @@ void AUTGameMode::KillBots()
 
 bool AUTGameMode::AllowRemovingBot(AUTBotPlayer* B)
 {
-	if (bOfflineChallenge)
+	if (bOfflineChallenge || bBasicTrainingGame)
 	{
 		return false;
 	}
