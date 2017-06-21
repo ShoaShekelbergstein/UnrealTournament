@@ -33,6 +33,7 @@ void AUTLineUpHelper::CalculateLineUpSlots()
 	static const int FFATeamNum = 255;
 
 	LineUpSlots.Empty();
+	UnusedLineUpSlots.Empty();
 
 	AUTGameState* UTGameState = GetWorld()->GetGameState<AUTGameState>();
 	if (UTGameState)
@@ -98,6 +99,7 @@ void AUTLineUpHelper::CalculateLineUpSlots()
 				// This is a team slot, need to fill with someone on the correct team
 				if (TeamNumberToFill >= 0)
 				{
+					bool bFoundMatch = false;
 					for (int index = 0; index < UnassignedControllers.Num(); ++index)
 					{
 						const IUTTeamInterface* TeamInterface = Cast<IUTTeamInterface>(UnassignedControllers[index]);
@@ -112,9 +114,19 @@ void AUTLineUpHelper::CalculateLineUpSlots()
 
 								//Found highest rated fit, don't need to look further
 								LineUpSlots.Add(NewSlot);
+								bFoundMatch = true;
 								break;
 							}
 						}
+					}
+
+					if (!bFoundMatch)
+					{
+						//Didn't find a fit. Add to unused slots.
+						NewSlot.ControllerInSpot = nullptr;
+						NewSlot.CharacterInSpot = nullptr;
+						NewSlot.TeamNumOfSlot = TeamNumberToFill;
+						UnusedLineUpSlots.Add(NewSlot);
 					}
 				}
 				//Just grab highest rated person for this spot as its FFA
@@ -128,6 +140,14 @@ void AUTLineUpHelper::CalculateLineUpSlots()
 						NewSlot.TeamNumOfSlot = FFATeamNum;
 
 						LineUpSlots.Add(NewSlot);
+					}
+					else
+					{
+						//Didn't find a fit. Add to unused slots.
+						NewSlot.ControllerInSpot = nullptr;
+						NewSlot.CharacterInSpot = nullptr;
+						NewSlot.TeamNumOfSlot = FFATeamNum;
+						UnusedLineUpSlots.Add(NewSlot);
 					}
 				}
 			}
@@ -751,72 +771,95 @@ void AUTLineUpHelper::SortControllers(TArray<AController*>& ControllersToSort)
 
 void AUTLineUpHelper::ServerOnPlayerChange(AUTPlayerState* PlayerChanged)
 {
-	//TArray<AController*> ControllersThatNeedRearrange;
-	//TArray<FLineUpSlot*> OpenSlots;
-
-	////CalculateLineUpSlots();
-
-	//if (PlayerChanged && GetWorld() && (LineUpSlots.Num() > 0) && (ActiveType == LineUpTypes::Intro))
-	//{
-	//	AController* Controller = Cast<AController>(PlayerChanged->GetOwner());
-	//	if (Controller)
-	//	{
-	//		ControllersThatNeedRearrange.Add(Controller);
-	//	}
-
-	//	for (FLineUpSlot& Slot : LineUpSlots)
-	//	{
-	//		AUTCharacter* UTChar = Slot.ControllerInSpot ? Cast<AUTCharacter>(Slot.ControllerInSpot->GetPawn()) : nullptr;
-	//		if (!UTChar)
-	//		{
-	//			OpenSlots.Add(&Slot);
-	//		}
-	//		else if (UTChar && (UTChar->GetTeamNum() != Slot.TeamNumOfSlot))
-	//		{
-	//			ControllersThatNeedRearrange.Add(Slot.ControllerInSpot);
-	//		}
-	//	}
-
-	//	for (int CharIndex = 0; CharIndex < ControllersThatNeedRearrange.Num(); ++CharIndex)
-	//	{
-	//		IUTTeamInterface* TeamInterface = Cast<IUTTeamInterface>(ControllersThatNeedRearrange[CharIndex]);
-	//		if (TeamInterface)
-	//		{
-	//			for (int SlotIndex = 0; SlotIndex < OpenSlots.Num(); ++SlotIndex)
-	//			{
-	//				if (OpenSlots[SlotIndex]->TeamNumOfSlot == TeamInterface->GetTeamNum())
-	//				{
-	//					OpenSlots[SlotIndex]->ControllerInSpot = ControllersThatNeedRearrange[CharIndex];
-	//					OpenSlots[SlotIndex]->CharacterInSpot = nullptr;
-
-	//					bIsPlacingPlayers = true;
-	//					SpawnCharacterFromLineUpSlot(*OpenSlots[SlotIndex]);
-	//					bIsPlacingPlayers = false;
-	//					
-	//					OpenSlots.RemoveAt(SlotIndex);
-	//					break;
-	//				}
-	//			}
-	//		}
-	//	}
-
-	//	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PlayerChanged->GetOwner());
-	//	if (UTPC)
-	//	{
-	//		UTPC->ClientLineUpIntroPlayerChange(PlayerChanged);
-	//	}
-	//}
-}
-
-void AUTLineUpHelper::ClientOnPlayerChange(AUTPlayerState* PlayerChanged)
-{
-	/*IntroBreakSlotsIntoTeams();
-	IntroSetFirstSlotToLocalPlayer();
-
 	if (PlayerChanged)
 	{
+		//If true, we need to add the old line up location to available spots
+		if (PlayerChanged->LineUpLocation != INDEX_NONE)
+		{
+			if (LineUpSlots.IsValidIndex(PlayerChanged->LineUpLocation) && (LineUpSlots[PlayerChanged->LineUpLocation].TeamNumOfSlot != PlayerChanged->GetTeamNum()))
+			{
+				LineUpSlots[PlayerChanged->LineUpLocation].CharacterInSpot = nullptr;
+				LineUpSlots[PlayerChanged->LineUpLocation].ControllerInSpot = nullptr;
+				UnusedLineUpSlots.Insert(LineUpSlots[PlayerChanged->LineUpLocation], 0);
+				PlayerChanged->LineUpLocation = INDEX_NONE;
+			}
+		}
+
+		TArray<AUTPlayerState*> NewPlayerStates;
+		for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+		{
+			AUTPlayerState* UTPS = Cast<AUTPlayerState>((*It)->PlayerState);
+			if (UTPS && (UTPS->LineUpLocation == INDEX_NONE))
+			{
+				for (FLineUpSlot& Slot : UnusedLineUpSlots)
+				{
+					if (Slot.TeamNumOfSlot == UTPS->GetTeamNum())
+					{
+						Slot.ControllerInSpot = (It->Get());
+						
+						bIsPlacingPlayers = true;
+						AUTCharacter* NewUTChar = SpawnCharacterFromLineUpSlot(Slot);
+						if (NewUTChar)
+						{
+							NewPlayerStates.Add(UTPS);
+
+							NewUTChar->TurnOff();
+							AUTLineUpHelper::ApplyCharacterAnimsForLineUp(NewUTChar);
+
+							if (LineUpSlots.Contains(Slot))
+							{
+								const int LineUpSlotLocation = LineUpSlots.Find(Slot);
+								UTPS->LineUpLocation = LineUpSlotLocation;
+							}
+							else
+							{
+								const int LineUpSlotLocation = LineUpSlots.Add(Slot);
+								UTPS->LineUpLocation = LineUpSlotLocation; 
+							}
+
+							if (LineUpSlots.IsValidIndex(UTPS->LineUpLocation))
+							{
+								LineUpSlots[UTPS->LineUpLocation].CharacterInSpot = NewUTChar;
+								LineUpSlots[UTPS->LineUpLocation].ControllerInSpot = It->Get();
+							}
+
+							UnusedLineUpSlots.RemoveSingle(Slot);
+
+							bIsPlacingPlayers = false;
+							break;
+						}
+						bIsPlacingPlayers = false;
+					}
+				}
+			}
+		}
+
+		for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+		{
+			AUTPlayerController* UTPC = Cast<AUTPlayerController>(It->Get());
+			if (UTPC)
+			{
+				for (AUTPlayerState* NewPS : NewPlayerStates)
+				{
+					UTPC->ClientLineUpIntroPlayerChange(NewPS);
+				}
+			}
+		}
+
+		FlagFixUp();
+	}
+}
+
+void AUTLineUpHelper::ClientLineUpIntroPlayerChange(AUTPlayerState* PlayerChanged)
+{
+	if (PlayerChanged && PlayerChanged->GetUTCharacter())
+	{
 		PlayIntroClientAnimationOnCharacter(PlayerChanged->GetUTCharacter(), false);
-	}*/
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::ClientLineUpIntroPlayerChange, PlayerChanged));
+	}
 }
 
 bool AUTLineUpHelper::CanInitiateGroupTaunt(AUTPlayerState* PlayerToCheck)
@@ -992,6 +1035,16 @@ void AUTLineUpHelper::IntroSetFirstSlotToLocalPlayer()
 					Intro_MyTeamLineUpSlots[0]->ControllerInSpot = UTPC;
 					Intro_MyTeamLineUpSlots[0]->CharacterInSpot = Cast<AUTCharacter>(UTPC->GetPawn());
 					IntroSwapMeshComponentLocations(Intro_MyTeamLineUpSlots[0]->CharacterInSpot, CurrentLocalPlayerSlot->CharacterInSpot);
+
+					//Swap LineUpLocations
+					AUTPlayerState* LocalUTPS = Intro_MyTeamLineUpSlots[0]->CharacterInSpot ? Cast<AUTPlayerState>(Intro_MyTeamLineUpSlots[0]->CharacterInSpot->PlayerState) : nullptr;
+					AUTPlayerState* OtherUTPS = CurrentLocalPlayerSlot->CharacterInSpot ? Cast<AUTPlayerState>(CurrentLocalPlayerSlot->CharacterInSpot->PlayerState) : nullptr;
+					if (LocalUTPS && OtherUTPS)
+					{
+						int LocalLineUpLoc = LocalUTPS->LineUpLocation;
+						LocalUTPS->LineUpLocation = OtherUTPS->LineUpLocation;
+						OtherUTPS->LineUpLocation = LocalLineUpLoc;
+					}
 				}
 			}
 		}
@@ -1067,10 +1120,6 @@ void AUTLineUpHelper::PlayIntroClientAnimationOnCharacter(AUTCharacter* UTChar, 
 					}
 				}
 			}
-		}
-		else
-		{
-			UE_LOG(LogUTLineUp, Warning, TEXT("FAIL 2"));
 		}
 	}
 }

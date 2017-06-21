@@ -20,6 +20,11 @@ struct FLineUpSlot
 
 	UPROPERTY()
 	int TeamNumOfSlot;
+
+	bool operator==(const FLineUpSlot& other) const
+	{
+		return ((&other == this) || ((other.SpotLocation.Equals(SpotLocation)) && (other.TeamNumOfSlot == TeamNumOfSlot)));
+	}
 };
 
 UCLASS()
@@ -37,7 +42,7 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 	void ServerOnPlayerChange(AUTPlayerState* PlayerChanged);
 
 	UFUNCTION()
-	void ClientOnPlayerChange(AUTPlayerState* PlayerChanged);
+	void ClientLineUpIntroPlayerChange(AUTPlayerState* PlayerChanged);
 
 	UFUNCTION()
 	void InitializeLineUp(LineUpTypes LineUpType);
@@ -144,6 +149,9 @@ protected:
 
 	UPROPERTY(Replicated, ReplicatedUsing = OnRep_CheckForClientIntro)
 	TArray<FLineUpSlot> LineUpSlots;
+
+	UPROPERTY()
+	TArray<FLineUpSlot> UnusedLineUpSlots;
 
 private:
 

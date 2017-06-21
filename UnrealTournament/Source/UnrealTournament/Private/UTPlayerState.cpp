@@ -458,7 +458,7 @@ void AUTPlayerState::NotifyTeamChanged_Implementation()
 	}
 
 	AUTGameState* UTGS = Cast<AUTGameState>(GetWorld()->GetGameState());
-	if (UTGS && UTGS->IsLineUpActive() && UTGS->ActiveLineUpHelper && (UTGS->ActiveLineUpHelper->ActiveType == LineUpTypes::Intro))
+	if (UTGS && UTGS->IsLineUpActive() && UTGS->ActiveLineUpHelper)
 	{
 		UTGS->ActiveLineUpHelper->ServerOnPlayerChange(this);
 	}

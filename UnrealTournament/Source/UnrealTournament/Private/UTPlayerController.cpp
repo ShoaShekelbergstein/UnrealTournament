@@ -5205,7 +5205,7 @@ void AUTPlayerController::ClientLineUpIntroPlayerChange_Implementation(AUTPlayer
 	AUTGameState* UTGS = GetWorld() ? Cast<AUTGameState>(GetWorld()->GetGameState()) : nullptr;
 	if (UTGS && UTGS->ActiveLineUpHelper)
 	{
-		UTGS->ActiveLineUpHelper->ClientOnPlayerChange(PlayerChanged);
+		UTGS->ActiveLineUpHelper->ClientLineUpIntroPlayerChange(PlayerChanged);
 	}
 }
 
