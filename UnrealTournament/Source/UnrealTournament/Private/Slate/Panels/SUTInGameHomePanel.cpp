@@ -372,7 +372,7 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 
 				AUTGameState* UTGameState = PlayerOwner->GetWorld()->GetGameState<AUTGameState>();
 
-				if (!SelectedPlayer->bIsABot && (UTGameState == nullptr || UTGameState->GetMatchState() != MatchState::InProgress || OwnerPlayerState == nullptr || !UTGameState->bTeamGame || OwnerPlayerState->GetTeamNum() == SelectedPlayer->GetTeamNum()))
+				if (!SelectedPlayer->bIsABot && SelectedPlayer.Get() != PlayerOwner->PlayerController->PlayerState)
 				{
 					// Mute Player
 					MenuBox->AddSlot()
@@ -380,9 +380,9 @@ void SUTInGameHomePanel::ShowContextMenu(UUTScoreboard* Scoreboard, FVector2D Co
 						[
 							SNew(SUTButton)
 							.OnClicked(this, &SUTInGameHomePanel::ContextCommand, ECONTEXT_COMMAND_MutePlayer, SelectedPlayer)
-						.ButtonStyle(SUTStyle::Get(), "UT.ContextMenu.Item")
-						.Text(this, &SUTInGameHomePanel::GetMuteLabelText)
-						.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
+							.ButtonStyle(SUTStyle::Get(), "UT.ContextMenu.Item")
+							.Text(this, &SUTInGameHomePanel::GetMuteLabelText)
+							.TextStyle(SUTStyle::Get(), "UT.Font.NormalText.Small")
 						];
 				}
 
@@ -740,14 +740,13 @@ FText SUTInGameHomePanel::GetMuteLabelText() const
 	
 	if (!SelectedPlayer.IsValid()) return FText::GetEmpty();
 
-	TSharedPtr<const FUniqueNetId> Id = SelectedPlayer->UniqueId.GetUniqueNetId();
-	bool bIsMuted = Id.IsValid() && PlayerOwner->PlayerController->IsPlayerMuted(Id.ToSharedRef().Get());
+	bool bIsMuted = PC->IsPlayerGameMuted(SelectedPlayer.Get());
 	
 	static const FName VoiceChatFeatureName("VoiceChat");
 	if (IModularFeatures::Get().IsModularFeatureAvailable(VoiceChatFeatureName))
 	{
 		UTVoiceChatFeature* VoiceChat = &IModularFeatures::Get().GetModularFeature<UTVoiceChatFeature>(VoiceChatFeatureName);
-		bIsMuted = VoiceChat->IsPlayerMuted(SelectedPlayer->PlayerName);
+		bIsMuted = bIsMuted | VoiceChat->IsPlayerMuted(SelectedPlayer->PlayerName);
 	}
 
 	return bIsMuted ? NSLOCTEXT("SUTInGameHomePanel","Unmute","Unmute Player") : NSLOCTEXT("SUTInGameHomePanel","Mute","Mute Player");

@@ -97,12 +97,13 @@ FReply SUTDLCWarningDialog::ReportClicked()
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("ServerName"), ServerName));
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("InstanceGUID"), InstanceGUID));
 				ParamArray.Add(FAnalyticsEventAttribute(TEXT("ConnectionString"), ConnectionString));
-				FUTAnalytics::SetClientInitialParameters(Cast<AUTPlayerController>(PlayerOwner->PlayerController), ParamArray, false);
+				FUTAnalytics::SetClientInitialParameters(Cast<AUTBasePlayerController>(PlayerOwner->PlayerController), ParamArray, false);
 				FUTAnalytics::GetProvider().RecordEvent( TEXT("ServerAbuseReport"), ParamArray );
 			}
 		}
 	}
 
+	PlayerOwner->ReturnToMainMenu();
 	return OnButtonClick(UTDIALOG_BUTTON_CANCEL);
 }
 
