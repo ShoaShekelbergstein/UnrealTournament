@@ -5547,8 +5547,9 @@ void AUTCharacter::UpdateArmorOverlay()
 	{
 		if (ArmorType->ShieldOverlayEffect.IsValid())
 		{
-			SetCharacterOverlayEffect(ArmorType->ShieldOverlayEffect, true);
 			SetCharacterOverlayEffect(ArmorType->OverlayEffect, false);
+			SetCharacterOverlayEffect(ArmorType->ShieldOverlayEffect, true);
+			
 			UMaterialInstanceDynamic* MID = OverlayMesh ? Cast<UMaterialInstanceDynamic>(OverlayMesh->GetMaterial(0)) : nullptr;
 			if (MID && (GetNetMode() != NM_DedicatedServer))
 			{
