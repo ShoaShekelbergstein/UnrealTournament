@@ -363,13 +363,13 @@ public:
 
 			NewRuleset->Categories.Empty(); 
 			NewRuleset->Categories.Add(TEXT("QuickPlay"));
-			NewRuleset->MaxPlayers = 8;
+			NewRuleset->MaxPlayers = 6;
 			NewRuleset->DisplayTexture = TEXT("Texture2D'/Game/RestrictedAssets/UI/GameModeBadges/GB_DM.GB_DM'");
 			NewRuleset->GameMode = TEXT("/Script/UnrealTournament.UTDMGameMode");
 			NewRuleset->GameOptions = FString(TEXT("?TimeLimit=10?GoalScore=0"));
 			NewRuleset->bTeamGame = false;
 			NewRuleset->MaxTeamCount = 1;
-			NewRuleset->MaxTeamSize = 8;
+			NewRuleset->MaxTeamSize = 6;
 			NewRuleset->MaxPartySize = 5;
 
 			NewRuleset->EpicMaps = "/Game/RestrictedAssets/Maps/DM-Outpost23";
