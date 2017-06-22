@@ -1181,7 +1181,6 @@ FLineUpSlot* AUTLineUpHelper::Intro_GetRandomUnSpawnedLineUpSlot()
 
 void AUTLineUpHelper::IntroSpawnDelayedCharacter()
 {
-
 	if (LineUpSlots.IsValidIndex(Intro_TotalSpawnedPlayers))
 	{
 		UUTLocalPlayer* LocalPlayer = Cast<UUTLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController());
@@ -1206,7 +1205,7 @@ void AUTLineUpHelper::IntroSpawnDelayedCharacter()
 
 	if (LineUpSlots.IsValidIndex(Intro_TotalSpawnedPlayers))
 	{
-		const float TimeToNextSpawn = (Intro_TimeDelaysOnAnims[Intro_TotalSpawnedPlayers] - Intro_TimeDelaysOnAnims[Intro_TotalSpawnedPlayers - 1]);
+		const float TimeToNextSpawn = LineUpSlots.IsValidIndex(Intro_TotalSpawnedPlayers - 1) ? (Intro_TimeDelaysOnAnims[Intro_TotalSpawnedPlayers] - Intro_TimeDelaysOnAnims[Intro_TotalSpawnedPlayers - 1]) : Intro_TimeDelaysOnAnims[Intro_TotalSpawnedPlayers];
 		GetWorld()->GetTimerManager().SetTimer(Intro_NextClientSpawnHandle, FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::IntroSpawnDelayedCharacter), TimeToNextSpawn, false);
 	}
 }
