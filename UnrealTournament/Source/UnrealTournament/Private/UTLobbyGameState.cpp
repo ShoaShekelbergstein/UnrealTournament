@@ -993,16 +993,16 @@ bool AUTLobbyGameState::AddDedicatedInstance(FGuid InstanceGUID, const FString& 
 	return false;
 }
 
-AUTLobbyMatchInfo* AUTLobbyGameState::FindMatch(FGuid MatchID)
+AUTLobbyMatchInfo* AUTLobbyGameState::FindMatch(FGuid MatchIDIn)
 {
 	for (int32 i=0; i<AvailableMatches.Num(); i++)
 	{
-		if (AvailableMatches[i]->UniqueMatchID == MatchID) return AvailableMatches[i];
+		if (AvailableMatches[i]->UniqueMatchID == MatchIDIn) return AvailableMatches[i];
 	}
 
 	for (int32 i=0; i<GameInstances.Num(); i++)
 	{
-		if (GameInstances[i].MatchInfo->UniqueMatchID == MatchID && GameInstances[i].MatchInfo->CurrentState == ELobbyMatchState::InProgress) return GameInstances[i].MatchInfo;
+		if (GameInstances[i].MatchInfo->UniqueMatchID == MatchIDIn && GameInstances[i].MatchInfo->CurrentState == ELobbyMatchState::InProgress) return GameInstances[i].MatchInfo;
 	}
 
 	return NULL;

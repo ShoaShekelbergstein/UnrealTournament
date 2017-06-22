@@ -12,6 +12,7 @@ namespace EGenericAnalyticParam
 		BotSkill,
 		InactivePlayerList,
 		ServerInstanceGUID,
+		MatchReplayGUID,
 		ServerMatchGUID,
 		ContextGUID,
 		MatchTime,

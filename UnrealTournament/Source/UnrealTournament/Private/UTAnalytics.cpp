@@ -135,6 +135,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(BotSkill);
 	AddGenericParamName(InactivePlayerList);
 	AddGenericParamName(ServerInstanceGUID);
+	AddGenericParamName(MatchReplayGUID);
 	AddGenericParamName(ServerMatchGUID);
 	AddGenericParamName(ContextGUID);
 	AddGenericParamName(MatchTime);
@@ -368,9 +369,14 @@ void FUTAnalytics::SetClientInitialParameters(AUTBasePlayerController* UTPC, TAr
 			AUTGameState* UTGS = UTPC->GetWorld()->GetGameState<AUTGameState>();
 			if (UTGS)
 			{
-				if (UTGS->ReplayID.IsEmpty())
+				if (!UTGS->ReplayID.IsEmpty())
 				{
-					ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGS->ReplayID));
+					ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MatchReplayGUID), UTGS->ReplayID));
+				}
+
+				if (!UTGS->MatchID.IsValid())
+				{
+					ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGS->MatchID));
 				}
 
 				AUTBaseGameMode* UTGM = Cast<AUTBaseGameMode>(UTPC->GetWorld()->GetAuthGameMode());
@@ -418,7 +424,12 @@ void FUTAnalytics::SetMatchInitialParameters(AUTGameMode* UTGM, TArray<FAnalytic
 		{
 			if (!UTGM->UTGameState->ReplayID.IsEmpty())
 			{
-				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGM->UTGameState->ReplayID));
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MatchReplayGUID), UTGM->UTGameState->ReplayID));
+			}
+			
+			if (!UTGM->UTGameState->MatchID.IsValid())
+			{
+				ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerMatchGUID), UTGM->UTGameState->MatchID));
 			}
 		}
 

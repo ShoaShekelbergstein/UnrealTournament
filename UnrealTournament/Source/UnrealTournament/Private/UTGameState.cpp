@@ -354,6 +354,7 @@ void AUTGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLif
 	DOREPLIFETIME_CONDITION(AUTGameState, ServerInstanceGUID, COND_InitialOnly);
 
 	DOREPLIFETIME(AUTGameState, ReplayID);
+	DOREPLIFETIME(AUTGameState, MatchID);
 	DOREPLIFETIME(AUTGameState, LeadLineUpPlayer);
 
 	DOREPLIFETIME(AUTGameState, FCFriendlyLocCount);

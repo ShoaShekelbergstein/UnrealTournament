@@ -617,6 +617,8 @@ void AUTGameMode::InitGameState()
 				UTGameState->AIDifficulty = (GameDifficulty > 4.f) ? 3 : 2;
 			}
 		}
+
+		UTGameState->MatchID = FGuid::NewGuid();
 	}
 	else
 	{
