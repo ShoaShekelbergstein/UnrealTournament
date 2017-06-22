@@ -843,7 +843,7 @@ void UUTMatchmaking::TravelPartyToServer()
 
 					if (FUTAnalytics::IsAvailable())
 					{
-						FUTAnalytics::FireEvent_UTMatchMakingJoinGame(Cast<AUTBasePlayerController>(GetOwningController()),MatchRatingType, (GetWorld()->RealTimeSeconds - TimeMatchmakingStarted));
+						FUTAnalytics::FireEvent_UTMatchMakingJoinGame(Cast<AUTBasePlayerController>(GetOwningController()), CachedMatchmakingSearchParams.GetMatchmakingParams().TeamElo, (GetWorld()->RealTimeSeconds - TimeMatchmakingStarted));
 					}
 				}
 			}

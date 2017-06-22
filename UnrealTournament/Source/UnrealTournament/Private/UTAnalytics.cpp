@@ -1147,7 +1147,7 @@ void FUTAnalytics::FireEvent_UTMatchMakingCancelled(AUTBasePlayerController* UTP
 *
 * @Comments
 */
-void FUTAnalytics::FireEvent_UTMatchMakingJoinGame(AUTBasePlayerController* UTPC, FString& TeamELORating, float SeekTime)
+void FUTAnalytics::FireEvent_UTMatchMakingJoinGame(AUTBasePlayerController* UTPC, int32 TeamELORating, float SeekTime)
 {
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
 	if (UTPC && AnalyticsProvider.IsValid())

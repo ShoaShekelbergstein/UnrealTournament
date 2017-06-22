@@ -74,7 +74,7 @@ public:
 
 	static void FireEvent_UTMatchMakingStart(AUTBasePlayerController* UTPC, struct FMatchmakingParams* MatchParams);
 	static void FireEvent_UTMatchMakingCancelled(AUTBasePlayerController* UTPC, float SeekTime);
-	static void FireEvent_UTMatchMakingJoinGame(AUTBasePlayerController* UTPC, FString& TeamELORating, float SeekTime);
+	static void FireEvent_UTMatchMakingJoinGame(AUTBasePlayerController* UTPC, int32 TeamELORating, float SeekTime);
 	static void FireEvent_UTMatchMakingFailed(AUTBasePlayerController* UTPC, FString LastMatchMakingSessionId);
 
 	/* GameMode Metrics*/
