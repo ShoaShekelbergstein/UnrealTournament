@@ -899,6 +899,7 @@ void AUTFlagRunGameState::AddMinorRoundHighlights(AUTPlayerState* PS)
 		else if (PS->RoundDamageDone > 150)
 		{
 			PS->MatchHighlights[0] = HighlightNames::DamageAward;
+			PS->MatchHighlightData[0] = PS->RoundDamageDone;
 		}
 		else
 		{
