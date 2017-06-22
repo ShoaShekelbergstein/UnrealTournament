@@ -251,6 +251,12 @@ void AUTLineUpHelper::CleanUp()
 	{
 		for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 		{
+			//skip any demo recorder
+			if (Cast<AUTDemoRecSpectator>(*Iterator) != nullptr)
+			{
+				continue;
+			}
+
 			AUTPlayerState* UTPS = Cast<AUTPlayerState>((*Iterator)->PlayerState);
 			if (UTPS)
 			{
@@ -788,6 +794,12 @@ void AUTLineUpHelper::ServerOnPlayerChange(AUTPlayerState* PlayerChanged)
 		TArray<AUTPlayerState*> NewPlayerStates;
 		for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
 		{
+			//Skip demo recorder
+			if (Cast<AUTDemoRecSpectator>(*It) != nullptr)
+			{
+				continue;
+			}
+
 			AUTPlayerState* UTPS = Cast<AUTPlayerState>((*It)->PlayerState);
 			if (UTPS && (UTPS->LineUpLocation == INDEX_NONE))
 			{
