@@ -340,7 +340,7 @@ void AUTRemoteRedeemer::OnShotDown()
 
 	if (!bExploded)
 	{
-		if (!bShotDown)
+		if (bShotDown)
 		{
 			CollisionFreeRadius *= 0.8f;
 		}
