@@ -5,6 +5,7 @@
 =============================================================================*/
 
 #include "ProfilingDebugging/MallocProfiler.h"
+#include "ProfilingDebugging/ProfilingHelpers.h"
 #include "Misc/DateTime.h"
 #include "GenericPlatform/GenericPlatformStackWalk.h"
 #include "Logging/LogMacros.h"
@@ -14,6 +15,7 @@
 #include "Misc/Paths.h"
 #include "HAL/TlsAutoCleanup.h"
 #include "Misc/App.h"
+#include "Misc/CoreDelegates.h"
 
 #if USE_MALLOC_PROFILER
 
