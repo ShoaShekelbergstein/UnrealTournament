@@ -9,6 +9,8 @@
 #include "PerfCountersHelpers.h"
 #include "QosInterface.h"
 
+#include "UTGameEngine.h"
+
 #include "UTMenuGameMode.h"
 #include "UTFlagRunGame.h"
 #include "UTFlagRunGameState.h"
@@ -1666,31 +1668,39 @@ void FUTAnalytics::FireEvent_UTCancelOnboarding(AUTPlayerController* UTPC)
 void FUTAnalytics::FireEvent_UTGraphicsSettings(AUTPlayerController* UTPC)
 {
 	UUTGameUserSettings* UserSettings = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
+	UUTGameEngine* UTEngine = Cast<UUTGameEngine>(GEngine);
 
 	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
-	if (UserSettings && UTPC && AnalyticsProvider.IsValid())
+	if ( (UserSettings || UTEngine) && UTPC && AnalyticsProvider.IsValid())
 	{
 		TArray<FAnalyticsEventAttribute> ParamArray;
 
 		SetClientInitialParameters(UTPC, ParamArray, false);
 
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::AAMode), UserSettings->GetAAMode()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ScreenPercentage), UserSettings->GetScreenPercentage()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsHRTFEnabled), UserSettings->IsHRTFEnabled()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsKeyboardLightingEnabled), UserSettings->IsKeyboardLightingEnabled()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ScreenResolution), UserSettings->GetScreenResolution().ToString()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::DesktopResolution), UserSettings->GetDesktopResolution().ToString()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::FullscreenMode), static_cast<int32>(UserSettings->GetFullscreenMode())));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsVSyncEnabled), UserSettings->IsVSyncEnabled()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::FrameRateLimit), UserSettings->GetFrameRateLimit()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::OverallScalabilityLevel), UserSettings->GetOverallScalabilityLevel()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ViewDistanceQuality), UserSettings->GetViewDistanceQuality()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ShadowQuality), UserSettings->GetShadowQuality()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::AntiAliasingQuality), UserSettings->GetAntiAliasingQuality()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TextureQuality), UserSettings->GetTextureQuality()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::VisualEffectQuality), UserSettings->GetVisualEffectQuality()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PostProcessingQuality), UserSettings->GetPostProcessingQuality()));
-		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::FoliageQuality), UserSettings->GetFoliageQuality()));
+		if (UTEngine)
+		{
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::FrameRateLimit), UTEngine->FrameRateCap));
+		}
+
+		if (UserSettings)
+		{
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::AAMode), UserSettings->GetAAMode()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ScreenPercentage), UserSettings->GetScreenPercentage()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsHRTFEnabled), UserSettings->IsHRTFEnabled()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsKeyboardLightingEnabled), UserSettings->IsKeyboardLightingEnabled()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ScreenResolution), UserSettings->GetScreenResolution().ToString()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::DesktopResolution), UserSettings->GetDesktopResolution().ToString()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::FullscreenMode), static_cast<int32>(UserSettings->GetFullscreenMode())));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsVSyncEnabled), UserSettings->IsVSyncEnabled()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::OverallScalabilityLevel), UserSettings->GetOverallScalabilityLevel()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ViewDistanceQuality), UserSettings->GetViewDistanceQuality()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ShadowQuality), UserSettings->GetShadowQuality()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::AntiAliasingQuality), UserSettings->GetAntiAliasingQuality()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::TextureQuality), UserSettings->GetTextureQuality()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::VisualEffectQuality), UserSettings->GetVisualEffectQuality()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PostProcessingQuality), UserSettings->GetPostProcessingQuality()));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::FoliageQuality), UserSettings->GetFoliageQuality()));
+		}
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTGraphicsSettings), ParamArray);
 	}
