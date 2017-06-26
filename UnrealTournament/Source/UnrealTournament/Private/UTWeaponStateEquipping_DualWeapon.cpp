@@ -18,7 +18,10 @@ void UUTWeaponStateEquipping_DualWeapon::StartEquip(float OverflowTime)
 	{
 		GetOuterAUTWeapon()->GetWorldTimerManager().SetTimer(BringUpFinishedHandle, this, &UUTWeaponStateEquipping_DualWeapon::BringUpFinished, EquipTime);
 		AUTDualWeapon* OuterWeapon = Cast<AUTDualWeapon>(GetOuterAUTWeapon());
-		
 		GetOuterAUTWeapon()->PlayWeaponAnim(GetOuterAUTWeapon()->BringUpAnim, GetOuterAUTWeapon()->BringUpAnimHands, GetAnimLengthForScaling(GetOuterAUTWeapon()->BringUpAnim, GetOuterAUTWeapon()->BringUpAnimHands) / EquipTime);
+		if ((GetOuterAUTWeapon()->GetUTOwner() != nullptr) && (GetOuterAUTWeapon()->BringUpSound != nullptr))
+		{
+			UUTGameplayStatics::UTPlaySound(GetWorld(), GetOuterAUTWeapon()->BringUpSound, GetOuterAUTWeapon()->GetUTOwner(), SRT_None);
+		}
 	}
 }
