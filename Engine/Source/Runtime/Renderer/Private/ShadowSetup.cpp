@@ -1562,6 +1562,7 @@ void FSceneRenderer::CreatePerObjectProjectedShadow(
 		CVarAllowPreshadows.GetValueOnRenderThread() 
 		// Preshadow only affects the subject's pixels
 		&& bSubjectIsVisible 
+		&& Bounds.SphereRadius < WORLD_MAX
 		// Only objects with dynamic lighting should create a preshadow
 		// Unless we're in the editor and need to preview an object without built lighting
 		&& (!PrimitiveSceneInfo->Proxy->HasStaticLighting() || !Interaction->IsShadowMapped())
