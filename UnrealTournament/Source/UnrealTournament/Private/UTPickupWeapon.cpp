@@ -146,15 +146,6 @@ void AUTPickupWeapon::ProcessTouch_Implementation(APawn* TouchedBy)
 		else if (!IsTaken(TouchedBy) && Cast<AUTCharacter>(TouchedBy) != NULL && !((AUTCharacter*)TouchedBy)->IsRagdoll() && ((AUTCharacter*)TouchedBy)->bCanPickupItems &&
 				(Role == ROLE_Authority || !TouchedBy->IsLocallyControlled() || Cast<AUTPlayerController>(TouchedBy->Controller) == nullptr))
 		{
-			// make sure all the meshes are visible and let the PC sort out which ones should be displayed based on per-player respawn
-			if (GhostMesh != NULL)
-			{
-				GhostMesh->SetVisibility(true, true);
-				if (GhostDepthMesh != NULL)
-				{
-					GhostDepthMesh->SetVisibility(true, true);
-				}
-			}
 			if (Role == ROLE_Authority)
 			{
 				GiveTo(TouchedBy);
@@ -195,6 +186,17 @@ void AUTPickupWeapon::ProcessTouch_Implementation(APawn* TouchedBy)
 				{
 					PC->ClientGotWeaponStayPickup(this, TouchedBy);
 				}
+			}
+		}
+
+		// As State.bActive was true, we are going to be invisible one way or another after the player has touched it.
+		// Calls to Super::ProcessTouch are not always reliable in cases of WeaponStay as State.bActive is always true. Make sure we show ghost mesh.
+		if (GhostMesh != NULL)
+		{
+			GhostMesh->SetVisibility(true, true);
+			if (GhostDepthMesh != NULL)
+			{
+				GhostDepthMesh->SetVisibility(true, true);
 			}
 		}
 	}
