@@ -3067,7 +3067,7 @@ FString AUTGameMode::InitNewPlayer(APlayerController* NewPlayerController, const
 AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
 	AUTPlayerState* UTPS = Player != NULL ? Cast<AUTPlayerState>(Player->PlayerState) : NULL;
-	if (bHasRespawnChoices && UTPS->RespawnChoiceA != nullptr && UTPS->RespawnChoiceB != nullptr)
+	if (bHasRespawnChoices && UTPS && UTPS->RespawnChoiceA != nullptr && UTPS->RespawnChoiceB != nullptr)
 	{
 		AUTBot* B = Cast<AUTBot>(Player);
 		if (B != NULL)
@@ -3088,7 +3088,7 @@ AActor* AUTGameMode::ChoosePlayerStart_Implementation(AController* Player)
 			return UTPS->RespawnChoiceB;
 		}
 	}
-	else if (!bHasRespawnChoices && UTPS->RespawnChoiceA != nullptr)
+	else if (!bHasRespawnChoices && UTPS && UTPS->RespawnChoiceA != nullptr)
 	{
 		return UTPS->RespawnChoiceA;
 	}
