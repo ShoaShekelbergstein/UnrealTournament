@@ -168,7 +168,7 @@ AUTFlagRunGameState::AUTFlagRunGameState(const FObjectInitializer& ObjectInitial
 	ShortHighlightMap.Add(HighlightNames::ComeAtMeBro, NSLOCTEXT("AUTGameMode", "ComeAtMeBro", "Come at Me Bro"));
 	ShortHighlightMap.Add(HighlightNames::ThisIsSparta, NSLOCTEXT("AUTGameMode", "ThisIsSparta", "This is Sparta!"));
 	ShortHighlightMap.Add(HighlightNames::AllOutOfBubbleGum, NSLOCTEXT("AUTGameMode", "AllOutOfBubbleGum", "All Out of Bubblegum"));
-	ShortHighlightMap.Add(HighlightNames::MoreThanAHandful, NSLOCTEXT("AUTGameMode", "MoreThanAHandful", "More Than A Handfull"));
+	ShortHighlightMap.Add(HighlightNames::MoreThanAHandful, NSLOCTEXT("AUTGameMode", "MoreThanAHandful", "More Than A Handful"));
 	ShortHighlightMap.Add(HighlightNames::ToughGuy, NSLOCTEXT("AUTGameMode", "ToughGuy", "Tough Guy"));
 	ShortHighlightMap.Add(HighlightNames::LargerThanLife, NSLOCTEXT("AUTGameMode", "LargerThanLife", "Larger Than Life"));
 	ShortHighlightMap.Add(HighlightNames::AssKicker, NSLOCTEXT("AUTGameMode", "AssKicker", "Ass Kicker"));
