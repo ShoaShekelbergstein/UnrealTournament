@@ -60,6 +60,7 @@ struct FRazerChroma : FTickableGameObject, IModuleInterface
 	bool bIsFlashingForEnd;
 	bool bInitialized;
 	bool bChromaSDKEnabled;
+	bool bChromaSDKAttempted;
 
 	typedef RZRESULT(*INIT)(void);
 	typedef RZRESULT(*UNINIT)(void);

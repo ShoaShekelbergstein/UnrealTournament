@@ -35,6 +35,7 @@ FRazerChroma::FRazerChroma()
 	bIsFlashingForEnd = false;
 	bInitialized = false;
 	bChromaSDKEnabled = false;
+	bChromaSDKAttempted = false;
 
 	FlashSpeed = 100;
 	
@@ -95,6 +96,14 @@ void FRazerChroma::StartupModule()
 
 void FRazerChroma::LoadChromaDLL()
 {
+	// Load library is very expensive, only do this once
+	if (bChromaSDKAttempted)
+	{
+		return;
+	}
+
+	bChromaSDKAttempted = true;
+
 	HMODULE ChromaSDKModule = nullptr;
 
 	ChromaSDKModule = LoadLibrary(CHROMASDKDLL);
