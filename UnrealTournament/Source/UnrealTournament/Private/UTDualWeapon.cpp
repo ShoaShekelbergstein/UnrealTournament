@@ -245,6 +245,7 @@ void AUTDualWeapon::AttachLeftMesh()
 	{
 		LeftMesh->SetHiddenInGame(false);
 		LeftMesh->AttachToComponent(UTOwner->FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, HandsAttachSocketLeft);
+		LeftMesh->SetRelativeScale3D(FVector(1.0f,1.0f,1.0f));
 		if (Cast<APlayerController>(UTOwner->Controller) != NULL && UTOwner->IsLocallyControlled())
 		{
 			LeftMesh->LastRenderTime = GetWorld()->TimeSeconds;
