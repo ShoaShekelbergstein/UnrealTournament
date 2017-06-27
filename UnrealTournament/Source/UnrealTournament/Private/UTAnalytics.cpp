@@ -288,6 +288,7 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(IsSpectator);
 	AddGenericParamName(UTHubBootUp);
 	AddGenericParamName(UTHubNewInstance);
+	AddGenericParamName(UTHubInstanceClosing);
 	AddGenericParamName(UTHubPlayerJoinLobby);
 	AddGenericParamName(UTHubPlayerEnterInstance);
 }
@@ -1985,6 +1986,52 @@ void FUTAnalytics::FireEvent_UTHubNewInstance(AUTLobbyMatchInfo* NewGameInfo, co
 		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), HostId));
 
 		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTHubNewInstance), ParamArray);
+	}
+}
+
+/*
+* @EventName UTHubInstanceClosing
+*
+* @Trigger Fires when a hub server is ended
+*
+* @Type Sent by the Server
+*
+* @EventParam ServerName string Name of the HUB (not the instance)
+* @EventParam ServerInstanceGUID string Unique GUID to identify this hub
+* @EventParam GameModeName string Name of the game mode for this instance
+* @EventParam MapName string Name of the map for this instance
+* @EventParam IsCustomRuleset bool Is this instance using a custom ruleset?
+* @EventParam GameOptions string Full Game Options string
+* @EventParam RequiredPackages string List of all required packages
+* @EventParam CurrentGameState string State of the game. IE: In Progress, Loading, Etc.
+* @EventParam PlayerGUID string Player GUID of the player that started this Instance in the HUB.
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTHubInstanceClosing(AUTLobbyMatchInfo* GameInfo, const FString& HostId)
+{
+	const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+	if (AnalyticsProvider.IsValid() && GameInfo && GameInfo->CurrentRuleset.IsValid())
+	{
+		TArray<FAnalyticsEventAttribute> ParamArray;
+
+		AUTLobbyGameState* GameState = GameInfo->GetWorld()->GetGameState<AUTLobbyGameState>();
+		if (GameState)
+		{
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerName), GameState->ServerName));
+			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::ServerInstanceGUID), GameState->HubGuid));
+		}
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameModeName), GameInfo->CurrentRuleset->Data.GameMode));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::MapName), GameInfo->InitialMap));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::IsCustomRuleset), (int32)(GameInfo->CurrentRuleset->bCustomRuleset)));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::GameOptions), GameInfo->CurrentRuleset->Data.GameOptions));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::RequiredPackages), GameInfo->CurrentRuleset->Data.RequiredPackages));
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::CurrentGameState), GameInfo->CurrentState.ToString()));
+
+		ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), HostId));
+
+		AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTHubInstanceClosing), ParamArray);
 	}
 }
 

@@ -165,6 +165,7 @@ namespace EGenericAnalyticParam
 		IsSpectator,
 		UTHubBootUp,
 		UTHubNewInstance,
+		UTHubInstanceClosing,
 		UTHubPlayerJoinLobby,
 		UTHubPlayerEnterInstance,
 

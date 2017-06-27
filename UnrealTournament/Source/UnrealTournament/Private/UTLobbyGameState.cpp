@@ -558,6 +558,11 @@ void AUTLobbyGameState::LaunchGameInstance(AUTLobbyMatchInfo* MatchOwner, FStrin
 
 void AUTLobbyGameState::TerminateGameInstance(AUTLobbyMatchInfo* MatchOwner, bool bAborting)
 {
+	if (FUTAnalytics::IsAvailable() && MatchOwner)
+	{
+		FUTAnalytics::FireEvent_UTHubInstanceClosing(MatchOwner, MatchOwner->OwnerId.ToString());
+	}
+
 	if (MatchOwner->GameInstanceProcessHandle.IsValid())
 	{
 		// if we have an active game instance that is coming up but we have not started the travel to it yet, Kill the instance.
