@@ -2531,6 +2531,11 @@ bool AUTGameMode::UTIsHandlingReplays()
 
 void AUTGameMode::TravelToNextMap_Implementation()
 {
+	if (FUTAnalytics::IsAvailable())
+	{
+		FUTAnalytics::FireEvent_UTMapTravel(this);
+	}
+
 	// Handle tutorial games first.
 
 	if (GetWorld()->GetNetMode() == NM_Standalone)

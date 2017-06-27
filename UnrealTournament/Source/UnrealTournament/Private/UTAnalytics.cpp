@@ -207,6 +207,8 @@ void FUTAnalytics::InitializeAnalyticParameterNames()
 	AddGenericParamName(PlayerUsedRally);
 	AddGenericParamName(RallyPointBeginActivate);
 	AddGenericParamName(RallyPointCompleteActivate);
+	AddGenericParamName(UTMapTravel);
+
 	AddGenericParamName(OffenseKills);
 	AddGenericParamName(DefenseKills);
 	AddGenericParamName(DefenseLivesRemaining);
@@ -1388,6 +1390,31 @@ void FUTAnalytics::FireEvent_RallyPointCompleteActivate(AUTGameMode* UTGM, AUTPl
 			ParamArray.Add(FAnalyticsEventAttribute(GetGenericParamName(EGenericAnalyticParam::PlayerGUID), GetEpicAccountName(UTPS)));
 
 			AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::RallyPointCompleteActivate), ParamArray);
+		}
+	}
+}
+
+/*
+* @EventName UTMapTravel
+*
+* @Trigger Fires whenever the client or server travels to a new map
+*
+* @Type Sent by the Client and Server
+*
+* @Comments
+*/
+void FUTAnalytics::FireEvent_UTMapTravel(AUTGameMode* UTGM)
+{
+	if (UTGM)
+	{
+		const TSharedPtr<IAnalyticsProvider>& AnalyticsProvider = GetProviderPtr();
+		if (AnalyticsProvider.IsValid())
+		{
+			TArray<FAnalyticsEventAttribute> ParamArray;
+
+			SetMatchInitialParameters(UTGM, ParamArray, true);
+
+			AnalyticsProvider->RecordEvent(GetGenericParamName(EGenericAnalyticParam::UTMapTravel), ParamArray);
 		}
 	}
 }

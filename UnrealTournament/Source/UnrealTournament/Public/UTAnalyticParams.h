@@ -77,6 +77,8 @@ namespace EGenericAnalyticParam
 		PlayerUsedRally,
 		RallyPointBeginActivate,
 		RallyPointCompleteActivate,
+		UTMapTravel,
+
 		OffenseKills,
 		DefenseKills,
 		DefenseLivesRemaining,

@@ -83,7 +83,7 @@ public:
 	static void FireEvent_PlayerUsedRally(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	static void FireEvent_RallyPointBeginActivate(AUTGameMode* UTGM, AUTPlayerState* UTPS);
 	static void FireEvent_RallyPointCompleteActivate(AUTGameMode* UTGM, AUTPlayerState* UTPS);
-
+	static void FireEvent_UTMapTravel(AUTGameMode* UTGM);
 
 	//Param name generalizer
 	static FString GetGenericParamName(EGenericAnalyticParam::Type InGenericParam);
