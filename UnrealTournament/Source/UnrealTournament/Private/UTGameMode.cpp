@@ -1933,14 +1933,7 @@ void AUTGameMode::StartMatch()
 	}
 	else
 	{
-		if (NumPlayers+NumBots > 1)
-		{
-			SetMatchState(MatchState::PlayerIntro);
-		}
-		else
-		{
-			EndPlayerIntro();
-		}
+		SetMatchState(MatchState::PlayerIntro);
 	}
 	
 	// clear any PlayerState values that could be modified during warmup
