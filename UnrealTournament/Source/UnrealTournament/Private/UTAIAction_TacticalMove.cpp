@@ -158,7 +158,7 @@ bool UUTAIAction_TacticalMove::EngageDirection(const FVector& StrafeDir, bool bF
 
 void UUTAIAction_TacticalMove::FinalWaitFinished()
 {
-	if (FMath::FRand() + 0.3f > GetOuterAUTBot()->CurrentAggression)
+	if ((FMath::FRand() + 0.3f > GetOuterAUTBot()->CurrentAggression) && GetPawn())
 	{
 		GetOuterAUTBot()->SetMoveTargetDirect(FRouteCacheItem(HidingSpot + 4.0 * GetPawn()->GetSimpleCollisionRadius() * (HidingSpot - GetPawn()->GetActorLocation()).GetSafeNormal()));
 		bFinalMove = false;
