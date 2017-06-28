@@ -1574,9 +1574,13 @@ struct FMCPPulledData
 	UPROPERTY()
 	int32 CurrentVersionNumber;
 
+	UPROPERTY()
+	FString BuildNotesURL;
+
 	FMCPPulledData()
 	{
 		Challenges.Empty();
+		BuildNotesURL = TEXT("");
 		FragCenterCounter=0;
 		CurrentVersionNumber=0;
 	}

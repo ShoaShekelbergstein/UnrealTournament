@@ -6755,9 +6755,9 @@ void UUTLocalPlayer::CheckForNewUpdate()
 
 FString UUTLocalPlayer::GetBuildNotesURL()
 {
-	if (MCPPulledData.bValid)
+	if (MCPPulledData.bValid && !MCPPulledData.BuildNotesURL.IsEmpty())
 	{
-		return FString::Printf(TEXT("https://www.epicgames.com/unrealtournament/build-notes-%i"), MCPPulledData.CurrentVersionNumber);
+		return MCPPulledData.BuildNotesURL;
 	}
 
 	return TEXT("http://epic.gm/ood");
@@ -6768,9 +6768,9 @@ void UUTLocalPlayer::UpdateCheck()
 {
 #if !UE_SERVER
 
-	uint32 MyVersion = FNetworkVersion::GetLocalNetworkVersion();
+	int32 MyVersion = (int32) FNetworkVersion::GetLocalNetworkVersion();
 
-	if ((uint32)MCPPulledData.CurrentVersionNumber > MyVersion )
+	if (MCPPulledData.CurrentVersionNumber > MyVersion )
 	{
 		ShowWebMessage(NSLOCTEXT("UTLocalPlayer","NeedtoUpdateTitle","New Version Available"), TEXT("http://epic.gm/ood"));
 	}
@@ -6786,7 +6786,7 @@ void UUTLocalPlayer::UpdateCheck()
 			// Open a Web page with better info
 			ShowWebMessage(NSLOCTEXT("UTLocalPlayer","ThanksForUpdating","New Features"), GetBuildNotesURL());
 					
-			LastLoadedVersionNumber = (uint32)MCPPulledData.CurrentVersionNumber;
+			LastLoadedVersionNumber = MCPPulledData.CurrentVersionNumber;
 			SaveConfig();
 		}
 	}

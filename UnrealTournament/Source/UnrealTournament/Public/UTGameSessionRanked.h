@@ -158,16 +158,6 @@ public:
 
 	void LockPlayersToSession(bool bNewLockState);
 
-	FDelegateHandle OnReadTitleFileCompleteDelegate;
-	FDelegateHandle OnEnumerateTitleFilesCompleteDelegate;
-	virtual void OnReadTitleFileComplete(bool bWasSuccessful, const FString& Filename);
-	virtual void OnEnumerateTitleFilesComplete(bool bWasSuccessful);
-	static const FString& GetMCPRankedPlaylistFilename()
-	{
-		const static FString MCPStorageFilename = "UnrealTournamentPlaylists.json";
-		return MCPStorageFilename;
-	}
-
 	/**
 	 * Cleanup host beacon
 	 *
