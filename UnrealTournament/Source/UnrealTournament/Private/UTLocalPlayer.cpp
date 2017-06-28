@@ -4906,8 +4906,6 @@ void UUTLocalPlayer::RestartQuickMatch()
 
 bool UUTLocalPlayer::IsRankedMatchmakingEnabled(int32 PlaylistId)
 {
-	return true;
-
 	int32 MatchesPlayed = 0;
 	if (PlayerController && PlayerController->PlayerState)
 	{

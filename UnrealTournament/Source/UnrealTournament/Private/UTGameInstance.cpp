@@ -1360,7 +1360,7 @@ void UUTGameInstance::OnReadTitleFileComplete(bool bWasSuccessful, const FString
 			if (OnlineTitleFileInterface.IsValid())
 			{
 				TArray<uint8> FileContents;
-				OnlineTitleFileInterface->GetFileContents(UUTLocalPlayer::GetMCPPlaylistFilename(), FileContents);
+				OnlineTitleFileInterface->GetFileContents(Filename, FileContents);
 				FileContents.Add(0);		
 	
 				UUTLocalPlayer* UTLocalPlayer = Cast<UUTLocalPlayer>(GetFirstGamePlayer());
