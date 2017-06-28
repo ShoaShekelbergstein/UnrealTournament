@@ -147,6 +147,14 @@ void UUTHeartbeatManager::SendPlayerContextLocationPerMinute()
 					if (MenuGM)
 					{
 						PlayerConxtextLocation = TEXT("Menu");
+						if (GameInstance->GetMatchmaking())
+						{
+							PlaylistID = GameInstance->GetMatchmaking()->GetPlaylistID();
+							if (PlaylistID != INDEX_NONE)
+							{
+								PlayerConxtextLocation.Append(TEXT("_InQueue"));
+							}
+						}
 					}
 
 					AUTLobbyGameState* LobbyGS = Cast<AUTLobbyGameState>(UTGS);
