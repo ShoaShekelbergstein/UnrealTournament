@@ -990,12 +990,9 @@ void APlayerCameraManager::DoUpdateCamera(float DeltaTime)
 	}
 
 	// update photography camera, if any
-	bool bPhotographyCausedCameraCut = FCameraPhotographyManager::Get().UpdateCamera(NewPOV, this);
-	bGameCameraCutThisFrame = bGameCameraCutThisFrame || bPhotographyCausedCameraCut;
-
 	if (AllowPhotographyMode())
 	{
-		const bool bPhotographyCausedCameraCut = UpdatePhotographyCamera(NewPOV);
+		bool bPhotographyCausedCameraCut = FCameraPhotographyManager::Get().UpdateCamera(NewPOV, this);
 		bGameCameraCutThisFrame = bGameCameraCutThisFrame || bPhotographyCausedCameraCut;
 	}
 

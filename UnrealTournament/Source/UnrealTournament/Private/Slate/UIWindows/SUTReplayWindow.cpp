@@ -918,6 +918,15 @@ FText SUTReplayWindow::GetTooltipText() const
 
 EVisibility SUTReplayWindow::GetVis() const
 {
+	AUTPlayerController* PC = Cast<AUTPlayerController>(PlayerOwner->PlayerController);
+	if (PC && PC->MyUTHUD)
+	{
+		if (!PC->MyUTHUD->bShowHUD)
+		{
+			return EVisibility::Collapsed;
+		}
+	}
+
 	return PlayerOwner->AreMenusOpen() ? EVisibility::Collapsed : EVisibility::Visible;
 }
 
