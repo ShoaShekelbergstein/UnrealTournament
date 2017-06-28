@@ -113,6 +113,10 @@
 		{
 			"Name": "Substance",
 			"Enabled": false
+		},
+		{
+			"Name": "Ansel",
+			"Enabled": true
 		}
 	]
 }

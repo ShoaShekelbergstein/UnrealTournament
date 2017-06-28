@@ -616,6 +616,12 @@ protected:
 	/** Internal function conditionally called from UpdateCamera to do the actual work of updating the camera. */
 	virtual void DoUpdateCamera(float DeltaTime);
 
+	/** Updates the photography camera. Return true if a cut occurred */
+	virtual bool UpdatePhotographyCamera(FMinimalViewInfo& NewPOV);
+
+	/** Whether or not we allow photography mode */
+	virtual bool AllowPhotographyMode() const;
+
 	/** Whether to only run photography overrides */
 	bool IsOnlyPhotography() const;
 	

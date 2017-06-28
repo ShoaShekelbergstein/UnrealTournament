@@ -34,13 +34,19 @@ void AUTMenuGameMode::RestartGame()
 	return;
 }
 void AUTMenuGameMode::BeginGame()
-{
+{	
 	return;
 }
 
 void AUTMenuGameMode::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+
+	IConsoleVariable* PhotoCVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.Photography.Allow"));
+	if (PhotoCVar)
+	{
+		PhotoCVar->Set(0, ECVF_SetByCode);
+	}
 
 	ClearPause();
 

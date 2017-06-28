@@ -438,6 +438,14 @@ void AUTDemoRecSpectator::SetPlayer(UPlayer* InPlayer)
 		MyHUD = GetWorld()->SpawnActor<AHUD>(AUTHUD_InstantReplay::StaticClass(), SpawnInfo);
 		MyUTHUD = Cast<AUTHUD>(MyHUD);
 	}
+	else
+	{
+		IConsoleVariable* PhotoCVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.Photography.Allow"));
+		if (PhotoCVar)
+		{
+			PhotoCVar->Set(1, ECVF_SetByCode);
+		}
+	}
 }
 
 bool AUTDemoRecSpectator::IsKillcamSpectator() const

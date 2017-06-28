@@ -596,3 +596,15 @@ void AUTPlayerCameraManager::ProcessViewRotation(float DeltaTime, FRotator& OutV
 	}
 	Super::ProcessViewRotation(DeltaTime, OutViewRotation, OutDeltaRot);
 }
+
+bool AUTPlayerCameraManager::AllowPhotographyMode() const
+{
+	AUTPlayerController* UTPC = Cast<AUTPlayerController>(PCOwner);
+	AUTPlayerState* PS = UTPC ? UTPC->UTPlayerState : NULL;
+	if (UTPC && PS && PS->bOnlySpectator)
+	{
+		return true;
+	}
+
+	return false;
+}

@@ -874,6 +874,11 @@ bool APlayerCameraManager::IsOnlyPhotography() const
 	return GetWorld()->IsPaused() && !PCOwner->ShouldPerformFullTickWhenPaused();
 }
 
+bool APlayerCameraManager::AllowPhotographyMode() const
+{
+	return true;
+}
+
 void APlayerCameraManager::DoUpdateCamera(float DeltaTime)
 {
 	FMinimalViewInfo NewPOV = ViewTarget.POV;
@@ -988,11 +993,21 @@ void APlayerCameraManager::DoUpdateCamera(float DeltaTime)
 	bool bPhotographyCausedCameraCut = FCameraPhotographyManager::Get().UpdateCamera(NewPOV, this);
 	bGameCameraCutThisFrame = bGameCameraCutThisFrame || bPhotographyCausedCameraCut;
 
+	if (AllowPhotographyMode())
+	{
+		const bool bPhotographyCausedCameraCut = UpdatePhotographyCamera(NewPOV);
+		bGameCameraCutThisFrame = bGameCameraCutThisFrame || bPhotographyCausedCameraCut;
+	}
+
 	// Cache results
 	FillCameraCache(NewPOV);
 }
 
-
+bool APlayerCameraManager::UpdatePhotographyCamera(FMinimalViewInfo& NewPOV)
+{
+	// update photography camera, if any
+	return FCameraPhotographyManager::Get().UpdateCamera(NewPOV, this);
+}
 
 FPOV APlayerCameraManager::BlendViewTargets(const FTViewTarget& A,const FTViewTarget& B, float Alpha)
 {
