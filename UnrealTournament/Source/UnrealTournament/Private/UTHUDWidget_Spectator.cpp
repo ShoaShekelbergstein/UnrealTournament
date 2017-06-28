@@ -223,7 +223,7 @@ FText UUTHUDWidget_Spectator::GetSpectatorMessageText(FText& ShortMessage)
 				if (IntermissionTime > 0)
 				{
 					FFormatNamedArguments Args;
-					if ((IntermissionTime > 6) && UTGameState->IsLineUpActive() && UTPS->GetUTCharacter())
+					if ((IntermissionTime > 6) && UTGameState->IsLineUpActive() && UTPS->GetUTCharacter() && AUTLineUpHelper::IsControllerInLineup(UTPlayerOwner))
 					{
 						if (UTGameState->ActiveLineUpHelper && UTGameState->ActiveLineUpHelper->CanInitiateGroupTaunt(UTPS) && !UTPS->ActiveGroupTaunt)
 						{
