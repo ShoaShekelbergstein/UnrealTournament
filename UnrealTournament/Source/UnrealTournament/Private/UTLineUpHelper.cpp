@@ -1242,8 +1242,18 @@ void AUTLineUpHelper::IntroTransitionToWeaponReadyAnims()
 						SpawnZone->OnPlayWeaponReadyAnimOnCharacter(Slot.CharacterInSpot);
 					}
 				}
-
 			}
 		}
 	}
+}
+
+bool AUTLineUpHelper::IsControllerInLineup(AController* Controller)
+{
+	if (Controller && Controller->PlayerState)
+	{
+		AUTPlayerState* UTPS = Cast<AUTPlayerState>(Controller->PlayerState);
+		return UTPS ? (UTPS->LineUpLocation != INDEX_NONE) : false;
+	}
+
+	return false;
 }

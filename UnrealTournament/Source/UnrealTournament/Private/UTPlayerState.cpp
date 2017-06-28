@@ -98,7 +98,6 @@ AUTPlayerState::AUTPlayerState(const class FObjectInitializer& ObjectInitializer
 
 	LineUpLocation = INDEX_NONE;
 	bHasPlayedLineUpIntro = false;
-	bIsInLineUp = false;
 }
 
 void AUTPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const

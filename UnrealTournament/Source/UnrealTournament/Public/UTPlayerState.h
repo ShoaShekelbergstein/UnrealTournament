@@ -405,9 +405,6 @@ public:
 	UPROPERTY()
 	int32 ElapsedTime;
 
-	UPROPERTY(Replicated)
-	bool bIsInLineUp;
-
 	UPROPERTY()
 	bool bHasPlayedLineUpIntro;
 

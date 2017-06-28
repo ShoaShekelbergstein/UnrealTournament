@@ -36,6 +36,9 @@ class UNREALTOURNAMENT_API AUTLineUpHelper : public AActor
 	static void ApplyCharacterAnimsForLineUp(AUTCharacter* UTChar);
 
 	UFUNCTION()
+	static bool IsControllerInLineup(AController* Controller);
+
+	UFUNCTION()
 	bool CanInitiateGroupTaunt(AUTPlayerState* PlayerToCheck);
 
 	UFUNCTION()
