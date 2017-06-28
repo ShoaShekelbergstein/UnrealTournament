@@ -21,7 +21,10 @@ void UUTWeaponStateFiring::EndState()
 	ToggleLoopingEffects(false);
 	GetOuterAUTWeapon()->OnStoppedFiring();
 	GetOuterAUTWeapon()->StopFiringEffects();
-	GetOuterAUTWeapon()->GetUTOwner()->ClearFiringInfo();
+	if (GetOuterAUTWeapon()->GetUTOwner())
+	{
+		GetOuterAUTWeapon()->GetUTOwner()->ClearFiringInfo();
+	}
 	GetOuterAUTWeapon()->GetWorldTimerManager().ClearAllTimersForObject(this);
 }
 
