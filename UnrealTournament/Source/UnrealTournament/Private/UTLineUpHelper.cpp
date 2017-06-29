@@ -423,7 +423,7 @@ AUTCharacter* AUTLineUpHelper::SpawnCharacterFromLineUpSlot(FLineUpSlot& Slot)
 
 void AUTLineUpHelper::MoveCharacterToLineUpSlot(AUTCharacter* UTChar, FLineUpSlot& Slot)
 {
-	if (UTChar && !UTChar->IsDead())
+	if (UTChar && !UTChar->IsDead() && !UTChar->IsPendingKill() && UTChar->Controller)
 	{
 		UTChar->TeleportTo(Slot.SpotLocation.GetTranslation(), Slot.SpotLocation.GetRotation().Rotator(), false, true);
 		UTChar->Controller->SetControlRotation(Slot.SpotLocation.GetRotation().Rotator());
