@@ -40,6 +40,7 @@ void AUTLineUpZoneVisualizationCharacter::PostEditMove(bool bFinished)
 		if (ZoneOwner != nullptr)
 		{
 			ZoneOwner->UpdateSpawnLocationsWithVisualizationMove();
+			ZoneOwner->CallAppropriateCreate();
 		}
 	}
 }

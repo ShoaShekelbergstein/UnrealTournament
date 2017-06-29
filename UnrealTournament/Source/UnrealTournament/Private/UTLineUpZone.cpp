@@ -194,6 +194,46 @@ void AUTLineUpZone::PostEditChangeProperty(FPropertyChangedEvent& PropertyChange
 		UpdateMeshVisualizations();
 	}
 
+	//Moved something, call appropriate create will snap it back if not using custom values
+	if (PropertyChangedEvent.Property != NULL && (PropertyChangedEvent.MemberProperty->GetFName() == FName(TEXT("Location")) || (PropertyChangedEvent.MemberProperty->GetFName() == FName(TEXT("Rotation"))) || (PropertyChangedEvent.MemberProperty->GetFName() == FName(TEXT("Scale")))))
+	{
+		CallAppropriateCreate();
+	}
+
+	//We have changed a default property. Go through all actors in the level to reflect this change
+	if (PropertyChangedEvent.Property != NULL && (PropertyChangedEvent.MemberProperty->GetFName() == FName(TEXT("TeamIntroSpawnLocations")) 
+											  || (PropertyChangedEvent.MemberProperty->GetFName() == FName(TEXT("TeamIntermissionSpawnLocations"))) 
+											  || (PropertyChangedEvent.MemberProperty->GetFName() == FName(TEXT("TeamPostMatchSpawnLocations")))
+											  || (PropertyChangedEvent.MemberProperty->GetFName() == FName(TEXT("SoloIntroSpawnLocations")))
+		                                      || (PropertyChangedEvent.MemberProperty->GetFName() == FName(TEXT("SoloIntermissionSpawnLocations")))
+		                                      || (PropertyChangedEvent.MemberProperty->GetFName() == FName(TEXT("SoloPostMatchSpawnLocations"))) ))
+	{
+		if (GetWorld())
+		{
+			for (FActorIterator It(GetWorld()); It; ++It)
+			{
+				if (It->IsA<AUTLineUpZone>())
+				{
+					AUTLineUpZone* ZoneToUpdate = Cast<AUTLineUpZone>(*It);
+
+					TSubclassOf<AUTLineUpZone> LineUpClass = LoadClass<AUTLineUpZone>(NULL, TEXT("/Game/RestrictedAssets/Blueprints/LineUpZone.LineUpZone_C"), NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
+					AUTLineUpZone* DefaultZone = LineUpClass ? LineUpClass->GetDefaultObject<AUTLineUpZone>() : nullptr;
+					if (DefaultZone)
+					{
+						ZoneToUpdate->TeamIntroSpawnLocations = DefaultZone->TeamIntroSpawnLocations;
+						ZoneToUpdate->TeamIntermissionSpawnLocations = DefaultZone->TeamIntermissionSpawnLocations;
+						ZoneToUpdate->TeamPostMatchSpawnLocations = DefaultZone->TeamPostMatchSpawnLocations;
+						ZoneToUpdate->SoloIntroSpawnLocations = DefaultZone->SoloIntroSpawnLocations;
+						ZoneToUpdate->SoloIntermissionSpawnLocations = DefaultZone->SoloIntermissionSpawnLocations;
+						ZoneToUpdate->SoloPostMatchSpawnLocations = DefaultZone->SoloPostMatchSpawnLocations;
+					}
+
+					ZoneToUpdate->CallAppropriateCreate();
+					UpdateMeshVisualizations();
+				}
+			}
+		}
+	}
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 

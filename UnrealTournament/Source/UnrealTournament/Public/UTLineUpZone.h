@@ -44,7 +44,7 @@ class UNREALTOURNAMENT_API AUTLineUpZone : public AActor
 {
 	GENERATED_UCLASS_BODY()
 
-	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Team Spawn Point List")
 	LineUpTypes ZoneType;
 
 	//**Determines if Spawn Locations should snap to the floor when being placed in the editor **/
@@ -52,11 +52,11 @@ class UNREALTOURNAMENT_API AUTLineUpZone : public AActor
 	bool bSnapToFloor;
 
 	/**Extra offset we add when snapping objects to the floor. Should be equal to the visualization capsule half height. **/
-	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Team Spawn Point List")
 	float SnapFloorOffset;
 
 	/** Determines if this list is holding Team Spawn Locations or FFA Spawn Locations. True = Team Spawn Locations. False = FFA Spawn Locations.**/
-	UPROPERTY(EditAnywhere, Category = "Team Spawn Point List")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Team Spawn Point List")
 	bool bIsTeamSpawnList;
 
 	/** Determines if the default spawn list should be used, or if you'd like to override the default **/
@@ -140,6 +140,9 @@ class UNREALTOURNAMENT_API AUTLineUpZone : public AActor
 	UPROPERTY(BlueprintReadOnly, Category = "Intro Zone")
 	TArray<UMeshComponent*> RenderedPlayerStates;
 
+	UFUNCTION()
+	void CallAppropriateCreate();
+
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Instanced,Transient, VisibleAnywhere, meta = (MakeEditWidget = ""))
 	TArray<AUTLineUpZoneVisualizationCharacter*> MeshVisualizations;
@@ -203,6 +206,5 @@ public:
 	void DefaultCreateForOnly1Character();
 
 private:
-	void CallAppropriateCreate();
 	void DefaultCreate();
 };
