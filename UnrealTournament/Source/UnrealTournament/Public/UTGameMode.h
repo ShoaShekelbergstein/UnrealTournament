@@ -643,6 +643,14 @@ public:
 	UFUNCTION(Exec, BlueprintCallable, Category = AI)
 	virtual void KillBots();
 
+	/** Starts a line-up of the specified type*/
+	UFUNCTION(Exec, BlueprintCallable, Category = LineUp)
+	virtual void BeginLineUp(const FString& LineUpTypeName);
+
+	/** Ends any active line-up*/
+	UFUNCTION(Exec, BlueprintCallable, Category = LineUp)
+	virtual void EndLineUp();
+
 	/** NOTE: return value is a workaround for blueprint bugs involving ref parameters and is not used */
 	UFUNCTION(BlueprintNativeEvent)
 	bool ModifyDamage(UPARAM(ref) int32& Damage, UPARAM(ref) FVector& Momentum, APawn* Injured, AController* InstigatedBy, const FHitResult& HitInfo, AActor* DamageCauser, TSubclassOf<UDamageType> DamageType);

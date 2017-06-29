@@ -1149,6 +1149,41 @@ void AUTGameMode::CheckBotCount()
 	}
 }
 
+void AUTGameMode::BeginLineUp(const FString& LineUpTypeName)
+{
+	const UEnum* LineUpTypeEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("LineUpTypes"));
+	if (UTGameState && LineUpTypeEnum)
+	{
+		for (int EnumIndex = 0; EnumIndex < LineUpTypeEnum->NumEnums(); ++EnumIndex)
+		{
+			if (LineUpTypeEnum->GetEnumName(EnumIndex).Equals(LineUpTypeName, ESearchCase::IgnoreCase))
+			{
+				LineUpTypes TypeToCreate = static_cast<LineUpTypes>(EnumIndex);
+				
+				AUTLineUpZone* ZoneToUse = UTGameState->GetAppropriateSpawnList(TypeToCreate);
+				if (ZoneToUse)
+				{
+					//Spawn bots to fill up to the spawn locations count
+					BotFillCount = FMath::Max(ZoneToUse->SpawnLocations.Num(), BotFillCount);
+					WarmupFillCount = BotFillCount;
+					CheckBotCount();
+
+					UTGameState->CreateLineUp(TypeToCreate);
+					break;
+				}
+			}
+		}
+	}
+}
+
+void AUTGameMode::EndLineUp()
+{
+	if (UTGameState && UTGameState->ActiveLineUpHelper)
+	{
+		UTGameState->ActiveLineUpHelper->CleanUp();
+	}
+}
+
 void AUTGameMode::RecreateLobbyBeacon()
 {
 	UE_LOG(UT,Log,TEXT("RecreateLobbyBeacon: %s %i"), HubAddress.IsEmpty() ? TEXT("none") : *HubAddress, LobbyInstanceID);

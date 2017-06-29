@@ -44,8 +44,8 @@ void AUTLineUpHelper::CalculateLineUpSlots()
 			TArray<AController*> UnassignedControllers;
 			for (FConstControllerIterator Iterator = GetWorld()->GetControllerIterator(); Iterator; ++Iterator)
 			{
-				//Don't put any Demo Rec specators in the list, as they aren't in charge of characters
-				if (Cast<AUTDemoRecSpectator>(*Iterator) == nullptr)
+				//Don't put any Demo Rec specators in the list, as they aren't in charge of characters. Also eliminate any controllers without attached player states.
+				if ((Cast<AUTDemoRecSpectator>(*Iterator) == nullptr) && (Cast<AUTPlayerState>(Iterator->Get()->PlayerState) != nullptr))
 				{
 					UnassignedControllers.Add(Iterator->Get());
 				}
@@ -331,8 +331,8 @@ void AUTLineUpHelper::PerformLineUp()
 
 void AUTLineUpHelper::CalculateAllLineUpData()
 {
-	SetLineUpWeapons();
 	CalculateLineUpSlots();
+	SetLineUpWeapons();
 }
 
 void AUTLineUpHelper::SpawnLineUp()
@@ -458,6 +458,7 @@ void AUTLineUpHelper::SetLineUpWeapons()
 		if (Slot.ControllerInSpot != nullptr)
 		{
 			AUTPlayerState* UTPS = Cast<AUTPlayerState>(Slot.ControllerInSpot->PlayerState);
+			if (UTPS)
 			{
 				UTPS->LineUpWeapon = UTPS->LineUpWeapon = (UTPS->FavoriteWeapon != NULL) ? UTPS->FavoriteWeapon : NULL;
 
