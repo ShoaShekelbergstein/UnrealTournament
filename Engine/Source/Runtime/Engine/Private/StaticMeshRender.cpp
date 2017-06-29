@@ -1604,16 +1604,23 @@ FLODMask FStaticMeshSceneProxy::GetLODMask(const FSceneView* View) const
 				}
 
 			}
+
+			static const auto CVarStaticMeshLODDistanceScale = IConsoleManager::Get().FindTConsoleVariableDataFloat(TEXT("r.StaticMeshLODDistanceScale"));
+			float StaticMeshLODDistanceScale = 1.0f;
+			if (CVarStaticMeshLODDistanceScale)
+			{
+				StaticMeshLODDistanceScale = 1.0f / CVarStaticMeshLODDistanceScale->GetValueOnRenderThread();
+			}
 			if (bUseDithered)
 			{
 				for (int32 Sample = 0; Sample < 2; Sample++)
 				{
-					Result.SetLODSample(ComputeTemporalStaticMeshLOD(RenderData, ProxyBounds.Origin, ProxyBounds.SphereRadius, *View, ClampedMinLOD, 1.0f, Sample), Sample);
+					Result.SetLODSample(ComputeTemporalStaticMeshLOD(RenderData, ProxyBounds.Origin, ProxyBounds.SphereRadius, *View, ClampedMinLOD, StaticMeshLODDistanceScale, Sample), Sample);
 				}
 			}
 			else
 			{
-				Result.SetLOD(ComputeStaticMeshLOD(RenderData, ProxyBounds.Origin, ProxyBounds.SphereRadius, *View, ClampedMinLOD));
+				Result.SetLOD(ComputeStaticMeshLOD(RenderData, ProxyBounds.Origin, ProxyBounds.SphereRadius, *View, ClampedMinLOD, StaticMeshLODDistanceScale));
 			}
 		}
 	}
