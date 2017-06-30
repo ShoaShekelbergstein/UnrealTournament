@@ -946,21 +946,11 @@ void AUTLineUpHelper::HandleIntroClientAnimations()
 					IntroSetFirstSlotToLocalPlayer();
 					IntroBuildStaggeredSpawnTimerList();
 
-					//Spawn in local player first before spawning in random players
-					if (Intro_MyTeamLineUpSlots.Num() > 0)
+					// Setup first delayed spawn character
+					if (Intro_TimeDelaysOnAnims.Num() > 0)
 					{
-						AUTPlayerState* UTPS = Intro_MyTeamLineUpSlots[0]->CharacterInSpot ? Cast<AUTPlayerState>(Intro_MyTeamLineUpSlots[0]->CharacterInSpot->PlayerState) : nullptr;
-						if (UTPS && !UTPS->bHasPlayedLineUpIntro)
-						{
-							PlayIntroClientAnimationOnCharacter(Intro_MyTeamLineUpSlots[0]->CharacterInSpot, true);
-							++Intro_TotalSpawnedPlayers;
-						}
+						GetWorld()->GetTimerManager().SetTimer(Intro_NextClientSpawnHandle, FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::IntroSpawnDelayedCharacter), Intro_TimeDelaysOnAnims[0], false);
 					}
-
-					//On each fire of trigger, Start new team mate spawn.
-					IntroSpawnDelayedCharacter();
-
-					SetupCharactersForLineUp();
 
 					//Set timer for weapon ready
 					GetWorld()->GetTimerManager().SetTimer(Intro_ClientSwitchToWeaponFaceoffHandle, FTimerDelegate::CreateUObject(this, &AUTLineUpHelper::IntroTransitionToWeaponReadyAnims), IntroZone->TimeToReadyWeaponStance, false);
@@ -1076,7 +1066,10 @@ void AUTLineUpHelper::IntroBuildStaggeredSpawnTimerList()
 			AUTLineUpZone* SpawnZone = UTGS->GetAppropriateSpawnList(LineUpTypes::Intro);
 			if (SpawnZone)
 			{
-				for (FLineUpSlot& LineUpSlot : LineUpSlots)
+				//First spawn is always the minimum time and everything else is random, so add that
+				Intro_TimeDelaysOnAnims.Add(SpawnZone->MinIntroSpawnTime);
+
+				for (int LineUpIndex = 1; LineUpIndex < LineUpSlots.Num(); ++LineUpIndex)
 				{
 					Intro_TimeDelaysOnAnims.Add(FMath::RandRange(SpawnZone->MinIntroSpawnTime, SpawnZone->MaxIntroSpawnTime));
 				}
@@ -1192,7 +1185,8 @@ void AUTLineUpHelper::IntroSpawnDelayedCharacter()
 			{
 				int LocalTeamNum = UTPC->GetTeamNum();
 
-				const FLineUpSlot* LineUpSlot = Intro_GetRandomUnSpawnedLineUpSlot();
+				//if this is the first person spawning, and we are spawning from my team. Always choose the first player on the local team.
+				const FLineUpSlot* LineUpSlot = ((Intro_TotalSpawnedPlayers > 0) || (Intro_MyTeamLineUpSlots.Num() == 0)) ? Intro_GetRandomUnSpawnedLineUpSlot() : Intro_MyTeamLineUpSlots[0];
 				if (LineUpSlot && LineUpSlot->CharacterInSpot)
 				{
 					const bool bIsOnSameTeamAsLocalPlayer = (LineUpSlot->CharacterInSpot->GetTeamNum() == LocalTeamNum);
