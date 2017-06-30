@@ -29,17 +29,20 @@ struct FGenericPlatformMemoryConstants
 	/** The amount of virtual memory, in bytes. */
 	SIZE_T TotalVirtual;
 
-	/** The size of a page, in bytes. */
+	/** The size of a physical page, in bytes. This is also the granularity for PageProtect(), commitment and properties (e.g. ability to access) of the physical RAM. */
 	SIZE_T PageSize;
 
 	/** The size of a "page" in Binned2 malloc terms, in bytes. Should be at least 64KB. BinnedMalloc expects memory returned from BinnedAllocFromOS() to be aligned on BinnedPageSize boundary. */
 	SIZE_T BinnedPageSize;
 
-	/** 
-	* For platforms that support multiple page sizes this is non-zero and smaller than PageSize.
-	* If non-zero, then BinnedAllocFromOS will take allocation requests aligned to this size and return blocks aligned to PageSize
-	*/
+	/**
+	 * Some platforms have advantages if memory is allocated in chunks larger than PageSize (e.g. VirtualAlloc() seems to have 64KB granularity as of now).
+     * This value is the minimum allocation size that the system will use behind the scenes.
+	 */
 	SIZE_T OsAllocationGranularity;
+	
+	/** This is the "allocation granularity" in Binned malloc terms, i.e. BinnedMalloc will allocate the memory in increments of this value. If non-zero, should be at least 16KB. If zero, Binned will use BinnedPageSize for this value. */
+	SIZE_T BinnedAllocationGranularity;
 
 	// AddressLimit - Second parameter is estimate of the range of addresses expected to be returns by BinnedAllocFromOS(). Binned
 	// Malloc will adjust its internal structures to make lookups for memory allocations O(1) for this range. 
@@ -56,6 +59,7 @@ struct FGenericPlatformMemoryConstants
 		, PageSize(0)
 		, BinnedPageSize(0)
 		, OsAllocationGranularity(0)
+		, BinnedAllocationGranularity( 0 )
 		, AddressLimit((uint64)0xffffffff + 1)
 		, TotalPhysicalGB( 1 )
 	{}
@@ -67,6 +71,7 @@ struct FGenericPlatformMemoryConstants
 		, PageSize( Other.PageSize )
 		, BinnedPageSize(Other.BinnedPageSize)
 		, OsAllocationGranularity(Other.OsAllocationGranularity)
+		, BinnedAllocationGranularity(Other.BinnedAllocationGranularity)
 		, AddressLimit(Other.AddressLimit)
 		, TotalPhysicalGB(Other.TotalPhysicalGB)
 	{}

@@ -84,6 +84,36 @@ const FPlatformMemoryConstants& FAndroidPlatformMemory::GetConstants()
 	return MemoryConstants;	
 }
 
+const FPlatformMemoryConstants& FAndroidPlatformMemory::GetConstants()
+{
+	static FPlatformMemoryConstants MemoryConstants;
+
+	if (MemoryConstants.TotalPhysical == 0)
+	{
+		// Gather platform memory stats.
+		struct sysinfo SysInfo;
+		unsigned long long MaxPhysicalRAMBytes = 0;
+		unsigned long long MaxVirtualRAMBytes = 0;
+
+		if (0 == sysinfo(&SysInfo))
+		{
+			MaxPhysicalRAMBytes = static_cast< unsigned long long >(SysInfo.mem_unit) * static_cast< unsigned long long >(SysInfo.totalram);
+			MaxVirtualRAMBytes = static_cast< unsigned long long >(SysInfo.mem_unit) * static_cast< unsigned long long >(SysInfo.totalswap);
+		}
+
+		MemoryConstants.TotalPhysical = MaxPhysicalRAMBytes;
+		MemoryConstants.TotalVirtual = MaxVirtualRAMBytes;
+		MemoryConstants.TotalPhysicalGB = (MemoryConstants.TotalPhysical + 1024 * 1024 * 1024 - 1) / 1024 / 1024 / 1024;
+		MemoryConstants.PageSize = sysconf(_SC_PAGESIZE);
+		MemoryConstants.BinnedPageSize = FMath::Max((SIZE_T)65536, MemoryConstants.PageSize);
+		MemoryConstants.OsAllocationGranularity = MemoryConstants.PageSize;
+	}
+
+	return MemoryConstants;
+}
+
+#endif
+
 FMalloc* FAndroidPlatformMemory::BaseAllocator()
 {
 	const FPlatformMemoryConstants& MemoryConstants = FPlatformMemory::GetConstants();
@@ -96,6 +126,7 @@ FMalloc* FAndroidPlatformMemory::BaseAllocator()
 	// todo: track down why FMallocBinned is failing on ARM64
 	return new FMallocAnsi();
 #else
+	// [RCL] 2017-03-06 FIXME: perhaps BinnedPageSize should be used here, but leaving this change to the Android platform owner.
 	return new FMallocBinned(MemoryConstants.PageSize, MemoryLimit);
 #endif
 }
