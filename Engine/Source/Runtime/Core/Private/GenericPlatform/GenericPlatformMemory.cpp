@@ -24,9 +24,6 @@
 	#define UE4_PLATFORM_USES_MMAP_FOR_BINNED_OS_ALLOCS			0
 #endif
 
-// maintain bookkeeping info in Debug and Development
-#define UE4_PLATFORM_SANITY_CHECK_OS_ALLOCATIONS			(UE_BUILD_DEBUG || UE_BUILD_DEVELOPMENT)
-
 // check bookkeeping info against the passed in parameters in Debug and Development (the latter only in games and servers)
 #define UE4_PLATFORM_SANITY_CHECK_OS_ALLOCATIONS			(UE_BUILD_DEBUG || (UE_BUILD_DEVELOPMENT && (UE_GAME || UE_SERVER)))
 
