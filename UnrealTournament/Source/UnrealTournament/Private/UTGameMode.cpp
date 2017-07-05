@@ -2829,9 +2829,11 @@ bool AUTGameMode::PrepareMapVote()
 
 void AUTGameMode::SetEndGameFocus(AUTPlayerState* Winner)
 {
-	if (Winner == NULL) return; // It's possible to call this with Winner == NULL if timelimit is hit with noone on the server
-
-	EndGameFocus = Cast<AController>(Winner->GetOwner())->GetPawn();
+	if (!Winner)
+	{
+		return; // It's possible to call this with Winner == NULL if timelimit is hit with noone on the server
+	}
+	EndGameFocus = Cast<AController>(Winner->GetOwner()) ?  Cast<AController>(Winner->GetOwner())->GetPawn() : nullptr;
 	AUTRemoteRedeemer* Missile = Cast<AUTRemoteRedeemer>(EndGameFocus);
 	if (Missile && Missile->Driver)
 	{
