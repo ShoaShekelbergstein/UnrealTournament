@@ -30,7 +30,7 @@ bool UUTDemoNetDriver::ShouldSaveCheckpoint()
 		return true;
 	}
 
-	if (TimeElapsed > 120.0)
+	if (TimeElapsed > 30.0)
 	{
 		AUTGameState* GS = GetWorld()->GetGameState<AUTGameState>();
 		if (GS && GS->IsMatchIntermission())
