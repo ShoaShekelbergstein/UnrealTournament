@@ -119,7 +119,7 @@ AUTHUD::AUTHUD(const class FObjectInitializer& ObjectInitializer) : Super(Object
 	SuffixNth = NSLOCTEXT("UTHUD", "NthPlaceSuffix", "th");
 
 	CachedProfileSettings = nullptr;
-	BuildText = NSLOCTEXT("UTHUD", "info", "PRE-ALPHA Build 0.1.12");
+	BuildText = NSLOCTEXT("UTHUD", "info", "PRE-ALPHA Build 0.1.12.1");
 	WarmupText = NSLOCTEXT("UTHUD", "warmup", "You are in WARM UP");
 	MatchHostText = NSLOCTEXT("UTHUD", "hostwarmup", "Press [ENTER] to start match.");
 	NeedFullText = NSLOCTEXT("UTHUD", "NeedFullText", "Waiting for match to fill.");

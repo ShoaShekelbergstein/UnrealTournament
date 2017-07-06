@@ -735,15 +735,22 @@ TSharedRef<ITableRow> SUTCreateGamePanel::GenerateMutatorListRow(UClass* Mutator
 {
 	checkSlow(MutatorType->IsChildOf(AUTMutator::StaticClass()));
 
-	FString MutatorName = MutatorType->GetDefaultObject<AUTMutator>()->DisplayName.IsEmpty() ? MutatorType->GetName() : MutatorType->GetDefaultObject<AUTMutator>()->DisplayName.ToString();
+	AUTMutator* DefaultMutatorObj = MutatorType->GetDefaultObject<AUTMutator>();
+	FString MutatorName = TEXT("");
+	if (DefaultMutatorObj != nullptr)
+	{
+		MutatorName = MutatorType->GetDefaultObject<AUTMutator>()->DisplayName.IsEmpty() ? MutatorType->GetName() : MutatorType->GetDefaultObject<AUTMutator>()->DisplayName.ToString();
+	}
+
 	return SNew(STableRow<UClass*>, OwningList)
 		.Padding(5)
 		[
-			SNew(STextBlock)
-			.TextStyle(SUTStyle::Get(), "UT.Font.ContextMenuItem")
-			.Text(FText::FromString(MutatorName))
+			MutatorName.IsEmpty() ? SNullWidget::NullWidget : SNew(STextBlock)
+																	.TextStyle(SUTStyle::Get(), "UT.Font.ContextMenuItem")
+																	.Text(FText::FromString(MutatorName))
 		]; 
 }
+
 
 FReply SUTCreateGamePanel::AddMutator()
 {

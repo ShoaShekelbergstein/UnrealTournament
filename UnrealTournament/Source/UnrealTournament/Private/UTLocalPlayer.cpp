@@ -6760,7 +6760,7 @@ FString UUTLocalPlayer::GetBuildNotesURL()
 		return MCPPulledData.BuildNotesURL;
 	}
 
-	return TEXT("http://epic.gm/ood");
+	return TEXT("https://www.epicgames.com/unrealtournament/");
 	
 }
 
@@ -6772,7 +6772,7 @@ void UUTLocalPlayer::UpdateCheck()
 
 	if (MCPPulledData.CurrentVersionNumber > MyVersion )
 	{
-		ShowWebMessage(NSLOCTEXT("UTLocalPlayer","NeedtoUpdateTitle","New Version Available"), TEXT("http://epic.gm/ood"));
+		ShowWebMessage(NSLOCTEXT("UTLocalPlayer","NeedtoUpdateTitle","New Version Available"), GetBuildNotesURL());
 	}
 	else if (IsMenuGame())
 	{

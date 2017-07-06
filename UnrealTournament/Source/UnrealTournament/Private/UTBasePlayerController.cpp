@@ -367,12 +367,8 @@ bool AUTBasePlayerController::ForwardDirectSay(AUTPlayerState* SenderPlayerState
 	return false;
 }
 
-
-void AUTBasePlayerController::ClientSay_Implementation(AUTPlayerState* Speaker, const FString& Message, FName Destination)
+bool AUTBasePlayerController::AllowSay(AUTPlayerState* Speaker, const FString& Message, FName Destination)
 {
-
-	// Vaidate the say
-
 	UUTProfileSettings* ProfileSettings = GetProfileSettings();
 	if (ProfileSettings != nullptr && Speaker != nullptr)
 	{
@@ -380,34 +376,42 @@ void AUTBasePlayerController::ClientSay_Implementation(AUTPlayerState* Speaker, 
 		{
 			if (ProfileSettings->ComFilter == EComFilter::NoComs)
 			{
-				return;
+				return false;
 			}
 			else if (ProfileSettings->ComFilter == EComFilter::TeamComs)
 			{
 				if (Speaker->GetTeamNum() != GetTeamNum())			
 				{
-					return;
+					return false;
 				}
 			}
 			else if (ProfileSettings->ComFilter == EComFilter::FriendComs)
 			{
 				if (!Speaker->bIsFriend)
 				{
-					return;
+					return false;
 				}
 			}
 		}
 	}
 
-	if (IsPlayerGameMuted(Speaker)) return;
+	return !IsPlayerGameMuted(Speaker);
 
-	FClientReceiveData ClientData;
-	ClientData.LocalPC = this;
-	ClientData.MessageIndex = (Destination == ChatDestinations::Team) ? 1 : 0;
-	ClientData.RelatedPlayerState_1 = Speaker;
-	ClientData.MessageString = Message;
+}
 
-	UUTChatMessage::StaticClass()->GetDefaultObject<UUTChatMessage>()->ClientReceiveChat(ClientData, Destination);
+void AUTBasePlayerController::ClientSay_Implementation(AUTPlayerState* Speaker, const FString& Message, FName Destination)
+{
+
+	if ( AllowSay(Speaker, Message, Destination) )
+	{
+		FClientReceiveData ClientData;
+		ClientData.LocalPC = this;
+		ClientData.MessageIndex = (Destination == ChatDestinations::Team) ? 1 : 0;
+		ClientData.RelatedPlayerState_1 = Speaker;
+		ClientData.MessageString = Message;
+
+		UUTChatMessage::StaticClass()->GetDefaultObject<UUTChatMessage>()->ClientReceiveChat(ClientData, Destination);
+	}
 }
 
 uint8 AUTBasePlayerController::GetTeamNum() const

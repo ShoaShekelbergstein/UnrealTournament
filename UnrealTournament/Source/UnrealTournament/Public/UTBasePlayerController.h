@@ -81,6 +81,7 @@ class UNREALTOURNAMENT_API AUTBasePlayerController : public APlayerController , 
 	UFUNCTION(reliable, server, WithValidation)
 	void ServerLobbySay(const FString& Message);
 
+	virtual bool AllowSay(AUTPlayerState* Speaker, const FString& Message, FName Destination);
 
 	UFUNCTION(reliable, client)
 	virtual void ClientSay(class AUTPlayerState* Speaker, const FString& Message, FName Destination);

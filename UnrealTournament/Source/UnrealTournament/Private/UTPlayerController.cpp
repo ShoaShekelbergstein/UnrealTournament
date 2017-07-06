@@ -3959,11 +3959,14 @@ int32 AUTPlayerController::GetWeaponGroup(AUTWeapon* InWeapon)
 
 void AUTPlayerController::ClientSay_Implementation(AUTPlayerState* Speaker, const FString& Message, FName Destination)
 {
-	UUTGameUserSettings* GS = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
-	if (Speaker == NULL || !Speaker->bIsABot || GS == NULL || GS->GetBotSpeech() > BSO_None)
+	if (AllowSay(Speaker, Message, Destination))
 	{
-		UTClientPlaySound(ChatMsgSound);
-		Super::ClientSay_Implementation(Speaker, Message, Destination);
+		UUTGameUserSettings* GS = Cast<UUTGameUserSettings>(GEngine->GetGameUserSettings());
+		if (Speaker == NULL || !Speaker->bIsABot || GS == NULL || GS->GetBotSpeech() > BSO_None)
+		{
+			UTClientPlaySound(ChatMsgSound);
+			Super::ClientSay_Implementation(Speaker, Message, Destination);
+		}
 	}
 }
 
