@@ -272,7 +272,10 @@ public:
 
 	bool bReceivedTitleFiles;
 
+	void CheckForNewUpdate();
+
 protected:
+	bool bSkippedFirstCheck;
 
 	// Holds a list of title files that have been requested from the MCP.  If this list isn't empty then we are waiting on files
 	TArray<FString> RequestedTitleFiles;

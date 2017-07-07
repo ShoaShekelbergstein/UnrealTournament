@@ -40,6 +40,7 @@ UUTGameInstance::UUTGameInstance(const class FObjectInitializer& ObjectInitializ
 	, Matchmaking(nullptr)
 	, Party(nullptr)
 {
+	bSkippedFirstCheck = false;
 	bLevelIsLoading = false;
 	bDisablePerformanceCounters = false;
 #if USE_SQLITE
@@ -1483,3 +1484,26 @@ void UUTGameInstance::ProcessMCPRulesetUpdate(FString MCPRulesetJson)
 	}
 }
 
+void UUTGameInstance::CheckForNewUpdate()
+{
+
+	if (bSkippedFirstCheck)
+	{
+		IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+		if (OnlineSubsystem) 
+		{
+			IOnlineTitleFilePtr OnlineTitleFileInterface = OnlineSubsystem->GetTitleFileInterface();
+			if (OnlineTitleFileInterface.IsValid())
+			{
+				OnReadTitleFileCompleteDelegate = OnlineTitleFileInterface->AddOnReadFileCompleteDelegate_Handle(FOnReadFileCompleteDelegate::CreateUObject(this, &ThisClass::OnReadTitleFileComplete));
+				OnEnumerateTitleFilesCompleteDelegate = OnlineTitleFileInterface->AddOnEnumerateFilesCompleteDelegate_Handle(FOnEnumerateFilesCompleteDelegate::CreateUObject(this, &ThisClass::OnEnumerateTitleFilesComplete));
+
+				RequestedTitleFiles.Add(UUTLocalPlayer::GetMCPStorageFilename());
+				OnlineTitleFileInterface->EnumerateFiles();
+			}
+		}
+	}
+
+	bSkippedFirstCheck = true;
+
+}

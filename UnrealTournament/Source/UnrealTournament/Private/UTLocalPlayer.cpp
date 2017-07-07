@@ -6745,10 +6745,10 @@ void UUTLocalPlayer::CheckForNewUpdate()
 {
 	if (LoginPhase == ELoginPhase::LoggedIn)
 	{
-		if (OnlineTitleFileInterface.IsValid())
+		UUTGameInstance* GI = Cast<UUTGameInstance>(GetGameInstance());
+		if (GI)
 		{
-			TitleFileQueue.Add(GetMCPStorageFilename());
-			OnlineTitleFileInterface->EnumerateFiles();
+			GI->CheckForNewUpdate();
 		}
 	}
 }
