@@ -53,6 +53,7 @@ namespace UnrealTournamentGame.Automation
             UnrealTournamentDevTesting,
 			UnrealTournamentDevStage,
 			UnrealTournamentDevPlaytest,
+			UnrealTournamentQuail,
 
 			// Release branch promotions
 			UnrealTournamentReleaseTesting,
@@ -81,6 +82,7 @@ namespace UnrealTournamentGame.Automation
             UnrealTournamentEditorDevTesting,
 			UnrealTournamentEditorDevStage,
 			UnrealTournamentEditorDevPlaytest,
+			UnrealTournamentEditorQuail,
 
 			// Release branch promotions
 			UnrealTournamentEditorReleaseTesting,
@@ -673,6 +675,7 @@ namespace UnrealTournamentGame.Automation
 			DevBranchApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDevTesting);
 			DevBranchApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDevStage);
 			DevBranchApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDevPlaytest);
+			DevBranchApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuail);
 
 			List<UnrealTournamentBuild.UnrealTournamentAppName> ReleaseBranchApps = new List<UnrealTournamentBuild.UnrealTournamentAppName>();
 			ReleaseBranchApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentReleaseTesting);
@@ -719,6 +722,7 @@ namespace UnrealTournamentGame.Automation
 			// Map which apps are Production only
 			List<UnrealTournamentBuild.UnrealTournamentAppName> ProdApps = new List<UnrealTournamentBuild.UnrealTournamentAppName>();
 			ProdApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDevPlaytest);
+			ProdApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuail);
 			ProdApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentPublicTest);
 			ProdApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDev);
 
@@ -764,6 +768,10 @@ namespace UnrealTournamentGame.Automation
 				else if (ToGameApp == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDevPlaytest)
 				{
 					ToEditorApp = UnrealTournamentBuild.UnrealTournamentEditorAppName.UnrealTournamentEditorDevPlaytest;
+				}
+				else if (ToGameApp == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuail)
+				{
+					ToEditorApp = UnrealTournamentBuild.UnrealTournamentEditorAppName.UnrealTournamentEditorQuail;
 				}
 				else if (ToGameApp == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentReleaseTesting)
 				{
