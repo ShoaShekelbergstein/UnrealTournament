@@ -85,6 +85,8 @@ namespace UnrealTournamentGame.Automation
             UnrealTournamentEditorDevTesting,
 			UnrealTournamentEditorDevStage,
 			UnrealTournamentEditorDevPlaytest,
+
+			UnrealTournamentEditorQuailStage,
 			UnrealTournamentEditorQuail,
 
 			// Release branch promotions
@@ -774,6 +776,10 @@ namespace UnrealTournamentGame.Automation
 				else if (ToGameApp == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDevPlaytest)
 				{
 					ToEditorApp = UnrealTournamentBuild.UnrealTournamentEditorAppName.UnrealTournamentEditorDevPlaytest;
+				}
+				else if (ToGameApp == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuailStage)
+				{
+					ToEditorApp = UnrealTournamentBuild.UnrealTournamentEditorAppName.UnrealTournamentEditorQuailStage;
 				}
 				else if (ToGameApp == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuail)
 				{
