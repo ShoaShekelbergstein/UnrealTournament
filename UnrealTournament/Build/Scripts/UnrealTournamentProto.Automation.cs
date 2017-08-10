@@ -813,6 +813,14 @@ namespace UnrealTournamentGame.Automation
 			// Set this to false to disable dedicated server fleet deployment
 			bool bEnableServerDeploy = true;
 
+			// Booleans related to client chunk staging/promotion
+			bool bSkipS3 = false;
+			if (ToGameApp == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuail)
+			{
+				Log("-- Skipping S3 interactions for this app");
+				bSkipS3 = true;
+			}
+
 			// Booleans related to dedicated server deployments
 			bool bDistributeServerBuild = false;
 			bool bSetLiveServerBuild = false;
@@ -920,22 +928,25 @@ namespace UnrealTournamentGame.Automation
 
 			}
 
-			// S3 PARAMETERS (used during staging and operating on ProdCom only)
 			CloudStorageBase CloudStorage = null;
 			string S3Bucket = null;
-			if (bIsProdPromotion || bIsStagePromotion)
+			if (!bSkipS3)
 			{
-				S3Bucket = ParseParamValue("AWSBucket", "patcher-origin");
+				// S3 PARAMETERS (used during staging and operating on ProdCom only)
+				if (bIsProdPromotion || bIsStagePromotion)
+				{
+					S3Bucket = ParseParamValue("AWSBucket", "patcher-origin");
 
-				var CloudConfiguration = new Dictionary<string, object>
-			{
-				{ "CredentialsFilePath", ParseParamValue("AWSCredentialsFile", @"P:\Builds\Utilities\S3Credentials.txt") },
-				{ "CredentialsKey",      ParseParamValue("AWSCredentialsKey", "s3_origin_prod") },
-				{ "AWSRegion",           ParseParamValue("AWSRegion", "us-east-1") }
-			};
+					var CloudConfiguration = new Dictionary<string, object>
+				{
+					{ "CredentialsFilePath", ParseParamValue("AWSCredentialsFile", @"P:\Builds\Utilities\S3Credentials.txt") },
+					{ "CredentialsKey",      ParseParamValue("AWSCredentialsKey", "s3_origin_prod") },
+					{ "AWSRegion",           ParseParamValue("AWSRegion", "us-east-1") }
+				};
 
-				CloudStorage = CloudStorageBase.Get();
-				CloudStorage.Init(CloudConfiguration);
+					CloudStorage = CloudStorageBase.Get();
+					CloudStorage.Init(CloudConfiguration);
+				}
 			}
 
 			// Ensure that the build exists in gamedev Build Info services, regardless of where we're promoting to
@@ -949,41 +960,43 @@ namespace UnrealTournamentGame.Automation
 			// If this label will go to Prod, then make sure the build manifests are all staged to the Prod CDN already
 			if (bIsProdPromotion)
 			{
-				// Look for game builds' manifests
-				foreach (var Platform in GameStagingInfos.Keys)
+				if (!bSkipS3)
 				{
-					var StagingInfo = GameStagingInfos[Platform]; // We can use the target here, as it's guaranteed to have the correct manifest filename embedded
-
-					// Check for the manifest on the S3 bucket which seeds the production CDN
-					Log("Verifying manifest for prod promotion of Ocean {0} {1} was already staged to the S3 origin", BuildVersion, Platform);
-					bool bWasManifestFound = CloudStorage.IsManifestOnCloudStorage(S3Bucket, StagingInfo);
-					if (!bWasManifestFound)
+					// Look for game builds' manifests
+					foreach (var Platform in GameStagingInfos.Keys)
 					{
-						string DestinationLabelWithPlatform = BuildInfoPublisherBase.Get().GetLabelWithPlatform(LiveLabel, Platform);
-						throw new AutomationException("Promotion to Prod requires the build first be staged to the S3 origin. Manifest {0} not found for promotion to label {1} of app {2}"
-							, StagingInfo.ManifestFilename
-							, DestinationLabelWithPlatform
-							, ToGameApp.ToString());
+						var StagingInfo = GameStagingInfos[Platform]; // We can use the target here, as it's guaranteed to have the correct manifest filename embedded
+
+						// Check for the manifest on the S3 bucket which seeds the production CDN
+						Log("Verifying manifest for prod promotion of Ocean {0} {1} was already staged to the S3 origin", BuildVersion, Platform);
+						bool bWasManifestFound = CloudStorage.IsManifestOnCloudStorage(S3Bucket, StagingInfo);
+						if (!bWasManifestFound)
+						{
+							string DestinationLabelWithPlatform = BuildInfoPublisherBase.Get().GetLabelWithPlatform(LiveLabel, Platform);
+							throw new AutomationException("Promotion to Prod requires the build first be staged to the S3 origin. Manifest {0} not found for promotion to label {1} of app {2}"
+								, StagingInfo.ManifestFilename
+								, DestinationLabelWithPlatform
+								, ToGameApp.ToString());
+						}
+					}
+					// Look for editor builds' manifests
+					foreach (var Platform in EditorStagingInfos.Keys)
+					{
+						var StagingInfo = EditorStagingInfos[Platform]; // We can use the target here, as it's guaranteed to have the correct manifest filename embedded
+
+						// Check for the manifest on the S3 bucket which seeds the production CDN
+						Log("Verifying manifest for prod promotion of Ocean {0} {1} was already staged to the S3 origin", BuildVersion, Platform);
+						bool bWasManifestFound = CloudStorage.IsManifestOnCloudStorage(S3Bucket, StagingInfo);
+						if (!bWasManifestFound)
+						{
+							string DestinationLabelWithPlatform = BuildInfoPublisherBase.Get().GetLabelWithPlatform(LiveLabel, Platform);
+							throw new AutomationException("Promotion to Prod requires the build first be staged to the S3 origin. Manifest {0} not found for promotion to label {1} of app {2}"
+								, StagingInfo.ManifestFilename
+								, DestinationLabelWithPlatform
+								, ToEditorApp.ToString());
+						}
 					}
 				}
-				// Look for editor builds' manifests
-				foreach (var Platform in EditorStagingInfos.Keys)
-				{
-					var StagingInfo = EditorStagingInfos[Platform]; // We can use the target here, as it's guaranteed to have the correct manifest filename embedded
-
-					// Check for the manifest on the S3 bucket which seeds the production CDN
-					Log("Verifying manifest for prod promotion of Ocean {0} {1} was already staged to the S3 origin", BuildVersion, Platform);
-					bool bWasManifestFound = CloudStorage.IsManifestOnCloudStorage(S3Bucket, StagingInfo);
-					if (!bWasManifestFound)
-					{
-						string DestinationLabelWithPlatform = BuildInfoPublisherBase.Get().GetLabelWithPlatform(LiveLabel, Platform);
-						throw new AutomationException("Promotion to Prod requires the build first be staged to the S3 origin. Manifest {0} not found for promotion to label {1} of app {2}"
-							, StagingInfo.ManifestFilename
-							, DestinationLabelWithPlatform
-							, ToEditorApp.ToString());
-					}
-				}
-
 
 				// Ensure the build is registered on the prod and staging build info services.
 				Log("-- Ensuring builds are posted to {0} app {1}/{2} for prod promotion", StagingMcpConfigString, ToGameApp.ToString(), ToEditorApp.ToString());
@@ -1009,24 +1022,27 @@ namespace UnrealTournamentGame.Automation
 			Log("Performing build promotion actions for promoting to label {0} of app {1}/{2}.", LiveLabel, ToGameApp.ToString(), ToEditorApp.ToString());
 			if (bIsStagePromotion)
 			{
-				// Copy game chunks to CDN
-				foreach (var Platform in GameStagingInfos.Keys)
+				if (!bSkipS3)
 				{
-					var StagingInfo = GameStagingInfos[Platform];
+					// Copy game chunks to CDN
+					foreach (var Platform in GameStagingInfos.Keys)
 					{
-						Log("Promoting game chunks to S3 origin");
-						CloudStorage.CopyChunksToCloudStorage(S3Bucket, StagingInfo);
-						Log("DONE Promoting game chunks");
+						var StagingInfo = GameStagingInfos[Platform];
+						{
+							Log("Promoting game chunks to S3 origin");
+							CloudStorage.CopyChunksToCloudStorage(S3Bucket, StagingInfo);
+							Log("DONE Promoting game chunks");
+						}
 					}
-				}
-				// Copy editor chunks to CDN
-				foreach (var Platform in EditorStagingInfos.Keys)
-				{
-					var StagingInfo = EditorStagingInfos[Platform];
+					// Copy editor chunks to CDN
+					foreach (var Platform in EditorStagingInfos.Keys)
 					{
-						Log("Promoting editor chunks to S3 origin");
-						CloudStorage.CopyChunksToCloudStorage(S3Bucket, StagingInfo);
-						Log("DONE Promoting editor chunks");
+						var StagingInfo = EditorStagingInfos[Platform];
+						{
+							Log("Promoting editor chunks to S3 origin");
+							CloudStorage.CopyChunksToCloudStorage(S3Bucket, StagingInfo);
+							Log("DONE Promoting editor chunks");
+						}
 					}
 				}
 
