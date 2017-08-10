@@ -803,7 +803,7 @@ namespace UnrealTournamentGame.Automation
 				}
 				else
 				{
-					throw new AutomationException("Unable to find an editor app matching game app {1}", ToGameApp);
+					throw new AutomationException("Unable to find an editor app matching game app {0}", ToGameApp);
 				}
 			}
 
