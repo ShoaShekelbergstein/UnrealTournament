@@ -53,6 +53,9 @@ namespace UnrealTournamentGame.Automation
             UnrealTournamentDevTesting,
 			UnrealTournamentDevStage,
 			UnrealTournamentDevPlaytest,
+
+			// Quail quail quail, stage and promote servers only
+			UnrealTournamentQuailStage,
 			UnrealTournamentQuail,
 
 			// Release branch promotions
@@ -82,7 +85,6 @@ namespace UnrealTournamentGame.Automation
             UnrealTournamentEditorDevTesting,
 			UnrealTournamentEditorDevStage,
 			UnrealTournamentEditorDevPlaytest,
-			UnrealTournamentEditorQuail,
 
 			// Release branch promotions
 			UnrealTournamentEditorReleaseTesting,
@@ -675,6 +677,8 @@ namespace UnrealTournamentGame.Automation
 			DevBranchApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDevTesting);
 			DevBranchApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDevStage);
 			DevBranchApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDevPlaytest);
+			
+			DevBranchApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuailStage);
 			DevBranchApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuail);
 
 			List<UnrealTournamentBuild.UnrealTournamentAppName> ReleaseBranchApps = new List<UnrealTournamentBuild.UnrealTournamentAppName>();
@@ -718,6 +722,7 @@ namespace UnrealTournamentGame.Automation
 			// Map which apps are Stage only
 			List<UnrealTournamentBuild.UnrealTournamentAppName> StageApps = new List<UnrealTournamentBuild.UnrealTournamentAppName>();
 			StageApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentDevStage);
+			StageApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuailStage);
 			StageApps.Add(UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentReleaseStage);
 			// Map which apps are Production only
 			List<UnrealTournamentBuild.UnrealTournamentAppName> ProdApps = new List<UnrealTournamentBuild.UnrealTournamentAppName>();
@@ -769,10 +774,6 @@ namespace UnrealTournamentGame.Automation
 				{
 					ToEditorApp = UnrealTournamentBuild.UnrealTournamentEditorAppName.UnrealTournamentEditorDevPlaytest;
 				}
-				else if (ToGameApp == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuail)
-				{
-					ToEditorApp = UnrealTournamentBuild.UnrealTournamentEditorAppName.UnrealTournamentEditorQuail;
-				}
 				else if (ToGameApp == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentReleaseTesting)
 				{
 					ToEditorApp = UnrealTournamentBuild.UnrealTournamentEditorAppName.UnrealTournamentEditorReleaseTesting;
@@ -815,7 +816,8 @@ namespace UnrealTournamentGame.Automation
 
 			// Booleans related to client chunk staging/promotion
 			bool bSkipS3 = false;
-			if (ToGameApp == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuail)
+			if (ToGameApp == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuail
+				|| ToGameApp == UnrealTournamentBuild.UnrealTournamentAppName.UnrealTournamentQuailStage)
 			{
 				Log("-- Skipping S3 interactions for this app");
 				bSkipS3 = true;
