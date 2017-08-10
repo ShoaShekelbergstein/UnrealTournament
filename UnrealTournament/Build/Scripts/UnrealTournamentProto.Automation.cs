@@ -539,7 +539,7 @@ namespace UnrealTournamentGame.Automation
 				WorkingCL = P4.CreateChange(P4Env.Client, String.Format("UnrealTournamentBuild build built from changelist {0}", P4Env.Changelist));
 				Log("Build from {0}    Working in {1}", P4Env.Changelist, WorkingCL);
 			}
-
+            /*
 			if (P4Enabled)
 			{
                 if (Params.ClientConfigsToBuild.Count > 0)
@@ -551,7 +551,7 @@ namespace UnrealTournamentGame.Automation
                     UnrealTournamentBuild.Tweet(String.Format("Starting {2} Server {0} build from changelist {1}", P4Env.BuildRootP4, P4Env.Changelist, Params.ServerTargetPlatforms[0].ToString()));
                 }
 			}
-
+            */
 			Project.Build(this, Params, WorkingCL);
 			Project.Cook(Params);
 			Project.CopyBuildToStagingDirectory(Params);
