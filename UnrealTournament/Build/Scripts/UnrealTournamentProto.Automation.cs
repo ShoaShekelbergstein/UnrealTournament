@@ -819,6 +819,8 @@ namespace UnrealTournamentGame.Automation
 			{
 				Log("-- Skipping S3 interactions for this app");
 				bSkipS3 = true;
+				// Hard flip editor promotions off for Quail
+				bShouldPromoteEditor = false;
 			}
 
 			// Booleans related to dedicated server deployments
