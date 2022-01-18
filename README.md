@@ -63,7 +63,7 @@ One way to contribute changes is to send a GitHub [Pull Request](https://help.gi
 - Use the GitHub program to **Sync** the project's files to a folder on your machine.
 - You can now open up **UnrealTournament.uproject** in the editor!
 - If you're a programmer, follow the platform specific steps below to set up the C++ project. 
-- Using the GitHub program, you can easily **submit contributions** back up to your **fork**.  These files will be visible to all subscribers, and you can advertise your changes in the [Unreal Tournament forums](http://forums.unrealengine.com/forumdisplay.php?34-Unreal-Tournament).
+- Using the GitHub program, you can easily **submit contributions** back up to your **fork**.  These files will be visible to all subscribers, and you can advertise your changes in the [Unreal Tournament forums](https://forums.unrealengine.com/c/modding/unreal-tournament/79).
 - When you're ready to send the changes to the Unreal Tournament team for review, simply create a [Pull Request](https://help.github.com/articles/using-pull-requests).
 
 
